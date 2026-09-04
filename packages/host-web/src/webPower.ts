@@ -26,9 +26,9 @@ import type {
 // Keep-awake over the Wake Lock API. Both operations AWAIT the platform, so the reported outcome is the
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
-  export const webPowerKeepAwakeBackend = (() => {
-    const out = allocateEntity<PowerKeepAwakeBackend>();
-    out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
+export const webPowerKeepAwakeBackend = (() => {
+  const out = allocateEntity<PowerKeepAwakeBackend>();
+  out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
     if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
     const wakeLock = _getWebWakeLock();
@@ -53,17 +53,17 @@ import type {
     sentinel.addEventListener?.('release', onRelease);
     return { reason: 'ok' };
   };
-    out.destroy = (): void => {
+  out.destroy = (): void => {
     void _releaseSentinel();
     for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
       sentinel.removeEventListener?.('release', onRelease);
     }
     _wakeLockReleaseListeners.clear();
   };
-    out.isActive = (): boolean => {
+  out.isActive = (): boolean => {
     return _wakeLockSentinel !== null;
   };
-    out.release = async (): Promise<PowerKeepAwakeReleaseResult> => {
+  out.release = async (): Promise<PowerKeepAwakeReleaseResult> => {
     const sentinel = _wakeLockSentinel;
     // Nothing held is an ordinary outcome, not a fault — reported distinctly from 'ok' so a caller that
     // believed it held a lock can tell that it did not.
@@ -81,24 +81,24 @@ import type {
     _wakeLockReleaseListeners.delete(sentinel);
     return { reason: 'ok' };
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
-  export const webPowerSuspensionBackend = (() => {
-    const out = allocateEntity<PowerSuspensionBackend>();
-    out.subscribeResume = (listener: () => void): () => void => {
+export const webPowerSuspensionBackend = (() => {
+  const out = allocateEntity<PowerSuspensionBackend>();
+  out.subscribeResume = (listener: () => void): (() => void) => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('resume', listener);
     return () => document.removeEventListener('resume', listener);
   };
-    out.subscribeSuspend = (listener: () => void): () => void => {
+  out.subscribeSuspend = (listener: () => void): (() => void) => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('freeze', listener);
     return () => document.removeEventListener('freeze', listener);
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 // change and status SHARE one closure-owned battery cache. The readings used to be module-scoped with a
 // `destroy` to reset them — but cached readings are not an externally freeable resource, they are just
@@ -110,7 +110,7 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   let cachedDischargingTime = -1;
   let cachedLevel = -1;
 
-    const out = allocateEntity<WebPowerReadingCapabilities>();
+  const out = allocateEntity<WebPowerReadingCapabilities>();
   const changeEntity = allocateEntity<PowerChangeBackend>();
   changeEntity.subscribe = (listener: () => void) => {
     const battery = _getWebBatteryManagerPromise();

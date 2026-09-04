@@ -285,7 +285,7 @@ function createElectronLoginItemBackend(electron: ElectronApi) {
 }
 
 function createElectronRecentDocumentsBackend(electron: ElectronApi) {
-    const out = allocateEntity<AppRecentDocumentsBackend>();
+  const out = allocateEntity<AppRecentDocumentsBackend>();
   out.addRecentDocument = (path: string) => electron.app.addRecentDocument(path);
   out.clearRecentDocuments = () => electron.app.clearRecentDocuments();
   return finishEntity(out);

@@ -110,89 +110,90 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
   const worlds = new Map<number, ReferencePhysics2DAbiWorld>();
   let nextWorldHandle = 1;
 
-    const out = allocateEntity<Physics2DAbi>();
+  const out = allocateEntity<Physics2DAbi>();
   out.version = Physics2DAbiVersion;
-  out.capabilities = Physics2DAbiCapability.ContactHooks |
-      Physics2DAbiCapability.PersistentWorlds |
-      Physics2DAbiCapability.Queries |
-      Physics2DAbiCapability.SelectiveReadback;
+  out.capabilities =
+    Physics2DAbiCapability.ContactHooks |
+    Physics2DAbiCapability.PersistentWorlds |
+    Physics2DAbiCapability.Queries |
+    Physics2DAbiCapability.SelectiveReadback;
   out.createWorld = (): Physics2DAbiWorldHandle => {
-      if (nextWorldHandle > 0xffffffff) return 0;
-      const handle = nextWorldHandle;
-      nextWorldHandle += 1;
-      const world = createPhysics2DWorld();
-      registerBuiltInPhysics2DJointSolvers(world);
-      worlds.set(handle, createReferenceWorld(world));
-      return handle;
-    };
+    if (nextWorldHandle > 0xffffffff) return 0;
+    const handle = nextWorldHandle;
+    nextWorldHandle += 1;
+    const world = createPhysics2DWorld();
+    registerBuiltInPhysics2DJointSolvers(world);
+    worlds.set(handle, createReferenceWorld(world));
+    return handle;
+  };
   out.destroyWorld = (handle): boolean => {
-      if (worlds.get(handle)?.stepping === true) return false;
-      return worlds.delete(handle);
-    };
+    if (worlds.get(handle)?.stepping === true) return false;
+    return worlds.delete(handle);
+  };
   out.getWorldStatus = (handle): Physics2DAbiWorldStatus => {
-      const state = worlds.get(handle);
-      if (state === undefined) return 'Stale';
-      return state.stepping ? 'Busy' : 'Ready';
-    };
+    const state = worlds.get(handle);
+    if (state === undefined) return 'Stale';
+    return state.stepping ? 'Busy' : 'Ready';
+  };
   out.execute = (handle, commands, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined) return failExecution(out, 'StaleWorld', 0, Physics2DAbiCommandHeaderByteLength, 0);
-      if (state.stepping) return failExecution(out, 'BusyWorld', 0, Physics2DAbiCommandHeaderByteLength, 0);
-      return executeCommands(state, commands, out);
-    };
+    const state = worlds.get(handle);
+    if (state === undefined) return failExecution(out, 'StaleWorld', 0, Physics2DAbiCommandHeaderByteLength, 0);
+    if (state.stepping) return failExecution(out, 'BusyWorld', 0, Physics2DAbiCommandHeaderByteLength, 0);
+    return executeCommands(state, commands, out);
+  };
   out.step = (handle, dt, hooks): Physics2DAbiStepStatus => {
-      const state = worlds.get(handle);
-      if (state === undefined) return 'StaleWorld';
-      if (state.stepping) return 'BusyWorld';
-      return stepReferenceWorld(state, dt, hooks);
-    };
+    const state = worlds.get(handle);
+    if (state === undefined) return 'StaleWorld';
+    if (state.stepping) return 'BusyWorld';
+    return stepReferenceWorld(state, dt, hooks);
+  };
   out.readBodies = (handle, bodyIds, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      readBodies(state, bodyIds, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    readBodies(state, bodyIds, out);
+    return true;
+  };
   out.readContacts = (handle, selection, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      readContacts(state, selection, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    readContacts(state, selection, out);
+    return true;
+  };
   out.readJoints = (handle, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      readJoints(state, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    readJoints(state, out);
+    return true;
+  };
   out.queryPoint = (handle, x, y, filter, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      queryPhysics2DPoint(state.world, x, y, state.query, filter ?? undefined);
-      writeQueryHits(state, state.query, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    queryPhysics2DPoint(state.world, x, y, state.query, filter ?? undefined);
+    writeQueryHits(state, state.query, out);
+    return true;
+  };
   out.queryRay = (handle, originX, originY, directionX, directionY, maxFraction, closest, filter, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      const query = closest ? queryPhysics2DRayClosest : queryPhysics2DRay;
-      query(state.world, originX, originY, directionX, directionY, state.ray, maxFraction, filter ?? undefined);
-      writeRayHits(state, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    const query = closest ? queryPhysics2DRayClosest : queryPhysics2DRay;
+    query(state.world, originX, originY, directionX, directionY, state.ray, maxFraction, filter ?? undefined);
+    writeRayHits(state, out);
+    return true;
+  };
   out.queryRegion = (handle, region, filter, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      queryPhysics2DRegion(state.world, region, state.query, filter ?? undefined);
-      writeQueryHits(state, state.query, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    queryPhysics2DRegion(state.world, region, state.query, filter ?? undefined);
+    writeQueryHits(state, state.query, out);
+    return true;
+  };
   out.queryShapeCast = (handle, shape, dx, dy, maxFraction, filter, out): boolean => {
-      const state = worlds.get(handle);
-      if (state === undefined || state.stepping) return false;
-      queryPhysics2DShapeCast(state.world, shape, dx, dy, state.shapeCast, maxFraction, filter ?? undefined);
-      writeShapeCastHit(state, out);
-      return true;
-    };
+    const state = worlds.get(handle);
+    if (state === undefined || state.stepping) return false;
+    queryPhysics2DShapeCast(state.world, shape, dx, dy, state.shapeCast, maxFraction, filter ?? undefined);
+    writeShapeCastHit(state, out);
+    return true;
+  };
   return finishEntity(out);
 }
 

@@ -1,9 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CapacitorApi,
-  ClipboardImageBackend,
-  ClipboardTextBackend,
-} from '@flighthq/types/contract';
+import type { CapacitorApi, ClipboardImageBackend, ClipboardTextBackend } from '@flighthq/types/contract';
 
 type CapacitorClipboardBackend = ClipboardImageBackend & ClipboardTextBackend;
 

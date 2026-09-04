@@ -10,23 +10,23 @@ import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics'
 // so a renderer drawing a string just asks for each glyph. This is the dynamic implementation of
 // `GlyphSource`; `@flighthq/bitmapfont` will provide a static one of the same shape.
 export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): GlyphSource {
-    const out = allocateEntity<GlyphSource>();
+  const out = allocateEntity<GlyphSource>();
   out.getGlyphAtlasImage = (page = 0) => {
-      // One growing bitmap = page 0; a `Bitmap` is an `Image`, so this pairs the geometry
-      // seam with its pixels directly.
-      return page === 0 ? getGlyphAtlasBitmap(atlas) : null;
-    };
+    // One growing bitmap = page 0; a `Bitmap` is an `Image`, so this pairs the geometry
+    // seam with its pixels directly.
+    return page === 0 ? getGlyphAtlasBitmap(atlas) : null;
+  };
   out.getGlyphEntry = (codepoint) => {
-      return getGlyphAtlasEntry(atlas, codepoint);
-    };
+    return getGlyphAtlasEntry(atlas, codepoint);
+  };
   out.getGlyphKerning = (left, right) => {
-      return getGlyphAtlasKerning(atlas, left, right);
-    };
+    return getGlyphAtlasKerning(atlas, left, right);
+  };
   out.getGlyphLayoutVersion = () => {
-      return getGlyphAtlasLayoutVersion(atlas);
-    };
+    return getGlyphAtlasLayoutVersion(atlas);
+  };
   out.getGlyphMetrics = () => {
-      return getGlyphAtlasMetrics(atlas);
-    };
+    return getGlyphAtlasMetrics(atlas);
+  };
   return finishEntity(out);
 }

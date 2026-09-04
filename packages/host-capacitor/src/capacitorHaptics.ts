@@ -17,42 +17,42 @@ import type {
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
 export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsBackend {
   const haptics = capacitor.haptics;
-    const out = allocateEntity<HapticsBackend>();
+  const out = allocateEntity<HapticsBackend>();
   out.cancel = () => {
-      // Capacitor exposes no cancel-vibration call.
-      return false;
-    };
+    // Capacitor exposes no cancel-vibration call.
+    return false;
+  };
   out.capabilities = (out: HapticsCapabilities): HapticsCapabilities => {
-      out.supported = true;
-      out.intensity = false;
-      out.patterns = false;
-      out.amplitudeControl = false;
-      out.customEvents = false;
-      return out;
-    };
+    out.supported = true;
+    out.intensity = false;
+    out.patterns = false;
+    out.amplitudeControl = false;
+    out.customEvents = false;
+    return out;
+  };
   out.impact = (style: HapticImpactStyle) => {
-      haptics.impact({ style: toCapacitorImpactStyle(style) }).catch(() => {});
-      return true;
-    };
+    haptics.impact({ style: toCapacitorImpactStyle(style) }).catch(() => {});
+    return true;
+  };
   out.isSupported = () => {
-      return true;
-    };
+    return true;
+  };
   out.notification = (type: HapticNotificationType) => {
-      haptics.notification({ type: type.toUpperCase() }).catch(() => {});
-      return true;
-    };
+    haptics.notification({ type: type.toUpperCase() }).catch(() => {});
+    return true;
+  };
   out.selection = () => {
-      haptics.selectionChanged().catch(() => {});
-      return true;
-    };
+    haptics.selectionChanged().catch(() => {});
+    return true;
+  };
   out.vibrate = (durationMs: number) => {
-      haptics.vibrate({ duration: durationMs }).catch(() => {});
-      return true;
-    };
+    haptics.vibrate({ duration: durationMs }).catch(() => {});
+    return true;
+  };
   out.vibratePattern = () => {
-      // Capacitor's vibrate takes a single duration, not an on/off pattern; report unsupported.
-      return false;
-    };
+    // Capacitor's vibrate takes a single duration, not an on/off pattern; report unsupported.
+    return false;
+  };
   return finishEntity(out);
 }
 

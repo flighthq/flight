@@ -122,13 +122,18 @@ function createWebMidiProfile(
     };
     return finishEntity(out);
   })();
-  if (!includePermission) return (() => { const out = allocateEntity<WebMidiAccessCapabilities>(); out.access = access; return finishEntity(out); })();
+  if (!includePermission)
+    return (() => {
+      const out = allocateEntity<WebMidiAccessCapabilities>();
+      out.access = access;
+      return finishEntity(out);
+    })();
   const permission = (() => {
     const out = allocateEntity<MidiPermissionBackend>();
     out.getPermission = () => queryWebMidiPermission(api.permissions);
     return finishEntity(out);
   })();
-    const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
+  const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
   out.access = access;
   out.permission = permission;
   return finishEntity(out);

@@ -145,7 +145,7 @@ export function createFlightDocumentScene3DMaterialization(
   const materializedNodes = getMaterializedNodes(scene.root);
   const cameras = materializeCameras(documentScene.cameras, materializedNodes);
   const lights = materializeLights(documentScene.lights, materializedNodes);
-    const out = allocateEntity<FlightDocumentScene3DMaterialization>();
+  const out = allocateEntity<FlightDocumentScene3DMaterialization>();
   out.cameras = cameras;
   out.interactiveStateBindings = interactiveStateBindings;
   out.layoutBindings = layoutBindings;

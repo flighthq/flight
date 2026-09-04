@@ -21,64 +21,64 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
   // The Capacitor string callback id keyed by the numeric id handed to the caller; null while the async
   // watch registration is still in flight. A cleared-early entry is removed so its late id self-cancels.
   const watchIds = new Map<number, string | null>();
-    const out = allocateEntity<GeolocationBackend>();
+  const out = allocateEntity<GeolocationBackend>();
   out.getCurrentPosition = async (options) => {
-      try {
-        return toGeoPosition(await geolocation.getCurrentPosition(options));
-      } catch {
-        return null;
-      }
-    };
+    try {
+      return toGeoPosition(await geolocation.getCurrentPosition(options));
+    } catch {
+      return null;
+    }
+  };
   out.getCurrentPositionResult = async (options) => {
-      try {
-        return { position: toGeoPosition(await geolocation.getCurrentPosition(options)), reason: null };
-      } catch {
-        const out: GeoPositionResult = { position: null, reason: 'unavailable' };
-        return out;
-      }
-    };
+    try {
+      return { position: toGeoPosition(await geolocation.getCurrentPosition(options)), reason: null };
+    } catch {
+      const out: GeoPositionResult = { position: null, reason: 'unavailable' };
+      return out;
+    }
+  };
   out.isAvailable = () => {
-      return true;
-    };
+    return true;
+  };
   out.watchPosition = (listener, options, onError) => {
-      const numericId = nextWatchId++;
-      watchIds.set(numericId, null);
-      geolocation
-        .watchPosition(options, (position, err) => {
-          if (position !== null && position !== undefined) listener(toGeoPosition(position));
-          else if (err !== undefined && onError !== undefined) onError('unavailable');
-        })
-        .then((stringId) => {
-          if (watchIds.has(numericId)) watchIds.set(numericId, stringId);
-          // Cleared before the registration resolved: cancel the now-live watch immediately.
-          else geolocation.clearWatch({ id: stringId }).catch(() => {});
-        })
-        .catch(() => {
-          watchIds.delete(numericId);
-        });
-      return numericId;
-    };
+    const numericId = nextWatchId++;
+    watchIds.set(numericId, null);
+    geolocation
+      .watchPosition(options, (position, err) => {
+        if (position !== null && position !== undefined) listener(toGeoPosition(position));
+        else if (err !== undefined && onError !== undefined) onError('unavailable');
+      })
+      .then((stringId) => {
+        if (watchIds.has(numericId)) watchIds.set(numericId, stringId);
+        // Cleared before the registration resolved: cancel the now-live watch immediately.
+        else geolocation.clearWatch({ id: stringId }).catch(() => {});
+      })
+      .catch(() => {
+        watchIds.delete(numericId);
+      });
+    return numericId;
+  };
   out.clearWatch = (id) => {
-      const stringId = watchIds.get(id);
-      watchIds.delete(id);
-      if (stringId !== undefined && stringId !== null) geolocation.clearWatch({ id: stringId }).catch(() => {});
-    };
+    const stringId = watchIds.get(id);
+    watchIds.delete(id);
+    if (stringId !== undefined && stringId !== null) geolocation.clearWatch({ id: stringId }).catch(() => {});
+  };
   out.promptForAccess = async () => {
-      try {
-        const location = (await geolocation.requestPermissions()).location;
-        if (location === 'granted') return { reason: 'granted' as const };
-        if (location === 'prompt') return { reason: 'dismissed' as const };
-        return { reason: 'denied' as const };
-      } catch {
-        return { reason: 'operation-failed' as const };
-      }
-    };
+    try {
+      const location = (await geolocation.requestPermissions()).location;
+      if (location === 'granted') return { reason: 'granted' as const };
+      if (location === 'prompt') return { reason: 'dismissed' as const };
+      return { reason: 'denied' as const };
+    } catch {
+      return { reason: 'operation-failed' as const };
+    }
+  };
   return finishEntity(out);
 }
 
 function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {
   const coords = position.coords;
-    const out = allocateEntity<GeoPosition>();
+  const out = allocateEntity<GeoPosition>();
   out.latitude = coords.latitude;
   out.longitude = coords.longitude;
   out.accuracy = coords.accuracy;

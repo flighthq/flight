@@ -23,7 +23,7 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
   const menuModule = tauri.menu;
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-    const out = allocateEntity<TauriMenuCapabilities>();
+  const out = allocateEntity<TauriMenuCapabilities>();
   // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
   // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting

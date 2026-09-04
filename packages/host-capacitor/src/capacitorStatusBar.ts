@@ -44,30 +44,30 @@ export function createCapacitorStatusBarBackend(
     .catch(() => {
       /* leave null → defaults */
     });
-    const out = allocateEntity<CapacitorStatusBarBackend>();
+  const out = allocateEntity<CapacitorStatusBarBackend>();
   out.getInfo = (out: StatusBarInfo): StatusBarInfo => {
-      const info = cachedInfo;
-      out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;
-      // Capacitor does not report a status-bar height; -1 sentinel per the contract.
-      out.height = -1;
-      out.overlaysContent = info?.overlays ?? false;
-      out.style = info !== null ? toStatusBarStyle(info.style) : 'default';
-      out.visible = info?.visible ?? true;
-      return out;
-    };
+    const info = cachedInfo;
+    out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;
+    // Capacitor does not report a status-bar height; -1 sentinel per the contract.
+    out.height = -1;
+    out.overlaysContent = info?.overlays ?? false;
+    out.style = info !== null ? toStatusBarStyle(info.style) : 'default';
+    out.visible = info?.visible ?? true;
+    return out;
+  };
   out.setBackgroundColor = (color: number) => {
-      statusBar.setBackgroundColor({ color: rgbaToHex(color) }).catch(() => {});
-    };
+    statusBar.setBackgroundColor({ color: rgbaToHex(color) }).catch(() => {});
+  };
   out.setOverlaysContent = (overlay: boolean) => {
-      statusBar.setOverlaysWebView({ overlay }).catch(() => {});
-    };
+    statusBar.setOverlaysWebView({ overlay }).catch(() => {});
+  };
   out.setStyle = (style: StatusBarStyle) => {
-      statusBar.setStyle({ style: toCapacitorStyle(style) }).catch(() => {});
-    };
+    statusBar.setStyle({ style: toCapacitorStyle(style) }).catch(() => {});
+  };
   out.setVisible = (visible: boolean) => {
-      if (visible) statusBar.show().catch(() => {});
-      else statusBar.hide().catch(() => {});
-    };
+    if (visible) statusBar.show().catch(() => {});
+    else statusBar.hide().catch(() => {});
+  };
   return finishEntity(out);
 }
 

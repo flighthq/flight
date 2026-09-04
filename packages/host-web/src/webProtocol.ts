@@ -1,5 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostProtocolCapabilities, ProtocolLaunchBackend, ProtocolRegistrationBackend } from '@flighthq/types/contract';
+import type {
+  Entity,
+  HostProtocolCapabilities,
+  ProtocolLaunchBackend,
+  ProtocolRegistrationBackend,
+} from '@flighthq/types/contract';
 
 type WebProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
 

@@ -15,10 +15,10 @@ export function createWebWindowStoragePersistenceCapabilities(
 ): WebWindowStoragePersistenceCapabilities {
   const persistenceRequest = allocateEntity<StoragePersistenceRequestBackend>();
   persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceResult> => {
-      const outcome = await observePersistenceOutcome(() => api.persist());
-      const permissionState = await observePermissionState(() => api.getPermissionState());
-      return { outcome, permissionState };
-    };
+    const outcome = await observePersistenceOutcome(() => api.persist());
+    const permissionState = await observePermissionState(() => api.getPermissionState());
+    return { outcome, permissionState };
+  };
   const capabilities = (() => {
     const out = allocateEntity<WebWindowStoragePersistenceCapabilities>();
     out.persistenceQuery = createPersistenceQueryBackend(api);
@@ -39,10 +39,10 @@ export function createWebWorkerStoragePersistenceCapabilities(
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
   const backend = allocateEntity<StoragePersistenceQueryBackend>();
   backend.getPersistence = async (): Promise<StoragePersistenceResult> => {
-      const outcome = await observePersistenceOutcome(() => api.persisted());
-      const permissionState = await observePermissionState(() => api.getPermissionState());
-      return { outcome, permissionState };
-    };
+    const outcome = await observePersistenceOutcome(() => api.persisted());
+    const permissionState = await observePermissionState(() => api.getPermissionState());
+    return { outcome, permissionState };
+  };
   return backend;
 }
 

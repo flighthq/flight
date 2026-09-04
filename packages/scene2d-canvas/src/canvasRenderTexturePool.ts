@@ -33,7 +33,7 @@ export function acquireCanvasRenderTexture(
 export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
   const out = allocateEntity<CanvasRenderTexturePool>();
   out.destroyed = false;
-    const _entity = allocateEntity<CanvasRenderTargetPool>();
+  const _entity = allocateEntity<CanvasRenderTargetPool>();
   _entity.creator = creator;
   _entity.free = [];
   _entity.inUse = [];

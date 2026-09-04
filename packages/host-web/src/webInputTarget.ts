@@ -16,9 +16,9 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
 }
 
-  export const webInputDropFileBackend = (() => {
-    const out = allocateEntity<InputDropFileBackend>();
-    out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
+export const webInputDropFileBackend = (() => {
+  const out = allocateEntity<InputDropFileBackend>();
+  out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     const onDragOver = (event: DragEvent): void => event.preventDefault();
@@ -33,12 +33,12 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
       element.removeEventListener('drop', onDrop);
     });
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webInputFocusBackend = (() => {
-    const out = allocateEntity<InputFocusBackend>();
-    out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
+export const webInputFocusBackend = (() => {
+  const out = allocateEntity<InputFocusBackend>();
+  out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     element.addEventListener('focus', onFocus);
@@ -48,12 +48,12 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
       element.removeEventListener('blur', onBlur);
     });
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webInputPointerLockBackend = (() => {
-    const out = allocateEntity<InputPointerLockBackend>();
-    out.exit = () => {
+export const webInputPointerLockBackend = (() => {
+  const out = allocateEntity<InputPointerLockBackend>();
+  out.exit = () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
     const exitPointerLock = document.exitPointerLock;
@@ -71,7 +71,7 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
     }
     return observation.outcome;
   };
-    out.request = (target: InputTargetHandle) => {
+  out.request = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
     const requestPointerLock = element.requestPointerLock;
@@ -91,12 +91,12 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
       (error: unknown) => classifyPointerLockRequestFailure(error),
     );
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webInputTargetBackend = (() => {
-    const out = allocateEntity<InputTargetBackend>();
-    out.prepare = (target: InputTargetHandle) => {
+export const webInputTargetBackend = (() => {
+  const out = allocateEntity<InputTargetBackend>();
+  out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
     element.style.touchAction = 'none';
@@ -105,12 +105,12 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
     (element.style as WebInputTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webRenderContextBackend = (() => {
-    const out = allocateEntity<RenderContextBackend>();
-    out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
+export const webRenderContextBackend = (() => {
+  const out = allocateEntity<RenderContextBackend>();
+  out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
       return noop;
@@ -126,12 +126,12 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
       element.removeEventListener('webglcontextrestored', onRestored);
     });
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webRenderSurfaceBackend = (() => {
-    const out = allocateEntity<RenderSurfaceBackend>();
-    out.resize = (target: InputTargetHandle, width: number, height: number) => {
+export const webRenderSurfaceBackend = (() => {
+  const out = allocateEntity<RenderSurfaceBackend>();
+  out.resize = (target: InputTargetHandle, width: number, height: number) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
       return;
@@ -139,8 +139,8 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
     element.width = width;
     element.height = height;
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
   const target = allocateEntity<InputTargetHandle>();

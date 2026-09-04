@@ -44,64 +44,64 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     liveRegions.clear();
   }
 
-    const out = allocateEntity<AccessibilityBackend>();
+  const out = allocateEntity<AccessibilityBackend>();
   out.announce = (message, liveness) => {
-      const unavailable = unavailableRootReason();
-      if (unavailable !== null) return { reason: unavailable };
-      const overlayRoot = root as HTMLElement;
-      const region = getAccessibilityLiveRegion(overlayRoot, liveRegions, liveness);
-      region.textContent = message;
-      return _OK;
-    };
+    const unavailable = unavailableRootReason();
+    if (unavailable !== null) return { reason: unavailable };
+    const overlayRoot = root as HTMLElement;
+    const region = getAccessibilityLiveRegion(overlayRoot, liveRegions, liveness);
+    region.textContent = message;
+    return _OK;
+  };
   out.clear = () => {
-      const unavailable = unavailableRootReason();
-      if (unavailable !== null) return { reason: unavailable };
-      removeOwnedAccessibilityDom();
-      return _OK;
-    };
+    const unavailable = unavailableRootReason();
+    if (unavailable !== null) return { reason: unavailable };
+    removeOwnedAccessibilityDom();
+    return _OK;
+  };
   out.destroy = () => {
-      if (destroyed) return;
-      destroyed = true;
-      removeOwnedAccessibilityDom();
-      if (ownsRoot) root?.remove();
-      root = null;
-      // A destroyed provider is terminal and cannot resurrect a new root on a later command.
-      rootResolved = true;
-    };
+    if (destroyed) return;
+    destroyed = true;
+    removeOwnedAccessibilityDom();
+    if (ownsRoot) root?.remove();
+    root = null;
+    // A destroyed provider is terminal and cannot resurrect a new root on a later command.
+    rootResolved = true;
+  };
   out.removeNode = (id) => {
-      const unavailable = unavailableRootReason();
-      if (unavailable !== null) return { reason: unavailable };
-      const element = elements.get(id);
-      if (element === undefined) return _NODE_NOT_FOUND;
-      // Node.contains includes the node itself and every DOM descendant, matching overlay nesting.
-      for (const [key, other] of elements) {
-        if (element.contains(other)) elements.delete(key);
-      }
-      element.remove();
-      return _OK;
-    };
+    const unavailable = unavailableRootReason();
+    if (unavailable !== null) return { reason: unavailable };
+    const element = elements.get(id);
+    if (element === undefined) return _NODE_NOT_FOUND;
+    // Node.contains includes the node itself and every DOM descendant, matching overlay nesting.
+    for (const [key, other] of elements) {
+      if (element.contains(other)) elements.delete(key);
+    }
+    element.remove();
+    return _OK;
+  };
   out.setFocus = (id) => {
-      const unavailable = unavailableRootReason();
-      if (unavailable !== null) return { reason: unavailable };
-      const element = elements.get(id);
-      if (element === undefined) return _NODE_NOT_FOUND;
-      element.focus();
-      return element.ownerDocument.activeElement === element ? _OK : _FOCUS_NOT_MOVED;
-    };
+    const unavailable = unavailableRootReason();
+    if (unavailable !== null) return { reason: unavailable };
+    const element = elements.get(id);
+    if (element === undefined) return _NODE_NOT_FOUND;
+    element.focus();
+    return element.ownerDocument.activeElement === element ? _OK : _FOCUS_NOT_MOVED;
+  };
   out.setNode = (node) => {
-      const unavailable = unavailableRootReason();
-      if (unavailable !== null) return { reason: unavailable };
-      const overlayRoot = root as HTMLElement;
-      let element = elements.get(node.id);
-      if (element === undefined) {
-        element = overlayRoot.ownerDocument.createElement('div');
-        element.setAttribute('data-flight-accessibility-id', node.id);
-        elements.set(node.id, element);
-      }
-      applyAccessibilityElementAttributes(element, node);
-      reparentAccessibilityElement(element, node.parentId, elements, overlayRoot);
-      return _OK;
-    };
+    const unavailable = unavailableRootReason();
+    if (unavailable !== null) return { reason: unavailable };
+    const overlayRoot = root as HTMLElement;
+    let element = elements.get(node.id);
+    if (element === undefined) {
+      element = overlayRoot.ownerDocument.createElement('div');
+      element.setAttribute('data-flight-accessibility-id', node.id);
+      elements.set(node.id, element);
+    }
+    applyAccessibilityElementAttributes(element, node);
+    reparentAccessibilityElement(element, node.parentId, elements, overlayRoot);
+    return _OK;
+  };
   return finishEntity(out);
 }
 

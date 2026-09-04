@@ -39,65 +39,65 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     .catch(() => {
       /* leave '' */
     });
-    const out = allocateEntity<DeviceBackend>();
+  const out = allocateEntity<DeviceBackend>();
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
-      // `@capacitor/device` reports no input capabilities; report the false sentinels.
-      out.hasKeyboard = false;
-      out.hasMouse = false;
-      out.hasStylus = false;
-      return out;
-    };
+    // `@capacitor/device` reports no input capabilities; report the false sentinels.
+    out.hasKeyboard = false;
+    out.hasMouse = false;
+    out.hasStylus = false;
+    return out;
+  };
   out.getDisplayMetrics = (out: DeviceDisplayMetrics): DeviceDisplayMetrics => {
-      // No display metrics on `@capacitor/device`; report the -1 sentinels.
-      out.colorDepth = -1;
-      out.densityDpi = -1;
-      out.logicalHeight = -1;
-      out.logicalWidth = -1;
-      out.physicalHeight = -1;
-      out.physicalWidth = -1;
-      out.pixelRatio = -1;
-      return out;
-    };
+    // No display metrics on `@capacitor/device`; report the -1 sentinels.
+    out.colorDepth = -1;
+    out.densityDpi = -1;
+    out.logicalHeight = -1;
+    out.logicalWidth = -1;
+    out.physicalHeight = -1;
+    out.physicalWidth = -1;
+    out.pixelRatio = -1;
+    return out;
+  };
   out.getId = (): string => {
-      return cachedId;
-    };
+    return cachedId;
+  };
   out.getInfo = (out: DeviceInfo): DeviceInfo => {
-      const info = cachedInfo;
-      out.arch = '';
-      out.availableMemory = -1;
-      out.boardName = '';
-      out.colorGamut = '';
-      out.cpuCores = -1;
-      out.fontScale = -1;
-      out.formFactor = toFormFactor(info);
-      out.gpuRenderer = '';
-      out.gpuVendor = '';
-      out.isHdr = false;
-      out.isJailbroken = false;
-      out.isLowEndDevice = false;
-      out.isRooted = false;
-      out.isVirtual = info?.isVirtual ?? false;
-      out.manufacturer = info?.manufacturer ?? '';
-      out.marketingName = info?.name ?? '';
-      out.model = info?.model ?? '';
-      out.osBuild = '';
-      out.osName = info?.operatingSystem ?? '';
-      out.osVersion = info?.osVersion ?? '';
-      out.platformString = info?.platform ?? '';
-      out.productName = info?.model ?? '';
-      out.supportedAbis = [];
-      out.totalMemory = -1;
-      out.webViewVersion = info?.webViewVersion ?? '';
-      return out;
-    };
+    const info = cachedInfo;
+    out.arch = '';
+    out.availableMemory = -1;
+    out.boardName = '';
+    out.colorGamut = '';
+    out.cpuCores = -1;
+    out.fontScale = -1;
+    out.formFactor = toFormFactor(info);
+    out.gpuRenderer = '';
+    out.gpuVendor = '';
+    out.isHdr = false;
+    out.isJailbroken = false;
+    out.isLowEndDevice = false;
+    out.isRooted = false;
+    out.isVirtual = info?.isVirtual ?? false;
+    out.manufacturer = info?.manufacturer ?? '';
+    out.marketingName = info?.name ?? '';
+    out.model = info?.model ?? '';
+    out.osBuild = '';
+    out.osName = info?.operatingSystem ?? '';
+    out.osVersion = info?.osVersion ?? '';
+    out.platformString = info?.platform ?? '';
+    out.productName = info?.model ?? '';
+    out.supportedAbis = [];
+    out.totalMemory = -1;
+    out.webViewVersion = info?.webViewVersion ?? '';
+    return out;
+  };
   out.getSafeAreaInsets = (out: SafeAreaInsets): SafeAreaInsets => {
-      // No safe-area call on `@capacitor/device`; report zero insets.
-      out.top = 0;
-      out.right = 0;
-      out.bottom = 0;
-      out.left = 0;
-      return out;
-    };
+    // No safe-area call on `@capacitor/device`; report zero insets.
+    out.top = 0;
+    out.right = 0;
+    out.bottom = 0;
+    out.left = 0;
+    return out;
+  };
   return finishEntity(out);
 }
 

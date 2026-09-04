@@ -15,111 +15,110 @@ import {
 } from '@flighthq/useragent/contract';
 
 export function createWebDeviceBackend(): DeviceBackend {
-    const out = allocateEntity<DeviceBackend>();
+  const out = allocateEntity<DeviceBackend>();
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
-      const nav = typeof navigator !== 'undefined' ? navigator : null;
-      // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
-      // This is best-effort; the browser cannot confirm whether a physical mouse is attached.
-      const maxTouch = nav !== null && 'maxTouchPoints' in nav ? nav.maxTouchPoints : -1;
-      out.hasMouse = maxTouch === 0;
-      // hasKeyboard: desktop UAs very likely have a physical keyboard; mobile UAs likely do not.
-      // Cannot distinguish virtual + physical keyboard on hybrid devices (Surface, iPad with keyboard).
-      const ua = nav?.userAgent ?? '';
-      out.hasKeyboard = detectDesktopUa(ua);
-      // hasStylus: no reliable UA or API signal in browsers — always false.
-      out.hasStylus = false;
-      return out;
-    };
+    const nav = typeof navigator !== 'undefined' ? navigator : null;
+    // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
+    // This is best-effort; the browser cannot confirm whether a physical mouse is attached.
+    const maxTouch = nav !== null && 'maxTouchPoints' in nav ? nav.maxTouchPoints : -1;
+    out.hasMouse = maxTouch === 0;
+    // hasKeyboard: desktop UAs very likely have a physical keyboard; mobile UAs likely do not.
+    // Cannot distinguish virtual + physical keyboard on hybrid devices (Surface, iPad with keyboard).
+    const ua = nav?.userAgent ?? '';
+    out.hasKeyboard = detectDesktopUa(ua);
+    // hasStylus: no reliable UA or API signal in browsers — always false.
+    out.hasStylus = false;
+    return out;
+  };
   out.getDisplayMetrics = (out: DeviceDisplayMetrics): DeviceDisplayMetrics => {
-      const win = typeof window !== 'undefined' ? window : null;
-      const scr = typeof screen !== 'undefined' ? screen : null;
-      out.colorDepth = scr !== null ? scr.colorDepth : -1;
-      // DPI is not exposed by browsers — always sentinel.
-      out.densityDpi = -1;
-      out.logicalHeight = scr !== null ? scr.height : -1;
-      out.logicalWidth = scr !== null ? scr.width : -1;
-      const pixelRatio = win !== null ? win.devicePixelRatio : -1;
-      out.pixelRatio = pixelRatio;
-      out.physicalWidth = scr !== null && pixelRatio > 0 ? Math.round(scr.width * pixelRatio) : -1;
-      out.physicalHeight = scr !== null && pixelRatio > 0 ? Math.round(scr.height * pixelRatio) : -1;
-      return out;
-    };
+    const win = typeof window !== 'undefined' ? window : null;
+    const scr = typeof screen !== 'undefined' ? screen : null;
+    out.colorDepth = scr !== null ? scr.colorDepth : -1;
+    // DPI is not exposed by browsers — always sentinel.
+    out.densityDpi = -1;
+    out.logicalHeight = scr !== null ? scr.height : -1;
+    out.logicalWidth = scr !== null ? scr.width : -1;
+    const pixelRatio = win !== null ? win.devicePixelRatio : -1;
+    out.pixelRatio = pixelRatio;
+    out.physicalWidth = scr !== null && pixelRatio > 0 ? Math.round(scr.width * pixelRatio) : -1;
+    out.physicalHeight = scr !== null && pixelRatio > 0 ? Math.round(scr.height * pixelRatio) : -1;
+    return out;
+  };
   out.getId = (): string => {
-      // Web: crypto.randomUUID() persisted to localStorage as a stable install id.
-      // Returns '' when storage is unavailable (SSR, private browsing with blocked storage).
-      // This is an install id — it resets if localStorage is cleared. Not a hardware serial.
-      // For a durable cross-storage id, use @flighthq/storage as the backend's persistence layer.
-      try {
-        const key = '__flighthq_device_id';
-        const existing = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
-        if (existing !== null) return existing;
-        if (typeof crypto === 'undefined' || typeof crypto.randomUUID !== 'function') return '';
-        const id = crypto.randomUUID();
-        if (typeof localStorage !== 'undefined') localStorage.setItem(key, id);
-        return id;
-      } catch {
-        return '';
-      }
-    };
+    // Web: crypto.randomUUID() persisted to localStorage as a stable install id.
+    // Returns '' when storage is unavailable (SSR, private browsing with blocked storage).
+    // This is an install id — it resets if localStorage is cleared. Not a hardware serial.
+    // For a durable cross-storage id, use @flighthq/storage as the backend's persistence layer.
+    try {
+      const key = '__flighthq_device_id';
+      const existing = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      if (existing !== null) return existing;
+      if (typeof crypto === 'undefined' || typeof crypto.randomUUID !== 'function') return '';
+      const id = crypto.randomUUID();
+      if (typeof localStorage !== 'undefined') localStorage.setItem(key, id);
+      return id;
+    } catch {
+      return '';
+    }
+  };
   out.getInfo = (out: DeviceInfo): DeviceInfo => {
-      const nav = typeof navigator !== 'undefined' ? navigator : null;
-      const ua = nav?.userAgent ?? '';
-      const uadPlatform: string | undefined = (nav as { userAgentData?: { platform?: string } } | null)?.userAgentData
-        ?.platform;
-      out.arch = parseUserAgentArch(ua, uadPlatform);
-      // availableMemory is not exposed by browsers — always -1.
-      out.availableMemory = -1;
-      // boardName, marketingName, productName, supportedAbis — not exposed by browsers.
-      out.boardName = '';
-      out.colorGamut = detectColorGamut();
-      const cores = nav !== null && 'hardwareConcurrency' in nav ? (nav.hardwareConcurrency ?? -1) : -1;
-      out.cpuCores = cores;
-      out.fontScale = -1;
-      out.formFactor = parseUserAgentFormFactor(ua, nav !== null && 'maxTouchPoints' in nav ? nav.maxTouchPoints : -1);
-      const gpuInfo = readWebGpuInfo();
-      out.gpuRenderer = gpuInfo.renderer;
-      out.gpuVendor = gpuInfo.vendor;
-      out.isHdr = detectHdr();
-      // isJailbroken and isRooted are always false on web — no detection available.
-      out.isJailbroken = false;
-      const devMem =
-        nav !== null && 'deviceMemory' in nav ? ((nav as { deviceMemory?: number }).deviceMemory ?? -1) : -1;
-      out.isLowEndDevice = detectLowEndDevice(devMem, cores);
-      out.isRooted = false;
-      out.isVirtual = false;
-      out.manufacturer = '';
-      out.marketingName = '';
-      out.model = '';
-      out.osBuild = '';
-      out.osName = parseUserAgentOsName(ua);
-      out.osVersion = parseUserAgentOsVersion(ua);
-      out.platformString = ua;
-      out.productName = '';
-      out.supportedAbis = [];
-      // totalMemory: navigator.deviceMemory is in GiB; convert to bytes. -1 when absent.
-      out.totalMemory = devMem >= 0 ? devMem * 1024 * 1024 * 1024 : -1;
-      // webViewVersion is not exposed by browsers (we are the browser).
-      out.webViewVersion = '';
-      return out;
-    };
+    const nav = typeof navigator !== 'undefined' ? navigator : null;
+    const ua = nav?.userAgent ?? '';
+    const uadPlatform: string | undefined = (nav as { userAgentData?: { platform?: string } } | null)?.userAgentData
+      ?.platform;
+    out.arch = parseUserAgentArch(ua, uadPlatform);
+    // availableMemory is not exposed by browsers — always -1.
+    out.availableMemory = -1;
+    // boardName, marketingName, productName, supportedAbis — not exposed by browsers.
+    out.boardName = '';
+    out.colorGamut = detectColorGamut();
+    const cores = nav !== null && 'hardwareConcurrency' in nav ? (nav.hardwareConcurrency ?? -1) : -1;
+    out.cpuCores = cores;
+    out.fontScale = -1;
+    out.formFactor = parseUserAgentFormFactor(ua, nav !== null && 'maxTouchPoints' in nav ? nav.maxTouchPoints : -1);
+    const gpuInfo = readWebGpuInfo();
+    out.gpuRenderer = gpuInfo.renderer;
+    out.gpuVendor = gpuInfo.vendor;
+    out.isHdr = detectHdr();
+    // isJailbroken and isRooted are always false on web — no detection available.
+    out.isJailbroken = false;
+    const devMem = nav !== null && 'deviceMemory' in nav ? ((nav as { deviceMemory?: number }).deviceMemory ?? -1) : -1;
+    out.isLowEndDevice = detectLowEndDevice(devMem, cores);
+    out.isRooted = false;
+    out.isVirtual = false;
+    out.manufacturer = '';
+    out.marketingName = '';
+    out.model = '';
+    out.osBuild = '';
+    out.osName = parseUserAgentOsName(ua);
+    out.osVersion = parseUserAgentOsVersion(ua);
+    out.platformString = ua;
+    out.productName = '';
+    out.supportedAbis = [];
+    // totalMemory: navigator.deviceMemory is in GiB; convert to bytes. -1 when absent.
+    out.totalMemory = devMem >= 0 ? devMem * 1024 * 1024 * 1024 : -1;
+    // webViewVersion is not exposed by browsers (we are the browser).
+    out.webViewVersion = '';
+    return out;
+  };
   out.getSafeAreaInsets = (out: SafeAreaInsets): SafeAreaInsets => {
-      // Reading CSS env(safe-area-inset-*) requires a probe element in the DOM. The web backend
-      // returns zero insets by default. Call enableWebSafeAreaInsets() to mount a live CSS-var probe
-      // that updates this when the device reports real insets (notched PWAs).
-      const insets = _safeAreaInsets;
-      if (insets !== null) {
-        out.bottom = insets.bottom;
-        out.left = insets.left;
-        out.right = insets.right;
-        out.top = insets.top;
-      } else {
-        out.bottom = 0;
-        out.left = 0;
-        out.right = 0;
-        out.top = 0;
-      }
-      return out;
-    };
+    // Reading CSS env(safe-area-inset-*) requires a probe element in the DOM. The web backend
+    // returns zero insets by default. Call enableWebSafeAreaInsets() to mount a live CSS-var probe
+    // that updates this when the device reports real insets (notched PWAs).
+    const insets = _safeAreaInsets;
+    if (insets !== null) {
+      out.bottom = insets.bottom;
+      out.left = insets.left;
+      out.right = insets.right;
+      out.top = insets.top;
+    } else {
+      out.bottom = 0;
+      out.left = 0;
+      out.right = 0;
+      out.top = 0;
+    }
+    return out;
+  };
   return finishEntity(out);
 }
 
@@ -135,7 +134,7 @@ export function enableWebSafeAreaInsets(): () => void {
 
   function readInsets(): void {
     const style = getComputedStyle(el);
-        const _entity = allocateEntity<SafeAreaInsets>();
+    const _entity = allocateEntity<SafeAreaInsets>();
     _entity.bottom = parseFloat(style.bottom) || 0;
     _entity.left = parseFloat(style.left) || 0;
     _entity.right = parseFloat(style.right) || 0;

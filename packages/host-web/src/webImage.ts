@@ -3,41 +3,41 @@ import { createImageResourceFromCanvas, createImageResourceFromImageElement } fr
 import type { Entity, EntityWithoutRuntime, ImageBackend, ImageResource } from '@flighthq/types/contract';
 
 export function createWebImageBackend(): ImageBackend & Entity {
-    const out = allocateEntity<ImageBackend>();
+  const out = allocateEntity<ImageBackend>();
   out.createImageFromBitmap = (bitmap): ImageResource => {
-      const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
-      domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
-      canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-      return createImageResourceFromCanvas(canvas);
-    };
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+    domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
+    canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+    return createImageResourceFromCanvas(canvas);
+  };
   out.loadImageFromUrl = async (url, crossOrigin, signal): Promise<ImageResource> => {
-      signal?.throwIfAborted();
-      const img = new Image();
-      if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
-      img.src = url;
-      if (signal !== undefined) {
-        let rejectAbort: (reason?: unknown) => void = () => {};
-        const abortPromise = new Promise<never>((_, reject) => {
-          rejectAbort = reject;
-        });
-        const onAbort = (): void => {
-          img.src = '';
-          rejectAbort(signal.reason);
-        };
-        signal.addEventListener('abort', onAbort, { once: true });
-        try {
-          await Promise.race([img.decode(), abortPromise]);
-        } finally {
-          signal.removeEventListener('abort', onAbort);
-        }
-      } else {
-        await img.decode();
+    signal?.throwIfAborted();
+    const img = new Image();
+    if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
+    img.src = url;
+    if (signal !== undefined) {
+      let rejectAbort: (reason?: unknown) => void = () => {};
+      const abortPromise = new Promise<never>((_, reject) => {
+        rejectAbort = reject;
+      });
+      const onAbort = (): void => {
+        img.src = '';
+        rejectAbort(signal.reason);
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+      try {
+        await Promise.race([img.decode(), abortPromise]);
+      } finally {
+        signal.removeEventListener('abort', onAbort);
       }
-      return createImageResourceFromImageElement(img);
-    };
+    } else {
+      await img.decode();
+    }
+    return createImageResourceFromImageElement(img);
+  };
   return finishEntity(out);
 }
 

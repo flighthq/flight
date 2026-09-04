@@ -4,53 +4,53 @@ import type { Entity, EntityConstruction, WgpuHostAcquisition, WgpuHostBackend }
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.
 export function createWebWgpuHostBackend(): WgpuHostBackend {
-    const out = allocateEntity<WgpuHostBackend>();
+  const out = allocateEntity<WgpuHostBackend>();
   out.acquire = async (canvas, options): Promise<WgpuHostAcquisition> => {
-      const gpu = getWebWgpu();
-      if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
+    const gpu = getWebWgpu();
+    if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
 
-      const adapter = await gpu.requestAdapter(
-        options.powerPreference !== undefined ? { powerPreference: options.powerPreference } : undefined,
-      );
-      if (adapter === null) throw new Error('Failed to get WebGPU adapter.');
+    const adapter = await gpu.requestAdapter(
+      options.powerPreference !== undefined ? { powerPreference: options.powerPreference } : undefined,
+    );
+    if (adapter === null) throw new Error('Failed to get WebGPU adapter.');
 
-      // The forward-lit 3D pipeline binds 5 groups (Frame, Draw, Material, Shadow, Ibl); request 5
-      // only when the adapter advertises it so baseline-4 adapters retain the portable paths.
-      const requiredLimits: Record<string, number> = {};
-      if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
-      // Compression features have to be enabled when the device is created. Unsupported families
-      // retain their CPU decode fallback.
-      const requiredFeatures = (
-        ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
-      ).filter((feature) => adapter.features.has(feature));
-      const descriptor: GPUDeviceDescriptor = {};
-      if (Object.keys(requiredLimits).length > 0) descriptor.requiredLimits = requiredLimits;
-      if (requiredFeatures.length > 0) descriptor.requiredFeatures = requiredFeatures;
-      const device = await adapter.requestDevice(descriptor);
+    // The forward-lit 3D pipeline binds 5 groups (Frame, Draw, Material, Shadow, Ibl); request 5
+    // only when the adapter advertises it so baseline-4 adapters retain the portable paths.
+    const requiredLimits: Record<string, number> = {};
+    if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
+    // Compression features have to be enabled when the device is created. Unsupported families
+    // retain their CPU decode fallback.
+    const requiredFeatures = (
+      ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
+    ).filter((feature) => adapter.features.has(feature));
+    const descriptor: GPUDeviceDescriptor = {};
+    if (Object.keys(requiredLimits).length > 0) descriptor.requiredLimits = requiredLimits;
+    if (requiredFeatures.length > 0) descriptor.requiredFeatures = requiredFeatures;
+    const device = await adapter.requestDevice(descriptor);
 
-      try {
-        const format = options.format ?? gpu.getPreferredCanvasFormat();
-        const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
-        if (context === null) throw new Error('Failed to get WebGPU canvas context.');
-        const out = allocateEntity<WgpuHostAcquisition>();
-        out.context = context;
-        out.device = device;
-        out.format = format;
-        out.ownership = 'flight';
-        out.surface = canvas;
-        return finishEntity(out);
-      } catch (error) {
-        device.destroy();
-        throw error;
-      }
-    };
+    try {
+      const format = options.format ?? gpu.getPreferredCanvasFormat();
+      const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
+      if (context === null) throw new Error('Failed to get WebGPU canvas context.');
+      const out = allocateEntity<WgpuHostAcquisition>();
+      out.context = context;
+      out.device = device;
+      out.format = format;
+      out.ownership = 'flight';
+      out.surface = canvas;
+      return finishEntity(out);
+    } catch (error) {
+      device.destroy();
+      throw error;
+    }
+  };
   out.isSupported = (): boolean => {
-      return getWebWgpu() !== null;
-    };
+    return getWebWgpu() !== null;
+  };
   out.release = (acquisition): void => {
-      acquisition.context.unconfigure();
-      acquisition.device.destroy();
-    };
+    acquisition.context.unconfigure();
+    acquisition.device.destroy();
+  };
   return finishEntity(out);
 }
 

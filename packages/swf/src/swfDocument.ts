@@ -148,16 +148,16 @@ export function createScene2DImportFromSwf(
   }
   const imageResources = createSwfImageResources(parsed);
 
-    const out = allocateEntity<SwfDocumentImport>();
+  const out = allocateEntity<SwfDocumentImport>();
   out.appearances = instantiation.appearances;
   out.document = createScene2DDocument(
-      root,
-      slots,
-      'swf',
-      parsed.backgroundColor,
-      imageResources.resources,
-      createSwfAudioResources(parsed),
-    );
+    root,
+    slots,
+    'swf',
+    parsed.backgroundColor,
+    imageResources.resources,
+    createSwfAudioResources(parsed),
+  );
   out.jpegAlphaPayloads = createSwfJpegAlphaPayloads(parsed, imageResources.references);
   return finishEntity(out);
 }
@@ -858,84 +858,84 @@ function createSwfTimelineSource(
   const appliedAlphas = new Map<Node2D, number>();
   const appliedColorAdjustments = new Map<Node2D, readonly Adjustment[] | null>();
   const appliedRatios = new Map<Node2D, number>();
-    const out = allocateEntity<TimelineSource>();
+  const out = allocateEntity<TimelineSource>();
   out.totalFrames = frames.length;
   out.labels = labels;
   out.frameRate = frameRate;
   out.cues = cues;
   out.constructFrame = (target: Node2D, frame: number): void => {
-      const entries = frames[frame - 1];
-      if (entries === undefined) return;
+    const entries = frames[frame - 1];
+    if (entries === undefined) return;
 
-      // Membership and order are two passes, not one. Only the instances this frame drops are detached
-      // and only the newly placed ones attached; depth ordering is then a permutation of what is
-      // already there, so an instance placed between two others costs one apply rather than detaching
-      // and reattaching the whole list.
-      framed.clear();
-      clearNodeOrderList(depths);
-      for (const entry of entries) {
-        const node = nodes.get(createSwfInstanceKey(entry.placement));
-        if (node === undefined) continue;
-        framed.add(node);
-        addNodeOrderListEntry(depths, node, entry.placement.depth);
-      }
+    // Membership and order are two passes, not one. Only the instances this frame drops are detached
+    // and only the newly placed ones attached; depth ordering is then a permutation of what is
+    // already there, so an instance placed between two others costs one apply rather than detaching
+    // and reattaching the whole list.
+    framed.clear();
+    clearNodeOrderList(depths);
+    for (const entry of entries) {
+      const node = nodes.get(createSwfInstanceKey(entry.placement));
+      if (node === undefined) continue;
+      framed.add(node);
+      addNodeOrderListEntry(depths, node, entry.placement.depth);
+    }
 
-      for (const node of attached) {
-        if (framed.has(node)) continue;
-        removeNodeChild(target, node);
-        attached.delete(node);
-      }
-      // Iterates in depth order, since `framed` was filled from the depth-sorted entries.
-      for (const node of framed) {
-        if (attached.has(node)) continue;
-        addNodeChild(target, node);
-        attached.add(node);
-      }
-      applyNodeOrderList(target, depths);
+    for (const node of attached) {
+      if (framed.has(node)) continue;
+      removeNodeChild(target, node);
+      attached.delete(node);
+    }
+    // Iterates in depth order, since `framed` was filled from the depth-sorted entries.
+    for (const node of framed) {
+      if (attached.has(node)) continue;
+      addNodeChild(target, node);
+      attached.add(node);
+    }
+    applyNodeOrderList(target, depths);
 
-      for (const entry of entries) {
-        const node = nodes.get(createSwfInstanceKey(entry.placement));
-        if (node === undefined) continue;
-        // Placement records are immutable once parsed, so an unchanged matrix is the same object and the
-        // transform does not have to be rewritten or invalidated on every frame the instance survives.
-        if (appliedMatrices.get(node) !== entry.placement.matrix) {
-          setNodeLocalMatrix(node, entry.placement.matrix);
-          appliedMatrices.set(node, entry.placement.matrix);
-        }
-        // Alpha is per-frame data like the matrix, so a fade authored across frames follows.
-        if (appliedAlphas.get(node) !== entry.placement.alpha) {
-          node.alpha = entry.placement.alpha;
-          invalidateNodeAppearance(node);
-          appliedAlphas.set(node, entry.placement.alpha);
-        }
-        // A fixed-function blend is per-frame data like the matrix. An advanced mode never reaches here:
-        // it left BlendMode.Normal on the placement and rode out on the import's appearance report.
-        if (node.blendMode !== entry.placement.blendMode) {
-          node.blendMode = entry.placement.blendMode;
-          invalidateNodeAppearance(node);
-        }
-        // The rest of the colour transform rides the same per-frame path as alpha. The stack was built at
-        // parse and is shared by every frame that keeps the placement, so an unchanged tint compares equal
-        // by reference and never re-resolves.
-        if (appliedColorAdjustments.get(node) !== entry.placement.colorAdjustments) {
-          setNodeColorAdjustments(node, entry.placement.colorAdjustments);
-          appliedColorAdjustments.set(node, entry.placement.colorAdjustments);
-        }
-        // A morph's ratio is per-frame data too — it is what animates a morph at all, since the shape
-        // itself is one definition and every frame names a different point along it.
-        if (node.kind === MorphShapeKind && appliedRatios.get(node) !== entry.placement.ratio) {
-          setMorphShapeProgress(node as MorphShape, entry.placement.ratio);
-          applySwfMorphBounds(node as MorphShape, entry.placement.ratio);
-          appliedRatios.set(node, entry.placement.ratio);
-        }
-        // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
-        // same way: written only when this frame's region differs from the one already on the node.
-        if (appliedClips.get(node) !== entry.clip) {
-          setNode2DClip(node, entry.clip);
-          appliedClips.set(node, entry.clip);
-        }
+    for (const entry of entries) {
+      const node = nodes.get(createSwfInstanceKey(entry.placement));
+      if (node === undefined) continue;
+      // Placement records are immutable once parsed, so an unchanged matrix is the same object and the
+      // transform does not have to be rewritten or invalidated on every frame the instance survives.
+      if (appliedMatrices.get(node) !== entry.placement.matrix) {
+        setNodeLocalMatrix(node, entry.placement.matrix);
+        appliedMatrices.set(node, entry.placement.matrix);
       }
-    };
+      // Alpha is per-frame data like the matrix, so a fade authored across frames follows.
+      if (appliedAlphas.get(node) !== entry.placement.alpha) {
+        node.alpha = entry.placement.alpha;
+        invalidateNodeAppearance(node);
+        appliedAlphas.set(node, entry.placement.alpha);
+      }
+      // A fixed-function blend is per-frame data like the matrix. An advanced mode never reaches here:
+      // it left BlendMode.Normal on the placement and rode out on the import's appearance report.
+      if (node.blendMode !== entry.placement.blendMode) {
+        node.blendMode = entry.placement.blendMode;
+        invalidateNodeAppearance(node);
+      }
+      // The rest of the colour transform rides the same per-frame path as alpha. The stack was built at
+      // parse and is shared by every frame that keeps the placement, so an unchanged tint compares equal
+      // by reference and never re-resolves.
+      if (appliedColorAdjustments.get(node) !== entry.placement.colorAdjustments) {
+        setNodeColorAdjustments(node, entry.placement.colorAdjustments);
+        appliedColorAdjustments.set(node, entry.placement.colorAdjustments);
+      }
+      // A morph's ratio is per-frame data too — it is what animates a morph at all, since the shape
+      // itself is one definition and every frame names a different point along it.
+      if (node.kind === MorphShapeKind && appliedRatios.get(node) !== entry.placement.ratio) {
+        setMorphShapeProgress(node as MorphShape, entry.placement.ratio);
+        applySwfMorphBounds(node as MorphShape, entry.placement.ratio);
+        appliedRatios.set(node, entry.placement.ratio);
+      }
+      // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
+      // same way: written only when this frame's region differs from the one already on the node.
+      if (appliedClips.get(node) !== entry.clip) {
+        setNode2DClip(node, entry.clip);
+        appliedClips.set(node, entry.clip);
+      }
+    }
+  };
   return finishEntity(out);
 }
 
@@ -2832,7 +2832,7 @@ function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
 // Builds the cue one trigger becomes. A stop names the sound to silence and nothing else: every play field
 // SOUNDINFO carries alongside it describes a playback being ended rather than started.
 function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
-    const out = allocateEntity<TimelineAudioCue>();
+  const out = allocateEntity<TimelineAudioCue>();
   out.duration = info.stop || info.outPointSamples < 0 ? null : info.outPointSamples;
   out.envelope = info.stop ? [] : info.envelope;
   out.frame = frame;

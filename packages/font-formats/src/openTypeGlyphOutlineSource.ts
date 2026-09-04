@@ -72,29 +72,29 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 
   // A bound method object rather than a plain record, because the source owns tables the methods close
   // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
-    const out = allocateEntity<GlyphOutlineSource & Entity>();
+  const out = allocateEntity<GlyphOutlineSource & Entity>();
   out.getGlyphOutline = (out: Path, glyphIndex: number): boolean => {
-      if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
-      if (cff !== null) {
-        const charstring = cff.charstrings[glyphIndex];
-        if (charstring === undefined) return false;
-        // A CID font selects the pool per glyph; every other font shares one. Reading the wrong pool
-        // draws plausible geometry rather than failing, so the choice is made here from the table's own
-        // structure rather than defaulted anywhere.
-        const localSubrs = cff.localSubrsByGlyph?.[glyphIndex] ?? cff.localSubrs;
-        return runCffCharstring(out, bytes, charstring, localSubrs, cff.globalSubrs);
-      }
-      return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
-    };
+    if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
+    if (cff !== null) {
+      const charstring = cff.charstrings[glyphIndex];
+      if (charstring === undefined) return false;
+      // A CID font selects the pool per glyph; every other font shares one. Reading the wrong pool
+      // draws plausible geometry rather than failing, so the choice is made here from the table's own
+      // structure rather than defaulted anywhere.
+      const localSubrs = cff.localSubrsByGlyph?.[glyphIndex] ?? cff.localSubrs;
+      return runCffCharstring(out, bytes, charstring, localSubrs, cff.globalSubrs);
+    }
+    return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
+  };
   out.getGlyphOutlineAdvance = (glyphIndex: number): number => {
-      return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
-    };
+    return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
+  };
   out.getGlyphOutlineIndexForCodePoint = (codePoint: number): number => {
-      return codepoints.get(codePoint) ?? -1;
-    };
+    return codepoints.get(codePoint) ?? -1;
+  };
   out.getGlyphOutlineMetrics = () => {
-      return metrics;
-    };
+    return metrics;
+  };
   return finishEntity(out);
 }
 

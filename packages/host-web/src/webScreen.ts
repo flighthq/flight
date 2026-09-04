@@ -306,7 +306,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
     return finishEntity(out);
   })();
 
-    const out = allocateEntity<WebScreenCapabilities>();
+  const out = allocateEntity<WebScreenCapabilities>();
   out.change = change;
   out.details = detailsBackend;
   out.permissionChange = permissionChange;

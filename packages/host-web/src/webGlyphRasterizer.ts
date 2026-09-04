@@ -8,22 +8,22 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
-    const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+  const out = allocateEntity<GlyphRasterizerBackend & Entity>();
   out.measureMetrics = (options): GlyphMetrics | null => {
-      const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
-      _applyGlyphRasterFont(context, options);
-      const metrics = context.measureText('Hg');
-      const ascent = metrics.fontBoundingBoxAscent;
-      const descent = metrics.fontBoundingBoxDescent;
-      if (!(ascent > 0) || !(descent >= 0)) return null;
-      return { ascent, descent, lineGap: 0 };
-    };
+    const context = _acquireGlyphRasterContext();
+    if (context === null) return null;
+    _applyGlyphRasterFont(context, options);
+    const metrics = context.measureText('Hg');
+    const ascent = metrics.fontBoundingBoxAscent;
+    const descent = metrics.fontBoundingBoxDescent;
+    if (!(ascent > 0) || !(descent >= 0)) return null;
+    return { ascent, descent, lineGap: 0 };
+  };
   out.rasterize = (codepoint, options): GlyphRasterizedBitmap | null => {
-      const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
-      return _rasterizeGlyphOnContext(context, codepoint, options);
-    };
+    const context = _acquireGlyphRasterContext();
+    if (context === null) return null;
+    return _rasterizeGlyphOnContext(context, codepoint, options);
+  };
   return finishEntity(out);
 }
 

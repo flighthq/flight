@@ -16,25 +16,25 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): DirectoryOpenDialogBackend & Entity {
-    const out = allocateEntity<DirectoryOpenDialogBackend>();
+  const out = allocateEntity<DirectoryOpenDialogBackend>();
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
-      if (options?.signal?.aborted) return { outcome: 'cancelled' };
-      const open = tauri.dialog?.open;
-      if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const result = await open.call(tauri.dialog, { directory: true, multiple: false });
-        const paths = normalizePaths(result);
-        if (paths === null) return { outcome: 'cancelled' };
-        const [path] = paths;
-        if (path === undefined) return { outcome: 'directory-open-failed' };
-        return {
-          handle: createNativeHandle(path, 'Directory'),
-          outcome: 'selected',
-        };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'directory-open-failed') };
-      }
-    };
+    if (options?.signal?.aborted) return { outcome: 'cancelled' };
+    const open = tauri.dialog?.open;
+    if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const result = await open.call(tauri.dialog, { directory: true, multiple: false });
+      const paths = normalizePaths(result);
+      if (paths === null) return { outcome: 'cancelled' };
+      const [path] = paths;
+      if (path === undefined) return { outcome: 'directory-open-failed' };
+      return {
+        handle: createNativeHandle(path, 'Directory'),
+        outcome: 'selected',
+      };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'directory-open-failed') };
+    }
+  };
   return finishEntity(out);
 }
 
@@ -66,23 +66,23 @@ export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialo
 }
 
 export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialogBackend & Entity {
-    const out = allocateEntity<FileSaveDialogBackend>();
+  const out = allocateEntity<FileSaveDialogBackend>();
   out.save = async (options): Promise<FileSaveDialogResult> => {
-      if (options.signal?.aborted) return { outcome: 'cancelled' };
-      const save = tauri.dialog?.save;
-      if (typeof save !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const path = await save.call(tauri.dialog, {
-          defaultPath: options.defaultName,
-          filters: toTauriFilters(options.filters),
-        });
-        if (path === null) return { outcome: 'cancelled' };
-        if (path === '') return { outcome: 'file-save-failed' };
-        return { handle: createNativeHandle(path, 'File'), outcome: 'selected' };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'file-save-failed') };
-      }
-    };
+    if (options.signal?.aborted) return { outcome: 'cancelled' };
+    const save = tauri.dialog?.save;
+    if (typeof save !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const path = await save.call(tauri.dialog, {
+        defaultPath: options.defaultName,
+        filters: toTauriFilters(options.filters),
+      });
+      if (path === null) return { outcome: 'cancelled' };
+      if (path === '') return { outcome: 'file-save-failed' };
+      return { handle: createNativeHandle(path, 'File'), outcome: 'selected' };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'file-save-failed') };
+    }
+  };
   return finishEntity(out);
 }
 
@@ -90,28 +90,28 @@ export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialo
 // therefore assemble dialog.message while leaving dialog.prompt absent.
 export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogBackend & Entity {
   const dialog = tauri.dialog;
-    const out = allocateEntity<MessageDialogBackend>();
+  const out = allocateEntity<MessageDialogBackend>();
   out.message = async (options) => {
-      if (options.signal?.aborted) {
-        return {
-          buttonIndex: options.cancelId ?? 0,
-          cancelled: true,
-          checkboxChecked: options.checkboxChecked ?? false,
-        };
-      }
-      await dialog.message(options.message, {
-        title: options.title,
-        kind: toTauriMessageKind(options.kind),
-      });
-      return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
-    };
+    if (options.signal?.aborted) {
+      return {
+        buttonIndex: options.cancelId ?? 0,
+        cancelled: true,
+        checkboxChecked: options.checkboxChecked ?? false,
+      };
+    }
+    await dialog.message(options.message, {
+      title: options.title,
+      kind: toTauriMessageKind(options.kind),
+    });
+    return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+  };
   out.confirm = async (options) => {
-      if (options.signal?.aborted) return false;
-      return dialog.confirm(options.message, {
-        title: options.title,
-        kind: toTauriMessageKind(options.kind),
-      });
-    };
+    if (options.signal?.aborted) return false;
+    return dialog.confirm(options.message, {
+      title: options.title,
+      kind: toTauriMessageKind(options.kind),
+    });
+  };
   return finishEntity(out);
 }
 

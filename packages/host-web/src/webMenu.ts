@@ -12,24 +12,24 @@ import type {
 // setApplicationMenu with an unconditional `false` and subscribeSelect with a no-op unsubscribe, which
 // made web structurally indistinguishable from a host that really implements them.
 
-  export const webMenuHighlightBackend = (() => {
-    const out = allocateEntity<MenuHighlightBackend>();
-    out.subscribe = (listener: (id: string) => void): () => void => {
+export const webMenuHighlightBackend = (() => {
+  const out = allocateEntity<MenuHighlightBackend>();
+  out.subscribe = (listener: (id: string) => void): (() => void) => {
     _highlightListeners.add(listener);
     return () => {
       _highlightListeners.delete(listener);
     };
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webMenuPopupBackend = (() => {
-    const out = allocateEntity<MenuPopupBackend>();
-    out.popup = (items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
+export const webMenuPopupBackend = (() => {
+  const out = allocateEntity<MenuPopupBackend>();
+  out.popup = (items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
     return showWebContextMenu(items, x, y);
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
   return new Promise((resolve) => {

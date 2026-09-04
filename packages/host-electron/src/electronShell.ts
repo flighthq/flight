@@ -24,8 +24,8 @@ export function makeElectronShellCapabilities(
   const shell = electron.shell;
   const beep = allocateEntity<ShellBeepBackend>();
   beep.beep = () => {
-      shell.beep();
-    };
+    shell.beep();
+  };
   const external = (() => {
     const out = allocateEntity<ShellExternalBackend>();
     out.open = async (url) => {
@@ -81,40 +81,40 @@ export function makeElectronShellCapabilities(
 
 function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
   const shell = electron.shell;
-    const out = allocateEntity<ShellShortcutLinkBackend>();
+  const out = allocateEntity<ShellShortcutLinkBackend>();
   out.read = async (shortcutPath) => {
-      try {
-        const details = shell.readShortcutLink(shortcutPath);
-        const link: ShellShortcutLink = {
-          target: details.target,
-          appUserModelId: details.appUserModelId,
-          args: details.args,
-          description: details.description,
-          icon: details.icon,
-          iconIndex: details.iconIndex,
-          workingDirectory: details.cwd,
-        };
-        return { link, reason: 'ok' };
-      } catch (error) {
-        return { message: errorMessage(error), reason: 'operation-failed' };
-      }
-    };
+    try {
+      const details = shell.readShortcutLink(shortcutPath);
+      const link: ShellShortcutLink = {
+        target: details.target,
+        appUserModelId: details.appUserModelId,
+        args: details.args,
+        description: details.description,
+        icon: details.icon,
+        iconIndex: details.iconIndex,
+        workingDirectory: details.cwd,
+      };
+      return { link, reason: 'ok' };
+    } catch (error) {
+      return { message: errorMessage(error), reason: 'operation-failed' };
+    }
+  };
   out.write = async (shortcutPath, link, operation) => {
-      try {
-        const details: ElectronShortcutDetails = {
-          target: link.target,
-          appUserModelId: link.appUserModelId,
-          args: link.args,
-          description: link.description,
-          icon: link.icon,
-          iconIndex: link.iconIndex,
-          cwd: link.workingDirectory,
-        };
-        return { reason: shell.writeShortcutLink(shortcutPath, operation, details) ? 'ok' : 'operation-failed' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    };
+    try {
+      const details: ElectronShortcutDetails = {
+        target: link.target,
+        appUserModelId: link.appUserModelId,
+        args: link.args,
+        description: link.description,
+        icon: link.icon,
+        iconIndex: link.iconIndex,
+        cwd: link.workingDirectory,
+      };
+      return { reason: shell.writeShortcutLink(shortcutPath, operation, details) ? 'ok' : 'operation-failed' };
+    } catch {
+      return { reason: 'operation-failed' };
+    }
+  };
   return finishEntity(out);
 }
 

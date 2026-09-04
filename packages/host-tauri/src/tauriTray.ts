@@ -199,7 +199,11 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     image,
     lifecycle,
     menu,
-    menuSelectionEvents: (() => { const out = allocateEntity<TrayMenuSelectionEventsBackend>(); out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null; return finishEntity(out); })(),
+    menuSelectionEvents: (() => {
+      const out = allocateEntity<TrayMenuSelectionEventsBackend>();
+      out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
+      return finishEntity(out);
+    })(),
   };
 
   const title = (() => {

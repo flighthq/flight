@@ -67,27 +67,27 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
       // Failure leaves the status unknown. Unknown means wait; it is not an offline observation.
     });
 
-    const out = allocateEntity<CapacitorConnectivityBackend>();
+  const out = allocateEntity<CapacitorConnectivityBackend>();
   out.destroy = () => {
-      if (destroyed) return;
-      destroyed = true;
-      subscribers.clear();
-      removeHandle();
-    };
+    if (destroyed) return;
+    destroyed = true;
+    subscribers.clear();
+    removeHandle();
+  };
   out.getStatus = (out) => {
-      copyStatus(out, mirror);
-      return out;
-    };
+    copyStatus(out, mirror);
+    return out;
+  };
   out.subscribe = (listener) => {
-      if (destroyed) return null;
-      subscribers.add(listener);
-      let active = true;
-      return () => {
-        if (!active) return;
-        active = false;
-        subscribers.delete(listener);
-      };
+    if (destroyed) return null;
+    subscribers.add(listener);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      subscribers.delete(listener);
     };
+  };
   return finishEntity(out);
 }
 
