@@ -16,16 +16,23 @@ export function clearSpatialIndex3D(index: Readonly<SpatialIndex3D>): void {
   index.runtime.backend.clearSpatialIndex();
 }
 
+export function createSpatialIndex3D(backend?: SpatialIndexBackend3D): SpatialIndex3D {
+  const out = allocateEntity<SpatialIndex3D>();
+  initializeSpatialIndex3D(out, backend);
+  return finishEntity(out);
+}
+
 // Creates a 3D broadphase index. With no backend it defaults to a uniform grid sized for
 // medium-scale scenes; pass an explicit backend (a differently-sized grid, or a future octree / BVH)
 // to select the structure for the workload. Constructing the default grid happens here, on call —
 // importing the package has no side effect.
-export function createSpatialIndex3D(backend?: SpatialIndexBackend3D): SpatialIndex3D {
-  const out = allocateEntity<SpatialIndex3D>();
+export function initializeSpatialIndex3D(
+  out: EntityConstruction<SpatialIndex3D>,
+  backend?: SpatialIndexBackend3D,
+): void {
   out.runtime = {
     backend: backend ?? createUniformGridSpatialBackend3D(DEFAULT_SPATIAL_CELL_SIZE_3D),
   };
-  return finishEntity(out);
 }
 
 // Adds an object to the index under `id` with its current bounds. The bounds are copied; the caller

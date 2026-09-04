@@ -1,22 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { VideoResource } from '@flighthq/types/contract';
+import type { VideoResource, EntityConstruction } from '@flighthq/types/contract';
 
-// No cloneVideoResource: a VideoResource is a thin carrier over a single HTMLVideoElement, and an
-// element cannot be duplicated (each carries its own decoder and playback position). Wrap the same
-// element in a second createVideoResource call if two carriers over one stream are truly wanted.
-// `objectUrl` transfers ownership of a blob object URL to the resource, so destruction revokes it. Pass
-// it only for a URL this resource should own — a caller-managed URL stays the caller's to revoke.
-// `ownsElement` true means this resource created the element and destroyVideoResource will release
-// its decoder; false means the caller supplied it and destruction only drops the reference.
 export function createVideoResource(
   element?: HTMLVideoElement,
   objectUrl?: string,
   ownsElement?: boolean,
 ): VideoResource {
   const out = allocateEntity<VideoResource>();
-  out.element = element ?? null;
-  out.objectUrl = objectUrl ?? null;
-  out.ownsElement = ownsElement ?? false;
+  initializeVideoResource(out, element, objectUrl, ownsElement);
   return finishEntity(out);
 }
 
@@ -78,6 +69,24 @@ export function getVideoResourceWidth(resource: Readonly<VideoResource>): number
 
 export function hasVideoResourceElement(resource: Readonly<VideoResource>): boolean {
   return resource.element !== null;
+}
+
+// No cloneVideoResource: a VideoResource is a thin carrier over a single HTMLVideoElement, and an
+// element cannot be duplicated (each carries its own decoder and playback position). Wrap the same
+// element in a second createVideoResource call if two carriers over one stream are truly wanted.
+// `objectUrl` transfers ownership of a blob object URL to the resource, so destruction revokes it. Pass
+// it only for a URL this resource should own — a caller-managed URL stays the caller's to revoke.
+// `ownsElement` true means this resource created the element and destroyVideoResource will release
+// its decoder; false means the caller supplied it and destruction only drops the reference.
+export function initializeVideoResource(
+  out: EntityConstruction<VideoResource>,
+  element?: HTMLVideoElement,
+  objectUrl?: string,
+  ownsElement?: boolean,
+): void {
+  out.element = element ?? null;
+  out.objectUrl = objectUrl ?? null;
+  out.ownsElement = ownsElement ?? false;
 }
 
 export function isVideoResourceEmpty(resource: Readonly<VideoResource>): boolean {

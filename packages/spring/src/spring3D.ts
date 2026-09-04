@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Spring3D, SpringConfig } from '@flighthq/types/contract';
+import type { Spring3D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
 import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
 
@@ -15,8 +15,6 @@ export function applySpringImpulse3D(
   applySpringImpulse(spring3D.z, velocityZ);
 }
 
-// Allocate a 3D spring as three scalar springs, each at its `value*` (default 0) and `velocity*`
-// (default 0).
 export function createSpring3D(
   valueX: number = 0,
   valueY: number = 0,
@@ -26,10 +24,24 @@ export function createSpring3D(
   velocityZ: number = 0,
 ): Spring3D {
   const out = allocateEntity<Spring3D>();
+  initializeSpring3D(out, valueX, valueY, valueZ, velocityX, velocityY, velocityZ);
+  return finishEntity(out);
+}
+
+// Allocate a 3D spring as three scalar springs, each at its `value*` (default 0) and `velocity*`
+// (default 0).
+export function initializeSpring3D(
+  out: EntityConstruction<Spring3D>,
+  valueX: number = 0,
+  valueY: number = 0,
+  valueZ: number = 0,
+  velocityX: number = 0,
+  velocityY: number = 0,
+  velocityZ: number = 0,
+): void {
   out.x = createSpring(valueX, velocityX);
   out.y = createSpring(valueY, velocityY);
   out.z = createSpring(valueZ, velocityZ);
-  return finishEntity(out);
 }
 
 // Report whether all three axes of `spring3D` have settled at (`targetX`, `targetY`, `targetZ`) —

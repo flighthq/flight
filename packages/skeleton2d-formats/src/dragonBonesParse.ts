@@ -15,7 +15,6 @@ import type {
   AttachmentSkin2D,
   Bone2D,
   EasingFunction,
-  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,

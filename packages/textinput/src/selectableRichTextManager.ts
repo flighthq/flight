@@ -21,7 +21,7 @@ export function blurSelectableRichText(manager: SelectableRichTextManager): void
 
 export function createSelectableRichTextManager(): SelectableRichTextManager {
   const out = allocateEntity<SelectableRichTextManager>();
-  out.focused = null;
+  initializeSelectableRichTextManager(out);
   return finishEntity(out);
 }
 
@@ -101,6 +101,10 @@ export function getSelectableRichTextSelectionText(manager: SelectableRichTextMa
   const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   return target.data.text.slice(start, end);
+}
+
+export function initializeSelectableRichTextManager(out: EntityConstruction<SelectableRichTextManager>): void {
+  out.focused = null;
 }
 
 function getMutableRuntime(source: RichText): RichTextRuntime {

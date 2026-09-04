@@ -29,11 +29,7 @@ export function acquireWgpuRenderTexture(
 
 export function createWgpuRenderTexturePool(): WgpuRenderTexturePool {
   const out = allocateEntity<WgpuRenderTexturePool>();
-  out.device = null;
-  out.destroyed = false;
-  out.effectTargets = createWgpuRenderTargetPool();
-  out.free = [];
-  out.leased = new Set();
+  initializeWgpuRenderTexturePool(out);
   return finishEntity(out);
 }
 
@@ -48,6 +44,14 @@ export function destroyWgpuRenderTexturePool(state: WgpuRenderState, pool: WgpuR
   pool.leased.clear();
   destroyWgpuRenderTargetPool(state, pool.effectTargets);
   pool.destroyed = true;
+}
+
+export function initializeWgpuRenderTexturePool(out: EntityConstruction<WgpuRenderTexturePool>): void {
+  out.device = null;
+  out.destroyed = false;
+  out.effectTargets = createWgpuRenderTargetPool();
+  out.free = [];
+  out.leased = new Set();
 }
 
 export function releaseWgpuRenderTexture(

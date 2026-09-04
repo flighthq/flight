@@ -79,12 +79,7 @@ export function createTextLabel(obj?: Readonly<PartialNode<TextLabel>>): TextLab
 
 export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): TextLabelData {
   const out = allocateEntity<TextLabelData>();
-  out.autoSize = data?.autoSize ?? 'none';
-  out.height = data?.height ?? 100;
-  out.text = data?.text ?? '';
-  out.textFormat = data?.textFormat ?? {};
-  out.verticalAlign = data?.verticalAlign ?? 'top';
-  out.width = data?.width ?? 100;
+  initializeTextLabelData(out, data);
   return finishEntity(out);
 }
 
@@ -109,6 +104,18 @@ export function getTextLabelRuntime(source: Readonly<TextLabel>): Readonly<TextL
 
 export function getTextLabelString(source: Readonly<TextLabel>): string {
   return source.data.text;
+}
+
+export function initializeTextLabelData(
+  out: EntityConstruction<TextLabelData>,
+  data?: Readonly<Partial<TextLabelData>>,
+): void {
+  out.autoSize = data?.autoSize ?? 'none';
+  out.height = data?.height ?? 100;
+  out.text = data?.text ?? '';
+  out.textFormat = data?.textFormat ?? {};
+  out.verticalAlign = data?.verticalAlign ?? 'top';
+  out.width = data?.width ?? 100;
 }
 
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {

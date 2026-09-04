@@ -32,15 +32,23 @@ import { reportSpatialIndexing } from './spatialIndexingGuard';
 // that second test would make this backend report overlaps the grid does not, and the two are supposed
 // to be interchangeable.
 
+export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
+  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
+  initializeBvhSpatialBackend3D(out, margin);
+  return finishEntity(out);
+}
+
 // Creates a BVH backend. `margin` is how far each leaf's stored box is grown beyond its object; a
 // larger margin means fewer reinsertions and looser internal nodes.
 //
 // The default suits a world whose objects are order-of-magnitude single-digit units and move a few
 // units per step. It is a world-space LENGTH, like the grid's cell size, so the two tune against the
 // same intuition.
-export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
+export function initializeBvhSpatialBackend3D(
+  out: EntityConstruction<SpatialIndexBackend3D & Entity>,
+  margin = DEFAULT_BVH_MARGIN_3D,
+): void {
   const tree = createBvh3D(margin);
-  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   out.clearSpatialIndex = () => clearBvh3D(tree);
   out.explainSpatialIndexing = (id) => explainBvh3D(tree, id);
   out.insertSpatialObject = (id, bounds) => insertBvh3D(tree, id, bounds, 'insert');
@@ -59,7 +67,6 @@ export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): Spati
     if (wasMissing) reportBvh3DIndexing(tree, id, explainBvh3D(tree, id).mode, 'update', 'missing-id');
     return inserted;
   };
-  return finishEntity(out);
 }
 
 interface Bvh3D {

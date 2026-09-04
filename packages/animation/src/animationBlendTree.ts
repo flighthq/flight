@@ -25,15 +25,33 @@ export function advanceAnimationBlendTree(tree: AnimationBlendTree, dt: number):
   for (const player of tree.players) advanceAnimationPlayer(player, dt);
 }
 
+export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInput[]): AnimationBlendTree {
+  const out = allocateEntity<AnimationBlendTree>();
+  initializeAnimationBlendTree(out, inputs);
+  return finishEntity(out);
+}
+
+export function createAnimationBlendTreeInput(
+  player: AnimationPlayer,
+  weight = 1,
+  additive = false,
+): AnimationBlendTreeInput {
+  const out = allocateEntity<AnimationBlendTreeInput>();
+  initializeAnimationBlendTreeInput(out, player, weight, additive);
+  return finishEntity(out);
+}
+
 // Allocates an N-way target-correspondence layout and one reusable accumulator per target. Every clip
 // must contain unique targetRef values; corresponding tracks must agree on width and quaternion meaning.
-export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInput[]): AnimationBlendTree {
+export function initializeAnimationBlendTree(
+  out: EntityConstruction<AnimationBlendTree>,
+  inputs: readonly AnimationBlendTreeInput[],
+): void {
   const copiedInputs = inputs.slice();
   const channels: AnimationBlendTreeChannel[] = [];
   const channelByTarget = new Map<unknown, number>();
   const players: AnimationPlayer[] = [];
   let sampleWidth = 0;
-
   for (let inputIndex = 0; inputIndex < copiedInputs.length; inputIndex++) {
     const player = copiedInputs[inputIndex].player;
     if (!players.includes(player)) players.push(player);
@@ -57,27 +75,23 @@ export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInpu
       (existing.sources as AnimationBlendTreeChannelSource[]).push({ channelIndex, inputIndex });
     }
   }
-
-  const out = allocateEntity<AnimationBlendTree>();
   out.channels = channels;
   out.inputs = copiedInputs;
   out.players = players;
   out.sampleScratch = new Float32Array(sampleWidth);
-  return finishEntity(out);
 }
 
 // Allocates one caller-visible leaf descriptor. Weight is not clamped; sampling ignores values that are
 // not positive, so callers can drive weights directly from math without a separate sanitation pass.
-export function createAnimationBlendTreeInput(
+export function initializeAnimationBlendTreeInput(
+  out: EntityConstruction<AnimationBlendTreeInput>,
   player: AnimationPlayer,
   weight = 1,
   additive = false,
-): AnimationBlendTreeInput {
-  const out = allocateEntity<AnimationBlendTreeInput>();
+): void {
   out.additive = additive;
   out.player = player;
   out.weight = weight;
-  return finishEntity(out);
 }
 
 // Samples every target in stable first-appearance order. The visitor must consume `out` before returning

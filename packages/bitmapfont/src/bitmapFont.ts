@@ -9,45 +9,9 @@ import type {
   TextureAtlas,
 } from '@flighthq/types/contract';
 
-// Builds an immutable static bitmap font from plain data: the glyph list becomes a
-// `codepoint → GlyphEntry` map, the kerning pairs become a `left * 0x110000 + right → amount` map, and
-// the page-indexed atlas list, line metrics, and encoding (default `raster`) are carried as-is. Each
-// glyph's `page` (default 0) indexes `data.pages`; an out-of-range page is clamped to 0 so the glyph
-// is still placed (on the primary page) rather than dropped — a bad page index is a source-data
-// defect the font should survive, not a reason to lose a glyph. Nothing mutates the font after this
-// call — it is the static counterpart to the growing `@flighthq/glyphatlas`.
 export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
-  const pageCount = data.pages.length;
-  const glyphs = new Map<number, GlyphEntry>();
-  for (const glyph of data.glyphs) {
-    const page = glyph.page ?? 0;
-    glyphs.set(glyph.codepoint, {
-      advance: glyph.advance,
-      bearingX: glyph.bearingX,
-      bearingY: glyph.bearingY,
-      height: glyph.height,
-      page: resolveBitmapFontGlyphPage(glyph.codepoint, page, pageCount),
-      width: glyph.width,
-      x: glyph.x,
-      y: glyph.y,
-    });
-  }
-  const kerning = new Map<number, number>();
-  if (data.kerning !== undefined) {
-    for (const pair of data.kerning) {
-      kerning.set(packBitmapFontKerningKey(pair.left, pair.right), pair.amount);
-    }
-  }
   const out = allocateEntity<BitmapFont>();
-  out.encoding = data.encoding ?? 'raster';
-  out.glyphs = glyphs;
-  out.kerning = kerning;
-  out.metrics = {
-    ascent: data.metrics.ascent,
-    descent: data.metrics.descent,
-    lineGap: data.metrics.lineGap,
-  };
-  out.pages = data.pages.slice();
+  initializeBitmapFont(out, data);
   return finishEntity(out);
 }
 
@@ -87,6 +51,46 @@ export function getBitmapFontPages(font: Readonly<BitmapFont>): readonly Texture
 // get an answer. Cheap enough for a per-character loop — one map lookup, no allocation.
 export function hasBitmapFontGlyph(font: Readonly<BitmapFont>, codepoint: number): boolean {
   return font.glyphs.has(codepoint);
+}
+
+// Builds an immutable static bitmap font from plain data: the glyph list becomes a
+// `codepoint → GlyphEntry` map, the kerning pairs become a `left * 0x110000 + right → amount` map, and
+// the page-indexed atlas list, line metrics, and encoding (default `raster`) are carried as-is. Each
+// glyph's `page` (default 0) indexes `data.pages`; an out-of-range page is clamped to 0 so the glyph
+// is still placed (on the primary page) rather than dropped — a bad page index is a source-data
+// defect the font should survive, not a reason to lose a glyph. Nothing mutates the font after this
+// call — it is the static counterpart to the growing `@flighthq/glyphatlas`.
+export function initializeBitmapFont(out: EntityConstruction<BitmapFont>, data: Readonly<BitmapFontData>): void {
+  const pageCount = data.pages.length;
+  const glyphs = new Map<number, GlyphEntry>();
+  for (const glyph of data.glyphs) {
+    const page = glyph.page ?? 0;
+    glyphs.set(glyph.codepoint, {
+      advance: glyph.advance,
+      bearingX: glyph.bearingX,
+      bearingY: glyph.bearingY,
+      height: glyph.height,
+      page: resolveBitmapFontGlyphPage(glyph.codepoint, page, pageCount),
+      width: glyph.width,
+      x: glyph.x,
+      y: glyph.y,
+    });
+  }
+  const kerning = new Map<number, number>();
+  if (data.kerning !== undefined) {
+    for (const pair of data.kerning) {
+      kerning.set(packBitmapFontKerningKey(pair.left, pair.right), pair.amount);
+    }
+  }
+  out.encoding = data.encoding ?? 'raster';
+  out.glyphs = glyphs;
+  out.kerning = kerning;
+  out.metrics = {
+    ascent: data.metrics.ascent,
+    descent: data.metrics.descent,
+    lineGap: data.metrics.lineGap,
+  };
+  out.pages = data.pages.slice();
 }
 
 // Packs an adjacent glyph pair into the single-number kerning-map key `left * 0x110000 + right`. The

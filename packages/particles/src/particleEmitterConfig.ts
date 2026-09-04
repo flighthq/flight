@@ -1,8 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig, EntityConstruction } from '@flighthq/types/contract';
 
 export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
   const out = allocateEntity<ParticleEmitterConfig>();
+  initializeParticleEmitterConfig(out, config);
+  return finishEntity(out);
+}
+
+export function initializeParticleEmitterConfig(
+  out: EntityConstruction<ParticleEmitterConfig>,
+  config?: Partial<ParticleEmitterConfig>,
+): void {
   out.alphaCurve = config?.alphaCurve ?? null;
   out.alphaEnd = config?.alphaEnd ?? 0;
   out.alphaStart = config?.alphaStart ?? 1;
@@ -55,5 +63,4 @@ export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConf
   out.spread = config?.spread ?? Math.PI;
   out.velocityInheritance = config?.velocityInheritance ?? 0;
   out.worldSpace = config?.worldSpace ?? false;
-  return finishEntity(out);
 }

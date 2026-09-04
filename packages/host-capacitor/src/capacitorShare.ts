@@ -2,15 +2,23 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorShareContentBackend,
-  EntityRuntimeKey,
   ShareContent,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createCapacitorShareContentBackend(capacitor: CapacitorApi): CapacitorShareContentBackend {
+  const out = allocateEntity<CapacitorShareContentBackend>();
+  initializeCapacitorShareContentBackend(out, capacitor);
+  return finishEntity(out);
+}
 
 // Capacitor's provider is present synchronously. Platform rejection is reported by the command
 // outcome; construction never starts an async availability probe or caches a transient false value.
-export function createCapacitorShareContentBackend(capacitor: CapacitorApi): CapacitorShareContentBackend {
+export function initializeCapacitorShareContentBackend(
+  out: EntityConstruction<CapacitorShareContentBackend>,
+  capacitor: CapacitorApi,
+): void {
   const share = capacitor.share;
-  const out = allocateEntity<CapacitorShareContentBackend>();
   out.canShareContent = hasShareableContent;
   out.shareContent = async (content, options) => {
     if (!hasShareableContent(content)) return false;
@@ -40,7 +48,6 @@ export function createCapacitorShareContentBackend(capacitor: CapacitorApi): Cap
       return { activityType: null, completed: false, dismissed: true };
     }
   };
-  return finishEntity(out);
 }
 
 function hasShareableContent(content: Readonly<ShareContent>): boolean {

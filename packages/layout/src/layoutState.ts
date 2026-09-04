@@ -1,10 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { LayoutResolver, LayoutState } from '@flighthq/types/contract';
+import type { LayoutResolver, LayoutState, EntityConstruction } from '@flighthq/types/contract';
+
+export function createLayoutState(): LayoutState {
+  const out = allocateEntity<LayoutState>();
+  initializeLayoutState(out);
+  return finishEntity(out);
+}
 
 // Allocates the operation state and its open, last-write-wins resolver registry. Built-in resolvers are
 // opt-in registrations, so creating the core state never links anchor, flex, or grid code.
-export function createLayoutState(): LayoutState {
-  const out = allocateEntity<LayoutState>();
+export function initializeLayoutState(out: EntityConstruction<LayoutState>): void {
   out.guard = null;
   out.lastFailureActualLength = 0;
   out.lastFailureKind = null;
@@ -13,7 +18,6 @@ export function createLayoutState(): LayoutState {
   out.lastFailureRequiredLength = 0;
   out.lastFailureResolverKind = null;
   out.resolvers = new Map();
-  return finishEntity(out);
 }
 
 // Registers or replaces one container-kind resolver. Passing null removes it. Bare built-in names are

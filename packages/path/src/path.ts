@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
-import type { Path, PathWinding } from '@flighthq/types/contract';
+import type { Path, PathWinding, EntityConstruction } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 // Approximates an arc centered at (cx, cy) from `startAngle` to `endAngle` (radians) with the given
@@ -244,14 +244,19 @@ export function appendPathRoundRectangle(
   appendPathClose(path);
 }
 
-// Allocates an empty path. Winding defaults to nonZero: same-wound subpaths union (the common clip
-// case) and counter-wound subpaths cut holes. Pass 'evenOdd' for parity fills.
 export function createPath(winding: PathWinding = 'nonZero'): Path {
   const out = allocateEntity<Path>();
-  out.commands = [];
-  out.data = [];
-  out.winding = winding;
+  initializePath(out, winding);
   return finishEntity(out);
+}
+
+// Every point-producing command (MOVE_TO, LINE_TO, CURVE_TO, CUBIC_CURVE_TO, and their
+// WIDE variants) stores its anchor as the last two values pushed to `data[]`. CLOSE and
+// NO_OP push no data. So the last anchor is always at the tail of the data array — O(1).
+export function getPathLastPoint(path: Readonly<Path>): [number, number] | null {
+  const data = path.data;
+  if (data.length < 2) return null;
+  return [data[data.length - 2], data[data.length - 1]];
 }
 
 // Appends a quarter-circle arc (90°) centered at (cx, cy) with the given radius, from `startAngle`
@@ -328,13 +333,12 @@ function appendArcCubics(
   }
 }
 
-// Every point-producing command (MOVE_TO, LINE_TO, CURVE_TO, CUBIC_CURVE_TO, and their
-// WIDE variants) stores its anchor as the last two values pushed to `data[]`. CLOSE and
-// NO_OP push no data. So the last anchor is always at the tail of the data array — O(1).
-export function getPathLastPoint(path: Readonly<Path>): [number, number] | null {
-  const data = path.data;
-  if (data.length < 2) return null;
-  return [data[data.length - 2], data[data.length - 1]];
+// Allocates an empty path. Winding defaults to nonZero: same-wound subpaths union (the common clip
+// case) and counter-wound subpaths cut holes. Pass 'evenOdd' for parity fills.
+export function initializePath(out: EntityConstruction<Path>, winding: PathWinding = 'nonZero'): void {
+  out.commands = [];
+  out.data = [];
+  out.winding = winding;
 }
 
 // Normalizes corner radii for a rounded rectangle, clamping each corner radius to at most half the

@@ -42,7 +42,7 @@ export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieCl
 
 export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
   const out = allocateEntity<MovieClipData>();
-  out.timeline = data?.timeline ?? null;
+  initializeMovieClipData(out, data);
   return finishEntity(out);
 }
 
@@ -106,6 +106,13 @@ export function gotoAndPlayMovieClip(clip: MovieClip, frame: number | string): v
 export function gotoAndStopMovieClip(clip: MovieClip, frame: number | string): void {
   if (clip.data.timeline === null) return;
   gotoAndStopTimeline(clip.data.timeline, frame);
+}
+
+export function initializeMovieClipData(
+  out: EntityConstruction<MovieClipData>,
+  data?: Readonly<Partial<MovieClipData>>,
+): void {
+  out.timeline = data?.timeline ?? null;
 }
 
 export function isMovieClipPlaying(clip: MovieClip): boolean {

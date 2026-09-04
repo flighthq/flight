@@ -10,6 +10,7 @@ import type {
   StatusBarStyle,
   StatusBarStyleBackend,
   StatusBarVisibilityBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorStatusBarBackend = Entity &
@@ -19,12 +20,6 @@ type CapacitorStatusBarBackend = Entity &
   StatusBarStyleBackend &
   StatusBarVisibilityBackend;
 
-// Maps Flight's narrow status-bar capabilities onto Capacitor's `@capacitor/status-bar`. Setters are async and fire
-// fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping
-// alpha the plugin ignores), setVisible (→ show/hide), and setOverlaysContent (→ setOverlaysWebView).
-// getInfo is a synchronous snapshot while Capacitor's getInfo is async, so it is served from a value
-// prefetched once at construction (default until it resolves). Capacitor emits no status-bar change
-// event, so this provider deliberately has no change-subscription member.
 export function createCapacitorStatusBarBackend(
   capacitor: CapacitorApi,
 ): Entity &
@@ -33,6 +28,21 @@ export function createCapacitorStatusBarBackend(
   StatusBarOverlaysBackend &
   StatusBarStyleBackend &
   StatusBarVisibilityBackend {
+  const out = allocateEntity<CapacitorStatusBarBackend>();
+  initializeCapacitorStatusBarBackend(out, capacitor);
+  return finishEntity(out);
+}
+
+// Maps Flight's narrow status-bar capabilities onto Capacitor's `@capacitor/status-bar`. Setters are async and fire
+// fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping
+// alpha the plugin ignores), setVisible (→ show/hide), and setOverlaysContent (→ setOverlaysWebView).
+// getInfo is a synchronous snapshot while Capacitor's getInfo is async, so it is served from a value
+// prefetched once at construction (default until it resolves). Capacitor emits no status-bar change
+// event, so this provider deliberately has no change-subscription member.
+export function initializeCapacitorStatusBarBackend(
+  out: EntityConstruction<CapacitorStatusBarBackend>,
+  capacitor: CapacitorApi,
+): void {
   const statusBar = capacitor.statusBar;
   // Sync getInfo over async Capacitor: prefetch the snapshot once and cache it.
   let cachedInfo: CapacitorStatusBarInfoResult | null = null;
@@ -44,7 +54,6 @@ export function createCapacitorStatusBarBackend(
     .catch(() => {
       /* leave null → defaults */
     });
-  const out = allocateEntity<CapacitorStatusBarBackend>();
   out.getInfo = (out: StatusBarInfo): StatusBarInfo => {
     const info = cachedInfo;
     out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;
@@ -68,7 +77,6 @@ export function createCapacitorStatusBarBackend(
     if (visible) statusBar.show().catch(() => {});
     else statusBar.hide().catch(() => {});
   };
-  return finishEntity(out);
 }
 
 // Flight status-bar style ('light' | 'dark' | 'default') → Capacitor Style ('Light' | 'Dark' | 'Default').

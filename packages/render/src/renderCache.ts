@@ -8,6 +8,7 @@ import type {
   Renderer,
   RenderProxy2D,
   RenderState,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { RenderCacheKind } from '@flighthq/types/contract';
 
@@ -16,42 +17,15 @@ import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapt
 
 export { RenderCacheKind };
 
-/**
- * Creates a backend-agnostic cache handle. The handle owns no resource; a backend
- * allocates and stores its own render target on the render state, keyed by this handle,
- * when the cache is first refreshed.
- */
 export function createRenderCache(): RenderCache {
   const out = allocateEntity<RenderCache>();
-  out.kind = RenderCacheKind;
-  out.transform = createMatrix();
+  initializeRenderCache(out);
   return finishEntity(out);
 }
 
-/**
- * Creates an adapter that, during the render update pass, substitutes its cache handle
- * for `source` so the cached result is composited instead of the source subtree being
- * traversed. Returns null from `adapt` (renders normally) until a cache is attached.
- */
 export function createRenderCacheAdapter(cache: RenderCache | null = null): RenderCacheAdapter {
-  // Built through allocateEntity like createRenderCache above it, so the adapter carries the standard
-  // runtime slot. `adapt` closes over `adapter` rather than `this`, and the closure only runs long
-  // after construction.
   const adapter = allocateEntity<RenderCacheAdapter>();
-  adapter.cache = cache;
-  adapter.signals = null as RenderCacheAdapter['signals'];
-  adapter.adapt = (_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null => {
-    adapter.signals?.onPrepare.emit();
-    const attached = adapter.cache ?? null;
-    if (attached === null) return null;
-    // Switch the render node to the cache renderer and fold in the cache's placement
-    // transform, but keep node.source as the original scene node — the appearance and
-    // transform passes read node.source every (dirty) frame, and the handle is not a Node.
-    // The cache renderer resolves the handle from this adapter via getRenderProxyCache.
-    node.kind = RenderCacheKind;
-    multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
-    return false;
-  };
+  initializeRenderCacheAdapter(adapter, cache);
   return finishEntity(adapter);
 }
 
@@ -70,6 +44,44 @@ export function enableRenderCacheAdapterSignals(adapter: RenderCacheAdapter): vo
 export function getRenderProxyCache(state: RenderState, source: Renderable): RenderCache | null {
   const adapter = getRenderProxyAdapter(state, source);
   return isRenderCacheAdapter(adapter) ? (adapter.cache ?? null) : null;
+}
+
+/**
+ * Creates a backend-agnostic cache handle. The handle owns no resource; a backend
+ * allocates and stores its own render target on the render state, keyed by this handle,
+ * when the cache is first refreshed.
+ */
+export function initializeRenderCache(out: EntityConstruction<RenderCache>): void {
+  out.kind = RenderCacheKind;
+  out.transform = createMatrix();
+}
+
+/**
+ * Creates an adapter that, during the render update pass, substitutes its cache handle
+ * for `source` so the cached result is composited instead of the source subtree being
+ * traversed. Returns null from `adapt` (renders normally) until a cache is attached.
+ */
+export function initializeRenderCacheAdapter(
+  adapter: EntityConstruction<RenderCacheAdapter>,
+  cache: RenderCache | null = null,
+): void {
+  // Built through allocateEntity like createRenderCache above it, so the adapter carries the standard
+  // runtime slot. `adapt` closes over `adapter` rather than `this`, and the closure only runs long
+  // after construction.
+  adapter.cache = cache;
+  adapter.signals = null as RenderCacheAdapter['signals'];
+  adapter.adapt = (_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null => {
+    adapter.signals?.onPrepare.emit();
+    const attached = adapter.cache ?? null;
+    if (attached === null) return null;
+    // Switch the render node to the cache renderer and fold in the cache's placement
+    // transform, but keep node.source as the original scene node — the appearance and
+    // transform passes read node.source every (dirty) frame, and the handle is not a Node.
+    // The cache renderer resolves the handle from this adapter via getRenderProxyCache.
+    node.kind = RenderCacheKind;
+    multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
+    return false;
+  };
 }
 
 export function isRenderCache(source: unknown): source is RenderCache {

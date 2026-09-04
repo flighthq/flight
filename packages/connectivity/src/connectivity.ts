@@ -49,11 +49,7 @@ export function attachConnectivity(
 
 export function createConnectivity(): Connectivity {
   const out = allocateEntity<Connectivity>();
-  out.onChange = createSignal();
-  out.onConnectionTypeChange = createSignal();
-  out.onMeteredChange = createSignal();
-  out.onOffline = createSignal();
-  out.onOnline = createSignal();
+  initializeConnectivity(out);
   return finishEntity(out);
 }
 
@@ -111,6 +107,14 @@ export function hasConnectivityStatusChanged(
     a.saveData !== b.saveData ||
     a.metered !== b.metered
   );
+}
+
+export function initializeConnectivity(out: EntityConstruction<Connectivity>): void {
+  out.onChange = createSignal();
+  out.onConnectionTypeChange = createSignal();
+  out.onMeteredChange = createSignal();
+  out.onOffline = createSignal();
+  out.onOnline = createSignal();
 }
 
 export function isConnectivityMetered(host: HasConnectivityStatus): boolean {

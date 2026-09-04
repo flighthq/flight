@@ -33,15 +33,32 @@ export function createAnimationBlendTreeLayer(
   return createAnimationLayer(blendTree.channels.length, blendTree, null, options);
 }
 
-// Allocates an ordered stack with target correspondence across the selected channels of every layer.
 export function createAnimationLayerStack(layers: readonly AnimationLayer[]): AnimationLayerStack {
+  const out = allocateEntity<AnimationLayerStack>();
+  initializeAnimationLayerStack(out, layers);
+  return finishEntity(out);
+}
+
+// Allocates a layer sourced by one named state machine. Its global target layout remains stable while
+// the current state and transition change, so channel masks need no runtime rebuild.
+export function createAnimationStateMachineLayer(
+  stateMachine: AnimationStateMachine,
+  options?: Readonly<AnimationLayerOptions>,
+): AnimationLayer {
+  return createAnimationLayer(stateMachine.channels.length, null, stateMachine, options);
+}
+
+// Allocates an ordered stack with target correspondence across the selected channels of every layer.
+export function initializeAnimationLayerStack(
+  out: EntityConstruction<AnimationLayerStack>,
+  layers: readonly AnimationLayer[],
+): void {
   const copiedLayers = layers.slice();
   const blendTrees: AnimationBlendTree[] = [];
   const channels: AnimationLayerStackChannel[] = [];
   const channelByTarget = new Map<unknown, number>();
   const stateMachines: AnimationStateMachine[] = [];
   let sampleWidth = 0;
-
   for (let layerIndex = 0; layerIndex < copiedLayers.length; layerIndex++) {
     const layer = copiedLayers[layerIndex];
     if (layer.blendTree !== null) {
@@ -65,24 +82,12 @@ export function createAnimationLayerStack(layers: readonly AnimationLayer[]): An
       (existing.sources as AnimationLayerStackChannelSource[]).push({ channelIndex, layerIndex });
     }
   }
-
-  const out = allocateEntity<AnimationLayerStack>();
   out.advanceScratch = [];
   out.blendTrees = blendTrees;
   out.channels = channels;
   out.layers = copiedLayers;
   out.sampleScratch = new Float32Array(sampleWidth);
   out.stateMachines = stateMachines;
-  return finishEntity(out);
-}
-
-// Allocates a layer sourced by one named state machine. Its global target layout remains stable while
-// the current state and transition change, so channel masks need no runtime rebuild.
-export function createAnimationStateMachineLayer(
-  stateMachine: AnimationStateMachine,
-  options?: Readonly<AnimationLayerOptions>,
-): AnimationLayer {
-  return createAnimationLayer(stateMachine.channels.length, null, stateMachine, options);
 }
 
 // Samples all composed targets in stable first-appearance order. The visitor must consume `out`

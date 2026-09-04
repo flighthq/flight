@@ -45,24 +45,37 @@ export function createPhysics3DQueryFilter(): NonEntityCreateResult<Physics3DQue
   };
 }
 
-// Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
-// rewrite them and publish only `hitCount`, so picking can run each frame without garbage.
 export function createPhysics3DQueryResult(): Physics3DQueryResult {
   const out = allocateEntity<Physics3DQueryResult>();
-  out.hits = [];
-  out.hitCount = 0;
+  initializePhysics3DQueryResult(out);
   return finishEntity(out);
 }
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
   const out = allocateEntity<Physics3DRayResult>();
-  out.hits = [];
-  out.hitCount = 0;
+  initializePhysics3DRayResult(out);
   return finishEntity(out);
 }
 
 export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
   const out = allocateEntity<Physics3DShapeCastResult>();
+  initializePhysics3DShapeCastResult(out);
+  return finishEntity(out);
+}
+
+// Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
+// rewrite them and publish only `hitCount`, so picking can run each frame without garbage.
+export function initializePhysics3DQueryResult(out: EntityConstruction<Physics3DQueryResult>): void {
+  out.hits = [];
+  out.hitCount = 0;
+}
+
+export function initializePhysics3DRayResult(out: EntityConstruction<Physics3DRayResult>): void {
+  out.hits = [];
+  out.hitCount = 0;
+}
+
+export function initializePhysics3DShapeCastResult(out: EntityConstruction<Physics3DShapeCastResult>): void {
   out.body = null;
   out.collider = null;
   out.colliderIndex = -1;
@@ -74,7 +87,6 @@ export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
   out.x = 0;
   out.y = 0;
   out.z = 0;
-  return finishEntity(out);
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the

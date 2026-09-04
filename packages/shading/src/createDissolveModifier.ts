@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { DissolveModifier, DissolveModifierOptions } from '@flighthq/types/contract';
+import type { DissolveModifier, DissolveModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 import { initializeModifier } from './modifier';
@@ -8,19 +8,26 @@ import { initializeModifier } from './modifier';
 // defaults. `map` presence is compile-time structural (sampled mask vs procedural noise, driving the
 // define-key signature); `threshold`/`edgeWidth`/`scale` are uniform-fed and `edgeColor` is packed.
 
+export function createDissolveModifier(options: Readonly<DissolveModifierOptions>): DissolveModifier {
+  const out = allocateEntity<DissolveModifier>();
+  initializeDissolveModifier(out, options);
+  return finishEntity(out);
+}
+
 // Builds a DissolveModifier (slot: Effect) — a clip/burn dissolve of the shaded output. A per-fragment
 // noise value (procedural over the UV, or sampled from `map`'s red channel) is compared against
 // `threshold`; fragments below it are discarded and a band of width `edgeWidth` above it glows
 // `edgeColor`. Animate `threshold` from 0 to 1 to disintegrate the surface. `edgeColor` is packed sRgb
 // RGBA (default 0xff6600ff); `edgeWidth` defaults to 0.05 (0 = hard clip); `scale` (procedural-noise
 // frequency, ignored with `map`) defaults to 8. `map` is copied by reference only when provided.
-export function createDissolveModifier(options: Readonly<DissolveModifierOptions>): DissolveModifier {
-  const out = allocateEntity<DissolveModifier>();
+export function initializeDissolveModifier(
+  out: EntityConstruction<DissolveModifier>,
+  options: Readonly<DissolveModifierOptions>,
+): void {
   initializeModifier(out, DissolveModifierKind, ModifierSlot.Effect);
   out.threshold = options.threshold;
   out.edgeColor = options.edgeColor ?? 0xff6600ff;
   out.edgeWidth = options.edgeWidth ?? 0.05;
   out.scale = options.scale ?? 8;
   if (options.map !== undefined) out.map = options.map;
-  return finishEntity(out);
 }

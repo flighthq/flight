@@ -7,16 +7,25 @@ import type {
   ConnectivityConnectionType,
   ConnectivityStatus,
   ConnectivityStatusBackend,
-  EntityRuntimeKey,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorConnectivityBackend = ConnectivityStatusBackend & ConnectivityChangeBackend;
+
+export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): CapacitorConnectivityBackend {
+  const out = allocateEntity<CapacitorConnectivityBackend>();
+  initializeCapacitorConnectivityBackend(out, capacitor);
+  return finishEntity(out);
+}
 
 // Capacitor's async getStatus cannot truthfully fill a synchronous snapshot during construction, so
 // the mirror starts UNKNOWN (`online: null`) rather than making an unmeasured offline claim. One native
 // listener owns the mirror and fans out to every core entity; per-entity unsubscribe only leaves that
 // local subscriber set. Provider destroy owns the one native handle.
-export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): CapacitorConnectivityBackend {
+export function initializeCapacitorConnectivityBackend(
+  out: EntityConstruction<CapacitorConnectivityBackend>,
+  capacitor: CapacitorApi,
+): void {
   const network = capacitor.network;
   const subscribers = new Set<() => void>();
   const mirror = unknownStatus();
@@ -24,7 +33,6 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
   let nativeChangeObserved = false;
   let handle: CapacitorPluginListenerHandle | null = null;
   let handleRemoved = false;
-
   const removeHandle = () => {
     if (handle === null || handleRemoved) return;
     handleRemoved = true;
@@ -38,7 +46,6 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
     mirror.type = toConnectionType(status.connectionType);
     mirror.metered = mirror.type === 'cellular';
   };
-
   // Register the event source before starting the initial query. If an event wins the race, its newer
   // state must not be overwritten by a late getStatus result captured before that event.
   network
@@ -53,7 +60,6 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
       if (destroyed) removeHandle();
     })
     .catch(() => {});
-
   network
     .getStatus()
     .then((status) => {
@@ -66,8 +72,6 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
     .catch(() => {
       // Failure leaves the status unknown. Unknown means wait; it is not an offline observation.
     });
-
-  const out = allocateEntity<CapacitorConnectivityBackend>();
   out.destroy = () => {
     if (destroyed) return;
     destroyed = true;
@@ -88,7 +92,6 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
       subscribers.delete(listener);
     };
   };
-  return finishEntity(out);
 }
 
 function copyStatus(out: ConnectivityStatus, source: Readonly<ConnectivityStatus>): void {

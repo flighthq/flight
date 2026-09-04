@@ -1,12 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import type {
-  BoundsNodeAny,
-  EntityConstruction,
-  LassoSelection,
-  LassoSelectionRuntime,
-  Path,
-} from '@flighthq/types/contract';
+import type { BoundsNodeAny, LassoSelection, LassoSelectionRuntime, Path } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 export function addLassoSelectionPoint(selection: LassoSelection, x: number, y: number): void {

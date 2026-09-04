@@ -23,7 +23,7 @@ export function attachProtocolHandler(host: HasProtocolOpen, handler: ProtocolHa
 
 export function createProtocolHandler(): ProtocolHandler {
   const out = allocateEntity<ProtocolHandler>();
-  out.onOpenUrl = createSignal();
+  initializeProtocolHandler(out);
   return finishEntity(out);
 }
 
@@ -63,6 +63,10 @@ export function getProtocolLaunchUrl(host: HasProtocolLaunch): string | null {
 
 export function getRegisteredProtocolSchemes(host: HasProtocolRegistration): readonly string[] {
   return host.protocol.registration.getRegisteredSchemes();
+}
+
+export function initializeProtocolHandler(out: EntityConstruction<ProtocolHandler>): void {
+  out.onOpenUrl = createSignal();
 }
 
 export function isProtocolSchemeDefault(host: HasProtocolDefault, scheme: string): boolean {

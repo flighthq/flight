@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Command, CommandHistory } from '@flighthq/types/contract';
+import type { Command, CommandHistory, EntityConstruction } from '@flighthq/types/contract';
 
 import { createCommandBindingTable, getCommandBinding } from './commandBinding';
 
@@ -26,17 +26,9 @@ export function clearCommandHistory(history: CommandHistory): void {
   notifyCommandHistoryChanged(history);
 }
 
-/** An empty history with no bindings registered. `maxSize` of `0` (the default) is unbounded. */
 export function createCommandHistory(maxSize = 0): CommandHistory {
   const out = allocateEntity<CommandHistory>();
-  out.bindings = createCommandBindingTable();
-  out.entries = [];
-  out.index = 0;
-  out.maxSize = maxSize;
-  out.onChange = null;
-  out.transactionDepth = 0;
-  out.transactionIndex = 0;
-  out.transactionLabel = null;
+  initializeCommandHistory(out, maxSize);
   return finishEntity(out);
 }
 
@@ -91,6 +83,18 @@ export function getCommandHistoryRedoLabel(history: Readonly<CommandHistory>): s
 /** The label of the entry undo would reverse, or null. */
 export function getCommandHistoryUndoLabel(history: Readonly<CommandHistory>): string | null {
   return canUndoCommand(history) ? history.entries[history.index - 1].label : null;
+}
+
+/** An empty history with no bindings registered. `maxSize` of `0` (the default) is unbounded. */
+export function initializeCommandHistory(out: EntityConstruction<CommandHistory>, maxSize = 0): void {
+  out.bindings = createCommandBindingTable();
+  out.entries = [];
+  out.index = 0;
+  out.maxSize = maxSize;
+  out.onChange = null;
+  out.transactionDepth = 0;
+  out.transactionIndex = 0;
+  out.transactionLabel = null;
 }
 
 // Emits the opt-in change signal if a caller allocated one. Internal rather than exported: emitting a

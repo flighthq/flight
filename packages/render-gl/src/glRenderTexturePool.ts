@@ -29,11 +29,7 @@ export function acquireGlRenderTexture(
 
 export function createGlRenderTexturePool(): GlRenderTexturePool {
   const out = allocateEntity<GlRenderTexturePool>();
-  out.context = null;
-  out.destroyed = false;
-  out.effectTargets = createGlRenderTargetPool();
-  out.free = [];
-  out.leased = new Set();
+  initializeGlRenderTexturePool(out);
   return finishEntity(out);
 }
 
@@ -48,6 +44,14 @@ export function destroyGlRenderTexturePool(state: GlRenderState, pool: GlRenderT
   pool.leased.clear();
   destroyGlRenderTargetPool(state, pool.effectTargets);
   pool.destroyed = true;
+}
+
+export function initializeGlRenderTexturePool(out: EntityConstruction<GlRenderTexturePool>): void {
+  out.context = null;
+  out.destroyed = false;
+  out.effectTargets = createGlRenderTargetPool();
+  out.free = [];
+  out.leased = new Set();
 }
 
 export function releaseGlRenderTexture(

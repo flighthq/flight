@@ -24,12 +24,7 @@ export function clearShapedRun(run: ShapedRun): ShapedRun {
 
 export function createShapedRun(): ShapedRun & Entity {
   const out = allocateEntity<ShapedRun & Entity>();
-  out.advanceWidth = 0;
-  out.direction = 'LeftToRight';
-  out.font = null;
-  out.glyphCount = 0;
-  out.glyphs = [];
-  out.script = '';
+  initializeShapedRun(out);
   return finishEntity(out);
 }
 
@@ -126,6 +121,15 @@ export function getGlyphName(glyphId: number, _format: Readonly<TextFormat>, hos
   const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getGlyphName) return '';
   return backend.getGlyphName(glyphId);
+}
+
+export function initializeShapedRun(out: EntityConstruction<ShapedRun & Entity>): void {
+  out.advanceWidth = 0;
+  out.direction = 'LeftToRight';
+  out.font = null;
+  out.glyphCount = 0;
+  out.glyphs = [];
+  out.script = '';
 }
 
 export function shapeTextRun(

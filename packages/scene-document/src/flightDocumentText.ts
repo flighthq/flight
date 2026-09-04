@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
-  EntityConstruction,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentInteractiveState,

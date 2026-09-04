@@ -29,31 +29,22 @@ import {
 
 import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards';
 
-// The binding target for a bone transform channel. Prefer this over a literal: `kind` is what the binder
-// dispatches on, and a target that omits it binds to nothing.
 export function createSkeleton2DBoneAnimationTarget(
   boneIndex: number,
   path: Skeleton2DAnimationPath,
 ): Skeleton2DAnimationTarget {
   const out = allocateEntity<Skeleton2DAnimationTarget>();
-  out.boneIndex = boneIndex;
-  out.kind = TargetKind.Bone;
-  out.path = path;
+  initializeSkeleton2DBoneAnimationTarget(out, boneIndex, path);
   return finishEntity(out);
 }
 
-// The binding target for a slot appearance channel. `attachments` is the lookup table an Attachment
-// channel's index track resolves through, and is left null on a colour channel.
 export function createSkeleton2DSlotAnimationTarget(
   slotIndex: number,
   path: Skeleton2DSlotAnimationPath,
   attachments: readonly (Attachment2D | null)[] | null = null,
 ): Skeleton2DSlotAnimationTarget {
   const out = allocateEntity<Skeleton2DSlotAnimationTarget>();
-  out.attachments = attachments;
-  out.kind = TargetKind.Slot;
-  out.path = path;
-  out.slotIndex = slotIndex;
+  initializeSkeleton2DSlotAnimationTarget(out, slotIndex, path, attachments);
   return finishEntity(out);
 }
 
@@ -87,6 +78,32 @@ export function getSkeleton2DAnimationTargetBinderKinds(): readonly Skeleton2DAn
   const kinds: Skeleton2DAnimationTargetKind[] = [];
   getRegistryTableKeys(kinds, getSkeleton2DAnimationTargetBinderRegistry());
   return kinds;
+}
+
+// The binding target for a bone transform channel. Prefer this over a literal: `kind` is what the binder
+// dispatches on, and a target that omits it binds to nothing.
+export function initializeSkeleton2DBoneAnimationTarget(
+  out: EntityConstruction<Skeleton2DAnimationTarget>,
+  boneIndex: number,
+  path: Skeleton2DAnimationPath,
+): void {
+  out.boneIndex = boneIndex;
+  out.kind = TargetKind.Bone;
+  out.path = path;
+}
+
+// The binding target for a slot appearance channel. `attachments` is the lookup table an Attachment
+// channel's index track resolves through, and is left null on a colour channel.
+export function initializeSkeleton2DSlotAnimationTarget(
+  out: EntityConstruction<Skeleton2DSlotAnimationTarget>,
+  slotIndex: number,
+  path: Skeleton2DSlotAnimationPath,
+  attachments: readonly (Attachment2D | null)[] | null = null,
+): void {
+  out.attachments = attachments;
+  out.kind = TargetKind.Slot;
+  out.path = path;
+  out.slotIndex = slotIndex;
 }
 
 // Claims a target kind for a binder, so a family this package does not own — a constraint solver's

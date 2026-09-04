@@ -38,17 +38,13 @@ export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
   const out = allocateEntity<SpriteData>();
-  out.texture = data?.texture ?? null;
+  initializeSpriteData(out, data);
   return finishEntity(out);
 }
 
-// Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
-// attached to that state's render proxy, so separate render pipelines compare independently.
 export function createSpriteRendererData(_state: RenderState, source: Renderable): SpriteIdentityRendererData {
-  const texture = (source as Sprite).data.texture;
   const out = allocateEntity<SpriteIdentityRendererData>();
-  out.textureIdentity = texture;
-  out.textureVersion = texture?.version ?? -1;
+  initializeSpriteRendererData(out, _state, source);
   return finishEntity(out);
 }
 
@@ -61,6 +57,22 @@ export function createSpriteRuntime(): SpriteRuntime {
 
 export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRuntime> {
   return getNode2DRuntime(source) as SpriteRuntime;
+}
+
+export function initializeSpriteData(out: EntityConstruction<SpriteData>, data?: Readonly<Partial<SpriteData>>): void {
+  out.texture = data?.texture ?? null;
+}
+
+// Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
+// attached to that state's render proxy, so separate render pipelines compare independently.
+export function initializeSpriteRendererData(
+  out: EntityConstruction<SpriteIdentityRendererData>,
+  _state: RenderState,
+  source: Renderable,
+): void {
+  const texture = (source as Sprite).data.texture;
+  out.textureIdentity = texture;
+  out.textureVersion = texture?.version ?? -1;
 }
 
 // Detects Texture identity/version changes before requiresInvalidation can skip a Sprite. Each

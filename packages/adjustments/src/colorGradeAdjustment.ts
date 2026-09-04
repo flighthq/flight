@@ -1,7 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorGradeAdjustment, ColorTransformFunction, EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  ColorGradeAdjustment,
+  ColorTransformFunction,
+  EntityRuntimeKey,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment';
+
+export function createColorGradeAdjustment(
+  options: Readonly<Omit<ColorGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): ColorGradeAdjustment {
+  const out = allocateEntity<ColorGradeAdjustment>();
+  initializeColorGradeAdjustment(out, options);
+  return finishEntity(out);
+}
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
 // contrast scene2d is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain scene2d
@@ -9,9 +22,10 @@ import { initializeColorLutAdjustment } from './colorLutAdjustment';
 // fields leaves the rest unchanged. Gamma makes the composite nonlinear, so the whole grade bakes to one
 // LUT. Note: the old colorGradeEffect default had contrast 0 (its shader read `contrast ?? 1`); the
 // identity default here is contrast 1.
-export function createColorGradeAdjustment(
+export function initializeColorGradeAdjustment(
+  out: EntityConstruction<ColorGradeAdjustment>,
   options: Readonly<Omit<ColorGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
-): ColorGradeAdjustment {
+): void {
   const exposure = Math.pow(2, options.exposure ?? 0);
   const brightness = options.brightness ?? 0;
   const contrast = options.contrast ?? 1;
@@ -45,7 +59,6 @@ export function createColorGradeAdjustment(
     out[1] = clamp01(cg);
     out[2] = clamp01(cb);
   };
-  const out = allocateEntity<ColorGradeAdjustment>();
   initializeColorLutAdjustment(out, 'ColorGradeAdjustment', transform);
   out.exposure = options.exposure ?? 0;
   out.brightness = options.brightness ?? 0;
@@ -56,7 +69,6 @@ export function createColorGradeAdjustment(
   out.lift = options.lift ?? 0x000000ff;
   out.gamma = options.gamma ?? 0x808080ff;
   out.gain = options.gain ?? 0xffffffff;
-  return finishEntity(out);
 }
 
 function clamp01(v: number): number {

@@ -3,7 +3,6 @@ import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contrac
 import type {
   Accelerator,
   CreateGlobalShortcutOutcome,
-  EntityConstruction,
   GlobalShortcut,
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,

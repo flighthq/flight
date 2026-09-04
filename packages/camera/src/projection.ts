@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
-import type { Entity, Matrix4Like } from '@flighthq/types/contract';
+import type { Entity, Matrix4Like, EntityConstruction } from '@flighthq/types/contract';
 import type {
   OrthographicProjection,
   OrthographicProjectionOptions,
@@ -9,28 +9,19 @@ import type {
   Projection,
 } from '@flighthq/types/contract';
 
-// Builds an orthographic projection descriptor from explicit view-volume half-extents (in
-// view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the
-// clip-plane distances live on the owning Camera3D, not the projection.
 export function createOrthographicProjection(
   opts: Readonly<OrthographicProjectionOptions>,
 ): OrthographicProjection & Entity {
   const out = allocateEntity<OrthographicProjection & Entity>();
-  out.halfHeight = opts.halfHeight;
-  out.halfWidth = opts.halfWidth;
-  out.kind = 'orthographic';
+  initializeOrthographicProjection(out, opts);
   return finishEntity(out);
 }
 
-// Builds a perspective projection descriptor from a vertical field of view (radians) and a
-// viewport aspect ratio (width / height). The clip-plane distances live on the owning Camera3D.
 export function createPerspectiveProjection(
   opts: Readonly<PerspectiveProjectionOptions>,
 ): PerspectiveProjection & Entity {
   const out = allocateEntity<PerspectiveProjection & Entity>();
-  out.aspect = opts.aspect ?? 1;
-  out.fovY = opts.fovY;
-  out.kind = 'perspective';
+  initializePerspectiveProjection(out, opts);
   return finishEntity(out);
 }
 
@@ -43,6 +34,29 @@ export function getOrthographicProjectionTexelSize(
   pixelHeight: number,
 ): number {
   return Math.max((projection.halfWidth * 2) / pixelWidth, (projection.halfHeight * 2) / pixelHeight);
+}
+
+// Builds an orthographic projection descriptor from explicit view-volume half-extents (in
+// view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the
+// clip-plane distances live on the owning Camera3D, not the projection.
+export function initializeOrthographicProjection(
+  out: EntityConstruction<OrthographicProjection & Entity>,
+  opts: Readonly<OrthographicProjectionOptions>,
+): void {
+  out.halfHeight = opts.halfHeight;
+  out.halfWidth = opts.halfWidth;
+  out.kind = 'orthographic';
+}
+
+// Builds a perspective projection descriptor from a vertical field of view (radians) and a
+// viewport aspect ratio (width / height). The clip-plane distances live on the owning Camera3D.
+export function initializePerspectiveProjection(
+  out: EntityConstruction<PerspectiveProjection & Entity>,
+  opts: Readonly<PerspectiveProjectionOptions>,
+): void {
+  out.aspect = opts.aspect ?? 1;
+  out.fovY = opts.fovY;
+  out.kind = 'perspective';
 }
 
 // True when the projection is an orthographic descriptor. Narrows the discriminated union.

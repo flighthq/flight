@@ -8,24 +8,35 @@ export function addCameraShakeTrauma(shake: CameraShake, amount: number): void {
 
 export function createCameraShake(options?: Readonly<CameraShakeOptions>): CameraShake {
   const out = allocateEntity<CameraShake>();
+  initializeCameraShake(out, options);
+  return finishEntity(out);
+}
+
+export function createCameraShakeOffset(): CameraShakeOffset {
+  const out = allocateEntity<CameraShakeOffset>();
+  initializeCameraShakeOffset(out);
+  return finishEntity(out);
+}
+
+export function initializeCameraShake(
+  out: EntityConstruction<CameraShake>,
+  options?: Readonly<CameraShakeOptions>,
+): void {
   out.decay = options?.decay ?? 1.5;
   out.frequency = options?.frequency ?? 15;
   out.rotationAmplitude = options?.rotationAmplitude ?? 3;
   out.time = 0;
   out.translationAmplitude = options?.translationAmplitude ?? 0.5;
   out.trauma = 0;
-  return finishEntity(out);
 }
 
-export function createCameraShakeOffset(): CameraShakeOffset {
-  const out = allocateEntity<CameraShakeOffset>();
+export function initializeCameraShakeOffset(out: EntityConstruction<CameraShakeOffset>): void {
   out.rotationX = 0;
   out.rotationY = 0;
   out.rotationZ = 0;
   out.x = 0;
   out.y = 0;
   out.z = 0;
-  return finishEntity(out);
 }
 
 export function resetCameraShake(shake: CameraShake): void {

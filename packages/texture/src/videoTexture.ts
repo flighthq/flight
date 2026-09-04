@@ -1,7 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
-  EntityConstruction,
   ImageResource,
   Matrix3Like,
   Texture,

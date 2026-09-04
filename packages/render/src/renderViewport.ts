@@ -26,14 +26,24 @@ export function computeRenderProxyWorldBounds(
   return true;
 }
 
-// Allocates and returns a new RenderViewport2D with the given screen-space region.
 export function createRenderViewport2D(x: number, y: number, width: number, height: number): RenderViewport2D {
   const out = allocateEntity<RenderViewport2D>();
+  initializeRenderViewport2D(out, x, y, width, height);
+  return finishEntity(out);
+}
+
+// Allocates and returns a new RenderViewport2D with the given screen-space region.
+export function initializeRenderViewport2D(
+  out: EntityConstruction<RenderViewport2D>,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
   out.height = height;
   out.width = width;
   out.x = x;
   out.y = y;
-  return finishEntity(out);
 }
 
 // Returns true when `source` may be visible within `viewport`. Conservative: returns true when

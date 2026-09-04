@@ -11,16 +11,20 @@ import type {
   TextFormatListMarker,
 } from '@flighthq/types/contract';
 
+export function createMarkupTagRegistry(): MarkupTagRegistry {
+  const out = allocateEntity<MarkupTagRegistry>();
+  initializeMarkupTagRegistry(out);
+  return finishEntity(out);
+}
+
 /**
  * Creates an empty markup tag registry — the meaning layer `parseTextMarkup` composes over the parse
  * layer. Register handlers with `registerMarkupTag`, or populate the standard `htmlText` dialect with
  * `registerStandardMarkupTags`. The registered set of tag names is the supported dialect; a custom
  * registry that omits the standard tags lets them tree-shake out.
  */
-export function createMarkupTagRegistry(): MarkupTagRegistry {
-  const out = allocateEntity<MarkupTagRegistry>();
+export function initializeMarkupTagRegistry(out: EntityConstruction<MarkupTagRegistry>): void {
   out.handlers = new Map();
-  return finishEntity(out);
 }
 
 /**

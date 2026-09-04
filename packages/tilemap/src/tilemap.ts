@@ -57,16 +57,8 @@ export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
 }
 
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
-  const columns = data?.columns ?? 0;
-  const rows = data?.rows ?? 0;
   const out = allocateEntity<TilemapData>();
-  out.atlas = data?.atlas ?? null;
-  out.columns = columns;
-  out.materialData = data?.materialData ?? null;
-  out.rows = rows;
-  out.tileHeight = data?.tileHeight ?? 0;
-  out.tileWidth = data?.tileWidth ?? 0;
-  out.tiles = data?.tiles ?? new Int16Array(columns * rows).fill(-1);
+  initializeTilemapData(out, data);
   return finishEntity(out);
 }
 
@@ -76,9 +68,7 @@ export function createTilemapRuntime(): TilemapRuntime {
 
 export function createTilemapSignals(): TilemapSignals {
   const out = allocateEntity<TilemapSignals>();
-  out.onCleared = createSignal();
-  out.onTileChanged = createSignal();
-  out.onTilesChanged = createSignal();
+  initializeTilemapSignals(out);
   return finishEntity(out);
 }
 
@@ -180,6 +170,27 @@ export function getTilemapTileRect(out: Rectangle, source: Readonly<Tilemap>, co
   out.width = tileWidth;
   out.height = tileHeight;
   return true;
+}
+
+export function initializeTilemapData(
+  out: EntityConstruction<TilemapData>,
+  data?: Readonly<Partial<TilemapData>>,
+): void {
+  const columns = data?.columns ?? 0;
+  const rows = data?.rows ?? 0;
+  out.atlas = data?.atlas ?? null;
+  out.columns = columns;
+  out.materialData = data?.materialData ?? null;
+  out.rows = rows;
+  out.tileHeight = data?.tileHeight ?? 0;
+  out.tileWidth = data?.tileWidth ?? 0;
+  out.tiles = data?.tiles ?? new Int16Array(columns * rows).fill(-1);
+}
+
+export function initializeTilemapSignals(out: EntityConstruction<TilemapSignals>): void {
+  out.onCleared = createSignal();
+  out.onTileChanged = createSignal();
+  out.onTilesChanged = createSignal();
 }
 
 export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): void {

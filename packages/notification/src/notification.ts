@@ -37,6 +37,7 @@ import type {
   NotificationSubscriptionDisposeOutcome,
   ScheduledNotification,
   Signal,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export async function attachNotificationActionSubscription(
@@ -183,25 +184,19 @@ export function createNotificationReplySubscription(): NotificationReplySubscrip
   });
 }
 
-// Provider-contract constructor. Provider-local native keys never enter this public Entity.
 export function createNotificationResource(id: string, title: string, tag: string = ''): Notification {
   const out = allocateEntity<Notification>();
-  out.id = id;
-  out.tag = tag;
-  out.title = title;
+  initializeNotificationResource(out, id, title, tag);
   return finishEntity(out);
 }
 
-// Provider-contract constructor for one pending native schedule.
 export function createScheduledNotificationResource(
   id: string,
   request: Readonly<NotificationRequest>,
   schedule: Readonly<NotificationSchedule>,
 ): ScheduledNotification {
   const out = allocateEntity<ScheduledNotification>();
-  out.id = id;
-  out.request = request;
-  out.schedule = schedule;
+  initializeScheduledNotificationResource(out, id, request, schedule);
   return finishEntity(out);
 }
 
@@ -281,6 +276,30 @@ export function getNotificationPermission(
 
 export function getPendingNotifications(host: HasNotificationScheduling): Promise<NotificationPendingListOutcome> {
   return host.notification.scheduling.getPendingNotifications();
+}
+
+// Provider-contract constructor. Provider-local native keys never enter this public Entity.
+export function initializeNotificationResource(
+  out: EntityConstruction<Notification>,
+  id: string,
+  title: string,
+  tag: string = '',
+): void {
+  out.id = id;
+  out.tag = tag;
+  out.title = title;
+}
+
+// Provider-contract constructor for one pending native schedule.
+export function initializeScheduledNotificationResource(
+  out: EntityConstruction<ScheduledNotification>,
+  id: string,
+  request: Readonly<NotificationRequest>,
+  schedule: Readonly<NotificationSchedule>,
+): void {
+  out.id = id;
+  out.request = request;
+  out.schedule = schedule;
 }
 
 export function requestNotificationPermission(

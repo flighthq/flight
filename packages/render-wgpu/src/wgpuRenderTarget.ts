@@ -102,8 +102,6 @@ export function beginWgpuRenderPass(
   );
 }
 
-// `format` defaults to the canvas format. Pass 'rgba16float' for an HDR effect target (bloom, tone
-// mapping). The chosen format is recorded on the target so the effect-target pool matches on it.
 export function createWgpuRenderTarget(
   state: WgpuRenderState,
   width: number,
@@ -112,44 +110,8 @@ export function createWgpuRenderTarget(
   colorSpace: RenderTargetColorSpace = 'srgb',
   sampleCount = 1,
 ): WgpuRenderTarget {
-  const device = state.device;
-  const resolved = resolveWgpuRenderTargetExtent(width, height, sampleCount);
-  const { height: h, sampleCount: samples, width: w } = resolved;
-  const maxDimension = device.limits.maxTextureDimension2D;
-  if (w > maxDimension || h > maxDimension) {
-    throw new Error(
-      `Wgpu render target sampleCount ${samples} requires a ${w}x${h} texture, exceeding maxTextureDimension2D ${maxDimension}.`,
-    );
-  }
-
-  const texture = device.createTexture({
-    size: [w, h, 1],
-    format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
-  });
-  const view = texture.createView();
-
-  const depthStencilTexture = device.createTexture({
-    size: [w, h, 1],
-    format: 'depth24plus-stencil8',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  const depthStencilView = depthStencilTexture.createView();
-
   const out = allocateEntity<WgpuRenderTarget>();
-  out.bindings = new Map();
-  out.mipLevelCount = 1;
-  out.colorSpace = colorSpace;
-  out.texture = texture;
-  out.view = view;
-  out.depthStencilTexture = depthStencilTexture;
-  out.depthStencilView = depthStencilView;
-  out.format = format;
-  out.sampleCount = samples;
-  out.clearColors = [];
-  out.clearDepth = 1;
-  out.width = w;
-  out.height = h;
+  initializeWgpuRenderTarget(out, state, width, height, format, colorSpace, sampleCount);
   return finishEntity(out);
 }
 
@@ -275,6 +237,53 @@ export function endWgpuRenderPass(state: WgpuRenderState): void {
  */
 export function getWgpuRenderTargetSupersampleScale(target: Readonly<WgpuRenderTarget>): number {
   return target.sampleCount === 4 ? WGPU_RENDER_TARGET_SUPERSAMPLE_SCALE : 1;
+}
+
+// `format` defaults to the canvas format. Pass 'rgba16float' for an HDR effect target (bloom, tone
+// mapping). The chosen format is recorded on the target so the effect-target pool matches on it.
+export function initializeWgpuRenderTarget(
+  out: EntityConstruction<WgpuRenderTarget>,
+  state: WgpuRenderState,
+  width: number,
+  height: number,
+  format: GPUTextureFormat = state.format,
+  colorSpace: RenderTargetColorSpace = 'srgb',
+  sampleCount = 1,
+): void {
+  const device = state.device;
+  const resolved = resolveWgpuRenderTargetExtent(width, height, sampleCount);
+  const { height: h, sampleCount: samples, width: w } = resolved;
+  const maxDimension = device.limits.maxTextureDimension2D;
+  if (w > maxDimension || h > maxDimension) {
+    throw new Error(
+      `Wgpu render target sampleCount ${samples} requires a ${w}x${h} texture, exceeding maxTextureDimension2D ${maxDimension}.`,
+    );
+  }
+  const texture = device.createTexture({
+    size: [w, h, 1],
+    format,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+  });
+  const view = texture.createView();
+  const depthStencilTexture = device.createTexture({
+    size: [w, h, 1],
+    format: 'depth24plus-stencil8',
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  const depthStencilView = depthStencilTexture.createView();
+  out.bindings = new Map();
+  out.mipLevelCount = 1;
+  out.colorSpace = colorSpace;
+  out.texture = texture;
+  out.view = view;
+  out.depthStencilTexture = depthStencilTexture;
+  out.depthStencilView = depthStencilView;
+  out.format = format;
+  out.sampleCount = samples;
+  out.clearColors = [];
+  out.clearDepth = 1;
+  out.width = w;
+  out.height = h;
 }
 
 export function resizeWgpuRenderTarget(

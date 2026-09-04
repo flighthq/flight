@@ -6,7 +6,14 @@ import type {
   CapacitorApi,
   CapacitorPosition,
   Entity,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): GeolocationBackend & Entity {
+  const out = allocateEntity<GeolocationBackend>();
+  initializeCapacitorGeolocationBackend(out, capacitor);
+  return finishEntity(out);
+}
 
 // Maps Flight's GeolocationBackend onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
 // permission calls are async and map directly. `watchPosition` is the one sync/async seam: the backend
@@ -15,13 +22,15 @@ import type {
 // id against the number once it resolves; clearWatch resolves the number back to that string (and cancels
 // a watch that was cleared before it even started). Capacitor has no permission-change event, so
 // subscribePermission is inert.
-export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): GeolocationBackend & Entity {
+export function initializeCapacitorGeolocationBackend(
+  out: EntityConstruction<GeolocationBackend>,
+  capacitor: CapacitorApi,
+): void {
   const geolocation = capacitor.geolocation;
   let nextWatchId = 1;
   // The Capacitor string callback id keyed by the numeric id handed to the caller; null while the async
   // watch registration is still in flight. A cleared-early entry is removed so its late id self-cancels.
   const watchIds = new Map<number, string | null>();
-  const out = allocateEntity<GeolocationBackend>();
   out.getCurrentPosition = async (options) => {
     try {
       return toGeoPosition(await geolocation.getCurrentPosition(options));
@@ -73,7 +82,6 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
       return { reason: 'operation-failed' as const };
     }
   };
-  return finishEntity(out);
 }
 
 function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {

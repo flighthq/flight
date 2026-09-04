@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
@@ -7,7 +7,6 @@ import type {
   CanvasRenderSurfaceOptions,
   CanvasTextureResolver,
   CanvasTextureResolvers,
-  EntityConstruction,
   RenderState,
   Texture,
   TextureSourceKind,

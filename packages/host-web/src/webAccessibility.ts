@@ -4,12 +4,21 @@ import type {
   AccessibilityLiveness,
   AccessibilityNode,
   AccessibilityState,
-  EntityWithoutRuntime,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createWebAccessibilityBackend(container?: HTMLElement): AccessibilityBackend {
+  const out = allocateEntity<AccessibilityBackend>();
+  initializeWebAccessibilityBackend(out, container);
+  return finishEntity(out);
+}
 
 // Builds a visually-hidden ARIA DOM provider. Construction is passive: the default root is created on
 // the first operation, so this factory and webHost are safe to import where no document exists.
-export function createWebAccessibilityBackend(container?: HTMLElement): AccessibilityBackend {
+export function initializeWebAccessibilityBackend(
+  out: EntityConstruction<AccessibilityBackend>,
+  container?: HTMLElement,
+): void {
   const elements = new Map<string, HTMLElement>();
   const liveRegions = new Map<AccessibilityLiveness, HTMLElement>();
   let destroyed = false;
@@ -17,7 +26,6 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
   let rootResolved = container !== undefined;
   // A supplied container remains caller-owned; a lazily created root belongs to this provider.
   const ownsRoot = container === undefined;
-
   function getRoot(): HTMLElement | null {
     if (rootResolved) return root;
     rootResolved = true;
@@ -29,12 +37,10 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     document.body.appendChild(root);
     return root;
   }
-
   function unavailableRootReason(): 'destroyed' | 'no-dom' | null {
     if (destroyed) return 'destroyed';
     return getRoot() === null ? 'no-dom' : null;
   }
-
   // Removes only identities this provider created. Borrowed roots may contain unrelated children,
   // including lookalikes with Flight data attributes, and therefore cannot be cleared root-wide.
   function removeOwnedAccessibilityDom(): void {
@@ -43,8 +49,6 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     elements.clear();
     liveRegions.clear();
   }
-
-  const out = allocateEntity<AccessibilityBackend>();
   out.announce = (message, liveness) => {
     const unavailable = unavailableRootReason();
     if (unavailable !== null) return { reason: unavailable };
@@ -102,7 +106,6 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     reparentAccessibilityElement(element, node.parentId, elements, overlayRoot);
     return _OK;
   };
-  return finishEntity(out);
 }
 
 // The stable provider composed into webHost. It remains passive until a command first needs its root.

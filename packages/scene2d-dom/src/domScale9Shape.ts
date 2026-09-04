@@ -30,8 +30,7 @@ const _remappedCommands: ShapeCommandToken[] = [];
 
 export function createDomScale9ShapeData(_state: RenderState, _source: Renderable): DomScale9ShapeData {
   const out = allocateEntity<DomScale9ShapeData>();
-  out.canvas = null;
-  out.context = null;
+  initializeDomScale9ShapeData(out, _state, _source);
   return finishEntity(out);
 }
 
@@ -85,6 +84,15 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   state.applyBlendMode?.(data.canvas, renderProxy.blendMode);
   setStrippedDomTransform(data.canvas, renderProxy.transform2D, source.scaleX, source.scaleY, state.roundPixels);
   setDomRendererElement(state, data.canvas);
+}
+
+export function initializeDomScale9ShapeData(
+  out: EntityConstruction<DomScale9ShapeData>,
+  _state: RenderState,
+  _source: Renderable,
+): void {
+  out.canvas = null;
+  out.context = null;
 }
 
 export const defaultDomScale9ShapeRenderer: Scene2DRenderer = {

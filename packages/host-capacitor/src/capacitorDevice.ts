@@ -8,8 +8,15 @@ import type {
   DeviceInfo,
   Entity,
   SafeAreaInsets,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
+
+export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBackend & Entity {
+  const out = allocateEntity<DeviceBackend>();
+  initializeCapacitorDeviceBackend(out, capacitor);
+  return finishEntity(out);
+}
 
 // Maps Flight's DeviceBackend onto Capacitor's `@capacitor/device`. DeviceBackend reads are synchronous
 // out-fills, whereas Capacitor's getInfo/getId are async, so the adapter prefetches both once at
@@ -18,7 +25,10 @@ import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/
 // webview), which map onto DeviceInfo; the fields it does not report (arch, memory, GPU, ABIs, board,
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
-export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBackend & Entity {
+export function initializeCapacitorDeviceBackend(
+  out: EntityConstruction<DeviceBackend>,
+  capacitor: CapacitorApi,
+): void {
   const device = capacitor.device;
   // Sync getters over async Capacitor: prefetch identity once and serve the cached values.
   let cachedInfo: CapacitorDeviceInfo | null = null;
@@ -39,7 +49,6 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     .catch(() => {
       /* leave '' */
     });
-  const out = allocateEntity<DeviceBackend>();
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
     // `@capacitor/device` reports no input capabilities; report the false sentinels.
     out.hasKeyboard = false;
@@ -98,7 +107,6 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     out.left = 0;
     return out;
   };
-  return finishEntity(out);
 }
 
 // Capacitor's platform is 'ios' | 'android' | 'web'; a mobile platform is a phone (no tablet signal),

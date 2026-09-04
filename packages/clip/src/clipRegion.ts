@@ -97,22 +97,12 @@ export function createClipRegionFromCircle(x: number, y: number, radius: number,
   return createClipRegionFromPath(path, tolerance);
 }
 
-// Builds a clip region from raw flattened contours (x,y pairs per sub-path) and a winding rule.
-// The caller is responsible for providing valid, closed contours. The bounding rect is computed
-// from the contour data; pass an empty array for an empty region. The contours are deep-copied so
-// later edits to the caller's array do not mutate the region — symmetry with the rest of create*.
 export function createClipRegionFromContours(
   contours: Readonly<ReadonlyArray<ReadonlyArray<number>>>,
   winding: PathWinding,
 ): ClipRegion {
-  const rect = createRectangle();
-  setRectangleToContoursBounds(rect, contours);
-  const owned = contours.map((c) => c.slice());
   const out = allocateEntity<ClipRegion>();
-  out.contours = owned;
-  out.rect = rect;
-  out.version = 0;
-  out.winding = winding;
+  initializeClipRegionFromContours(out, contours, winding);
   return finishEntity(out);
 }
 
@@ -124,30 +114,15 @@ export function createClipRegionFromEllipse(rectangle: Readonly<RectangleLike>, 
   return createClipRegionFromPath(path, tolerance);
 }
 
-// Builds a clip region from arbitrary path geometry. The path is flattened to contours now (cached on
-// the region; re-create to change), and the region's rect is set to their bounding box for culling and
-// the stencil cover quad. Realized by stencil-then-cover, so it handles concavity, holes, and
-// self-intersection per the path's own winding rule.
 export function createClipRegionFromPath(path: Readonly<Path>, tolerance = 0.25): ClipRegion {
-  const contours = flattenPath(path, tolerance);
-  const rect = createRectangle();
-  setRectangleToContoursBounds(rect, contours);
   const out = allocateEntity<ClipRegion>();
-  out.contours = contours;
-  out.rect = rect;
-  out.version = 0;
-  out.winding = path.winding;
+  initializeClipRegionFromPath(out, path, tolerance);
   return finishEntity(out);
 }
 
-// Builds a rectangular clip region — the allocation-light, scissor-eligible form. The rectangle is
-// copied so later edits to the caller's rectangle do not mutate the region; bump via invalidateClipRegion.
 export function createClipRegionFromRectangle(rectangle: Readonly<RectangleLike>): ClipRegion {
   const out = allocateEntity<ClipRegion>();
-  out.contours = null;
-  out.rect = cloneRectangle(rectangle);
-  out.version = 0;
-  out.winding = 'nonZero';
+  initializeClipRegionFromRectangle(out, rectangle);
   return finishEntity(out);
 }
 
@@ -195,6 +170,54 @@ export function getClipRegionBounds(out: RectangleLike, clip: Readonly<ClipRegio
   out.y = r.y;
   out.width = r.width;
   out.height = r.height;
+}
+
+// Builds a clip region from raw flattened contours (x,y pairs per sub-path) and a winding rule.
+// The caller is responsible for providing valid, closed contours. The bounding rect is computed
+// from the contour data; pass an empty array for an empty region. The contours are deep-copied so
+// later edits to the caller's array do not mutate the region — symmetry with the rest of create*.
+export function initializeClipRegionFromContours(
+  out: EntityConstruction<ClipRegion>,
+  contours: Readonly<ReadonlyArray<ReadonlyArray<number>>>,
+  winding: PathWinding,
+): void {
+  const rect = createRectangle();
+  setRectangleToContoursBounds(rect, contours);
+  const owned = contours.map((c) => c.slice());
+  out.contours = owned;
+  out.rect = rect;
+  out.version = 0;
+  out.winding = winding;
+}
+
+// Builds a clip region from arbitrary path geometry. The path is flattened to contours now (cached on
+// the region; re-create to change), and the region's rect is set to their bounding box for culling and
+// the stencil cover quad. Realized by stencil-then-cover, so it handles concavity, holes, and
+// self-intersection per the path's own winding rule.
+export function initializeClipRegionFromPath(
+  out: EntityConstruction<ClipRegion>,
+  path: Readonly<Path>,
+  tolerance = 0.25,
+): void {
+  const contours = flattenPath(path, tolerance);
+  const rect = createRectangle();
+  setRectangleToContoursBounds(rect, contours);
+  out.contours = contours;
+  out.rect = rect;
+  out.version = 0;
+  out.winding = path.winding;
+}
+
+// Builds a rectangular clip region — the allocation-light, scissor-eligible form. The rectangle is
+// copied so later edits to the caller's rectangle do not mutate the region; bump via invalidateClipRegion.
+export function initializeClipRegionFromRectangle(
+  out: EntityConstruction<ClipRegion>,
+  rectangle: Readonly<RectangleLike>,
+): void {
+  out.contours = null;
+  out.rect = cloneRectangle(rectangle);
+  out.version = 0;
+  out.winding = 'nonZero';
 }
 
 // Computes the intersection of two clip regions into out (alias-safe: out may be a or b).

@@ -29,8 +29,7 @@ export function createScale9SpriteData(
   data?: Readonly<Partial<Scale9SpriteData>>,
 ): Scale9SpriteData {
   const out = allocateEntity<Scale9SpriteData>();
-  out.scale9Grid = scale9Grid;
-  out.texture = data?.texture ?? null;
+  initializeScale9SpriteData(out, scale9Grid, data);
   return finishEntity(out);
 }
 
@@ -40,4 +39,13 @@ export function createScale9SpriteRuntime(): Scale9SpriteRuntime {
 
 export function getScale9SpriteRuntime(source: Readonly<Scale9Sprite>): Readonly<Scale9SpriteRuntime> {
   return getNode2DRuntime(source) as Scale9SpriteRuntime;
+}
+
+export function initializeScale9SpriteData(
+  out: EntityConstruction<Scale9SpriteData>,
+  scale9Grid: Readonly<RectangleLike>,
+  data?: Readonly<Partial<Scale9SpriteData>>,
+): void {
+  out.scale9Grid = scale9Grid;
+  out.texture = data?.texture ?? null;
 }

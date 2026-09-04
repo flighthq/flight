@@ -21,21 +21,32 @@ export function advanceAnimationCrossfade(state: AnimationCrossfade, dt: number)
   state.weight = state.curve(getLinearAnimationCrossfadeWeight(state.elapsed, state.duration));
 }
 
-// Allocates a two-player transition, target-correspondence layout, and reusable sample scratch.
-// Channels correspond when their opaque targetRef values have identity equality. A target present in
-// only one clip remains in the layout as a pass-through channel.
 export function createAnimationCrossfade(
   from: AnimationPlayer,
   to: AnimationPlayer,
   duration: number,
   opts?: Readonly<AnimationCrossfadeOptions>,
 ): AnimationCrossfade {
+  const out = allocateEntity<AnimationCrossfade>();
+  initializeAnimationCrossfade(out, from, to, duration, opts);
+  return finishEntity(out);
+}
+
+// Allocates a two-player transition, target-correspondence layout, and reusable sample scratch.
+// Channels correspond when their opaque targetRef values have identity equality. A target present in
+// only one clip remains in the layout as a pass-through channel.
+export function initializeAnimationCrossfade(
+  out: EntityConstruction<AnimationCrossfade>,
+  from: AnimationPlayer,
+  to: AnimationPlayer,
+  duration: number,
+  opts?: Readonly<AnimationCrossfadeOptions>,
+): void {
   const resolvedDuration = Math.max(0, duration);
   const curve = opts?.curve ?? linearAnimationCrossfadeCurve;
   const channels = createAnimationCrossfadeChannels(from, to);
   let sampleWidth = 0;
   for (const entry of channels) sampleWidth = Math.max(sampleWidth, entry.channel.track.components);
-  const out = allocateEntity<AnimationCrossfade>();
   out.channels = channels;
   out.curve = curve;
   out.duration = resolvedDuration;
@@ -45,7 +56,6 @@ export function createAnimationCrossfade(
   out.to = to;
   out.toSample = new Float32Array(sampleWidth);
   out.weight = curve(getLinearAnimationCrossfadeWeight(0, resolvedDuration));
-  return finishEntity(out);
 }
 
 // Reports when elapsed transition time has reached duration. Completion deliberately ignores the

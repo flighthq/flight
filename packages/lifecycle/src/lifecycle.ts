@@ -1,13 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendOperationExplanation, LifecycleOperation } from '@flighthq/types/contract';
+import type { BackendOperationExplanation, LifecycleOperation, EntityConstruction } from '@flighthq/types/contract';
 import type {
   AppLaunchKind,
   HasSystemLifecycle,
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
-  Entity,
   LifecycleBackend,
 } from '@flighthq/types/contract';
 
@@ -60,9 +59,69 @@ export function attachAppLifecycle(host: HasSystemLifecycle, app: AppLifecycle):
   });
 }
 
-// Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
 export function createAppLifecycle(): AppLifecycle {
   const out = allocateEntity<AppLifecycle>();
+  initializeAppLifecycle(out);
+  return finishEntity(out);
+}
+
+export function createWebLifecycleBackend(): LifecycleBackend {
+  const out = allocateEntity<LifecycleBackend>();
+  initializeWebLifecycleBackend(out);
+  return finishEntity(out);
+}
+
+// Stops delivery to `app` and forgets its subscription. Safe to call when not attached.
+export function detachAppLifecycle(app: AppLifecycle): void {
+  const unsubscribe = _subscriptions.get(app);
+  if (unsubscribe !== undefined) {
+    unsubscribe();
+    _subscriptions.delete(app);
+  }
+}
+
+// Releases `app` for garbage collection by detaching its backend subscription. The signals remain
+// plain GC-managed memory afterward.
+export function disposeAppLifecycle(app: AppLifecycle): void {
+  detachAppLifecycle(app);
+  _savedState.delete(app);
+}
+
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainLifecycleBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainLifecycleOperation(
+  host: HasSystemLifecycle,
+  operation: LifecycleOperation,
+): BackendOperationExplanation {
+  const implemented = typeof host.system.lifecycle[operation] === 'function';
+  return { implemented, layer: implemented ? 'host' : 'sentinel', operation };
+}
+
+// Returns the kind of launch — 'cold' (fresh process) or 'warm' (resumed from background). The web
+// backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
+// others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
+// getLaunchKind (legacy or minimal backends that pre-date the optional method).
+export function getAppLaunchKind(host: HasSystemLifecycle): AppLaunchKind {
+  const backend = host.system.lifecycle;
+  return backend.getLaunchKind !== undefined ? backend.getLaunchKind() : 'warm';
+}
+
+// Returns the current application lifecycle state from the active backend.
+export function getAppLifecycleState(host: HasSystemLifecycle): AppLifecycleState {
+  return host.system.lifecycle.getState();
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasLifecycleOperation(host: HasSystemLifecycle, operation: LifecycleOperation): boolean {
+  return explainLifecycleOperation(host, operation).implemented;
+}
+
+// Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
+export function initializeAppLifecycle(out: EntityConstruction<AppLifecycle>): void {
   out.onStateChange = createSignal();
   out.onResume = createSignal();
   out.onPause = createSignal();
@@ -70,7 +129,6 @@ export function createAppLifecycle(): AppLifecycle {
   out.onMemoryWarning = createSignal();
   out.onSaveState = createSignal();
   out.onRestoreState = createSignal();
-  return finishEntity(out);
 }
 
 // Builds the default web backend over document visibility, window focus/blur, and pagehide/pageshow
@@ -90,9 +148,8 @@ export function createAppLifecycle(): AppLifecycle {
 // trial / behind flags). The event detail carries a 'critical' pressure string; this backend maps
 // it to 'critical' and fires 'normal' on the subsequent resolution event when present. Falls back to
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
-export function createWebLifecycleBackend(): LifecycleBackend {
+export function initializeWebLifecycleBackend(out: EntityConstruction<LifecycleBackend>): void {
   let _windowFocused = typeof document !== 'undefined';
-  const out = allocateEntity<LifecycleBackend>();
   out.getState = (): AppLifecycleState => {
     if (typeof document === 'undefined') return 'active';
     if (document.hidden) return 'background';
@@ -165,56 +222,6 @@ export function createWebLifecycleBackend(): LifecycleBackend {
       window.removeEventListener('memory-pressure-relieved', onPressureRelieved);
     };
   };
-  return finishEntity(out);
-}
-
-// Stops delivery to `app` and forgets its subscription. Safe to call when not attached.
-export function detachAppLifecycle(app: AppLifecycle): void {
-  const unsubscribe = _subscriptions.get(app);
-  if (unsubscribe !== undefined) {
-    unsubscribe();
-    _subscriptions.delete(app);
-  }
-}
-
-// Releases `app` for garbage collection by detaching its backend subscription. The signals remain
-// plain GC-managed memory afterward.
-export function disposeAppLifecycle(app: AppLifecycle): void {
-  detachAppLifecycle(app);
-  _savedState.delete(app);
-}
-
-// Which layer implements `operation`, and whether anything real does — the per-operation answer
-// `explainLifecycleBackend` cannot give: that one reports a backend is installed, this one reports whether
-// THIS operation on it is a genuine implementation or the sentinel standing in.
-//
-// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
-// this report `true` for everything and say nothing at all.
-export function explainLifecycleOperation(
-  host: HasSystemLifecycle,
-  operation: LifecycleOperation,
-): BackendOperationExplanation {
-  const implemented = typeof host.system.lifecycle[operation] === 'function';
-  return { implemented, layer: implemented ? 'host' : 'sentinel', operation };
-}
-
-// Returns the kind of launch — 'cold' (fresh process) or 'warm' (resumed from background). The web
-// backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
-// others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
-// getLaunchKind (legacy or minimal backends that pre-date the optional method).
-export function getAppLaunchKind(host: HasSystemLifecycle): AppLaunchKind {
-  const backend = host.system.lifecycle;
-  return backend.getLaunchKind !== undefined ? backend.getLaunchKind() : 'warm';
-}
-
-// Returns the current application lifecycle state from the active backend.
-export function getAppLifecycleState(host: HasSystemLifecycle): AppLifecycleState {
-  return host.system.lifecycle.getState();
-}
-
-// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
-export function hasLifecycleOperation(host: HasSystemLifecycle, operation: LifecycleOperation): boolean {
-  return explainLifecycleOperation(host, operation).implemented;
 }
 
 // Returns true when the application is in the 'active' state (visible and focused).

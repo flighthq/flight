@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionDistance3D, CollisionShape3D } from '@flighthq/types/contract';
+import type { CollisionDistance3D, CollisionShape3D, EntityConstruction } from '@flighthq/types/contract';
 
 import { getCollisionSupport3D } from './collisionSupport3D';
 
@@ -32,6 +32,11 @@ import { getCollisionSupport3D } from './collisionSupport3D';
 
 export function createCollisionDistance3D(): CollisionDistance3D {
   const out = allocateEntity<CollisionDistance3D>();
+  initializeCollisionDistance3D(out);
+  return finishEntity(out);
+}
+
+export function initializeCollisionDistance3D(out: EntityConstruction<CollisionDistance3D>): void {
   out.distance = 0;
   out.directionX = 0;
   out.directionY = 0;
@@ -43,7 +48,6 @@ export function createCollisionDistance3D(): CollisionDistance3D {
   out.pointBY = 0;
   out.pointBZ = 0;
   out.overlapping = false;
-  return finishEntity(out);
 }
 
 // Writes the distance between `a` and `b`, the unit direction of closest approach pointing from B toward

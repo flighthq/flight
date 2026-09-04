@@ -69,6 +69,16 @@ export function createDomScene2DRectangle(
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): DomScene2DRectangle & Entity {
+  const out = allocateEntity<DomScene2DRectangle & Entity>();
+  initializeDomScene2DRectangle(out, rect, transform);
+  return finishEntity(out);
+}
+
+export function initializeDomScene2DRectangle(
+  out: EntityConstruction<DomScene2DRectangle & Entity>,
+  rect: Readonly<RectangleLike>,
+  transform: Readonly<MatrixLike>,
+): void {
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
   const x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
@@ -77,13 +87,10 @@ export function createDomScene2DRectangle(
   const y2 = transform.b * rect.x + transform.d * (rect.y + rect.height) + transform.ty;
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
-
-  const out = allocateEntity<DomScene2DRectangle & Entity>();
   out.bottom = Math.max(y0, y1, y2, y3);
   out.left = Math.min(x0, x1, x2, x3);
   out.right = Math.max(x0, x1, x2, x3);
   out.top = Math.min(y0, y1, y2, y3);
-  return finishEntity(out);
 }
 
 export function pushDomClipRectangle(

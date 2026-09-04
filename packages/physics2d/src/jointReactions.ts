@@ -6,13 +6,17 @@ import type {
   Physics2DWorld,
 } from '@flighthq/types/contract';
 
-// An all-zero reaction, for a caller that wants somewhere to write.
 export function createPhysics2DJointReaction(): Physics2DJointReaction {
   const out = allocateEntity<Physics2DJointReaction>();
+  initializePhysics2DJointReaction(out);
+  return finishEntity(out);
+}
+
+// An all-zero reaction, for a caller that wants somewhere to write.
+export function initializePhysics2DJointReaction(out: EntityConstruction<Physics2DJointReaction>): void {
   out.forceX = 0;
   out.forceY = 0;
   out.torque = 0;
-  return finishEntity(out);
 }
 
 // Writes the force and couple `joint` applied to body B on the step that just ran, in world space.

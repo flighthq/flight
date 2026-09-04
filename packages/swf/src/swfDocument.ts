@@ -41,7 +41,6 @@ import type {
   BoundsNodeAny,
   ClipRegion,
   EmbeddedImageResourceReference,
-  EntityWithoutRuntime,
   FrameScript,
   GlyphOutlineSource,
   ImageResourceReference,

@@ -62,20 +62,8 @@ export function createCanvasRenderTarget(
   width: number,
   height: number,
 ): CanvasRenderTarget {
-  const targetWidth = Math.max(1, Math.ceil(width));
-  const targetHeight = Math.max(1, Math.ceil(height));
-  const surface = acquireCanvasRenderSurface(creator, {
-    height: targetHeight,
-    pixelRatio: 1,
-    width: targetWidth,
-  });
-  if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
   const out = allocateEntity<CanvasRenderTarget>();
-  out.canvas = surface.canvas;
-  out.context = surface.context;
-  out.height = targetHeight;
-  out.surface = surface;
-  out.width = targetWidth;
+  initializeCanvasRenderTarget(out, creator, width, height);
   return finishEntity(out);
 }
 
@@ -94,6 +82,27 @@ export function endCanvasRenderPass(state: CanvasRenderState): void {
   if (saved === undefined) return;
   setCanvasRenderStateHandles(state, saved.canvas, saved.context);
   state.renderTransform2D = saved.renderTransform2D;
+}
+
+export function initializeCanvasRenderTarget(
+  out: EntityConstruction<CanvasRenderTarget>,
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+  width: number,
+  height: number,
+): void {
+  const targetWidth = Math.max(1, Math.ceil(width));
+  const targetHeight = Math.max(1, Math.ceil(height));
+  const surface = acquireCanvasRenderSurface(creator, {
+    height: targetHeight,
+    pixelRatio: 1,
+    width: targetWidth,
+  });
+  if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
+  out.canvas = surface.canvas;
+  out.context = surface.context;
+  out.height = targetHeight;
+  out.surface = surface;
+  out.width = targetWidth;
 }
 
 export function resizeCanvasRenderTarget(target: CanvasRenderTarget, width: number, height: number): void {

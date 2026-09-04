@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityRuntimeKey, ShellExternalBackend } from '@flighthq/types/contract';
+import type { ShellExternalBackend } from '@flighthq/types/contract';
 
 // Web has exactly one genuine Shell capability. A stable Entity lets every web Host share provider
 // identity without an enabler, reset, ambient selector, or native-operation stubs.

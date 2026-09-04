@@ -3,13 +3,6 @@ import { createVector2 } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
 import type { EntityConstruction, MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types/contract';
 
-// Allocate a `MotionPath` marker at the start of `path` (`distance` 0, `direction` forward).
-// `speed` is the traversal rate in path units per second (a magnitude; default 0 = stationary),
-// `loopMode` the end behavior (default `clamp`). The path's total arc length is measured once here
-// with `getPathLength(path, tolerance)` and cached in `length`; per-frame updates reuse it rather
-// than re-measuring. `tolerance` is the curve-flattening tolerance forwarded to the arc-length
-// measurement. This is the only allocating function; `updateMotionPath` and the seek helpers write
-// into an existing marker.
 export function createMotionPath(
   path: Path,
   speed = 0,
@@ -17,12 +10,7 @@ export function createMotionPath(
   tolerance?: number,
 ): MotionPath {
   const out = allocateEntity<MotionPath>();
-  out.direction = 1;
-  out.distance = 0;
-  out.length = getPathLength(path, tolerance);
-  out.loopMode = loopMode;
-  out.path = path;
-  out.speed = speed;
+  initializeMotionPath(out, path, speed, loopMode, tolerance);
   return finishEntity(out);
 }
 
@@ -34,8 +22,6 @@ export function getMotionPathHeading(mp: Readonly<MotionPath>): number {
   getPathTangentAtDistance(mp.path, mp.distance, scratchTangent);
   return Math.atan2(scratchTangent.y, scratchTangent.x);
 }
-
-const scratchTangent = createVector2();
 
 // Sample the marker's current world position and unit tangent, writing them into `pointOut` and
 // `tangentOut`. Returns `true` on success, `false` for an empty/degenerate path (in which case the
@@ -49,10 +35,34 @@ export function getMotionPathPosition(
   return getPathPositionAtDistance(mp.path, mp.distance, pointOut, tangentOut);
 }
 
+const scratchTangent = createVector2();
+
 // Return the marker's normalized progress along the path, `distance / length` in `[0, 1]`. A
 // zero-length path reports 0.
 export function getMotionPathProgress(mp: Readonly<MotionPath>): number {
   return mp.length > 0 ? mp.distance / mp.length : 0;
+}
+
+// Allocate a `MotionPath` marker at the start of `path` (`distance` 0, `direction` forward).
+// `speed` is the traversal rate in path units per second (a magnitude; default 0 = stationary),
+// `loopMode` the end behavior (default `clamp`). The path's total arc length is measured once here
+// with `getPathLength(path, tolerance)` and cached in `length`; per-frame updates reuse it rather
+// than re-measuring. `tolerance` is the curve-flattening tolerance forwarded to the arc-length
+// measurement. This is the only allocating function; `updateMotionPath` and the seek helpers write
+// into an existing marker.
+export function initializeMotionPath(
+  out: EntityConstruction<MotionPath>,
+  path: Path,
+  speed = 0,
+  loopMode: MotionPathLoopMode = 'clamp',
+  tolerance?: number,
+): void {
+  out.direction = 1;
+  out.distance = 0;
+  out.length = getPathLength(path, tolerance);
+  out.loopMode = loopMode;
+  out.path = path;
+  out.speed = speed;
 }
 
 // Seek the marker to an absolute arc-length `distance`, clamping to the valid `[0, length]` range.

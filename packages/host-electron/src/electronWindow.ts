@@ -8,7 +8,36 @@ import type {
   NativeWindowHandle,
   WindowAttachmentOwnership,
   WindowBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createElectronWindowBackend(
+  electron: ElectronApi,
+): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
+  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+  initializeElectronWindowBackend(out, electron);
+  return finishEntity(out);
+}
+
+// Returns the ApplicationWindow mapped to the given Electron BrowserWindow id, or null when unknown.
+// Allows tray/menu/protocol handlers to resolve a native window id back into a Flight window entity.
+export function getApplicationWindowForElectronId(id: number): ApplicationWindow | null {
+  return _windowsById.get(id) ?? null;
+}
+
+// The Electron BrowserWindow backing a Flight window opened via openWindow, or null if not (yet)
+// opened. The escape hatch a host app needs to do Electron-specific things the seam doesn't cover —
+// most importantly loadFile/loadURL to put content in the window. Host-adapter-only by design.
+export function getElectronBrowserWindow(win: Readonly<ApplicationWindow>): ElectronBrowserWindow | null {
+  return _windows.get(win as ApplicationWindow) ?? null;
+}
+
+// Returns the Electron BrowserWindow id for a Flight window, or -1 when the window is not mapped.
+// Useful for tray/menu click handlers that receive a native window id and need to resolve back to an
+// ApplicationWindow; pair with getApplicationWindowForElectronId.
+export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
+  return _windows.get(win as ApplicationWindow)?.id ?? -1;
+}
 
 // Maps Flight's WindowBackend onto Electron's BrowserWindow, one BrowserWindow per ApplicationWindow.
 // open() constructs the real OS window from WindowOptions and wires BrowserWindow OS events back to
@@ -16,10 +45,10 @@ import type {
 // user-driven state changes (minimize, move, focus, …) flow through the same signals the command
 // functions emit. Other methods look up the BrowserWindow and no-op when it is absent (already closed
 // or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the seam.
-export function createElectronWindowBackend(
+export function initializeElectronWindowBackend(
+  out: EntityConstruction<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>,
   electron: ElectronApi,
-): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
-  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+): void {
   out.attach = (win, handle, ownership) => {
     if (!isElectronBrowserWindow(handle)) return false;
     return attachElectronWindow(win, handle, ownership);
@@ -304,27 +333,6 @@ export function createElectronWindowBackend(
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
-}
-
-// Returns the ApplicationWindow mapped to the given Electron BrowserWindow id, or null when unknown.
-// Allows tray/menu/protocol handlers to resolve a native window id back into a Flight window entity.
-export function getApplicationWindowForElectronId(id: number): ApplicationWindow | null {
-  return _windowsById.get(id) ?? null;
-}
-
-// The Electron BrowserWindow backing a Flight window opened via openWindow, or null if not (yet)
-// opened. The escape hatch a host app needs to do Electron-specific things the seam doesn't cover —
-// most importantly loadFile/loadURL to put content in the window. Host-adapter-only by design.
-export function getElectronBrowserWindow(win: Readonly<ApplicationWindow>): ElectronBrowserWindow | null {
-  return _windows.get(win as ApplicationWindow) ?? null;
-}
-
-// Returns the Electron BrowserWindow id for a Flight window, or -1 when the window is not mapped.
-// Useful for tray/menu click handlers that receive a native window id and need to resolve back to an
-// ApplicationWindow; pair with getApplicationWindowForElectronId.
-export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
-  return _windows.get(win as ApplicationWindow)?.id ?? -1;
 }
 
 export function resetElectronWindowBackendForTest(): void {

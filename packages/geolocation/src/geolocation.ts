@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Entity,
   GeolocationAccessOutcome,
   GeolocationBackend,
   GeolocationErrorReason,
@@ -8,6 +7,7 @@ import type {
   GeoPosition,
   GeoPositionResult,
   HasSystemGeolocation,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: number): void {
@@ -16,6 +16,31 @@ export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: 
 
 export function createGeoPosition(): GeoPosition {
   const out = allocateEntity<GeoPosition>();
+  initializeGeoPosition(out);
+  return finishEntity(out);
+}
+
+export function createWebGeolocationBackend(): GeolocationBackend {
+  const out = allocateEntity<GeolocationBackend>();
+  initializeWebGeolocationBackend(out);
+  return finishEntity(out);
+}
+
+export function getCurrentGeoPosition(
+  host: Readonly<HasSystemGeolocation>,
+  options?: Readonly<GeolocationRequestOptions>,
+): Promise<GeoPosition | null> {
+  return host.system.geolocation.getCurrentPosition(options ?? _emptyOptions);
+}
+
+export function getCurrentGeoPositionResult(
+  host: Readonly<HasSystemGeolocation>,
+  options?: Readonly<GeolocationRequestOptions>,
+): Promise<GeoPositionResult> {
+  return host.system.geolocation.getCurrentPositionResult(options ?? _emptyOptions);
+}
+
+export function initializeGeoPosition(out: EntityConstruction<GeoPosition>): void {
   out.accuracy = 0;
   out.altitude = 0;
   out.altitudeAccuracy = 0;
@@ -25,11 +50,9 @@ export function createGeoPosition(): GeoPosition {
   out.longitude = 0;
   out.speed = 0;
   out.timestamp = 0;
-  return finishEntity(out);
 }
 
-export function createWebGeolocationBackend(): GeolocationBackend {
-  const out = allocateEntity<GeolocationBackend>();
+export function initializeWebGeolocationBackend(out: EntityConstruction<GeolocationBackend>): void {
   out.clearWatch = (id) => {
     const geo = getWebGeolocation();
     if (geo === null || typeof geo.clearWatch !== 'function') return;
@@ -109,21 +132,6 @@ export function createWebGeolocationBackend(): GeolocationBackend {
       return -1;
     }
   };
-  return finishEntity(out);
-}
-
-export function getCurrentGeoPosition(
-  host: Readonly<HasSystemGeolocation>,
-  options?: Readonly<GeolocationRequestOptions>,
-): Promise<GeoPosition | null> {
-  return host.system.geolocation.getCurrentPosition(options ?? _emptyOptions);
-}
-
-export function getCurrentGeoPositionResult(
-  host: Readonly<HasSystemGeolocation>,
-  options?: Readonly<GeolocationRequestOptions>,
-): Promise<GeoPositionResult> {
-  return host.system.geolocation.getCurrentPositionResult(options ?? _emptyOptions);
 }
 
 export function isGeolocationAvailable(host: Readonly<HasSystemGeolocation>): boolean {

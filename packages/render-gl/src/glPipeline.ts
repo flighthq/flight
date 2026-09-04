@@ -1,10 +1,26 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { GlPipeline, GlRenderRegistries } from '@flighthq/types/contract';
+import type { GlPipeline, GlRenderRegistries, EntityConstruction } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEmptyGlRegistries(): GlRenderRegistries {
   const out = allocateEntity<GlRenderRegistries>();
+  initializeEmptyGlRegistries(out);
+  return finishEntity(out);
+}
+
+export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
+  const pipeline = allocateEntity<GlPipeline>();
+  pipeline.registries = registries;
+  pipeline[EntityRuntimeKey] = { binding: null };
+  return pipeline;
+}
+
+export function getGlPipelineRegistries(pipeline: Readonly<GlPipeline>): Readonly<GlRenderRegistries> {
+  return pipeline.registries;
+}
+
+export function initializeEmptyGlRegistries(out: EntityConstruction<GlRenderRegistries>): void {
   out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
   out.compressedTextureDecoder = createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('GlCompressedTextureUpload', 'Unregistered');
@@ -22,16 +38,4 @@ export function createEmptyGlRegistries(): GlRenderRegistries {
   out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
   out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');
-  return finishEntity(out);
-}
-
-export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
-  const pipeline = allocateEntity<GlPipeline>();
-  pipeline.registries = registries;
-  pipeline[EntityRuntimeKey] = { binding: null };
-  return pipeline;
-}
-
-export function getGlPipelineRegistries(pipeline: Readonly<GlPipeline>): Readonly<GlRenderRegistries> {
-  return pipeline.registries;
 }

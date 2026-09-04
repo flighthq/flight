@@ -4,7 +4,6 @@ import type {
   Bitmap,
   ColorScaleBias,
   CompressedImageResource,
-  EntityConstruction,
   HasColorScaleBias,
   ImageResource,
   RenderProxy,

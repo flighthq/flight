@@ -120,21 +120,7 @@ export function clearTextureAtlasRegions(target: TextureAtlas): void {
 
 export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>): TextureAtlasRegion {
   const out = allocateEntity<TextureAtlasRegion>();
-  out.x = obj?.x ?? 0;
-  out.y = obj?.y ?? 0;
-  out.width = obj?.width ?? 0;
-  out.height = obj?.height ?? 0;
-  out.id = obj?.id ?? -1;
-  out.name = obj?.name ?? null;
-  out.originalHeight = obj?.originalHeight ?? null;
-  out.originalWidth = obj?.originalWidth ?? null;
-  out.pageName = obj?.pageName ?? null;
-  out.pivotX = obj?.pivotX ?? null;
-  out.pivotY = obj?.pivotY ?? null;
-  out.rotated = obj?.rotated ?? false;
-  out.sourceX = obj?.sourceX ?? 0;
-  out.sourceY = obj?.sourceY ?? 0;
-  out.trimmed = obj?.trimmed ?? false;
+  initializeTextureAtlasRegion(out, obj);
   return finishEntity(out);
 }
 
@@ -427,6 +413,27 @@ export function getTextureAtlasRegionUvQuad(
 // getTextureAtlasRegionByName — the predicate form, for callers that only need to know it is there.
 export function hasTextureAtlasRegion(atlas: Readonly<TextureAtlas>, name: string): boolean {
   return getTextureAtlasRegionByName(atlas, name) !== null;
+}
+
+export function initializeTextureAtlasRegion(
+  out: EntityConstruction<TextureAtlasRegion>,
+  obj?: Partial<TextureAtlasRegionLike>,
+): void {
+  out.x = obj?.x ?? 0;
+  out.y = obj?.y ?? 0;
+  out.width = obj?.width ?? 0;
+  out.height = obj?.height ?? 0;
+  out.id = obj?.id ?? -1;
+  out.name = obj?.name ?? null;
+  out.originalHeight = obj?.originalHeight ?? null;
+  out.originalWidth = obj?.originalWidth ?? null;
+  out.pageName = obj?.pageName ?? null;
+  out.pivotX = obj?.pivotX ?? null;
+  out.pivotY = obj?.pivotY ?? null;
+  out.rotated = obj?.rotated ?? false;
+  out.sourceX = obj?.sourceX ?? 0;
+  out.sourceY = obj?.sourceY ?? 0;
+  out.trimmed = obj?.trimmed ?? false;
 }
 
 // Removes the region with this id, returning true when one was removed and false when no region held

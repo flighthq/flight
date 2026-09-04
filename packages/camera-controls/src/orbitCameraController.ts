@@ -35,16 +35,34 @@ export function copyOrbitCameraController(out: OrbitCameraController, source: Re
   out.target.z = source.target.z;
 }
 
+export function createOrbitCameraController(options?: Readonly<OrbitCameraControllerOptions>): OrbitCameraController {
+  const out = allocateEntity<OrbitCameraController>();
+  initializeOrbitCameraController(out, options);
+  return finishEntity(out);
+}
+
+// Moves the goal distance (dolly / zoom) by `deltaDistance`, clamped to [minDistance, maxDistance].
+// Negative moves the eye toward the target.
+export function dollyOrbitCameraController(controller: OrbitCameraController, deltaDistance: number): void {
+  controller.goalDistance = clamp(
+    controller.goalDistance + deltaDistance,
+    controller.minDistance,
+    controller.maxDistance,
+  );
+}
+
 // Allocates an orbit controller. `target` defaults to the origin, `distance` to 10, angles to 0;
 // `polar` limits default to just inside ±90° so the look-at up vector never degenerates, `distance`
 // to (0.01, +∞), and `smoothTime` to 0 (no damping — the camera snaps to the goal each update). The
 // current and goal coordinates start equal, so a controller with no verb calls holds a fixed view.
-export function createOrbitCameraController(options?: Readonly<OrbitCameraControllerOptions>): OrbitCameraController {
+export function initializeOrbitCameraController(
+  out: EntityConstruction<OrbitCameraController>,
+  options?: Readonly<OrbitCameraControllerOptions>,
+): void {
   const azimuth = options?.azimuth ?? 0;
   const polar = options?.polar ?? 0;
   const distance = options?.distance ?? 10;
   const target = options?.target;
-  const out = allocateEntity<OrbitCameraController>();
   out.azimuth = azimuth;
   out.distance = distance;
   out.goalAzimuth = azimuth;
@@ -57,17 +75,6 @@ export function createOrbitCameraController(options?: Readonly<OrbitCameraContro
   out.polar = polar;
   out.smoothTime = options?.smoothTime ?? 0;
   out.target = createVector3(target?.x ?? 0, target?.y ?? 0, target?.z ?? 0);
-  return finishEntity(out);
-}
-
-// Moves the goal distance (dolly / zoom) by `deltaDistance`, clamped to [minDistance, maxDistance].
-// Negative moves the eye toward the target.
-export function dollyOrbitCameraController(controller: OrbitCameraController, deltaDistance: number): void {
-  controller.goalDistance = clamp(
-    controller.goalDistance + deltaDistance,
-    controller.minDistance,
-    controller.maxDistance,
-  );
 }
 
 // Slides the orbit `target` in a world-up plane: `deltaRight` along the camera's horizontal right axis

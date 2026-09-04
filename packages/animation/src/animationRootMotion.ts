@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { AnimationClip, AnimationRootMotionExtractor } from '@flighthq/types/contract';
 
 import { sampleAnimationTrack } from './animationTrack';

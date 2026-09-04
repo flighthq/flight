@@ -62,7 +62,7 @@ import {
   wakePhysics3DBody,
   writePhysics3DJointReaction,
 } from '@flighthq/physics3d/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 import type {
   CollisionColliderShape3D,
   Physics3DAbi,
@@ -113,14 +113,17 @@ import {
 } from './physics3DAbiLayout';
 
 export function createReferencePhysics3DAbi(): Physics3DAbi {
+  const out = allocateEntity<Physics3DAbi>();
+  initializeReferencePhysics3DAbi(out);
+  return finishEntity(out);
+}
+
+export function initializeReferencePhysics3DAbi(out: EntityConstruction<Physics3DAbi>): void {
   registerBuiltInCollisionSupports3D();
   registerBuiltInCollisionPairTests3D();
   registerBuiltInCollisionFaceQueries3D();
-
   const worlds = new Map<number, ReferencePhysics3DAbiWorld>();
   let nextWorldHandle = 1;
-
-  const out = allocateEntity<Physics3DAbi>();
   out.version = Physics3DAbiVersion;
   out.capabilities =
     Physics3DAbiCapability.ContactHooks |
@@ -227,7 +230,6 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
     writeShapeCastHit(state, out);
     return true;
   };
-  return finishEntity(out);
 }
 
 interface ReferencePhysics3DAbiCollider {

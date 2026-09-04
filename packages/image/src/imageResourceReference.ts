@@ -15,6 +15,7 @@ import type {
   ImageResourceReference,
   ImageResourceReferenceResolutionExplanation,
   TextureSource,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -23,22 +24,22 @@ import {
   ResourceResolutionState,
 } from '@flighthq/types/contract';
 
-// `bytes` is retained as the view the container handed over, not a copy: a parser carves an image payload
-// out of its source and the reference borrows it, so a document that never resolves an image never pays for
-// its pixels. `textures` starts empty and each waiting Texture subscribes itself.
 export function createEmbeddedImageResourceReference(
   bytes: Uint8Array,
   mimeType: string | null = null,
   alphaType: AlphaType = 'straight',
 ): EmbeddedImageResourceReference {
   const out = allocateEntity<EmbeddedImageResourceReference>();
-  out.alphaType = alphaType;
-  out.bytes = bytes;
-  out.failure = null;
-  out.kind = ImageResourceReferenceKind.Embedded;
-  out.mimeType = mimeType;
-  out.state = ResourceResolutionState.Unresolved;
-  out.textures = [];
+  initializeEmbeddedImageResourceReference(out, bytes, mimeType, alphaType);
+  return finishEntity(out);
+}
+
+export function createExternalImageResourceReference(
+  uri: string,
+  basePath: string | null = null,
+): ExternalImageResourceReference {
+  const out = allocateEntity<ExternalImageResourceReference>();
+  initializeExternalImageResourceReference(out, uri, basePath);
   return finishEntity(out);
 }
 
@@ -71,21 +72,6 @@ async function decodeEmbeddedImageResourceReference(
   return finishEntity(out);
 }
 
-export function createExternalImageResourceReference(
-  uri: string,
-  basePath: string | null = null,
-): ExternalImageResourceReference {
-  const out = allocateEntity<ExternalImageResourceReference>();
-  out.basePath = basePath;
-  out.failure = null;
-  out.kind = ImageResourceReferenceKind.External;
-  out.mimeType = null;
-  out.state = ResourceResolutionState.Unresolved;
-  out.textures = [];
-  out.uri = uri;
-  return finishEntity(out);
-}
-
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createImageResourceFailure(cause: unknown): ImageResourceFailure {
@@ -101,6 +87,17 @@ export function createImageResourceFailure(cause: unknown): ImageResourceFailure
   out.message = String(cause);
   out.name = null;
   return finishEntity(out);
+}
+
+export function disableImageBitmapComposition(): void {
+  _resolveImageBitmapComposition = null;
+}
+
+// Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain
+// its registry lookup or straight-decode branch. A format package calls this beside its composer
+// registrations; until then the nullable hook leaves the original hot path byte-for-byte tree-shakable.
+export function enableImageBitmapComposition(): void {
+  _resolveImageBitmapComposition = resolveImageBitmapComposition;
 }
 
 async function resolveImageBitmapComposition(
@@ -125,17 +122,6 @@ type ResolveImageBitmapComposition = (
 
 let _resolveImageBitmapComposition: ResolveImageBitmapComposition | null = null;
 
-export function disableImageBitmapComposition(): void {
-  _resolveImageBitmapComposition = null;
-}
-
-// Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain
-// its registry lookup or straight-decode branch. A format package calls this beside its composer
-// registrations; until then the nullable hook leaves the original hot path byte-for-byte tree-shakable.
-export function enableImageBitmapComposition(): void {
-  _resolveImageBitmapComposition = resolveImageBitmapComposition;
-}
-
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
 // and exposes no resolver runtime or raw thrown value.
 export function explainImageResourceReferenceResolution(
@@ -147,6 +133,38 @@ export function explainImageResourceReferenceResolution(
     retryable: ref.state === ResourceResolutionState.Failed,
     state: ref.state,
   };
+}
+
+// `bytes` is retained as the view the container handed over, not a copy: a parser carves an image payload
+// out of its source and the reference borrows it, so a document that never resolves an image never pays for
+// its pixels. `textures` starts empty and each waiting Texture subscribes itself.
+export function initializeEmbeddedImageResourceReference(
+  out: EntityConstruction<EmbeddedImageResourceReference>,
+  bytes: Uint8Array,
+  mimeType: string | null = null,
+  alphaType: AlphaType = 'straight',
+): void {
+  out.alphaType = alphaType;
+  out.bytes = bytes;
+  out.failure = null;
+  out.kind = ImageResourceReferenceKind.Embedded;
+  out.mimeType = mimeType;
+  out.state = ResourceResolutionState.Unresolved;
+  out.textures = [];
+}
+
+export function initializeExternalImageResourceReference(
+  out: EntityConstruction<ExternalImageResourceReference>,
+  uri: string,
+  basePath: string | null = null,
+): void {
+  out.basePath = basePath;
+  out.failure = null;
+  out.kind = ImageResourceReferenceKind.External;
+  out.mimeType = null;
+  out.state = ResourceResolutionState.Unresolved;
+  out.textures = [];
+  out.uri = uri;
 }
 
 // Returns a failed reference to the requestable state. Loading/resolved/unresolved references are unchanged

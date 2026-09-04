@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  EntityWithoutRuntime,
   GradientGlowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,

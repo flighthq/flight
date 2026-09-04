@@ -4,16 +4,22 @@ import type {
   ConnectivityConnectionType,
   ConnectivityReachabilityBackend,
   ConnectivityStatusBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type WebConnectivityBackend = ConnectivityStatusBackend & ConnectivityChangeBackend & ConnectivityReachabilityBackend;
 
+export function createWebConnectivityBackend(): WebConnectivityBackend {
+  const backend = allocateEntity<WebConnectivityBackend>();
+  initializeWebConnectivityBackend(backend);
+  return finishEntity(backend);
+}
+
 // A fresh provider is useful when a caller owns a shorter-lived web host. The full webHost below uses
 // the module singleton, and references that same Entity from all three truthful capability slots.
-export function createWebConnectivityBackend(): WebConnectivityBackend {
+export function initializeWebConnectivityBackend(backend: EntityConstruction<WebConnectivityBackend>): void {
   const releases = new Set<() => void>();
   let destroyed = false;
-  const backend = allocateEntity<WebConnectivityBackend>();
   backend.destroy = () => {
     if (destroyed) return;
     destroyed = true;
@@ -102,7 +108,6 @@ export function createWebConnectivityBackend(): WebConnectivityBackend {
     releases.add(release);
     return release;
   };
-  return finishEntity(backend);
 }
 
 export const webConnectivityBackend = createWebConnectivityBackend();

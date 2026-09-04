@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   HasDialogMessage,
   HasDialogPrompt,
   MessageDialogBackend,

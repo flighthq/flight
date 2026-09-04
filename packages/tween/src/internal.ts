@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   EasingFunction,
-  EntityConstruction,
   NumericProps,
   Tween,
   TweenManager,

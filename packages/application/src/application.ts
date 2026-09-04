@@ -6,7 +6,6 @@ import type {
   ApplicationStepOptions,
   ApplicationWindow,
   EntityConstruction,
-  EntityWithoutRuntime,
   HasAppExitSubscription,
   HasAppLoop,
   HasAppVisibilityQuery,
@@ -64,19 +63,7 @@ export function attachApplicationLifecycle(app: Application, win: ApplicationWin
 
 export function createApplication(): Application {
   const out = allocateEntity<Application>();
-  out.deltaTime = 0;
-  out.elapsedTime = 0;
-  out.frameCount = 0;
-  out.interpolationAlpha = 1;
-  out.isRunning = false;
-  out.onActivate = null;
-  out.onDeactivate = null;
-  out.onError = null;
-  out.onExit = createSignal();
-  out.onFixedUpdate = null;
-  out.onRender = createSignal();
-  out.onUpdate = createSignal();
-  out.windows = [];
+  initializeApplication(out);
   return finishEntity(out);
 }
 
@@ -139,6 +126,22 @@ export function getApplicationMainWindow(app: Readonly<Application>): Applicatio
 // in hot paths.
 export function getApplicationWindows(app: Readonly<Application>): readonly ApplicationWindow[] {
   return app.windows.slice();
+}
+
+export function initializeApplication(out: EntityConstruction<Application>): void {
+  out.deltaTime = 0;
+  out.elapsedTime = 0;
+  out.frameCount = 0;
+  out.interpolationAlpha = 1;
+  out.isRunning = false;
+  out.onActivate = null;
+  out.onDeactivate = null;
+  out.onError = null;
+  out.onExit = createSignal();
+  out.onFixedUpdate = null;
+  out.onRender = createSignal();
+  out.onUpdate = createSignal();
+  out.windows = [];
 }
 
 export function isApplicationRunning(app: Readonly<Application>): boolean {

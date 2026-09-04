@@ -6,8 +6,7 @@ export function createRequirementSet(
   requirements: readonly Readonly<Requirement>[],
 ): RequirementSet {
   const out = allocateEntity<RequirementSet>();
-  out.covers = distinctSorted(covers);
-  out.requirements = distinctSortedRequirements(requirements);
+  initializeRequirementSet(out, covers, requirements);
   return finishEntity(out);
 }
 
@@ -29,6 +28,15 @@ export function diffRequirementSets(
         !baselineKeys.has(requirementIdentity(requirement.facet, requirement.key)),
     ),
   );
+}
+
+export function initializeRequirementSet(
+  out: EntityConstruction<RequirementSet>,
+  covers: readonly RequirementFacet[],
+  requirements: readonly Readonly<Requirement>[],
+): void {
+  out.covers = distinctSorted(covers);
+  out.requirements = distinctSortedRequirements(requirements);
 }
 
 // A merged set is complete for a facet only when every input inspected it. Requirements themselves are

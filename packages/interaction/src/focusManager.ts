@@ -49,15 +49,12 @@ export function connectFocusNavigation<N extends NodeAny>(
   return () => disconnectSignal(input.onKeyDown, onKeyDown);
 }
 
-/** Allocates a focus manager for `root`. `wrap` (default `true`) cycles tab navigation past the ends. */
 export function createFocusManager<N extends NodeAny>(
   root: N,
   options: Readonly<FocusManagerOptions> = {},
 ): FocusManager<N> {
   const out = allocateEntity<FocusManager<N>>();
-  out.focused = null;
-  out.root = root;
-  out.wrap = options.wrap ?? true;
+  initializeFocusManager(out, root, options);
   return finishEntity(out);
 }
 
@@ -119,6 +116,17 @@ export function getFocusOrder<N extends NodeAny>(manager: FocusManager<N>, out: 
   collectFocusStops(manager.root, out as NodeAny[]);
   out.sort(byTabIndexOrder);
   return out;
+}
+
+/** Allocates a focus manager for `root`. `wrap` (default `true`) cycles tab navigation past the ends. */
+export function initializeFocusManager(
+  out: EntityConstruction<FocusManager<N>>,
+  root: N,
+  options: Readonly<FocusManagerOptions> = {},
+): void {
+  out.focused = null;
+  out.root = root;
+  out.wrap = options.wrap ?? true;
 }
 
 /** Whether `node` is the manager's currently focused node. */

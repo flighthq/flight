@@ -6,6 +6,7 @@ import type {
   MediaSessionBackend,
   MediaSessionMetadata,
   MediaSessionPlaybackState,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 const OK = { reason: 'ok' } as const;
@@ -16,12 +17,23 @@ const OPERATION_FAILED = { reason: 'operation-failed' } as const;
 const POSITION_STATE_UNAVAILABLE = { reason: 'position-state-unavailable' } as const;
 const _webMediaSessionOwnership = new WeakMap<MediaSession, WebMediaSessionOwnership>();
 
+export function createWebMediaSessionActionBackend(): MediaSessionActionBackend {
+  const out = allocateEntity<MediaSessionActionBackend>();
+  initializeWebMediaSessionActionBackend(out);
+  return finishEntity(out);
+}
+
+export function createWebMediaSessionBackend(): MediaSessionBackend {
+  const out = allocateEntity<MediaSessionBackend>();
+  initializeWebMediaSessionBackend(out);
+  return finishEntity(out);
+}
+
 // Web event provider. Subscribers to the same action share one native handler; different actions are
 // never registered speculatively. Each returned unsubscribe remains pinned to its exact session,
 // action, lane token and subscription record even if navigator.mediaSession later changes.
-export function createWebMediaSessionActionBackend(): MediaSessionActionBackend {
+export function initializeWebMediaSessionActionBackend(out: EntityConstruction<MediaSessionActionBackend>): void {
   const lanes = new Map<MediaSession, Map<MediaSessionAction, WebMediaSessionActionLane>>();
-
   const finishLane = (lane: WebMediaSessionActionLane): void => {
     for (const subscription of lane.subscriptions) subscription.detached = true;
     lane.subscriptions.clear();
@@ -32,7 +44,6 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
     if (ownership?.actions.get(lane.action) === lane.token) ownership.actions.delete(lane.action);
     if (ownership !== undefined) pruneWebMediaSessionOwnership(lane.session, ownership);
   };
-
   const release = (lane: WebMediaSessionActionLane, subscription: WebMediaSessionActionSubscription): void => {
     if (subscription.detached || !lane.subscriptions.has(subscription)) return;
     if (lane.subscriptions.size > 1) {
@@ -40,7 +51,6 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
       subscription.detached = true;
       return;
     }
-
     const ownership = _webMediaSessionOwnership.get(lane.session);
     if (ownership?.actions.get(lane.action) !== lane.token) {
       finishLane(lane);
@@ -51,7 +61,6 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
     assertSyncVoid(lane.session.setActionHandler(lane.action, null));
     finishLane(lane);
   };
-
   const backend: Pick<MediaSessionActionBackend, 'destroy' | 'subscribe'> = {
     destroy() {
       for (const sessionLanes of [...lanes.values()]) {
@@ -70,14 +79,12 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
         }
       }
     },
-
     subscribe(action, listener) {
       const session = getWebMediaSession();
       if (session === null || typeof session.setActionHandler !== 'function') return null;
       let sessionLanes = lanes.get(session);
       let lane = sessionLanes?.get(action);
       const ownership = getWebMediaSessionOwnership(session);
-
       // A newer provider replaced this provider's unreadable native handler. Its old subscription
       // records cannot truthfully resume, so retire that stale lane before registering a new one.
       if (lane !== undefined && ownership.actions.get(action) !== lane.token) {
@@ -85,7 +92,6 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
         lane = undefined;
         sessionLanes = lanes.get(session);
       }
-
       if (lane === undefined) {
         const token = {};
         lane = { action, session, subscriptions: new Set(), token };
@@ -113,25 +119,20 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
         sessionLanes.set(action, lane);
         lanes.set(session, sessionLanes);
       }
-
       const subscription: WebMediaSessionActionSubscription = { detached: false, listener };
       lane.subscriptions.add(subscription);
       return () => release(lane!, subscription);
     },
   };
-
-  const out = allocateEntity<MediaSessionActionBackend>();
   Object.assign(out, backend);
-  return finishEntity(out);
 }
 
 // Web command provider. Every publication is pinned to the exact MediaSession identity and an opaque
 // owner token. Readable lanes additionally compare the exact value before release; the opaque position
 // lane uses the strongest boundary the browser exposes, its provenance token.
-export function createWebMediaSessionBackend(): MediaSessionBackend {
+export function initializeWebMediaSessionBackend(out: EntityConstruction<MediaSessionBackend>): void {
   const owner = {};
   const publications = new Map<MediaSession, WebMediaSessionCommandPublication>();
-
   const backend: Pick<
     MediaSessionBackend,
     'clearMetadata' | 'clearPositionState' | 'destroy' | 'setMetadata' | 'setPlaybackState' | 'setPositionState'
@@ -156,7 +157,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       pruneWebMediaSessionOwnership(session, ownership);
       return OK;
     },
-
     clearPositionState() {
       const session = getWebMediaSession();
       if (session === null) return MEDIA_SESSION_UNAVAILABLE;
@@ -177,7 +177,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       pruneWebMediaSessionOwnership(session, ownership);
       return OK;
     },
-
     destroy() {
       for (const [session, publication] of publications) {
         const ownership = _webMediaSessionOwnership.get(session);
@@ -185,7 +184,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
           publications.delete(session);
           continue;
         }
-
         if (publication.metadata !== null) {
           const owned = ownership.metadata;
           if (owned?.owner !== owner) publication.metadata = null;
@@ -202,7 +200,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             }
           }
         }
-
         if (publication.playbackState !== null) {
           const owned = ownership.playbackState;
           if (owned?.owner !== owner) publication.playbackState = null;
@@ -219,7 +216,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             }
           }
         }
-
         if (publication.positionState) {
           if (ownership.positionState !== owner) publication.positionState = false;
           else if (typeof session.setPositionState === 'function') {
@@ -232,17 +228,14 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             }
           }
         }
-
         pruneWebMediaSessionOwnership(session, ownership);
         pruneCommandPublication(publications, session, publication);
       }
     },
-
     setMetadata(metadata: Readonly<MediaSessionMetadata>) {
       const session = getWebMediaSession();
       if (session === null) return MEDIA_SESSION_UNAVAILABLE;
       if (typeof MediaMetadata === 'undefined') return MEDIA_METADATA_UNAVAILABLE;
-
       let published: MediaMetadata;
       try {
         // Isolated deliberately: the specification assigns TypeError to invalid artwork URLs. Later
@@ -256,7 +249,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       } catch (error) {
         return error instanceof TypeError ? INVALID_ARTWORK_SOURCE : OPERATION_FAILED;
       }
-
       const ownership = getWebMediaSessionOwnership(session);
       const prior = ownership.metadata;
       const record = { owner, value: published };
@@ -273,7 +265,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       getCommandPublication(publications, session).metadata = published;
       return OK;
     },
-
     setPlaybackState(state: MediaSessionPlaybackState) {
       const session = getWebMediaSession();
       if (session === null) return MEDIA_SESSION_UNAVAILABLE;
@@ -301,7 +292,6 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       }
       return OK;
     },
-
     setPositionState(state) {
       const session = getWebMediaSession();
       if (session === null) return MEDIA_SESSION_UNAVAILABLE;
@@ -320,10 +310,7 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       return OK;
     },
   };
-
-  const out = allocateEntity<MediaSessionBackend>();
   Object.assign(out, backend);
-  return finishEntity(out);
 }
 
 export const webMediaSessionBackend = createWebMediaSessionBackend();

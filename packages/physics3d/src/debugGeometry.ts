@@ -14,16 +14,20 @@ import type {
 
 import { writeRigidBody3DWorldCenter } from './world';
 
+export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {
+  const out = allocateEntity<Physics3DDebugGeometry>();
+  initializePhysics3DDebugGeometry(out);
+  return finishEntity(out);
+}
+
 // Creates a reusable destination for `writePhysics3DDebugGeometry`. The arrays are capacity pools: the
 // writer advances counts and overwrites existing entries before growing them, so a steady scene stops
 // allocating after its first query.
-export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {
-  const out = allocateEntity<Physics3DDebugGeometry>();
+export function initializePhysics3DDebugGeometry(out: EntityConstruction<Physics3DDebugGeometry>): void {
   out.lines = [];
   out.lineCount = 0;
   out.spheres = [];
   out.sphereCount = 0;
-  return finishEntity(out);
 }
 
 // Extracts the world's visible constraint geometry without choosing a renderer.

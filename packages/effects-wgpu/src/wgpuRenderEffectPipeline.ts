@@ -29,6 +29,7 @@ import type {
   WgpuRenderEffectPipelineSkipGuard,
   WgpuRenderState,
   WgpuRenderTarget,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
@@ -78,18 +79,8 @@ export function createWgpuRenderEffectPipeline(
   state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
-  const requestedSampleCount = options.sampleCount ?? 1;
-  const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
-  if (requestedSampleCount !== appliedSampleCount) {
-    _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
-  }
   const out = allocateEntity<WgpuRenderEffectPipeline>();
-  out.options = { ...options, sampleCount: appliedSampleCount };
-  out.sceneTarget = null;
-  out.pool = createWgpuRenderTargetPool();
-  out.lutCache = createColorLutCache();
-  out.lutTexture = { texture: null, size: 0, lut: null };
-  out.velocityTexture = null;
+  initializeWgpuRenderEffectPipeline(out, state, options);
   return finishEntity(out);
 }
 
@@ -186,6 +177,24 @@ export function endWgpuRenderEffectPipeline(
 
   if (scratchA !== null) releaseWgpuRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseWgpuRenderTarget(pipeline.pool, scratchB);
+}
+
+export function initializeWgpuRenderEffectPipeline(
+  out: EntityConstruction<WgpuRenderEffectPipeline>,
+  state: WgpuRenderState,
+  options: Readonly<RenderEffectPipelineOptions> = {},
+): void {
+  const requestedSampleCount = options.sampleCount ?? 1;
+  const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
+  if (requestedSampleCount !== appliedSampleCount) {
+    _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
+  }
+  out.options = { ...options, sampleCount: appliedSampleCount };
+  out.sceneTarget = null;
+  out.pool = createWgpuRenderTargetPool();
+  out.lutCache = createColorLutCache();
+  out.lutTexture = { texture: null, size: 0, lut: null };
+  out.velocityTexture = null;
 }
 
 // The diagnostics seam for sample-count substitutions. Core stays free of warning strings and

@@ -1,10 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CreateRenderTextureOptions,
-  EntityConstruction,
-  RenderTarget,
-  RenderTexture,
-} from '@flighthq/types/contract';
+import type { CreateRenderTextureOptions, RenderTarget, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';

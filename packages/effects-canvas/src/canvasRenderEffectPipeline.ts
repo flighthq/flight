@@ -21,6 +21,7 @@ import type {
   CanvasRenderTargetPool,
   RenderEffect,
   RenderEffectPipelineOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass';
@@ -70,18 +71,13 @@ export function createCanvasRenderEffectPipeline(
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): CanvasRenderEffectPipeline {
   const out = allocateEntity<CanvasRenderEffectPipeline>();
-  out.options = { ...options };
-  out.sceneTarget = null;
-  out.pool = createCanvasRenderTargetPool(state.surface.creator);
-  out.lutCache = createColorLutCache();
+  initializeCanvasRenderEffectPipeline(out, state, options);
   return finishEntity(out);
 }
 
 export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
   const out = allocateEntity<CanvasRenderTargetPool>();
-  out.creator = creator;
-  out.free = [];
-  out.inUse = [];
+  initializeCanvasRenderTargetPool(out, creator);
   return finishEntity(out);
 }
 
@@ -163,6 +159,26 @@ export function endCanvasRenderEffectPipeline(
 
   if (scratchA !== null) releaseCanvasRenderTarget(pool, scratchA);
   if (scratchB !== null) releaseCanvasRenderTarget(pool, scratchB);
+}
+
+export function initializeCanvasRenderEffectPipeline(
+  out: EntityConstruction<CanvasRenderEffectPipeline>,
+  state: CanvasRenderState,
+  options: Readonly<RenderEffectPipelineOptions> = {},
+): void {
+  out.options = { ...options };
+  out.sceneTarget = null;
+  out.pool = createCanvasRenderTargetPool(state.surface.creator);
+  out.lutCache = createColorLutCache();
+}
+
+export function initializeCanvasRenderTargetPool(
+  out: EntityConstruction<CanvasRenderTargetPool>,
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+): void {
+  out.creator = creator;
+  out.free = [];
+  out.inUse = [];
 }
 
 // Returns a scratch canvas to the pool so a later acquire can reuse it. Pairs with

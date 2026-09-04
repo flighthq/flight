@@ -27,17 +27,9 @@ export function acquireGlShapeRasterSurface(
   return surface;
 }
 
-// Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
-// start empty: nothing is allocated until a strategy needs it.
 export function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
   const out = allocateEntity<GlShapeRendererData>();
-  out.surface = null;
-  out.lastContentId = -1;
-  out.lastPixelRatio = 0;
-  out.lastW = 0;
-  out.lastH = 0;
-  out.meshVersion = -1;
-  out.meshes = null;
+  initializeGlShapeData(out, _state, _source);
   return finishEntity(out);
 }
 
@@ -58,6 +50,22 @@ export function destroyGlShapeData(state: GlRenderState, data: RendererData): vo
 
 export function getGlShapeData(data: RendererData): GlShapeRendererData {
   return data as GlShapeRendererData;
+}
+
+// Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
+// start empty: nothing is allocated until a strategy needs it.
+export function initializeGlShapeData(
+  out: EntityConstruction<GlShapeRendererData>,
+  _state: GlRenderState,
+  _source: Renderable,
+): void {
+  out.surface = null;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.lastH = 0;
+  out.meshVersion = -1;
+  out.meshes = null;
 }
 
 export function toGlShapeRendererData(data: GlShapeRendererData): RendererData {

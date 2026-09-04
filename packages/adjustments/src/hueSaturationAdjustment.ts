@@ -1,14 +1,28 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorTransformFunction, EntityRuntimeKey, HueSaturationAdjustment } from '@flighthq/types/contract';
+import type {
+  ColorTransformFunction,
+  EntityRuntimeKey,
+  HueSaturationAdjustment,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment';
+
+export function createHueSaturationAdjustment(
+  options: Readonly<Omit<HueSaturationAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): HueSaturationAdjustment {
+  const out = allocateEntity<HueSaturationAdjustment>();
+  initializeHueSaturationAdjustment(out, options);
+  return finishEntity(out);
+}
 
 // Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip the old
 // hueSaturationEffect shader did — convert to HSL, rotate hue, scale saturation, offset lightness,
 // convert back — ported faithfully so the look is unchanged while the op now fuses into a baked LUT.
-export function createHueSaturationAdjustment(
+export function initializeHueSaturationAdjustment(
+  out: EntityConstruction<HueSaturationAdjustment>,
   options: Readonly<Omit<HueSaturationAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
-): HueSaturationAdjustment {
+): void {
   const hue = (options.hue ?? 0) / 360;
   const saturation = options.saturation ?? 1;
   const lightness = options.lightness ?? 0;
@@ -41,12 +55,10 @@ export function createHueSaturationAdjustment(
     out[1] = hue2rgb(p, q, h);
     out[2] = hue2rgb(p, q, h - 1 / 3);
   };
-  const out = allocateEntity<HueSaturationAdjustment>();
   initializeColorLutAdjustment(out, 'HueSaturationAdjustment', transform);
   out.hue = options.hue ?? 0;
   out.saturation = options.saturation ?? 1;
   out.lightness = options.lightness ?? 0;
-  return finishEntity(out);
 }
 
 function clamp01(v: number): number {

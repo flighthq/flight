@@ -1,7 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorBlindSimulationAdjustment, ColorBlindType, EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  ColorBlindSimulationAdjustment,
+  ColorBlindType,
+  EntityRuntimeKey,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
+
+export function createColorBlindSimulationAdjustment(
+  options: Readonly<Omit<ColorBlindSimulationAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},
+): ColorBlindSimulationAdjustment {
+  const out = allocateEntity<ColorBlindSimulationAdjustment>();
+  initializeColorBlindSimulationAdjustment(out, options);
+  return finishEntity(out);
+}
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization
 // (it was previously a descriptor-only effect with no pass). Each type bakes a fixed linear 3×3 RGB→RGB
@@ -12,9 +25,10 @@ import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 // (e.g. the `color-blind` npm package). The three dichromacies (protan/deutan/tritan -opia) are the full
 // simulations; the -omaly forms are the published partial (anomalous-trichromacy) matrices; achromatopsia
 // is full luma monochromacy and achromatomaly its partial form.
-export function createColorBlindSimulationAdjustment(
+export function initializeColorBlindSimulationAdjustment(
+  out: EntityConstruction<ColorBlindSimulationAdjustment>,
   options: Readonly<Omit<ColorBlindSimulationAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},
-): ColorBlindSimulationAdjustment {
+): void {
   const type: ColorBlindType = options.type ?? 'deuteranopia';
   const m = COLOR_BLIND_MATRICES[type];
   // prettier-ignore
@@ -24,10 +38,8 @@ export function createColorBlindSimulationAdjustment(
     m[6], m[7], m[8], 0, 0,
     0, 0, 0, 1, 0,
   ];
-  const out = allocateEntity<ColorBlindSimulationAdjustment>();
   initializeColorMatrixAdjustment(out, 'ColorBlindSimulationAdjustment', colorMatrix);
   out.type = type;
-  return finishEntity(out);
 }
 
 // Row-major 3×3 RGB→RGB coefficients per deficiency (HCIRN / Wickline simulation set).

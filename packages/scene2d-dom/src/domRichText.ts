@@ -15,7 +15,6 @@ import {
 import type {
   DomRenderState,
   DomTextInputOverlay,
-  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,

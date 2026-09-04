@@ -1,10 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionShape3D, CollisionTimeOfImpact3D } from '@flighthq/types/contract';
+import type { CollisionShape3D, CollisionTimeOfImpact3D, EntityConstruction } from '@flighthq/types/contract';
 
 import { createCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D';
 
 export function createCollisionTimeOfImpact3D(): CollisionTimeOfImpact3D {
   const out = allocateEntity<CollisionTimeOfImpact3D>();
+  initializeCollisionTimeOfImpact3D(out);
+  return finishEntity(out);
+}
+
+export function initializeCollisionTimeOfImpact3D(out: EntityConstruction<CollisionTimeOfImpact3D>): void {
   out.fraction = 0;
   out.x = 0;
   out.y = 0;
@@ -12,7 +17,6 @@ export function createCollisionTimeOfImpact3D(): CollisionTimeOfImpact3D {
   out.normalX = 0;
   out.normalY = 0;
   out.normalZ = 0;
-  return finishEntity(out);
 }
 
 // Finds the first moment two convex shapes touch under LINEAR TRANSLATION of both, as a fraction of the

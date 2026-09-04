@@ -1,11 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionBuiltInShape3D, CollisionRaycastHit3D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape3D, CollisionRaycastHit3D, EntityConstruction } from '@flighthq/types/contract';
 
 import { writeCollisionConvexHullFaces3D } from './convexHull3D';
 import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
 
 export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
   const out = allocateEntity<CollisionRaycastHit3D>();
+  initializeCollisionRaycastHit3D(out);
+  return finishEntity(out);
+}
+
+export function initializeCollisionRaycastHit3D(out: EntityConstruction<CollisionRaycastHit3D>): void {
   out.fraction = 0;
   out.x = 0;
   out.y = 0;
@@ -13,7 +18,6 @@ export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
   out.normalX = 0;
   out.normalY = 0;
   out.normalZ = 0;
-  return finishEntity(out);
 }
 
 // Writes the first exact intersection of `origin + direction * fraction` with `shape`. Direction need

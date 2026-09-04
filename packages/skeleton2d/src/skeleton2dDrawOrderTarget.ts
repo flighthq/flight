@@ -19,22 +19,12 @@ import {
 } from './skeleton2dAnimationTarget';
 import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards';
 
-/**
- * The binding target for a draw-order channel. Prefer this over a literal: `kind` is what the binder
- * dispatches on, and a target that omits it binds to nothing.
- *
- * `nodes` maps slot index to the display node that slot draws, `null` where it draws nothing. `orderList`
- * is the caller's own list — ordering is never node state — and the binder fills it rather than applying
- * it, leaving `applyNodeOrderList` an explicit step the caller takes once per frame.
- */
 export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits>(
   nodes: readonly (Node<Traits> | null)[],
   orderList: NodeOrderList<Traits>,
 ): Skeleton2DDrawOrderAnimationTarget<Traits> {
   const out = allocateEntity<Skeleton2DDrawOrderAnimationTarget<Traits>>();
-  out.kind = TargetKind.DrawOrder;
-  out.nodes = nodes;
-  out.orderList = orderList;
+  initializeSkeleton2DDrawOrderAnimationTarget(out, nodes, orderList);
   return finishEntity(out);
 }
 
@@ -74,6 +64,24 @@ export function createSkeleton2DDrawOrderChannel<Traits extends object = NodeTra
     }),
     createSkeleton2DDrawOrderAnimationTarget(nodes, orderList),
   );
+}
+
+/**
+ * The binding target for a draw-order channel. Prefer this over a literal: `kind` is what the binder
+ * dispatches on, and a target that omits it binds to nothing.
+ *
+ * `nodes` maps slot index to the display node that slot draws, `null` where it draws nothing. `orderList`
+ * is the caller's own list — ordering is never node state — and the binder fills it rather than applying
+ * it, leaving `applyNodeOrderList` an explicit step the caller takes once per frame.
+ */
+export function initializeSkeleton2DDrawOrderAnimationTarget(
+  out: EntityConstruction<Skeleton2DDrawOrderAnimationTarget<Traits>>,
+  nodes: readonly (Node<Traits> | null)[],
+  orderList: NodeOrderList<Traits>,
+): void {
+  out.kind = TargetKind.DrawOrder;
+  out.nodes = nodes;
+  out.orderList = orderList;
 }
 
 /**

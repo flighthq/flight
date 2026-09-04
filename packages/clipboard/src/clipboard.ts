@@ -4,7 +4,6 @@ import type {
   ClipboardBookmark,
   ClipboardWatch,
   ClipboardWriteItem,
-  EntityConstruction,
   HasClipboardBookmark,
   HasClipboardChange,
   HasClipboardFormats,

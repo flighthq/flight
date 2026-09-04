@@ -28,16 +28,21 @@ export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
   return finishEntity(out);
 }
 
+export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight {
+  const out = allocateEntity<AreaLight>();
+  initializeAreaLight(out, options);
+  return finishEntity(out);
+}
+
 // Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its facing
 // normal, `right`/`up` its half-extent axes (length encodes half-width/half-height). Color is
 // packed sRgb-albedo RGBA (0xrrggbbaa); defaults to opaque white at unit intensity, at the origin
 // facing down (0, -1, 0), unit-half-extent (1,0,0)/(0,0,1) rectangle, infinite range, shadows off.
-export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight {
+export function initializeAreaLight(out: EntityConstruction<AreaLight>, options?: Readonly<AreaLightOptions>): void {
   const position = options?.position;
   const direction = options?.direction;
   const right = options?.right;
   const up = options?.up;
-  const out = allocateEntity<AreaLight>();
   out.castsShadow = options?.castsShadow ?? false;
   out.color = options?.color ?? 0xffffffff;
   out.decay = options?.decay ?? 2;
@@ -57,7 +62,6 @@ export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight
   out.shadowNear = options?.shadowNear ?? 0.5;
   out.shadowStrength = options?.shadowStrength ?? 1;
   out.up = up ? cloneVector3(up) : createVector3(0, 0, 1);
-  return finishEntity(out);
 }
 
 // Sets the orientation of a rectangular area light by writing normalized `direction`, `right`,

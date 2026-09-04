@@ -3,7 +3,6 @@ import { createImageResourceFailure, resolveImageResourceReference } from '@flig
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  EntityConstruction,
   ImageResourceFailure,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,

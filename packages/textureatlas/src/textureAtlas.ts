@@ -4,12 +4,7 @@ import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flig
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   const out = allocateEntity<TextureAtlas>();
-  out.imageHeight = obj?.imageHeight ?? 0;
-  out.imageName = obj?.imageName ?? null;
-  out.imageWidth = obj?.imageWidth ?? 0;
-  out.regions = obj?.regions ?? [];
-  out.scale = obj?.scale ?? 1;
-  out.texture = obj?.texture ?? null;
+  initializeTextureAtlas(out, obj);
   return finishEntity(out);
 }
 
@@ -33,4 +28,13 @@ export function getTextureAtlasByteSize(atlas: Readonly<TextureAtlas>): number {
     return (image as Readonly<CompressedImageResource>).compressed.payload.byteLength;
   }
   return 0;
+}
+
+export function initializeTextureAtlas(out: EntityConstruction<TextureAtlas>, obj?: Partial<TextureAtlas>): void {
+  out.imageHeight = obj?.imageHeight ?? 0;
+  out.imageName = obj?.imageName ?? null;
+  out.imageWidth = obj?.imageWidth ?? 0;
+  out.regions = obj?.regions ?? [];
+  out.scale = obj?.scale ?? 1;
+  out.texture = obj?.texture ?? null;
 }

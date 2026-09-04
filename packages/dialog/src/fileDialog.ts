@@ -1,7 +1,6 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import type {
   DirectoryOpenDialogResult,
-  EntityConstruction,
   FileDialogHandle,
   FileDialogHandleOperations,
   FileDialogHandleRuntime,

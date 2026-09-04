@@ -101,14 +101,6 @@ export function buildWgpuPerMapMaterialBindGroup(
   return state.device.createBindGroup({ layout, entries });
 }
 
-// Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
-// Draw, family Material] over the canonical 48-byte PBR vertex. Depth-stencil is depth24plus-stencil8,
-// compare 'less', depth-write on (the scene pass owns depth; stencil inert); culling is back-face
-// unless doubleSided. The family passes its own materialBindGroupLayout + entry points (default
-// vs_main/fs_main). A lit family that PCF-samples the directional shadow map passes the shared
-// group(3) `shadowBindGroupLayout` (ensureWgpuShadowSampleLayout), which extends the pipeline layout to
-// [Frame, Draw, Material, Shadow] and flags the pipeline so beginWgpuMeshDraw binds group(3). A custom
-// family may instead pass `extraBindGroupLayout`; it occupies group(3), but the family binds it itself.
 export function createWgpuMeshPipeline(
   state: WgpuRenderState,
   options: Readonly<{
@@ -125,69 +117,9 @@ export function createWgpuMeshPipeline(
     topology?: GPUPrimitiveTopology;
   }>,
 ): WgpuMeshPipeline {
-  const device = state.device;
-  const layouts = ensureWgpuScene3DLayouts(state);
-  const sceneRuntime = getWgpuScene3DRuntime(state);
-  const skinning = sceneRuntime.skinningAdapter as WgpuSkinningAdapter | null;
-  const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
-  const bindGroupLayouts: GPUBindGroupLayout[] = [
-    layouts.frameBindGroupLayout,
-    options.skinned && skinning !== null ? skinning.getMeshDrawLayout(state) : layouts.drawBindGroupLayout,
-    options.materialBindGroupLayout,
-  ];
-  if (options.extraBindGroupLayout !== undefined) {
-    bindGroupLayouts.push(options.extraBindGroupLayout);
-  }
-  if (options.extraBindGroupLayout === undefined && options.pbrSampleBindGroupLayout !== undefined) {
-    bindGroupLayouts.push(options.pbrSampleBindGroupLayout);
-  } else if (options.extraBindGroupLayout === undefined) {
-    // Group order is positional: shadow (group 3) then IBL (group 4). Prefer pbrSampleBindGroupLayout
-    // for new PBR pipelines so they fit WebGPU's minimum maxBindGroups=4.
-    if (options.shadowBindGroupLayout !== undefined) bindGroupLayouts.push(options.shadowBindGroupLayout);
-    if (options.iblBindGroupLayout !== undefined) bindGroupLayouts.push(options.iblBindGroupLayout);
-  }
-  const layout = device.createPipelineLayout({ bindGroupLayouts });
-  const pipeline = device.createRenderPipeline({
-    layout,
-    vertex: {
-      module: options.module,
-      entryPoint: 'vs_main',
-      buffers:
-        options.skinned && skinning !== null
-          ? [...skinning.vertexBufferLayouts, INSTANCE_BUFFER_LAYOUT]
-          : [...VERTEX_BUFFER_LAYOUTS, INSTANCE_BUFFER_LAYOUT],
-    },
-    fragment: {
-      module: options.module,
-      entryPoint: 'fs_main',
-      targets: [
-        {
-          format: options.format,
-          blend: blendMode === null ? undefined : getWgpuBlendState(blendMode),
-        },
-      ],
-    },
-    primitive: {
-      topology: options.topology ?? 'triangle-list',
-      frontFace: 'ccw',
-      cullMode: options.doubleSided ? 'none' : 'back',
-    },
-    depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
-  });
   const out = allocateEntity<WgpuMeshPipeline>();
-  out.hasIblGroup = options.iblBindGroupLayout !== undefined;
-  out.hasPbrSampleGroup = options.pbrSampleBindGroupLayout !== undefined;
-  out.hasShadowGroup = options.shadowBindGroupLayout !== undefined;
-  out.materialBindGroupLayout = options.materialBindGroupLayout;
-  out.pipeline = pipeline;
-  out.skinned = options.skinned === true;
+  initializeWgpuMeshPipeline(out, state, options);
   return finishEntity(out);
-}
-
-// Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface
-// trailer (or none at all) is treated as opaque, matching the registry's own fallback.
-function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined): boolean {
-  return material != null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
 }
 
 // The shared per-draw tail for every mesh-material family: ring-allocates + writes the Draw uniform
@@ -252,6 +184,32 @@ export function drawWgpuMeshSubset(
   }
 }
 
+// Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface
+// trailer (or none at all) is treated as opaque, matching the registry's own fallback.
+function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined): boolean {
+  return material != null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+
+// Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on
+// first use. Every family pipeline declares the same group(0) layout, so this one bind group is valid
+// for all of them.
+export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
+  const scene = getWgpuScene3DRuntime(state);
+  if (scene.frameBuffer === null) {
+    scene.frameBuffer = state.device.createBuffer({
+      size: FRAME_UNIFORM_BYTES,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  }
+  if (scene.frameBindGroup === null) {
+    scene.frameBindGroup = state.device.createBindGroup({
+      layout: ensureWgpuScene3DLayouts(state).frameBindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: scene.frameBuffer } }],
+    });
+  }
+  return scene.frameBindGroup;
+}
+
 const instanceBuffers = new WeakMap<WgpuRenderState, { buffer: GPUBuffer; capacity: number }>();
 const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
@@ -277,26 +235,6 @@ function ensureWgpuInstanceBuffer(
   }
   state.device.queue.writeBuffer(cached.buffer, 0, source.buffer, source.byteOffset, required);
   return cached.buffer;
-}
-
-// Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on
-// first use. Every family pipeline declares the same group(0) layout, so this one bind group is valid
-// for all of them.
-export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
-  const scene = getWgpuScene3DRuntime(state);
-  if (scene.frameBuffer === null) {
-    scene.frameBuffer = state.device.createBuffer({
-      size: FRAME_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-  }
-  if (scene.frameBindGroup === null) {
-    scene.frameBindGroup = state.device.createBindGroup({
-      layout: ensureWgpuScene3DLayouts(state).frameBindGroupLayout,
-      entries: [{ binding: 0, resource: { buffer: scene.frameBuffer } }],
-    });
-  }
-  return scene.frameBindGroup;
 }
 
 // Resolves the shared IBL sample bind group a caller binds when its pipeline carries the
@@ -702,6 +640,24 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
   return scene.shadowSampleBindGroup;
 }
 
+// Resolves the shared group(3) shadow-sample bind-group layout (uniform light matrix + enabled flag, a
+// depth texture, and a comparison sampler), created once per state. Lit pipelines pass this to
+// createWgpuMeshPipeline; the shared bind group built by ensureWgpuShadowSampleBindGroup targets it, so
+// one shadow bind group serves every lit family's pipeline (pbr today).
+export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+  const scene = getWgpuScene3DRuntime(state);
+  if (scene.shadowSampleLayout === null) {
+    scene.shadowSampleLayout = state.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+      ],
+    });
+  }
+  return scene.shadowSampleLayout;
+}
+
 // Writes the one shadow uniform shared by the combined PBR sample group and the standalone
 // classic/toon shadow group. params = {enabled, pcfRadius, shadowBias, normalBiasWorld}; keeping this in one
 // writer prevents the two binding paths from silently disagreeing about the same 80-byte ABI.
@@ -725,24 +681,6 @@ function writeWgpuShadowSampleUniform(state: WgpuRenderState): WgpuScene3DShadow
   }
   state.device.queue.writeBuffer(scene.shadowUniformBuffer!, 0, values.buffer, 0, SHADOW_SAMPLE_UNIFORM_BYTES);
   return shadow;
-}
-
-// Resolves the shared group(3) shadow-sample bind-group layout (uniform light matrix + enabled flag, a
-// depth texture, and a comparison sampler), created once per state. Lit pipelines pass this to
-// createWgpuMeshPipeline; the shared bind group built by ensureWgpuShadowSampleBindGroup targets it, so
-// one shadow bind group serves every lit family's pipeline (pbr today).
-export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
-  const scene = getWgpuScene3DRuntime(state);
-  if (scene.shadowSampleLayout === null) {
-    scene.shadowSampleLayout = state.device.createBindGroupLayout({
-      entries: [
-        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
-      ],
-    });
-  }
-  return scene.shadowSampleLayout;
 }
 
 // Selects the ONE GPUSampler a material bind group uses, from its PRIMARY map's full sampler descriptor
@@ -782,6 +720,88 @@ export function getWgpuMeshPreludeWgsl(
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
 ): string {
   return skinned && skinning !== null ? skinning.extendMeshPrelude(WGPU_MESH_PRELUDE_WGSL) : WGPU_MESH_PRELUDE_WGSL;
+}
+
+// Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
+// Draw, family Material] over the canonical 48-byte PBR vertex. Depth-stencil is depth24plus-stencil8,
+// compare 'less', depth-write on (the scene pass owns depth; stencil inert); culling is back-face
+// unless doubleSided. The family passes its own materialBindGroupLayout + entry points (default
+// vs_main/fs_main). A lit family that PCF-samples the directional shadow map passes the shared
+// group(3) `shadowBindGroupLayout` (ensureWgpuShadowSampleLayout), which extends the pipeline layout to
+// [Frame, Draw, Material, Shadow] and flags the pipeline so beginWgpuMeshDraw binds group(3). A custom
+// family may instead pass `extraBindGroupLayout`; it occupies group(3), but the family binds it itself.
+export function initializeWgpuMeshPipeline(
+  out: EntityConstruction<WgpuMeshPipeline>,
+  state: WgpuRenderState,
+  options: Readonly<{
+    blended?: boolean;
+    doubleSided: boolean;
+    extraBindGroupLayout?: GPUBindGroupLayout;
+    format: GPUTextureFormat;
+    iblBindGroupLayout?: GPUBindGroupLayout;
+    materialBindGroupLayout: GPUBindGroupLayout;
+    module: GPUShaderModule;
+    pbrSampleBindGroupLayout?: GPUBindGroupLayout;
+    shadowBindGroupLayout?: GPUBindGroupLayout;
+    skinned?: boolean;
+    topology?: GPUPrimitiveTopology;
+  }>,
+): void {
+  const device = state.device;
+  const layouts = ensureWgpuScene3DLayouts(state);
+  const sceneRuntime = getWgpuScene3DRuntime(state);
+  const skinning = sceneRuntime.skinningAdapter as WgpuSkinningAdapter | null;
+  const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
+  const bindGroupLayouts: GPUBindGroupLayout[] = [
+    layouts.frameBindGroupLayout,
+    options.skinned && skinning !== null ? skinning.getMeshDrawLayout(state) : layouts.drawBindGroupLayout,
+    options.materialBindGroupLayout,
+  ];
+  if (options.extraBindGroupLayout !== undefined) {
+    bindGroupLayouts.push(options.extraBindGroupLayout);
+  }
+  if (options.extraBindGroupLayout === undefined && options.pbrSampleBindGroupLayout !== undefined) {
+    bindGroupLayouts.push(options.pbrSampleBindGroupLayout);
+  } else if (options.extraBindGroupLayout === undefined) {
+    // Group order is positional: shadow (group 3) then IBL (group 4). Prefer pbrSampleBindGroupLayout
+    // for new PBR pipelines so they fit WebGPU's minimum maxBindGroups=4.
+    if (options.shadowBindGroupLayout !== undefined) bindGroupLayouts.push(options.shadowBindGroupLayout);
+    if (options.iblBindGroupLayout !== undefined) bindGroupLayouts.push(options.iblBindGroupLayout);
+  }
+  const layout = device.createPipelineLayout({ bindGroupLayouts });
+  const pipeline = device.createRenderPipeline({
+    layout,
+    vertex: {
+      module: options.module,
+      entryPoint: 'vs_main',
+      buffers:
+        options.skinned && skinning !== null
+          ? [...skinning.vertexBufferLayouts, INSTANCE_BUFFER_LAYOUT]
+          : [...VERTEX_BUFFER_LAYOUTS, INSTANCE_BUFFER_LAYOUT],
+    },
+    fragment: {
+      module: options.module,
+      entryPoint: 'fs_main',
+      targets: [
+        {
+          format: options.format,
+          blend: blendMode === null ? undefined : getWgpuBlendState(blendMode),
+        },
+      ],
+    },
+    primitive: {
+      topology: options.topology ?? 'triangle-list',
+      frontFace: 'ccw',
+      cullMode: options.doubleSided ? 'none' : 'back',
+    },
+    depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
+  });
+  out.hasIblGroup = options.iblBindGroupLayout !== undefined;
+  out.hasPbrSampleGroup = options.pbrSampleBindGroupLayout !== undefined;
+  out.hasShadowGroup = options.shadowBindGroupLayout !== undefined;
+  out.materialBindGroupLayout = options.materialBindGroupLayout;
+  out.pipeline = pipeline;
+  out.skinned = options.skinned === true;
 }
 
 // Whether a cached material binding must rebuild its GPUBindGroup because a freshly-resolved view or the

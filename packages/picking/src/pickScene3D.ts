@@ -31,10 +31,15 @@ import type {
   Vector3,
 } from '@flighthq/types/contract';
 
-// Allocates a zeroed Scene3DHit. Handy for the `out` of `pickScene3D`/`pickScene3DWithRay3D` and for
-// growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.
 export function createScene3DHit(): Scene3DHit {
   const out = allocateEntity<Scene3DHit>();
+  initializeScene3DHit(out);
+  return finishEntity(out);
+}
+
+// Allocates a zeroed Scene3DHit. Handy for the `out` of `pickScene3D`/`pickScene3DWithRay3D` and for
+// growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.
+export function initializeScene3DHit(out: EntityConstruction<Scene3DHit>): void {
   out.distance = 0;
   out.node = null;
   out.normalX = 0;
@@ -47,7 +52,6 @@ export function createScene3DHit(): Scene3DHit {
   out.u = 0;
   out.v = 0;
   out.w = 0;
-  return finishEntity(out);
 }
 
 // Resolves the nearest Mesh hit by a camera pick ray through a scene, filling `out` and returning it,

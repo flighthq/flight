@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Sampler, SamplerLike } from '@flighthq/types/contract';
+import type { Sampler, SamplerLike, EntityConstruction } from '@flighthq/types/contract';
 
 // Allocates an independent Sampler with the same sampling state. Sampler holds only plain values,
 // so the clone shares nothing mutable with its source.
@@ -44,17 +44,9 @@ export function createPixelArtSampler(): Sampler {
   return createSampler({ magFilter: 'nearest', minFilter: 'nearest', mipmaps: false });
 }
 
-// Builds a Sampler with the AAA-default sampling state: clamp-to-edge on both axes, linear
-// magnification, trilinear minification, a generated mip chain, and anisotropy disabled (1). Pass
-// SamplerLike fields to override any of these.
 export function createSampler(opts?: Readonly<Partial<SamplerLike>>): Sampler {
   const out = allocateEntity<Sampler>();
-  out.anisotropy = opts?.anisotropy ?? 1;
-  out.magFilter = opts?.magFilter ?? 'linear';
-  out.minFilter = opts?.minFilter ?? 'linear-mipmap-linear';
-  out.mipmaps = opts?.mipmaps ?? true;
-  out.wrapU = opts?.wrapU ?? 'clamp-to-edge';
-  out.wrapV = opts?.wrapV ?? 'clamp-to-edge';
+  initializeSampler(out, opts);
   return finishEntity(out);
 }
 
@@ -80,4 +72,16 @@ export function equalsSampler(
       a.wrapU === b.wrapU &&
       a.wrapV === b.wrapV)
   );
+}
+
+// Builds a Sampler with the AAA-default sampling state: clamp-to-edge on both axes, linear
+// magnification, trilinear minification, a generated mip chain, and anisotropy disabled (1). Pass
+// SamplerLike fields to override any of these.
+export function initializeSampler(out: EntityConstruction<Sampler>, opts?: Readonly<Partial<SamplerLike>>): void {
+  out.anisotropy = opts?.anisotropy ?? 1;
+  out.magFilter = opts?.magFilter ?? 'linear';
+  out.minFilter = opts?.minFilter ?? 'linear-mipmap-linear';
+  out.mipmaps = opts?.mipmaps ?? true;
+  out.wrapU = opts?.wrapU ?? 'clamp-to-edge';
+  out.wrapV = opts?.wrapV ?? 'clamp-to-edge';
 }

@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, EntityConstruction, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
+import type { WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
 
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.

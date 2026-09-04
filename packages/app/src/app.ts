@@ -133,12 +133,7 @@ export function clearAppRecentDocuments(host: HasAppRecentDocuments): void {
 
 export function createApp(): App {
   const out = allocateEntity<App>();
-  out.onActivate = createSignal();
-  out.onAllWindowsClosed = createSignal();
-  out.onOpenFile = createSignal();
-  out.onQuitRequest = createSignal();
-  out.onReady = createSignal();
-  out.onSecondInstance = createSignal();
+  initializeApp(out);
   return finishEntity(out);
 }
 
@@ -205,6 +200,15 @@ export function hasAppSingleInstanceLock(host: HasAppSingleInstance): boolean {
 
 export function hideApp(host: HasAppHide): void {
   host.app.hide.hideApp();
+}
+
+export function initializeApp(out: EntityConstruction<App>): void {
+  out.onActivate = createSignal();
+  out.onAllWindowsClosed = createSignal();
+  out.onOpenFile = createSignal();
+  out.onQuitRequest = createSignal();
+  out.onReady = createSignal();
+  out.onSecondInstance = createSignal();
 }
 
 export function isAppHidden(host: HasAppHiddenQuery): boolean {

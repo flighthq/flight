@@ -776,6 +776,11 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
 
 export function createTextLayoutResult(): TextLayoutResult {
   const out = allocateEntity<TextLayoutResult>();
+  initializeTextLayoutResult(out);
+  return finishEntity(out);
+}
+
+export function initializeTextLayoutResult(out: EntityConstruction<TextLayoutResult>): void {
   out.groups = [];
   out.lineAscents = [];
   out.lineDescents = [];
@@ -785,7 +790,6 @@ export function createTextLayoutResult(): TextLayoutResult {
   out.numLines = 0;
   out.textHeight = 0;
   out.textWidth = 0;
-  return finishEntity(out);
 }
 
 export function isTextLayoutTruncated(layout: Readonly<TextLayoutResult>, params: Readonly<TextLayoutParams>): boolean {

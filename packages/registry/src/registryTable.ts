@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
-  EntityConstruction,
   KeyedTable,
   Kind,
   OrdinalTable,

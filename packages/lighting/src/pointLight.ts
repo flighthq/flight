@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3 } from '@flighthq/geometry/contract';
-import type { PointLight, PointLightOptions } from '@flighthq/types/contract';
+import type { PointLight, PointLightOptions, EntityConstruction } from '@flighthq/types/contract';
 import { PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a point light's data, including a fresh `position` vector.
@@ -25,12 +25,17 @@ export function clonePointLight(source: Readonly<PointLight>): PointLight {
   return finishEntity(out);
 }
 
+export function createPointLight(options?: Readonly<PointLightOptions>): PointLight {
+  const out = allocateEntity<PointLight>();
+  initializePointLight(out, options);
+  return finishEntity(out);
+}
+
 // Omnidirectional point light. `position` is world-space; intensity falls off with distance up
 // to `range` (-1 = infinite). Color is packed sRgb-albedo RGBA (0xrrggbbaa); defaults to opaque
 // white at unit intensity, at the origin, infinite range, shadows off.
-export function createPointLight(options?: Readonly<PointLightOptions>): PointLight {
+export function initializePointLight(out: EntityConstruction<PointLight>, options?: Readonly<PointLightOptions>): void {
   const position = options?.position;
-  const out = allocateEntity<PointLight>();
   out.castsShadow = options?.castsShadow ?? false;
   out.color = options?.color ?? 0xffffffff;
   out.decay = options?.decay ?? 2;
@@ -47,5 +52,4 @@ export function createPointLight(options?: Readonly<PointLightOptions>): PointLi
   out.shadowMapSize = options?.shadowMapSize ?? 1024;
   out.shadowNear = options?.shadowNear ?? 0.5;
   out.shadowStrength = options?.shadowStrength ?? 1;
-  return finishEntity(out);
 }

@@ -3,7 +3,6 @@ import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flig
 import type {
   AttachInputOptions,
   Entity,
-  EntityRuntimeKey,
   GamepadAxisKind,
   GamepadButtonKind,
   GamepadMappingKind,
@@ -22,6 +21,7 @@ import type {
   InputState,
   InputTextData,
   MouseWheelMode,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import {
   GamepadAxisKind as GamepadAxisKindValues,
@@ -239,6 +239,162 @@ export function connectInputStateToInputManager(state: InputState, manager: Inpu
   };
 }
 
+export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): InputKeyRepeatTimer {
+  const out = allocateEntity<InputKeyRepeatTimer>();
+  initializeInputKeyRepeatTimer(out, options);
+  return finishEntity(out);
+}
+
+export function createInputManager(): InputManager {
+  const out = allocateEntity<InputManager>();
+  initializeInputManager(out);
+  return finishEntity(out);
+}
+
+export function createInputSignals(): InputSignals {
+  const out = allocateEntity<InputSignals>();
+  initializeInputSignals(out);
+  return finishEntity(out);
+}
+
+export function createInputState(): InputState {
+  const out = allocateEntity<InputState>();
+  initializeInputState(out);
+  return finishEntity(out);
+}
+
+export function createWebInputIngressBackend(): InputIngressBackend & Entity {
+  const out = allocateEntity<InputIngressBackend & Entity>();
+  initializeWebInputIngressBackend(out);
+  return finishEntity(out);
+}
+
+export function detachGamepadInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kGamepadInput);
+}
+
+export function detachKeyboardInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kKeyboardInput);
+}
+
+export function detachPointerInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kPointerInput);
+}
+
+export function detachRelativePointerInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kRelativePointerInput);
+}
+
+export function detachTextInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kTextInput);
+}
+
+export function detachWheelInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kWheelInput);
+}
+
+/**
+ * Rolls the per-frame edge sets on `state`, clearing `justPressedKeys`,
+ * `justReleasedKeys`, `justPressedGamepadButtons`, and
+ * `justReleasedGamepadButtons`. Call this once at the end of each logical
+ * frame (or input-poll cycle) to prepare the edge sets for the next frame.
+ */
+export function endInputStateFrame(state: InputState): void {
+  state.justPressedKeys.clear();
+  state.justReleasedKeys.clear();
+  state.justPressedGamepadButtons.clear();
+  state.justReleasedGamepadButtons.clear();
+}
+
+/**
+ * Returns coalesced pointer event data for a `pointermove` event, iterating
+ * over the high-frequency intermediate positions captured since the last
+ * delivered event. Falls back to a single entry with the event itself when
+ * `getCoalescedEvents` is unavailable (e.g. in jsdom).
+ *
+ * The callback receives each coalesced `InputPointerData` in order. The
+ * payload object is reused across calls — do not retain a reference to it.
+ */
+export function getCoalescedInputPointerEvents(
+  event: PointerEvent,
+  callback: (data: Readonly<InputPointerData>) => void,
+): void {
+  const coalesced = typeof event.getCoalescedEvents === 'function' ? event.getCoalescedEvents() : null;
+  if (coalesced !== null && coalesced.length > 0) {
+    for (const e of coalesced) {
+      setInputPointerData(_pointerData, e, 0, 0);
+      callback(_pointerData);
+    }
+  } else {
+    setInputPointerData(_pointerData, event, 0, 0);
+    callback(_pointerData);
+  }
+}
+
+/**
+ * Returns the semantic name string (a `GamepadAxisKind`) for `index` in the
+ * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
+ * `index` is out of the standard range.
+ */
+export function getGamepadAxisName(mapping: GamepadMappingKind, index: number): GamepadAxisKind | null {
+  if (mapping !== 'standard') return null;
+  return _standardAxisNames[index] ?? null;
+}
+
+/**
+ * Returns the semantic name string (a `GamepadButtonKind`) for `index` in the
+ * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
+ * `index` is out of the standard range.
+ */
+export function getGamepadButtonName(mapping: GamepadMappingKind, index: number): GamepadButtonKind | null {
+  if (mapping !== 'standard') return null;
+  return _standardButtonNames[index] ?? null;
+}
+
+/**
+ * Returns the current value of a gamepad axis from `state`, or `0` if not recorded.
+ * `gamepad` is the gamepad index; `axis` is the axis index.
+ */
+export function getInputGamepadAxis(state: Readonly<InputState>, gamepad: number, axis: number): number {
+  return state.axisValues.get(gamepad * MAX_GAMEPAD_AXES + axis) ?? 0;
+}
+
+export function getInputIngressBackend(): InputIngressBackend {
+  return _customInputIngressBackend ?? _hostInputIngressBackend ?? _webInputIngressBackend;
+}
+
+export function getKeyCodeFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
+  const code = getKeyCodeFromDomKeyboardCode(event.code, event.location);
+  if (code !== KeyCode.UNKNOWN) return code;
+  if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
+  return keyCodesByKey[event.key] ?? KeyCode.UNKNOWN;
+}
+
+export function getKeyModifierFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
+  let modifier = KeyModifier.NONE;
+  if (event.altKey)
+    modifier |= event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_ALT : KeyModifier.LEFT_ALT;
+  if (event.ctrlKey)
+    modifier |=
+      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_CTRL : KeyModifier.LEFT_CTRL;
+  if (event.metaKey)
+    modifier |=
+      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_META : KeyModifier.LEFT_META;
+  if (event.shiftKey)
+    modifier |=
+      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_SHIFT : KeyModifier.LEFT_SHIFT;
+  if (event.getModifierState?.('CapsLock') === true) modifier |= KeyModifier.CAPS_LOCK;
+  if (event.getModifierState?.('NumLock') === true) modifier |= KeyModifier.NUM_LOCK;
+  return modifier;
+}
+
+export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL) return 'pixels';
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
+  return 'unknown';
+}
+
 /**
  * Creates a key-repeat timer for non-DOM sources (gamepad d-pad buttons,
  * virtual on-screen keys, native backends) that do not generate their own
@@ -259,17 +415,18 @@ export function connectInputStateToInputManager(state: InputState, manager: Inpu
  * timer.stop();
  * ```
  */
-export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): InputKeyRepeatTimer {
+export function initializeInputKeyRepeatTimer(
+  out: EntityConstruction<InputKeyRepeatTimer>,
+  options: Readonly<InputKeyRepeatOptions>,
+): void {
   let delayId = 0;
   let intervalId = 0;
-
   const stop = () => {
     clearTimeout(delayId);
     clearInterval(intervalId);
     delayId = 0;
     intervalId = 0;
   };
-
   const start = (callback: () => void) => {
     stop();
     callback();
@@ -278,16 +435,12 @@ export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOption
       intervalId = setInterval(callback, options.interval) as unknown as number;
     }, options.delay) as unknown as number;
   };
-
-  const out = allocateEntity<InputKeyRepeatTimer>();
   out.start = start;
   out.stop = stop;
-  return finishEntity(out);
 }
 
-export function createInputManager(): InputManager {
+export function initializeInputManager(out: EntityConstruction<InputManager>): void {
   const signals = createInputSignals();
-  const out = allocateEntity<InputManager>();
   out.enabled = true;
   out.onGamepadAxisMove = signals.onGamepadAxisMove;
   out.onGamepadButtonDown = signals.onGamepadButtonDown;
@@ -304,11 +457,9 @@ export function createInputManager(): InputManager {
   out.onTextEdit = signals.onTextEdit;
   out.onTextInput = signals.onTextInput;
   out.onWheel = signals.onWheel;
-  return finishEntity(out);
 }
 
-export function createInputSignals(): InputSignals {
-  const out = allocateEntity<InputSignals>();
+export function initializeInputSignals(out: EntityConstruction<InputSignals>): void {
   out.onGamepadAxisMove = createSignal();
   out.onGamepadButtonDown = createSignal();
   out.onGamepadButtonUp = createSignal();
@@ -324,7 +475,6 @@ export function createInputSignals(): InputSignals {
   out.onTextEdit = createSignal();
   out.onTextInput = createSignal();
   out.onWheel = createSignal();
-  return finishEntity(out);
 }
 
 /**
@@ -333,8 +483,7 @@ export function createInputSignals(): InputSignals {
  * `connectInputStateToInputManager`, and call `endInputStateFrame` once per
  * logical frame to roll the edge sets.
  */
-export function createInputState(): InputState {
-  const out = allocateEntity<InputState>();
+export function initializeInputState(out: EntityConstruction<InputState>): void {
   out.axisValues = new Map();
   out.gamepadButtonsDown = new Set();
   out.justPressedGamepadButtons = new Set();
@@ -343,12 +492,10 @@ export function createInputState(): InputState {
   out.justReleasedKeys = new Set();
   out.keysDown = new Set();
   out.pointerButtonsDown = new Map();
-  return finishEntity(out);
 }
 
 /** Explicit browser adapter for the process-wide input-ingress seam. */
-export function createWebInputIngressBackend(): InputIngressBackend & Entity {
-  const out = allocateEntity<InputIngressBackend & Entity>();
+export function initializeWebInputIngressBackend(out: EntityConstruction<InputIngressBackend & Entity>): void {
   out.attachGamepad = (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
@@ -557,133 +704,6 @@ export function createWebInputIngressBackend(): InputIngressBackend & Entity {
     target.addEventListener('wheel', onWheel, { passive: !preventDefault });
     return () => target.removeEventListener('wheel', onWheel);
   };
-  return finishEntity(out);
-}
-
-export function detachGamepadInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kGamepadInput);
-}
-
-export function detachKeyboardInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kKeyboardInput);
-}
-
-export function detachPointerInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kPointerInput);
-}
-
-export function detachRelativePointerInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kRelativePointerInput);
-}
-
-export function detachTextInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kTextInput);
-}
-
-export function detachWheelInput(manager: InputManager, source: InputIngressSource): void {
-  clearInputBinding(manager, source, kWheelInput);
-}
-
-/**
- * Rolls the per-frame edge sets on `state`, clearing `justPressedKeys`,
- * `justReleasedKeys`, `justPressedGamepadButtons`, and
- * `justReleasedGamepadButtons`. Call this once at the end of each logical
- * frame (or input-poll cycle) to prepare the edge sets for the next frame.
- */
-export function endInputStateFrame(state: InputState): void {
-  state.justPressedKeys.clear();
-  state.justReleasedKeys.clear();
-  state.justPressedGamepadButtons.clear();
-  state.justReleasedGamepadButtons.clear();
-}
-
-/**
- * Returns coalesced pointer event data for a `pointermove` event, iterating
- * over the high-frequency intermediate positions captured since the last
- * delivered event. Falls back to a single entry with the event itself when
- * `getCoalescedEvents` is unavailable (e.g. in jsdom).
- *
- * The callback receives each coalesced `InputPointerData` in order. The
- * payload object is reused across calls — do not retain a reference to it.
- */
-export function getCoalescedInputPointerEvents(
-  event: PointerEvent,
-  callback: (data: Readonly<InputPointerData>) => void,
-): void {
-  const coalesced = typeof event.getCoalescedEvents === 'function' ? event.getCoalescedEvents() : null;
-  if (coalesced !== null && coalesced.length > 0) {
-    for (const e of coalesced) {
-      setInputPointerData(_pointerData, e, 0, 0);
-      callback(_pointerData);
-    }
-  } else {
-    setInputPointerData(_pointerData, event, 0, 0);
-    callback(_pointerData);
-  }
-}
-
-/**
- * Returns the semantic name string (a `GamepadAxisKind`) for `index` in the
- * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
- * `index` is out of the standard range.
- */
-export function getGamepadAxisName(mapping: GamepadMappingKind, index: number): GamepadAxisKind | null {
-  if (mapping !== 'standard') return null;
-  return _standardAxisNames[index] ?? null;
-}
-
-/**
- * Returns the semantic name string (a `GamepadButtonKind`) for `index` in the
- * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
- * `index` is out of the standard range.
- */
-export function getGamepadButtonName(mapping: GamepadMappingKind, index: number): GamepadButtonKind | null {
-  if (mapping !== 'standard') return null;
-  return _standardButtonNames[index] ?? null;
-}
-
-/**
- * Returns the current value of a gamepad axis from `state`, or `0` if not recorded.
- * `gamepad` is the gamepad index; `axis` is the axis index.
- */
-export function getInputGamepadAxis(state: Readonly<InputState>, gamepad: number, axis: number): number {
-  return state.axisValues.get(gamepad * MAX_GAMEPAD_AXES + axis) ?? 0;
-}
-
-export function getInputIngressBackend(): InputIngressBackend {
-  return _customInputIngressBackend ?? _hostInputIngressBackend ?? _webInputIngressBackend;
-}
-
-export function getKeyCodeFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
-  const code = getKeyCodeFromDomKeyboardCode(event.code, event.location);
-  if (code !== KeyCode.UNKNOWN) return code;
-  if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
-  return keyCodesByKey[event.key] ?? KeyCode.UNKNOWN;
-}
-
-export function getKeyModifierFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
-  let modifier = KeyModifier.NONE;
-  if (event.altKey)
-    modifier |= event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_ALT : KeyModifier.LEFT_ALT;
-  if (event.ctrlKey)
-    modifier |=
-      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_CTRL : KeyModifier.LEFT_CTRL;
-  if (event.metaKey)
-    modifier |=
-      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_META : KeyModifier.LEFT_META;
-  if (event.shiftKey)
-    modifier |=
-      event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_SHIFT : KeyModifier.LEFT_SHIFT;
-  if (event.getModifierState?.('CapsLock') === true) modifier |= KeyModifier.CAPS_LOCK;
-  if (event.getModifierState?.('NumLock') === true) modifier |= KeyModifier.NUM_LOCK;
-  return modifier;
-}
-
-export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
-  if (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL) return 'pixels';
-  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
-  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
-  return 'unknown';
 }
 
 // First host wins; a custom backend installed through setInputIngressBackend always takes precedence.

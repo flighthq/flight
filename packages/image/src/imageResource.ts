@@ -21,17 +21,9 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
   return finishEntity(out);
 }
 
-// Wraps a parsed block-compressed payload as its own GPU-only source. The caller owns the payload
-// bytes indexed by the container's level ranges.
 export function createCompressedImageResource(compressed: Readonly<CompressedImageData>): CompressedImageResource {
   const out = allocateEntity<CompressedImageResource>();
-  out.alphaType = DECODED_ALPHA_TYPE;
-  out.compressed = compressed;
-  out.gamut = DECODED_GAMUT;
-  out.height = compressed.container.height;
-  out.kind = CompressedImageTextureSourceKind;
-  out.version = 0;
-  out.width = compressed.container.width;
+  initializeCompressedImageResource(out, compressed);
   return finishEntity(out);
 }
 
@@ -46,6 +38,21 @@ export function createImageResource(image: CanvasImageSource): ImageResource {
   resource.width = 0;
   updateImageResourceSize(resource);
   return resource;
+}
+
+// Wraps a parsed block-compressed payload as its own GPU-only source. The caller owns the payload
+// bytes indexed by the container's level ranges.
+export function initializeCompressedImageResource(
+  out: EntityConstruction<CompressedImageResource>,
+  compressed: Readonly<CompressedImageData>,
+): void {
+  out.alphaType = DECODED_ALPHA_TYPE;
+  out.compressed = compressed;
+  out.gamut = DECODED_GAMUT;
+  out.height = compressed.container.height;
+  out.kind = CompressedImageTextureSourceKind;
+  out.version = 0;
+  out.width = compressed.container.width;
 }
 
 // Marks changed pixels behind the same borrowed host handle. The handle itself remains immutable.

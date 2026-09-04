@@ -369,10 +369,15 @@ export function computePhysics3DSphereMassData(radius: number, density: number, 
   writeDiagonal(out, mass, moment, moment, moment);
 }
 
-// Allocates a zeroed mass-data record — no mass, no inertia, centred on the origin. The identity for
-// `combinePhysics3DMassData`, so an assembly starts here and accumulates.
 export function createPhysics3DMassData(): Physics3DMassData {
   const out = allocateEntity<Physics3DMassData>();
+  initializePhysics3DMassData(out);
+  return finishEntity(out);
+}
+
+// Allocates a zeroed mass-data record — no mass, no inertia, centred on the origin. The identity for
+// `combinePhysics3DMassData`, so an assembly starts here and accumulates.
+export function initializePhysics3DMassData(out: EntityConstruction<Physics3DMassData>): void {
   out.mass = 0;
   out.inertiaXX = 0;
   out.inertiaYY = 0;
@@ -383,7 +388,6 @@ export function createPhysics3DMassData(): Physics3DMassData {
   out.centerX = 0;
   out.centerY = 0;
   out.centerZ = 0;
-  return finishEntity(out);
 }
 
 // Writes mass data onto a body, deriving the inverse mass and the LOCAL inverse inertia tensor.

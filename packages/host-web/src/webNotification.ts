@@ -17,6 +17,15 @@ import type {
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,
 ): WebPageNotificationCapabilities {
+  const out = allocateEntity<WebPageNotificationCapabilities>();
+  initializeWebPageNotificationCapabilities(out, api);
+  return finishEntity(out);
+}
+
+export function initializeWebPageNotificationCapabilities(
+  out: EntityConstruction<WebPageNotificationCapabilities>,
+  api: Readonly<WebPageNotificationApi>,
+): void {
   const nativeByNotification = new Map<Notification, WebPageNotificationInstance>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();
   const dismissListeners = new Set<(notification: Readonly<Notification>) => void>();
@@ -24,7 +33,6 @@ export function createWebPageNotificationCapabilities(
   let destroyed = false;
   let destroyCompleted = false;
   let nextId = 1;
-
   async function closeOne(notification: Notification) {
     const native = nativeByNotification.get(notification);
     if (native === undefined) return { reason: 'already-closed' } as const;
@@ -36,7 +44,6 @@ export function createWebPageNotificationCapabilities(
       return { reason: 'operation-failed' } as const;
     }
   }
-
   async function closeAll(): Promise<NotificationLifecycleOutcome> {
     const failures: NotificationLifecycleFailure[] = [];
     for (const notification of [...nativeByNotification.keys()]) {
@@ -45,8 +52,6 @@ export function createWebPageNotificationCapabilities(
     }
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
-
-  const out = allocateEntity<WebPageNotificationCapabilities>();
   out.click = makeWebNotificationEventBackend(clickListeners, () => destroyed);
   out.close = { closeAllNotifications: closeAll };
   out.delivery = {
@@ -115,7 +120,6 @@ export function createWebPageNotificationCapabilities(
     },
   };
   out.received = makeWebNotificationEventBackend(receivedListeners, () => destroyed);
-  return finishEntity(out);
 }
 
 function makeWebNotificationEventBackend<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {

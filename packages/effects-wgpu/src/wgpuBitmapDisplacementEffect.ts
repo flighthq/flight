@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
-  EntityWithoutRuntime,
   BitmapDisplacementEffect,
   RenderEffect,
   Sampler,
