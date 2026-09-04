@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createKeyedTable,
   getRegistryTableEntry,
@@ -89,7 +89,7 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
 }
 
 function entityHostBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
-  return createEntity(fields);
+  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
 }
 
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
@@ -162,7 +162,7 @@ describe('createWgpuDeviceState', () => {
     expect(createWgpuDeviceState(device)).not.toBe(createWgpuDeviceState(device));
   });
 
-  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without createEntity', () => {
+  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without allocateEntity', () => {
     const device = {} as GPUDevice;
     const literal = { device };
     expect(EntityRuntimeKey in literal).toBe(false);
@@ -349,7 +349,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
     const root = createDisplayObject();
-    registerRenderer(offscreen, root.kind, { createData: () => createEntity({}), submit: vi.fn() });
+    registerRenderer(offscreen, root.kind, { createData: () => finishEntity(allocateEntity()), submit: vi.fn() });
     prepareScene2DRender(offscreen, root);
     beginWgpuFrame(screen);
 
@@ -430,7 +430,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const root = createDisplayObject();
     const destroyData = vi.fn();
     registerRenderer(screen, root.kind, {
-      createData: () => createEntity({}),
+      createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),
     });
@@ -469,13 +469,12 @@ describe('createWgpuRenderState', () => {
   it('keeps exact caller-owned handles usable through every shared-state teardown', async () => {
     const owner = await createWgpuRenderStateForTest();
     const canvas = document.createElement('canvas');
-    const acquisition = createEntity({
-      context: owner.context,
-      device: owner.device,
-      format: owner.format,
-      ownership: 'caller' as const,
-      surface: owner.surface,
-    });
+    const acquisition = allocateEntity<WgpuHostBackend>();
+    acquisition.context = owner.context;
+    acquisition.device = owner.device;
+    acquisition.format = owner.format;
+    acquisition.ownership = 'caller' as const;
+    acquisition.surface = owner.surface;
     let contextUsable = true;
     let deviceUsable = true;
     const originalCreateBuffer = acquisition.device.createBuffer.bind(acquisition.device);
@@ -1105,7 +1104,12 @@ describe('wgpu acquisition lifecycle', () => {
 });
 
 function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  return createEntity({ context: owner.context, device: owner.device, format: owner.format, surface: owner.surface });
+    const out = allocateEntity<WgpuHostBackend>();
+  out.context = owner.context;
+  out.device = owner.device;
+  out.format = owner.format;
+  out.surface = owner.surface;
+  return finishEntity(out);
 }
 
 describe('WgpuPipeline snapshots', () => {
@@ -1182,13 +1186,15 @@ describe('WgpuPresentationSurface', () => {
         return width;
       },
     };
-    const acquisition = createEntity({
-      context: owner.context,
-      device: owner.device,
-      format: owner.format,
-      ownership: 'caller' as const,
-      surface,
-    });
+    const acquisition = (() => {
+      const out = allocateEntity<WgpuHostBackend>();
+      out.context = owner.context;
+      out.device = owner.device;
+      out.format = owner.format;
+      out.ownership = 'caller' as const;
+      out.surface = surface;
+      return finishEntity(out);
+    })();
     const canvas = document.createElement('canvas');
 
     const state = createWgpuRenderState(acquisition);

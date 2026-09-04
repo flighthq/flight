@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import {
   createKeyedTable,
@@ -99,7 +99,7 @@ describe('createGlContextState', () => {
 });
 
 describe('createGlContextState (Entity backing)', () => {
-  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without createEntity', () => {
+  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without allocateEntity', () => {
     const gl = makeGL();
     const literal = { gl };
     expect(EntityRuntimeKey in literal).toBe(false);
@@ -299,7 +299,7 @@ describe('createGlOffscreenRenderState', () => {
     const destroyData = vi.fn();
     const root = createDisplayObject();
     registerRenderer(screen, root.kind, {
-      createData: () => createEntity({}),
+      createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),
     });
@@ -556,11 +556,10 @@ describe('destroyGlRenderState', () => {
     const owner = createTestGlRenderState(gl);
     const owned = ensureDefaultGlBitmapShader(owner);
     const callerProgram = { callerOwned: true } as unknown as WebGLProgram;
-    const shader = createEntity({
-      bind: vi.fn(),
-      locations: { ...owned.locations, program: callerProgram },
-      program: callerProgram,
-    });
+    const shader = allocateEntity<void>();
+    shader.bind = vi.fn();
+    shader.locations = { ...owned.locations, program: callerProgram };
+    shader.program = callerProgram;
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
     useGlProgram(owner, shader);
 
