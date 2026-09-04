@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Vector2, Vector2Like, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Vector2, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 
 export function addVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
   const ax = a.x,
@@ -56,7 +56,9 @@ export function copyVector2(out: Vector2Like, source: Readonly<Vector2Like>): vo
  * @see Matrix
  */
 export function createVector2(x?: number, y?: number): Vector2 {
-  return createEntity({ x: x ?? 0, y: y ?? 0 });
+  const out = allocateEntity<Vector2>();
+  initializeVector2(out, x ?? 0, y ?? 0);
+  return finishEntity(out);
 }
 
 export function createVector2FromPolar(length: number, angle: number): Vector2 {
@@ -156,6 +158,11 @@ export function getVector2Length(source: Readonly<Vector2Like>): number {
 
 export function getVector2LengthSquared(source: Readonly<Vector2Like>): number {
   return source.x ** 2 + source.y ** 2;
+}
+
+export function initializeVector2(out: EntityConstruction<Vector2>, x: number, y: number): void {
+  out.x = x;
+  out.y = y;
 }
 
 /**

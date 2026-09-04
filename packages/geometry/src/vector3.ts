@@ -1,5 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Matrix3Like, Vector2Like, Vector3, Vector3Like, Vector4Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  EntityConstruction,
+  Matrix3Like,
+  Vector2Like,
+  Vector3,
+  Vector3Like,
+  Vector4Like,
+} from '@flighthq/types/contract';
 
 /**
  * Adds the x, y and z components of two vector objects
@@ -80,7 +87,9 @@ export function copyVector3(out: Vector3Like, source: Readonly<Vector3Like>): vo
  * - `lengthSquared = x ** 2 + y ** 2 + z ** 2;`
  */
 export function createVector3(x?: number, y?: number, z?: number): Vector3 {
-  return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0 });
+  const out = allocateEntity<Vector3>();
+  initializeVector3(out, x ?? 0, y ?? 0, z ?? 0);
+  return finishEntity(out);
 }
 
 /**
@@ -231,6 +240,12 @@ export function getVector3Spherical(out: Vector3Like, source: Readonly<Vector3Li
   out.x = radius;
   out.y = Math.acos(Math.min(1, Math.max(-1, y / radius)));
   out.z = Math.atan2(z, x);
+}
+
+export function initializeVector3(out: EntityConstruction<Vector3>, x: number, y: number, z: number): void {
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 /**

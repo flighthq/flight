@@ -1,5 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  EntityConstruction,
+  Matrix3,
+  Matrix3Like,
+  Matrix4Like,
+  MatrixLike,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool';
 
@@ -111,7 +118,6 @@ export function createMatrix3(
   m22?: number,
 ): Matrix3 {
   const m = new Float32Array(__identity);
-  const out: Matrix3 = createEntity({ m: m });
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[3] = m01;
   if (m02 !== undefined) m[6] = m02;
@@ -121,7 +127,9 @@ export function createMatrix3(
   if (m20 !== undefined) m[2] = m20;
   if (m21 !== undefined) m[5] = m21;
   if (m22 !== undefined) m[8] = m22;
-  return out;
+  const out = allocateEntity<Matrix3>();
+  initializeMatrix3(out, m);
+  return finishEntity(out);
 }
 
 export function equalsMatrix3(
@@ -154,6 +162,10 @@ export function getMatrix3Determinant(source: Readonly<Matrix3Like>): number {
 
 export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, column: number): number {
   return source.m[column * 3 + row];
+}
+
+export function initializeMatrix3(out: EntityConstruction<Matrix3>, m: Float32Array): void {
+  out.m = m;
 }
 
 /**

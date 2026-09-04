@@ -1,11 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AabbLike,
   BoundingSphereLike,
+  EntityConstruction,
   Frustum,
   FrustumLike,
   Matrix4Like,
   ObbLike,
+  Plane,
   PlaneLike,
   Vector3Like,
 } from '@flighthq/types/contract';
@@ -17,14 +19,9 @@ import { createPlane } from './plane';
  * planes start at zero (a degenerate frustum) and are populated by setFrustumFromMatrix4.
  */
 export function createFrustum(): Frustum {
-  return createEntity({
-    bottom: createPlane(),
-    far: createPlane(),
-    left: createPlane(),
-    near: createPlane(),
-    right: createPlane(),
-    top: createPlane(),
-  });
+  const out = allocateEntity<Frustum>();
+  initializeFrustum(out, createPlane(), createPlane(), createPlane(), createPlane(), createPlane(), createPlane());
+  return finishEntity(out);
 }
 
 /**
@@ -66,6 +63,23 @@ export function getFrustumCorners(out: readonly Vector3Like[], inverseViewProjec
     corner.y = y * invW;
     corner.z = z * invW;
   }
+}
+
+export function initializeFrustum(
+  out: EntityConstruction<Frustum>,
+  bottom: Plane,
+  far: Plane,
+  left: Plane,
+  near: Plane,
+  right: Plane,
+  top: Plane,
+): void {
+  out.bottom = bottom;
+  out.far = far;
+  out.left = left;
+  out.near = near;
+  out.right = right;
+  out.top = top;
 }
 
 /**

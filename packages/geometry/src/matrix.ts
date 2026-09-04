@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   Matrix,
   Matrix3Like,
   Matrix4Like,
@@ -146,7 +147,9 @@ export function createGradientTransformMatrix(
  * @see Rectangle
  */
 export function createMatrix(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix {
-  return createEntity({ a: a ?? 1, b: b ?? 0, c: c ?? 0, d: d ?? 1, tx: tx ?? 0, ty: ty ?? 0 });
+  const out = allocateEntity<Matrix>();
+  initializeMatrix(out, a ?? 1, b ?? 0, c ?? 0, d ?? 1, tx ?? 0, ty ?? 0);
+  return finishEntity(out);
 }
 
 export function createTransformMatrix(
@@ -175,6 +178,23 @@ export function equalsMatrix(
     a.c === b.c &&
     a.d === b.d
   );
+}
+
+export function initializeMatrix(
+  out: EntityConstruction<Matrix>,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+): void {
+  out.a = a;
+  out.b = b;
+  out.c = c;
+  out.d = d;
+  out.tx = tx;
+  out.ty = ty;
 }
 
 /**

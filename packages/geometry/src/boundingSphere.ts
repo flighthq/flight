@@ -1,5 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { AabbLike, BoundingSphere, BoundingSphereLike, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  AabbLike,
+  BoundingSphere,
+  BoundingSphereLike,
+  EntityConstruction,
+  Matrix4Like,
+  Vector3,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 import { createVector3 } from './vector3';
 
@@ -45,7 +53,9 @@ export function createBoundingSphere(
   radius?: number,
 ): BoundingSphere {
   const center = createVector3(centerX ?? 0, centerY ?? 0, centerZ ?? 0);
-  return createEntity({ center: center, radius: radius ?? -1 });
+  const out = allocateEntity<BoundingSphere>();
+  initializeBoundingSphere(out, center, radius ?? -1);
+  return finishEntity(out);
 }
 
 /**
@@ -86,6 +96,15 @@ export function getClosestPointOnBoundingSphere(
   out.x = cx + dx * scale;
   out.y = cy + dy * scale;
   out.z = cz + dz * scale;
+}
+
+export function initializeBoundingSphere(
+  out: EntityConstruction<BoundingSphere>,
+  center: Vector3,
+  radius: number,
+): void {
+  out.center = center;
+  out.radius = radius;
 }
 
 /**

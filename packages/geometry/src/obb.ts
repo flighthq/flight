@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AabbLike,
   BoundingSphereLike,
+  EntityConstruction,
   Matrix4Like,
   Obb,
   ObbLike,
@@ -25,18 +26,21 @@ export function createObb(
   orientationZ: number,
   orientationW: number,
 ): Obb {
-  return createEntity({
+  const out = allocateEntity<Obb>();
+  initializeObb(
+    out,
     centerX,
     centerY,
     centerZ,
     halfExtentX,
     halfExtentY,
     halfExtentZ,
-    orientationW,
     orientationX,
     orientationY,
     orientationZ,
-  });
+    orientationW,
+  );
+  return finishEntity(out);
 }
 
 /**
@@ -90,6 +94,31 @@ export function getClosestPointOnObb(out: Vector3Like, obb: Readonly<ObbLike>, p
   out.x = cx + d0 * ax0 + d1 * ax1 + d2 * ax2;
   out.y = cy + d0 * ay0 + d1 * ay1 + d2 * ay2;
   out.z = cz + d0 * az0 + d1 * az1 + d2 * az2;
+}
+
+export function initializeObb(
+  out: EntityConstruction<Obb>,
+  centerX: number,
+  centerY: number,
+  centerZ: number,
+  halfExtentX: number,
+  halfExtentY: number,
+  halfExtentZ: number,
+  orientationX: number,
+  orientationY: number,
+  orientationZ: number,
+  orientationW: number,
+): void {
+  out.centerX = centerX;
+  out.centerY = centerY;
+  out.centerZ = centerZ;
+  out.halfExtentX = halfExtentX;
+  out.halfExtentY = halfExtentY;
+  out.halfExtentZ = halfExtentZ;
+  out.orientationX = orientationX;
+  out.orientationY = orientationY;
+  out.orientationZ = orientationZ;
+  out.orientationW = orientationW;
 }
 
 /**

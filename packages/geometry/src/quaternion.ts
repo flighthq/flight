@@ -1,5 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { EulerOrder, Matrix4Like, Quaternion, QuaternionLike, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  EntityConstruction,
+  EulerOrder,
+  Matrix4Like,
+  Quaternion,
+  QuaternionLike,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 export function cloneQuaternion(source: Readonly<QuaternionLike>): Quaternion {
   return createQuaternion(source.x, source.y, source.z, source.w);
@@ -38,7 +45,9 @@ export function copyQuaternion(out: QuaternionLike, source: Readonly<QuaternionL
  * Defaults to the identity rotation (0, 0, 0, 1).
  */
 export function createQuaternion(x?: number, y?: number, z?: number, w?: number): Quaternion {
-  return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0, w: w ?? 1 });
+  const out = allocateEntity<Quaternion>();
+  initializeQuaternion(out, x ?? 0, y ?? 0, z ?? 0, w ?? 1);
+  return finishEntity(out);
 }
 
 export function equalsQuaternion(
@@ -197,6 +206,19 @@ export function getQuaternionEuler(
       break;
     }
   }
+}
+
+export function initializeQuaternion(
+  out: EntityConstruction<Quaternion>,
+  x: number,
+  y: number,
+  z: number,
+  w: number,
+): void {
+  out.x = x;
+  out.y = y;
+  out.z = z;
+  out.w = w;
 }
 
 /**

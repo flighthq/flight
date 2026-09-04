@@ -1,9 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AabbLike,
   BoundingSphereLike,
   Capsule,
   CapsuleLike,
+  EntityConstruction,
   Ray3DLike,
   Vector3Like,
 } from '@flighthq/types/contract';
@@ -21,7 +22,9 @@ export function createCapsule(
   endZ: number,
   radius: number,
 ): Capsule {
-  return createEntity({ endX, endY, endZ, radius, startX, startY, startZ });
+  const out = allocateEntity<Capsule>();
+  initializeCapsule(out, startX, startY, startZ, endX, endY, endZ, radius);
+  return finishEntity(out);
 }
 
 /**
@@ -84,6 +87,25 @@ export function getClosestPointOnCapsule(
     out.y = closestY + dy * inv;
     out.z = closestZ + dz * inv;
   }
+}
+
+export function initializeCapsule(
+  out: EntityConstruction<Capsule>,
+  startX: number,
+  startY: number,
+  startZ: number,
+  endX: number,
+  endY: number,
+  endZ: number,
+  radius: number,
+): void {
+  out.startX = startX;
+  out.startY = startY;
+  out.startZ = startZ;
+  out.endX = endX;
+  out.endY = endY;
+  out.endZ = endZ;
+  out.radius = radius;
 }
 
 /**
