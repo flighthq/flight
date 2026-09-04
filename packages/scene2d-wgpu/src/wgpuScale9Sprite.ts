@@ -3,7 +3,8 @@ import {
   resolveWgpuMaterialRenderer,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
-import { noopRendererData, SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { RenderProxy2D, Scale9Sprite, Scene2DRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
@@ -104,7 +105,8 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
 }
 
 export const defaultWgpuScale9SpriteRenderer: Scene2DRenderer = {
-  createData: noopRendererData,
+  createData: createSpriteRendererData,
   format: BatchFormat.Quad,
+  isDirty: isSpriteRendererDirty,
   submit: drawWgpuScale9Sprite,
 };
