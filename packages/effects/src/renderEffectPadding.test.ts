@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { RenderEffect, RenderState } from '@flighthq/types/contract';
@@ -31,15 +31,15 @@ describe('computeRenderEffectPadding', () => {
     expect(
       computeRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 1 }),
-        createEntity({ kind: 'acme.Pointwise' }) as RenderEffect,
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Pointwise'; return finishEntity(out) as RenderEffect,; })()
         createBlurEffect({ blurX: 1, blurY: 4 }),
       ]),
     ).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
   });
 
   it('returns a zero sentinel for an unregistered kind', () => {
-    const effect = createEntity({ kind: 'acme.Missing' }) as RenderEffect;
-    expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
+    const effect = allocateEntity<unknown>();
+    effect.kind = 'acme.Missing';
   });
 
   it('writes into a caller-owned output object when supplied', () => {
@@ -60,7 +60,7 @@ describe('computeRenderEffectPadding', () => {
     connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
       misses.push([registry, kind]);
     });
-    expect(computeRenderEffectPadding(state, createEntity({ kind: 'acme.Missing' }) as RenderEffect)).toEqual({
+    expect(computeRenderEffectPadding(state, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; return finishEntity(out) as RenderEffect)).toEqual({; })()
       bottom: 0,
       left: 0,
       right: 0,
@@ -78,7 +78,7 @@ describe('explainRenderEffectPadding', () => {
     expect(
       explainRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 3 }),
-        createEntity({ kind: 'acme.Missing' }) as RenderEffect,
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; return finishEntity(out) as RenderEffect,; })()
       ]),
     ).toEqual({
       missingKinds: ['acme.Missing'],

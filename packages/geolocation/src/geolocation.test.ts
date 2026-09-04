@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   GeolocationBackend,
@@ -19,36 +19,36 @@ import {
 } from './geolocation';
 
 function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
-  return createEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>({
-    cleared: [],
-    lastWatch: 0,
-    promptForAccess: () => Promise.resolve({ reason: 'granted' as const }),
-    clearWatch(id) {
+    const out = allocateEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>();
+  out.cleared = [];
+  out.lastWatch = 0;
+  out.promptForAccess = () => Promise.resolve({ reason: 'granted' as const });
+  out.clearWatch = (id) => {
       this.cleared.push(id);
-    },
-    async getCurrentPosition() {
+    };
+  out.getCurrentPosition = async () => {
       const position = createGeoPosition();
       position.latitude = 1;
       position.longitude = 2;
       return position;
-    },
-    async getCurrentPositionResult() {
+    };
+  out.getCurrentPositionResult = async () => {
       const position = createGeoPosition();
       position.latitude = 1;
       position.longitude = 2;
       return { position, reason: null };
-    },
-    isAvailable() {
+    };
+  out.isAvailable = () => {
       return available;
-    },
-    watchPosition(listener, _options, onError) {
+    };
+  out.watchPosition = (listener, _options, onError) => {
       const position = createGeoPosition();
       position.latitude = 3;
       listener(position);
       if (onError) onError('denied');
       return ++this.lastWatch;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function hostWith(backend: GeolocationBackend): HasSystemGeolocation {

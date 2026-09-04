@@ -1,5 +1,5 @@
 import { createAudioResource } from '@flighthq/audio/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
@@ -69,42 +69,25 @@ function createWebMockBackend() {
   const sourceNodes = new Map<number, MockAudioBufferSourceNode>();
 
   return {
-    backend: createEntity({
-      createBuffer: vi.fn().mockReturnValue(1),
-      createDevice: vi.fn().mockReturnValue(1),
-      createSource: vi.fn(() => {
+    backend: (() => { const out = allocateEntity<AudioBuffer>(); out.createBuffer = vi.fn().mockReturnValue(1); out.createDevice = vi.fn().mockReturnValue(1); out.createSource = vi.fn(() => {
         const h = nextSourceHandle++;
         const gainNode = new MockGainNode();
         gainNodes.set(h, gainNode);
         return h as unknown as AudioSourceHandle;
-      }),
-      destroyBuffer: vi.fn(),
-      destroyDevice: vi.fn(),
-      destroySource: vi.fn((source: AudioSourceHandle) => {
+      }); out.destroyBuffer = vi.fn(); out.destroyDevice = vi.fn(); out.destroySource = vi.fn((source: AudioSourceHandle) => {
         gainNodes.delete(source as number);
         sourceNodes.delete(source as number);
         onEndedCallbacks.delete(source as number);
-      }),
-      getDeviceTime: vi.fn(() => deviceTime),
-      getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null {
+      }); out.getDeviceTime = vi.fn(() => deviceTime); out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
         return (sourceNodes.get(source as number) as unknown as AudioBufferSourceNode) ?? null;
-      },
-      getSourceGainNode(source: AudioSourceHandle): GainNode | null {
+      }; out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
         return (gainNodes.get(source as number) as unknown as GainNode) ?? null;
-      },
-      onSourceEnded: vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
+      }; out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
         onEndedCallbacks.set(source as number, cb);
-      }),
-      resumeDevice: vi.fn(),
-      setSourceGain: vi.fn(),
-      setSourcePan: vi.fn(),
-      setSourcePlaybackRate: vi.fn(),
-      startSource: vi.fn((source: AudioSourceHandle) => {
+      }); out.resumeDevice = vi.fn(); out.setSourceGain = vi.fn(); out.setSourcePan = vi.fn(); out.setSourcePlaybackRate = vi.fn(); out.startSource = vi.fn((source: AudioSourceHandle) => {
         const srcNode = new MockAudioBufferSourceNode();
         sourceNodes.set(source as number, srcNode);
-      }),
-      stopSource: vi.fn(),
-    }),
+      }); out.stopSource = vi.fn(); return finishEntity(out); })(),
     gainNodes,
     sourceNodes,
   };
@@ -206,24 +189,23 @@ describe('fadeAudioChannelGain', () => {
   });
 
   it('falls back to setSourceGain when no web nodes are available', () => {
-    const plainMock = createEntity({
-      createBuffer: vi.fn().mockReturnValue(1),
-      createDevice: vi.fn().mockReturnValue(1),
-      createSource: vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle),
-      destroyBuffer: vi.fn(),
-      destroyDevice: vi.fn(),
-      destroySource: vi.fn(),
-      getDeviceTime: vi.fn(() => deviceTime),
-      onSourceEnded: vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
+    const plainMock = allocateEntity<AudioBuffer>();
+    plainMock.createBuffer = vi.fn().mockReturnValue(1);
+    plainMock.createDevice = vi.fn().mockReturnValue(1);
+    plainMock.createSource = vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle);
+    plainMock.destroyBuffer = vi.fn();
+    plainMock.destroyDevice = vi.fn();
+    plainMock.destroySource = vi.fn();
+    plainMock.getDeviceTime = vi.fn(() => deviceTime);
+    plainMock.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
         onEndedCallbacks.set(source as number, cb);
-      }),
-      resumeDevice: vi.fn(),
-      setSourceGain: vi.fn(),
-      setSourcePan: vi.fn(),
-      setSourcePlaybackRate: vi.fn(),
-      startSource: vi.fn(),
-      stopSource: vi.fn(),
-    });
+      });
+    plainMock.resumeDevice = vi.fn();
+    plainMock.setSourceGain = vi.fn();
+    plainMock.setSourcePan = vi.fn();
+    plainMock.setSourcePlaybackRate = vi.fn();
+    plainMock.startSource = vi.fn();
+    plainMock.stopSource = vi.fn();
     const channel = playAudioResource(plainMock, device, createAudioResource(createMockAudioBuffer()))!;
     fadeAudioChannelGain(channel, 0.3, 200);
     expect(plainMock.setSourceGain).toHaveBeenCalledWith(expect.anything(), 0.3);
@@ -290,22 +272,21 @@ describe('hasAudioChannelFade', () => {
   });
 
   it('returns false when no web backend is active', () => {
-    const plainBackend = createEntity({
-      createBuffer: vi.fn().mockReturnValue(1),
-      createDevice: vi.fn().mockReturnValue(1),
-      createSource: vi.fn().mockReturnValue(1),
-      destroyBuffer: vi.fn(),
-      destroyDevice: vi.fn(),
-      destroySource: vi.fn(),
-      getDeviceTime: vi.fn().mockReturnValue(0),
-      onSourceEnded: vi.fn(),
-      resumeDevice: vi.fn(),
-      setSourceGain: vi.fn(),
-      setSourcePan: vi.fn(),
-      setSourcePlaybackRate: vi.fn(),
-      startSource: vi.fn(),
-      stopSource: vi.fn(),
-    });
+    const plainBackend = allocateEntity<AudioBuffer>();
+    plainBackend.createBuffer = vi.fn().mockReturnValue(1);
+    plainBackend.createDevice = vi.fn().mockReturnValue(1);
+    plainBackend.createSource = vi.fn().mockReturnValue(1);
+    plainBackend.destroyBuffer = vi.fn();
+    plainBackend.destroyDevice = vi.fn();
+    plainBackend.destroySource = vi.fn();
+    plainBackend.getDeviceTime = vi.fn().mockReturnValue(0);
+    plainBackend.onSourceEnded = vi.fn();
+    plainBackend.resumeDevice = vi.fn();
+    plainBackend.setSourceGain = vi.fn();
+    plainBackend.setSourcePan = vi.fn();
+    plainBackend.setSourcePlaybackRate = vi.fn();
+    plainBackend.startSource = vi.fn();
+    plainBackend.stopSource = vi.fn();
     expect(hasAudioChannelFade(plainBackend)).toBe(false);
   });
 });
@@ -316,22 +297,21 @@ describe('hasAudioChannelNodeAccess', () => {
   });
 
   it('returns false when no web backend is active', () => {
-    const plainBackend = createEntity({
-      createBuffer: vi.fn().mockReturnValue(1),
-      createDevice: vi.fn().mockReturnValue(1),
-      createSource: vi.fn().mockReturnValue(1),
-      destroyBuffer: vi.fn(),
-      destroyDevice: vi.fn(),
-      destroySource: vi.fn(),
-      getDeviceTime: vi.fn().mockReturnValue(0),
-      onSourceEnded: vi.fn(),
-      resumeDevice: vi.fn(),
-      setSourceGain: vi.fn(),
-      setSourcePan: vi.fn(),
-      setSourcePlaybackRate: vi.fn(),
-      startSource: vi.fn(),
-      stopSource: vi.fn(),
-    });
+    const plainBackend = allocateEntity<AudioBuffer>();
+    plainBackend.createBuffer = vi.fn().mockReturnValue(1);
+    plainBackend.createDevice = vi.fn().mockReturnValue(1);
+    plainBackend.createSource = vi.fn().mockReturnValue(1);
+    plainBackend.destroyBuffer = vi.fn();
+    plainBackend.destroyDevice = vi.fn();
+    plainBackend.destroySource = vi.fn();
+    plainBackend.getDeviceTime = vi.fn().mockReturnValue(0);
+    plainBackend.onSourceEnded = vi.fn();
+    plainBackend.resumeDevice = vi.fn();
+    plainBackend.setSourceGain = vi.fn();
+    plainBackend.setSourcePan = vi.fn();
+    plainBackend.setSourcePlaybackRate = vi.fn();
+    plainBackend.startSource = vi.fn();
+    plainBackend.stopSource = vi.fn();
     expect(hasAudioChannelNodeAccess(plainBackend)).toBe(false);
   });
 });
@@ -606,22 +586,21 @@ describe('setAudioChannelPan', () => {
   });
 
   it('survives a backend with no web node access', () => {
-    const plainMock = createEntity({
-      createBuffer: vi.fn().mockReturnValue(1),
-      createDevice: vi.fn().mockReturnValue(1),
-      createSource: vi.fn(() => 1 as unknown as AudioSourceHandle),
-      destroyBuffer: vi.fn(),
-      destroyDevice: vi.fn(),
-      destroySource: vi.fn(),
-      getDeviceTime: vi.fn(() => 0),
-      onSourceEnded: vi.fn(),
-      resumeDevice: vi.fn(),
-      setSourceGain: vi.fn(),
-      setSourcePan: vi.fn(),
-      setSourcePlaybackRate: vi.fn(),
-      startSource: vi.fn(),
-      stopSource: vi.fn(),
-    });
+    const plainMock = allocateEntity<AudioBuffer>();
+    plainMock.createBuffer = vi.fn().mockReturnValue(1);
+    plainMock.createDevice = vi.fn().mockReturnValue(1);
+    plainMock.createSource = vi.fn(() => 1 as unknown as AudioSourceHandle);
+    plainMock.destroyBuffer = vi.fn();
+    plainMock.destroyDevice = vi.fn();
+    plainMock.destroySource = vi.fn();
+    plainMock.getDeviceTime = vi.fn(() => 0);
+    plainMock.onSourceEnded = vi.fn();
+    plainMock.resumeDevice = vi.fn();
+    plainMock.setSourceGain = vi.fn();
+    plainMock.setSourcePan = vi.fn();
+    plainMock.setSourcePlaybackRate = vi.fn();
+    plainMock.startSource = vi.fn();
+    plainMock.stopSource = vi.fn();
     const channel = playAudioResource(plainMock, device, createAudioResource(createMockAudioBuffer()))!;
     expect(setAudioChannelPan(channel, 0.75)).toBe(0.75);
     expect(plainMock.setSourcePan).toHaveBeenLastCalledWith(1, 0.75);

@@ -1,5 +1,5 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
-import { createEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
@@ -165,12 +165,11 @@ describe('setNode2DClip', () => {
   });
 
   it('sets clip', () => {
-    const clip = createEntity({
-      contours: null,
-      rect: { x: 0, y: 0, width: 100, height: 50 } as Rectangle,
-      winding: 'nonZero' as const,
-      version: 0,
-    });
+    const clip = allocateEntity<Node2DRuntime>();
+    clip.contours = null;
+    clip.rect = { x: 0, y: 0, width: 100, height: 50 } as Rectangle;
+    clip.winding = 'nonZero' as const;
+    clip.version = 0;
     setNode2DClip(obj, clip);
     expect(obj.clip).toBe(clip);
   });
@@ -184,12 +183,7 @@ describe('setNode2DClip', () => {
     const idBefore = getRuntime_(obj).appearanceId;
     setNode2DClip(
       obj,
-      createEntity({
-        contours: null,
-        rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
-        winding: 'nonZero' as const,
-        version: 0,
-      }),
+      (() => { const out = allocateEntity<Node2DRuntime>(); out.contours = null; out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle; out.winding = 'nonZero' as const; out.version = 0; return finishEntity(out); })(),
     );
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
@@ -248,7 +242,7 @@ interface Node2DTestData extends Node2DData {
 }
 
 function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
-  return createEntity({
-    foo: data?.foo ?? 'bar',
-  });
+    const out = allocateEntity<Node2DRuntime>();
+  out.foo = data?.foo ?? 'bar';
+  return finishEntity(out);
 }

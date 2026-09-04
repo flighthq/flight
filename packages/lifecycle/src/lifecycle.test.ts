@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   HasSystemLifecycle,
@@ -38,30 +38,30 @@ function hostOf(backend: LifecycleBackend): HasSystemLifecycle {
 function fakeBackend(): FakeBackend {
   let stateListener: (() => void) | null = null;
   let memoryListener: ((level: AppMemoryPressure) => void) | null = null;
-  return createEntity<Omit<FakeBackend, keyof Entity>>({
-    state: 'active',
-    getState() {
+    const out = allocateEntity<Omit<FakeBackend, keyof Entity>>();
+  out.state = 'active';
+  out.getState = () => {
       return this.state;
-    },
-    subscribe(l) {
+    };
+  out.subscribe = (l) => {
       stateListener = l;
       return () => {
         stateListener = null;
       };
-    },
-    subscribeMemoryWarning(l) {
+    };
+  out.subscribeMemoryWarning = (l) => {
       memoryListener = l;
       return () => {
         memoryListener = null;
       };
-    },
-    fire() {
+    };
+  out.fire = () => {
       stateListener?.();
-    },
-    fireMemory(level: AppMemoryPressure) {
+    };
+  out.fireMemory = (level: AppMemoryPressure) => {
       memoryListener?.(level);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 describe('attachAppLifecycle', () => {
@@ -456,7 +456,7 @@ describe('explainLifecycleOperation', () => {
   });
 
   it('reports an operation the host provider omits as unimplemented', () => {
-    const host = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
+    const host = hostOf((() => { const out = allocateEntity<HasSystemLifecycle>(); out.getState = () => 'active' as const; out.subscribe = () => () => {}; return finishEntity(out); })());
     expect(explainLifecycleOperation(host, 'getLaunchKind')).toEqual({
       implemented: false,
       layer: 'sentinel',
@@ -468,7 +468,7 @@ describe('explainLifecycleOperation', () => {
   // process-wide backend answered for every caller.
   it('answers per host rather than process-wide', () => {
     const rich = hostOf(fakeBackend());
-    const bare = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
+    const bare = hostOf((() => { const out = allocateEntity<HasSystemLifecycle>(); out.getState = () => 'active' as const; out.subscribe = () => () => {}; return finishEntity(out); })());
     expect(explainLifecycleOperation(rich, 'subscribeMemoryWarning').implemented).toBe(true);
     expect(explainLifecycleOperation(bare, 'subscribeMemoryWarning').implemented).toBe(false);
   });
@@ -482,11 +482,10 @@ describe('getAppLaunchKind', () => {
   });
 
   it('delegates to backend.getLaunchKind when present', () => {
-    const backend: LifecycleBackend = createEntity({
-      getState: () => 'active',
-      subscribe: () => () => {},
-      getLaunchKind: () => 'cold',
-    });
+    const backend = allocateEntity<HasSystemLifecycle>();
+    backend.getState = () => 'active';
+    backend.subscribe = () => () => {};
+    backend.getLaunchKind = () => 'cold';
     const host = hostOf(backend);
     expect(getAppLaunchKind(host)).toBe('cold');
   });
@@ -508,7 +507,7 @@ describe('hasLifecycleOperation', () => {
   });
 
   it('is false for an operation the host provider omits', () => {
-    const host = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
+    const host = hostOf((() => { const out = allocateEntity<HasSystemLifecycle>(); out.getState = () => 'active' as const; out.subscribe = () => () => {}; return finishEntity(out); })());
     expect(hasLifecycleOperation(host, 'getLaunchKind')).toBe(false);
   });
 });
@@ -559,10 +558,10 @@ const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'su
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
 function partialBackend(): LifecycleBackend {
-  return createEntity({
-    getState: (() => undefined) as never,
-    subscribe: (() => undefined) as never,
-  });
+    const out = allocateEntity<HasSystemLifecycle>();
+  out.getState = (() => undefined) as never;
+  out.subscribe = (() => undefined) as never;
+  return finishEntity(out);
 }
 
 describe('isAppInactive', () => {

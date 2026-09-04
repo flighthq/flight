@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   clearLogOnceKeys,
@@ -41,28 +41,27 @@ function unregisteredJointWorld(): Physics2DWorld {
   const world = createPhysics2DWorld(0, -10);
   const anchor = ball(world, 'static', 0, 0);
   const bob = ball(world, 'dynamic', 0, -3);
-  const joint: Physics2DDistanceJoint = createEntity<Omit<Physics2DDistanceJoint, keyof Entity>>({
-    kind: Physics2DDistanceJointKind,
-    bodyA: anchor.index,
-    bodyB: bob.index,
-    localAnchorAX: 0,
-    localAnchorAY: 0,
-    localAnchorBX: 0,
-    localAnchorBY: 0,
-    collideConnected: false,
-    breakForce: Number.POSITIVE_INFINITY,
-    breakTorque: Number.POSITIVE_INFINITY,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
-    length: 3,
-    frequencyHz: 0,
-    dampingRatio: 0,
-  });
+  const joint = allocateEntity<Omit<Physics2DDistanceJoint, keyof Entity>>();
+  joint.kind = Physics2DDistanceJointKind;
+  joint.bodyA = anchor.index;
+  joint.bodyB = bob.index;
+  joint.localAnchorAX = 0;
+  joint.localAnchorAY = 0;
+  joint.localAnchorBX = 0;
+  joint.localAnchorBY = 0;
+  joint.collideConnected = false;
+  joint.breakForce = Number.POSITIVE_INFINITY;
+  joint.breakTorque = Number.POSITIVE_INFINITY;
+  joint.impulse0 = 0;
+  joint.impulse1 = 0;
+  joint.impulse2 = 0;
+  joint.rAX = 0;
+  joint.rAY = 0;
+  joint.rBX = 0;
+  joint.rBY = 0;
+  joint.length = 3;
+  joint.frequencyHz = 0;
+  joint.dampingRatio = 0;
   addPhysics2DJoint(world, joint);
   return world;
 }

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Physics2DDistanceJoint,
   Physics2DGearJoint,
@@ -46,25 +46,25 @@ function box(world: ReturnType<typeof createPhysics2DWorld>, type: 'dynamic' | '
 }
 
 function baseJoint(kind: string, bodyA: number, bodyB: number) {
-  return createEntity({
-    kind,
-    bodyA,
-    bodyB,
-    localAnchorAX: 0,
-    localAnchorAY: 0,
-    localAnchorBX: 0,
-    localAnchorBY: 0,
-    collideConnected: false,
-    breakForce: Number.POSITIVE_INFINITY,
-    breakTorque: Number.POSITIVE_INFINITY,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
-  });
+    const out = allocateEntity<unknown>();
+  out.kind = kind;
+  out.bodyA = bodyA;
+  out.bodyB = bodyB;
+  out.localAnchorAX = 0;
+  out.localAnchorAY = 0;
+  out.localAnchorBX = 0;
+  out.localAnchorBY = 0;
+  out.collideConnected = false;
+  out.breakForce = Number.POSITIVE_INFINITY;
+  out.breakTorque = Number.POSITIVE_INFINITY;
+  out.impulse0 = 0;
+  out.impulse1 = 0;
+  out.impulse2 = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  return finishEntity(out);
 }
 
 function run(world: ReturnType<typeof createPhysics2DWorld>, steps: number): void {

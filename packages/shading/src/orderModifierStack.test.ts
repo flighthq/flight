@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -31,8 +31,12 @@ describe('orderModifierStack', () => {
   });
 
   it('sorts unknown and reserved slots after every built-in slot, stably', () => {
-    const ambient: Modifier = createEntity({ kind: 'acme.Ambient', slot: 'Ambient' });
-    const vendor: Modifier = createEntity({ kind: 'acme.Custom', slot: 'acme.Weird' });
+    const ambient = allocateEntity<Modifier>();
+    ambient.kind = 'acme.Ambient';
+    ambient.slot = 'Ambient';
+    const vendor = allocateEntity<Modifier>();
+    vendor.kind = 'acme.Custom';
+    vendor.slot = 'acme.Weird';
     const ordered = orderModifierStack([ambient, rim, vendor, normal]);
     expect(ordered).toEqual([normal, rim, ambient, vendor]);
   });

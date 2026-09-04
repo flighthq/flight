@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
@@ -8,11 +8,13 @@ describe('registerGlBitmapShader', () => {
   it('uses the provided shader as the state default shader', () => {
     const { state } = createGlState();
     const loc = makeShaderLoc();
-    const shader = createEntity({
-      bind: vi.fn(),
-      locations: loc,
-      program: loc.program,
-    });
+    const shader = (() => {
+      const out = allocateEntity<unknown>();
+      out.bind = vi.fn();
+      out.locations = loc;
+      out.program = loc.program;
+      return finishEntity(out);
+    })();
 
     registerGlBitmapShader(state, shader);
 

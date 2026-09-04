@@ -1,5 +1,5 @@
 import { createBlurEffect } from '@flighthq/effects/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
@@ -40,8 +40,8 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
 
     expect(
       applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
-        createEntity({ kind: 'acme.First' }),
-        createEntity({ kind: 'acme.Second' }),
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.First'; return finishEntity(out); })(),
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Second'; return finishEntity(out); })(),
       ]),
     ).toBe(true);
 
@@ -82,7 +82,7 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
 
     expect(
       applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
-        createEntity({ kind: 'acme.Missing' }),
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; return finishEntity(out); })(),
       ]),
     ).toBe(false);
     expect(isWgpuRenderTextureReady(state, dest)).toBe(false);
@@ -99,8 +99,8 @@ describe('explainWgpuRenderEffectApplication', () => {
     registerWgpuRenderEffect(state, 'test.explain-registered', (() => {}) as WgpuRenderEffectRunner);
 
     const explanation = explainWgpuRenderEffectApplication(state, source, dest, [
-      createEntity({ kind: 'test.explain-registered' }),
-      createEntity({ kind: 'test.explain-missing' }),
+      (() => { const out = allocateEntity<unknown>(); out.kind = 'test.explain-registered'; return finishEntity(out); })(),
+      (() => { const out = allocateEntity<unknown>(); out.kind = 'test.explain-missing'; return finishEntity(out); })(),
     ] as unknown as Readonly<RenderEffect>[]);
 
     expect(explanation).toMatchObject({
@@ -121,7 +121,7 @@ describe('explainWgpuRenderEffectApplication', () => {
     registerWgpuRenderEffect(state, 'test.explain-unresolved', vi.fn(), () => false);
 
     expect(
-      explainWgpuRenderEffectApplication(state, source, dest, [createEntity({ kind: 'test.explain-unresolved' })]),
+      explainWgpuRenderEffectApplication(state, source, dest, [(() => { const out = allocateEntity<unknown>(); out.kind = 'test.explain-unresolved'; return finishEntity(out); })()]),
     ).toMatchObject({
       registeredCount: 1,
       requestedCount: 1,
@@ -166,7 +166,7 @@ describe('setWgpuRenderEffectApplicationGuard', () => {
     const scratch = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     writeWgpuRenderTextureTarget(state, source, () => {});
     const seen: string[] = [];
-    const chain = [createEntity({ kind: 'test.seam-missing' })] as unknown as Readonly<RenderEffect>[];
+    const chain = [(() => { const out = allocateEntity<unknown>(); out.kind = 'test.seam-missing'; return finishEntity(out); })()] as unknown as Readonly<RenderEffect>[];
 
     setWgpuRenderEffectApplicationGuard(state, (_state, explanation) => seen.push(explanation.status));
     applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, chain);

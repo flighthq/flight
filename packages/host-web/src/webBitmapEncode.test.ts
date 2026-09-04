@@ -1,21 +1,21 @@
 import { encodeBitmap } from '@flighthq/bitmap/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HasGraphicsBitmapEncode } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createWebBitmapEncodeBackend, webBitmapEncodeBackend } from './webBitmapEncode';
 
 function createTestBitmap(): Bitmap {
-  return createEntity({
-    alphaType: 'straight',
-    gamut: 'srgb',
-    data: new Uint8ClampedArray([1, 2, 3, 4, 5, 6, 7, 8]),
-    format: 'rgba8unorm',
-    height: 1,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: 2,
-  });
+    const out = allocateEntity<Bitmap>();
+  out.alphaType = 'straight';
+  out.gamut = 'srgb';
+  out.data = new Uint8ClampedArray([1, 2, 3, 4, 5, 6, 7, 8]);
+  out.format = 'rgba8unorm';
+  out.height = 1;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = 2;
+  return finishEntity(out);
 }
 
 function hostWith(backend = webBitmapEncodeBackend): HasGraphicsBitmapEncode {

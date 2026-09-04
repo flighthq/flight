@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -93,8 +93,8 @@ describe('disposeMidiPort', () => {
       connection.value = 'closed';
     });
     const input = createInputPort({
-      attachMessage: async () => ({ attachment: createEntity({ release: messageRelease }), reason: 'ok' }),
-      attachStateChange: async () => ({ attachment: createEntity({ release: stateRelease }), reason: 'ok' }),
+      attachMessage: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = messageRelease; return finishEntity(out); })(), reason: 'ok' }),
+      attachStateChange: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = stateRelease; return finishEntity(out); })(), reason: 'ok' }),
       close,
       connection,
     });

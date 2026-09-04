@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HasGraphicsImage, ImageBackend, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -104,16 +104,15 @@ describe('createImageResourceFromBitmap', () => {
   });
 
   it('returns an ImageResource with matching dimensions', () => {
-    const bitmap: Bitmap = createEntity({
-      alphaType: 'straight',
-      gamut: 'srgb',
-      data: new Uint8ClampedArray(4 * 4 * 4),
-      format: 'rgba8unorm',
-      height: 4,
-      kind: BitmapTextureSourceKind,
-      version: 0,
-      width: 4,
-    });
+    const bitmap = allocateEntity<HasGraphicsImage>();
+    bitmap.alphaType = 'straight';
+    bitmap.gamut = 'srgb';
+    bitmap.data = new Uint8ClampedArray(4 * 4 * 4);
+    bitmap.format = 'rgba8unorm';
+    bitmap.height = 4;
+    bitmap.kind = BitmapTextureSourceKind;
+    bitmap.version = 0;
+    bitmap.width = 4;
     const resource = createImageResourceFromBitmap(host, bitmap);
     expect(resource).not.toBeNull();
     if (resource === null) return;
@@ -124,16 +123,16 @@ describe('createImageResourceFromBitmap', () => {
 });
 
 function createTestBitmap(width: number, height: number): Bitmap {
-  return createEntity({
-    alphaType: 'straight',
-    gamut: 'srgb',
-    data: new Uint8ClampedArray(width * height * 4),
-    format: 'rgba8unorm',
-    height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width,
-  });
+    const out = allocateEntity<HasGraphicsImage>();
+  out.alphaType = 'straight';
+  out.gamut = 'srgb';
+  out.data = new Uint8ClampedArray(width * height * 4);
+  out.format = 'rgba8unorm';
+  out.height = height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = width;
+  return finishEntity(out);
 }
 
 describe('createImageResourceFromCanvas', () => {

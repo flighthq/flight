@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
 import type { ImageResource, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
 import {
@@ -73,14 +73,14 @@ function renderTexture(): RenderTexture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
   if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
-  texture.source = createEntity({
-    alphaType: 'straight' as const,
-    gamut: 'srgb' as const,
-    height: 8,
-    kind: RenderTargetTextureSourceKind,
-    version: 0,
-    width: 8,
-  });
+    const _entity = allocateEntity<ImageResource>();
+  _entity.alphaType = 'straight' as const;
+  _entity.gamut = 'srgb' as const;
+  _entity.height = 8;
+  _entity.kind = RenderTargetTextureSourceKind;
+  _entity.version = 0;
+  _entity.width = 8;
+  texture.source = finishEntity(_entity);
   return texture as RenderTexture;
 }
 

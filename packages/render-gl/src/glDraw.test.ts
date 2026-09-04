@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
@@ -1065,11 +1065,13 @@ describe('useGlProgram', () => {
     const runtime = getGlRenderStateRuntime(state);
     const program = {} as WebGLProgram;
     const locations = { ...runtime.defaultBitmapShader!.locations, program };
-    const shader = createEntity({
-      bind: vi.fn(),
-      locations,
-      program,
-    });
+    const shader = (() => {
+      const out = allocateEntity<CompressedImageResource>();
+      out.bind = vi.fn();
+      out.locations = locations;
+      out.program = program;
+      return finishEntity(out);
+    })();
 
     registerGlBitmapShader(state, shader);
     useGlProgram(state);

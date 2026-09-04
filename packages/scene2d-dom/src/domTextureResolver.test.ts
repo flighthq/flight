@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
@@ -9,8 +9,11 @@ import { registerDomTextureResolver, resolveDomTexture } from './domTextureResol
 describe('registerDomTextureResolver', () => {
   it('registers and removes one state-scoped resolver', () => {
     const state = createDomRenderState(document.createElement('div'));
-    const textureSource = createEntity({ height: 1, kind: 'acme.test', version: 0, width: 1 }) as TextureSource;
-    const texture = createTexture({ dimension: '2d', source: textureSource });
+    const textureSource = allocateEntity<unknown>();
+    textureSource.height = 1;
+    textureSource.kind = 'acme.test';
+    textureSource.version = 0;
+    textureSource.width = 1;
     const canvas = document.createElement('canvas');
     const resolver = (): HTMLCanvasElement => canvas;
     registerDomTextureResolver(state, 'acme.test', resolver);

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
@@ -157,154 +157,158 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingWindowBackend>>({
-    calls,
-    emitCloseRequest() {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingWindowBackend>>();
+  out.calls = calls;
+  out.emitCloseRequest = () => {
       let cancelled = false;
       for (const subscription of closeSubscriptions) {
         if (subscription.onCloseRequest()) cancelled = true;
       }
       return cancelled;
-    },
-    emitClosed() {
+    };
+  out.emitClosed = () => {
       for (const subscription of closeSubscriptions) subscription.onClose();
-    },
-    emitMove(x, y) {
+    };
+  out.emitMove = (x, y) => {
       for (const listener of moveListeners) listener(x, y);
-    },
-    emitOrientation() {
+    };
+  out.emitOrientation = () => {
       for (const listener of orientationListeners) listener();
-    },
-    emitResize(width, height, devicePixelRatio) {
+    };
+  out.emitResize = (width, height, devicePixelRatio) => {
       for (const listener of resizeListeners) listener(width, height, devicePixelRatio);
-    },
-    emitVisibility(visible) {
+    };
+  out.emitVisibility = (visible) => {
       for (const listener of visibilityListeners) listener(visible);
-    },
-    attach(_win, _handle, ownership) {
+    };
+  out.attach = (_win, _handle, ownership) => {
       calls.push(`attach:${ownership}`);
       return true;
-    },
-    open(_win, options) {
+    };
+  out.open = (_win, options) => {
       calls.push(`open:${options.title ?? ''}`);
       return true;
-    },
-    close() {
+    };
+  out.close = () => {
       calls.push('close');
-    },
-    setTitle(_win, title) {
+    };
+  out.setTitle = (_win, title) => {
       calls.push(`setTitle:${title}`);
-    },
-    setPosition(_win, x, y) {
+    };
+  out.setPosition = (_win, x, y) => {
       calls.push(`setPosition:${x},${y}`);
-    },
-    setSize(_win, width, height) {
+    };
+  out.setSize = (_win, width, height) => {
       calls.push(`setSize:${width},${height}`);
-    },
-    getBounds(_win, out) {
+    };
+  out.getBounds = (_win, out) => {
       calls.push('getBounds');
       out.x = 1;
       out.y = 2;
       out.width = 3;
       out.height = 4;
       return out;
-    },
-    minimize() {
+    };
+  out.minimize = () => {
       calls.push('minimize');
-    },
-    maximize() {
+    };
+  out.maximize = () => {
       calls.push('maximize');
-    },
-    restore() {
+    };
+  out.restore = () => {
       calls.push('restore');
-    },
-    focus() {
+    };
+  out.focus = () => {
       calls.push('focus');
-    },
-    show() {
+    };
+  out.show = () => {
       calls.push('show');
-    },
-    hide() {
+    };
+  out.hide = () => {
       calls.push('hide');
-    },
-    center() {
+    };
+  out.center = () => {
       calls.push('center');
-    },
-    setResizable(_win, resizable) {
+    };
+  out.setResizable = (_win, resizable) => {
       calls.push(`setResizable:${resizable}`);
-    },
-    setAlwaysOnTop(_win, alwaysOnTop) {
+    };
+  out.setAlwaysOnTop = (_win, alwaysOnTop) => {
       calls.push(`setAlwaysOnTop:${alwaysOnTop}`);
-    },
-    setMinimumSize(_win, width, height) {
+    };
+  out.setMinimumSize = (_win, width, height) => {
       calls.push(`setMinimumSize:${width},${height}`);
-    },
-    setMaximumSize(_win, width, height) {
+    };
+  out.setMaximumSize = (_win, width, height) => {
       calls.push(`setMaximumSize:${width},${height}`);
-    },
-    setFullscreen(_win, fullscreen) {
+    };
+  out.setFullscreen = (_win, fullscreen) => {
       calls.push(`setFullscreen:${fullscreen}`);
-    },
-    setIcon(_win, icon) {
+    };
+  out.setIcon = (_win, icon) => {
       calls.push(`setIcon:${icon}`);
-    },
-    setOpacity(_win, opacity) {
+    };
+  out.setOpacity = (_win, opacity) => {
       calls.push(`setOpacity:${opacity}`);
-    },
-    setSkipTaskbar(_win, skip) {
+    };
+  out.setSkipTaskbar = (_win, skip) => {
       calls.push(`setSkipTaskbar:${skip}`);
-    },
-    setMenuBarVisible(_win, visible) {
+    };
+  out.setMenuBarVisible = (_win, visible) => {
       calls.push(`setMenuBarVisible:${visible}`);
-    },
-    setParent(_win, parent) {
+    };
+  out.setParent = (_win, parent) => {
       calls.push(`setParent:${parent === null ? 'null' : 'win'}`);
-    },
-    setProgress(_win, progress) {
+    };
+  out.setProgress = (_win, progress) => {
       calls.push(`setProgress:${progress}`);
-    },
-    requestAttention(_win, attention) {
+    };
+  out.requestAttention = (_win, attention) => {
       calls.push(`requestAttention:${attention}`);
-    },
-    setContentProtection(_win, enabled) {
+    };
+  out.setContentProtection = (_win, enabled) => {
       calls.push(`setContentProtection:${enabled}`);
-    },
-    flashWindowFrame() {
+    };
+  out.flashWindowFrame = () => {
       calls.push('flashWindowFrame');
-    },
-    setHasShadow(_win, hasShadow) {
+    };
+  out.setHasShadow = (_win, hasShadow) => {
       calls.push(`setHasShadow:${hasShadow}`);
-    },
-    subscribeClose(onCloseRequest, onClose) {
+    };
+  out.subscribeClose = (onCloseRequest, onClose) => {
       const subscription = { onClose, onCloseRequest };
       closeSubscriptions.add(subscription);
       return () => closeSubscriptions.delete(subscription);
-    },
-    subscribeMove(listener) {
+    };
+  out.subscribeMove = (listener) => {
       moveListeners.add(listener);
       return () => moveListeners.delete(listener);
-    },
-    subscribeOrientation(listener) {
+    };
+  out.subscribeOrientation = (listener) => {
       orientationListeners.add(listener);
       return () => orientationListeners.delete(listener);
-    },
-    subscribeResize(_target, listener) {
+    };
+  out.subscribeResize = (_target, listener) => {
       resizeListeners.add(listener);
       return () => resizeListeners.delete(listener);
-    },
-    subscribeVisibility(listener) {
+    };
+  out.subscribeVisibility = (listener) => {
       visibilityListeners.add(listener);
       return () => visibilityListeners.delete(listener);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function createInputTarget(): InputTargetHandle {
-  return createEntity({ __brand: 'InputTargetHandle' as const });
+    const out = allocateEntity<RenderState>();
+  out.__brand = 'InputTargetHandle' as const;
+  return finishEntity(out);
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
-  return createEntity({ __brand: 'WindowResizeTargetHandle' as const });
+    const out = allocateEntity<RenderState>();
+  out.__brand = 'WindowResizeTargetHandle' as const;
+  return finishEntity(out);
 }
 
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
@@ -337,35 +341,35 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
 function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   let listener: ((path: string) => void) | null = null;
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>({
-    calls,
-    emit(path: string) {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>();
+  out.calls = calls;
+  out.emit = (path: string) => {
       listener?.(path);
-    },
-    subscribe(_target: InputTargetHandle, next: (path: string) => void) {
+    };
+  out.subscribe = (_target: InputTargetHandle, next: (path: string) => void) => {
       calls.push('subscribe');
       listener = next;
       return () => {
         calls.push('release');
         if (listener === next) listener = null;
       };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function recordingInputFocusBackend(): RecordingInputFocusBackend {
   let onBlur: (() => void) | null = null;
   let onFocus: (() => void) | null = null;
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>({
-    calls,
-    emitBlur() {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>();
+  out.calls = calls;
+  out.emitBlur = () => {
       onBlur?.();
-    },
-    emitFocus() {
+    };
+  out.emitFocus = () => {
       onFocus?.();
-    },
-    subscribe(_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) {
+    };
+  out.subscribe = (_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) => {
       calls.push('subscribe');
       onFocus = nextFocus;
       onBlur = nextBlur;
@@ -374,38 +378,38 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
         if (onFocus === nextFocus) onFocus = null;
         if (onBlur === nextBlur) onBlur = null;
       };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>({
-    calls,
-    async exit() {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>();
+  out.calls = calls;
+  out.exit = async () => {
       calls.push('exit');
       return { reason: 'ok' };
-    },
-    async request(_target: InputTargetHandle) {
+    };
+  out.request = async (_target: InputTargetHandle) => {
       calls.push('request');
       return { reason: 'ok' };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function recordingRenderContextBackend(): RecordingRenderContextBackend {
   let onLost: (() => void) | null = null;
   let onRestored: (() => void) | null = null;
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>({
-    calls,
-    emitLost() {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>();
+  out.calls = calls;
+  out.emitLost = () => {
       onLost?.();
-    },
-    emitRestored() {
+    };
+  out.emitRestored = () => {
       onRestored?.();
-    },
-    subscribe(_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) {
+    };
+  out.subscribe = (_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) => {
       calls.push('subscribe');
       onLost = nextLost;
       onRestored = nextRestored;
@@ -414,18 +418,18 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
         if (onLost === nextLost) onLost = null;
         if (onRestored === nextRestored) onRestored = null;
       };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
-  return createEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>({
-    calls,
-    resize(_target: InputTargetHandle, width: number, height: number) {
+    const out = allocateEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>();
+  out.calls = calls;
+  out.resize = (_target: InputTargetHandle, width: number, height: number) => {
       calls.push(`resize:${width},${height}`);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowBackend()): TestHost {
@@ -1455,8 +1459,13 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = createEntity<{ prepare: typeof prepare }>({ prepare }) satisfies InputTargetBackend;
-    const target: InputTargetHandle = createEntity({ __brand: 'InputTargetHandle' as const });
+    const backend = allocateEntity<{ prepare: typeof prepare }>();
+    backend.prepare = prepare;
+    const target = (() => {
+      const out = allocateEntity<RenderState>();
+      out.__brand = 'InputTargetHandle' as const;
+      return finishEntity(out);
+    })();
 
     prepareElementForInput({ input: { target: backend } }, target);
 
@@ -1467,7 +1476,8 @@ describe('prepareElementForInput', () => {
 
 describe('requestApplicationFullscreen', () => {
   it('passes the opaque target to the fullscreen capability', async () => {
-    const target: FullscreenTargetHandle = createEntity({ __brand: 'FullscreenTargetHandle' as const });
+    const target = allocateEntity<RenderState>();
+    target.__brand = 'FullscreenTargetHandle' as const;
     await expect(requestApplicationFullscreen(host, target)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['request']);
   });

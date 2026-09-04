@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -102,24 +102,22 @@ describe('createPhysics3DAbi', () => {
   it('executes and reads through caller-owned shared-memory views', () => {
     const abi = createPhysics3DAbi();
     const world = createPhysics3DAbiWorld(abi);
-    const commands: Physics3DAbiCommandBuffer = createEntity({
-      data: new Uint8Array(new SharedArrayBuffer(512)),
-      byteLength: 0,
-      commandCount: 0,
-    });
+    const commands = allocateEntity<Physics3DAbiCommandBuffer>();
+    commands.data = new Uint8Array(new SharedArrayBuffer(512));
+    commands.byteLength = 0;
+    commands.commandCount = 0;
     clearPhysics3DAbiCommandBuffer(commands);
     const body = createRigidBody3D();
     body.x = 17;
     expect(writePhysics3DAbiSetBodyCommand(commands, 3, body)).toBe(true);
     executeOrThrow(abi, world, commands);
 
-    const out: Physics3DAbiBodyBuffer = createEntity({
-      ids: new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)),
-      flags: new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)),
-      values: new Float64Array(new SharedArrayBuffer(Physics3DAbiBodyValueStride * Float64Array.BYTES_PER_ELEMENT)),
-      count: 0,
-      requiredCount: 0,
-    });
+    const out = allocateEntity<Physics3DAbiBodyBuffer>();
+    out.ids = new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT));
+    out.flags = new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT));
+    out.values = new Float64Array(new SharedArrayBuffer(Physics3DAbiBodyValueStride * Float64Array.BYTES_PER_ELEMENT));
+    out.count = 0;
+    out.requiredCount = 0;
     expect(readPhysics3DAbiBodies(abi, world, null, out)).toBe(true);
     expect(out.ids[0]).toBe(3);
     expect(out.values[Physics3DAbiBodyValue.X]).toBe(17);
@@ -612,35 +610,8 @@ function getColliderShapes(): CollisionColliderShape3D[] {
     { kind: 'cylinder', x0: 0, y0: -1, z0: 0, x1: 0, y1: 1, z1: 0, radius: 0.5 },
     { kind: 'cone', apexX: 0, apexY: 1, apexZ: 0, baseX: 0, baseY: -1, baseZ: 0, radius: 1 },
     { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] },
-    createEntity({
-      kind: 'triangle-mesh',
-      version: 0,
-      x: 0,
-      y: 0,
-      z: 0,
-      rotationX: 0,
-      rotationY: 0,
-      rotationZ: 0,
-      rotationW: 1,
-      points: [0, 0, 0, 1, 0, 0, 0, 0, 1],
-      indices: [0, 1, 2],
-    }),
-    createEntity({
-      kind: 'heightfield',
-      columns: 2,
-      rows: 2,
-      version: 0,
-      cellSizeX: 1,
-      cellSizeZ: 1,
-      x: 0,
-      y: 0,
-      z: 0,
-      rotationX: 0,
-      rotationY: 0,
-      rotationZ: 0,
-      rotationW: 1,
-      heights: [0, 0, 0, 0],
-    }),
+    (() => { const out = allocateEntity<void>(); out.kind = 'triangle-mesh'; out.version = 0; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1]; out.indices = [0, 1, 2]; return finishEntity(out); })(),
+    (() => { const out = allocateEntity<void>(); out.kind = 'heightfield'; out.columns = 2; out.rows = 2; out.version = 0; out.cellSizeX = 1; out.cellSizeZ = 1; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.heights = [0, 0, 0, 0]; return finishEntity(out); })(),
   ];
 }
 

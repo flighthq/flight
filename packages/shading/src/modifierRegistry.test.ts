@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -41,7 +41,7 @@ describe('registerModifier', () => {
       getDefineSignature: (modifier: Readonly<Modifier>) => modifier.slot,
     });
     const definition = resolveModifier(registry, 'acme.Foo');
-    expect(definition?.getDefineSignature?.(createEntity({ kind: 'acme.Foo', slot: 'Effect' }))).toBe('Effect');
+    expect(definition?.getDefineSignature?.((() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Foo'; out.slot = 'Effect'; return finishEntity(out); })())).toBe('Effect');
   });
 });
 

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import type { Node2D, Kind } from '@flighthq/types/contract';
 
@@ -13,7 +13,11 @@ import {
 import { createGlState } from './glTestHelper';
 
 function makeShader() {
-  return createEntity({ locations: {} as never, program: {} as never, bind: vi.fn() });
+    const out = allocateEntity<unknown>();
+  out.locations = {} as never;
+  out.program = {} as never;
+  out.bind = vi.fn();
+  return finishEntity(out);
 }
 
 describe('getGlMaterialShader', () => {

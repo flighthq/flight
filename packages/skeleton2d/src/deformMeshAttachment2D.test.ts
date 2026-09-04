@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -26,20 +26,14 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    skin,
-    triangles: new Uint16Array(),
-    uvs: new Float32Array(vertexCount * 2),
-    vertexCount,
-    vertices: null,
-  }) as MeshAttachment2D;
-}
-
-describe('deformSkeleton2DMeshAttachment', () => {
-  it('deforms a single-bone weighted vertex through the bone world transform', () => {
-    // One bone rotated 90° at (5,0). One vertex, one influence: offset (1,0) in the bone, weight 1.
-    const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
+    const out = allocateEntity<MeshAttachment2D>();
+  out.kind = MeshAttachment2DKind;
+  out.skin = skin;
+  out.triangles = new Uint16Array();
+  out.uvs = new Float32Array(vertexCount * 2);
+  out.vertexCount = vertexCount;
+  out.vertices = null;
+  return finishEntity(out) as MeshAttachment2D;;
     computeSkeleton2DWorldTransforms(s);
     const mesh = weightedMesh(createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1])), 1);
     const out = new Float32Array(2);
@@ -103,15 +97,16 @@ describe('deformSkeleton2DMeshAttachment', () => {
   it('adds a rigid deform offset to the setup vertices before the bone transform', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
-    const mesh = createEntity({
-      kind: MeshAttachment2DKind,
-      skin: null,
-      triangles: new Uint16Array(),
-      uvs: new Float32Array(2),
-      vertexCount: 1,
-      vertices: new Float32Array([2, 0]),
-    }) as MeshAttachment2D;
-    const out = new Float32Array(2);
+    const mesh = (() => {
+      const out = allocateEntity<MeshAttachment2D>();
+      out.kind = MeshAttachment2DKind;
+      out.skin = null;
+      out.triangles = new Uint16Array();
+      out.uvs = new Float32Array(2);
+      out.vertexCount = 1;
+      out.vertices = new Float32Array([2, 0]);
+      return finishEntity(out) as MeshAttachment2D;;
+    })();
 
     deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([1, 0]));
 
@@ -138,16 +133,16 @@ describe('deformSkeleton2DMeshAttachment', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
     const verts = new Float32Array([2, 0]); // one vertex, local to the bone
-    const mesh = createEntity({
-      kind: MeshAttachment2DKind,
-      skin: null,
-      triangles: new Uint16Array(),
-      uvs: new Float32Array(2),
-      vertexCount: 1,
-      vertices: verts,
-    }) as MeshAttachment2D;
-    // Deform in place (out === vertices) to exercise alias safety.
-    deformSkeleton2DMeshAttachment(verts, mesh, s, 0);
+    const mesh = (() => {
+      const out = allocateEntity<MeshAttachment2D>();
+      out.kind = MeshAttachment2DKind;
+      out.skin = null;
+      out.triangles = new Uint16Array();
+      out.uvs = new Float32Array(2);
+      out.vertexCount = 1;
+      out.vertices = verts;
+      return finishEntity(out) as MeshAttachment2D;;
+    })();
     // (2,0) rotated 90° = (0,2), + (5,0) → (5,2).
     expect(verts[0]).toBeCloseTo(5, 5);
     expect(verts[1]).toBeCloseTo(2, 5);

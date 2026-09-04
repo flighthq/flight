@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { InteractionSignals, Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
@@ -264,9 +264,9 @@ interface NodeTestRuntime extends NodeRuntime {
 }
 
 function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
-  return createEntity({
-    testDataField: data?.testDataField ?? 'testDataField',
-  });
+    const out = allocateEntity<NodeTestData>();
+  out.testDataField = data?.testDataField ?? 'testDataField';
+  return finishEntity(out);
 }
 
 function createGraphNodeTestRuntime(): NodeTestRuntime {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderGl from '@flighthq/render-gl/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
@@ -30,8 +30,8 @@ beforeEach(() => {
     descriptor: { width: number; height: number },
   ): GlRenderTarget => {
     const texture = {} as WebGLTexture;
-    return createEntity({
-      requestedAxes: {
+        const out = allocateEntity<unknown>();
+    out.requestedAxes = {
         width: descriptor.width,
         height: descriptor.height,
         format: 'rgba8',
@@ -40,25 +40,25 @@ beforeEach(() => {
         sampleCount: 1,
         depth: 'none',
         colorSpace: 'srgb',
-      },
-      framebuffer: {} as WebGLFramebuffer,
-      resolveFramebuffer: null,
-      texture,
-      textures: [texture],
-      depthTexture: null,
-      colorRenderbuffers: [],
-      depthStencilRenderbuffer: null,
-      format: 'rgba8',
-      colorAttachments: 1,
-      colorFormats: ['rgba8'],
-      depth: 'none',
-      colorSpace: 'srgb',
-      clearColors: [],
-      clearDepth: 1,
-      sampleCount: 1,
-      width: descriptor.width,
-      height: descriptor.height,
-    });
+      };
+    out.framebuffer = {} as WebGLFramebuffer;
+    out.resolveFramebuffer = null;
+    out.texture = texture;
+    out.textures = [texture];
+    out.depthTexture = null;
+    out.colorRenderbuffers = [];
+    out.depthStencilRenderbuffer = null;
+    out.format = 'rgba8';
+    out.colorAttachments = 1;
+    out.colorFormats = ['rgba8'];
+    out.depth = 'none';
+    out.colorSpace = 'srgb';
+    out.clearColors = [];
+    out.clearDepth = 1;
+    out.sampleCount = 1;
+    out.width = descriptor.width;
+    out.height = descriptor.height;
+    return finishEntity(out);
   }) as never);
   vi.spyOn(renderGl, 'destroyGlRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'drawGlRenderTargetResult').mockImplementation((() => {}) as never);

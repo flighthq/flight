@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityRuntimeKey,
   HasShellBeep,
@@ -50,12 +50,10 @@ describe('moveShellItemsToTrash', () => {
     const paths: string[] = [];
     const resolvers: Array<(outcome: { reason: 'ok' | 'operation-failed' }) => void> = [];
     const host = trashHost(
-      createEntity({
-        moveToTrash(path) {
+      (() => { const out = allocateEntity<unknown>(); out.moveToTrash = (path) => {
           paths.push(path);
           return new Promise((resolve) => resolvers.push(resolve));
-        },
-      } satisfies Omit<ShellTrashBackend, typeof EntityRuntimeKey>),
+        }; return finishEntity(out); })(),
     );
 
     const outcomes = moveShellItemsToTrash(host, ['/first', '/second']);
@@ -75,7 +73,7 @@ describe('moveShellItemsToTrash', () => {
 describe('moveShellItemToTrash', () => {
   it('routes through the supplied trash provider', async () => {
     const moveToTrash = vi.fn(async () => ({ reason: 'ok' as const }));
-    await expect(moveShellItemToTrash(trashHost(createEntity({ moveToTrash })), '/item')).resolves.toEqual({
+    await expect(moveShellItemToTrash(trashHost((() => { const out = allocateEntity<unknown>(); out.moveToTrash = moveToTrash; return finishEntity(out); })()), '/item')).resolves.toEqual({
       reason: 'ok',
     });
     expect(moveToTrash).toHaveBeenCalledWith('/item');
@@ -91,7 +89,7 @@ describe('openShellExternalUrl', () => {
 
   it('blocks before dispatch when the scheme is not allowed', async () => {
     const open = vi.fn(async () => ({ reason: 'ok' as const }));
-    const host = externalHost(createEntity({ open }));
+    const host = externalHost((() => { const out = allocateEntity<unknown>(); out.open = open; return finishEntity(out); })());
     await expect(openShellExternalUrl(host, 'file:///etc/passwd', { allowedSchemes: ['https'] })).resolves.toEqual({
       reason: 'blocked-scheme',
     });
@@ -101,20 +99,16 @@ describe('openShellExternalUrl', () => {
   it('keeps two live hosts isolated', async () => {
     const calls: string[] = [];
     const first = externalHost(
-      createEntity({
-        async open(url) {
+      (() => { const out = allocateEntity<unknown>(); out.open = async (url) => {
           calls.push(`first:${url}`);
           return { reason: 'ok' };
-        },
-      } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>),
+        }; return finishEntity(out); })(),
     );
     const second = externalHost(
-      createEntity({
-        async open(url) {
+      (() => { const out = allocateEntity<unknown>(); out.open = async (url) => {
           calls.push(`second:${url}`);
           return { reason: 'operation-failed' };
-        },
-      } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>),
+        }; return finishEntity(out); })(),
     );
     await expect(openShellExternalUrl(first, 'https://one.test', HTTPS_ONLY)).resolves.toEqual({ reason: 'ok' });
     await expect(openShellExternalUrl(second, 'https://two.test', HTTPS_ONLY)).resolves.toEqual({
@@ -126,11 +120,10 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = createEntity({
-      async open() {
+    const provider = allocateEntity<unknown>();
+    provider.open = async () => {
         return { message: '', reason: 'operation-failed' as const };
-      },
-    });
+      };
     await expect(openShellPath(pathOpenHost(provider), '/missing')).resolves.toEqual({
       message: '',
       reason: 'operation-failed',
@@ -151,7 +144,7 @@ describe('readShellShortcutLink', () => {
 describe('revealShellPath', () => {
   it('returns the reveal-specific outcome', async () => {
     const reveal = vi.fn(async () => ({ reason: 'operation-failed' as const }));
-    await expect(revealShellPath(pathRevealHost(createEntity({ reveal })), '/item')).resolves.toEqual({
+    await expect(revealShellPath(pathRevealHost((() => { const out = allocateEntity<unknown>(); out.reveal = reveal; return finishEntity(out); })()), '/item')).resolves.toEqual({
       reason: 'operation-failed',
     });
   });
@@ -160,7 +153,7 @@ describe('revealShellPath', () => {
 describe('shellBeep', () => {
   it('dispatches synchronously', () => {
     const beep = vi.fn();
-    shellBeep(beepHost(createEntity({ beep })));
+    shellBeep(beepHost((() => { const out = allocateEntity<unknown>(); out.beep = beep; return finishEntity(out); })()));
     expect(beep).toHaveBeenCalledOnce();
   });
 });
@@ -176,7 +169,7 @@ describe('spawnShellProcess', () => {
   it('forwards the command, argument vector, and options to the host backend unchanged', () => {
     const process = shellProcess();
     const spawn = vi.fn(() => process);
-    const host = processHost(createEntity({ spawn }));
+    const host = processHost((() => { const out = allocateEntity<unknown>(); out.spawn = spawn; return finishEntity(out); })());
     const args = ['--flag', 'value'] as const;
     const options = { cwd: '/work', environment: { MODE: 'test' } } as const;
 
@@ -222,13 +215,13 @@ function processHost(process: ShellProcessBackend): ShellProcessHost {
 }
 
 function shellProcess(): ShellProcess {
-  return createEntity({
-    exit: Promise.resolve({ code: 0, signal: null }),
-    stderr: new ReadableStream<Uint8Array>(),
-    stdin: new WritableStream<Uint8Array>(),
-    stdout: new ReadableStream<Uint8Array>(),
-    terminate: vi.fn(),
-  });
+    const out = allocateEntity<HasShellBeep>();
+  out.exit = Promise.resolve({ code: 0, signal: null });
+  out.stderr = new ReadableStream<Uint8Array>();
+  out.stdin = new WritableStream<Uint8Array>();
+  out.stdout = new ReadableStream<Uint8Array>();
+  out.terminate = vi.fn();
+  return finishEntity(out);
 }
 
 function shortcutLinkHost(shortcutLink: ShellShortcutLinkBackend): HasShellShortcutLink {
@@ -236,12 +229,12 @@ function shortcutLinkHost(shortcutLink: ShellShortcutLinkBackend): HasShellShort
 }
 
 function shortcutLinkProvider(): ShellShortcutLinkBackend & { write: ReturnType<typeof vi.fn> } {
-  return createEntity({
-    async read() {
+    const out = allocateEntity<HasShellBeep>();
+  out.read = async () => {
       return { link: { target: '/app' }, reason: 'ok' };
-    },
-    write: vi.fn(async () => ({ reason: 'ok' as const })),
-  } satisfies Omit<ShellShortcutLinkBackend, typeof EntityRuntimeKey>);
+    };
+  out.write = vi.fn(async () => ({ reason: 'ok' as const }));
+  return finishEntity(out);
 }
 
 function trashHost(trash: ShellTrashBackend): HasShellTrash {

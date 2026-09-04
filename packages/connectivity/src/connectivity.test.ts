@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   ConnectivityChangeBackend,
@@ -48,18 +48,15 @@ function fakeProvider(
   let unsubscribes = 0;
   let destroyed = false;
   return Object.assign(
-    createEntity({
-      destroy() {
+    (() => { const out = allocateEntity<unknown>(); out.destroy = () => {
         if (destroyed) return;
         destroyed = true;
         destroys++;
         listeners.clear();
-      },
-      getStatus(out: ConnectivityStatus) {
+      }; out.getStatus = (out: ConnectivityStatus) => {
         Object.assign(out, current);
         return out;
-      },
-      subscribe(listener: () => void) {
+      }; out.subscribe = (listener: () => void) => {
         if (!subscriptionAvailable || destroyed) return null;
         listeners.add(listener);
         let active = true;
@@ -69,8 +66,7 @@ function fakeProvider(
           unsubscribes++;
           listeners.delete(listener);
         };
-      },
-    }),
+      }; return finishEntity(out); })(),
     {
       activeSubscriptions: () => listeners.size,
       destroyCalls: () => destroys,
@@ -215,14 +211,13 @@ describe('detachConnectivity', () => {
 describe('detectConnectivityReachability', () => {
   it('dispatches reachability only to the supplied reachability slot', async () => {
     let calls = 0;
-    const reachability = createEntity({
-      async detectReachability(_options, out) {
+    const reachability = allocateEntity<unknown>();
+    reachability.detectReachability = async (_options, out) => {
         calls++;
         out.latency = 7;
         out.reachable = true;
         return out;
-      },
-    } satisfies Omit<ConnectivityReachabilityBackend, typeof EntityRuntimeKey>);
+      };
     const out = { latency: -1, reachable: false };
     const result = await detectConnectivityReachability(
       { connectivity: { reachability } },

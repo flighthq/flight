@@ -1,5 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -33,18 +33,14 @@ function makeBone(): Bone2D {
 
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    skin,
-    triangles: new Uint16Array(),
-    uvs: new Float32Array(pointCount * 2),
-    vertexCount: pointCount,
-    vertices: null,
-  }) as MeshAttachment2D;
-}
-
-function rig(attachment: MeshAttachment2D | null): {
-  pose: ReturnType<typeof cloneSkeleton2D>;
+    const out = allocateEntity<Bone2D>();
+  out.kind = MeshAttachment2DKind;
+  out.skin = skin;
+  out.triangles = new Uint16Array();
+  out.uvs = new Float32Array(pointCount * 2);
+  out.vertexCount = pointCount;
+  out.vertices = null;
+  return finishEntity(out) as MeshAttachment2D;;
   setup: ReturnType<typeof createSkeleton2D>;
 } {
   const slot: Slot2D = { attachment, boneIndex: 0, color: 0xffffffff, name: 's' };

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget } from '@flighthq/types/contract';
 
 import {
@@ -60,5 +60,10 @@ function makeTarget(w = 4, h = 4): CanvasRenderTarget {
   canvas.width = w;
   canvas.height = h;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-  return createEntity({ canvas, context, width: w, height: h }) as unknown as CanvasRenderTarget;
+    const out = allocateEntity<CanvasRenderTarget>();
+  out.canvas = canvas;
+  out.context = context;
+  out.width = w;
+  out.height = h;
+  return finishEntity(out) as unknown;
 }

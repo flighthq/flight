@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -34,7 +34,7 @@ describe('disposeMidiAccess', () => {
     const access = requiredFunction('createMidiAccessResource')({
       attachStateChange: async (listener: (port: unknown) => void) => {
         accessListener.current = listener;
-        return { attachment: createEntity({ release }), reason: 'ok' };
+        return { attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' };
       },
       getInputPorts: () => [],
       getOutputPorts: () => [],
@@ -75,7 +75,8 @@ describe('disposeMidiAccess', () => {
 
 describe('getMidiAccessInputPorts', () => {
   it('returns the provider current stable input identities without routing through ids', () => {
-    const input = createEntity({ id: 'duplicate' });
+    const input = allocateEntity<unknown>();
+    input.id = 'duplicate';
     const access = createAccess([input], []);
     const getMidiAccessInputPorts = requiredFunction('getMidiAccessInputPorts');
     expect(getMidiAccessInputPorts(access)).toEqual({ ports: [input], reason: 'ok' });
@@ -85,7 +86,8 @@ describe('getMidiAccessInputPorts', () => {
 
 describe('getMidiAccessOutputPorts', () => {
   it('accepts an access with zero devices and preserves the provider output identities', () => {
-    const output = createEntity({ id: 'duplicate' });
+    const output = allocateEntity<unknown>();
+    output.id = 'duplicate';
     const getMidiAccessOutputPorts = requiredFunction('getMidiAccessOutputPorts');
     expect(getMidiAccessOutputPorts(createAccess([], []))).toEqual({ ports: [], reason: 'ok' });
     expect(getMidiAccessOutputPorts(createAccess([], [output]))).toEqual({ ports: [output], reason: 'ok' });
@@ -102,7 +104,7 @@ describe('requestMidiAccess', () => {
       .mockResolvedValueOnce({ reason: 'permission-denied' })
       .mockResolvedValueOnce({ reason: 'security-restricted' })
       .mockRejectedValueOnce(new Error('provider fault'));
-    const host = { midi: { access: createEntity({ requestAccess }) } };
+    const host = { midi: { access: (() => { const out = allocateEntity<unknown>(); out.requestAccess = requestAccess; return finishEntity(out); })() } };
     await expect(requestMidiAccess(host)).resolves.toEqual({ access, reason: 'accepted' });
     await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'permission-denied' });
     await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'security-restricted' });

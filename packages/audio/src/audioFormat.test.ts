@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AudioBackend, Entity, HasMediaAudioCodec } from '@flighthq/types/contract';
 
 import {
@@ -12,7 +12,7 @@ import {
 function hostWith(canPlay: (type: string) => boolean): HasMediaAudioCodec {
   return {
     media: {
-      audioCodec: createEntity<Omit<AudioBackend, keyof Entity>>({ canPlayType: canPlay }),
+      audioCodec: (() => { const out = allocateEntity<Omit<AudioBackend, keyof Entity>>(); out.canPlayType = canPlay; return finishEntity(out); })(),
     },
   } as HasMediaAudioCodec;
 }

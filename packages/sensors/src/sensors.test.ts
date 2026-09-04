@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
@@ -70,109 +70,109 @@ function fakeBackend(): SensorsBackend & {
   let proximityListener: ((reading: Readonly<ProximityReading>) => void) | null = null;
   let quaternionListener: ((reading: Readonly<QuaternionReading>) => void) | null = null;
 
-  return createEntity<Omit<ReturnType<typeof fakeBackend>, typeof EntityRuntimeKey>>({
-    getPermissionState: async (): Promise<SensorsPermissionState> => 'granted',
-    isAmbientLightSupported: () => true,
-    isBarometerSupported: () => false,
-    isGravitySupported: () => true,
-    isGyroscopeSupported: () => true,
-    isLinearAccelerationSupported: () => true,
-    isMagnetometerSupported: () => true,
-    isMotionSupported: () => true,
-    isOrientationSupported: () => true,
-    isProximitySupported: () => false,
-    requestPermission: async () => true,
-    subscribeAbsoluteOrientation(l) {
+    const out = allocateEntity<Omit<ReturnType<typeof fakeBackend>, typeof EntityRuntimeKey>>();
+  out.getPermissionState = async (): Promise<SensorsPermissionState> => 'granted';
+  out.isAmbientLightSupported = () => true;
+  out.isBarometerSupported = () => false;
+  out.isGravitySupported = () => true;
+  out.isGyroscopeSupported = () => true;
+  out.isLinearAccelerationSupported = () => true;
+  out.isMagnetometerSupported = () => true;
+  out.isMotionSupported = () => true;
+  out.isOrientationSupported = () => true;
+  out.isProximitySupported = () => false;
+  out.requestPermission = async () => true;
+  out.subscribeAbsoluteOrientation = (l) => {
       absoluteOrientationListener = l;
       return () => {
         absoluteOrientationListener = null;
       };
-    },
-    subscribeAmbientLight(l) {
+    };
+  out.subscribeAmbientLight = (l) => {
       ambientLightListener = l;
       return () => {
         ambientLightListener = null;
       };
-    },
-    subscribeBarometer(l) {
+    };
+  out.subscribeBarometer = (l) => {
       barometerListener = l;
       return () => {
         barometerListener = null;
       };
-    },
-    subscribeGravity(l) {
+    };
+  out.subscribeGravity = (l) => {
       gravityListener = l;
       return () => {
         gravityListener = null;
       };
-    },
-    subscribeLinearAcceleration(l) {
+    };
+  out.subscribeLinearAcceleration = (l) => {
       linearAccelerationListener = l;
       return () => {
         linearAccelerationListener = null;
       };
-    },
-    subscribeMagnetometer(l) {
+    };
+  out.subscribeMagnetometer = (l) => {
       magnetometerListener = l;
       return () => {
         magnetometerListener = null;
       };
-    },
-    subscribeMotion(l) {
+    };
+  out.subscribeMotion = (l) => {
       motionListener = l;
       return () => {
         motionListener = null;
       };
-    },
-    subscribeOrientation(l) {
+    };
+  out.subscribeOrientation = (l) => {
       orientationListener = l;
       return () => {
         orientationListener = null;
       };
-    },
-    subscribeProximity(l) {
+    };
+  out.subscribeProximity = (l) => {
       proximityListener = l;
       return () => {
         proximityListener = null;
       };
-    },
-    subscribeQuaternion(l) {
+    };
+  out.subscribeQuaternion = (l) => {
       quaternionListener = l;
       return () => {
         quaternionListener = null;
       };
-    },
-    fireAbsoluteOrientation(orientation) {
+    };
+  out.fireAbsoluteOrientation = (orientation) => {
       absoluteOrientationListener?.(orientation);
-    },
-    fireAmbientLight(reading) {
+    };
+  out.fireAmbientLight = (reading) => {
       ambientLightListener?.(reading);
-    },
-    fireBarometer(reading) {
+    };
+  out.fireBarometer = (reading) => {
       barometerListener?.(reading);
-    },
-    fireGravity(reading) {
+    };
+  out.fireGravity = (reading) => {
       gravityListener?.(reading);
-    },
-    fireLinearAcceleration(reading) {
+    };
+  out.fireLinearAcceleration = (reading) => {
       linearAccelerationListener?.(reading);
-    },
-    fireMagnetometer(reading) {
+    };
+  out.fireMagnetometer = (reading) => {
       magnetometerListener?.(reading);
-    },
-    fireMotion(acceleration, rotationRate) {
+    };
+  out.fireMotion = (acceleration, rotationRate) => {
       motionListener?.(acceleration, rotationRate);
-    },
-    fireOrientation(orientation) {
+    };
+  out.fireOrientation = (orientation) => {
       orientationListener?.(orientation);
-    },
-    fireProximity(reading) {
+    };
+  out.fireProximity = (reading) => {
       proximityListener?.(reading);
-    },
-    fireQuaternion(reading) {
+    };
+  out.fireQuaternion = (reading) => {
       quaternionListener?.(reading);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function hostOf(backend: SensorsBackend): HasSystemSensors {

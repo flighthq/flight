@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -14,10 +14,10 @@ describe('app explicit Host ownership', () => {
     const setBadgeCount = vi.fn(() => true);
     const host = {
       app: {
-        badge: createEntity({ setBadgeCount }),
-        focus: createEntity({ focus }),
-        name: createEntity({ getName }),
-        quit: createEntity({ quit }),
+        badge: (() => { const out = allocateEntity<unknown>(); out.setBadgeCount = setBadgeCount; return finishEntity(out); })(),
+        focus: (() => { const out = allocateEntity<unknown>(); out.focus = focus; return finishEntity(out); })(),
+        name: (() => { const out = allocateEntity<unknown>(); out.getName = getName; return finishEntity(out); })(),
+        quit: (() => { const out = allocateEntity<unknown>(); out.quit = quit; return finishEntity(out); })(),
       },
     };
 
@@ -38,14 +38,18 @@ describe('app explicit Host ownership', () => {
       listeners.ready = listener;
       return vi.fn();
     });
-    const inert = createEntity({ subscribe: () => vi.fn() });
+    const inert = (() => {
+      const out = allocateEntity<unknown>();
+      out.subscribe = () => vi.fn();
+      return finishEntity(out);
+    })();
     const host = {
       app: {
         activate: inert,
         allWindowsClosed: inert,
         openFile: inert,
         quitRequest: inert,
-        ready: createEntity({ subscribe }),
+        ready: (() => { const out = allocateEntity<unknown>(); out.subscribe = subscribe; return finishEntity(out); })(),
         secondInstance: inert,
       },
     };

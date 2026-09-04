@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { presentGlRenderTarget } from './glPresentRenderTarget';
@@ -6,8 +6,8 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRenderTarget {
   const format = colorSpace === 'linear' ? 'rgba16f' : 'rgba8';
-  return createEntity({
-    requestedAxes: {
+    const out = allocateEntity<GlRenderTarget>();
+  out.requestedAxes = {
       width: 32,
       height: 16,
       format,
@@ -16,25 +16,25 @@ function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRen
       sampleCount: 1,
       depth: 'none',
       colorSpace,
-    },
-    width: 32,
-    height: 16,
-    format,
-    colorAttachments: 1,
-    colorFormats: [format],
-    depth: 'none',
-    colorSpace,
-    clearColors: [],
-    clearDepth: 1,
-    sampleCount: 1,
-    framebuffer: {} as WebGLFramebuffer,
-    resolveFramebuffer: null,
-    textures: [texture],
-    texture,
-    depthTexture: null,
-    colorRenderbuffers: [],
-    depthStencilRenderbuffer: null,
-  });
+    };
+  out.width = 32;
+  out.height = 16;
+  out.format = format;
+  out.colorAttachments = 1;
+  out.colorFormats = [format];
+  out.depth = 'none';
+  out.colorSpace = colorSpace;
+  out.clearColors = [];
+  out.clearDepth = 1;
+  out.sampleCount = 1;
+  out.framebuffer = {} as WebGLFramebuffer;
+  out.resolveFramebuffer = null;
+  out.textures = [texture];
+  out.texture = texture;
+  out.depthTexture = null;
+  out.colorRenderbuffers = [];
+  out.depthStencilRenderbuffer = null;
+  return finishEntity(out);
 }
 
 describe('presentGlRenderTarget', () => {

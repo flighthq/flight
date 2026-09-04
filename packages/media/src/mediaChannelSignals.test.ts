@@ -1,5 +1,5 @@
 import { createAudioResource } from '@flighthq/audio/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
@@ -27,24 +27,24 @@ function mockBuffer(): AudioBuffer {
 }
 
 function mockBackend(): AudioDeviceBackend {
-  return createEntity({
-    createBuffer: vi.fn().mockReturnValue(1),
-    createDevice: vi.fn().mockReturnValue(1),
-    createSource: vi.fn(() => nextHandle++ as unknown as AudioSourceHandle),
-    destroyBuffer: vi.fn(),
-    destroyDevice: vi.fn(),
-    destroySource: vi.fn(),
-    getDeviceTime: vi.fn(() => 0),
-    onSourceEnded: vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
+    const out = allocateEntity<AudioBuffer>();
+  out.createBuffer = vi.fn().mockReturnValue(1);
+  out.createDevice = vi.fn().mockReturnValue(1);
+  out.createSource = vi.fn(() => nextHandle++ as unknown as AudioSourceHandle);
+  out.destroyBuffer = vi.fn();
+  out.destroyDevice = vi.fn();
+  out.destroySource = vi.fn();
+  out.getDeviceTime = vi.fn(() => 0);
+  out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
       onEnded.set(source as number, cb);
-    }),
-    resumeDevice: vi.fn(),
-    setSourceGain: vi.fn(),
-    setSourcePan: vi.fn(),
-    setSourcePlaybackRate: vi.fn(),
-    startSource: vi.fn(),
-    stopSource: vi.fn(),
-  });
+    });
+  out.resumeDevice = vi.fn();
+  out.setSourceGain = vi.fn();
+  out.setSourcePan = vi.fn();
+  out.setSourcePlaybackRate = vi.fn();
+  out.startSource = vi.fn();
+  out.stopSource = vi.fn();
+  return finishEntity(out);
 }
 
 beforeEach(() => {
