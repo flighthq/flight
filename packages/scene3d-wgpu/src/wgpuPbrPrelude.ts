@@ -221,11 +221,24 @@ struct VertexOutput {
   @location(1) normal : vec3f,
   @location(2) tangent : vec4f,
   @location(3) uv : vec2f,
+  @location(6) instanceModel0 : vec4f,
+  @location(7) instanceModel1 : vec4f,
+  @location(8) instanceModel2 : vec4f,
+  @location(9) instanceModel3 : vec4f,
 ) -> VertexOutput {
   var out : VertexOutput;
-  var localPosition = vec4f(position, 1.0);
-  var localNormal = normal;
-  var localTangent = tangent.xyz;
+  // The per-instance model matrix, mirroring scene-gl's HAS_INSTANCES PBR path. Applied unconditionally:
+  // a non-instanced draw binds the identity instance buffer (ensureWgpuInstanceBuffer's fallback), so this
+  // is a no-op there and the family needs no second pipeline variant. Without it an InstancedMesh drawn
+  // with a PBR material renders every instance stacked at the node origin — the geometry is placed by the
+  // vertex stage, so a shader that ignores these attributes ignores the whole batch's placement.
+  let instanceModel = mat4x4f(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
+  // The instance rotation/scale also carries the normal and tangent, or a rotated instance would light as
+  // though it were still in the batch's bind orientation.
+  let instanceBasis = mat3x3f(instanceModel[0].xyz, instanceModel[1].xyz, instanceModel[2].xyz);
+  var localPosition = instanceModel * vec4f(position, 1.0);
+  var localNormal = instanceBasis * normal;
+  var localTangent = instanceBasis * tangent.xyz;
   let world = draw.world * localPosition;
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;

@@ -1885,6 +1885,112 @@
       ]
     },
     {
+      "key": "instanced",
+      "label": "Instanced",
+      "scenes": [
+        {
+          "scene": "instanced-mesh-batches",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "instanced-mesh-offscreen-origin",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "instanced-mesh-placement",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "instanced-mesh-shadow",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            }
+          }
+        }
+      ]
+    },
+    {
       "key": "light",
       "label": "Lighting",
       "scenes": [
