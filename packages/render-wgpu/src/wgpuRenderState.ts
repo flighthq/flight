@@ -317,6 +317,9 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
   }
+  for (const slot of runtime.meshInstanceBufferPool) {
+    slot.buffer?.destroy();
+  }
   const ctx = runtime.context;
   ctx.references--;
   if (ctx.references === 0) {
@@ -339,6 +342,10 @@ function createWgpuRenderStateRuntimeInternal(
 ): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
+  // Initialized here rather than alongside the presentation-state field block, so every state that
+  // reaches an instanced draw — presentation, offscreen, or a test helper's — has the pool to claim from.
+  runtime.meshInstanceBufferPool = [];
+  runtime.meshInstanceBufferCursor = 0;
   runtime.surfaceAntialiasEnabled = false;
   runtime.surfaceAntialiasTexture = null;
   runtime.surfaceAntialiasView = null;

@@ -5,6 +5,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   DirectionalLight,
+  InstancedMesh,
   Material,
   Matrix3,
   Matrix4,
@@ -16,7 +17,12 @@ import type {
 } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
-import { ensureWgpuScene3DLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
+import {
+  ensureWgpuInstanceBuffer,
+  ensureWgpuScene3DLayouts,
+  SHADOW_DEPTH_FORMAT,
+  writeWgpuDrawUniform,
+} from './wgpuMeshPipeline';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 
@@ -43,6 +49,7 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
   }
   scene.shadowComparisonSampler = null;
   scene.shadowDepthPipeline = null;
+  scene.shadowDepthInstancedPipeline = null;
   scene.shadowDepthSkinnedPipeline = null;
   scene.shadowSampleBindGroup = null;
   scene.shadowSampleLayout = null;
@@ -131,8 +138,19 @@ export function drawWgpuScene3DShadowMap(
     // The app prepares the skin palette before any draw. Select the optional skinned depth pipeline only
     // when the registered GPU-skinning adapter recognizes this caster, so rigid scenes neither compile
     // the skin shader nor allocate a palette texture.
-    const skinned = skinning?.isGpuSkinned(mesh) ?? false;
-    const pipeline = skinned ? ensureWgpuShadowDepthPipeline(state, true) : rigidPipeline;
+    // An InstancedMesh draws once per instance at world * instanceMatrix, so the depth pass must instance
+    // it exactly as the forward pass does. Recording a single rigid caster at the node's world matrix both
+    // drops every instance's shadow and — because the per-instance matrix routinely carries the model's
+    // authoring scale — can stamp a wildly mis-sized silhouette over the whole map. Mirrors glShadowMap.
+    const instanced = isShadowInstancedMesh(mesh);
+    if (instanced && (mesh as unknown as InstancedMesh).instanceCount === 0) return;
+
+    const skinned = !instanced && (skinning?.isGpuSkinned(mesh) ?? false);
+    const pipeline = instanced
+      ? ensureWgpuShadowDepthInstancedPipeline(state)
+      : skinned
+        ? ensureWgpuShadowDepthPipeline(state, true)
+        : rigidPipeline;
     const upload = ensureWgpuMeshUpload(state, mesh.geometry, skinned);
     if (pipeline !== boundPipeline) {
       pass.setPipeline(pipeline);
@@ -155,13 +173,21 @@ export function drawWgpuScene3DShadowMap(
 
     pass.setBindGroup(0, drawBindGroup, _dynamicOffsets);
     pass.setVertexBuffer(0, upload.vertexBuffer);
+    const instanceCount = instanced ? (mesh as unknown as InstancedMesh).instanceCount : 1;
+    if (instanced) {
+      const instancedMesh = mesh as unknown as InstancedMesh;
+      pass.setVertexBuffer(
+        1,
+        ensureWgpuInstanceBuffer(state, flattenShadowInstanceMatrices(instancedMesh), instanceCount),
+      );
+    }
     // Same indexed/non-indexed split as the forward pass and as glShadowMap: a non-indexed caster
     // still has to cast, or it renders but drops its shadow.
     if (upload.indexBuffer === null) {
-      pass.draw(upload.indexCount, 1, 0, 0);
+      pass.draw(upload.indexCount, instanceCount, 0, 0);
     } else {
       pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat!);
-      pass.drawIndexed(upload.indexCount, 1, 0, 0, 0);
+      pass.drawIndexed(upload.indexCount, instanceCount, 0, 0, 0);
     }
   });
 
@@ -213,6 +239,91 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean)
   else scene.shadowDepthPipeline = pipeline;
   return pipeline;
 }
+
+// The HAS_INSTANCES depth pipeline: the rigid depth pass plus the instance-step vertex buffer carrying
+// one mat4 per instance, so a batch records one silhouette per live instance. group(0) is the same shared
+// Draw layout the rigid variant uses. The WGSL mirror of scene-gl's compileShadowDepthInstancedProgram.
+function ensureWgpuShadowDepthInstancedPipeline(state: WgpuRenderState): GPURenderPipeline {
+  const scene = getWgpuScene3DRuntime(state);
+  if (scene.shadowDepthInstancedPipeline !== null) return scene.shadowDepthInstancedPipeline;
+
+  const device = state.device;
+  const pipeline = device.createRenderPipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [ensureWgpuScene3DLayouts(state).drawBindGroupLayout],
+    }),
+    vertex: {
+      module: device.createShaderModule({ code: SHADOW_DEPTH_INSTANCED_WGSL }),
+      entryPoint: 'vs_main',
+      buffers: SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS,
+    },
+    primitive: { topology: 'triangle-list', frontFace: 'ccw', cullMode: 'front' },
+    depthStencil: { format: SHADOW_DEPTH_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
+  });
+  scene.shadowDepthInstancedPipeline = pipeline;
+  return pipeline;
+}
+
+// Structural, matching prepareScene3DRender's own instanced test, so the depth pass and the forward pass
+// agree on what an instanced caster is without importing a kind check.
+function isShadowInstancedMesh(mesh: Readonly<Mesh>): boolean {
+  return 'instanceMatrices' in mesh;
+}
+
+// Packs the live instance matrices into the flat Float32Array ensureWgpuInstanceBuffer uploads. The depth
+// pass keeps its own scratch rather than sharing the forward pass's: the two run at different points in a
+// frame and a shared buffer would couple their growth.
+function flattenShadowInstanceMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
+  const count = mesh.instanceCount;
+  const needed = count * 16;
+  if (_shadowInstanceData.length < needed) _shadowInstanceData = new Float32Array(needed);
+  for (let i = 0; i < count; i++) _shadowInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  return _shadowInstanceData;
+}
+
+// draw.world already carries lightMatrix * nodeWorld, so the per-instance matrix slots between it and the
+// vertex — the same `world * instanceMatrix * position` order the forward instanced path uses.
+const SHADOW_DEPTH_INSTANCED_WGSL = /* wgsl */ `
+struct Draw {
+  world : mat4x4f,
+  normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,
+  params : vec4f,
+};
+@group(0) @binding(0) var<uniform> draw : Draw;
+
+@vertex fn vs_main(
+  @location(0) position : vec3f,
+  @location(6) instance0 : vec4f,
+  @location(7) instance1 : vec4f,
+  @location(8) instance2 : vec4f,
+  @location(9) instance3 : vec4f,
+) -> @builtin(position) vec4f {
+  let instanceModel = mat4x4f(instance0, instance1, instance2, instance3);
+  var clip = draw.world * instanceModel * vec4f(position, 1.0);
+  clip.z = (clip.z + clip.w) * 0.5;
+  return clip;
+}
+`;
+
+// Position from the shared 48-byte vertex, plus the 64-byte instance-step matrix buffer at slot 1. The
+// instance layout matches wgpuMeshPipeline's INSTANCE_BUFFER_LAYOUT — the same buffer ensureWgpuInstanceBuffer
+// fills for the forward pass — so the two paths place an instance identically.
+const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
+  { arrayStride: 48, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] },
+  {
+    arrayStride: 64,
+    stepMode: 'instance',
+    attributes: [
+      { shaderLocation: 6, offset: 0, format: 'float32x4' },
+      { shaderLocation: 7, offset: 16, format: 'float32x4' },
+      { shaderLocation: 8, offset: 32, format: 'float32x4' },
+      { shaderLocation: 9, offset: 48, format: 'float32x4' },
+    ],
+  },
+];
+
+let _shadowInstanceData = new Float32Array(64 * 16);
 
 // The depth-only shadow vertex module. Reads only position from the canonical 48-byte vertex; draw.world
 // already carries the light view-projection (baked per mesh by drawWgpuScene3DShadowMap). The one WebGPU

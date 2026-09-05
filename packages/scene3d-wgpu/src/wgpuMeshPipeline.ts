@@ -22,6 +22,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuMaterialBinding,
   WgpuMeshPipeline,
+  WgpuMeshInstanceBufferSlot,
   WgpuRenderState,
   WgpuScene3DLayouts,
   WgpuScene3DShadow,
@@ -210,7 +211,6 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
   return scene.frameBindGroup;
 }
 
-const instanceBuffers = new WeakMap<WgpuRenderState, { buffer: GPUBuffer; capacity: number }>();
 const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
 // Resolves the shared IBL sample bind group a caller binds when its pipeline carries the
@@ -308,6 +308,14 @@ export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupL
   return scene.iblSampleLayout;
 }
 
+// Claims a per-draw slot from the frame's instance-buffer pool, sizes it, uploads `matrices`, and returns
+// the buffer to bind as the instance-step vertex buffer.
+//
+// ★ THE SLOT MUST BE PER DRAW, NOT PER STATE. Every instanced draw in a frame records into the same
+// render pass, and that pass is submitted once at end of frame — so all of these writeBuffer calls land
+// before any draw reads. One shared buffer rewritten between draws therefore leaves EVERY instanced mesh
+// rendering the last one's matrices, silently collapsing each batch onto another's placement. This is the
+// same hazard, and the same remedy, as the quad-batch writer's buffer pool.
 export function ensureWgpuInstanceBuffer(
   state: WgpuRenderState,
   matrices: Readonly<Float32Array> | null | undefined,
@@ -315,21 +323,34 @@ export function ensureWgpuInstanceBuffer(
 ): GPUBuffer {
   const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
   const required = Math.max(1, instanceCount) * 64;
-  let cached = instanceBuffers.get(state);
-  if (cached === undefined || cached.capacity < required) {
-    cached?.buffer.destroy();
-    const capacity = Math.max(required, 64 * 64);
-    cached = {
-      buffer: state.device.createBuffer({
-        size: capacity,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      }),
-      capacity,
-    };
-    instanceBuffers.set(state, cached);
+  const slot = acquireWgpuMeshInstanceBufferSlot(state);
+  if (slot.buffer === null || slot.capacity < required) {
+    // Grown by allocating a replacement and letting the superseded buffer go to GC: destroying it here
+    // could pull a buffer a prior frame's submit still references.
+    const capacity = Math.max(required, slot.capacity * 2, 64 * 64);
+    slot.buffer = state.device.createBuffer({
+      size: capacity,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    slot.capacity = capacity;
   }
-  state.device.queue.writeBuffer(cached.buffer, 0, source.buffer, source.byteOffset, required);
-  return cached.buffer;
+  state.device.queue.writeBuffer(slot.buffer, 0, source.buffer, source.byteOffset, required);
+  return slot.buffer;
+}
+
+// Claims the next per-frame pool slot, allocating one if this frame has more instanced draws than any
+// prior frame. The cursor is reset each frame by beginWgpuFrame, so slots are reused across frames —
+// safe because a frame's writeBuffer is queued after the previous frame's submit.
+function acquireWgpuMeshInstanceBufferSlot(state: WgpuRenderState): WgpuMeshInstanceBufferSlot {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const pool = runtime.meshInstanceBufferPool;
+  let slot = pool[runtime.meshInstanceBufferCursor];
+  if (slot === undefined) {
+    slot = { buffer: null, capacity: 0 };
+    pool[runtime.meshInstanceBufferCursor] = slot;
+  }
+  runtime.meshInstanceBufferCursor++;
+  return slot;
 }
 
 // Fetches (or on first use creates) the per-material binding cached under `key`, rebuilding its bind

@@ -153,6 +153,10 @@ export interface WgpuScene3DRuntime {
   shadowComparisonSampler: GPUSampler | null;
   shadowDepthPipeline: GPURenderPipeline | null;
   shadowDepthSkinnedPipeline: GPURenderPipeline | null;
+  // The HAS_INSTANCES depth variant, cached alongside the rigid and skinned ones. An InstancedMesh casts
+  // one silhouette per live instance, so the depth pass needs the instance-step vertex buffer the forward
+  // pipeline uses; a scene with no instanced caster never compiles it.
+  shadowDepthInstancedPipeline: GPURenderPipeline | null;
   shadowDummyTexture: GPUTexture | null;
   shadowDummyView: GPUTextureView | null;
   shadowSampleBindGroup: GPUBindGroup | null;
