@@ -1989,6 +1989,31 @@
           }
         },
         {
+          "scene": "instanced-mesh-rotated-normals",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "instanced-mesh-shadow",
           "backends": {
             "canvas": {
