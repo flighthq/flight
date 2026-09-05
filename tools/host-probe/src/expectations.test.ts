@@ -61,6 +61,7 @@ describe('getRequiredHostProbeCapabilities', () => {
       'device',
       'dialog',
       'filesystem',
+      'geolocation',
       'glyph-rasterizer',
       'haptics',
       'loop',
