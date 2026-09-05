@@ -24,9 +24,18 @@ import {
   invalidateNodeLocalTransform,
   setNodeLocalMatrix4,
 } from '@flighthq/node/contract';
-import { createMesh, createNode3D, Node3DKind, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
+import {
+  createInstancedMesh,
+  createMesh,
+  createNode3D,
+  Node3DKind,
+  getNode3DWorldAlpha,
+  setInstancedMeshInstanceCount,
+  setInstancedMeshInstanceMatrix,
+} from '@flighthq/scene3d/contract';
 import type {
   Mesh,
+  Matrix4,
   Skin,
   Camera3D,
   Material,
@@ -53,6 +62,16 @@ function boundedBox(): MeshGeometry {
   return geometry;
 }
 
+function cameraLookingAtX(x: number): Camera3D {
+  const camera = createCamera3D({
+    far: 200,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
+  setCamera3DViewMatrix4FromLookAt(camera, { x: x, y: 0, z: 20 }, { x: x, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+  return camera;
+}
+
 function frontCamera(): Camera3D {
   const camera = createCamera3D({
     far: 100,
@@ -65,6 +84,12 @@ function frontCamera(): Camera3D {
 
 function emptyLights(): Scene3DLightsLike {
   return { ambient: null, directional: null };
+}
+
+function translationMatrix(x: number): Matrix4 {
+  const matrix = createMatrix4();
+  matrix.m[12] = x;
+  return matrix;
 }
 
 function newLightBlock(): Scene3DLightBlock {
@@ -433,6 +458,70 @@ describe('prepareScene3DRender', () => {
     invalidateNodeLocalTransform(mesh);
     prepareScene3DRender(state, scene, camera, emptyLights());
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
+  });
+
+  // An instance draws at `worldMatrix * instanceMatrix`, so the per-instance matrices are part of the
+  // batch's extent. Culling on the bare geometry bounds at the node origin describes one instance
+  // sitting on the node and drops a batch that is entirely on screen.
+  it('keeps an instanced mesh whose instances are placed away from the node origin', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(boundedBox(), [null], 4);
+    setInstancedMeshInstanceCount(mesh, 1);
+    setInstancedMeshInstanceMatrix(mesh, 0, translationMatrix(60));
+    addNodeChild(scene, mesh);
+
+    const list = prepareScene3DRender(state, scene, cameraLookingAtX(60), emptyLights());
+
+    expect(list.instancedMeshCount).toBe(1);
+    expect(list.visibleInstancedMeshes[0]).toBe(mesh);
+  });
+
+  it('culls an instanced mesh whose instances are all outside the frustum', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(boundedBox(), [null], 4);
+    setInstancedMeshInstanceCount(mesh, 1);
+    setInstancedMeshInstanceMatrix(mesh, 0, translationMatrix(0));
+    addNodeChild(scene, mesh);
+
+    const list = prepareScene3DRender(state, scene, cameraLookingAtX(60), emptyLights());
+
+    expect(list.instancedMeshCount).toBe(0);
+  });
+
+  // The instance union is cached against the InstancedMesh version, so a batch that moves must not
+  // keep the extent it had last frame.
+  it('re-culls an instanced mesh after its instance matrices move', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(boundedBox(), [null], 4);
+    setInstancedMeshInstanceCount(mesh, 1);
+    setInstancedMeshInstanceMatrix(mesh, 0, translationMatrix(0));
+    addNodeChild(scene, mesh);
+    const camera = cameraLookingAtX(60);
+
+    expect(prepareScene3DRender(state, scene, camera, emptyLights()).instancedMeshCount).toBe(0);
+
+    setInstancedMeshInstanceMatrix(mesh, 0, translationMatrix(60));
+
+    expect(prepareScene3DRender(state, scene, camera, emptyLights()).instancedMeshCount).toBe(1);
+  });
+
+  // The union spans every live instance, so a batch straddling the frustum edge stays visible for the
+  // instances that are on screen.
+  it('keeps an instanced mesh when only some instances are in view', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(boundedBox(), [null], 4);
+    setInstancedMeshInstanceCount(mesh, 2);
+    setInstancedMeshInstanceMatrix(mesh, 0, translationMatrix(0));
+    setInstancedMeshInstanceMatrix(mesh, 1, translationMatrix(60));
+    addNodeChild(scene, mesh);
+
+    const list = prepareScene3DRender(state, scene, cameraLookingAtX(60), emptyLights());
+
+    expect(list.instancedMeshCount).toBe(1);
   });
 });
 
