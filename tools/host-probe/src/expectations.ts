@@ -112,6 +112,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'device',
     'dialog',
     'filesystem',
+    'geolocation',
     'glyph-rasterizer',
     'haptics',
     'loop',
