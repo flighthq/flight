@@ -7,11 +7,11 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 369 |
+| able | 371 |
 | blind | 0 |
 | gap | 0 |
 | exempt | 0 |
-| **total** | **369** |
+| **total** | **371** |
 
 `able` means at least one throw threshold depends on a named sample point, spatial bound or
 neighbourhood, or multiple distinct call-site regions. `blind` means its thresholds use only
@@ -170,6 +170,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/instanced-mesh-offscreen-origin.webgpu.ts` | able | L138: getBitmapPixelRgb is thresholded at named coordinates (Math.round(w / 2), Math.round(h / 2 + 1.6 * s)) |
 | `functional/scenes/instanced-mesh-placement.webgl.ts` | able | L144: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/instanced-mesh-placement.webgpu.ts` | able | L138: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/instanced-mesh-rotated-normals.webgl.ts` | able | L134: getBitmapPixelLuminance is thresholded at named coordinates (Math.round(w * fx), y) |
+| `functional/scenes/instanced-mesh-rotated-normals.webgpu.ts` | able | L128: getBitmapPixelLuminance is thresholded at named coordinates (Math.round(w * fx), y) |
 | `functional/scenes/instanced-mesh-shadow.webgl.ts` | able | L161: getBitmapPixelLuminance is thresholded at named coordinates (Math.round(w * fx), y) |
 | `functional/scenes/instanced-mesh-shadow.webgpu.ts` | able | L156: getBitmapPixelLuminance is thresholded at named coordinates (Math.round(w * fx), y) |
 | `functional/scenes/light-hemisphere.webgl.ts` | able | L122: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |

@@ -1113,7 +1113,15 @@ struct VertexOutput {
   var localNormal = normal;
   var localTangent = tangent.xyz;
   let instanceModel = mat4x4f(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
+  // The instance transform carries the normal and tangent as well as the position: an instance rotated
+  // by its own matrix must light by its ROTATED surface basis, or every instance in a batch shades as
+  // though it were still in the batch's bind orientation. Identity for a non-instanced draw (which binds
+  // the identity instance record), so this costs those nothing and changes nothing about them. Mirrors
+  // scene-gl's mat3(instanceModel) in the HAS_INSTANCES branch of every family.
+  let instanceBasis = mat3x3f(instanceModel[0].xyz, instanceModel[1].xyz, instanceModel[2].xyz);
   localPosition = instanceModel * localPosition;
+  localNormal = instanceBasis * localNormal;
+  localTangent = instanceBasis * localTangent;
   let world = draw.world * localPosition;
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;

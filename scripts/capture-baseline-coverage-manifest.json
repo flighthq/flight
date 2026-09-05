@@ -164,6 +164,8 @@
       "instanced-mesh-offscreen-origin/webgpu": ["sceneAssertion", "screenshot"],
       "instanced-mesh-placement/webgl": ["sceneAssertion", "screenshot"],
       "instanced-mesh-placement/webgpu": ["sceneAssertion", "screenshot"],
+      "instanced-mesh-rotated-normals/webgl": ["sceneAssertion", "screenshot"],
+      "instanced-mesh-rotated-normals/webgpu": ["sceneAssertion", "screenshot"],
       "instanced-mesh-shadow/webgl": ["sceneAssertion", "screenshot"],
       "instanced-mesh-shadow/webgpu": ["sceneAssertion", "screenshot"],
       "light-hemisphere/webgl": ["referenceImage", "sceneAssertion", "screenshot"],
