@@ -8,6 +8,7 @@ import type {
   Camera3D,
   DirectionalLight,
   GlRenderState,
+  InstancedMesh,
   Mesh,
   Node3D,
   Node3DTraits,
@@ -16,8 +17,10 @@ import type {
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
 import {
+  bindGlInstancePalette,
   compileGlProgram,
   ensureGlScene3DProgram,
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   SKIN_PALETTE_TEXTURE_UNIT,
 } from './glMeshProgram';
@@ -65,6 +68,8 @@ export function drawGlScene3DShadowMap(
   const rigidProgram = ensureGlScene3DProgram(state, 'shadow:depth', compileShadowDepthProgram);
   // Compiled lazily on the first GPU-skinned caster so a scene without skinned meshes never pays for it.
   let skinnedProgram: GlMeshProgram | null = null;
+  // Likewise compiled lazily, so a scene with no instanced casters never pays for the variant.
+  let instancedProgram: GlMeshProgram | null = null;
 
   const prevFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
   const prevViewport = gl.getParameter(gl.VIEWPORT) as Int32Array;
@@ -97,10 +102,24 @@ export function drawGlScene3DShadowMap(
     // animated caster casts its animated silhouette without the depth pass re-deforming (and lagging or
     // double-driving the forward pass). GPU skinning still deforms in the vertex shader from the bone
     // palette, so a skinned caster needs the HAS_SKIN depth variant + the palette bound.
-    const skinned = mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
-    const program = skinned
-      ? (skinnedProgram ??= ensureGlScene3DProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))
-      : rigidProgram;
+    // An InstancedMesh draws its geometry once per instance at `u_model * instanceModelMatrix()`, so the
+    // depth pass must instance it exactly as the forward pass does. Drawing it as a single rigid caster
+    // records ONE copy at the node origin — and because the per-instance matrix routinely carries the
+    // model's authoring scale, that copy can be orders of magnitude the wrong size and flood the map,
+    // shadowing the whole scene. A batch with no live instances casts nothing.
+    const instanced = isShadowInstancedMesh(mesh);
+    if (instanced && (mesh as unknown as InstancedMesh).instanceCount === 0) return;
+
+    const skinned = !instanced && mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
+    const program = instanced
+      ? (instancedProgram ??= ensureGlScene3DProgram(
+          state,
+          'shadow:depth:instanced',
+          compileShadowDepthInstancedProgram,
+        ))
+      : skinned
+        ? (skinnedProgram ??= ensureGlScene3DProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))
+        : rigidProgram;
     if (program !== boundProgram) {
       gl.useProgram(program.program);
       gl.uniformMatrix4fv(program.locViewProjection, false, matrix.m);
@@ -121,7 +140,16 @@ export function drawGlScene3DShadowMap(
     // palette) and wires the joints0/weights0 attributes; a rigid draw uploads geometry.vertices as-is.
     const upload = ensureGlMeshUpload(state, mesh.geometry, skinned);
     gl.bindVertexArray(upload.vao);
-    if (upload.indexBuffer !== null) {
+    if (instanced) {
+      const instancedMesh = mesh as unknown as InstancedMesh;
+      const count = instancedMesh.instanceCount;
+      bindGlInstancePalette(state, program, flattenShadowInstanceMatrices(instancedMesh), count);
+      if (upload.indexBuffer !== null) {
+        gl.drawElementsInstanced(upload.primitiveMode, upload.indexCount, upload.indexType, 0, count);
+      } else {
+        gl.drawArraysInstanced(upload.primitiveMode, 0, upload.indexCount, count);
+      }
+    } else if (upload.indexBuffer !== null) {
       gl.drawElements(upload.primitiveMode, upload.indexCount, upload.indexType, 0);
     } else {
       gl.drawArrays(upload.primitiveMode, 0, upload.indexCount);
@@ -175,6 +203,51 @@ function compileShadowDepthSkinnedProgram(gl: GlContext): GlMeshProgram {
     program,
   };
 }
+
+// The HAS_INSTANCES depth variant: the same depth pass with the instance palette declarations spliced in,
+// so `u_model * instanceModelMatrix()` reproduces the forward pass's per-instance placement exactly and a
+// batch records one depth silhouette per live instance.
+function compileShadowDepthInstancedProgram(gl: GlContext): GlMeshProgram {
+  const program = compileGlProgram(gl, SHADOW_DEPTH_INSTANCED_VERTEX, SHADOW_DEPTH_FRAGMENT);
+  return {
+    locInstancePalette: gl.getUniformLocation(program, 'u_instancePalette'),
+    locModel: gl.getUniformLocation(program, 'u_model'),
+    locNormalMatrix: null,
+    locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
+    program,
+  };
+}
+
+// Structural, matching prepareScene3DRender's own instanced test, so the depth pass and the forward pass
+// agree on what an instanced caster is without importing a kind check.
+function isShadowInstancedMesh(mesh: Readonly<Mesh>): boolean {
+  return 'instanceMatrices' in mesh;
+}
+
+// Packs the live instance matrices into the flat Float32Array bindGlInstancePalette uploads. The depth
+// pass keeps its own scratch buffer rather than sharing the forward pass's: the two passes run at
+// different points in a frame and a shared buffer would couple their growth.
+function flattenShadowInstanceMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
+  const count = mesh.instanceCount;
+  const needed = count * 16;
+  if (scratchShadowInstanceData.length < needed) scratchShadowInstanceData = new Float32Array(needed);
+  for (let i = 0; i < count; i++) {
+    scratchShadowInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  }
+  return scratchShadowInstanceData;
+}
+
+const SHADOW_DEPTH_INSTANCED_VERTEX = `#version 300 es
+${GL_INSTANCE_VERTEX_DECLARATIONS_GLSL}
+layout(location = 0) in vec3 a_position;
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+void main() {
+  gl_Position = u_viewProjection * u_model * instanceModelMatrix() * vec4(a_position, 1.0);
+}
+`;
+
+let scratchShadowInstanceData = new Float32Array(64 * 16);
 
 const SHADOW_DEPTH_VERTEX = `#version 300 es
 layout(location = 0) in vec3 a_position;

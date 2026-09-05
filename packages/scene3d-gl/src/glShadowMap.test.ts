@@ -4,11 +4,18 @@ import {
   getOrthographicProjectionTexelSize,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
-import { createVector3 } from '@flighthq/geometry/contract';
+import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createDirectionalLight } from '@flighthq/lighting/contract';
-import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
+import {
+  createInstancedMesh,
+  createMesh,
+  createNode3D,
+  Node3DKind,
+  setInstancedMeshInstanceCount,
+  setInstancedMeshInstanceMatrix,
+} from '@flighthq/scene3d/contract';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -96,6 +103,12 @@ function makeShadowState() {
   (state[EntityRuntimeKey] as unknown as Record<string, unknown>).currentFramebuffer = null;
 
   return { state, gl };
+}
+
+function shadowTranslation(x: number) {
+  const matrix = createMatrix4();
+  matrix.m[12] = x;
+  return matrix;
 }
 
 function makeShadowCamera() {
@@ -337,5 +350,48 @@ describe('drawGlScene3DShadowMap', () => {
     expect(lastBindFramebuffer).toBeDefined();
     expect(lastBindFramebuffer.args[0]).toBe(framebufferConstant);
     expect(lastBindFramebuffer.args[1]).toBeNull();
+  });
+
+  // An instanced caster draws once per instance at `u_model * instanceModelMatrix()`. Recording a single
+  // rigid copy at the node origin both loses every instance's shadow and, because the per-instance matrix
+  // routinely carries the model's authoring scale, can stamp a wildly mis-sized caster into the map.
+  it('instances an instanced caster rather than drawing one copy at the node origin', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(createBoxMeshGeometry(), [null], 8);
+    setInstancedMeshInstanceCount(mesh, 3);
+    setInstancedMeshInstanceMatrix(mesh, 0, shadowTranslation(0));
+    setInstancedMeshInstanceMatrix(mesh, 1, shadowTranslation(4));
+    setInstancedMeshInstanceMatrix(mesh, 2, shadowTranslation(-4));
+    addNodeChild(scene, mesh);
+
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    expect(gl.calls.filter((call) => call.name === 'drawElements')).toHaveLength(0);
+    const instanced = gl.calls.filter((call) => call.name === 'drawElementsInstanced');
+    expect(instanced).toHaveLength(1);
+    expect(instanced[0]!.args[4]).toBe(3);
+  });
+
+  it('casts nothing for an instanced caster with no live instances', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, createInstancedMesh(createBoxMeshGeometry(), [null], 8));
+
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    expect(gl.calls.filter((call) => call.name === 'drawElementsInstanced')).toHaveLength(0);
+    expect(gl.calls.filter((call) => call.name === 'drawElements')).toHaveLength(0);
+  });
+
+  it('still draws an ordinary rigid caster with a non-instanced draw', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [null]));
+
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    expect(gl.calls.filter((call) => call.name === 'drawElements')).toHaveLength(1);
+    expect(gl.calls.filter((call) => call.name === 'drawElementsInstanced')).toHaveLength(0);
   });
 });
