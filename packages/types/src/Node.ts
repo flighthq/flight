@@ -11,7 +11,7 @@ export interface NodeData extends Entity {}
 export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
 export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
 export interface NodeTraits {
-  data: NodeData | null;
+  readonly data: NodeData | null;
   enabled: boolean;
   kind: Kind;
   name: string | null;
