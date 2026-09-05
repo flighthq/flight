@@ -1,4 +1,5 @@
 import type { Aabb } from './Aabb';
+import type { InstancedMeshSignals } from './InstancedMeshSignals';
 import type { Material } from './Material';
 import type { Matrix4 } from './Matrix4';
 import type { MeshGeometry } from './MeshGeometry';
@@ -30,5 +31,12 @@ export interface InstancedMeshCullRuntime {
   instanceLocalBoundsVersion?: number;
 }
 
-export type InstancedMeshRuntime = Node3DRuntime & InstancedMeshCullRuntime;
+// The signal group's slot on the InstancedMesh node runtime, null until enableInstancedMeshSignals
+// creates it — the same runtime-slot shape enableNodeSignals uses for NodeSignals, so an unobserved
+// batch carries no signal objects.
+export interface InstancedMeshSignalsRuntime {
+  instancedMeshSignals?: InstancedMeshSignals | null;
+}
+
+export type InstancedMeshRuntime = Node3DRuntime & InstancedMeshCullRuntime & InstancedMeshSignalsRuntime;
 export const InstancedMeshKind = 'InstancedMesh';
