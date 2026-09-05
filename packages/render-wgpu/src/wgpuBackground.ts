@@ -48,6 +48,7 @@ export function beginWgpuFrame(state: WgpuPresentationRenderState): void {
   // Reclaim the quad-batch writer buffer pool from the start of the frame; last frame's submit has been
   // queued, so its slots are safe to overwrite.
   runtime.quadBatchWriterBufferCursor = 0;
+  runtime.meshInstanceBufferCursor = 0;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
   runtime.currentMaskDepth = 0;
@@ -223,6 +224,7 @@ export function withWgpuFrameBorrow<T>(
   borrower.borrowedSurfaceExtent = { height: ownerState.surface.height, width: ownerState.surface.width };
   borrower.uniformOffset = 0;
   borrower.quadBatchWriterBufferCursor = 0;
+  borrower.meshInstanceBufferCursor = 0;
 
   try {
     return callback();

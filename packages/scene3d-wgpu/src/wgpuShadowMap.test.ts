@@ -4,7 +4,7 @@ import {
   createOrthographicProjection,
   getOrthographicProjectionTexelSize,
 } from '@flighthq/camera/contract';
-import { createAabb, createVector3 } from '@flighthq/geometry/contract';
+import { createAabb, createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
@@ -14,7 +14,14 @@ import {
 } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
+import {
+  createInstancedMesh,
+  createMesh,
+  createNode3D,
+  Node3DKind,
+  setInstancedMeshInstanceCount,
+  setInstancedMeshInstanceMatrix,
+} from '@flighthq/scene3d/contract';
 import type { Camera3D, Scene3DLightsLike, Node3D, Skeleton3D } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
 
@@ -49,6 +56,12 @@ function makeShadowCamera(): Camera3D {
   });
   configureDirectionalShadowCamera3D(camera, { x: 0, y: -1, z: -1 }, createAabb(-1, -1, -1, 1, 1, 1));
   return camera;
+}
+
+function shadowTranslation(x: number) {
+  const matrix = createMatrix4();
+  matrix.m[12] = x;
+  return matrix;
 }
 
 function makeShadowScene3D(): Node3D {
@@ -339,6 +352,68 @@ describe('drawWgpuScene3DShadowMap', () => {
     drawWgpuScene3D(state, scene, camera, LIGHTS);
 
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
+
+  // An instanced caster draws once per instance at world * instanceMatrix. Recording a single rigid copy
+  // at the node's world matrix loses every instance's shadow, and because the per-instance matrix routinely
+  // carries the model's authoring scale it can stamp a wildly mis-sized silhouette over the map.
+  it('instances an instanced caster rather than drawing one copy at the node world matrix', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(createBoxMeshGeometry(), [], 8);
+    setInstancedMeshInstanceCount(mesh, 3);
+    setInstancedMeshInstanceMatrix(mesh, 0, shadowTranslation(0));
+    setInstancedMeshInstanceMatrix(mesh, 1, shadowTranslation(0.5));
+    setInstancedMeshInstanceMatrix(mesh, 2, shadowTranslation(-0.5));
+    addNodeChild(scene, mesh);
+
+    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    const draws = fake.calls.filter((call) => call.name === 'drawIndexed');
+    expect(draws).toHaveLength(1);
+    expect(draws[0]!.args[1]).toBe(3);
+    expect(fake.calls.some((call) => call.name === 'setVertexBuffer' && call.args[0] === 1)).toBe(true);
+  });
+
+  it('casts nothing for an instanced caster with no live instances', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, createInstancedMesh(createBoxMeshGeometry(), [], 8));
+
+    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    expect(fake.calls.filter((call) => call.name === 'drawIndexed')).toHaveLength(0);
+  });
+
+  // Two instanced casters in one depth pass must not share an instance buffer: the pass is submitted once,
+  // so a shared buffer would leave both reading whichever batch was written last.
+  it('gives each instanced caster in a pass its own instance buffer', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    for (const x of [0, 0.5]) {
+      const mesh = createInstancedMesh(createBoxMeshGeometry(), [], 8);
+      setInstancedMeshInstanceCount(mesh, 1);
+      setInstancedMeshInstanceMatrix(mesh, 0, shadowTranslation(x));
+      addNodeChild(scene, mesh);
+    }
+
+    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    const bound = fake.calls
+      .filter((call) => call.name === 'setVertexBuffer' && call.args[0] === 1)
+      .map((call) => call.args[1]);
+    expect(bound).toHaveLength(2);
+    expect(new Set(bound).size).toBe(2);
+  });
+
+  it('still draws an ordinary rigid caster with a single non-instanced draw', () => {
+    const { fake, state } = makeWgpuScene3DState();
+
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+
+    const draws = fake.calls.filter((call) => call.name === 'drawIndexed');
+    expect(draws).toHaveLength(1);
+    expect(draws[0]!.args[1]).toBe(1);
   });
 });
 

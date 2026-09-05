@@ -373,30 +373,46 @@ describe('ensureWgpuIblSampleLayout', () => {
   });
 });
 
+function identityInstanceMatrices(): Float32Array {
+  const matrices = new Float32Array(16);
+  matrices[0] = 1;
+  matrices[5] = 1;
+  matrices[10] = 1;
+  matrices[15] = 1;
+  return matrices;
+}
+
 describe('ensureWgpuInstanceBuffer', () => {
   it('creates a GPU buffer sized for the given instance count', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const matrices = new Float32Array(16);
-    matrices[0] = 1;
-    matrices[5] = 1;
-    matrices[10] = 1;
-    matrices[15] = 1;
-    const buffer = ensureWgpuInstanceBuffer(state, matrices, 1);
+    const buffer = ensureWgpuInstanceBuffer(state, identityInstanceMatrices(), 1);
     expect(buffer).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createBuffer')).toBe(true);
   });
 
-  it('reuses the buffer when capacity is sufficient', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    const matrices = new Float32Array(16);
-    matrices[0] = 1;
-    matrices[5] = 1;
-    matrices[10] = 1;
-    matrices[15] = 1;
+  // Two instanced draws in one frame record into the same render pass, which is submitted once — so both
+  // uploads land before either draw reads. Handing them one buffer would leave both drawing whichever
+  // batch was written last, so each claim must be a distinct slot.
+  it('hands successive claims in a frame distinct buffers', () => {
+    const { state } = makeWgpuScene3DState();
+    const matrices = identityInstanceMatrices();
     const a = ensureWgpuInstanceBuffer(state, matrices, 1);
-    const buffersBefore = fake.calls.filter((c) => c.name === 'createBuffer').length;
     const b = ensureWgpuInstanceBuffer(state, matrices, 1);
-    expect(a).toBe(b);
+    expect(a).not.toBe(b);
+  });
+
+  // Slots are pooled, not allocated per draw: once the cursor resets for the next frame the same slot's
+  // buffer is handed out again, so a steady-state scene allocates nothing after its first frame.
+  it('reuses a slot buffer across frames when capacity is sufficient', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const matrices = identityInstanceMatrices();
+    const first = ensureWgpuInstanceBuffer(state, matrices, 1);
+    const buffersBefore = fake.calls.filter((c) => c.name === 'createBuffer').length;
+
+    getWgpuRenderStateRuntime(state).meshInstanceBufferCursor = 0;
+    const second = ensureWgpuInstanceBuffer(state, matrices, 1);
+
+    expect(second).toBe(first);
     expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(buffersBefore);
   });
 

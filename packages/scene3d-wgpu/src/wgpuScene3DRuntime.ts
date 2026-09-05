@@ -67,6 +67,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       shadow: null,
       shadowComparisonSampler: null,
       shadowDepthPipeline: null,
+      shadowDepthInstancedPipeline: null,
       shadowDepthSkinnedPipeline: null,
       shadowDummyTexture: null,
       shadowDummyView: null,

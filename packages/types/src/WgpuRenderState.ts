@@ -268,6 +268,13 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // because a frame's writeBuffer is queued after the previous frame's submit completes.
   quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
   quadBatchWriterBufferCursor: number;
+  // The 3D instanced-mesh equivalent, and it exists for the same reason: every InstancedMesh in a scene
+  // sets its instance-step vertex buffer and draws into the SAME render pass, which is submitted once at
+  // end of frame. A single shared buffer rewritten between those draws leaves every instanced mesh
+  // reading the last one's matrices — each batch collapsing onto another batch's placement. Each
+  // instanced draw claims a distinct slot; the cursor resets per frame alongside the quad-batch one.
+  meshInstanceBufferPool: WgpuMeshInstanceBufferSlot[];
+  meshInstanceBufferCursor: number;
   // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
   // material table because a material kind is either 2D or 3D, never both. This cache is the device-tier
   // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
@@ -461,6 +468,14 @@ export interface WgpuQuadBatchWriterBufferSlot {
   instanceCapacity: number;
   materialBuffer: GPUBuffer | null;
   materialCapacity: number;
+}
+
+// One 3D instanced-draw pool slot: the instance-step vertex buffer holding a single InstancedMesh's
+// per-instance model matrices for one draw. Grown by allocating a replacement rather than destroying the
+// superseded buffer, which a prior frame's submit may still reference.
+export interface WgpuMeshInstanceBufferSlot {
+  buffer: GPUBuffer | null;
+  capacity: number;
 }
 
 // What was ALLOCATED on the GPU, as distinct from how it will be sampled. Every field here is an

@@ -1,5 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
-import { createVector3 } from '@flighthq/geometry/contract';
+import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
@@ -14,7 +14,14 @@ import {
   createWgpuPipeline,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
+import {
+  createInstancedMesh,
+  createMesh,
+  createNode3D,
+  Node3DKind,
+  setInstancedMeshInstanceCount,
+  setInstancedMeshInstanceMatrix,
+} from '@flighthq/scene3d/contract';
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
@@ -32,6 +39,12 @@ function makeCamera(): Camera3D {
   });
   setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return camera;
+}
+
+function instanceTranslation(x: number) {
+  const matrix = createMatrix4();
+  matrix.m[12] = x;
+  return matrix;
 }
 
 const LIGHTS: Scene3DLightsLike = {
@@ -266,6 +279,29 @@ describe('drawWgpuScene3D', () => {
     expect(draw).toBeDefined();
     expect(draw!.args[0]).toBe(6);
     expect(draw!.args[1]).toBe(3);
+  });
+
+  // Every instanced draw records into the one render pass that is submitted at end of frame, so all of
+  // their writeBuffer uploads land before any draw reads. Sharing one instance buffer across them leaves
+  // every batch rendering the last batch's matrices — each collapsing onto another's placement.
+  it('gives each instanced mesh in a frame its own instance buffer', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    registerWgpuStandardPbrMaterial(state);
+    const scene = createNode3D(Node3DKind);
+    for (const x of [0, 0.5]) {
+      const mesh = createInstancedMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()], 8);
+      setInstancedMeshInstanceCount(mesh, 1);
+      setInstancedMeshInstanceMatrix(mesh, 0, instanceTranslation(x));
+      addNodeChild(scene, mesh);
+    }
+
+    drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
+
+    const bound = fake.calls
+      .filter((call) => call.name === 'setVertexBuffer' && call.args[0] === 1)
+      .map((call) => call.args[1]);
+    expect(bound).toHaveLength(2);
+    expect(new Set(bound).size).toBe(2);
   });
 });
 
