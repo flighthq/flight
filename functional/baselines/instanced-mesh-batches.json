@@ -1,0 +1,24 @@
+{
+  "webgl": {
+    "sha256": "3327be903a31dd43c7e575ca942b5684b1aeee28588d87ad1c4256c487f591d6",
+    "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
+      "frames": 0,
+      "sourceHash": "dc766978889c63bc5ae0fc317b669b0a0b97c6d0b7444552c7bbedf5ad385046",
+      "targetKind": null,
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
+  },
+  "webgpu": {
+    "sha256": "3327be903a31dd43c7e575ca942b5684b1aeee28588d87ad1c4256c487f591d6",
+    "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
+      "frames": 0,
+      "sourceHash": "3238b3dbdb2421a6ea6e00b28a4bfb4d0f71f32c4c2f76ba8501c12b82231695",
+      "targetKind": "webgpu",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
+  }
+}
