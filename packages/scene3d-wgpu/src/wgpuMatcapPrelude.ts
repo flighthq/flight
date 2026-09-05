@@ -152,7 +152,7 @@ struct MatcapMaterial {
 @group(2) @binding(2) var matcapTexture : texture_2d<f32>;
 
 @fragment fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-  var color = material.tint;
+  var color = material.tint * in.instanceColor;
   if (HAS_MATCAP) {
     // View-space-normal approximation: the shared Frame uniform carries no view matrix, so face the
     // world normal toward the camera and project to 2D for the matcap lookup (uv = n.xy * 0.5 + 0.5).

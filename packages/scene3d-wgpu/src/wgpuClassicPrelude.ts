@@ -273,7 +273,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
 }
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
-  var diffuse = material.diffuse;
+  var diffuse = material.diffuse * in.instanceColor;
   if (HAS_DIFFUSE_MAP) {
     let sampled = textureSample(diffuseTexture, diffuseSampler, in.uv);
     diffuse = vec4f(diffuse.rgb * sampled.rgb, diffuse.a * sampled.a);

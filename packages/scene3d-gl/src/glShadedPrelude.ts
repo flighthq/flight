@@ -222,7 +222,11 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   return defines;
 }
 
-const SHADED_VERTEX_BODY = `
+const SHADED_VERTEX_BODY = `#ifdef HAS_INSTANCES
+// Per-instance tint, fetched once in the vertex stage and interpolated flat across the primitive.
+flat out vec4 v_instanceColor;
+#endif
+
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec4 a_tangent;
@@ -241,6 +245,9 @@ out vec2 v_uv0;
 //@VERTEX_DECLARATIONS
 
 void main() {
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
 #ifdef HAS_SKIN
   mat4 skin = skinMatrix();
   vec4 localPosition = skin * vec4(a_position, 1.0);
@@ -291,6 +298,9 @@ void main() {
 // are documented at the marker — this is the injection contract a GL modifier snippet targets.
 const SHADED_FRAGMENT_TEMPLATE = `
 precision highp float;
+#ifdef HAS_INSTANCES
+flat in vec4 v_instanceColor;
+#endif
 
 in vec3 v_worldPosition;
 in vec3 v_normal;
@@ -365,6 +375,9 @@ vec3 shadeShadedLight(vec3 normal, vec3 lightDir, vec3 lightColor, vec3 diffuseR
 
 void main() {
   vec4 diffuse = u_diffuse;
+#ifdef HAS_INSTANCES
+  diffuse *= v_instanceColor;
+#endif
 #ifdef HAS_DIFFUSE_MAP
   vec4 sampledDiffuse = texture(u_diffuseMap, v_uv0);
   diffuse.rgb *= sampledDiffuse.rgb;

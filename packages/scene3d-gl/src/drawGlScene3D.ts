@@ -1,3 +1,4 @@
+import { unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
@@ -16,6 +17,7 @@ import type {
   GlMeshMaterialRenderer,
   GlRenderState,
   InstancedMesh,
+  LinearColor,
   Material,
   Matrix3,
   Matrix4,
@@ -305,6 +307,7 @@ export function drawGlScene3D(
       const colorMatrixFlag = colorAdjusted && colorMatrix !== null;
 
       const flatMatrices = flattenInstancedMeshMatrices(mesh);
+      const flatColors = flattenInstancedMeshColors(mesh);
 
       for (let s = 0; s < subsets.length; s++) {
         const material = resolveInstancedMeshSubsetMaterial(mesh, s);
@@ -321,6 +324,7 @@ export function drawGlScene3D(
         proxy.colorMatrix = colorAdjusted ? colorMatrix : null;
         proxy.instanceCount = mesh.instanceCount;
         proxy.instanceMatrices = flatMatrices;
+        proxy.instanceColors = flatColors;
         proxy.jointMatrices = null;
         proxy.normalMatrices = null;
         proxy.material = resolvedMaterial;
@@ -334,6 +338,7 @@ export function drawGlScene3D(
     runtime.activeInstancedRun = false;
     proxy.instanceCount = 0;
     proxy.instanceMatrices = null;
+    proxy.instanceColors = null;
   }
 
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
@@ -476,6 +481,25 @@ function compareOpaqueEntriesBySortKey(a: GlScene3DDrawEntry, b: GlScene3DDrawEn
   return a.sortKey - b.sortKey;
 }
 
+// Unpacks the batch's packed sRGB instance colours into the linear RGBA the shaders multiply, matching
+// how every material renderer converts its own base colour. A batch with no colours yields opaque white,
+// so the multiply is an identity and one program variant serves both cases.
+function flattenInstancedMeshColors(mesh: Readonly<InstancedMesh>): Float32Array {
+  const count = mesh.instanceCount;
+  const needed = count * 4;
+  if (scratchInstanceColors.length < needed) scratchInstanceColors = new Float32Array(needed);
+  const colors = mesh.instanceColors;
+  if (colors === null) {
+    scratchInstanceColors.fill(1, 0, needed);
+    return scratchInstanceColors;
+  }
+  for (let i = 0; i < count; i++) {
+    unpackColorToLinear(scratchLinearColor, colors[i]);
+    scratchInstanceColors.set(scratchLinearColor, i * 4);
+  }
+  return scratchInstanceColors;
+}
+
 function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
   const count = mesh.instanceCount;
   const needed = count * 16;
@@ -494,4 +518,6 @@ function resolveInstancedMeshSubsetMaterial(
 }
 
 let scratchInstanceData = new Float32Array(64 * 16);
+let scratchInstanceColors = new Float32Array(64 * 4);
+const scratchLinearColor: LinearColor = [0, 0, 0, 0];
 const scratchNormalMatrix = createMatrix3() as Matrix3;

@@ -211,7 +211,12 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
   return scene.frameBindGroup;
 }
 
-const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+// The identity record a non-instanced draw binds: identity model matrix + opaque white tint, so the
+// shared vertex stage can apply both unconditionally.
+const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
+
+export const INSTANCE_RECORD_FLOATS = 20;
+const INSTANCE_RECORD_BYTES = INSTANCE_RECORD_FLOATS * 4;
 
 // Resolves the shared IBL sample bind group a caller binds when its pipeline carries the
 // legacy standalone IBL layout — the WGSL counterpart of scene-gl's IBL texture-unit + u_ibl* uniform binds in
@@ -322,12 +327,12 @@ export function ensureWgpuInstanceBuffer(
   instanceCount: number,
 ): GPUBuffer {
   const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
-  const required = Math.max(1, instanceCount) * 64;
+  const required = Math.max(1, instanceCount) * INSTANCE_RECORD_BYTES;
   const slot = acquireWgpuMeshInstanceBufferSlot(state);
   if (slot.buffer === null || slot.capacity < required) {
     // Grown by allocating a replacement and letting the superseded buffer go to GC: destroying it here
     // could pull a buffer a prior frame's submit still references.
-    const capacity = Math.max(required, slot.capacity * 2, 64 * 64);
+    const capacity = Math.max(required, slot.capacity * 2, INSTANCE_RECORD_BYTES * 64);
     slot.buffer = state.device.createBuffer({
       size: capacity,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
@@ -1089,6 +1094,7 @@ struct VertexOutput {
   @location(2) worldTangent : vec4f,
   @location(3) uv : vec2f,
   @location(4) @interpolate(flat) objectAlpha : f32,
+  @location(5) @interpolate(flat) instanceColor : vec4f,
 };
 
 @vertex fn vs_main(
@@ -1100,6 +1106,7 @@ struct VertexOutput {
   @location(7) instanceModel1 : vec4f,
   @location(8) instanceModel2 : vec4f,
   @location(9) instanceModel3 : vec4f,
+  @location(10) instanceTint : vec4f,
 ) -> VertexOutput {
   var out : VertexOutput;
   var localPosition = vec4f(position, 1.0);
@@ -1119,6 +1126,7 @@ struct VertexOutput {
   // multiply is negligible. The scene-gl mirror gates the equivalent branch via its #ifdef variant.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
   out.objectAlpha = draw.params.x;
+  out.instanceColor = instanceTint;
   return out;
 }
 
@@ -1356,14 +1364,18 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
   },
 ];
 
+// One instance record is the model matrix followed by the linear RGBA tint — 20 floats. The colour lives
+// in the same record rather than a second buffer so every instanced draw binds one buffer and the tint is
+// always defined (white when the batch carries none), which is what lets one pipeline serve both cases.
 const INSTANCE_BUFFER_LAYOUT: GPUVertexBufferLayout = {
-  arrayStride: 64,
+  arrayStride: INSTANCE_RECORD_BYTES,
   stepMode: 'instance',
   attributes: [
     { shaderLocation: 6, offset: 0, format: 'float32x4' },
     { shaderLocation: 7, offset: 16, format: 'float32x4' },
     { shaderLocation: 8, offset: 32, format: 'float32x4' },
     { shaderLocation: 9, offset: 48, format: 'float32x4' },
+    { shaderLocation: 10, offset: 64, format: 'float32x4' },
   ],
 };
 

@@ -9,6 +9,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   destroyGlScene3DRuntime,
+  ensureGlInstanceColorPalette,
   ensureGlInstancePalette,
   ensureGlSkinNormalPalette,
   ensureGlSkinPalette,
@@ -86,6 +87,18 @@ describe('destroyGlScene3DRuntime', () => {
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
     expect(scene.skinPalette).toBeNull();
+  });
+});
+
+describe('ensureGlInstanceColorPalette', () => {
+  it('creates a SEPARATE texture from the matrix palette and reuses it after', () => {
+    const { state } = makeGlScene3DState();
+    expect(getGlScene3DRuntime(state).instanceColorPalette).toBeNull();
+
+    const first = ensureGlInstanceColorPalette(state);
+    expect(first).toBe(getGlScene3DRuntime(state).instanceColorPalette);
+    expect(ensureGlInstanceColorPalette(state)).toBe(first);
+    expect(first).not.toBe(ensureGlInstancePalette(state));
   });
 });
 

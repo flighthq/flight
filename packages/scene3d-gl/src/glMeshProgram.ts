@@ -16,6 +16,7 @@ import type {
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 import {
+  ensureGlInstanceColorPalette,
   ensureGlInstancePalette,
   ensureGlSkinNormalPalette,
   ensureGlSkinPalette,
@@ -45,6 +46,26 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
   }
+}
+
+// Uploads and binds the per-instance linear RGBA colours consumed by a HAS_INSTANCES program. One texel
+// per instance, mirroring bindGlInstancePalette's four.
+export function bindGlInstanceColorPalette(
+  state: GlRenderState,
+  program: Readonly<GlMeshProgram>,
+  instanceColors: Readonly<Float32Array>,
+  instanceCount: number,
+): void {
+  const gl = state.gl;
+  const palette = ensureGlInstanceColorPalette(state);
+  gl.activeTexture(gl.TEXTURE0 + INSTANCE_COLOR_PALETTE_TEXTURE_UNIT);
+  uploadGlSkinPaletteTexture(gl, palette, instanceColors, instanceCount, 1);
+  let loc = program.locInstanceColorPalette;
+  if (loc === undefined) {
+    loc = gl.getUniformLocation(program.program, 'u_instanceColorPalette');
+    (program as GlMeshProgram).locInstanceColorPalette = loc;
+  }
+  if (loc !== null) gl.uniform1i(loc, INSTANCE_COLOR_PALETTE_TEXTURE_UNIT);
 }
 
 export function bindGlInstancePalette(
@@ -215,6 +236,9 @@ export function drawGlMeshSubset(
 
   if (gpuInstanced) {
     bindGlInstancePalette(state, program, proxy.instanceMatrices!, instanceCount);
+    if (proxy.instanceColors != null) {
+      bindGlInstanceColorPalette(state, program, proxy.instanceColors, instanceCount);
+    }
   }
 
   // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
@@ -334,6 +358,10 @@ export const SKIN_PALETTE_TEXTURE_UNIT = 12;
 export const SKIN_NORMAL_PALETTE_TEXTURE_UNIT = 13;
 export const INSTANCE_PALETTE_TEXTURE_UNIT = 14;
 
+// The per-instance colour palette rides its own unit beside the matrix palette; both are vertex-stage
+// fetches, and WebGL2 guarantees at least 16 vertex texture image units.
+export const INSTANCE_COLOR_PALETTE_TEXTURE_UNIT = 15;
+
 // Vertex-scene2d GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
 // influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette DATA TEXTURE, and
 // the linear-blend `skinMatrix()` the body applies to position/normal/tangent. The palette is an RGBA32F
@@ -399,6 +427,13 @@ mat3 skinNormalMatrix() {
 
 export const GL_INSTANCE_VERTEX_DECLARATIONS_GLSL = `
 uniform highp sampler2D u_instancePalette;
+uniform highp sampler2D u_instanceColorPalette;
+
+// One linear RGBA texel per instance. A batch carrying no per-instance colours uploads opaque white, so
+// this is an identity multiply there and the families need no second program variant for the tinted case.
+vec4 instanceColor() {
+  return texelFetch(u_instanceColorPalette, ivec2(gl_InstanceID, 0), 0);
+}
 
 mat4 instanceModelMatrix() {
   int x = gl_InstanceID * 4;

@@ -158,7 +158,7 @@ struct ToonMaterial {
 ${WGPU_DIRECTIONAL_SHADOW_WGSL}
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
-  var baseColor = material.baseColor;
+  var baseColor = material.baseColor * in.instanceColor;
   if (HAS_BASE_COLOR_MAP) {
     let sampled = textureSample(baseColorTexture, materialSampler, in.uv);
     baseColor = vec4f(baseColor.rgb * sampled.rgb, baseColor.a * sampled.a);

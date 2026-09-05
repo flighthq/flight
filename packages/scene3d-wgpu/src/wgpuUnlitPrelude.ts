@@ -197,7 +197,7 @@ struct UnlitMaterial {
 @group(2) @binding(2) var colorTexture : texture_2d<f32>;
 
 @fragment fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-  var color = material.color;
+  var color = material.color * in.instanceColor;
   if (HAS_COLOR_MAP) {
     let sampled = textureSample(colorTexture, materialSampler, in.uv);
     color = vec4f(color.rgb * sampled.rgb, color.a * sampled.a);

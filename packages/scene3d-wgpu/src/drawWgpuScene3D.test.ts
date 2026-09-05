@@ -19,6 +19,7 @@ import {
   createMesh,
   createNode3D,
   Node3DKind,
+  setInstancedMeshInstanceColor,
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
@@ -284,6 +285,33 @@ describe('drawWgpuScene3D', () => {
   // Every instanced draw records into the one render pass that is submitted at end of frame, so all of
   // their writeBuffer uploads land before any draw reads. Sharing one instance buffer across them leaves
   // every batch rendering the last batch's matrices — each collapsing onto another's placement.
+  // The instance record is matrix-then-linear-RGBA. A batch with per-instance colours must upload them
+  // in the tail of each record, and one WITHOUT must upload opaque white there — the shader multiplies
+  // unconditionally, so a zeroed tail would render every uncoloured batch black.
+  it('packs each instance colour into the tail of its instance record', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    registerWgpuStandardPbrMaterial(state);
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()], 8);
+    setInstancedMeshInstanceCount(mesh, 2);
+    setInstancedMeshInstanceMatrix(mesh, 0, instanceTranslation(0));
+    setInstancedMeshInstanceMatrix(mesh, 1, instanceTranslation(1));
+    setInstancedMeshInstanceColor(mesh, 0, 0xff0000ff);
+    addNodeChild(scene, mesh);
+
+    drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
+
+    // Select the instance upload by its exact byte size: two 80-byte records. Picking "the largest
+    // write" would just as happily return the frame uniform buffer.
+    const instanceWrite = fake.calls.find((call) => call.name === 'writeBuffer' && call.args[4] === 2 * 80);
+    expect(instanceWrite).toBeDefined();
+    const record = new Float32Array(instanceWrite!.args[2] as ArrayBuffer);
+    // Instance 0 is red: linear red is (1, 0, 0, 1) since 0xff and 0x00 are colour-space fixed points.
+    expect([...record!.slice(16, 20)]).toEqual([1, 0, 0, 1]);
+    // Instance 1 carries no colour of its own, so it defaults to opaque white.
+    expect([...record!.slice(36, 40)]).toEqual([1, 1, 1, 1]);
+  });
+
   it('gives each instanced mesh in a frame its own instance buffer', () => {
     const { fake, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);

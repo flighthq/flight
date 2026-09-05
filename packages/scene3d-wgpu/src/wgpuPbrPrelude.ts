@@ -214,6 +214,7 @@ struct VertexOutput {
   @location(2) worldTangent : vec4f,
   @location(3) uv : vec2f,
   @location(4) @interpolate(flat) objectAlpha : f32,
+  @location(5) @interpolate(flat) instanceColor : vec4f,
 };
 
 @vertex fn vs_main(
@@ -225,6 +226,7 @@ struct VertexOutput {
   @location(7) instanceModel1 : vec4f,
   @location(8) instanceModel2 : vec4f,
   @location(9) instanceModel3 : vec4f,
+  @location(10) instanceTint : vec4f,
 ) -> VertexOutput {
   var out : VertexOutput;
   // The per-instance model matrix, mirroring scene-gl's HAS_INSTANCES PBR path. Applied unconditionally:
@@ -248,6 +250,7 @@ struct VertexOutput {
   // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
   out.objectAlpha = draw.params.x;
+  out.instanceColor = instanceTint;
   return out;
 }
 
@@ -391,7 +394,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
 }
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
-  var baseColor = material.baseColor;
+  var baseColor = material.baseColor * in.instanceColor;
   if (HAS_BASE_COLOR_MAP) {
     let sampled = textureSample(baseColorTexture, baseColorSampler, in.uv);
     baseColor = vec4f(baseColor.rgb * sampled.rgb, baseColor.a * sampled.a);

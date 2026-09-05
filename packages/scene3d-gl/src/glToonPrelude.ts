@@ -84,7 +84,11 @@ function buildGlToonDefineSource(key: Readonly<GlToonDefineKey>): string {
   return defines;
 }
 
-const TOON_VERTEX_BODY = `
+const TOON_VERTEX_BODY = `#ifdef HAS_INSTANCES
+// Per-instance tint, fetched once in the vertex stage and interpolated flat across the primitive.
+flat out vec4 v_instanceColor;
+#endif
+
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 3) in vec2 a_uv0;
@@ -98,6 +102,9 @@ out vec3 v_normal;
 out vec2 v_uv0;
 
 void main() {
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
 #ifdef HAS_SKIN
   mat4 skin = skinMatrix();
   vec4 localPosition = skin * vec4(a_position, 1.0);
@@ -123,6 +130,9 @@ void main() {
 
 const TOON_FRAGMENT_BODY = `
 precision highp float;
+#ifdef HAS_INSTANCES
+flat in vec4 v_instanceColor;
+#endif
 
 in vec3 v_worldPosition;
 in vec3 v_normal;
@@ -145,6 +155,9 @@ out vec4 fragColor;
 
 void main() {
   vec4 baseColor = u_baseColor;
+#ifdef HAS_INSTANCES
+  baseColor *= v_instanceColor;
+#endif
 #ifdef HAS_BASE_COLOR_MAP
   vec4 sampled = texture(u_baseColorMap, v_uv0);
   baseColor.rgb *= sampled.rgb;

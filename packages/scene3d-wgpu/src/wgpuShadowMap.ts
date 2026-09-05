@@ -20,6 +20,7 @@ import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '
 import {
   ensureWgpuInstanceBuffer,
   ensureWgpuScene3DLayouts,
+  INSTANCE_RECORD_FLOATS,
   SHADOW_DEPTH_FORMAT,
   writeWgpuDrawUniform,
 } from './wgpuMeshPipeline';
@@ -275,9 +276,11 @@ function isShadowInstancedMesh(mesh: Readonly<Mesh>): boolean {
 // frame and a shared buffer would couple their growth.
 function flattenShadowInstanceMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
   const count = mesh.instanceCount;
-  const needed = count * 16;
+  const needed = count * INSTANCE_RECORD_FLOATS;
   if (_shadowInstanceData.length < needed) _shadowInstanceData = new Float32Array(needed);
-  for (let i = 0; i < count; i++) _shadowInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  // Only the matrix half is read by the depth shader, but the record must keep the shared stride so the
+  // one instance buffer ensureWgpuInstanceBuffer hands out is addressed identically by both pipelines.
+  for (let i = 0; i < count; i++) _shadowInstanceData.set(mesh.instanceMatrices[i].m, i * INSTANCE_RECORD_FLOATS);
   return _shadowInstanceData;
 }
 
@@ -312,7 +315,7 @@ struct Draw {
 const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
   { arrayStride: 48, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] },
   {
-    arrayStride: 64,
+    arrayStride: INSTANCE_RECORD_FLOATS * 4,
     stepMode: 'instance',
     attributes: [
       { shaderLocation: 6, offset: 0, format: 'float32x4' },
@@ -323,7 +326,7 @@ const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
   },
 ];
 
-let _shadowInstanceData = new Float32Array(64 * 16);
+let _shadowInstanceData = new Float32Array(64 * 20);
 
 // The depth-only shadow vertex module. Reads only position from the canonical 48-byte vertex; draw.world
 // already carries the light view-projection (baked per mesh by drawWgpuScene3DShadowMap). The one WebGPU
