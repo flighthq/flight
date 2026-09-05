@@ -7,11 +7,11 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 367 |
+| able | 369 |
 | blind | 0 |
 | gap | 0 |
 | exempt | 0 |
-| **total** | **367** |
+| **total** | **369** |
 
 `able` means at least one throw threshold depends on a named sample point, spatial bound or
 neighbourhood, or multiple distinct call-site regions. `blind` means its thresholds use only
@@ -164,6 +164,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/env-skybox.webgpu.ts` | able | L130: getBitmapPixel is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.12)) |
 | `functional/scenes/instanced-mesh-batches.webgl.ts` | able | L142: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/instanced-mesh-batches.webgpu.ts` | able | L136: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/instanced-mesh-color.webgl.ts` | able | L144: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/instanced-mesh-color.webgpu.ts` | able | L138: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/instanced-mesh-offscreen-origin.webgl.ts` | able | L144: getBitmapPixelRgb is thresholded at named coordinates (Math.round(w / 2), Math.round(h / 2 + 1.6 * s)) |
 | `functional/scenes/instanced-mesh-offscreen-origin.webgpu.ts` | able | L138: getBitmapPixelRgb is thresholded at named coordinates (Math.round(w / 2), Math.round(h / 2 + 1.6 * s)) |
 | `functional/scenes/instanced-mesh-placement.webgl.ts` | able | L144: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |

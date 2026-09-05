@@ -373,19 +373,26 @@ describe('ensureWgpuIblSampleLayout', () => {
   });
 });
 
-function identityInstanceMatrices(): Float32Array {
-  const matrices = new Float32Array(16);
-  matrices[0] = 1;
-  matrices[5] = 1;
-  matrices[10] = 1;
-  matrices[15] = 1;
-  return matrices;
+// One full instance record: the identity model matrix followed by the opaque-white tint. The record is
+// 20 floats, not 16 — a 16-float array is one instance's matrix with no room for its colour, and the
+// upload reads past the end of it.
+function identityInstanceRecord(count = 1): Float32Array {
+  const records = new Float32Array(count * 20);
+  for (let i = 0; i < count; i++) {
+    const offset = i * 20;
+    records[offset] = 1;
+    records[offset + 5] = 1;
+    records[offset + 10] = 1;
+    records[offset + 15] = 1;
+    records.fill(1, offset + 16, offset + 20);
+  }
+  return records;
 }
 
 describe('ensureWgpuInstanceBuffer', () => {
   it('creates a GPU buffer sized for the given instance count', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const buffer = ensureWgpuInstanceBuffer(state, identityInstanceMatrices(), 1);
+    const buffer = ensureWgpuInstanceBuffer(state, identityInstanceRecord(), 1);
     expect(buffer).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createBuffer')).toBe(true);
   });
@@ -395,7 +402,7 @@ describe('ensureWgpuInstanceBuffer', () => {
   // batch was written last, so each claim must be a distinct slot.
   it('hands successive claims in a frame distinct buffers', () => {
     const { state } = makeWgpuScene3DState();
-    const matrices = identityInstanceMatrices();
+    const matrices = identityInstanceRecord();
     const a = ensureWgpuInstanceBuffer(state, matrices, 1);
     const b = ensureWgpuInstanceBuffer(state, matrices, 1);
     expect(a).not.toBe(b);
@@ -405,7 +412,7 @@ describe('ensureWgpuInstanceBuffer', () => {
   // buffer is handed out again, so a steady-state scene allocates nothing after its first frame.
   it('reuses a slot buffer across frames when capacity is sufficient', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const matrices = identityInstanceMatrices();
+    const matrices = identityInstanceRecord();
     const first = ensureWgpuInstanceBuffer(state, matrices, 1);
     const buffersBefore = fake.calls.filter((c) => c.name === 'createBuffer').length;
 

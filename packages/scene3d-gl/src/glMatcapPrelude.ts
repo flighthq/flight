@@ -94,7 +94,11 @@ function buildDefineSource(key: Readonly<GlMatcapDefineKey>): string {
   return defines;
 }
 
-const MATCAP_VERTEX_BODY = `
+const MATCAP_VERTEX_BODY = `#ifdef HAS_INSTANCES
+// Per-instance tint, fetched once in the vertex stage and interpolated flat across the primitive.
+flat out vec4 v_instanceColor;
+#endif
+
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 
@@ -106,6 +110,9 @@ uniform mat3 u_normalMatrix;
 out vec3 v_viewNormal;
 
 void main() {
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
 #ifdef HAS_SKIN
   mat4 skin = skinMatrix();
   vec4 localPosition = skin * vec4(a_position, 1.0);
@@ -133,6 +140,9 @@ void main() {
 
 const MATCAP_FRAGMENT_BODY = `
 precision highp float;
+#ifdef HAS_INSTANCES
+flat in vec4 v_instanceColor;
+#endif
 
 in vec3 v_viewNormal;
 
@@ -151,6 +161,9 @@ out vec4 fragColor;
 // Texture.colorSpace selects the GPU format, so sampled matcap color is already linear here.
 void main() {
   vec4 color = u_tint;
+#ifdef HAS_INSTANCES
+  color *= v_instanceColor;
+#endif
 #ifdef HAS_MATCAP
   // The view-space normal projected to 2D indexes the prebaked-lit sphere: uv = n.xy * 0.5 + 0.5.
   vec3 viewNormal = normalize(v_viewNormal);

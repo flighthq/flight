@@ -31,6 +31,7 @@ export interface GlMeshProgram {
   // The normal palette sampler. Optional and null on a variant compiled without skinning, matching
   // `locJointTexture` — a rigid program has neither, and the draw path skips both together.
   locInstancePalette?: WebGLUniformLocation | null;
+  locInstanceColorPalette?: WebGLUniformLocation | null;
   locJointNormalTexture?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;

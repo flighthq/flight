@@ -1,12 +1,20 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
-import { createVector3 } from '@flighthq/geometry/contract';
+import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createGlOffscreenRenderState, createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
+import {
+  createInstancedMesh,
+  createMesh,
+  createNode3D,
+  Node3DKind,
+  setInstancedMeshInstanceColor,
+  setInstancedMeshInstanceCount,
+  setInstancedMeshInstanceMatrix,
+} from '@flighthq/scene3d/contract';
 import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
@@ -398,5 +406,31 @@ describe('drawGlScene3D', () => {
     drawGlScene3D(state, scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
+  });
+
+  // The colour palette is one linear RGBA texel per instance, uploaded beside the matrix palette. A batch
+  // with no per-instance colours must still upload opaque white: the HAS_INSTANCES fragment multiplies
+  // unconditionally, so an unwritten palette would render every uncoloured instanced batch black.
+  it('uploads each instance colour as a linear texel, defaulting to opaque white', () => {
+    const { state, gl } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+    const scene = createNode3D(Node3DKind);
+    const mesh = createInstancedMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()], 8);
+    setInstancedMeshInstanceCount(mesh, 2);
+    setInstancedMeshInstanceMatrix(mesh, 0, createMatrix4());
+    setInstancedMeshInstanceMatrix(mesh, 1, createMatrix4());
+    setInstancedMeshInstanceColor(mesh, 0, 0xff0000ff);
+    addNodeChild(scene, mesh);
+
+    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+
+    // Two instances at one texel each; the matrix palette uploads eight, so select by width.
+    const upload = gl.calls
+      .filter((c) => (c.name === 'texImage2D' || c.name === 'texSubImage2D') && c.args[3] === 2)
+      .at(-1);
+    expect(upload).toBeDefined();
+    const texels = upload!.args[upload!.name === 'texImage2D' ? 8 : 6] as Float32Array;
+    expect([...texels.slice(0, 4)]).toEqual([1, 0, 0, 1]);
+    expect([...texels.slice(4, 8)]).toEqual([1, 1, 1, 1]);
   });
 });

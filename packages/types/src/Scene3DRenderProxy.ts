@@ -44,6 +44,11 @@ export interface Scene3DRenderProxy {
   // `u_model * instanceModelMatrix()` so each instance's matrix is entity-local. Null/absent when
   // `instanceCount` is 0 or absent.
   instanceMatrices?: Readonly<Float32Array> | null;
+  // Flattened per-instance colours: `instanceCount` linear RGBA quadruples packed as 4 contiguous floats
+  // each, parallel to `instanceMatrices`. A batch with no per-instance colours still supplies the array,
+  // filled with opaque white, so the shader's multiply is an identity rather than a second program
+  // variant. Null (or absent) when the draw is not instanced.
+  instanceColors?: Readonly<Float32Array> | null;
   jointMatrices?: Readonly<Float32Array> | null;
   // The matching NORMAL palette for this draw — the skeleton's `normalMatrices`, one inverse-transpose
   // 3x3 per joint as three padded vec4 columns (12 floats each). Carried beside `jointMatrices` because

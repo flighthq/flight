@@ -158,6 +158,8 @@
       "env-skybox/webgpu": ["referenceImage", "sceneAssertion", "screenshot"],
       "instanced-mesh-batches/webgl": ["sceneAssertion", "screenshot"],
       "instanced-mesh-batches/webgpu": ["sceneAssertion", "screenshot"],
+      "instanced-mesh-color/webgl": ["sceneAssertion", "screenshot"],
+      "instanced-mesh-color/webgpu": ["sceneAssertion", "screenshot"],
       "instanced-mesh-offscreen-origin/webgl": ["sceneAssertion", "screenshot"],
       "instanced-mesh-offscreen-origin/webgpu": ["sceneAssertion", "screenshot"],
       "instanced-mesh-placement/webgl": ["sceneAssertion", "screenshot"],

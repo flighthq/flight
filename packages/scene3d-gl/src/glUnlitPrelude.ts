@@ -105,7 +105,11 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   return defines;
 }
 
-const UNLIT_VERTEX_BODY = `
+const UNLIT_VERTEX_BODY = `#ifdef HAS_INSTANCES
+// Per-instance tint, fetched once in the vertex stage and interpolated flat across the primitive.
+flat out vec4 v_instanceColor;
+#endif
+
 layout(location = 0) in vec3 a_position;
 layout(location = 3) in vec2 a_uv0;
 #ifdef VERTEX_COLOR
@@ -119,6 +123,9 @@ ${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec2 v_uv0;
 
 void main() {
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
   v_uv0 = applyUvTransform(a_uv0);
 #ifdef VERTEX_COLOR
   v_color0 = a_color0;
@@ -135,6 +142,9 @@ void main() {
 
 const UNLIT_FRAGMENT_BODY = `
 precision highp float;
+#ifdef HAS_INSTANCES
+flat in vec4 v_instanceColor;
+#endif
 
 in vec2 v_uv0;
 #ifdef VERTEX_COLOR
@@ -157,6 +167,9 @@ out vec4 fragColor;
 // Texture.colorSpace selects the GPU format, so sampled color is already linear here.
 void main() {
   vec4 color = u_color;
+#ifdef HAS_INSTANCES
+  color *= v_instanceColor;
+#endif
 #ifdef VERTEX_COLOR
   color *= v_color0;
 #endif

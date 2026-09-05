@@ -1,3 +1,4 @@
+import { unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
@@ -11,6 +12,7 @@ import type {
   ColorScaleBias,
   Material,
   InstancedMesh,
+  LinearColor,
   Matrix3,
   Matrix4,
   Mesh,
@@ -29,6 +31,7 @@ import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/t
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline';
 import { drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -304,12 +307,26 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
   };
 }
 
-let scratchInstanceData = new Float32Array(64 * 16);
+let scratchInstanceData = new Float32Array(64 * 20);
+const scratchInstanceColor: LinearColor = [0, 0, 0, 0];
+// Packs each instance as its model matrix followed by its linear RGBA tint — the 20-float record
+// INSTANCE_BUFFER_LAYOUT describes. A batch with no per-instance colours packs opaque white, so the
+// shader multiply is an identity there rather than a second pipeline variant.
 function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
   const count = mesh.instanceCount;
-  const needed = count * 16;
+  const needed = count * INSTANCE_RECORD_FLOATS;
   if (scratchInstanceData.length < needed) scratchInstanceData = new Float32Array(needed);
-  for (let i = 0; i < count; i++) scratchInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  const colors = mesh.instanceColors;
+  for (let i = 0; i < count; i++) {
+    const offset = i * INSTANCE_RECORD_FLOATS;
+    scratchInstanceData.set(mesh.instanceMatrices[i].m, offset);
+    if (colors === null) {
+      scratchInstanceData.fill(1, offset + 16, offset + 20);
+    } else {
+      unpackColorToLinear(scratchInstanceColor, colors[i]);
+      scratchInstanceData.set(scratchInstanceColor, offset + 16);
+    }
+  }
   return scratchInstanceData;
 }
 

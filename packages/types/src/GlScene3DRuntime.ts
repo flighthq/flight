@@ -119,6 +119,10 @@ export interface GlScene3DRuntime {
   // the first skinned draw and grown to the largest skeleton seen. Every skinned mesh reuses this one
   // texture: the palette is re-uploaded per draw, so no per-mesh texture is retained. null until first use.
   instancePalette: GlSkinPaletteTexture | null;
+  // The per-instance colour palette: one RGBA32F texel per instance, linear, uploaded beside the matrix
+  // palette whenever an instanced run draws. Separate from instancePalette rather than widening it,
+  // because that palette's four-texels-per-record stride is shared with the skin palette upload.
+  instanceColorPalette: GlSkinPaletteTexture | null;
   skinPalette: GlSkinPaletteTexture | null;
   // The normal palette's own data texture, separate from the pose palette rather than interleaved with
   // it: a 3x3 padded to three vec4 columns uploads directly this way, with no per-frame repacking.

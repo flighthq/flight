@@ -16,6 +16,7 @@ import { ImageTextureSourceKind } from '@flighthq/types/contract';
 import {
   SKIN_PALETTE_TEXTURE_UNIT,
   beginGlMeshDraw,
+  bindGlInstanceColorPalette,
   bindGlInstancePalette,
   bindGlMeshSkinPalette,
   bindGlUvTransform,
@@ -68,6 +69,29 @@ describe('beginGlMeshDraw', () => {
     const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+});
+
+describe('bindGlInstanceColorPalette', () => {
+  it('uploads the colour palette texture and sets u_instanceColorPalette', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = makeProgram();
+
+    bindGlInstanceColorPalette(state, program, new Float32Array([1, 0, 0, 1]), 1);
+
+    expect(gl.calls.some((c) => c.name === 'activeTexture')).toBe(true);
+    expect(program.locInstanceColorPalette).toBeDefined();
+  });
+
+  // One texel per instance, against the matrix palette's four — a colour palette uploaded at the matrix
+  // stride would read another instance's texel for every instance past the first.
+  it('uploads one texel per instance', () => {
+    const { state, gl } = makeGlScene3DState();
+
+    bindGlInstanceColorPalette(state, makeProgram(), new Float32Array(3 * 4), 3);
+
+    const upload = gl.calls.filter((c) => c.name === 'texImage2D' || c.name === 'texSubImage2D').at(-1);
+    expect(upload?.args[3]).toBe(3);
   });
 });
 
