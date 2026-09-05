@@ -384,6 +384,7 @@ export * from './InputSignals';
 export * from './InputState';
 export * from './InputTextData';
 export * from './InstancedMesh';
+export * from './InstancedMeshSignals';
 export * from './InteractionConnectGuard';
 export * from './InteractionManager';
 export * from './InteractionHitEligibility';

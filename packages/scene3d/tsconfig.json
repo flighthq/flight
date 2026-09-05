@@ -43,6 +43,9 @@
       "path": "../shading"
     },
     {
+      "path": "../signals"
+    },
+    {
       "path": "../texture"
     },
     {
