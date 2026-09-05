@@ -1,5 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
+  copyAabb,
   createAabb,
   createFrustum,
   createMatrix4,
@@ -9,6 +10,7 @@ import {
   setOrthographicMatrix4,
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
+  unionAabb,
 } from '@flighthq/geometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
 import {
@@ -26,6 +28,7 @@ import type {
   Frustum,
   HemisphereLight,
   InstancedMesh,
+  InstancedMeshRuntime,
   Matrix4,
   Mesh,
   MeshRuntime,
@@ -276,11 +279,35 @@ function ensurePreparedScene3D(state: RenderState): PreparedScene3D {
   return prepared;
 }
 
+// An instance is drawn at `worldMatrix * instanceMatrix`, so the box to cull is the union of the
+// geometry bounds over every live instance matrix — NOT the bare geometry bounds at the node origin,
+// which describes a single instance sitting on the node and culls a spread-out batch that is fully in
+// view. The union is built in the node's local space and cached on the node runtime against the
+// InstancedMesh `version`, so a batch whose matrices did not change this frame costs one comparison.
 function isInstancedMeshVisible(mesh: Readonly<InstancedMesh>, frustum: Readonly<Frustum>, worldBounds: Aabb): boolean {
   const bounds = ensureMeshGeometryBounds(mesh.geometry);
   if (bounds === null) return true;
-  transformAabbByMatrix4(worldBounds, bounds, getNodeWorldMatrix4(mesh));
+  transformAabbByMatrix4(worldBounds, ensureInstancedMeshLocalBounds(mesh, bounds), getNodeWorldMatrix4(mesh));
   return isFrustumIntersectingAabb(frustum, worldBounds);
+}
+
+// Returns the cached local-space union of `bounds` over the mesh's live instance matrices, rebuilding
+// it when the instance payload's version has moved since the cache was written.
+function ensureInstancedMeshLocalBounds(mesh: Readonly<InstancedMesh>, bounds: Readonly<Aabb>): Readonly<Aabb> {
+  const runtime = getNodeRuntime(mesh) as InstancedMeshRuntime;
+  const cached = runtime.instanceLocalBounds;
+  if (cached != null && runtime.instanceLocalBoundsVersion === mesh.version) return cached;
+
+  const out = cached ?? createAabb();
+  const matrices = mesh.instanceMatrices;
+  for (let i = 0; i < mesh.instanceCount; i++) {
+    transformAabbByMatrix4(_scratchInstanceBounds, bounds, matrices[i]);
+    if (i === 0) copyAabb(out, _scratchInstanceBounds);
+    else unionAabb(out, out, _scratchInstanceBounds);
+  }
+  runtime.instanceLocalBounds = out;
+  runtime.instanceLocalBoundsVersion = mesh.version;
+  return out;
 }
 
 function isFloat32ArrayEqual(a: Readonly<Float32Array>, b: Readonly<Float32Array>): boolean {
@@ -474,4 +501,5 @@ function isSceneMesh(node: Readonly<Node3D>): node is Mesh {
 }
 
 const _collectStack: Readonly<Node3D>[] = [];
+const _scratchInstanceBounds = createAabb();
 let _skinnedBoundsGuard: ((mesh: Readonly<Mesh>) => void) | null = null;
