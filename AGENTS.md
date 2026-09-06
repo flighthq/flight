@@ -106,6 +106,7 @@ Run these at the points listed; skipping them causes cascading failures. Full de
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`.
 - **After adding source** — `npm run portable:check`.
+- **After adding or modifying a `create*`/`clone*` factory** — `npm run construction:check`.
 - **After changes that may affect tree-shaking** — `npm run size`.
 - **After changing functional scenes or baselines** — `npm run support` and `npm run evidence:check`.
 - **While iterating** — closest meaningful tests, then `npm run check <package>` and `npm run test <package>`.
