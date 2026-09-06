@@ -185,6 +185,10 @@ host seam. A new primitive or a primitive moved into an ordinary helper therefor
 file and location rather than disappearing into a maintained census. The gate runs in the bare
 `npm run check` sweep because its population spans packages; scoped package checks omit it.
 
+### `npm run construction` / `construction:check` / `construction:json`
+
+Enforces the entity construction model: every `allocateEntity()` call must have a matching `finishEntity()` in the same function scope, and `createEntity()` is blocked for new code. AST-based (oxc-parser), scoped per function. Existing unmigrated factories are allow-listed in `scripts/construction.ts` with reasons — remove entries as factories are migrated to the allocate-initialize-finish pattern. See [entity construction model](entity-construction-model.md).
+
 ### `npm run mocks` / `mocks:check` / `mocks:json`
 
 Enforces the per-file mock scoping the root `vitest.config.ts` declares. The unit suite runs
