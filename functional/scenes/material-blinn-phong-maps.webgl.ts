@@ -8,7 +8,7 @@ import {
   createAmbientLight,
   createBitmap,
   createBlinnPhongMaterial,
-  createBoxMeshGeometry,
+  createQuadMeshGeometry,
   createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
@@ -83,7 +83,11 @@ function createStripTexture(left: number, right: number, linear: boolean = false
   });
 }
 
-const geometry = createBoxMeshGeometry(1.6, 1.6, 0.15);
+// A flat camera-facing quad, not a slab. A thin BOX here put each off-centre panel's inward side
+// face in view, and every box face carries its own full 0..1 UV, so that face redrew the whole map
+// as a ~3px strip down the panel's edge — read as a rendering fault more than once. The quad has
+// only the surface the scene is about.
+const geometry = createQuadMeshGeometry(1.6, 1.6);
 const diffusePanel = createMesh(geometry, [
   createBlinnPhongMaterial({
     diffuse: 0xffffffff,
@@ -174,5 +178,27 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
     throw new Error(
       `[material-blinn-phong-maps] specular-map halves did not separate (left ${specularLeft}, right ${specularRight})`,
     );
+  }
+  // Edge guard for the diffuse panel. Every sample above sits well inside a panel, so none of them
+  // noticed when this scene's panels were thin BOXES and each off-centre one drew its inward side face —
+  // a ~2px strip replaying the whole map — just inside its edge.
+  //
+  // It has to be a WINDOW, not a sample. The strip sat inside the outermost covered pixel (blue, red,
+  // red, blue going in), so a single read at the edge, or three pixels in, landed on the correct half
+  // and passed. Only requiring the blue half to hold across the last few pixels catches it.
+  //
+  // The specular panel gets no such guard on purpose: its side face rendered at luminance 8, DARKER than
+  // the 11 of the background, so a coverage walk stops before reaching it and cannot see it at all.
+  let edgeX = Math.floor(bitmap.width * 0.29);
+  while (edgeX < bitmap.width - 1 && getBitmapPixelLuminance(bitmap, edgeX + 1, bitmap.height >> 1) > 25) {
+    edgeX++;
+  }
+  for (let i = 0; i < 4; i++) {
+    const rgb = getBitmapPixelRgb(bitmap, edgeX - i, bitmap.height >> 1);
+    if ((rgb & 0xff) - (rgb >>> 16) < 60) {
+      throw new Error(
+        `[material-blinn-phong-maps] the diffuse panel is not blue ${i}px inside its right edge (#${(rgb & 0xffffff).toString(16).padStart(6, '0')}) — something is drawn over the edge of the map`,
+      );
+    }
   }
 }
