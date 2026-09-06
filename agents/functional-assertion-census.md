@@ -189,8 +189,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/material-anisotropy.webgl.ts` | able | L172: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-blend-modes.webgl.ts` | able | L239: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgl]') |
 | `functional/scenes/material-blend-modes.webgpu.ts` | able | L227: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgpu]') |
-| `functional/scenes/material-blinn-phong-maps.webgl.ts` | able | L157: sampleRgb samples pixels from a named call site (0.2) |
-| `functional/scenes/material-blinn-phong-maps.webgpu.ts` | able | L151: sampleRgb samples pixels from a named call site (0.2) |
+| `functional/scenes/material-blinn-phong-maps.webgl.ts` | able | L161: sampleRgb samples pixels from a named call site (0.2) |
+| `functional/scenes/material-blinn-phong-maps.webgpu.ts` | able | L155: sampleRgb samples pixels from a named call site (0.2) |
 | `functional/scenes/material-blinn-phong.webgl.ts` | able | L180: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-blinn-phong.webgpu.ts` | able | L171: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-clearcoat.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
