@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene3d-gl'
-updated: 2026-07-22
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -77,7 +77,7 @@ basedOn: ./review.md
 ## Backlog
 
 - Order-independent transparency is an optional backend technique, not the base draw contract.
-- WGPU parity remains deferred until GL contracts and functionals settle.
+- ~~WGPU parity remains deferred until GL contracts and functionals settle.~~ — retired 2026-09-07. WGPU PBR parity has landed.
 
 ## Approved
 

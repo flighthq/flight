@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/entity'
-updated: 2026-07-22
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 
 ## Directed
 
-1. **Track the proposed `create*` Entity convention as an advisory.** An Entity-valued `create*` can make the runtime and binding contract predictable, including for value-looking objects such as `Viewport`, while structural literals remain appropriate for explicit `*Like` inputs. This is design evidence rather than a repository invariant: a new public `create*` that returns another value must remain legal and must not block CI.
+1. **~~Track the proposed `create*` Entity convention as an advisory.~~** — retired 2026-09-07. The allocate-initialize-finish model (`allocateEntity` → `initialize*` → `finishEntity`) is now the strict ruleset with 1,808 `finishEntity` usages across the codebase. `npm run construction:check` enforces pairing as a CI gate; `npm run entity-contracts:check` audits the Entity return shape. The convention is enforced, not advisory.
 2. **Make the migration semantic rather than a cast or verb-table exercise.** The generated API currently
    exposes `create*` for structural products (`Scene3DDocument`, Standard PBR property blocks, projection
    descriptors), collections (`createScenesFrom*`), runtime records, backend descriptors, DOM elements,

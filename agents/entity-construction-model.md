@@ -2,8 +2,8 @@
 
 _2026-09-04. Architecture record — the allocate-initialize construction discipline for all Entity types._
 
-**Status: UNRATIFIED.** Read before adding a `create*` factory, changing how a hierarchical entity is
-constructed, or adding a base type or trait initializer.
+**Status: RATIFIED 2026-09-07.** Read before adding a `create*` factory, changing how a hierarchical entity is
+constructed, or adding a base type or trait initializer. Enforced by `npm run construction:check`.
 
 ## The problem
 

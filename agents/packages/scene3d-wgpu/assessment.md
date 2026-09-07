@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene3d-wgpu'
-updated: 2026-07-21
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -12,7 +12,7 @@ The result is a near-empty Recommended set. That is the honest read: the package
 
 ## Directed
 
-1. **Defer PBR-extension parity until the GL contracts and raster evidence settle.** Do not independently evolve the old WGPU per-extension material lane. After `StandardPbrMaterial`/`ExtendedPbrMaterial`/open `PbrExtension`, attachment inputs, diagnostics, and transmission passes are proven in GL, migrate this backend deliberately against those contracts.
+1. **~~Defer PBR-extension parity until the GL contracts and raster evidence settle.~~** — retired 2026-09-07. WGPU now has a full PBR renderer set matching GL: standard PBR, specular-glossiness, Blinn-Phong, Lambert, Phong, toon, matcap, normal, depth, emissive, custom shader, plus IBL bake, environment skybox, shadow mapping, forward light selection with guards and explain, and the PBR pipeline cache. PBR parity is achieved.
 
 ## Recommended
 
@@ -28,7 +28,7 @@ Parked: cross-package coordination, larger scope, breaking change, or waiting on
 
 **Gated on a design decision (charter Open directions):**
 
-- **Wire forward-light counts into the define key (the headline dark feature).** The multi-light WGSL, the GPU `LightBlock` buffer, and the per-frame upload are all built and tested, but every renderer hardcodes `pointLightCount: 0` / `spotLightCount: 0` / `hemisphereEnabled: false`, so the WGSL loops fold to nothing and no point/spot/hemisphere light renders. Flowing the live `SceneLightBlock` counts into the key turns on a **fork in pipeline strategy** — specialize-per-count-bucket vs. always-compile-8-and-runtime-guard — that the status doc and review explicitly defer to the user. **Parked on Open direction #1.** (review.md#gaps, review.md#candidate-open-directions)
+- **~~Wire forward-light counts into the define key.~~** — retired 2026-09-07. `prepareWgpuScene3DForwardLights` feeds live scene light counts to `drawWgpuScene3D`; renderers no longer hardcode counts to 0. Forward light selection guards and explain query are shipped.
 
 - **Narrow the root barrel / decide prelude-internal visibility.** The barrel re-exports every prelude key-builder, module-source getter, and pipeline compiler — a wide public surface for a leaf renderer. Whether prelude internals are public API or implementation detail is a **surface-shape decision** the review flags for the charter, and it must stay symmetric with `scene-gl` (`npm run api`). Not a contract violation; not sweep-safe. **Parked on Open direction #6.** (review.md#contract--docs-fit)
 

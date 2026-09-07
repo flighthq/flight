@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/render-wgpu'
-updated: 2026-07-21
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -14,7 +14,7 @@ basedOn: ./review.md
 
 ## Directed
 
-1. **Defer `ApplicationRenderView` and partial-target parity until the GL contract settles.** Do not add an upward `@flighthq/application` dependency or preserve a premature WGPU factory merely for symmetry. Once GL functionals validate the shared `RenderTarget`/`Viewport`/pass semantics, implement the same lower-layer contract here.
+1. **~~Defer `ApplicationRenderView` and partial-target parity until the GL contract settles.~~** — retired 2026-09-07. `ApplicationRenderView` is built and tested in `@flighthq/application`, `RenderTarget`/`Viewport` are first-class primitives, and WGPU parity has landed (full PBR renderer set, IBL, shadows, forward lights).
 
 ## Recommended
 
@@ -26,7 +26,7 @@ Sweep-safe: within `@flighthq/render-wgpu`, no cross-package coupling, no breaki
 
 3. **~~Add `generateWgpuTextureMipmaps` and mip/anisotropy sampler support.~~** — retired 2026-08-05. `wgpuMipmap.ts` now builds full texture mip chains through cached format-specific downsample pipelines, upload resolvers invoke it for mipmapped textures, and `getWgpuSampler` caches mip-filter and bounded `maxAnisotropy` variants with WebGPU's linear-filter constraint enforced and tested.
 
-4. **Move `@flighthq/scene2d` from `dependencies` to `devDependencies` (after confirming it is test-only).** It appears only in test files (`createBitmap` in `wgpuDraw.test.ts`, `wgpuShaderBinding.test.ts`) yet sits in runtime `dependencies` — a layering inversion for a backend core (`scene2d-wgpu` depends on `render-wgpu`, never the reverse). The fix is to this package's own manifest; confirm the import is genuinely test-only, then relocate it. Within-package packaging correction, no API change, surfaced by `packages:check`. — review.md#contract--docs-fit (mis-declared dependency)
+4. **~~Move `@flighthq/scene2d` from `dependencies` to `devDependencies`.~~** — retired 2026-09-07. Already in `devDependencies`.
 
 ## Backlog
 
