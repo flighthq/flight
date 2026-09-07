@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene3d-resources'
-updated: 2026-07-22
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -10,10 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Directed
 
-1. **Compose Extended PBR texture discovery through a nested extension-kind registry.** Keep one generic
-   Extended PBR material lister, then dispatch each descriptor to a separately imported
-   PbrExtension.kind texture lister. Do not register multiple listers under the one material kind, add
-   registerAll, or make the base resolver depend on every extension texture slot.
+1. **~~Compose Extended PBR texture discovery through a nested extension-kind registry.~~** — retired 2026-09-07. `registerExtendedPbrScene3DMaterialTextures` dispatches per extension via `registry.extensionListers`; `registerScene3DPbrExtensionTextures` registers per-kind listers (sheen, transmission-volume tested). The base resolver depends only on standard PBR properties; each extension lister is separately imported.
 
 ## Recommended
 

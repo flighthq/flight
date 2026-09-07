@@ -1,12 +1,12 @@
 ---
 package: '@flighthq/path'
-updated: 2026-08-02
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
 # path — Assessment
 
-Sorted from the 2026-07-13 rereview (solid — 90/100). The 2026-07-02 approved sweep is nearly complete: pen-position cache, standalone `dashPath`, `getPathContourLengths`, `getPathNearestPoint`, `decimatePath`, `fitPathCurves`, and the `StrokeStyle` promotion all landed, and `offsetPath` was correctly reassigned to `@flighthq/path-boolean`. What remains is one unlanded approved item (walker dedup), one real bug, and a pool that does not yet deliver its stated purpose.
+Sorted from the 2026-07-13 rereview (solid — 90/100). Refreshed 2026-09-07: the 2026-07-02 approved sweep is now complete — walker/flatten dedup has landed (`strokePath` delegates through `strokePathGeometry` → `flattenPath`; `dashPath` composes `flattenPath`). Remaining Recommended: the `dashPath` alias bug, out-param tessellation, `getPathLastPoint` post-CLOSE semantics, curvature query, and description update.
 
 ## Recommended
 
@@ -14,7 +14,7 @@ Sweep-safe: within `@flighthq/path`, no cross-package coupling, no breaking chan
 
 1. **Fix the `dashPath` alias bug.** It clears `out` before flattening `source`, so `dashPath(p, dash, offset, p)` empties the path despite the "Alias-safe" doc claim. Flatten first (the order `decimatePath`/`cleanPath`/`fitPathCurves` already use), and add aliased-case tests for `dashPath`, `decimatePath`, `fitPathCurves`, and `reversePath` per the testing convention (only `cleanPath` and `transformPath`/`translatePath` have them today).
 
-2. **Land the approved walker/flatten dedup (carry-over of approved item #2).** `flattenQuadratic`/`flattenCubic`/chord-distance exist three times (`flattenPath`, `strokePath`, `containsPathPoint`) and the verb/stride decode ~6 times; `strokePath`'s private `applyDash` duplicates the dash walk `dashPath` now exports. One shared internal flatten/decode module (keeping tight loops where fork B's closed-union exception applies); `strokePath` composes `dashPath`'s walk.
+2. **~~Land the approved walker/flatten dedup (carry-over of approved item #2).~~** — retired 2026-09-07. `strokePath` now delegates through `strokePathGeometry` which imports `flattenPath`; `dashPath` imports `flattenPath`. `containsPathPoint` retains its own winding-number-specific subdivision (correctly, since the winding-number variant forks at each subdivision level), so only `flattenPath` and `containsPathPoint` have curve subdivision — the duplication in `strokePath`'s kernel is resolved.
 
 3. **Out-param tessellation so the pool actually avoids allocation.** `acquirePathMesh` currently calls the allocating `tessellatePath` and copies; `acquirePathMeshTyped` pools only the wrapper object. Add an `out`-writing tessellate over an existing `PathMesh` (grow-only typed buffers for the typed variant) and rewire the pool through it. Internal seam; the public `tessellatePath` signature is untouched.
 

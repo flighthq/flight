@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/camera'
-updated: 2026-07-21
+updated: 2026-09-07
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Directed
 
-1. **Finish the single camera package migration.** `Camera2D` and `Camera3D` share `@flighthq/camera`; remove the obsolete `@flighthq/camera2d` cell/package references and rename any example workspace whose name still implies a separate package.
+1. **~~Finish the single camera package migration.~~** — retired 2026-09-07. `Camera2D` and `Camera3D` are unified in `@flighthq/camera`; no `packages/camera2d/` exists; the public barrel exports all 2D camera functions.
 2. **~~Use draw-time viewport aspect for rendered projection.~~** — retired 2026-08-05. `prepareScene3DRender` accepts an authoritative draw-time aspect without mutating the camera's authored fallback, both backend draw paths derive it from the active viewport, and `render-pass-viewport.webgl.ts` renders one untouched Camera3D into tall and wide viewports on the same target with pixel assertions.
 3. **Complete the Entity constructor invariant.** Camera2D must match Camera3D's Entity shape. The two
    projection create functions must either return Entity-backed descriptors or move to an explicitly
