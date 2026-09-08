@@ -1,1 +1,1 @@
-export { appendSvgPathData, formatSvgPathData, parseSvgPathData } from './contract';
+export { appendSvgPathData, explainSvgPathData, formatSvgPathData, parseSvgPathData } from './contract';
