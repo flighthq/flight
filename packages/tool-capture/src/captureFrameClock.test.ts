@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CAPTURE_FRAME_DURATION_MS, getCaptureFrameTimestamp } from './captureFrameClock';
 
-describe('capture frame clock', () => {
+describe('getCaptureFrameTimestamp', () => {
   it('uses a stable 60 Hz interval', () => {
     expect(CAPTURE_FRAME_DURATION_MS).toBeCloseTo(16.6666666667);
     expect(getCaptureFrameTimestamp(0)).toBe(0);
