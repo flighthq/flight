@@ -40,6 +40,7 @@ import type { FunctionalVerification } from './functionalVerify.js';
 
 export type CaptureStatusProvenance = Partial<CaptureBaselineProvenance> & CaptureHostProvenance;
 
+/** Stable machine-readable result written beside every capture attempt. */
 export interface CaptureStatus {
   protocolVersion: typeof CAPTURE_PROTOCOL_VERSION;
   state: 'ready' | 'error';
