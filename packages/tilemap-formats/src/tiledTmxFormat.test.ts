@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatTiledTmx } from './tiledTmxFormat';
-import { parseTiledTmx } from './tiledXmlParse';
+import { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat';
+import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
 
 // A map exercising every modeled TMX construct: background + typed properties, an embedded tileset
 // with an animated tile, an external tileset ref, a CSV tile layer (with a flipped GID), an object
@@ -25,6 +25,28 @@ const richTmx = [
   '  <layer id="5" name="over" width="2" height="2"><data encoding="csv">0,0,1,1</data></layer>',
   ' </group>',
   '</map>',
+].join('\n');
+
+describe('formatTiledTileset', () => {
+  it('round-trips parse -> format -> parse for a standalone TSX tileset', () => {
+    const tileset = parseTiledTileset(richTsx)!;
+    expect(parseTiledTileset(formatTiledTileset(tileset))).toEqual(tileset);
+  });
+
+  it('omits the firstgid a standalone tileset has no map to sit in', () => {
+    const text = formatTiledTileset(parseTiledTileset(richTsx)!);
+    expect(text).toContain('<tileset name="base"');
+    expect(text).not.toContain('firstgid');
+  });
+});
+
+const richTsx = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<tileset name="base" tilewidth="16" tileheight="16" tilecount="4" columns="2" objectalignment="center">',
+  ' <tileoffset x="1" y="2"/>',
+  ' <image source="base.png" width="32" height="32"/>',
+  ' <tile id="1" type="wall"><properties><property name="solid" type="bool" value="true"/></properties></tile>',
+  '</tileset>',
 ].join('\n');
 
 describe('formatTiledTmx', () => {

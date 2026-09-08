@@ -4,6 +4,9 @@ import type {
   TiledCompression,
   TiledLayer,
   TiledMap,
+  TiledObjectAlignment,
+  TiledStaggerAxis,
+  TiledStaggerIndex,
   TiledObject,
   TiledOrientation,
   TiledParseOptions,
@@ -66,10 +69,14 @@ export function parseTiledTmj(
   }
 
   const background = strField(root, 'backgroundcolor');
+  const hexSide = root.hexsidelength;
   return {
     backgroundColor: background !== null ? parseTiledColor(background) : null,
     height: numField(root, 'height', 0),
+    hexSideLength: typeof hexSide === 'number' ? hexSide : null,
     infinite: boolField(root, 'infinite', false),
+    staggerAxis: asStaggerAxis(strField(root, 'staggeraxis')),
+    staggerIndex: asStaggerIndex(strField(root, 'staggerindex')),
     layers: arrayField(root, 'layers')
       .map((layer, index) =>
         buildTiledLayerFromJson(layer, options, diagnostics, diagnostics === undefined ? '' : `map.layers[${index}]`),
@@ -129,16 +136,26 @@ function buildTiledLayerBaseFromJson(obj: JsonObject): {
   offsetX: number;
   offsetY: number;
   opacity: number;
+  parallaxX: number;
+  parallaxY: number;
   properties: readonly TiledProperty[];
+  tintColor: number | null;
   visible: boolean;
+  class: string;
 } {
+  const tint = strField(obj, 'tintcolor');
   return {
+    class: strField(obj, 'class') ?? '',
     id: numField(obj, 'id', 0),
     name: strField(obj, 'name') ?? '',
     offsetX: numField(obj, 'offsetx', 0),
     offsetY: numField(obj, 'offsety', 0),
     opacity: numField(obj, 'opacity', 1),
+    // 1 is lockstep with the camera, so an absent field defaults to 1 rather than 0.
+    parallaxX: numField(obj, 'parallaxx', 1),
+    parallaxY: numField(obj, 'parallaxy', 1),
     properties: buildTiledPropertiesFromJson(obj),
+    tintColor: tint !== undefined && tint !== null ? parseTiledColor(tint) : null,
     visible: boolField(obj, 'visible', true),
   };
 }
@@ -226,7 +243,13 @@ function buildTiledLayerFromJson(
     return { ...base, objects: arrayField(obj, 'objects').map(buildTiledObjectFromJson), type: 'objectgroup' };
   }
   if (type === 'imagelayer') {
-    return { ...base, image: strField(obj, 'image') ?? '', type: 'imagelayer' };
+    return {
+      ...base,
+      image: strField(obj, 'image') ?? '',
+      repeatX: boolField(obj, 'repeatx', false),
+      repeatY: boolField(obj, 'repeaty', false),
+      type: 'imagelayer',
+    };
   }
   if (type === 'group') {
     return {
@@ -268,7 +291,9 @@ function buildTiledObjectFromJson(obj: JsonObject): TiledObject {
     polygon: parsePointsField(obj, 'polygon'),
     polyline: parsePointsField(obj, 'polyline'),
     properties: buildTiledPropertiesFromJson(obj),
+    rotation: numField(obj, 'rotation', 0),
     type: strField(obj, 'type') ?? strField(obj, 'class') ?? '',
+    visible: boolField(obj, 'visible', true),
     width: numField(obj, 'width', 0),
     x: numField(obj, 'x', 0),
     y: numField(obj, 'y', 0),
@@ -289,6 +314,8 @@ function buildTiledTilesetFromJson(obj: JsonObject, diagnostics?: ImportDiagnost
     reportMissingJsonField(obj, 'tileheight', diagnostics, 'buildTiledTilesetFromJson', path);
     reportMissingJsonField(obj, 'tilewidth', diagnostics, 'buildTiledTilesetFromJson', path);
   }
+  // TMJ carries the tile offset as a nested object, where TMX uses a `<tileoffset>` child element.
+  const tileOffset = objectField(obj, 'tileoffset');
   return {
     columns: numField(obj, 'columns', 0),
     image: strField(obj, 'image'),
@@ -296,8 +323,11 @@ function buildTiledTilesetFromJson(obj: JsonObject, diagnostics?: ImportDiagnost
     imageWidth: numField(obj, 'imagewidth', 0),
     margin: numField(obj, 'margin', 0),
     name: strField(obj, 'name') ?? '',
+    objectAlignment: asObjectAlignment(strField(obj, 'objectalignment')),
     properties: buildTiledPropertiesFromJson(obj),
     spacing: numField(obj, 'spacing', 0),
+    tileOffsetX: tileOffset !== null ? numField(tileOffset, 'x', 0) : 0,
+    tileOffsetY: tileOffset !== null ? numField(tileOffset, 'y', 0) : 0,
     tileCount: numField(obj, 'tilecount', 0),
     tileHeight: numField(obj, 'tileheight', 0),
     tileWidth: numField(obj, 'tilewidth', 0),
@@ -340,6 +370,39 @@ function coercePropertyValue(type: TiledPropertyType, raw: unknown): string | nu
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+// Null rather than an empty object when the field is absent, so a caller can tell "no tile offset
+// declared" from "declared as zero" — the two re-emit differently.
+// `unspecified` is Tiled's own marker for "not declared", so an unknown or absent value maps to it
+// rather than to a resolved corner — the effective default depends on the map orientation.
+function asObjectAlignment(value: string | null): TiledObjectAlignment {
+  return value === 'topleft' ||
+    value === 'top' ||
+    value === 'topright' ||
+    value === 'left' ||
+    value === 'center' ||
+    value === 'right' ||
+    value === 'bottomleft' ||
+    value === 'bottom' ||
+    value === 'bottomright'
+    ? value
+    : 'unspecified';
+}
+
+// Null rather than a default for both stagger fields: an orthogonal document declares neither, and
+// inventing one would re-emit an attribute the source never had.
+function asStaggerAxis(value: string | null): TiledStaggerAxis | null {
+  return value === 'x' || value === 'y' ? value : null;
+}
+
+function asStaggerIndex(value: string | null): TiledStaggerIndex | null {
+  return value === 'even' || value === 'odd' ? value : null;
+}
+
+function objectField(obj: JsonObject, key: string): JsonObject | null {
+  const value = obj[key];
+  return isJsonObject(value) ? value : null;
 }
 
 function numField(obj: JsonObject, key: string, fallback: number): number {

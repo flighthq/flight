@@ -23,5 +23,11 @@ export interface TiledObject {
   ellipse: boolean;
   polygon: readonly Vector2Like[] | null;
   polyline: readonly Vector2Like[] | null;
+  // Clockwise rotation in DEGREES about the object's origin, matching Tiled's own unit and sign. Zero
+  // for an unrotated object, which is what a document omitting the attribute means.
+  rotation: number;
+  // False hides the object without removing it from the document. Tiled omits the attribute for a
+  // visible object, so absent means true.
+  visible: boolean;
   properties: readonly TiledProperty[];
 }

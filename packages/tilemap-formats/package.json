@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/importdiagnostics": "*",
+    "@flighthq/log": "*",
     "@flighthq/tilemap": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"

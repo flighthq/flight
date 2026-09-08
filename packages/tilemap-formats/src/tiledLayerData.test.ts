@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
+import {
+  decodeTiledBase64Layer,
+  decodeTiledCsvLayer,
+  explainTiledLayerData,
+  setTiledLayerDataGuard,
+} from './tiledLayerData';
 
 // GIDs [1, 5, 0x80000001, 6] as little-endian 32-bit ints.
 const gids = [1, 5, 0x80000001, 6];
@@ -52,5 +57,49 @@ describe('decodeTiledBase64Layer', () => {
 describe('decodeTiledCsvLayer', () => {
   it('parses comma-separated GIDs and ignores whitespace', () => {
     expect(Array.from(decodeTiledCsvLayer('\n1, 5,\n2147483649, 6\n'))).toEqual(gids);
+  });
+});
+
+// Two GIDs, base64-encoded. Compression is named only so the guard/explain paths are reached; no real
+// inflate runs, and the failing case needs a seam that returns null rather than real compressed bytes.
+const payload = 'AQAAAAIAAAA=';
+
+describe('explainTiledLayerData', () => {
+  it('separates the two causes a null decode collapses together', () => {
+    expect(explainTiledLayerData(payload, 'zlib')).toEqual({
+      preservedAsZeroGrid: true,
+      reason: 'compressed-without-inflate',
+    });
+    expect(explainTiledLayerData(payload, 'gzip', () => null)).toEqual({
+      preservedAsZeroGrid: true,
+      reason: 'inflate-failed',
+    });
+  });
+
+  it('reports a decoded payload for the uncompressed and the working-seam cases', () => {
+    expect(explainTiledLayerData(payload, null)).toEqual({ preservedAsZeroGrid: false, reason: 'decoded' });
+    expect(explainTiledLayerData(payload, 'zlib', (bytes) => bytes)).toEqual({
+      preservedAsZeroGrid: false,
+      reason: 'decoded',
+    });
+  });
+
+  it('retains nothing, so asking does not disturb a later decode', () => {
+    explainTiledLayerData(payload, 'zlib');
+    expect(decodeTiledBase64Layer(payload, null)).not.toBeNull();
+  });
+});
+
+describe('setTiledLayerDataGuard', () => {
+  it('routes both failure causes to the installed guard and stops when uninstalled', () => {
+    const seen: string[] = [];
+    setTiledLayerDataGuard((reason) => seen.push(reason));
+    decodeTiledBase64Layer('AQAAAA==', 'zlib');
+    decodeTiledBase64Layer('AQAAAA==', 'gzip', () => null);
+    setTiledLayerDataGuard(null);
+    decodeTiledBase64Layer('AQAAAA==', 'zlib');
+    // The core carries the seam and never the message, so what is asserted here is the routing; the
+    // wording is enableTilemapFormatsGuards' business and is tested there.
+    expect(seen).toEqual(['compressed-without-inflate', 'inflate-failed']);
   });
 });

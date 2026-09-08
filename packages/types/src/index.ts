@@ -771,6 +771,7 @@ export * from './ThreeDsSchema';
 export * from './ThresholdOperation';
 export * from './TiledGid';
 export * from './TiledLayer';
+export * from './TiledLayerDataExplanation';
 export * from './TiledMap';
 export * from './TiledObject';
 export * from './TiledParseOptions';
