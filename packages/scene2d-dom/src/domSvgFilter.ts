@@ -1,4 +1,19 @@
-import type { ConvolutionEffect, DisplacementEffect, DomRenderState } from '@flighthq/types/contract';
+import type { ConvolutionEffect, DisplacementEffect, DomRenderState, Node2D } from '@flighthq/types/contract';
+
+import { setDomCssFilter } from './domCSSFilterBinding';
+
+export function applyDomSvgFilterToNode(
+  state: DomRenderState,
+  node: Node2D,
+  effect: Readonly<ConvolutionEffect | DisplacementEffect>,
+): void {
+  const defs = getSvgDefs(state);
+  if (defs === null) return;
+  const body = getDomSvgFilter(state, effect);
+  if (body === null) return;
+  const id = ensureFilterElement(state, defs, body);
+  setDomCssFilter(state, node, `url(#${id})`);
+}
 
 /** Returns the canonical SVG filter body for a convolution effect. */
 export function createDomSvgConvolutionFilter(effect: Readonly<ConvolutionEffect>): string {
@@ -26,8 +41,10 @@ export function createDomSvgDisplacementMapFilter(effect: Readonly<DisplacementE
 
 /** Enables the DOM raster-filter cache for a render state. */
 export function enableDomRasterFilterSupport(state: DomRenderState): void {
+  if (_enabledStates.has(state)) return;
   _enabledStates.add(state);
   getCache(state);
+  injectSvgDefs(state);
 }
 
 /** Returns (and caches) the SVG body for an effect on an enabled state. */
@@ -53,6 +70,27 @@ export function getDomSvgFilter(
   return body;
 }
 
+export function removeDomSvgFilterFromNode(state: DomRenderState, node: Node2D): void {
+  setDomCssFilter(state, node, null);
+}
+
+function ensureFilterElement(state: DomRenderState, defs: SVGDefsElement, body: string): string {
+  const filterElements = getFilterElements(state);
+  let id = filterElements.get(body);
+  if (id !== undefined) return id;
+  id = `flight-filter-${_nextFilterId++}`;
+  const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  filter.setAttribute('id', id);
+  filter.innerHTML = body;
+  defs.appendChild(filter);
+  filterElements.set(body, id);
+  return id;
+}
+
+function formatNumber(value: number): string {
+  return Number.isFinite(value) ? String(value) : '0';
+}
+
 function getCache(state: DomRenderState): Map<string, string> {
   let cache = _filterCaches.get(state);
   if (cache === undefined) {
@@ -62,9 +100,33 @@ function getCache(state: DomRenderState): Map<string, string> {
   return cache;
 }
 
-function formatNumber(value: number): string {
-  return Number.isFinite(value) ? String(value) : '0';
+function getFilterElements(state: DomRenderState): Map<string, string> {
+  let elements = _filterElements.get(state);
+  if (elements === undefined) {
+    elements = new Map();
+    _filterElements.set(state, elements);
+  }
+  return elements;
+}
+
+function getSvgDefs(state: DomRenderState): SVGDefsElement | null {
+  return _svgDefs.get(state) ?? null;
+}
+
+function injectSvgDefs(state: DomRenderState): void {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '0');
+  svg.setAttribute('height', '0');
+  svg.style.position = 'absolute';
+  svg.style.pointerEvents = 'none';
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
+  state.element.appendChild(svg);
+  _svgDefs.set(state, defs);
 }
 
 const _filterCaches = new WeakMap<DomRenderState, Map<string, string>>();
+const _filterElements = new WeakMap<DomRenderState, Map<string, string>>();
 const _enabledStates = new WeakSet<DomRenderState>();
+const _svgDefs = new WeakMap<DomRenderState, SVGDefsElement>();
+let _nextFilterId = 0;
