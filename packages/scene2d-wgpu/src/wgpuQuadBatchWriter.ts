@@ -26,6 +26,8 @@ import type {
 } from '@flighthq/types/contract';
 import type { BlendMode } from '@flighthq/types/contract';
 
+import { recordWgpuBatchFlush } from './wgpuRenderStats';
+
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color adjustment). A material
 // that needs per-instance data writes it into a parallel material storage buffer instead.
@@ -209,6 +211,9 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   }
   if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
   pass.draw(6, count, 0, 0);
+  // Recorded beside the draw it counts, not at the top of the flush: an early return above leaves the
+  // writer empty without issuing a draw, and counting that would report batches the GPU never saw.
+  recordWgpuBatchFlush(state, count);
 }
 
 export function getWgpuQuadBatchPipeline(

@@ -17,6 +17,7 @@ import {
   writeWgpuQuadBatchAffineInstance,
   writeWgpuQuadBatchInstance,
 } from './wgpuQuadBatchWriter';
+import { getWgpuRenderStats, resetWgpuRenderStats } from './wgpuRenderStats';
 import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
@@ -103,6 +104,39 @@ describe('flushWgpuQuadBatchWriter', () => {
     expect(runtime.quadBatchWriterTexture).toBeNull();
     expect(runtime.quadBatchWriterBlendMode).toBeNull();
     expect(runtime.quadBatchWriterMaterial).toBeNull();
+    submitWgpuRenderPass(state);
+  });
+
+  it('records the flush in render stats, from the LIVE draw path', async () => {
+    // The stats functions were unit-tested by calling recordWgpuBatchFlush directly, which is why the
+    // production path could reach here recording nothing at all and every test still pass. This drives
+    // the real flush and asserts the counters moved.
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    resetWgpuRenderStats(state);
+
+    prepareWgpuQuadBatchWrite(state, makeTexture(), null, null, null, standardWgpuMaterialRenderer, 1);
+    runtime.quadBatchWriterCount = 3;
+    flushWgpuQuadBatchWriter(state);
+
+    const stats = getWgpuRenderStats(state);
+    expect(stats.batchFlushCount).toBe(1);
+    expect(stats.drawCallCount).toBe(1);
+    // The instance count is the batch size, not one per flush — a caller reading this to size buffers
+    // needs the quads, not the draws.
+    expect(stats.instanceCount).toBe(3);
+    submitWgpuRenderPass(state);
+  });
+
+  it('records nothing when the flush issues no draw', async () => {
+    // An empty writer returns early without drawing. Counting that would report batches the GPU never
+    // saw, which is worse than not counting at all: it makes a frame look busier than it was.
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    resetWgpuRenderStats(state);
+    flushWgpuQuadBatchWriter(state);
+    expect(getWgpuRenderStats(state).batchFlushCount).toBe(0);
     submitWgpuRenderPass(state);
   });
 
