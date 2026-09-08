@@ -10,6 +10,7 @@ export * from './enableGlScene3DColorSpaceGuards';
 export * from './enableGlScene3DCustomShaderGuards';
 export * from './enableGlScene3DDeformGuards';
 export * from './enableGlScene3DForwardLightSelectionGuards';
+export * from './explainGlMeshGeometryUvSets';
 export * from './explainGlScene3DCoverage';
 export * from './explainGlScene3DForwardLightSelection';
 export * from './extendedPbrGlMeshMaterialRenderer';

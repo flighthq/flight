@@ -440,6 +440,7 @@ export * from './MenuSignals';
 export * from './Mesh';
 export * from './MeshDeformer';
 export * from './MeshGeometry';
+export * from './MeshGeometryUvSetExplanation';
 export * from './MeshGeometryFromAttributesOptions';
 export * from './MeshGeometryOptions';
 export * from './MeshTriangleVertexIndices';

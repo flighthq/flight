@@ -12,14 +12,32 @@ import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
+// Frees the cached source radiance cubemap for `state` and clears the cache, so the next
+// ensureGlEnvironmentSourceCube uploads again. This is the invalidation verb that call site names: the
+// upload is keyed only by the cache being non-null, so replacing an Environment's cube — or switching to
+// a different Environment entity — otherwise keeps rendering the first cube forever. `destroy*` rather
+// than `dispose*` because a GL texture is freed here and now, not released to GC. A no-op when nothing
+// is cached, and safe to call twice.
+export function destroyGlEnvironmentSourceCube(state: GlRenderState): void {
+  const runtime = getGlScene3DRuntime(state);
+  if (runtime.environmentSourceCube === null) return;
+  state.gl.deleteTexture(runtime.environmentSourceCube);
+  runtime.environmentSourceCube = null;
+  // The colour space belongs to the cube that was just freed. restampGlEnvironmentCubeFace reads it to
+  // pick an internal format, so leaving it behind would carry one cube's decode decision onto the next.
+  runtime.environmentSourceCubeColorSpace = 'linear';
+}
+
 // Uploads an Environment's source radiance cubemap (six ImageResource faces) to a GL cubemap texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six
 // faces bound with pixels, either a decoded `source` element or raw `data` — which callers treat as
 // "no environment this frame". Each face uploads through whichever representation it carries: the
 // element overload for a `source`, or the raw-pixel overload for a data-only face (a generated
 // Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The upload is
-// keyed by identity: re-uploaded only when the cached texture is absent (a changed cube must drop the
-// cache first via destroyGlEnvironment). Texture.colorSpace selects the cube's GPU internal format,
+// keyed by identity: re-uploaded only when the cached texture is absent, so a caller that changes the
+// cube must drop the cache first with destroyGlEnvironmentSourceCube. The cache does NOT compare the
+// Environment it was asked about, which is why dropping it is the caller's job rather than something
+// this function detects. Texture.colorSpace selects the cube's GPU internal format,
 // so hardware sampling performs sRGB-to-linear decode only for an sRGB cube.
 export function ensureGlEnvironmentSourceCube(
   state: GlRenderState,

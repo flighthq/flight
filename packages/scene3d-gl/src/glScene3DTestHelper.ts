@@ -176,6 +176,8 @@ export function makeFakeGl2(options?: {
     vertexAttribDivisor: record('vertexAttribDivisor'),
     bufferSubData: record('bufferSubData'),
     bindFramebuffer: record('bindFramebuffer'),
+    createFramebuffer: record('createFramebuffer', {}),
+    framebufferTexture2D: record('framebufferTexture2D'),
     blendEquation: record('blendEquation'),
     blendFunc: record('blendFunc'),
     clear: record('clear'),
