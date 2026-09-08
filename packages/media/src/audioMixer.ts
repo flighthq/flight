@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { clamp } from '@flighthq/math/contract';
 import type {
   AudioBus,
   AudioBusMixerGuard,
@@ -242,10 +243,6 @@ const mixerRuntimes = new WeakMap<AudioMixer, AudioMixerRuntime>();
 // This allows setAudioBusGain/setAudioBusMuted/setAudioBusPan to update the Web Audio graph
 // without requiring the caller to pass the mixer.
 const busToMixerRuntimes = new Map<AudioBus, Set<AudioMixerRuntime>>();
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
 
 function registerBusInReverseMap(bus: AudioBus, runtime: AudioMixerRuntime): void {
   let runtimes = busToMixerRuntimes.get(bus);

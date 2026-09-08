@@ -1,3 +1,4 @@
+import { clamp } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types/contract';
 
@@ -154,10 +155,6 @@ const videoChannelRuntimes = new WeakMap<HTMLVideoElement, VideoChannelRuntime>(
 
 function getVideoElement(resource: Readonly<VideoResource> | null): HTMLVideoElement | null {
   return (resource?.element as HTMLVideoElement | null) ?? null;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
 }
 
 function completeVideoChannel(channel: VideoChannel): void {
