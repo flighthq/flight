@@ -59,7 +59,7 @@ describe('createCapacitorGeolocationBackend', () => {
     expect(backend.isAvailable()).toBe(true);
   });
 
-  it('maps a Capacitor position onto a GeoPosition', async () => {
+  it('maps a Capacitor position onto a GeolocationPosition', async () => {
     const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
     const position = await backend.getCurrentPosition({});
     expect(position).toMatchObject({ latitude: 37.5, longitude: -122.3, accuracy: 5, heading: 90, floorLevel: 0 });

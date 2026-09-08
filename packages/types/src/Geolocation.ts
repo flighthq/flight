@@ -3,9 +3,9 @@
 // permission requests resolve to false when the host denies or lacks access rather than throwing —
 // location access is an expected-failure surface, not a programmer error.
 
-// A plain snapshot of a device location. Named GeoPosition to avoid colliding with the lib.dom
-// GeolocationPosition / GeolocationCoordinates global types. Fields are zeroed when unknown.
-export interface GeoPosition extends Entity {
+// A plain snapshot of a device location. Packages that also consume the lib.dom
+// GeolocationPosition global may alias this imported Flight type. Fields are zeroed when unknown.
+export interface GeolocationPosition extends Entity {
   latitude: number;
   longitude: number;
   accuracy: number;
@@ -23,8 +23,8 @@ export type GeolocationErrorReason = 'denied' | 'timeout' | 'unavailable';
 
 // A position read paired with its failure reason. On success, position is set and reason is null;
 // on failure, position is null and reason carries why.
-export interface GeoPositionResult {
-  position: GeoPosition | null;
+export interface GeolocationPositionResult {
+  position: GeolocationPosition | null;
   reason: GeolocationErrorReason | null;
 }
 
@@ -61,12 +61,12 @@ export type GeolocationAccessOutcome = {
 };
 
 export interface GeolocationBackend extends Entity {
-  getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
-  getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
+  getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPosition | null>;
+  getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPositionResult>;
   // Reports whether this provider can acquire positions now; permission denial is a separate state.
   isAvailable(): boolean;
   watchPosition(
-    listener: (position: Readonly<GeoPosition>) => void,
+    listener: (position: Readonly<GeolocationPosition>) => void,
     options: Readonly<GeolocationRequestOptions>,
     onError?: (reason: GeolocationErrorReason) => void,
   ): number;

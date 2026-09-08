@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   GeolocationBackend,
-  GeoPosition,
-  GeoPositionResult,
+  GeolocationPosition,
+  GeolocationPositionResult,
   CapacitorApi,
   CapacitorPosition,
   Entity,
@@ -33,16 +33,16 @@ export function initializeCapacitorGeolocationBackend(
   const watchIds = new Map<number, string | null>();
   out.getCurrentPosition = async (options) => {
     try {
-      return toGeoPosition(await geolocation.getCurrentPosition(options));
+      return toGeolocationPosition(await geolocation.getCurrentPosition(options));
     } catch {
       return null;
     }
   };
   out.getCurrentPositionResult = async (options) => {
     try {
-      return { position: toGeoPosition(await geolocation.getCurrentPosition(options)), reason: null };
+      return { position: toGeolocationPosition(await geolocation.getCurrentPosition(options)), reason: null };
     } catch {
-      const out: GeoPositionResult = { position: null, reason: 'unavailable' };
+      const out: GeolocationPositionResult = { position: null, reason: 'unavailable' };
       return out;
     }
   };
@@ -54,7 +54,7 @@ export function initializeCapacitorGeolocationBackend(
     watchIds.set(numericId, null);
     geolocation
       .watchPosition(options, (position, err) => {
-        if (position !== null && position !== undefined) listener(toGeoPosition(position));
+        if (position !== null && position !== undefined) listener(toGeolocationPosition(position));
         else if (err !== undefined && onError !== undefined) onError('unavailable');
       })
       .then((stringId) => {
@@ -84,9 +84,9 @@ export function initializeCapacitorGeolocationBackend(
   };
 }
 
-function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {
+function toGeolocationPosition(position: Readonly<CapacitorPosition>): GeolocationPosition {
   const coords = position.coords;
-  const out = allocateEntity<GeoPosition>();
+  const out = allocateEntity<GeolocationPosition>();
   out.latitude = coords.latitude;
   out.longitude = coords.longitude;
   out.accuracy = coords.accuracy;

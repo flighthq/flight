@@ -3,9 +3,9 @@ import type {
   GeolocationAccessOutcome,
   GeolocationBackend,
   GeolocationErrorReason,
+  GeolocationPosition as FlightGeolocationPosition,
+  GeolocationPositionResult,
   GeolocationRequestOptions,
-  GeoPosition,
-  GeoPositionResult,
   HasSystemGeolocation,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -14,9 +14,9 @@ export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: 
   host.system.geolocation.clearWatch(id);
 }
 
-export function createGeoPosition(): GeoPosition {
-  const out = allocateEntity<GeoPosition>();
-  initializeGeoPosition(out);
+export function createGeolocationPosition(): FlightGeolocationPosition {
+  const out = allocateEntity<FlightGeolocationPosition>();
+  initializeGeolocationPosition(out);
   return finishEntity(out);
 }
 
@@ -26,21 +26,21 @@ export function createWebGeolocationBackend(): GeolocationBackend {
   return finishEntity(out);
 }
 
-export function getCurrentGeoPosition(
+export function getCurrentGeolocationPosition(
   host: Readonly<HasSystemGeolocation>,
   options?: Readonly<GeolocationRequestOptions>,
-): Promise<GeoPosition | null> {
+): Promise<FlightGeolocationPosition | null> {
   return host.system.geolocation.getCurrentPosition(options ?? _emptyOptions);
 }
 
-export function getCurrentGeoPositionResult(
+export function getCurrentGeolocationPositionResult(
   host: Readonly<HasSystemGeolocation>,
   options?: Readonly<GeolocationRequestOptions>,
-): Promise<GeoPositionResult> {
+): Promise<GeolocationPositionResult> {
   return host.system.geolocation.getCurrentPositionResult(options ?? _emptyOptions);
 }
 
-export function initializeGeoPosition(out: EntityConstruction<GeoPosition>): void {
+export function initializeGeolocationPosition(out: EntityConstruction<FlightGeolocationPosition>): void {
   out.accuracy = 0;
   out.altitude = 0;
   out.altitudeAccuracy = 0;
@@ -140,7 +140,7 @@ export function isGeolocationAvailable(host: Readonly<HasSystemGeolocation>): bo
 
 export function watchGeolocationPosition(
   host: Readonly<HasSystemGeolocation>,
-  handler: (position: Readonly<GeoPosition>) => void,
+  handler: (position: Readonly<FlightGeolocationPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
   onError?: (reason: GeolocationErrorReason) => void,
 ): number {
@@ -154,9 +154,9 @@ function getWebGeolocation(): Geolocation | null {
   return navigator.geolocation ?? null;
 }
 
-function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosition {
+function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): FlightGeolocationPosition {
   const coords = position.coords;
-  const out = allocateEntity<GeoPosition>();
+  const out = allocateEntity<FlightGeolocationPosition>();
   out.accuracy = coords.accuracy;
   out.altitude = coords.altitude ?? 0;
   out.altitudeAccuracy = coords.altitudeAccuracy ?? 0;

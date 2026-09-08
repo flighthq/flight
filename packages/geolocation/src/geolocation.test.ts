@@ -3,18 +3,18 @@ import type {
   Entity,
   GeolocationBackend,
   GeolocationErrorReason,
-  GeoPosition,
+  GeolocationPosition,
   HasSystemGeolocation,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   clearGeolocationWatch,
-  createGeoPosition,
+  createGeolocationPosition,
   createWebGeolocationBackend,
-  getCurrentGeoPosition,
-  getCurrentGeoPositionResult,
-  initializeGeoPosition,
+  getCurrentGeolocationPosition,
+  getCurrentGeolocationPositionResult,
+  initializeGeolocationPosition,
   initializeWebGeolocationBackend,
   isGeolocationAvailable,
   watchGeolocationPosition,
@@ -29,13 +29,13 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
     out.cleared.push(id);
   };
   out.getCurrentPosition = async () => {
-    const position = createGeoPosition();
+    const position = createGeolocationPosition();
     position.latitude = 1;
     position.longitude = 2;
     return position;
   };
   out.getCurrentPositionResult = async () => {
-    const position = createGeoPosition();
+    const position = createGeolocationPosition();
     position.latitude = 1;
     position.longitude = 2;
     return { position, reason: null };
@@ -44,11 +44,11 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
     return available;
   };
   out.watchPosition = (
-    listener: (position: GeoPosition) => void,
+    listener: (position: GeolocationPosition) => void,
     _options: Record<string, unknown>,
     onError?: (reason: GeolocationErrorReason) => void,
   ) => {
-    const position = createGeoPosition();
+    const position = createGeolocationPosition();
     position.latitude = 3;
     listener(position);
     if (onError) onError('denied');
@@ -69,9 +69,9 @@ describe('clearGeolocationWatch', () => {
   });
 });
 
-describe('createGeoPosition', () => {
+describe('createGeolocationPosition', () => {
   it('allocates a zeroed position', () => {
-    const position = createGeoPosition();
+    const position = createGeolocationPosition();
     expect(Object.hasOwn(position, EntityRuntimeKey)).toBe(true);
     expect(position).toMatchObject({
       accuracy: 0,
@@ -157,26 +157,26 @@ describe('createWebGeolocationBackend', () => {
   afterEach(() => vi.unstubAllGlobals());
 });
 
-describe('getCurrentGeoPosition', () => {
+describe('getCurrentGeolocationPosition', () => {
   it('returns the backend position', async () => {
-    const position = (await getCurrentGeoPosition(hostWith(fakeBackend()))) as GeoPosition;
+    const position = (await getCurrentGeolocationPosition(hostWith(fakeBackend()))) as GeolocationPosition;
     expect(position.latitude).toBe(1);
     expect(position.longitude).toBe(2);
   });
 });
 
-describe('getCurrentGeoPositionResult', () => {
+describe('getCurrentGeolocationPositionResult', () => {
   it('returns position and null reason on success', async () => {
-    const result = await getCurrentGeoPositionResult(hostWith(fakeBackend()));
+    const result = await getCurrentGeolocationPositionResult(hostWith(fakeBackend()));
     expect(result.position).not.toBeNull();
     expect(result.position!.latitude).toBe(1);
     expect(result.reason).toBeNull();
   });
 });
 
-describe('initializeGeoPosition', () => {
-  it('is the construction initializer of createGeoPosition', () => {
-    expect(typeof initializeGeoPosition).toBe('function');
+describe('initializeGeolocationPosition', () => {
+  it('is the construction initializer of createGeolocationPosition', () => {
+    expect(typeof initializeGeolocationPosition).toBe('function');
   });
 });
 
