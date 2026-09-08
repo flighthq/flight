@@ -43,6 +43,8 @@ export interface CanvasRenderRegistries extends Entity, RenderRegistries {
 // layer — so out-of-package custom renderers can reach the same state.
 export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   registries: CanvasRenderRegistries;
+  // Active alpha tracked to avoid redundant globalAlpha changes. NaN forces a write on the first draw.
+  currentAlpha: number;
   // Active compositing mode tracked to avoid redundant globalCompositeOperation changes. Internal —
   // formerly public on the CanvasRenderState entity.
   currentBlendMode: BlendMode | null;

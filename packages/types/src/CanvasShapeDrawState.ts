@@ -1,5 +1,6 @@
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { Matrix } from './Matrix';
+import type { LineScaleMode } from './ShapeCommand';
 
 export interface CanvasShapeDrawState {
   // The set the fill commands resolve textures through. What a replay can paint is exactly what is
@@ -11,6 +12,7 @@ export interface CanvasShapeDrawState {
   fillMatrix: Matrix | null;
   fillMatrixInverse: Matrix | null;
   hasStroke: boolean;
+  lineScaleMode: LineScaleMode;
   strokeStyle: string | CanvasPattern | CanvasGradient;
   strokeWidth: number;
   hasPendingPath: boolean;
