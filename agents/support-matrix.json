@@ -2526,6 +2526,31 @@
           }
         },
         {
+          "scene": "material-pbr-extension-composition",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            }
+          }
+        },
+        {
           "scene": "material-phong",
           "backends": {
             "canvas": {
