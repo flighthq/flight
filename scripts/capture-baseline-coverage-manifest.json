@@ -202,7 +202,7 @@
       "material-matcap/webgpu": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-normal/webgl": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-normal/webgpu": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
-      "material-pbr-extension-composition/webgl": ["sceneAssertion", "screenshot"],
+      "material-pbr-extension-composition/webgl": ["fingerprint", "sceneAssertion", "screenshot"],
       "material-phong/webgl": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-phong/webgpu": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-sheen/webgl": ["fingerprint", "sceneAssertion", "screenshot"],
