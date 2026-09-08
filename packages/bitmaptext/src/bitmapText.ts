@@ -69,8 +69,10 @@ export function createBitmapTextRuntime(): BitmapTextRuntime {
   // -1 is below every real version, so a node that has never been laid out reads stale and one
   // `refreshBitmapTextGlyphLayout` brings it up — no separate "was it ever updated" flag.
   runtime.glyphLayoutVersion = -1;
+  runtime.lineCount = 0;
   runtime.localBoundsRectangle = null;
   runtime.pages = [];
+  runtime.truncated = false;
   return runtime;
 }
 
@@ -80,6 +82,10 @@ export function getBitmapTextBounds(source: Readonly<BitmapText>): Rectangle {
   const out = createRectangle();
   computeBitmapTextLocalBoundsRectangle(out, source);
   return out;
+}
+
+export function getBitmapTextLineCount(source: Readonly<BitmapText>): number {
+  return (getNode2DRuntime(source) as BitmapTextRuntime).lineCount;
 }
 
 // The glyph-quad pages the node draws — one per glyph-atlas page in page order. A single-page source
@@ -93,9 +99,11 @@ export function initializeBitmapTextData(
   data?: Readonly<Partial<BitmapTextData>>,
 ): void {
   out.align = data?.align ?? 'left';
+  out.ellipsis = data?.ellipsis ?? '';
   out.glyphSource = data?.glyphSource ?? null;
   out.letterSpacing = data?.letterSpacing ?? 0;
   out.lineHeight = data?.lineHeight ?? 1;
+  out.maxLines = data?.maxLines ?? null;
   out.text = data?.text ?? '';
   out.wrapWidth = data?.wrapWidth ?? null;
 }
@@ -109,6 +117,10 @@ export function isBitmapTextGlyphLayoutStale(source: Readonly<BitmapText>): bool
   const glyphSource = source.data.glyphSource;
   if (glyphSource === null) return false;
   return (getNode2DRuntime(source) as BitmapTextRuntime).glyphLayoutVersion !== glyphSource.getGlyphLayoutVersion();
+}
+
+export function isBitmapTextTruncated(source: Readonly<BitmapText>): boolean {
+  return (getNode2DRuntime(source) as BitmapTextRuntime).truncated;
 }
 
 // Grows each page's quad arrays to hold at least `glyphCapacity` glyph quads without reallocating during
@@ -127,6 +139,10 @@ export function setBitmapTextAlign(target: BitmapText, align: BitmapTextAlign): 
   target.data.align = align;
 }
 
+export function setBitmapTextEllipsis(target: BitmapText, ellipsis: string): void {
+  target.data.ellipsis = ellipsis;
+}
+
 export function setBitmapTextGlyphSource(target: BitmapText, glyphSource: GlyphSource | null): void {
   target.data.glyphSource = glyphSource;
 }
@@ -139,6 +155,10 @@ export function setBitmapTextLineHeight(target: BitmapText, lineHeight: number):
   target.data.lineHeight = lineHeight;
 }
 
+export function setBitmapTextMaxLines(target: BitmapText, maxLines: number | null): void {
+  target.data.maxLines = maxLines;
+}
+
 export function setBitmapTextText(target: BitmapText, text: string): void {
   target.data.text = text;
 }
@@ -149,8 +169,10 @@ export function setBitmapTextWrapWidth(target: BitmapText, wrapWidth: number | n
 
 function applyBitmapTextOptions(data: BitmapTextData, options: Readonly<BitmapTextOptions>): void {
   if (options.align !== undefined) data.align = options.align;
+  if (options.ellipsis !== undefined) data.ellipsis = options.ellipsis;
   if (options.letterSpacing !== undefined) data.letterSpacing = options.letterSpacing;
   if (options.lineHeight !== undefined) data.lineHeight = options.lineHeight;
+  if (options.maxLines !== undefined) data.maxLines = options.maxLines;
   if (options.text !== undefined) data.text = options.text;
   if (options.wrapWidth !== undefined) data.wrapWidth = options.wrapWidth;
 }
