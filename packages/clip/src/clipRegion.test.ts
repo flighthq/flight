@@ -130,6 +130,22 @@ describe('clipRegionContainsRectangle', () => {
     const clip = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
     expect(clipRegionContainsRectangle(clip, createRectangle(5, 5, 20, 20))).toBe(false);
   });
+
+  it('answers from BOUNDS for a contour region, which is conservative and deliberately so', () => {
+    // A right triangle (0,0)-(100,0)-(0,100). Its bounds are the full 100x100 square, so the corner
+    // square at (80,80) is inside the BOUNDS and entirely outside the triangle. The conservative
+    // contract says true: this predicate answers from bounds and never claims exactness for a contour
+    // region. Pinning the case where conservative and exact DISAGREE is the only way to prove which one
+    // is implemented — a fixture where they agree passes either way.
+    const triangle = createClipRegionFromContours([[0, 0, 100, 0, 0, 100]], 'nonZero');
+    expect(clipRegionContainsRectangle(triangle, createRectangle(80, 80, 10, 10))).toBe(true);
+  });
+
+  it('still rejects a rectangle outside a contour region BOUNDS', () => {
+    // The conservatism is bounded: outside the bounds there is no ambiguity and the answer is exact.
+    const triangle = createClipRegionFromContours([[0, 0, 100, 0, 0, 100]], 'nonZero');
+    expect(clipRegionContainsRectangle(triangle, createRectangle(120, 120, 10, 10))).toBe(false);
+  });
 });
 
 describe('clipRegionIntersectsClipRegion', () => {
@@ -149,6 +165,19 @@ describe('clipRegionIntersectsRectangle', () => {
   it('returns false for a disjoint rectangle', () => {
     const clip = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
     expect(clipRegionIntersectsRectangle(clip, createRectangle(20, 20, 5, 5))).toBe(false);
+  });
+
+  it('answers from BOUNDS for a contour region, reporting overlap the contour does not have', () => {
+    // Same triangle. The corner square touches the bounds but not the triangle, so the exact answer is
+    // false and the conservative answer is true. A culling caller may draw something it did not need to;
+    // it must never SKIP something it did need to, which is the direction this predicate errs in.
+    const triangle = createClipRegionFromContours([[0, 0, 100, 0, 0, 100]], 'nonZero');
+    expect(clipRegionIntersectsRectangle(triangle, createRectangle(80, 80, 10, 10))).toBe(true);
+  });
+
+  it('still rejects a rectangle disjoint from a contour region BOUNDS', () => {
+    const triangle = createClipRegionFromContours([[0, 0, 100, 0, 0, 100]], 'nonZero');
+    expect(clipRegionIntersectsRectangle(triangle, createRectangle(120, 120, 10, 10))).toBe(false);
   });
 });
 
