@@ -95,8 +95,8 @@ export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, 
     const id = ids[i];
     if (id < 0 || id >= numRegions) continue;
     const region = regions[id];
-    const rw = region.width;
-    const rh = region.height;
+    const rw = region.rotated ? region.height : region.width;
+    const rh = region.rotated ? region.width : region.height;
     if (rw <= 0 || rh <= 0) continue;
 
     const tt = i * 4;
@@ -167,8 +167,8 @@ export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) =>
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
-      const w = region.width;
-      const h = region.height;
+      const w = region.rotated ? region.height : region.width;
+      const h = region.rotated ? region.width : region.height;
       if (w <= 0 || h <= 0) continue;
 
       // World-space instance transform = batch world transform ∘ per-instance local transform.

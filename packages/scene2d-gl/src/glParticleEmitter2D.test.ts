@@ -11,13 +11,13 @@ import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
 
-function makeAtlas() {
+function makeAtlas(rotated = false, rotationDirection?: 'clockwise' | 'counterclockwise') {
   const img = document.createElement('img');
   const image = createImageResource(img);
   image.width = 64;
   image.height = 64;
   return {
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
+    regions: [{ id: 0, rotated, rotationDirection, x: 0, y: 0, width: rotated ? 20 : 32, height: rotated ? 40 : 32 }],
     texture: createTexture({ dimension: '2d', source: image }),
   };
 }
@@ -111,6 +111,22 @@ describe('drawGlParticleEmitter2D', () => {
       }),
     );
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
+  });
+
+  it('packs a rotated region at its upright logical size without growing the instance record', () => {
+    const { state } = createAtlasGlState();
+    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: makeAtlas(true) }));
+    const data = getGlRenderStateRuntime(state).particleInstanceData!;
+    expect(data[12]).toBe(-40);
+    expect(data[13]).toBe(20);
+  });
+
+  it('uses the existing height sign bit for a counterclockwise packed region', () => {
+    const { state } = createAtlasGlState();
+    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: makeAtlas(true, 'counterclockwise') }));
+    const data = getGlRenderStateRuntime(state).particleInstanceData!;
+    expect(data[12]).toBe(40);
+    expect(data[13]).toBe(-20);
   });
 
   it('uploads the straight-alpha flag for a compressed particle atlas', () => {

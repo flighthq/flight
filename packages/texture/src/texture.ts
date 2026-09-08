@@ -18,6 +18,8 @@ import type {
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
+const HALF_PI = Math.PI / 2;
+
 function getFirstTextureSource(texture: Readonly<TextureLike>): TextureSource | null {
   switch (texture.dimension) {
     case '2d':
@@ -245,8 +247,24 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   const sy = texture.uvScale.y * flipScaleY;
   const preOffsetX = texture.flipX ? texture.uvScale.x : 0;
   const preOffsetY = texture.flipY ? texture.uvScale.y : 0;
-  const cosR = Math.cos(r);
-  const sinR = Math.sin(r);
+  let cosR: number;
+  let sinR: number;
+  if (r === 0) {
+    cosR = 1;
+    sinR = 0;
+  } else if (r === HALF_PI) {
+    cosR = 0;
+    sinR = 1;
+  } else if (r === -HALF_PI) {
+    cosR = 0;
+    sinR = -1;
+  } else if (r === Math.PI || r === -Math.PI) {
+    cosR = -1;
+    sinR = 0;
+  } else {
+    cosR = Math.cos(r);
+    sinR = Math.sin(r);
+  }
   const tx = texture.uvOffset.x + cosR * preOffsetX - sinR * preOffsetY;
   const ty = texture.uvOffset.y + sinR * preOffsetX + cosR * preOffsetY;
   const m = out.m;
@@ -273,8 +291,19 @@ export function getTextureViewSize(out: Vector2Like, texture: Readonly<TextureLi
     return;
   }
 
-  const cosR = Math.cos(texture.uvRotation);
-  const sinR = Math.sin(texture.uvRotation);
+  const rotation = texture.uvRotation;
+  if (rotation === 0 || rotation === Math.PI || rotation === -Math.PI) {
+    out.x = Math.abs(source.width * texture.uvScale.x);
+    out.y = Math.abs(source.height * texture.uvScale.y);
+    return;
+  }
+  if (rotation === HALF_PI || rotation === -HALF_PI) {
+    out.x = Math.abs(source.height * texture.uvScale.x);
+    out.y = Math.abs(source.width * texture.uvScale.y);
+    return;
+  }
+  const cosR = Math.cos(rotation);
+  const sinR = Math.sin(rotation);
   out.x = Math.hypot(source.width * texture.uvScale.x * cosR, source.height * texture.uvScale.x * sinR);
   out.y = Math.hypot(source.width * texture.uvScale.y * sinR, source.height * texture.uvScale.y * cosR);
 }

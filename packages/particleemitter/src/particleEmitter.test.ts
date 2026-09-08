@@ -181,6 +181,17 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
     expect(out.height).toBeCloseTo(20);
   });
 
+  it('uses the upright logical extent of a rotated atlas region', () => {
+    const region = makeAtlasRegion(0, 0, 0, 10, 20);
+    region.rotated = true;
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas(region), particleCount: 1 } });
+    emitter.data.ids = new Uint16Array([0]);
+    emitter.data.transforms = new Float32Array([5, 10, 0, 1]);
+    const out = createRectangle();
+    computeParticleEmitter2DLocalBoundsRectangle(out, emitter);
+    expect(out).toMatchObject({ height: 10, width: 20, x: 5, y: 10 });
+  });
+
   it('computes AABB over multiple particles', () => {
     const atlas = makeAtlas(makeAtlasRegion(0, 0, 0, 10, 10));
     const emitter = createParticleEmitter2D({ data: { atlas, particleCount: 2 } });

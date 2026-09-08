@@ -143,6 +143,27 @@ describe('defaultCanvasBeginTextureFill', () => {
     expect(fillSpy).toHaveBeenCalled();
   });
 
+  it('uses the upright dimensions of a rotated texture window for the bitmap fast-path check', () => {
+    const { context, state } = makeShapeTarget();
+    const drawImageSpy = vi.spyOn(context, 'drawImage');
+    const fillSpy = vi.spyOn(context, 'fill');
+    const texture = makeBitmapTexture(100, 50);
+    texture.uvOffset.x = 0.1;
+    texture.uvOffset.y = 0.4;
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, texture);
+    appendShapeRectangle(shape, 0, 0, 18, 10);
+    appendShapeEndFill(shape);
+
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+
+    expect(drawImageSpy).not.toHaveBeenCalled();
+    expect(fillSpy).toHaveBeenCalledOnce();
+  });
+
   // A singular fill matrix must take the SAME path as no matrix. `inverseMatrix` answers a singular
   // input with a defined-but-wrong matrix (a/b/c/d zeroed, tx/ty negated) rather than NaN, so an
   // unchecked return does not merely mis-place the fill — flushCanvasShapePath wraps the fill in

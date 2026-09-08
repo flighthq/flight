@@ -91,17 +91,18 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       const v0 = region.y * ih;
       const u1 = (region.x + region.width) * iw;
       const v1 = (region.y + region.height) * ih;
+      const counterclockwise = region.rotationDirection === 'counterclockwise';
       writeWgpuQuadBatchAffineInstance(
         instanceData,
         writeBase,
         tileTransform,
         tileWidth,
         tileHeight,
-        u0,
-        region.rotated ? v1 : v0,
+        region.rotated ? (counterclockwise ? u0 : u1) : u0,
+        region.rotated && counterclockwise ? v1 : v0,
         region.rotated ? 0 : u1 - u0,
-        region.rotated ? v0 - v1 : 0,
-        region.rotated ? u1 - u0 : 0,
+        region.rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
+        region.rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
         region.rotated ? 0 : v1 - v0,
         alpha,
       );

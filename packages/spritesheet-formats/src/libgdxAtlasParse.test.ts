@@ -54,6 +54,21 @@ run_2
   index: -1
 `;
 
+const ROTATED_ATLAS = `
+atlas.png
+  size: 128, 64
+  format: RGBA8888
+  filter: Linear, Linear
+  repeat: none
+flight
+  rotate: true
+  xy: 0, 0
+  size: 20, 40
+  orig: 40, 20
+  offset: 0, 0
+  index: -1
+`;
+
 describe('parseLibgdxAtlasSpritesheet', () => {
   it('parses frame names', () => {
     const data = parseLibgdxAtlasSpritesheet(MINIMAL_ATLAS);
@@ -99,6 +114,15 @@ describe('parseLibgdxAtlasSpritesheet', () => {
   it('sets non-indexed frames without rotation', () => {
     const data = parseLibgdxAtlasSpritesheet(MINIMAL_ATLAS);
     expect(data.frames[0]?.rotated).toBe(false);
+  });
+
+  it('reports the upright logical size of a non-square rotated frame', () => {
+    const frame = parseLibgdxAtlasSpritesheet(ROTATED_ATLAS).frames[0];
+    expect(frame.rotated).toBe(true);
+    expect(frame.width).toBe(40);
+    expect(frame.height).toBe(20);
+    expect(frame.sourceWidth).toBe(40);
+    expect(frame.sourceHeight).toBe(20);
   });
 
   it('emits no diagnostics on well-formed atlas with page header', () => {

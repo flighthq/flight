@@ -37,8 +37,8 @@ import { getGlScene3DViewportAspect } from './glViewportAspect';
 // [10] v0         float
 // [11] u1         float
 // [12] v1         float
-// [13] width      float
-// [14] height     float
+// [13] signed width  float   (< 0 marks clockwise atlas packing)
+// [14] signed height float   (< 0 marks counterclockwise atlas packing)
 // [15] _pad       float   (alignment to 64 bytes)
 const INSTANCE_FLOATS = 16;
 const INSTANCE_STRIDE = INSTANCE_FLOATS * 4;
@@ -65,13 +65,19 @@ out vec2 v_uv;
 out vec4 v_color;
 
 void main() {
-  float lx = (a_corner.x - 0.5) * a_size.x;
-  float ly = (a_corner.y - 0.5) * a_size.y;
+  bool clockwise = a_size.x < 0.0;
+  bool counterclockwise = a_size.y < 0.0;
+  float lx = (a_corner.x - 0.5) * abs(a_size.x);
+  float ly = (a_corner.y - 0.5) * abs(a_size.y);
   float rx = a_cosScale * lx - a_sinScale * ly;
   float ry = a_sinScale * lx + a_cosScale * ly;
   vec3 worldPos = a_pos + u_cameraRight * rx + u_cameraUp * ry;
   gl_Position = u_viewProjection * vec4(worldPos, 1.0);
-  v_uv    = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_uv = clockwise
+    ? vec2(mix(a_uvRect.z, a_uvRect.x, a_corner.y), mix(a_uvRect.y, a_uvRect.w, a_corner.x))
+    : counterclockwise
+      ? vec2(mix(a_uvRect.x, a_uvRect.z, a_corner.y), mix(a_uvRect.w, a_uvRect.y, a_corner.x))
+      : mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_color = a_color;
 }`;
 
@@ -276,6 +282,8 @@ function drawParticleEmitter3DNode(
     let v1 = 1;
     let regionW = 1;
     let regionH = 1;
+    let rotated = false;
+    let counterclockwise = false;
 
     if (regions !== null) {
       const id = ids[i];
@@ -286,8 +294,10 @@ function drawParticleEmitter3DNode(
       v0 = region.y * ih;
       u1 = (region.x + region.width) * iw;
       v1 = (region.y + region.height) * ih;
-      regionW = region.width;
-      regionH = region.height;
+      rotated = region.rotated;
+      counterclockwise = region.rotationDirection === 'counterclockwise';
+      regionW = rotated ? region.height : region.width;
+      regionH = rotated ? region.width : region.height;
     }
 
     instanceData[base] = wx;
@@ -309,8 +319,8 @@ function drawParticleEmitter3DNode(
     // dims default to 1 and non-positive regions were skipped). Using the raw pixel dims here would
     // make a 64px sprite a 64-world-unit quad — screen-covering, with crippling overdraw.
     const maxDim = regionW >= regionH ? regionW : regionH;
-    instanceData[base + 13] = regionW / maxDim;
-    instanceData[base + 14] = regionH / maxDim;
+    instanceData[base + 13] = (rotated && !counterclockwise ? -regionW : regionW) / maxDim;
+    instanceData[base + 14] = (rotated && counterclockwise ? -regionH : regionH) / maxDim;
     instanceData[base + 15] = 0;
     base += INSTANCE_FLOATS;
     drawCount++;

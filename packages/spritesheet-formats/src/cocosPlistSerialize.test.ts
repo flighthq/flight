@@ -53,4 +53,20 @@ describe('serializeCocosPlistSpritesheet', () => {
     const reparsed = parseCocosPlistSpritesheet(serialized);
     expect(reparsed.imageFile).toBe(data.imageFile);
   });
+
+  it('serializes a non-square rotated frame as a transposed packed rectangle', () => {
+    const data = parseCocosPlistSpritesheet(MINIMAL_PLIST);
+    const frame = data.frames[0];
+    frame.width = 64;
+    frame.height = 32;
+    frame.sourceWidth = 64;
+    frame.sourceHeight = 32;
+    frame.rotated = true;
+    const serialized = serializeCocosPlistSpritesheet(data);
+    expect(serialized).toContain('{{0,0},{32,64}}');
+    const reparsed = parseCocosPlistSpritesheet(serialized).frames[0];
+    expect(reparsed.rotated).toBe(true);
+    expect(reparsed.width).toBe(64);
+    expect(reparsed.height).toBe(32);
+  });
 });

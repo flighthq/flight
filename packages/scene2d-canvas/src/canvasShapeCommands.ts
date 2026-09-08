@@ -13,7 +13,7 @@ import {
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
 } from '@flighthq/shape/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureViewSize } from '@flighthq/texture/contract';
 import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();
@@ -46,10 +46,13 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
       state.fillMatrixInverse = null;
     }
     state.bitmapSrc = resolveCanvasTextureWindowSource(state.canvasTextureResolvers, texture);
-    state.bitmapW = Math.abs(texture.uvScale.x * getTextureWidth(texture));
-    state.bitmapH = Math.abs(texture.uvScale.y * getTextureHeight(texture));
+    getTextureViewSize(textureFillViewSize, texture);
+    state.bitmapW = textureFillViewSize.x;
+    state.bitmapH = textureFillViewSize.y;
   },
 };
+
+const textureFillViewSize = { x: 0, y: 0 };
 
 export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
   fillBounds: defaultShapeBoundsFlush,

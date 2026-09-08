@@ -450,6 +450,13 @@ describe('getTextureAtlasRegionFrame', () => {
     getTextureAtlasRegionFrame(region, out);
     expect(out).toEqual({ height: 20, width: 30, x: 0, y: 0 });
   });
+
+  it('falls back to the upright logical extent for an untrimmed rotated region', () => {
+    const region = createTextureAtlasRegion({ height: 20, rotated: true, width: 30, x: 100, y: 200 });
+    const out = { height: 0, width: 0, x: 0, y: 0 };
+    getTextureAtlasRegionFrame(region, out);
+    expect(out).toEqual({ height: 30, width: 20, x: 0, y: 0 });
+  });
 });
 
 describe('getTextureAtlasRegionOrdinal', () => {
@@ -668,11 +675,11 @@ describe('getTextureAtlasRegionTexture', () => {
 
     expect(texture.flipX).toBe(true);
     expect(texture.flipY).toBe(true);
-    expect(texture.uvRotation).toBeCloseTo(-Math.PI / 2);
-    expect(topLeft.x).toBeCloseTo(0.9);
-    expect(topLeft.y).toBeCloseTo(0.6);
-    expect(bottomRight.x).toBeCloseTo(0.7);
-    expect(bottomRight.y).toBeCloseTo(0.9);
+    expect(texture.uvRotation).toBeCloseTo(Math.PI / 2);
+    expect(topLeft.x).toBeCloseTo(0.7);
+    expect(topLeft.y).toBeCloseTo(0.9);
+    expect(bottomRight.x).toBeCloseTo(0.9);
+    expect(bottomRight.y).toBeCloseTo(0.6);
   });
 
   it('refuses a rotated page', () => {
@@ -745,8 +752,22 @@ describe('getTextureAtlasRegionUvQuad', () => {
     expect(out).toEqual([0, 0, 0.5, 0, 0.5, 0.25, 0, 0.25]);
   });
 
-  it('steps a rotated region one corner back, so it draws upright', () => {
+  it('undoes a clockwise packed quarter-turn, so it draws upright', () => {
     const region = createTextureAtlasRegion({ height: 25, rotated: true, width: 50, x: 0, y: 0 });
+    const out: number[] = [];
+    getTextureAtlasRegionUvQuad(region, 100, 100, out);
+    expect(out).toEqual([0.5, 0, 0.5, 0.25, 0, 0.25, 0, 0]);
+  });
+
+  it('preserves the opposite libGDX packed quarter-turn explicitly', () => {
+    const region = createTextureAtlasRegion({
+      height: 25,
+      rotated: true,
+      rotationDirection: 'counterclockwise',
+      width: 50,
+      x: 0,
+      y: 0,
+    });
     const out: number[] = [];
     getTextureAtlasRegionUvQuad(region, 100, 100, out);
     expect(out).toEqual([0, 0.25, 0, 0, 0.5, 0, 0.5, 0.25]);
@@ -836,9 +857,11 @@ describe('setTextureAtlasRegion', () => {
       name: 'hero',
       originalHeight: 200,
       originalWidth: 100,
+      pageName: 'page.png',
       pivotX: 0.5,
       pivotY: 0.5,
       rotated: true,
+      rotationDirection: 'counterclockwise',
       sourceX: 5,
       sourceY: 6,
       trimmed: true,
@@ -854,7 +877,9 @@ describe('setTextureAtlasRegion', () => {
     // The eight that used to survive from the previous frame.
     expect(region.id).toBe(-1);
     expect(region.name).toBeNull();
+    expect(region.pageName).toBeNull();
     expect(region.rotated).toBe(false);
+    expect(region.rotationDirection).toBe('clockwise');
     expect(region.trimmed).toBe(false);
     expect(region.sourceX).toBe(0);
     expect(region.sourceY).toBe(0);
@@ -873,9 +898,11 @@ describe('setTextureAtlasRegion', () => {
       'name',
       'originalHeight',
       'originalWidth',
+      'pageName',
       'pivotX',
       'pivotY',
       'rotated',
+      'rotationDirection',
       'sourceX',
       'sourceY',
       'trimmed',

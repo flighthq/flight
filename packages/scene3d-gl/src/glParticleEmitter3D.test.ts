@@ -50,14 +50,21 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
 // A single-particle emitter carrying a texture atlas whose sole region is regionWidth×regionHeight
 // pixels within a 128×128 image. Exercises the atlas draw path — texture upload/bind and quad-size
 // normalization — that the plain makeEmitterWithParticles (atlas === null) never reaches.
-function makeAtlasEmitter(regionWidth: number, regionHeight: number): ParticleEmitter3D {
+function makeAtlasEmitter(
+  regionWidth: number,
+  regionHeight: number,
+  rotated = false,
+  rotationDirection?: 'clockwise' | 'counterclockwise',
+): ParticleEmitter3D {
   const emitter = makeEmitterWithParticles(1);
   const img = document.createElement('img');
   const image = createImageResource(img);
   image.width = 128;
   image.height = 128;
   emitter.data.atlas = {
-    regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
+    regions: [
+      { id: 0, rotated, rotationDirection, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion,
+    ],
     texture: createTexture({ dimension: '2d', source: image }),
   } as TextureAtlas;
   return emitter;
@@ -255,6 +262,31 @@ describe('drawGlScene3DParticleEmitter3Ds', () => {
     // a_size occupies instance floats [13] (width) and [14] (height) of the first particle.
     expect(instanceData[13]).toBeCloseTo(1);
     expect(instanceData[14]).toBeCloseTo(0.5);
+  });
+
+  it('unrotates a packed region while preserving its logical billboard aspect ratio', () => {
+    const { state, gl } = makeAtlasGlScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(32, 64, true));
+    drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
+    expect(instanceData[13]).toBeCloseTo(-1);
+    expect(instanceData[14]).toBeCloseTo(0.5);
+    const vertexSource = gl.calls
+      .filter((c) => c.name === 'shaderSource')
+      .map((c) => String(c.args[1]))
+      .find((source) => source.includes('u_cameraRight'));
+    expect(vertexSource).toContain('bool clockwise = a_size.x < 0.0;');
+  });
+
+  it('uses the height sign bit for a counterclockwise packed region', () => {
+    const { state, gl } = makeAtlasGlScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(32, 64, true, 'counterclockwise'));
+    drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
+    expect(instanceData[13]).toBeCloseTo(1);
+    expect(instanceData[14]).toBeCloseTo(-0.5);
   });
 
   it('does not upload a texture and signals u_hasTexture off for atlas-less emitters', () => {

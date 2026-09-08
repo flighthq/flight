@@ -195,6 +195,15 @@ describe('parseSpritesheet', () => {
     expect(data?.frames[0]?.name).toBe('hero');
   });
 
+  it('forwards supplied image dimensions to the Starling parser', () => {
+    const data = parseSpritesheet(STARLING_XML, SpritesheetFormatKindStarling, {
+      imageHeight: 128,
+      imageWidth: 256,
+    });
+    expect(data?.imageWidth).toBe(256);
+    expect(data?.imageHeight).toBe(128);
+  });
+
   it('returns null for unknown format', () => {
     const data = parseSpritesheet('unknown format content here');
     expect(data).toBeNull();

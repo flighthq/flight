@@ -93,8 +93,8 @@ export const defaultWgpuParticleEmitter2DVelocityWriter: WgpuVelocityWriter = (c
     const id = ids[i];
     if (id < 0 || id >= numRegions) continue;
     const region = regions[id];
-    const rw = region.width;
-    const rh = region.height;
+    const rw = region.rotated ? region.height : region.width;
+    const rh = region.rotated ? region.width : region.height;
     if (rw <= 0 || rh <= 0) continue;
 
     const tt = i * 4;
@@ -159,8 +159,8 @@ export const defaultWgpuQuadBatchVelocityWriter: WgpuVelocityWriter = (ctx, node
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
-      const w = region.width;
-      const h = region.height;
+      const w = region.rotated ? region.height : region.width;
+      const h = region.rotated ? region.width : region.height;
       if (w <= 0 || h <= 0) continue;
 
       let wa: number;

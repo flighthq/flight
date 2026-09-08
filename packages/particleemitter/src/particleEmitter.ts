@@ -163,8 +163,8 @@ export function computeParticleEmitter2DLocalBoundsRectangle(
     const scale = transforms[tt + 3];
     const cosR = Math.cos(rotation) * scale;
     const sinR = Math.sin(rotation) * scale;
-    const w = region.width;
-    const h = region.height;
+    const w = region.rotated ? region.height : region.width;
+    const h = region.rotated ? region.width : region.height;
     // Four corners of the quad at local (0,0)-(w,h) after rotate+scale+translate
     const x0 = px;
     const y0 = py;

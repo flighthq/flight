@@ -24,7 +24,7 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 //   0: px, 1: py, 2: cosScale, 3: sinScale
 //   4: r, 5: g, 6: b, 7: alpha
 //   8: u0, 9: v0, 10: u1, 11: v1
-//   12: width, 13: height
+//   12: signed width (< 0 clockwise), 13: signed height (< 0 counterclockwise)
 const INSTANCE_FLOATS = 14;
 const INSTANCE_STRIDE = INSTANCE_FLOATS * 4;
 
@@ -69,15 +69,23 @@ fn vs_main(
   let inst = instances[ii];
   let xi = (vi == 1u || vi == 2u || vi == 4u);
   let yi = (vi == 2u || vi == 4u || vi == 5u);
-  let rotated = inst.width < 0.0;
+  let clockwise = inst.width < 0.0;
+  let counterclockwise = inst.height < 0.0;
   let lx = select(0.0, abs(inst.width), xi);
-  let ly = select(0.0, inst.height, yi);
+  let ly = select(0.0, abs(inst.height), yi);
   // Rotate and translate in world space
   let rx = inst.cosScale * lx - inst.sinScale * ly + inst.px;
   let ry = inst.sinScale * lx + inst.cosScale * ly + inst.py;
   let p = uni.matrix * vec3f(rx, ry, 1.0);
-  let u = select(select(inst.u0, inst.u1, xi), select(inst.u0, inst.u1, yi), rotated);
-  let v = select(select(inst.v0, inst.v1, yi), select(inst.v1, inst.v0, xi), rotated);
+  var u = select(inst.u0, inst.u1, xi);
+  var v = select(inst.v0, inst.v1, yi);
+  if (clockwise) {
+    u = select(inst.u1, inst.u0, yi);
+    v = select(inst.v0, inst.v1, xi);
+  } else if (counterclockwise) {
+    u = select(inst.u0, inst.u1, yi);
+    v = select(inst.v1, inst.v0, xi);
+  }
   var out : VertexOut;
   out.position = vec4f(p.x, p.y, 0.0, 1.0);
   out.uv = vec2f(u, v);
@@ -263,8 +271,11 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
     instanceData[base + 9] = region.y * ih;
     instanceData[base + 10] = (region.x + region.width) * iw;
     instanceData[base + 11] = (region.y + region.height) * ih;
-    instanceData[base + 12] = region.rotated ? -region.height : region.width;
-    instanceData[base + 13] = region.rotated ? region.width : region.height;
+    const counterclockwise = region.rotationDirection === 'counterclockwise';
+    instanceData[base + 12] =
+      region.rotated && !counterclockwise ? -region.height : region.rotated ? region.height : region.width;
+    instanceData[base + 13] =
+      region.rotated && counterclockwise ? -region.width : region.rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

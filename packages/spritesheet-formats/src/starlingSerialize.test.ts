@@ -23,8 +23,8 @@ const ATLAS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 const ROTATED_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="sprites.png">
-  <SubTexture name="run_001" x="0" y="0" width="32" height="32" rotated="true"/>
-  <SubTexture name="run_002" x="32" y="0" width="32" height="32" rotated="true"/>
+  <SubTexture name="run_001" x="0" y="0" width="20" height="40" rotated="true"/>
+  <SubTexture name="run_002" x="20" y="0" width="18" height="30" rotated="true"/>
 </TextureAtlas>`;
 
 const MINIMAL_XML = `<TextureAtlas imagePath="mini.png">
@@ -84,6 +84,15 @@ describe('serializeStarlingSpritesheet', () => {
     const { data, document } = parseStarlingSpritesheetDocument(ROTATED_XML);
     const data2 = parseStarlingSpritesheet(serializeStarlingSpritesheet(data, document));
     expect(data2.frames[0].rotated).toBe(true);
+    expect(data2.frames[0].width).toBe(40);
+    expect(data2.frames[0].height).toBe(20);
+  });
+
+  it('serializes logical rotated sizes as transposed packed rectangles', () => {
+    const { data, document } = parseStarlingSpritesheetDocument(ROTATED_XML);
+    const xml = serializeStarlingSpritesheet(data, document);
+    expect(xml).toContain('width="20"');
+    expect(xml).toContain('height="40"');
   });
 
   it('round-trips imagePath', () => {

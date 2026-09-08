@@ -182,8 +182,8 @@ export function getTextureAtlasRegionCount(atlas: Readonly<TextureAtlas>): numbe
 // Writes the region's placement inside its original, untrimmed frame into `out`: where the packed
 // pixels sit within the frame the artist authored. `out.x`/`out.y` are the trim offsets
 // (`sourceX`/`sourceY`), and `out.width`/`out.height` the original frame extent — falling back to the
-// packed extent for an untrimmed region, so an untrimmed region reports a frame at the origin with
-// its own size and the caller needs no special case.
+// logical drawn extent for an untrimmed region, so an untrimmed region reports a frame at the origin
+// with its own upright size and the caller needs no special case for packed rotation.
 //
 // This is the arithmetic a renderer must do to place a trimmed region correctly: packers drop
 // transparent margins, so drawing the packed rect at the sprite's position puts the art in the wrong
@@ -192,8 +192,8 @@ export function getTextureAtlasRegionCount(atlas: Readonly<TextureAtlas>): numbe
 export function getTextureAtlasRegionFrame(region: Readonly<TextureAtlasRegion>, out: RectangleLike): RectangleLike {
   const sourceX = region.sourceX;
   const sourceY = region.sourceY;
-  const originalWidth = region.originalWidth ?? region.width;
-  const originalHeight = region.originalHeight ?? region.height;
+  const originalWidth = region.originalWidth ?? (region.rotated ? region.height : region.width);
+  const originalHeight = region.originalHeight ?? (region.rotated ? region.width : region.height);
   out.x = sourceX;
   out.y = sourceY;
   out.width = originalWidth;
@@ -366,10 +366,11 @@ export function getTextureAtlasRegionUv(
 // top-left, top-right, bottom-right, bottom-left order of the *drawn* quad.
 //
 // This is the rotation-aware companion to getTextureAtlasRegionUv, which returns the packed rect and
-// leaves rotation to the caller. A packer that rotates a region stores it turned 90° clockwise, so
-// drawing it upright means walking the packed rect's corners rotated one step — arithmetic every
-// renderer was repeating, and getting wrong quietly (a mis-stepped corner list mirrors or rotates the
-// sprite rather than failing). Returns `out`, filled with zeros when either image dimension is zero.
+// leaves rotation to the caller. TexturePacker/Starling store clockwise by default, while libGDX
+// explicitly stores counterclockwise; rotationDirection preserves that distinction. Drawing either
+// upright means walking the packed rect's corners in the matching order — arithmetic every renderer
+// was repeating, and getting wrong quietly. Returns `out`, filled with zeros when either image
+// dimension is zero.
 export function getTextureAtlasRegionUvQuad(
   region: Readonly<TextureAtlasRegion>,
   imageWidth: number,
@@ -386,16 +387,27 @@ export function getTextureAtlasRegionUvQuad(
   const u1 = (region.x + region.width) / imageWidth;
   const v1 = (region.y + region.height) / imageHeight;
   if (region.rotated) {
-    // Packed 90° clockwise: the drawn top-left corner is the packed bottom-left, and the walk
-    // continues from there, so each drawn corner is the packed corner one step back around the rect.
-    out[0] = u0;
-    out[1] = v1;
-    out[2] = u0;
-    out[3] = v0;
-    out[4] = u1;
-    out[5] = v0;
-    out[6] = u1;
-    out[7] = v1;
+    if (region.rotationDirection === 'counterclockwise') {
+      out[0] = u0;
+      out[1] = v1;
+      out[2] = u0;
+      out[3] = v0;
+      out[4] = u1;
+      out[5] = v0;
+      out[6] = u1;
+      out[7] = v1;
+      return out;
+    }
+    // Packed 90° clockwise: the drawn top-left corner is the packed top-right, and the walk
+    // continues from there, undoing the packer's quarter-turn without moving texels.
+    out[0] = u1;
+    out[1] = v0;
+    out[2] = u1;
+    out[3] = v1;
+    out[4] = u0;
+    out[5] = v1;
+    out[6] = u0;
+    out[7] = v0;
     return out;
   }
   out[0] = u0;
@@ -431,6 +443,7 @@ export function initializeTextureAtlasRegion(
   out.pivotX = obj?.pivotX ?? null;
   out.pivotY = obj?.pivotY ?? null;
   out.rotated = obj?.rotated ?? false;
+  out.rotationDirection = obj?.rotationDirection ?? 'clockwise';
   out.sourceX = obj?.sourceX ?? 0;
   out.sourceY = obj?.sourceY ?? 0;
   out.trimmed = obj?.trimmed ?? false;
@@ -462,9 +475,11 @@ export function setTextureAtlasRegion(
   const name = source.name ?? null;
   const originalHeight = source.originalHeight ?? null;
   const originalWidth = source.originalWidth ?? null;
+  const pageName = source.pageName ?? null;
   const pivotX = source.pivotX ?? null;
   const pivotY = source.pivotY ?? null;
   const rotated = source.rotated ?? false;
+  const rotationDirection = source.rotationDirection ?? 'clockwise';
   const sourceX = source.sourceX ?? 0;
   const sourceY = source.sourceY ?? 0;
   const trimmed = source.trimmed ?? false;
@@ -476,9 +491,11 @@ export function setTextureAtlasRegion(
   out.name = name;
   out.originalHeight = originalHeight;
   out.originalWidth = originalWidth;
+  out.pageName = pageName;
   out.pivotX = pivotX;
   out.pivotY = pivotY;
   out.rotated = rotated;
+  out.rotationDirection = rotationDirection;
   out.sourceX = sourceX;
   out.sourceY = sourceY;
   out.trimmed = trimmed;
@@ -540,13 +557,15 @@ function setTextureAtlasRegionTextureWindow(
   const pageHeight = page.uvScale.y * sourceHeight;
   const x = page.flipX ? pageX + pageWidth - region.x - region.width : pageX + region.x;
   const y = page.flipY ? pageY + pageHeight - region.y - region.height : pageY + region.y;
+  const counterclockwise = region.rotationDirection === 'counterclockwise';
 
   texture.uvOffset.x = x / sourceWidth;
   if (region.rotated) {
     texture.flipX = page.flipY;
     texture.flipY = page.flipX;
-    texture.uvOffset.y = (y + region.height) / sourceHeight;
-    texture.uvRotation = -Math.PI / 2;
+    texture.uvOffset.x = (x + (counterclockwise ? 0 : region.width)) / sourceWidth;
+    texture.uvOffset.y = (y + (counterclockwise ? region.height : 0)) / sourceHeight;
+    texture.uvRotation = counterclockwise ? -Math.PI / 2 : Math.PI / 2;
     texture.uvScale.x = region.height / sourceHeight;
     texture.uvScale.y = region.width / sourceWidth;
   } else {
