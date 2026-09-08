@@ -12,6 +12,7 @@ export {
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomCssFilterSupport,
+  enableDomRasterFilterSupport,
   enableDomRenderCache,
   enableDomTextInput,
   enableDomTextureResolverGuards,
@@ -23,4 +24,5 @@ export {
   renderDomScene2D,
   setDomCssFilter,
 } from './contract';
+export { createDomSvgConvolutionFilter, createDomSvgDisplacementMapFilter, getDomSvgFilter } from './domSvgFilter';
 export { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer';
