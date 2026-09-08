@@ -2,8 +2,7 @@ import { matrixTransformPointXY, multiplyMatrix, setTransformMatrix } from '@fli
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { MatrixLike, RegionAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
-// 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
-const MATRIX_STRIDE = 6;
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
 
 // Writes a RegionAttachment2D's four world corner positions into `out` as flat interleaved pairs — order
 // bottom-left, top-left, top-right, bottom-right (`[blx, bly, tlx, tly, trx, try, brx, bry]`, 8 floats).

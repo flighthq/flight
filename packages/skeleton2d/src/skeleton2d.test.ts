@@ -16,6 +16,7 @@ import {
   getSkeleton2DBoneWorldMatrix,
   getSkeleton2DSkin,
   initializeSkeleton2D,
+  resetSkeleton2DToSetup,
   setSkeleton2DBindPose,
   setSkeleton2DSkin,
   validateSkeleton2D,
@@ -418,6 +419,26 @@ describe('getSkeleton2DSkin', () => {
 describe('initializeSkeleton2D', () => {
   it('is the construction initializer of createSkeleton2D', () => {
     expect(typeof initializeSkeleton2D).toBe('function');
+  });
+});
+
+describe('resetSkeleton2DToSetup', () => {
+  it('copies every animatable local transform from setup to pose', () => {
+    const setup = createSkeleton2D([
+      makeBone({ rotation: 12, scaleX: 2, scaleY: 3, shearX: 4, shearY: 5, x: 6, y: 7 }),
+    ]);
+    const pose = cloneSkeleton2D(setup);
+    Object.assign(pose.bones[0], { rotation: 90, scaleX: 9, scaleY: 8, shearX: 7, shearY: 6, x: 5, y: 4 });
+
+    resetSkeleton2DToSetup(setup, pose);
+
+    expect(pose.bones[0]).toEqual(setup.bones[0]);
+  });
+
+  it('rejects aliased or structurally incompatible skeletons', () => {
+    const setup = createSkeleton2D([makeBone()]);
+    expect(() => resetSkeleton2DToSetup(setup, setup)).toThrow(/distinct/);
+    expect(() => resetSkeleton2DToSetup(setup, createSkeleton2D([]))).toThrow(/same number/);
   });
 });
 

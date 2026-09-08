@@ -62,6 +62,7 @@ export { stepPhysics3D, stepPhysics3DInterval } from './step';
 export {
   addPhysics3DBody,
   addPhysics3DCollider,
+  applyPhysics3DAngularImpulse,
   applyPhysics3DForce,
   applyPhysics3DForceAtPoint,
   applyPhysics3DLinearImpulse,

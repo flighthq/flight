@@ -22,6 +22,7 @@ import {
   applyPhysics3DForceAtPoint,
   applyPhysics3DLinearImpulse,
   applyPhysics3DLinearImpulseAtPoint,
+  applyPhysics3DAngularImpulse,
   applyPhysics3DTorque,
   createPhysics3DCollider,
   createPhysics3DSequentialImpulseConfig,
@@ -235,6 +236,28 @@ describe('addPhysics3DCollider', () => {
 
     expect(() => addPhysics3DCollider(foreign, body, createPhysics3DCollider(colliderUnitBox()))).toThrow(/own/);
     expect(body.colliders).toHaveLength(0);
+  });
+});
+
+describe('applyPhysics3DAngularImpulse', () => {
+  it('changes angular velocity immediately through world inverse inertia', () => {
+    const body = sphere();
+
+    expect(applyPhysics3DAngularImpulse(body, 0, 0, 2)).toBe(true);
+
+    expect(body.angularVelocityZ).toBeGreaterThan(0);
+  });
+
+  it('rejects fixed rotation, immovable bodies, and non-finite input atomically', () => {
+    const body = sphere();
+    body.fixedRotation = true;
+    expect(applyPhysics3DAngularImpulse(body, 1, 0, 0)).toBe(false);
+    body.fixedRotation = false;
+    body.type = 'static';
+    expect(applyPhysics3DAngularImpulse(body, 1, 0, 0)).toBe(false);
+    body.type = 'dynamic';
+    expect(applyPhysics3DAngularImpulse(body, Number.NaN, 0, 0)).toBe(false);
+    expect(body.angularVelocityX).toBe(0);
   });
 });
 
