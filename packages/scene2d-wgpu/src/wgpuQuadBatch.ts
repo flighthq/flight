@@ -11,7 +11,7 @@ import type {
   TintMaterialData,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   ensureWgpuQuadBatchResources,
@@ -134,8 +134,7 @@ function writeAtlasRegionInstance(
   transform: typeof quadTransform,
   region: Readonly<{
     height: number;
-    rotated: boolean;
-    rotationDirection?: 'clockwise' | 'counterclockwise';
+    rotation: TextureAtlasRotation;
     width: number;
     x: number;
     y: number;
@@ -148,19 +147,20 @@ function writeAtlasRegionInstance(
   const v0 = region.y * ih;
   const u1 = (region.x + region.width) * iw;
   const v1 = (region.y + region.height) * ih;
-  const counterclockwise = region.rotationDirection === 'counterclockwise';
+  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const counterclockwise = region.rotation === TextureAtlasRotation.Counterclockwise90;
   writeWgpuQuadBatchAffineInstance(
     data,
     base,
     transform,
-    region.rotated ? region.height : region.width,
-    region.rotated ? region.width : region.height,
-    region.rotated ? (counterclockwise ? u0 : u1) : u0,
-    region.rotated && counterclockwise ? v1 : v0,
-    region.rotated ? 0 : u1 - u0,
-    region.rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
-    region.rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
-    region.rotated ? 0 : v1 - v0,
+    rotated ? region.height : region.width,
+    rotated ? region.width : region.height,
+    rotated ? (counterclockwise ? u0 : u1) : u0,
+    rotated && counterclockwise ? v1 : v0,
+    rotated ? 0 : u1 - u0,
+    rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
+    rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
+    rotated ? 0 : v1 - v0,
     alpha,
   );
 }

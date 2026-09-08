@@ -8,6 +8,7 @@ import {
 } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   Kind,
   ParticleEmitter2D,
@@ -93,8 +94,9 @@ export const defaultWgpuParticleEmitter2DVelocityWriter: WgpuVelocityWriter = (c
     const id = ids[i];
     if (id < 0 || id >= numRegions) continue;
     const region = regions[id];
-    const rw = region.rotated ? region.height : region.width;
-    const rh = region.rotated ? region.width : region.height;
+    const rotated = region.rotation !== TextureAtlasRotation.None;
+    const rw = rotated ? region.height : region.width;
+    const rh = rotated ? region.width : region.height;
     if (rw <= 0 || rh <= 0) continue;
 
     const tt = i * 4;
@@ -159,8 +161,9 @@ export const defaultWgpuQuadBatchVelocityWriter: WgpuVelocityWriter = (ctx, node
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
-      const w = region.rotated ? region.height : region.width;
-      const h = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const w = rotated ? region.height : region.width;
+      const h = rotated ? region.width : region.height;
       if (w <= 0 || h <= 0) continue;
 
       let wa: number;

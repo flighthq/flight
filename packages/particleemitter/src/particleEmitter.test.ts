@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import type { ParticleEmitter2D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { ParticleEmitter2DKind } from '@flighthq/types/contract';
+import { ParticleEmitter2DKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   PARTICLE_EMITTER_DELETED_ID,
@@ -29,7 +29,16 @@ import {
 } from './particleEmitter';
 
 function makeAtlasRegion(id = 0, x = 0, y = 0, width = 32, height = 32): TextureAtlasRegion {
-  return { id, x, y, width, height, pivotX: null, pivotY: null } as TextureAtlasRegion;
+  return {
+    id,
+    x,
+    y,
+    width,
+    height,
+    pivotX: null,
+    pivotY: null,
+    rotation: TextureAtlasRotation.None,
+  } as TextureAtlasRegion;
 }
 
 function makeAtlas(...regions: TextureAtlasRegion[]): TextureAtlas {
@@ -183,7 +192,7 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('uses the upright logical extent of a rotated atlas region', () => {
     const region = makeAtlasRegion(0, 0, 0, 10, 20);
-    region.rotated = true;
+    region.rotation = TextureAtlasRotation.Clockwise90;
     const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas(region), particleCount: 1 } });
     emitter.data.ids = new Uint16Array([0]);
     emitter.data.transforms = new Float32Array([5, 10, 0, 1]);

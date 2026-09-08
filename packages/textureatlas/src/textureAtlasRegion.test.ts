@@ -1,5 +1,6 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { createTexture, getTextureSource, transformTextureUv } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
@@ -273,7 +274,7 @@ describe('createTextureAtlasRegion', () => {
     expect(region.originalWidth).toBeNull();
     expect(region.pivotX).toBeNull();
     expect(region.pivotY).toBeNull();
-    expect(region.rotated).toBe(false);
+    expect(region.rotation).toBe(TextureAtlasRotation.None);
     expect(region.sourceX).toStrictEqual(0);
     expect(region.sourceY).toStrictEqual(0);
     expect(region.trimmed).toBe(false);
@@ -284,14 +285,14 @@ describe('createTextureAtlasRegion', () => {
   it('initializes trim and rotation fields', () => {
     const trimmed = createTextureAtlasRegion({
       trimmed: true,
-      rotated: true,
+      rotation: TextureAtlasRotation.Clockwise90,
       sourceX: 4,
       sourceY: 8,
       originalWidth: 64,
       originalHeight: 32,
     });
     expect(trimmed.trimmed).toBe(true);
-    expect(trimmed.rotated).toBe(true);
+    expect(trimmed.rotation).toBe(TextureAtlasRotation.Clockwise90);
     expect(trimmed.sourceX).toBe(4);
     expect(trimmed.sourceY).toBe(8);
     expect(trimmed.originalWidth).toBe(64);
@@ -452,7 +453,13 @@ describe('getTextureAtlasRegionFrame', () => {
   });
 
   it('falls back to the upright logical extent for an untrimmed rotated region', () => {
-    const region = createTextureAtlasRegion({ height: 20, rotated: true, width: 30, x: 100, y: 200 });
+    const region = createTextureAtlasRegion({
+      height: 20,
+      rotation: TextureAtlasRotation.Clockwise90,
+      width: 30,
+      x: 100,
+      y: 200,
+    });
     const out = { height: 0, width: 0, x: 0, y: 0 };
     getTextureAtlasRegionFrame(region, out);
     expect(out).toEqual({ height: 30, width: 20, x: 0, y: 0 });
@@ -665,7 +672,16 @@ describe('getTextureAtlasRegionTexture', () => {
         source: image,
       }),
     });
-    atlas.regions.push(createTextureAtlasRegion({ height: 15, id: 0, rotated: true, width: 20, x: 10, y: 5 }));
+    atlas.regions.push(
+      createTextureAtlasRegion({
+        height: 15,
+        id: 0,
+        rotation: TextureAtlasRotation.Clockwise90,
+        width: 20,
+        x: 10,
+        y: 5,
+      }),
+    );
 
     const texture = getTextureAtlasRegionTexture(atlas, 0)!;
     const topLeft = createVector2();
@@ -753,7 +769,13 @@ describe('getTextureAtlasRegionUvQuad', () => {
   });
 
   it('undoes a clockwise packed quarter-turn, so it draws upright', () => {
-    const region = createTextureAtlasRegion({ height: 25, rotated: true, width: 50, x: 0, y: 0 });
+    const region = createTextureAtlasRegion({
+      height: 25,
+      rotation: TextureAtlasRotation.Clockwise90,
+      width: 50,
+      x: 0,
+      y: 0,
+    });
     const out: number[] = [];
     getTextureAtlasRegionUvQuad(region, 100, 100, out);
     expect(out).toEqual([0.5, 0, 0.5, 0.25, 0, 0.25, 0, 0]);
@@ -762,8 +784,7 @@ describe('getTextureAtlasRegionUvQuad', () => {
   it('preserves the opposite libGDX packed quarter-turn explicitly', () => {
     const region = createTextureAtlasRegion({
       height: 25,
-      rotated: true,
-      rotationDirection: 'counterclockwise',
+      rotation: TextureAtlasRotation.Counterclockwise90,
       width: 50,
       x: 0,
       y: 0,
@@ -778,7 +799,12 @@ describe('getTextureAtlasRegionUvQuad', () => {
     const upright: number[] = [];
     const rotated: number[] = [];
     getTextureAtlasRegionUvQuad(createTextureAtlasRegion(packed), 100, 100, upright);
-    getTextureAtlasRegionUvQuad(createTextureAtlasRegion({ ...packed, rotated: true }), 100, 100, rotated);
+    getTextureAtlasRegionUvQuad(
+      createTextureAtlasRegion({ ...packed, rotation: TextureAtlasRotation.Clockwise90 }),
+      100,
+      100,
+      rotated,
+    );
     const asPairs = (a: readonly number[]) =>
       a.reduce<string[]>((acc, _v, i) => (i % 2 ? acc : [...acc, `${a[i]},${a[i + 1]}`]), []).sort();
     expect(asPairs(rotated)).toEqual(asPairs(upright));
@@ -860,8 +886,7 @@ describe('setTextureAtlasRegion', () => {
       pageName: 'page.png',
       pivotX: 0.5,
       pivotY: 0.5,
-      rotated: true,
-      rotationDirection: 'counterclockwise',
+      rotation: TextureAtlasRotation.Counterclockwise90,
       sourceX: 5,
       sourceY: 6,
       trimmed: true,
@@ -878,8 +903,7 @@ describe('setTextureAtlasRegion', () => {
     expect(region.id).toBe(-1);
     expect(region.name).toBeNull();
     expect(region.pageName).toBeNull();
-    expect(region.rotated).toBe(false);
-    expect(region.rotationDirection).toBe('clockwise');
+    expect(region.rotation).toBe(TextureAtlasRotation.None);
     expect(region.trimmed).toBe(false);
     expect(region.sourceX).toBe(0);
     expect(region.sourceY).toBe(0);
@@ -888,9 +912,18 @@ describe('setTextureAtlasRegion', () => {
   });
 
   it('lands exactly where createTextureAtlasRegion would for the same source', () => {
-    const source = { name: 'frame', rotated: true, sourceX: 3, trimmed: true, height: 4, width: 3, x: 1, y: 2 };
+    const source = {
+      name: 'frame',
+      rotation: TextureAtlasRotation.Clockwise90,
+      sourceX: 3,
+      trimmed: true,
+      height: 4,
+      width: 3,
+      x: 1,
+      y: 2,
+    };
     const built = createTextureAtlasRegion(source);
-    const set = createTextureAtlasRegion({ name: 'stale', rotated: false, width: 99, x: 99 });
+    const set = createTextureAtlasRegion({ name: 'stale', rotation: TextureAtlasRotation.None, width: 99, x: 99 });
     setTextureAtlasRegion(set, source);
     for (const key of [
       'height',
@@ -901,8 +934,7 @@ describe('setTextureAtlasRegion', () => {
       'pageName',
       'pivotX',
       'pivotY',
-      'rotated',
-      'rotationDirection',
+      'rotation',
       'sourceX',
       'sourceY',
       'trimmed',
@@ -939,7 +971,7 @@ describe('setTextureAtlasRegion', () => {
     const region = createTextureAtlasRegion({
       height: 40,
       name: 'keep',
-      rotated: true,
+      rotation: TextureAtlasRotation.Clockwise90,
       sourceX: 7,
       width: 30,
       x: 10,
@@ -951,7 +983,7 @@ describe('setTextureAtlasRegion', () => {
     expect(region.width).toBe(30);
     expect(region.height).toBe(40);
     expect(region.name).toBe('keep');
-    expect(region.rotated).toBe(true);
+    expect(region.rotation).toBe(TextureAtlasRotation.Clockwise90);
     expect(region.sourceX).toBe(7);
   });
 });

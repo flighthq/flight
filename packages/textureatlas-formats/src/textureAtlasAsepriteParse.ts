@@ -1,4 +1,5 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   TextureAtlas,
   TextureAtlasAsepriteArrayFrame,
@@ -78,7 +79,7 @@ function applyAsepriteFrame(
       originalWidth: trimmed && sourceSize !== undefined ? sourceSize.w : null,
       pivotX: null,
       pivotY: null,
-      rotated: entry.rotated,
+      rotation: entry.rotated ? TextureAtlasRotation.Clockwise90 : TextureAtlasRotation.None,
       sourceX: spriteSourceSize !== undefined ? spriteSourceSize.x : 0,
       sourceY: spriteSourceSize !== undefined ? spriteSourceSize.y : 0,
       trimmed,

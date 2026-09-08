@@ -1,4 +1,5 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
@@ -45,7 +46,7 @@ export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): 
         originalWidth: trimmed ? (frameWidth ?? (rotated ? height : width)) : null,
         pivotX,
         pivotY,
-        rotated,
+        rotation: rotated ? TextureAtlasRotation.Clockwise90 : TextureAtlasRotation.None,
         sourceX: a['frameX'] !== undefined ? -parseFloat(a['frameX']) : 0,
         sourceY: a['frameY'] !== undefined ? -parseFloat(a['frameY']) : 0,
         trimmed,

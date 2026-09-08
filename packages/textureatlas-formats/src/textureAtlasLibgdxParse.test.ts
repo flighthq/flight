@@ -1,4 +1,5 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
 
@@ -78,9 +79,8 @@ describe('parseTextureAtlasLibgdxAtlas', () => {
   it('sets rotated on rotated regions', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasLibgdxAtlas(SIMPLE_ATLAS, atlas);
-    expect(atlas.regions[2].rotated).toBe(true);
-    expect(atlas.regions[2].rotationDirection).toBe('counterclockwise');
-    expect(atlas.regions[0].rotated).toBe(false);
+    expect(atlas.regions[2].rotation).toBe(TextureAtlasRotation.Counterclockwise90);
+    expect(atlas.regions[0].rotation).toBe(TextureAtlasRotation.None);
     expect(atlas.regions[2].trimmed).toBe(false);
   });
   it('appends index to name when index >= 0', () => {

@@ -7,6 +7,7 @@ import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ParticleEmitter3D, Scene3DLightsLike, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { destroyGlParticleEmitter3DShader, drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -53,8 +54,7 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
 function makeAtlasEmitter(
   regionWidth: number,
   regionHeight: number,
-  rotated = false,
-  rotationDirection?: 'clockwise' | 'counterclockwise',
+  rotation = TextureAtlasRotation.None,
 ): ParticleEmitter3D {
   const emitter = makeEmitterWithParticles(1);
   const img = document.createElement('img');
@@ -62,9 +62,7 @@ function makeAtlasEmitter(
   image.width = 128;
   image.height = 128;
   emitter.data.atlas = {
-    regions: [
-      { id: 0, rotated, rotationDirection, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion,
-    ],
+    regions: [{ id: 0, rotation, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
     texture: createTexture({ dimension: '2d', source: image }),
   } as TextureAtlas;
   return emitter;
@@ -267,7 +265,7 @@ describe('drawGlScene3DParticleEmitter3Ds', () => {
   it('unrotates a packed region while preserving its logical billboard aspect ratio', () => {
     const { state, gl } = makeAtlasGlScene3DState();
     const scene = createNode3D(Node3DKind);
-    addNodeChild(scene, makeAtlasEmitter(32, 64, true));
+    addNodeChild(scene, makeAtlasEmitter(32, 64, TextureAtlasRotation.Clockwise90));
     drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
     const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
     expect(instanceData[13]).toBeCloseTo(-1);
@@ -282,7 +280,7 @@ describe('drawGlScene3DParticleEmitter3Ds', () => {
   it('uses the height sign bit for a counterclockwise packed region', () => {
     const { state, gl } = makeAtlasGlScene3DState();
     const scene = createNode3D(Node3DKind);
-    addNodeChild(scene, makeAtlasEmitter(32, 64, true, 'counterclockwise'));
+    addNodeChild(scene, makeAtlasEmitter(32, 64, TextureAtlasRotation.Counterclockwise90));
     drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
     const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
     expect(instanceData[13]).toBeCloseTo(1);

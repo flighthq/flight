@@ -1,4 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
@@ -12,7 +13,7 @@ function makeAtlas() {
   image.width = 64;
   image.height = 64;
   return {
-    regions: [{ rotated: false, x: 0, y: 0, width: 32, height: 32 }],
+    regions: [{ rotation: TextureAtlasRotation.None, x: 0, y: 0, width: 32, height: 32 }],
     texture: createTexture({ dimension: '2d', source: image }),
   };
 }
@@ -111,7 +112,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const atlas = makeAtlas();
     atlas.regions[0].width = 20;
     atlas.regions[0].height = 40;
-    atlas.regions[0].rotated = true;
+    atlas.regions[0].rotation = TextureAtlasRotation.Clockwise90;
 
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
 
@@ -132,8 +133,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const atlas = makeAtlas();
     atlas.regions[0].width = 20;
     atlas.regions[0].height = 40;
-    atlas.regions[0].rotated = true;
-    atlas.regions[0].rotationDirection = 'counterclockwise';
+    atlas.regions[0].rotation = TextureAtlasRotation.Counterclockwise90;
 
     defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
 

@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   BitmapText,
   BitmapTextRuntime,
@@ -55,8 +56,8 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
         region,
         roundPixels ? dx | 0 : dx,
         roundPixels ? dy | 0 : dy,
-        region.rotated ? region.height : region.width,
-        region.rotated ? region.width : region.height,
+        region.rotation !== TextureAtlasRotation.None ? region.height : region.width,
+        region.rotation !== TextureAtlasRotation.None ? region.width : region.height,
       );
     }
   }

@@ -17,10 +17,11 @@ import type {
   TexturePackerMeta,
   TexturePackerParsed,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const width = region.rotated ? region.height : region.width;
-  const height = region.rotated ? region.width : region.height;
+  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const width = rotated ? region.height : region.width;
+  const height = rotated ? region.width : region.height;
   return createSpritesheetFrameData({
     height,
     name: region.name ?? '',
@@ -28,7 +29,7 @@ function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrame
     offsetY: region.sourceY,
     pivotX: region.pivotX,
     pivotY: region.pivotY,
-    rotated: region.rotated,
+    rotated,
     sourceHeight: region.originalHeight ?? height,
     sourceWidth: region.originalWidth ?? width,
     width,

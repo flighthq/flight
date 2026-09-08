@@ -1,7 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   createTextureAtlas,
@@ -19,7 +19,7 @@ function createTextureAtlasRegionForTest(): TextureAtlasRegion {
     originalWidth: null,
     pivotX: null,
     pivotY: null,
-    rotated: false,
+    rotation: TextureAtlasRotation.None,
     sourceX: 0,
     sourceY: 0,
     trimmed: false,

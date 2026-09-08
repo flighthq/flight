@@ -1,4 +1,5 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse';
 
@@ -57,8 +58,8 @@ describe('parseTextureAtlasStarlingXml', () => {
   it('sets rotated on regions with rotated="true"', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasStarlingXml(SIMPLE_XML, atlas);
-    expect(atlas.regions[2].rotated).toBe(true);
-    expect(atlas.regions[0].rotated).toBe(false);
+    expect(atlas.regions[2].rotation).toBe(TextureAtlasRotation.Clockwise90);
+    expect(atlas.regions[0].rotation).toBe(TextureAtlasRotation.None);
   });
   it('uses upright fallback dimensions for a rotated trimmed region', () => {
     const atlas = createTextureAtlas();

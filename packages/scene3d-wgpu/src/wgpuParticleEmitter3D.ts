@@ -19,7 +19,7 @@ import type {
   Node3D,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
+import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,
@@ -337,8 +337,8 @@ function drawParticleEmitter3DNode(
       v0 = region.y * ih;
       u1 = (region.x + region.width) * iw;
       v1 = (region.y + region.height) * ih;
-      rotated = region.rotated;
-      counterclockwise = region.rotationDirection === 'counterclockwise';
+      rotated = region.rotation !== TextureAtlasRotation.None;
+      counterclockwise = region.rotation === TextureAtlasRotation.Counterclockwise90;
       regionW = rotated ? region.height : region.width;
       regionH = rotated ? region.width : region.height;
     }

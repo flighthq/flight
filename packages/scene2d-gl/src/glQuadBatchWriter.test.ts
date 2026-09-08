@@ -11,6 +11,8 @@ import {
   recordGlQuadBatchColorScaleBias,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
+  writeGlQuadBatchAffineInstance,
+  writeGlQuadBatchInstance,
 } from './glQuadBatchWriter';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
@@ -276,5 +278,35 @@ describe('useGlQuadBatchProgram', () => {
     useGlQuadBatchProgram(state, program);
     expect(gl.useProgram).toHaveBeenCalledWith(program);
     expect(getGlRenderStateRuntime(state).context.currentShader?.program).toBe(program);
+  });
+});
+
+describe('writeGlQuadBatchAffineInstance', () => {
+  it('packs pre-scaled geometry and two affine UV axes into thirteen floats', () => {
+    const data = new Float32Array(13);
+    writeGlQuadBatchAffineInstance(
+      data,
+      0,
+      { a: 2, b: 3, c: 4, d: 5, tx: 6, ty: 7 },
+      10,
+      20,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.9,
+    );
+    expect(Array.from(data.slice(0, 6))).toEqual([20, 30, 80, 100, 6, 7]);
+    [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.9].forEach((expected, index) => expect(data[index + 6]).toBeCloseTo(expected));
+  });
+});
+
+describe('writeGlQuadBatchInstance', () => {
+  it('maps an axis-aligned UV rectangle onto the affine record', () => {
+    const data = new Float32Array(13);
+    writeGlQuadBatchInstance(data, 0, { a: 1, b: 0, c: 0, d: 1, tx: 2, ty: 3 }, 4, 5, 0.1, 0.2, 0.7, 0.8, 0.9);
+    [0.1, 0.2, 0.6, 0, 0, 0.6, 0.9].forEach((expected, index) => expect(data[index + 6]).toBeCloseTo(expected));
   });
 });

@@ -10,6 +10,7 @@ import {
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   ParticleEmitter2D,
   RenderProxy2D,
@@ -271,11 +272,10 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
     instanceData[base + 9] = region.y * ih;
     instanceData[base + 10] = (region.x + region.width) * iw;
     instanceData[base + 11] = (region.y + region.height) * ih;
-    const counterclockwise = region.rotationDirection === 'counterclockwise';
-    instanceData[base + 12] =
-      region.rotated && !counterclockwise ? -region.height : region.rotated ? region.height : region.width;
-    instanceData[base + 13] =
-      region.rotated && counterclockwise ? -region.width : region.rotated ? region.width : region.height;
+    const rotated = region.rotation !== TextureAtlasRotation.None;
+    const counterclockwise = region.rotation === TextureAtlasRotation.Counterclockwise90;
+    instanceData[base + 12] = rotated && !counterclockwise ? -region.height : rotated ? region.height : region.width;
+    instanceData[base + 13] = rotated && counterclockwise ? -region.width : rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

@@ -3,6 +3,7 @@ import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   EntityConstruction,
   MethodsOf,
@@ -134,8 +135,9 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
       if (region.width <= 0 || region.height <= 0) continue;
-      const width = region.rotated ? region.height : region.width;
-      const height = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const width = rotated ? region.height : region.width;
+      const height = rotated ? region.width : region.height;
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
       if (dx < minX) minX = dx;
@@ -158,8 +160,9 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.rotated ? region.height : region.width;
-      const h = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const w = rotated ? region.height : region.width;
+      const h = rotated ? region.width : region.height;
       const x0 = tx;
       const y0 = ty;
       const x1 = a * w + tx;
@@ -307,8 +310,9 @@ export function hitTestQuadBatchPointExactXY(source: Readonly<QuadBatch>, x: num
       const region = regions[id];
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
-      const width = region.rotated ? region.height : region.width;
-      const height = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const width = rotated ? region.height : region.width;
+      const height = rotated ? region.width : region.height;
       if (x >= dx && x < dx + width && y >= dy && y < dy + height) return i;
     }
   } else {
@@ -324,8 +328,9 @@ export function hitTestQuadBatchPointExactXY(source: Readonly<QuadBatch>, x: num
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.rotated ? region.height : region.width;
-      const h = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const w = rotated ? region.height : region.width;
+      const h = rotated ? region.width : region.height;
       // Four corners of the quad: (0,0)→(w,0)→(w,h)→(0,h) mapped by the affine.
       const x0 = tx;
       const y0 = ty;
@@ -361,8 +366,9 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
       const region = regions[id];
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
-      const width = region.rotated ? region.height : region.width;
-      const height = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const width = rotated ? region.height : region.width;
+      const height = rotated ? region.width : region.height;
       if (x >= dx && x < dx + width && y >= dy && y < dy + height) return i;
     }
   } else {
@@ -378,8 +384,9 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.rotated ? region.height : region.width;
-      const h = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const w = rotated ? region.height : region.width;
+      const h = rotated ? region.width : region.height;
       const x0 = tx;
       const y0 = ty;
       const x1 = a * w + tx;

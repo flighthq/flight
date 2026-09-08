@@ -6,18 +6,27 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, RegistryEntryState, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
 
-function makeAtlas(rotated = false, rotationDirection?: 'clockwise' | 'counterclockwise') {
+function makeAtlas(rotation = TextureAtlasRotation.None) {
   const img = document.createElement('img');
   const image = createImageResource(img);
   image.width = 64;
   image.height = 64;
   return {
-    regions: [{ id: 0, rotated, rotationDirection, x: 0, y: 0, width: rotated ? 20 : 32, height: rotated ? 40 : 32 }],
+    regions: [
+      {
+        id: 0,
+        rotation,
+        x: 0,
+        y: 0,
+        width: rotation === TextureAtlasRotation.None ? 32 : 20,
+        height: rotation === TextureAtlasRotation.None ? 32 : 40,
+      },
+    ],
     texture: createTexture({ dimension: '2d', source: image }),
   };
 }
@@ -115,7 +124,7 @@ describe('drawGlParticleEmitter2D', () => {
 
   it('packs a rotated region at its upright logical size without growing the instance record', () => {
     const { state } = createAtlasGlState();
-    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: makeAtlas(true) }));
+    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: makeAtlas(TextureAtlasRotation.Clockwise90) }));
     const data = getGlRenderStateRuntime(state).particleInstanceData!;
     expect(data[12]).toBe(-40);
     expect(data[13]).toBe(20);
@@ -123,7 +132,10 @@ describe('drawGlParticleEmitter2D', () => {
 
   it('uses the existing height sign bit for a counterclockwise packed region', () => {
     const { state } = createAtlasGlState();
-    drawGlParticleEmitter2D(state, makeParticleEmitter2DNode({ atlas: makeAtlas(true, 'counterclockwise') }));
+    drawGlParticleEmitter2D(
+      state,
+      makeParticleEmitter2DNode({ atlas: makeAtlas(TextureAtlasRotation.Counterclockwise90) }),
+    );
     const data = getGlRenderStateRuntime(state).particleInstanceData!;
     expect(data[12]).toBe(40);
     expect(data[13]).toBe(-20);
@@ -149,7 +161,7 @@ describe('drawGlParticleEmitter2D', () => {
       state,
       makeParticleEmitter2DNode({
         atlas: {
-          regions: [{ id: 0, x: 0, y: 0, width: 4, height: 4 }],
+          regions: [{ id: 0, rotation: TextureAtlasRotation.None, x: 0, y: 0, width: 4, height: 4 }],
           texture: createTexture({ dimension: '2d', source: image }),
         },
       }),

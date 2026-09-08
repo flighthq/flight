@@ -10,6 +10,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getOrCreateRenderProxy2D, getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { defaultWgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
@@ -55,7 +56,16 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     const batch = createQuadBatch({
       data: {
         atlas: createTextureAtlas({
-          regions: [createTextureAtlasRegion({ height: 40, id: 0, rotated: true, width: 20, x: 0, y: 0 })],
+          regions: [
+            createTextureAtlasRegion({
+              height: 40,
+              id: 0,
+              rotation: TextureAtlasRotation.Clockwise90,
+              width: 20,
+              x: 0,
+              y: 0,
+            }),
+          ],
           texture,
         }),
       },
@@ -93,8 +103,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
             createTextureAtlasRegion({
               height: 40,
               id: 0,
-              rotated: true,
-              rotationDirection: 'counterclockwise',
+              rotation: TextureAtlasRotation.Counterclockwise90,
               width: 20,
               x: 0,
               y: 0,
