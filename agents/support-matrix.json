@@ -2539,8 +2539,8 @@
               "realization": false
             },
             "webgl": {
-              "status": "unbaselined",
-              "fingerprint": false,
+              "status": "realized",
+              "fingerprint": true,
               "realization": true
             },
             "webgpu": {
