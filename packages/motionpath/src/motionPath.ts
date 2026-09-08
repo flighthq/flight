@@ -35,8 +35,6 @@ export function getMotionPathPosition(
   return getPathPositionAtDistance(mp.path, mp.distance, pointOut, tangentOut);
 }
 
-const scratchTangent = createVector2();
-
 // Return the marker's normalized progress along the path, `distance / length` in `[0, 1]`. A
 // zero-length path reports 0.
 export function getMotionPathProgress(mp: Readonly<MotionPath>): number {
@@ -63,6 +61,14 @@ export function initializeMotionPath(
   out.loopMode = loopMode;
   out.path = path;
   out.speed = speed;
+}
+
+export function isMotionPathAtEnd(mp: Readonly<MotionPath>): boolean {
+  return mp.direction > 0 ? mp.distance >= mp.length : mp.distance <= 0;
+}
+
+export function setMotionPathDirection(mp: MotionPath, direction: 1 | -1): void {
+  mp.direction = direction;
 }
 
 // Seek the marker to an absolute arc-length `distance`, clamping to the valid `[0, length]` range.
@@ -141,3 +147,5 @@ function applyMotionPathLoopMode(mp: MotionPath, move: number, length: number): 
   else if (clamped > length) clamped = length;
   mp.distance = clamped;
 }
+
+const scratchTangent = createVector2();
