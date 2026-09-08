@@ -105,6 +105,7 @@ export * from './BitmapDisplacementEffect';
 export * from './BitmapFont';
 export * from './BitmapFontSummary';
 export * from './BitmapFontGlyphExplanation';
+export * from './BitmapFontParseExplanation';
 export * from './BitmapFontRecord';
 export * from './BitmapText';
 export * from './BlendEffect';

@@ -1,1 +1,7 @@
-export { formatBitmapFontFnt, parseBitmapFontFnt, parseBitmapFontJson, parseBitmapFontXml } from './contract';
+export {
+  explainBitmapFontParse,
+  formatBitmapFontFnt,
+  parseBitmapFontFnt,
+  parseBitmapFontJson,
+  parseBitmapFontXml,
+} from './contract';
