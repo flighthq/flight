@@ -1,12 +1,33 @@
 import {
+  getCubicBezierCurvature,
   getCubicBezierPoint,
   getCubicBezierTangent,
+  getPathSegmentCurvatureAtParameter,
   getPathSegmentPointAtParameter,
   getPathSegmentTangentAtParameter,
+  getQuadraticBezierCurvature,
   getQuadraticBezierPoint,
   getQuadraticBezierTangent,
 } from './getPathSegmentAtParameter';
 import { appendPathCubicCurveTo, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+
+describe('getCubicBezierCurvature', () => {
+  it('returns zero for a straight cubic', () => {
+    expect(getCubicBezierCurvature(0, 0, 1, 0, 2, 0, 3, 0, 0.5)).toBe(0);
+  });
+
+  it('returns nonzero curvature for a curved cubic', () => {
+    const k = getCubicBezierCurvature(0, 0, 0, 1, 1, 1, 1, 0, 0.5);
+    expect(k).not.toBe(0);
+  });
+
+  it('returns a known curvature for a circular-arc approximation', () => {
+    // Quarter circle approximation r=1: P0=(1,0), C1=(1,0.5523), C2=(0.5523,1), P1=(0,1)
+    // κ should be close to 1/r = 1 at the midpoint.
+    const k = getCubicBezierCurvature(1, 0, 1, 0.5523, 0.5523, 1, 0, 1, 0.5);
+    expect(Math.abs(k)).toBeCloseTo(1, 1);
+  });
+});
 
 describe('getCubicBezierPoint', () => {
   it('returns the start point at t=0', () => {
@@ -47,6 +68,36 @@ describe('getCubicBezierTangent', () => {
     // B'(1) = 3*(P1-C2) = 3*(9-6,0) = (9,0)
     expect(out.x).toBeCloseTo(9);
     expect(out.y).toBeCloseTo(0);
+  });
+});
+
+describe('getPathSegmentCurvatureAtParameter', () => {
+  it('returns null for an out-of-range segment index', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 1, 0);
+    expect(getPathSegmentCurvatureAtParameter(path, 5, 0.5)).toBeNull();
+  });
+
+  it('returns zero for a line segment', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 10, 0);
+    expect(getPathSegmentCurvatureAtParameter(path, 0, 0.5)).toBe(0);
+  });
+
+  it('returns nonzero for a quadratic bezier segment', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathCurveTo(path, 50, 100, 100, 0);
+    expect(getPathSegmentCurvatureAtParameter(path, 0, 0.5)).not.toBe(0);
+  });
+
+  it('returns nonzero for a cubic bezier segment', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathCubicCurveTo(path, 0, 1, 1, 1, 1, 0);
+    expect(getPathSegmentCurvatureAtParameter(path, 0, 0.5)).not.toBe(0);
   });
 });
 
@@ -147,6 +198,23 @@ describe('getPathSegmentTangentAtParameter', () => {
     // At t=0: B'(0) = 3*(C1-P0) = 3*(1,3) = (3,9)
     expect(out.x).toBeCloseTo(3);
     expect(out.y).toBeCloseTo(9);
+  });
+});
+
+describe('getQuadraticBezierCurvature', () => {
+  it('returns zero for a straight quadratic', () => {
+    expect(getQuadraticBezierCurvature(0, 0, 5, 0, 10, 0, 0.5)).toBe(0);
+  });
+
+  it('returns nonzero for a curved quadratic', () => {
+    const k = getQuadraticBezierCurvature(0, 0, 50, 100, 100, 0, 0.5);
+    expect(k).not.toBe(0);
+  });
+
+  it('returns consistent sign for a right-turning curve', () => {
+    // P0=(0,0) → C=(0,10) → P1=(10,10) — in y-down, second derivative turns right → negative
+    const k = getQuadraticBezierCurvature(0, 0, 0, 10, 10, 10, 0.5);
+    expect(k).toBeLessThan(0);
   });
 });
 
