@@ -48,6 +48,7 @@ export function createCanvasRenderState(
   // The state owns a resolution set and points its miss seam at its own emitter. The closure reads the
   // emitter at call time, so enabling the guards later still reports through it.
   runtime.canvasTextureResolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
+  runtime.currentAlpha = NaN;
   runtime.currentBlendMode = null;
   runtime.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
   runtime.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
@@ -100,6 +101,24 @@ export function registerCanvasRenderStateTeardown(
   teardown: (state: CanvasRenderState) => void,
 ): void {
   getCanvasRenderStateRuntime(state).teardowns.push(teardown);
+}
+
+export function resolveCanvasTextureSmoothing(state: CanvasRenderState, magFilter: string): boolean {
+  return state.allowSmoothing && !magFilter.startsWith('nearest');
+}
+
+export function setCanvasGlobalAlpha(state: CanvasRenderState, alpha: number): void {
+  const runtime = getCanvasRenderStateRuntime(state);
+  if (runtime.currentAlpha === alpha) return;
+  runtime.currentAlpha = alpha;
+  state.context.globalAlpha = alpha;
+}
+
+export function setCanvasImageSmoothing(state: CanvasRenderState, enabled: boolean): void {
+  const runtime = getCanvasRenderStateRuntime(state);
+  if (runtime.imageSmoothingEnabled === enabled) return;
+  runtime.imageSmoothingEnabled = enabled;
+  state.context.imageSmoothingEnabled = enabled;
 }
 
 const _destroyedStates = new WeakSet<CanvasRenderState>();

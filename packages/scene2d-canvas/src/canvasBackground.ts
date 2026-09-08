@@ -7,8 +7,10 @@ export function renderCanvasBackground(state: CanvasRenderState): void {
   // Reset to normal compositing directly. This deliberately bypasses the blend-mode
   // map so the background path never pulls blend-mode support into the bundle; each
   // display object re-applies its own mode through state.applyBlendMode when drawn.
+  const runtime = getCanvasRenderStateRuntime(state);
   state.context.globalCompositeOperation = 'source-over';
-  getCanvasRenderStateRuntime(state).currentBlendMode = BlendMode.Normal;
+  runtime.currentBlendMode = BlendMode.Normal;
+  runtime.currentAlpha = 1;
 
   state.context.setTransform(1, 0, 0, 1, 0, 0);
   state.context.globalAlpha = 1;
