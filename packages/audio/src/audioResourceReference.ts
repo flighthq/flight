@@ -15,9 +15,8 @@ import {
   ResourceResolutionState,
 } from '@flighthq/types/contract';
 
-import { getAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
-import { loadAudioResourceFromBytes } from './audioResourceFrom';
+import { decodeAudioResourceBytes } from './decodeAudioResourceBytes';
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
@@ -147,7 +146,7 @@ export async function resolveAudioResourceReference(
   try {
     const decoded =
       ref.kind === AudioResourceReferenceKind.Embedded
-        ? await decodeAudioResourceBytes(ref, context, signal)
+        ? await decodeAudioResourceBytes(context, ref.bytes, ref.mimeType ?? undefined, signal)
         : await fetch(ref, signal);
     if (decoded === null || decoded.buffer === null) {
       ref.failure = (() => {
@@ -174,15 +173,4 @@ export async function resolveAudioResourceReference(
     ref.state = ResourceResolutionState.Failed;
     return null;
   }
-}
-
-async function decodeAudioResourceBytes(
-  ref: Readonly<EmbeddedAudioResourceReference>,
-  context: AudioContext | null,
-  signal: AbortSignal,
-): Promise<AudioResource | null> {
-  const decoder = ref.mimeType === null ? null : getAudioDecoder(ref.mimeType);
-  if (decoder !== null) return decoder(ref.bytes, ref.mimeType as string, signal);
-  if (context === null) return null;
-  return loadAudioResourceFromBytes(context, ref.bytes, ref.mimeType ?? undefined, signal);
 }

@@ -2,7 +2,7 @@ import type { ShapedRun } from '@flighthq/types/contract';
 
 import { getCaretPositionsForRun, getClusterForIndex, getIndexRangeForCluster } from './textShaperCluster';
 
-function _makeRun(glyphs: ReadonlyArray<{ cluster: number; xAdvance: number }>): ShapedRun {
+function _makeRun(glyphs: ReadonlyArray<{ cluster: number; xAdvance: number; xOffset?: number }>): ShapedRun {
   return {
     advanceWidth: glyphs.reduce((s, g) => s + g.xAdvance, 0),
     direction: 'LeftToRight',
@@ -12,7 +12,7 @@ function _makeRun(glyphs: ReadonlyArray<{ cluster: number; xAdvance: number }>):
       cluster: g.cluster,
       glyphId: g.cluster,
       xAdvance: g.xAdvance,
-      xOffset: 0,
+      xOffset: g.xOffset ?? 0,
       yAdvance: 0,
       yOffset: 0,
     })),
@@ -47,6 +47,14 @@ describe('getCaretPositionsForRun', () => {
     ]);
     const pos = getCaretPositionsForRun(run);
     expect(pos[pos.length - 1]).toBe(run.advanceWidth);
+  });
+
+  it('uses pen advances rather than glyph drawing offsets', () => {
+    const run = _makeRun([
+      { cluster: 0, xAdvance: 8, xOffset: 3 },
+      { cluster: 1, xAdvance: 7, xOffset: -2 },
+    ]);
+    expect(getCaretPositionsForRun(run)).toEqual([0, 8, 15]);
   });
 });
 

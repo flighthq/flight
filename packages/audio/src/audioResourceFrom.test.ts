@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioBackend, Entity, HasMediaAudioCodec, HasNetHttp, NetBackend } from '@flighthq/types/contract';
+import type { AudioDecoder, HasMediaAudioCodec, HasNetHttp, NetBackend } from '@flighthq/types/contract';
 
+import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
+import { createAudioResource } from './audioResource';
 import {
   createAudioResourceFromSamples,
   loadAudioResourceFromBase64,
@@ -90,6 +92,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const mimeType of [...getAudioDecoderMimeTypes()]) unregisterAudioDecoder(mimeType);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   (mockContext.decodeAudioData as ReturnType<typeof vi.fn>).mockClear();
@@ -172,6 +175,30 @@ describe('loadAudioResourceFromBytes', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
     await loadAudioResourceFromBytes(mockContext, bytes);
     expect(bytes.byteLength).toBe(4);
+  });
+
+  it('prefers a registered decoder when the MIME type is known', async () => {
+    const customBuffer = { duration: 2 } as AudioBuffer;
+    const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
+    registerAudioDecoder('audio/vnd.acme.custom', decoder);
+    const bytes = new Uint8Array([4, 3, 2, 1]);
+    const signal = new AbortController().signal;
+
+    const resource = await loadAudioResourceFromBytes(mockContext, bytes, 'audio/vnd.acme.custom; rate=22050', signal);
+
+    expect(resource.buffer).toBe(customBuffer);
+    expect(decoder).toHaveBeenCalledWith(bytes, 'audio/vnd.acme.custom; rate=22050', signal);
+    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
+  });
+
+  it('rejects when a registered decoder reports an expected miss', async () => {
+    const decoder = vi.fn<AudioDecoder>(async () => null);
+    registerAudioDecoder('audio/vnd.acme.custom', decoder);
+
+    await expect(loadAudioResourceFromBytes(mockContext, new Uint8Array([1]), 'audio/vnd.acme.custom')).rejects.toThrow(
+      'Failed to decode audio: audio/vnd.acme.custom',
+    );
+    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
   });
 
   it('rejects when the signal is already aborted', async () => {
@@ -309,6 +336,30 @@ describe('loadAudioResourceFromUrls', () => {
       undefined,
     );
   });
+
+  it('loads a registered format even when the platform cannot play it', async () => {
+    const customBuffer = { duration: 2 } as AudioBuffer;
+    const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
+    registerAudioDecoder('audio/vnd.acme.custom', decoder);
+    const host = fakeNetAudioHost(() => false, {
+      sendNetRequest: async () => ({
+        body: new ArrayBuffer(8),
+        headers: {},
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        url: 'sound.custom',
+      }),
+    });
+
+    const resource = await loadAudioResourceFromUrls(host, mockContext, [
+      { type: 'audio/vnd.acme.custom', url: 'sound.custom' },
+    ]);
+
+    expect(resource.buffer).toBe(customBuffer);
+    expect(decoder).toHaveBeenCalledOnce();
+    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
+  });
 });
 
 describe('selectAudioResourceUrl', () => {
@@ -324,5 +375,15 @@ describe('selectAudioResourceUrl', () => {
 
   it('returns null when no source is playable', () => {
     expect(selectAudioResourceUrl(host, [{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
+  });
+
+  it('returns a source handled by a registered decoder', () => {
+    registerAudioDecoder('audio/vnd.acme.custom', async () => createAudioResource());
+    expect(
+      selectAudioResourceUrl(
+        fakeAudioCodecHost(() => false),
+        [{ type: 'audio/vnd.acme.custom', url: 'sound.custom' }],
+      ),
+    ).toBe('sound.custom');
   });
 });

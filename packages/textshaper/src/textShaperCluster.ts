@@ -1,13 +1,13 @@
 import type { ShapedRun } from '@flighthq/types/contract';
 
-// Returns the per-grapheme caret x-positions for the run, in visual order. Each position is the
-// x-coordinate of the caret insertion point before the corresponding glyph, measured in pixels
-// from the left edge of the run. The returned array has `glyphCount + 1` entries: index 0 is the
-// left edge (0.0), and the last entry is the total advance width of the run.
+// Returns the per-glyph caret x-positions for the run, in visual order. Each position is the
+// x-coordinate of the text pen before the corresponding glyph, measured in pixels from the left
+// edge of the run. The returned array has `glyphCount + 1` entries: index 0 is the left edge (0.0),
+// and the last entry is the total advance width of the run.
 //
-// Unlike summing per-character widths, this respects per-glyph xOffset (mark attachment, kerning
-// corrections) and ligature clusters — the caret jumps at cluster boundaries, not character
-// boundaries, which is correct for editing into ligatures and composed characters.
+// Glyph xOffset deliberately does not move the caret: it adjusts that glyph's drawing origin relative
+// to the pen for positioning such as mark attachment, while xAdvance moves the pen. Unlike summing
+// per-character widths, shaped advances also preserve ligature and composed-cluster layout.
 export function getCaretPositionsForRun(run: Readonly<ShapedRun>): number[] {
   const glyphs = run.glyphs;
   const count = run.glyphCount;
