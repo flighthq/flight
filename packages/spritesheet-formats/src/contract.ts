@@ -2,6 +2,7 @@ export * from './asepriteParse';
 export * from './asepriteSerialize';
 export * from './cocosPlistParse';
 export * from './cocosPlistSerialize';
+export * from './libgdxAtlasFormat';
 export * from './libgdxAtlasParse';
 export * from './spritesheetDetect';
 export * from './starlingParse';

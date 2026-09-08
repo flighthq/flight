@@ -1,5 +1,7 @@
-import type { Environment } from '@flighthq/types/contract';
+import type { Bitmap, CubeTexture, Environment } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
+import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 import { bakeGlEnvironmentIbl, destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -7,6 +9,27 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 // The GPU bake (irradiance / prefiltered specular / BRDF LUT) is validated by the functional `env-ibl`
 // capture — software jsdom has no float-cube render path. This covers the guard: with no source cube
 // the bake is a no-op and leaves runtime.ibl null, so the PBR ambient falls back to the flat term.
+
+function dataOnlyEnvironment(size: number): Environment & { environment: CubeTexture } {
+  const face = {
+    alphaType: 'straight',
+    data: new Uint8ClampedArray(size * size * 4),
+    format: 'rgba8unorm',
+    gamut: 'srgb',
+    height: size,
+    kind: BitmapTextureSourceKind,
+    version: 0,
+    width: size,
+  } as Bitmap;
+  const cube = {
+    colorSpace: 'srgb',
+    dimension: 'cube',
+    sampler: {},
+    sources: [face, face, face, face, face, face],
+    version: 0,
+  } as unknown as CubeTexture;
+  return { environment: cube, intensity: 1 } as Environment & { environment: CubeTexture };
+}
 
 describe('bakeGlEnvironmentIbl', () => {
   it('is a no-op leaving runtime.ibl null when the environment has no source cube', () => {
@@ -21,19 +44,20 @@ describe('bakeGlEnvironmentIbl rebake ownership', () => {
   it('frees the irradiance and prefiltered cubes it replaces, and keeps the reused BRDF LUT', () => {
     const { state, gl } = makeGlScene3DState();
     const runtime = getGlScene3DRuntime(state);
+    const environment = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, environment);
     // Stand in for a prior bake. The GPU bake needs a float-cube render path jsdom does not have, so the
     // replaced set is planted directly — what is under test is the ownership handoff, not the bake.
     const previous = {
       brdfLut: {} as WebGLTexture,
+      environmentSourceRevision: (runtime.environmentSourceRevision - 1) >>> 0,
       intensity: 1,
       irradianceCube: {} as WebGLTexture,
       prefilteredCube: {} as WebGLTexture,
       prefilteredMipCount: 5,
     };
     runtime.ibl = previous;
-    runtime.environmentSourceCube = {} as WebGLTexture;
-
-    const environment = { environment: null, intensity: 2 } as unknown as Environment;
+    environment.intensity = 2;
     bakeGlEnvironmentIbl(state, environment);
 
     const deleted = gl.calls.filter((call) => call.name === 'deleteTexture').map((call) => call.args[0]);
@@ -42,6 +66,29 @@ describe('bakeGlEnvironmentIbl rebake ownership', () => {
     // The LUT is environment-independent and is carried forward into the new set, so freeing it would
     // delete a texture the runtime still points at.
     expect(deleted).not.toContain(previous.brdfLut);
+  });
+
+  it('updates intensity without rebaking when the environment source revision is unchanged', () => {
+    const { state, gl } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, environment);
+    const runtime = getGlScene3DRuntime(state);
+    runtime.ibl = {
+      brdfLut: {} as WebGLTexture,
+      environmentSourceRevision: runtime.environmentSourceRevision,
+      intensity: 1,
+      irradianceCube: {} as WebGLTexture,
+      prefilteredCube: {} as WebGLTexture,
+      prefilteredMipCount: 5,
+    };
+    const callsBefore = gl.calls.length;
+    environment.intensity = 3;
+
+    bakeGlEnvironmentIbl(state, environment);
+
+    expect(runtime.ibl.intensity).toBe(3);
+    expect(gl.calls.slice(callsBefore).some((call) => call.name === 'createFramebuffer')).toBe(false);
+    expect(gl.calls.slice(callsBefore).some((call) => call.name === 'deleteTexture')).toBe(false);
   });
 });
 

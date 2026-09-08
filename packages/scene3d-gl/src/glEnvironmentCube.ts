@@ -1,23 +1,23 @@
 import { uploadGlTextureData, uploadGlTextureImageResource } from '@flighthq/render-gl/contract';
 import type {
-  GlContext,
   Bitmap,
+  CubeTexture,
   Environment,
+  GlContext,
   GlRenderState,
-  TextureSource,
+  GlScene3DRuntime,
   ImageResource,
-  Texture,
+  TextureSource,
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
-// Frees the cached source radiance cubemap for `state` and clears the cache, so the next
-// ensureGlEnvironmentSourceCube uploads again. This is the invalidation verb that call site names: the
-// upload is keyed only by the cache being non-null, so replacing an Environment's cube — or switching to
-// a different Environment entity — otherwise keeps rendering the first cube forever. `destroy*` rather
-// than `dispose*` because a GL texture is freed here and now, not released to GC. A no-op when nothing
-// is cached, and safe to call twice.
+// Frees the cached source radiance cubemap for `state` and clears its identity/version stamps, so the
+// next ensureGlEnvironmentSourceCube uploads again. Automatic invalidation handles ordinary source
+// changes; this explicit verb is for callers that know the GPU copy is stale independently of the
+// modeled revisions. `destroy*` rather than `dispose*` because a GL texture is freed here and now, not
+// released to GC. A no-op when nothing is cached, and safe to call twice.
 export function destroyGlEnvironmentSourceCube(state: GlRenderState): void {
   const runtime = getGlScene3DRuntime(state);
   if (runtime.environmentSourceCube === null) return;
@@ -26,6 +26,10 @@ export function destroyGlEnvironmentSourceCube(state: GlRenderState): void {
   // The colour space belongs to the cube that was just freed. restampGlEnvironmentCubeFace reads it to
   // pick an internal format, so leaving it behind would carry one cube's decode decision onto the next.
   runtime.environmentSourceCubeColorSpace = 'linear';
+  runtime.environmentSourceCubeFaceVersions = [];
+  runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
+  runtime.environmentSourceTexture = null;
+  runtime.environmentSourceTextureVersion = -1;
 }
 
 // Uploads an Environment's source radiance cubemap (six ImageResource faces) to a GL cubemap texture,
@@ -34,20 +38,24 @@ export function destroyGlEnvironmentSourceCube(state: GlRenderState): void {
 // "no environment this frame". Each face uploads through whichever representation it carries: the
 // element overload for a `source`, or the raw-pixel overload for a data-only face (a generated
 // Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The upload is
-// keyed by identity: re-uploaded only when the cached texture is absent, so a caller that changes the
-// cube must drop the cache first with destroyGlEnvironmentSourceCube. The cache does NOT compare the
-// Environment it was asked about, which is why dropping it is the caller's job rather than something
-// this function detects. Texture.colorSpace selects the cube's GPU internal format,
-// so hardware sampling performs sRGB-to-linear decode only for an sRGB cube.
+// keyed by the source Texture identity plus its view revision and all six face payload revisions.
+// Switching the Environment wrapper alone does not rebuild a shared cube, and changing only intensity
+// is likewise free. A changed source advances environmentSourceRevision immediately, which disables a
+// stale IBL bake until the caller explicitly invokes bakeGlEnvironmentIbl again. Texture.colorSpace
+// selects the cube's GPU internal format, so hardware sampling performs sRGB-to-linear decode only for
+// an sRGB cube.
 export function ensureGlEnvironmentSourceCube(
   state: GlRenderState,
   environment: Readonly<Environment>,
 ): WebGLTexture | null {
   const runtime = getGlScene3DRuntime(state);
-  if (runtime.environmentSourceCube !== null) return runtime.environmentSourceCube;
-
   const cube = environment.environment;
-  if (cube === null || cube.dimension !== 'cube' || !hasGlCubeFacePixels(cube)) return null;
+  if (cube === null || cube.dimension !== 'cube' || !hasGlCubeFacePixels(cube)) {
+    if (runtime.environmentSourceCube !== null) destroyGlEnvironmentSourceCube(state);
+    return null;
+  }
+  if (isGlEnvironmentSourceCubeCurrent(runtime, cube)) return runtime.environmentSourceCube;
+  if (runtime.environmentSourceCube !== null) destroyGlEnvironmentSourceCube(state);
   const sources = cube.sources;
 
   const gl = state.gl;
@@ -66,6 +74,10 @@ export function ensureGlEnvironmentSourceCube(
 
   runtime.environmentSourceCube = texture;
   runtime.environmentSourceCubeColorSpace = cube.colorSpace;
+  runtime.environmentSourceCubeFaceVersions = getGlEnvironmentSourceCubeFaceVersions(cube);
+  runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
+  runtime.environmentSourceTexture = cube;
+  runtime.environmentSourceTextureVersion = cube.version;
   return texture;
 }
 
@@ -98,18 +110,41 @@ export function updateGlEnvironmentCubeFace(
     runtime.environmentSourceCubeColorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
   );
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+  const trackedCube = runtime.environmentSourceTexture;
+  const faceVersions = runtime.environmentSourceCubeFaceVersions.slice();
+  faceVersions[face] = trackedCube?.dimension === 'cube' && trackedCube.sources[face] === image ? image.version : -1;
+  runtime.environmentSourceCubeFaceVersions = faceVersions;
+  runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
   return true;
 }
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
 // raw CPU `data` (a generated Bitmap). A cube is complete only when all six faces are uploadable.
-function hasGlCubeFacePixels(cube: Readonly<Texture>): boolean {
-  if (cube.dimension !== 'cube') return false;
+function getGlEnvironmentSourceCubeFaceVersions(cube: Readonly<CubeTexture>): readonly number[] {
+  return cube.sources.map((source) => source?.version ?? -1);
+}
+
+function hasGlCubeFacePixels(cube: Readonly<CubeTexture>): boolean {
   for (let face = 0; face < 6; face++) {
     const image = cube.sources[face];
     if (image === null || (image.kind !== ImageTextureSourceKind && image.kind !== BitmapTextureSourceKind)) {
       return false;
     }
+  }
+  return true;
+}
+
+function isGlEnvironmentSourceCubeCurrent(runtime: Readonly<GlScene3DRuntime>, cube: Readonly<CubeTexture>): boolean {
+  if (
+    runtime.environmentSourceCube === null ||
+    runtime.environmentSourceTexture !== cube ||
+    runtime.environmentSourceTextureVersion !== cube.version ||
+    runtime.environmentSourceCubeFaceVersions.length !== 6
+  ) {
+    return false;
+  }
+  for (let face = 0; face < 6; face++) {
+    if (runtime.environmentSourceCubeFaceVersions[face] !== cube.sources[face]?.version) return false;
   }
   return true;
 }

@@ -108,7 +108,7 @@ export function bindGlMeshLightBlock(
 
   // Image-based lighting (PBR families only; classic/toon programs resolve these locations to null so
   // the binds are harmless no-ops). Bound here so every PBR draw samples the same baked environment.
-  const ibl = runtime.ibl;
+  const ibl = runtime.ibl?.environmentSourceRevision === runtime.environmentSourceRevision ? runtime.ibl : null;
   if (ibl !== null) {
     gl.activeTexture(gl.TEXTURE0 + IBL_IRRADIANCE_TEXTURE_UNIT);
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, ibl.irradianceCube);
