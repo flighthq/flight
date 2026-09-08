@@ -52,6 +52,9 @@ export function initializeShareSignals(out: EntityConstruction<ShareSignals>): v
   out.onShareResult = createSignal();
 }
 
+// True when the required descriptor strings are non-empty and dataUrl has the portable envelope
+// core can recognize without decoding: a data: prefix and comma separator. URL syntax, MIME
+// plausibility, and encoded bytes remain provider-boundary concerns.
 export function isShareFileValid(file: Readonly<ShareFile>): boolean {
   return file.name !== '' && file.mimeType !== '' && file.dataUrl.startsWith('data:') && file.dataUrl.includes(',');
 }
