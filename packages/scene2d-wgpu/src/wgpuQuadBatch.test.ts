@@ -1,10 +1,19 @@
-import { createQuadBatch } from '@flighthq/quadbatch/contract';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
+import {
+  getWgpuRenderStateRuntime,
+  registerWgpuRenderTextureResolver,
+  renderIntoWgpuRenderTexture,
+  renderWgpuBackground,
+  submitWgpuRenderPass,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import { createRenderTexture } from '@flighthq/texture/contract';
+import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
 import { defaultWgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -33,6 +42,80 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
       defaultWgpuQuadBatchRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
+    submitWgpuRenderPass(state);
+  });
+
+  it('packs a rotated region with upright geometry and affine UV axes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerWgpuRenderTextureResolver(state);
+    registerWgpuStandardMaterial(state);
+    const texture = createRenderTexture({ height: 64, width: 64 });
+    renderIntoWgpuRenderTexture(state, texture, () => {});
+    const batch = createQuadBatch({
+      data: {
+        atlas: createTextureAtlas({
+          regions: [createTextureAtlasRegion({ height: 40, id: 0, rotated: true, width: 20, x: 0, y: 0 })],
+          texture,
+        }),
+      },
+    });
+    reserveQuadBatch(batch, 1);
+    batch.data.instanceCount = 1;
+    batch.data.ids[0] = 0;
+    prepareScene2DRender(state, batch);
+
+    defaultWgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
+
+    const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data[0]).toBeCloseTo(40);
+    expect(data[3]).toBeCloseTo(20);
+    expect(data[6]).toBeCloseTo(20 / 64);
+    expect(data[7]).toBeCloseTo(0);
+    expect(data[8]).toBeCloseTo(0);
+    expect(data[9]).toBeCloseTo(40 / 64);
+    expect(data[10]).toBeCloseTo(-20 / 64);
+    expect(data[11]).toBeCloseTo(0);
+    submitWgpuRenderPass(state);
+  });
+
+  it('packs libGDX counterclockwise regions with the opposite affine UV axes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerWgpuRenderTextureResolver(state);
+    registerWgpuStandardMaterial(state);
+    const texture = createRenderTexture({ height: 64, width: 64 });
+    renderIntoWgpuRenderTexture(state, texture, () => {});
+    const batch = createQuadBatch({
+      data: {
+        atlas: createTextureAtlas({
+          regions: [
+            createTextureAtlasRegion({
+              height: 40,
+              id: 0,
+              rotated: true,
+              rotationDirection: 'counterclockwise',
+              width: 20,
+              x: 0,
+              y: 0,
+            }),
+          ],
+          texture,
+        }),
+      },
+    });
+    reserveQuadBatch(batch, 1);
+    batch.data.instanceCount = 1;
+    batch.data.ids[0] = 0;
+    prepareScene2DRender(state, batch);
+
+    defaultWgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
+
+    const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data[6]).toBeCloseTo(0);
+    expect(data[7]).toBeCloseTo(40 / 64);
+    expect(data[9]).toBeCloseTo(-40 / 64);
+    expect(data[10]).toBeCloseTo(20 / 64);
     submitWgpuRenderPass(state);
   });
 });

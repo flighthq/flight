@@ -79,7 +79,9 @@ describe('parseTextureAtlasLibgdxAtlas', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasLibgdxAtlas(SIMPLE_ATLAS, atlas);
     expect(atlas.regions[2].rotated).toBe(true);
+    expect(atlas.regions[2].rotationDirection).toBe('counterclockwise');
     expect(atlas.regions[0].rotated).toBe(false);
+    expect(atlas.regions[2].trimmed).toBe(false);
   });
   it('appends index to name when index >= 0', () => {
     const indexedAtlas = `

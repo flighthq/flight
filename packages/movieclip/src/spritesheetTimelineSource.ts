@@ -1,7 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import { getTextureAtlasRegionById, getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
+import {
+  getTextureAtlasRegionById,
+  getTextureAtlasRegionFrame,
+  getTextureAtlasRegionTexture,
+} from '@flighthq/textureatlas/contract';
 import type {
   Entity,
   Node2D,
@@ -75,10 +79,9 @@ export function initializeSpritesheetTimelineSource(
     bitmap.data.texture = getTextureAtlasRegionTexture(atlas, sheetFrame.id);
     bitmap.x = sheetFrame.offsetX - animation.originX;
     bitmap.y = sheetFrame.offsetY - animation.originY;
-    const frameWidth = region.originalWidth ?? (region.rotated ? region.height : region.width);
-    const frameHeight = region.originalHeight ?? (region.rotated ? region.width : region.height);
-    bitmap.pivotX = sheetFrame.pivotX === null ? 0 : sheetFrame.pivotX * frameWidth;
-    bitmap.pivotY = sheetFrame.pivotY === null ? 0 : sheetFrame.pivotY * frameHeight;
+    getTextureAtlasRegionFrame(region, regionFrame);
+    bitmap.pivotX = sheetFrame.pivotX === null ? 0 : sheetFrame.pivotX * regionFrame.width;
+    bitmap.pivotY = sheetFrame.pivotY === null ? 0 : sheetFrame.pivotY * regionFrame.height;
     invalidateNodeLocalTransform(bitmap);
   };
 }
@@ -111,3 +114,4 @@ function materializeSpritesheetTimelineFrames(animation: Readonly<SpritesheetAni
 const FRAME_DURATIONS_AND_REPEAT_COUNT_UNSUPPORTED = ['frameDurations', 'repeatCount'] as const;
 const REPEAT_COUNT_UNSUPPORTED = ['repeatCount'] as const;
 let _spritesheetTimelineSourceGuard: SpritesheetTimelineSourceGuard | null = null;
+const regionFrame = { height: 0, width: 0, x: 0, y: 0 };

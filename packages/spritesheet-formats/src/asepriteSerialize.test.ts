@@ -86,11 +86,11 @@ const ROUNDTRIP_ARRAY_JSON = JSON.stringify({
     },
     {
       filename: 'anim 1.aseprite',
-      frame: { x: 16, y: 0, w: 16, h: 16 },
-      rotated: false,
+      frame: { x: 16, y: 0, w: 12, h: 20 },
+      rotated: true,
       trimmed: false,
-      spriteSourceSize: { x: 0, y: 0, w: 16, h: 16 },
-      sourceSize: { w: 16, h: 16 },
+      spriteSourceSize: { x: 0, y: 0, w: 20, h: 12 },
+      sourceSize: { w: 20, h: 12 },
       duration: 80,
     },
   ],
@@ -197,6 +197,17 @@ describe('serializeAsepriteSpritesheet', () => {
     const parsed = JSON.parse(serializeAsepriteSpritesheet(data, document));
     expect(Array.isArray(parsed.frames)).toBe(true);
     expect(parsed.frames[0].filename).toBeDefined();
+  });
+
+  it('round-trips non-square rotated frames without changing packed or logical dimensions', () => {
+    const { data, document } = parseAsepriteSpritesheetDocument(ROUNDTRIP_ARRAY_JSON);
+    const serialized = serializeAsepriteSpritesheet(data, document);
+    const raw = JSON.parse(serialized) as { frames: Array<{ frame: { h: number; w: number } }> };
+    expect(raw.frames[1].frame).toMatchObject({ h: 20, w: 12 });
+    const frame = parseAsepriteSpritesheet(serialized).frames[1];
+    expect(frame.rotated).toBe(true);
+    expect(frame.width).toBe(20);
+    expect(frame.height).toBe(12);
   });
 
   it('emits hash variant by default', () => {

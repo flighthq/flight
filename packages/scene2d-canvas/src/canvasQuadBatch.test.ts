@@ -82,6 +82,49 @@ describe('drawCanvasQuadBatch', () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
+  it('draws a rotated region upright without allocating a temporary canvas', () => {
+    const state = makeState();
+    const atlas = makeAtlas();
+    atlas.regions[0].width = 20;
+    atlas.regions[0].height = 40;
+    atlas.regions[0].rotated = true;
+    const qb = createQuadBatch();
+    qb.data.atlas = atlas;
+    reserveQuadBatch(qb, 1);
+    qb.data.instanceCount = 1;
+    qb.data.ids[0] = 0;
+    prepareScene2DRender(state, qb);
+    const renderProxy = getOrCreateRenderProxy2D(state, qb);
+    const transformSpy = vi.spyOn(state.context, 'transform');
+    const createElementSpy = vi.spyOn(document, 'createElement');
+
+    drawCanvasQuadBatch(state, renderProxy);
+
+    expect(transformSpy).toHaveBeenCalledTimes(1);
+    expect(transformSpy).toHaveBeenCalledWith(0, -1, 1, 0, 0, 20);
+    expect(createElementSpy).not.toHaveBeenCalled();
+  });
+
+  it('honors the counterclockwise packing convention used by libGDX', () => {
+    const state = makeState();
+    const atlas = makeAtlas();
+    atlas.regions[0].width = 20;
+    atlas.regions[0].height = 40;
+    atlas.regions[0].rotated = true;
+    atlas.regions[0].rotationDirection = 'counterclockwise';
+    const qb = createQuadBatch();
+    qb.data.atlas = atlas;
+    reserveQuadBatch(qb, 1);
+    qb.data.instanceCount = 1;
+    qb.data.ids[0] = 0;
+    prepareScene2DRender(state, qb);
+    const transformSpy = vi.spyOn(state.context, 'transform');
+
+    drawCanvasQuadBatch(state, getOrCreateRenderProxy2D(state, qb));
+
+    expect(transformSpy).toHaveBeenCalledWith(0, 1, -1, 0, 40, 0);
+  });
+
   it('skips instances with out-of-range id', () => {
     const state = makeState();
     const atlas = makeAtlas(1);

@@ -1,3 +1,4 @@
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
@@ -11,7 +12,7 @@ function makeAtlas() {
   image.width = 64;
   image.height = 64;
   return {
-    regions: [{ x: 0, y: 0, width: 32, height: 32 }],
+    regions: [{ rotated: false, x: 0, y: 0, width: 32, height: 32 }],
     texture: createTexture({ dimension: '2d', source: image }),
   };
 }
@@ -102,6 +103,45 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
+  });
+
+  it('packs a rotated region with upright geometry and affine UV axes', () => {
+    const { state } = createAtlasGlState();
+    registerGlStandardMaterial(state);
+    const atlas = makeAtlas();
+    atlas.regions[0].width = 20;
+    atlas.regions[0].height = 40;
+    atlas.regions[0].rotated = true;
+
+    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
+
+    const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data[0]).toBeCloseTo(40);
+    expect(data[3]).toBeCloseTo(20);
+    expect(data[6]).toBeCloseTo(20 / 64);
+    expect(data[7]).toBeCloseTo(0);
+    expect(data[8]).toBeCloseTo(0);
+    expect(data[9]).toBeCloseTo(40 / 64);
+    expect(data[10]).toBeCloseTo(-20 / 64);
+    expect(data[11]).toBeCloseTo(0);
+  });
+
+  it('packs libGDX counterclockwise regions with the opposite affine UV axes', () => {
+    const { state } = createAtlasGlState();
+    registerGlStandardMaterial(state);
+    const atlas = makeAtlas();
+    atlas.regions[0].width = 20;
+    atlas.regions[0].height = 40;
+    atlas.regions[0].rotated = true;
+    atlas.regions[0].rotationDirection = 'counterclockwise';
+
+    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
+
+    const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data[6]).toBeCloseTo(0);
+    expect(data[7]).toBeCloseTo(40 / 64);
+    expect(data[9]).toBeCloseTo(-40 / 64);
+    expect(data[10]).toBeCloseTo(20 / 64);
   });
 
   it('excludes out-of-range ids from the instanced draw count', () => {

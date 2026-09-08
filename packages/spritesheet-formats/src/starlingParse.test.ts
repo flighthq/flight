@@ -18,8 +18,8 @@ const ATLAS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 const ROTATED_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="sprites.png">
-  <SubTexture name="run_001" x="0" y="0" width="32" height="32" rotated="true"/>
-  <SubTexture name="run_002" x="32" y="0" width="32" height="32" rotated="true"/>
+  <SubTexture name="run_001" x="0" y="0" width="20" height="40" rotated="true"/>
+  <SubTexture name="run_002" x="20" y="0" width="18" height="30" rotated="true"/>
 </TextureAtlas>`;
 
 const MINIMAL_XML = `<TextureAtlas imagePath="mini.png">
@@ -86,6 +86,14 @@ describe('parseStarlingSpritesheet', () => {
     const data = parseStarlingSpritesheet(ROTATED_XML);
     expect(data.frames[0].rotated).toBe(true);
     expect(data.frames[1].rotated).toBe(true);
+  });
+
+  it('reports the upright logical size of non-square rotated frames', () => {
+    const data = parseStarlingSpritesheet(ROTATED_XML);
+    expect(data.frames[0].width).toBe(40);
+    expect(data.frames[0].height).toBe(20);
+    expect(data.frames[1].width).toBe(30);
+    expect(data.frames[1].height).toBe(18);
   });
 
   it('defaults rotated to false when absent', () => {

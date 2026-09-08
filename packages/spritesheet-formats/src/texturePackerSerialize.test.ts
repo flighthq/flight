@@ -71,11 +71,11 @@ const ROUNDTRIP_ARRAY_JSON = JSON.stringify({
     },
     {
       filename: 'hero/run_0.png',
-      frame: { x: 60, y: 0, w: 32, h: 32 },
+      frame: { x: 60, y: 0, w: 20, h: 40 },
       rotated: true,
       trimmed: false,
-      spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 },
-      sourceSize: { w: 32, h: 32 },
+      spriteSourceSize: { x: 0, y: 0, w: 40, h: 20 },
+      sourceSize: { w: 40, h: 20 },
     },
   ],
   meta: {
@@ -177,6 +177,16 @@ describe('serializeTexturePackerSpritesheet', () => {
     const json2 = serializeTexturePackerSpritesheet(data, document);
     const parsed = JSON.parse(json2);
     expect(Array.isArray(parsed.frames)).toBe(true);
+  });
+
+  it('round-trips non-square rotated frames without changing packed or logical dimensions', () => {
+    const { data, document } = parseTexturePackerSpritesheetDocument(ROUNDTRIP_ARRAY_JSON);
+    const serialized = serializeTexturePackerSpritesheet(data, document);
+    const raw = JSON.parse(serialized) as { frames: Array<{ frame: { h: number; w: number } }> };
+    expect(raw.frames[1].frame).toMatchObject({ h: 40, w: 20 });
+    const frame = parseTexturePackerSpritesheet(serialized).frames[1];
+    expect(frame.width).toBe(40);
+    expect(frame.height).toBe(20);
   });
 
   it('emits hash variant by default', () => {

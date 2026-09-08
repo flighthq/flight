@@ -27,8 +27,8 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 // [9]  v0         float
 // [10] u1         float
 // [11] v1         float
-// [12] width      float
-// [13] height     float
+// [12] signed width  float   (< 0 marks clockwise atlas packing)
+// [13] signed height float   (< 0 marks counterclockwise atlas packing)
 const INSTANCE_FLOATS = 14;
 const INSTANCE_STRIDE = INSTANCE_FLOATS * 4; // bytes
 
@@ -50,16 +50,19 @@ out vec2 v_uv;
 out vec4 v_color;
 
 void main() {
-  bool rotated = a_size.x < 0.0;
+  bool clockwise = a_size.x < 0.0;
+  bool counterclockwise = a_size.y < 0.0;
   float lx = a_corner.x * abs(a_size.x);
-  float ly = a_corner.y * a_size.y;
+  float ly = a_corner.y * abs(a_size.y);
   float rx = a_cosScale * lx - a_sinScale * ly + a_pos.x;
   float ry = a_sinScale * lx + a_cosScale * ly + a_pos.y;
   vec3 clip = u_world * vec3(rx, ry, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_uv = rotated
-    ? vec2(mix(a_uvRect.x, a_uvRect.z, a_corner.y), mix(a_uvRect.w, a_uvRect.y, a_corner.x))
-    : mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_uv = clockwise
+    ? vec2(mix(a_uvRect.z, a_uvRect.x, a_corner.y), mix(a_uvRect.y, a_uvRect.w, a_corner.x))
+    : counterclockwise
+      ? vec2(mix(a_uvRect.x, a_uvRect.z, a_corner.y), mix(a_uvRect.w, a_uvRect.y, a_corner.x))
+      : mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_color = a_color;
 }`;
 
@@ -200,10 +203,13 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
     instanceData[base + 9] = region.y * ih;
     instanceData[base + 10] = (region.x + region.width) * iw;
     instanceData[base + 11] = (region.y + region.height) * ih;
-    // A negative stored width is the zero-bandwidth rotated-region flag; the shader takes abs for
-    // geometry and walks the UV rectangle one corner back.
-    instanceData[base + 12] = region.rotated ? -region.height : region.width;
-    instanceData[base + 13] = region.rotated ? region.width : region.height;
+    // A negative stored width marks clockwise packing; a negative height marks libGDX's opposite
+    // convention. The shader takes abs for geometry, so direction costs no extra instance bytes.
+    const counterclockwise = region.rotationDirection === 'counterclockwise';
+    instanceData[base + 12] =
+      region.rotated && !counterclockwise ? -region.height : region.rotated ? region.height : region.width;
+    instanceData[base + 13] =
+      region.rotated && counterclockwise ? -region.width : region.rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

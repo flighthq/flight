@@ -52,11 +52,11 @@ const ARRAY_JSON = JSON.stringify({
     },
     {
       filename: 'hero/run_0.png',
-      frame: { x: 60, y: 0, w: 32, h: 32 },
+      frame: { x: 60, y: 0, w: 20, h: 40 },
       rotated: true,
       trimmed: false,
-      spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 },
-      sourceSize: { w: 32, h: 32 },
+      spriteSourceSize: { x: 0, y: 0, w: 40, h: 20 },
+      sourceSize: { w: 40, h: 20 },
     },
   ],
   meta: {
@@ -162,6 +162,14 @@ describe('parseTexturePackerSpritesheet', () => {
     const data = parseTexturePackerSpritesheet(ARRAY_JSON);
     expect(data.frames[0].rotated).toBe(false);
     expect(data.frames[1].rotated).toBe(true);
+  });
+
+  it('reports the upright logical size of a non-square rotated frame', () => {
+    const frame = parseTexturePackerSpritesheet(ARRAY_JSON).frames[1];
+    expect(frame.width).toBe(40);
+    expect(frame.height).toBe(20);
+    expect(frame.sourceWidth).toBe(40);
+    expect(frame.sourceHeight).toBe(20);
   });
 
   it('maps image file from meta', () => {

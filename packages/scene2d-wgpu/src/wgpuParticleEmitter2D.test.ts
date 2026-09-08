@@ -1,7 +1,9 @@
+import { createImageResource } from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuCompressedImageTextureResolver,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
@@ -98,5 +100,53 @@ describe('drawWgpuParticleEmitter2D', () => {
     drawWgpuParticleEmitter2D(state, renderProxy);
 
     expect(runtime.uniformDataU32[(before >> 2) + 14]).toBe(1);
+  });
+
+  it('packs a rotated region at its upright logical size without growing the instance record', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    registerWgpuImageTextureResolver(state);
+    renderWgpuBackground(state);
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const region: {
+      height: number;
+      id: number;
+      rotated: boolean;
+      rotationDirection?: 'clockwise' | 'counterclockwise';
+      width: number;
+      x: number;
+      y: number;
+    } = { height: 40, id: 0, rotated: true, width: 20, x: 0, y: 0 };
+    const renderProxy = {
+      alpha: 1,
+      blendMode: null,
+      source: {
+        data: {
+          alphas: new Float32Array([1]),
+          atlas: {
+            regions: [region],
+            texture: createTexture({ dimension: '2d', source: createImageResource(canvas) }),
+          },
+          colors: new Float32Array([1, 1, 1]),
+          ids: new Uint16Array([0]),
+          particleCount: 1,
+          transforms: new Float32Array([0, 0, 0, 1]),
+          worldSpace: false,
+        },
+      },
+      transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+    } as unknown as RenderProxy2D;
+
+    drawWgpuParticleEmitter2D(state, renderProxy);
+
+    expect(runtime.particleInstanceData![12]).toBe(-40);
+    expect(runtime.particleInstanceData![13]).toBe(20);
+
+    region.rotationDirection = 'counterclockwise';
+    drawWgpuParticleEmitter2D(state, renderProxy);
+    expect(runtime.particleInstanceData![12]).toBe(40);
+    expect(runtime.particleInstanceData![13]).toBe(-20);
   });
 });

@@ -127,7 +127,14 @@ function writeAtlasRegionInstance(
   data: Float32Array,
   base: number,
   transform: typeof quadTransform,
-  region: Readonly<{ height: number; rotated: boolean; width: number; x: number; y: number }>,
+  region: Readonly<{
+    height: number;
+    rotated: boolean;
+    rotationDirection?: 'clockwise' | 'counterclockwise';
+    width: number;
+    x: number;
+    y: number;
+  }>,
   iw: number,
   ih: number,
   alpha: number,
@@ -136,17 +143,18 @@ function writeAtlasRegionInstance(
   const v0 = region.y * ih;
   const u1 = (region.x + region.width) * iw;
   const v1 = (region.y + region.height) * ih;
+  const counterclockwise = region.rotationDirection === 'counterclockwise';
   writeGlQuadBatchAffineInstance(
     data,
     base,
     transform,
     region.rotated ? region.height : region.width,
     region.rotated ? region.width : region.height,
-    u0,
-    region.rotated ? v1 : v0,
+    region.rotated ? (counterclockwise ? u0 : u1) : u0,
+    region.rotated && counterclockwise ? v1 : v0,
     region.rotated ? 0 : u1 - u0,
-    region.rotated ? v0 - v1 : 0,
-    region.rotated ? u1 - u0 : 0,
+    region.rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
+    region.rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
     region.rotated ? 0 : v1 - v0,
     alpha,
   );

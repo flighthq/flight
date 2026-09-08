@@ -134,12 +134,14 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
       if (region.width <= 0 || region.height <= 0) continue;
+      const width = region.rotated ? region.height : region.width;
+      const height = region.rotated ? region.width : region.height;
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
       if (dx < minX) minX = dx;
       if (dy < minY) minY = dy;
-      const rx = dx + region.width;
-      const ry = dy + region.height;
+      const rx = dx + width;
+      const ry = dy + height;
       if (rx > maxX) maxX = rx;
       if (ry > maxY) maxY = ry;
     }
@@ -156,8 +158,8 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.width;
-      const h = region.height;
+      const w = region.rotated ? region.height : region.width;
+      const h = region.rotated ? region.width : region.height;
       const x0 = tx;
       const y0 = ty;
       const x1 = a * w + tx;
@@ -305,7 +307,9 @@ export function hitTestQuadBatchPointExactXY(source: Readonly<QuadBatch>, x: num
       const region = regions[id];
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
-      if (x >= dx && x < dx + region.width && y >= dy && y < dy + region.height) return i;
+      const width = region.rotated ? region.height : region.width;
+      const height = region.rotated ? region.width : region.height;
+      if (x >= dx && x < dx + width && y >= dy && y < dy + height) return i;
     }
   } else {
     for (let i = 0; i < instanceCount; i++) {
@@ -320,8 +324,8 @@ export function hitTestQuadBatchPointExactXY(source: Readonly<QuadBatch>, x: num
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.width;
-      const h = region.height;
+      const w = region.rotated ? region.height : region.width;
+      const h = region.rotated ? region.width : region.height;
       // Four corners of the quad: (0,0)→(w,0)→(w,h)→(0,h) mapped by the affine.
       const x0 = tx;
       const y0 = ty;
@@ -357,7 +361,9 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
       const region = regions[id];
       const dx = transforms[i * QUAD_VECTOR2_STRIDE];
       const dy = transforms[i * QUAD_VECTOR2_STRIDE + 1];
-      if (x >= dx && x < dx + region.width && y >= dy && y < dy + region.height) return i;
+      const width = region.rotated ? region.height : region.width;
+      const height = region.rotated ? region.width : region.height;
+      if (x >= dx && x < dx + width && y >= dy && y < dy + height) return i;
     }
   } else {
     for (let i = 0; i < instanceCount; i++) {
@@ -372,8 +378,8 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
       const d = transforms[o + 3];
       const tx = transforms[o + 4];
       const ty = transforms[o + 5];
-      const w = region.width;
-      const h = region.height;
+      const w = region.rotated ? region.height : region.width;
+      const h = region.rotated ? region.width : region.height;
       const x0 = tx;
       const y0 = ty;
       const x1 = a * w + tx;

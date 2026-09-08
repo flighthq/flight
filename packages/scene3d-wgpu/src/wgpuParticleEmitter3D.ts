@@ -23,7 +23,8 @@ import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,
-// [8] alpha, [9..12] uvRect (u0,v0,u1,v1), [13..14] normalized quad size, [15] pad.
+// [8] alpha, [9..12] uvRect (u0,v0,u1,v1), [13..14] signed normalized quad size, [15] pad.
+// A negative width marks clockwise atlas packing; a negative height marks counterclockwise packing.
 const INSTANCE_FLOATS = 16;
 const INSTANCE_STRIDE = INSTANCE_FLOATS * 4;
 
@@ -71,13 +72,24 @@ struct VertexOutput {
   @location(6) size : vec2f,
 ) -> VertexOutput {
   var out : VertexOutput;
-  let lx = (corner.x - 0.5) * size.x;
-  let ly = (corner.y - 0.5) * size.y;
+  let clockwise = size.x < 0.0;
+  let counterclockwise = size.y < 0.0;
+  let lx = (corner.x - 0.5) * abs(size.x);
+  let ly = (corner.y - 0.5) * abs(size.y);
   let rx = cosScale * lx - sinScale * ly;
   let ry = sinScale * lx + cosScale * ly;
   let worldPos = pos + frame.cameraRight.xyz * rx + frame.cameraUp.xyz * ry;
   out.clipPosition = frame.viewProjection * vec4f(worldPos, 1.0);
-  out.uv = mix(uvRect.xy, uvRect.zw, corner);
+  var u = select(uvRect.x, uvRect.z, corner.x > 0.5);
+  var v = select(uvRect.y, uvRect.w, corner.y > 0.5);
+  if (clockwise) {
+    u = select(uvRect.z, uvRect.x, corner.y > 0.5);
+    v = select(uvRect.y, uvRect.w, corner.x > 0.5);
+  } else if (counterclockwise) {
+    u = select(uvRect.x, uvRect.z, corner.y > 0.5);
+    v = select(uvRect.w, uvRect.y, corner.x > 0.5);
+  }
+  out.uv = vec2f(u, v);
   out.color = color;
   return out;
 }
@@ -313,6 +325,8 @@ function drawParticleEmitter3DNode(
     let v1 = 1;
     let regionW = 1;
     let regionH = 1;
+    let rotated = false;
+    let counterclockwise = false;
 
     if (regions !== null) {
       const id = ids[i];
@@ -323,8 +337,10 @@ function drawParticleEmitter3DNode(
       v0 = region.y * ih;
       u1 = (region.x + region.width) * iw;
       v1 = (region.y + region.height) * ih;
-      regionW = region.width;
-      regionH = region.height;
+      rotated = region.rotated;
+      counterclockwise = region.rotationDirection === 'counterclockwise';
+      regionW = rotated ? region.height : region.width;
+      regionH = rotated ? region.width : region.height;
     }
 
     instanceData[base] = wx;
@@ -343,8 +359,8 @@ function drawParticleEmitter3DNode(
     // The atlas region's pixel dimensions set the billboard aspect ratio, not its world size (that is the
     // particle scale, folded into cos/sinScale); normalize the base quad so the larger axis is 1.
     const maxDim = regionW >= regionH ? regionW : regionH;
-    instanceData[base + 13] = regionW / maxDim;
-    instanceData[base + 14] = regionH / maxDim;
+    instanceData[base + 13] = (rotated && !counterclockwise ? -regionW : regionW) / maxDim;
+    instanceData[base + 14] = (rotated && counterclockwise ? -regionH : regionH) / maxDim;
     instanceData[base + 15] = 0;
     base += INSTANCE_FLOATS;
     drawCount++;

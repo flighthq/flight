@@ -7,13 +7,13 @@ import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
 
-function makeAtlas() {
+function makeAtlas(rotated = false) {
   const img = document.createElement('img') as HTMLImageElement;
   const image = createImageResource(img);
   image.width = 64;
   image.height = 64;
   return {
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
+    regions: [{ id: 0, rotated, x: 0, y: 0, width: rotated ? 20 : 32, height: rotated ? 40 : 32 }],
     texture: createTexture({ dimension: '2d', source: image }),
   };
 }
@@ -68,6 +68,20 @@ describe('drawCanvasParticleEmitter2D', () => {
       }),
     );
     expect(spy).toHaveBeenCalledTimes(3);
+  });
+
+  it('draws a rotated region upright without allocating a temporary canvas', () => {
+    const state = makeState();
+    const renderProxy = makeRenderProxy({ atlas: makeAtlas(true) });
+    const transformSpy = vi.spyOn(state.context, 'transform');
+    const drawSpy = vi.spyOn(state.context, 'drawImage');
+    const createElementSpy = vi.spyOn(document, 'createElement');
+
+    drawCanvasParticleEmitter2D(state, renderProxy);
+
+    expect(transformSpy).toHaveBeenCalledTimes(1);
+    expect(drawSpy).toHaveBeenCalledTimes(1);
+    expect(createElementSpy).not.toHaveBeenCalled();
   });
 
   it('skips drawing when atlas is null', () => {

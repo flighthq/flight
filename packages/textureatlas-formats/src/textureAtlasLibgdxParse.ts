@@ -48,6 +48,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
         let offsetX = 0;
         let offsetY = 0;
         let rotated = false;
+        let rotationDirection: 'clockwise' | 'counterclockwise' = 'counterclockwise';
         let index = -1;
         // Read region key:value pairs
         while (i < lines.length) {
@@ -59,7 +60,13 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
           i++;
           switch (key) {
             case 'rotate':
-              rotated = value === 'true';
+              if (value === 'true') {
+                rotated = true;
+              } else if (value !== 'false') {
+                const degrees = parseFloat(value);
+                rotated = degrees === 90 || degrees === 270;
+                rotationDirection = degrees === 270 ? 'clockwise' : 'counterclockwise';
+              }
               break;
             case 'xy': {
               const parts = value.split(',');
@@ -91,7 +98,9 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
           }
         }
         const name = index >= 0 ? `${regionName}_${index}` : regionName;
-        const trimmed = origW > 0 && origH > 0 && (origW !== atlasW || origH !== atlasH);
+        const logicalWidth = rotated ? atlasH : atlasW;
+        const logicalHeight = rotated ? atlasW : atlasH;
+        const trimmed = origW > 0 && origH > 0 && (origW !== logicalWidth || origH !== logicalHeight);
         atlas.regions.push(
           createTextureAtlasRegion({
             height: atlasH,
@@ -103,6 +112,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
             pivotX: null,
             pivotY: null,
             rotated,
+            rotationDirection,
             sourceX: offsetX,
             sourceY: offsetY,
             trimmed,

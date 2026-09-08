@@ -196,6 +196,17 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
     expect(out.height).toBe(96); // 100+16 - 20
   });
 
+  it('uses the upright logical extent of a rotated region for bounds', () => {
+    const region = makeQuadRegion(0, 10, 20);
+    region.rotated = true;
+    const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
+    quadBatch.data.ids = new Uint16Array([0]);
+    quadBatch.data.transforms = new Float32Array([5, 7]);
+    const out = createRectangle();
+    computeQuadBatchLocalBoundsRectangle(out, quadBatch);
+    expect(out).toMatchObject({ height: 10, width: 20, x: 5, y: 7 });
+  });
+
   it('skips quads with out-of-range region ids for vector2 transforms', () => {
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
@@ -517,6 +528,18 @@ describe('hitTestQuadBatchPointExactXY', () => {
     quadBatch.data.transforms = new Float32Array([10, 20]);
     expect(hitTestQuadBatchPointExactXY(quadBatch, 15, 25)).toBe(0);
     expect(hitTestQuadBatchPointExactXY(quadBatch, 5, 5)).toBe(-1);
+  });
+
+  it('hit-tests the upright logical extent of a rotated region', () => {
+    const region = makeQuadRegion(0, 10, 20);
+    region.rotated = true;
+    const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
+    quadBatch.data.ids = new Uint16Array([0]);
+    quadBatch.data.transforms = new Float32Array([0, 0]);
+    expect(hitTestQuadBatchPointExactXY(quadBatch, 15, 5)).toBe(0);
+    expect(hitTestQuadBatchPointExactXY(quadBatch, 5, 15)).toBe(-1);
+    expect(hitTestQuadBatchPointXY(quadBatch, 15, 5)).toBe(0);
+    expect(hitTestQuadBatchPointXY(quadBatch, 5, 15)).toBe(-1);
   });
 
   it('rejects an AABB corner that lies outside a rotated quad', () => {

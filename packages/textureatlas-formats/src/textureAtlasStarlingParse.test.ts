@@ -60,6 +60,15 @@ describe('parseTextureAtlasStarlingXml', () => {
     expect(atlas.regions[2].rotated).toBe(true);
     expect(atlas.regions[0].rotated).toBe(false);
   });
+  it('uses upright fallback dimensions for a rotated trimmed region', () => {
+    const atlas = createTextureAtlas();
+    parseTextureAtlasStarlingXml(
+      '<TextureAtlas imagePath="a.png"><SubTexture name="r" x="0" y="0" width="20" height="40" rotated="true" frameX="0" frameY="0"/></TextureAtlas>',
+      atlas,
+    );
+    expect(atlas.regions[0].originalWidth).toBe(40);
+    expect(atlas.regions[0].originalHeight).toBe(20);
+  });
   it('sets pivot when pivotX/pivotY attributes are present', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasStarlingXml(SIMPLE_XML, atlas);
