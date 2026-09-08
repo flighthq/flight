@@ -3,7 +3,12 @@ import { getTextureViewSize } from '@flighthq/texture/contract';
 import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  resolveCanvasTextureSmoothing,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 import { drawCanvasTextureView } from './canvasTextureView';
 import { setCanvasTransform } from './canvasTransform';
@@ -22,13 +27,13 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
 
   const context = state.context;
   state.applyBlendMode?.(state, sprite.blendMode);
-  context.globalAlpha = sprite.alpha;
+  setCanvasGlobalAlpha(state, sprite.alpha);
   setCanvasTransform(state, context, sprite.transform2D);
 
-  const smoothing = state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
-  if (!smoothing) context.imageSmoothingEnabled = false;
+  const smoothing = resolveCanvasTextureSmoothing(state, texture.sampler.magFilter);
+  if (!smoothing) setCanvasImageSmoothing(state, false);
   drawCanvasTextureView(context, drawable, texture, viewWidth, viewHeight);
-  if (!smoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
 export const defaultCanvasSpriteRenderer: Scene2DRenderer = {
