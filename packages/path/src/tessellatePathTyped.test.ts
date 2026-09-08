@@ -1,6 +1,6 @@
 import { appendPathRectangle, createPath } from './path';
 import { tessellatePath } from './tessellatePath';
-import { tessellatePathTyped } from './tessellatePathTyped';
+import { tessellatePathTyped, tessellatePathTypedInto } from './tessellatePathTyped';
 
 describe('tessellatePathTyped', () => {
   it('returns Float32Array vertices and Uint32Array indices', () => {
@@ -22,5 +22,37 @@ describe('tessellatePathTyped', () => {
     const mesh = tessellatePathTyped(createPath());
     expect(mesh.vertices.length).toBe(0);
     expect(mesh.indices.length).toBe(0);
+  });
+});
+
+describe('tessellatePathTypedInto', () => {
+  it('writes into an existing PathMeshTyped with the same values', () => {
+    const path = createPath();
+    appendPathRectangle(path, 0, 0, 100, 100);
+    const expected = tessellatePath(path);
+    const out = { vertices: new Float32Array(0), indices: new Uint32Array(0) };
+    tessellatePathTypedInto(path, out);
+    expect(Array.from(out.vertices).slice(0, expected.vertices.length)).toStrictEqual(expected.vertices);
+    expect(Array.from(out.indices).slice(0, expected.indices.length)).toStrictEqual(expected.indices);
+  });
+
+  it('grows typed arrays when the mesh exceeds capacity', () => {
+    const path = createPath();
+    appendPathRectangle(path, 0, 0, 50, 50);
+    const out = { vertices: new Float32Array(2), indices: new Uint32Array(1) };
+    tessellatePathTypedInto(path, out);
+    expect(out.vertices.length).toBeGreaterThanOrEqual(8);
+    expect(out.indices.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('reuses typed arrays when capacity is sufficient', () => {
+    const path = createPath();
+    appendPathRectangle(path, 0, 0, 50, 50);
+    const big = { vertices: new Float32Array(1000), indices: new Uint32Array(1000) };
+    const vRef = big.vertices;
+    const iRef = big.indices;
+    tessellatePathTypedInto(path, big);
+    expect(big.vertices).toBe(vRef);
+    expect(big.indices).toBe(iRef);
   });
 });

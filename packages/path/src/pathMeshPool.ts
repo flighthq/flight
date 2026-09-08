@@ -1,7 +1,7 @@
 import type { Path, PathMesh, PathMeshTyped } from '@flighthq/types/contract';
 
-import { tessellatePath } from './tessellatePath';
-import { tessellatePathTyped } from './tessellatePathTyped';
+import { tessellatePathInto } from './tessellatePath';
+import { tessellatePathTypedInto } from './tessellatePathTyped';
 
 // Pool-backed flatten+tessellate for hot-loop usage. Each `acquirePathMesh` retrieves a `PathMesh`
 // from a shared pool, tessellates the given path into it (replacing its contents), and returns it.
@@ -13,29 +13,16 @@ import { tessellatePathTyped } from './tessellatePathTyped';
 // Each acquire/release pair is a matching bracket — do not acquire without releasing.
 export function acquirePathMesh(path: Readonly<Path>, tolerance = 0.25): PathMesh {
   const mesh = pathMeshPool.length > 0 ? pathMeshPool.pop()! : { vertices: [], indices: [] };
-  // Reuse backing arrays: clear them and re-tessellate in place.
-  mesh.vertices.length = 0;
-  mesh.indices.length = 0;
-  const fresh = tessellatePath(path, tolerance);
-  // Copy into the pooled mesh rather than replacing, to preserve the array identity the caller
-  // receives (important if the caller passed an array reference into a renderer upload).
-  for (let i = 0; i < fresh.vertices.length; i++) mesh.vertices[i] = fresh.vertices[i];
-  mesh.vertices.length = fresh.vertices.length;
-  for (let i = 0; i < fresh.indices.length; i++) mesh.indices[i] = fresh.indices[i];
-  mesh.indices.length = fresh.indices.length;
+  tessellatePathInto(path, mesh, tolerance);
   return mesh;
 }
 
 // Pool-backed flatten+tessellate returning a `PathMeshTyped` (Float32Array / Uint32Array). The same
 // acquire/release contract applies: one matching `releasePathMeshTyped` per `acquirePathMeshTyped`.
+// Typed arrays are grow-only: reused when the new mesh fits, reallocated when it exceeds capacity.
 export function acquirePathMeshTyped(path: Readonly<Path>, tolerance = 0.25): PathMeshTyped {
-  // Typed array meshes are reallocated on each acquire (the underlying ArrayBuffer cannot be
-  // resized to a different length). Pooling amortizes the allocation when the path data size is
-  // stable across frames; if size varies significantly the gain is smaller.
-  const fresh = tessellatePathTyped(path, tolerance);
   const mesh = typedPool.length > 0 ? typedPool.pop()! : { vertices: new Float32Array(0), indices: new Uint32Array(0) };
-  mesh.vertices = fresh.vertices;
-  mesh.indices = fresh.indices;
+  tessellatePathTypedInto(path, mesh, tolerance);
   return mesh;
 }
 

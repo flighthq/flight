@@ -1,7 +1,7 @@
 import type { PathMesh } from '@flighthq/types/contract';
 
 import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { tessellatePath } from './tessellatePath';
+import { tessellatePath, tessellatePathInto } from './tessellatePath';
 
 function meshArea(mesh: PathMesh): number {
   let area = 0;
@@ -58,5 +58,34 @@ describe('tessellatePath', () => {
     const mesh = tessellatePath(polygon(0, 0, 10, 0));
     expect(mesh.indices).toHaveLength(0);
     expect(mesh.vertices).toHaveLength(0);
+  });
+});
+
+describe('tessellatePathInto', () => {
+  it('writes the same result as tessellatePath into a provided mesh', () => {
+    const path = polygon(0, 0, 10, 0, 10, 10, 0, 10);
+    const expected = tessellatePath(path);
+    const out = { vertices: [] as number[], indices: [] as number[] };
+    tessellatePathInto(path, out);
+    expect(out.vertices).toStrictEqual(expected.vertices);
+    expect(out.indices).toStrictEqual(expected.indices);
+  });
+
+  it('clears previous contents before writing', () => {
+    const path = polygon(0, 0, 10, 0, 0, 10);
+    const out = { vertices: [99, 99, 99], indices: [0, 1, 2, 3] };
+    tessellatePathInto(path, out);
+    expect(out.indices).toHaveLength(3);
+    expect(out.vertices).toHaveLength(6);
+  });
+
+  it('reuses the same array identity across calls', () => {
+    const path = polygon(0, 0, 10, 0, 10, 10, 0, 10);
+    const out = { vertices: [] as number[], indices: [] as number[] };
+    const vRef = out.vertices;
+    const iRef = out.indices;
+    tessellatePathInto(path, out);
+    expect(out.vertices).toBe(vRef);
+    expect(out.indices).toBe(iRef);
   });
 });

@@ -8,13 +8,24 @@ import { flattenPath } from './flattenPath';
 // but holes/overlap/self-intersection are NOT subtracted here (a hole contour fills solid). Use the
 // flatten + stencil-then-cover route for those. Winding rule is not consulted by this triangulator.
 export function tessellatePath(path: Readonly<Path>, tolerance = 0.25): PathMesh {
-  const contours = flattenPath(path, tolerance);
   const vertices: number[] = [];
   const indices: number[] = [];
+  const contours = flattenPath(path, tolerance);
   for (let i = 0; i < contours.length; i++) {
     tessellateContour(contours[i], vertices, indices);
   }
   return { vertices, indices };
+}
+
+// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays so pool callers
+// avoid per-call allocation. The arrays grow via `push` but are never replaced — identity is stable.
+export function tessellatePathInto(path: Readonly<Path>, out: PathMesh, tolerance = 0.25): void {
+  out.vertices.length = 0;
+  out.indices.length = 0;
+  const contours = flattenPath(path, tolerance);
+  for (let i = 0; i < contours.length; i++) {
+    tessellateContour(contours[i], out.vertices, out.indices);
+  }
 }
 
 // Ear-clips one simple polygon contour (flat x,y pairs) into the shared vertex/index buffers. Vertices
