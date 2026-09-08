@@ -188,6 +188,17 @@ describe('explainVelocity', () => {
     const result = explainVelocity(field, source);
     expect(result).toMatchObject({ reason: 'ok', x: 3, y: -4, explicit: true });
   });
+
+  it('reports ok with explicit false for a derived nonzero velocity', () => {
+    const field = createVelocityField();
+    const source = {};
+    const sample = ensureVelocitySample(field, source);
+    sample.velocity.x = 7;
+    sample.velocity.y = -2;
+    sample.lastFrameId = field.frameId;
+    const result = explainVelocity(field, source);
+    expect(result).toMatchObject({ reason: 'ok', x: 7, y: -2, explicit: false });
+  });
 });
 
 describe('getVelocity', () => {
