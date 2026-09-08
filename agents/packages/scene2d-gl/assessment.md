@@ -12,10 +12,8 @@ The standing ceiling is unchanged because the delta does not touch it: the offsc
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/scene2d-gl`, no cross-package coupling, no breaking public-API change, no open design decision.
+_All live items retired to Approved — verified 2026-09-08._
 
-- **Fix the inaccurate word in the new `glTestHelper.ts` docstring.** The header comment claims it mirrors _"render-gl's own **private** glTestHelper pattern,"_ but render-gl's `makeGlState` is publicly re-exported from its barrel (`render-gl/src/index.ts`). Drop "private" (or rephrase to "render-gl's own glTestHelper pattern, but built through the public `createGlRenderState`"). One-word, within-package, no surface change. — review.md "Judged against the seven standards" #2.
-- **Replace the `as unknown as` casts in `createGlShapeData` / `createGlTextLabelData` with a typed runtime-slot accessor.** (Carried forward from the prior assessment; base-state, untouched by this delta.) The roadmap's Bronze cast-cleanup, minus the part that is cross-package: the `unknown[]` _command-buffer_ signature is a codebase-wide decision (see Backlog), but the local `as unknown as GlShapeData` / `as unknown as RendererData` casts on the runtime slot are a within-package smell, fixable with a typed nullable runtime-slot accessor per the entity/runtime pattern. No public-signature change, no neighbor touched. — review.md "Contract & docs fit", roadmap Bronze (loose-signatures item).
 - **~~Track the orphan `GlBitmapSamplingLike` so it cannot rot.~~** — retired 2026-08-05. OBSOLETE: `GlBitmapSamplingLike` and its filter companion no longer exist in `packages/types/src` or either renderer source, so an in-package anchor would bind to a stale generated artifact rather than a live header seam; current texture sampling policy is carried by `Texture.sampler`.
 
 ## Backlog
@@ -42,7 +40,11 @@ Parked: cross-package coordination, a larger scope, or waiting on an Open direct
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
+Verified 2026-09-08.
+
+- **Docstring "private" word fixed in `glTestHelper.ts`.** Rephrased to remove inaccurate "private" — render-gl's glTestHelper is publicly exported. One-word fix applied in this verification pass. — from review.md #2.
+
+- **`as unknown as` casts in `createGlShapeData` / `createGlTextLabelData` already resolved.** Both `getGlShapeData` (`glShapeData.ts:52`) and `getGlTextLabelData` (`glTextLabel.ts:48-49`) use direct `as` casts (`data as GlShapeRendererData`, `data as GlTextLabelData`), not `as unknown as`. The double casts the assessment described no longer exist in the current tree. — from review.md "Contract & docs fit".
 
 ---
 

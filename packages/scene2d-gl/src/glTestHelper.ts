@@ -7,9 +7,8 @@ import {
 } from '@flighthq/render-gl/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
-// Local test helper for scene2d-gl unit tests. Mirrors render-gl's own private
-// glTestHelper pattern but builds the state through render-gl's PUBLIC createGlRenderState
-// rather than reaching into render-gl internals. The jsdom webgl2Mock setup file patches
+// Local test helper for scene2d-gl unit tests. Mirrors render-gl's glTestHelper pattern,
+// building state through createGlRenderState. The jsdom webgl2Mock setup file patches
 // HTMLCanvasElement.getContext('webgl2') to return a mock GlContext, so
 // createGlRenderState produces a fully-populated state with a working mock GL.
 export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
