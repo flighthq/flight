@@ -279,10 +279,10 @@ function getFourComponentAttribute(
   semantic: VertexSemantic,
   allowFloat3: boolean,
 ): boolean {
-  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
-  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic)) return false;
-  const { attribute, byteOffset, view } = location;
-  if (attribute === null || view === null) return false;
+  const attribute = getVertexAttribute(geometry.layout, semantic);
+  const byteOffset = getAttributeByteOffset(geometry, vertexIndex, semantic);
+  if (attribute === null || byteOffset < 0) return false;
+  const view = getAttributeDataView(geometry);
   const componentCount = getVertexFormatComponentCount(attribute.format);
   if (componentCount !== 4 && !(allowFloat3 && attribute.format === 'float32x3')) return false;
   const x = readVertexFormatComponent(view, byteOffset, attribute.format, 0);
@@ -305,10 +305,11 @@ function setFloat2Attribute(
 ): boolean {
   const attribute = getVertexAttribute(geometry.layout, semantic);
   if (attribute?.format !== 'float32x2') return false;
-  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
-  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic) || location.view === null) return false;
-  location.view.setFloat32(location.byteOffset, x, true);
-  location.view.setFloat32(location.byteOffset + 4, y, true);
+  const byteOffset = getAttributeByteOffset(geometry, vertexIndex, semantic);
+  if (byteOffset < 0) return false;
+  const view = getAttributeDataView(geometry);
+  view.setFloat32(byteOffset, x, true);
+  view.setFloat32(byteOffset + 4, y, true);
   geometry.version++;
   return true;
 }
@@ -323,10 +324,10 @@ function setFourComponentAttribute(
   w: number,
   allowFloat3: boolean,
 ): boolean {
-  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
-  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic)) return false;
-  const { attribute, byteOffset, view } = location;
-  if (attribute === null || view === null) return false;
+  const attribute = getVertexAttribute(geometry.layout, semantic);
+  const byteOffset = getAttributeByteOffset(geometry, vertexIndex, semantic);
+  if (attribute === null || byteOffset < 0) return false;
+  const view = getAttributeDataView(geometry);
   const componentCount = getVertexFormatComponentCount(attribute.format);
   if (componentCount !== 4 && !(allowFloat3 && attribute.format === 'float32x3')) return false;
   writeVertexFormatComponent(view, byteOffset, attribute.format, 0, x);
@@ -337,30 +338,24 @@ function setFourComponentAttribute(
   return true;
 }
 
-interface AttributeByteLocation {
-  attribute: VertexAttribute | null;
-  byteOffset: number;
-  view: DataView | null;
-}
-
-function getAttributeByteLocation(
-  out: AttributeByteLocation,
+function getAttributeByteOffset(
   geometry: Readonly<MeshGeometry>,
   vertexIndex: number,
   semantic: VertexSemantic,
-): boolean {
-  out.attribute = null;
-  out.byteOffset = 0;
-  out.view = null;
+): number {
   const attribute = getVertexAttribute(geometry.layout, semantic);
-  if (attribute === null || vertexIndex < 0 || geometry.layout.stride <= 0) return false;
+  if (attribute === null || vertexIndex < 0 || geometry.layout.stride <= 0) return -1;
   const attributeByteLength = getVertexFormatByteLength(attribute.format);
-  if (attributeByteLength === 0 || attribute.byteOffset < 0) return false;
-  if (attribute.byteOffset + attributeByteLength > geometry.layout.stride) return false;
+  if (attributeByteLength === 0 || attribute.byteOffset < 0) return -1;
+  if (attribute.byteOffset + attributeByteLength > geometry.layout.stride) return -1;
   const vertexCount = Math.floor(geometry.vertices.byteLength / geometry.layout.stride);
-  if (vertexIndex >= vertexCount) return false;
+  if (vertexIndex >= vertexCount) return -1;
   const byteOffset = vertexIndex * geometry.layout.stride + attribute.byteOffset;
-  if (byteOffset + attributeByteLength > geometry.vertices.byteLength) return false;
+  if (byteOffset + attributeByteLength > geometry.vertices.byteLength) return -1;
+  return byteOffset;
+}
+
+function getAttributeDataView(geometry: Readonly<MeshGeometry>): DataView {
   const runtime = getEntityRuntime(geometry) as MeshGeometryRuntime;
   const buffer = geometry.vertices.buffer;
   const cached = runtime.attributeDataView;
@@ -377,10 +372,7 @@ function getAttributeByteLocation(
     byteLength: geometry.vertices.byteLength,
     view,
   };
-  out.attribute = attribute;
-  out.byteOffset = byteOffset;
-  out.view = view;
-  return true;
+  return view;
 }
 
 function getFloat3Attribute(
