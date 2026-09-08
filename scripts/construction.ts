@@ -182,7 +182,8 @@ for (const path of getSourceFiles()) {
   if (!program) continue;
 
   const fileViolations: Violation[] = [];
-  walkConstruction(program, [], null, text, fileViolations);
+  // Program satisfies AstNode at runtime but lacks the index signature walkConstruction iterates.
+  walkConstruction(program as unknown as AstNode, [], null, text, fileViolations);
 
   for (const v of fileViolations) {
     if (ALLOW.some((a) => a.rule === v.rule && a.match(rel))) {
