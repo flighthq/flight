@@ -20,6 +20,7 @@ import {
   enableShareSignals,
   hasShareContentFields,
   initializeShareSignals,
+  isShareFileValid,
   shareContent,
   shareContentWithResult,
   shareFiles,
@@ -87,10 +88,13 @@ describe('canShareContent', () => {
 });
 
 describe('canShareFiles', () => {
-  it('validates through the files slot only for non-empty lists', () => {
-    const host = filesHost();
+  it('validates through the files slot only for valid, non-empty lists', () => {
+    const can = vi.fn(() => true);
+    const host = filesHost({ canShareContent: can });
     expect(canShareFiles(host, [file])).toBe(true);
     expect(canShareFiles(host, [])).toBe(false);
+    expect(canShareFiles(host, [{ ...file, dataUrl: 'data:text/plain;base64' }])).toBe(false);
+    expect(can).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -137,6 +141,21 @@ describe('initializeShareSignals', () => {
   });
 });
 
+describe('isShareFileValid', () => {
+  it.each([file, { ...file, dataUrl: 'data:,' }])('accepts a portable data URL descriptor', (candidate) => {
+    expect(isShareFileValid(candidate)).toBe(true);
+  });
+
+  it.each([
+    { ...file, dataUrl: 'text/plain;base64,QQ==' },
+    { ...file, dataUrl: 'data:text/plain;base64' },
+    { ...file, mimeType: '' },
+    { ...file, name: '' },
+  ])('rejects a malformed descriptor before provider dispatch', (candidate) => {
+    expect(isShareFileValid(candidate)).toBe(false);
+  });
+});
+
 describe('Share contract surface', () => {
   it('contains only explicit-host commands, payload validation, and core signal lifecycle', () => {
     expect(Object.keys(shareContract).sort()).toEqual([
@@ -148,6 +167,7 @@ describe('Share contract surface', () => {
       'enableShareSignals',
       'hasShareContentFields',
       'initializeShareSignals',
+      'isShareFileValid',
       'shareContent',
       'shareContentWithResult',
       'shareFiles',
@@ -177,11 +197,12 @@ describe('shareContentWithResult', () => {
 });
 
 describe('shareFiles', () => {
-  it('dispatches a non-empty portable file tuple', async () => {
+  it('dispatches only a valid, non-empty portable file tuple', async () => {
     const invoke = vi.fn(async (_content: Parameters<ShareFilesBackend['shareContent']>[0]) => true);
     const host = filesHost({ shareContent: invoke });
     expect(await shareFiles(host, [file])).toBe(true);
     expect(await shareFiles(host, [])).toBe(false);
+    expect(await shareFiles(host, [{ ...file, dataUrl: 'not-a-data-url' }])).toBe(false);
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(invoke.mock.calls[0]?.[0].files).toEqual([file]);
   });
