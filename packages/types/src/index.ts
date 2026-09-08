@@ -549,7 +549,6 @@ export * from './Renderer';
 export * from './RenderPassPreserve';
 export * from './RenderState';
 export * from './RenderTarget';
-export * from './RenderViewport2D';
 export * from './ResourceLoader';
 export * from './ResourceLoaderItemSignals';
 export * from './ResourceLoaderOptions';
