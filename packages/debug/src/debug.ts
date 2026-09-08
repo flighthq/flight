@@ -1,7 +1,6 @@
 import {
   addLogSink,
   clearLogChannelLevel,
-  clearLogChannelLevels,
   createConsoleLogSink,
   getLogChannelLevel,
   getLogLevel,
@@ -83,6 +82,7 @@ export function enableDebug(options: Readonly<DebugOptions> = {}): void {
     }
     throw error;
   }
+  _savedChannelLevels = savedChannelLevels;
   _enabled = true;
 }
 
@@ -118,6 +118,7 @@ const _enabledSubsystems: Readonly<DebugSubsystemHooks>[] = [];
 let _enabled = false;
 let _installedSink: LogSink | null = null;
 let _savedGlobalLevel: LogLevel = LogLevel.Verbose;
+let _savedChannelLevels: Map<string, LogLevel | null> = new Map();
 
 // Raises the global level and every selected channel's level to `level` for the session.
 function _applyDebugLevels(level: LogLevel, channels: readonly string[]): void {
@@ -163,10 +164,13 @@ function _resolveDebugSubsystems(names: readonly DebugSubsystemName[] | undefine
   return resolved;
 }
 
-// Restores the global level enableDebug saved and clears the per-channel overrides it raised. Debug
-// owns per-channel verbosity for the duration of a session, so disabling wipes those overrides back
-// to inheriting the global level.
+// Restores the global level and per-channel overrides enableDebug saved. Only the channels debug
+// raised are touched; channel overrides the caller set before the session are preserved.
 function _restoreDebugLevels(): void {
   setLogLevel(_savedGlobalLevel);
-  clearLogChannelLevels();
+  for (const [channel, savedLevel] of _savedChannelLevels) {
+    if (savedLevel === null) clearLogChannelLevel(channel);
+    else setLogChannelLevel(channel, savedLevel);
+  }
+  _savedChannelLevels = new Map();
 }
