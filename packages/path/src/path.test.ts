@@ -333,18 +333,18 @@ describe('getPathLastPoint', () => {
     expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
   });
 
-  it('returns the last anchor after appendPathClose', () => {
+  it('returns the MOVE_TO origin after appendPathClose', () => {
     const path = createPath();
     appendPathMoveTo(path, 10, 20);
     appendPathLineTo(path, 30, 40);
     appendPathClose(path);
-    expect(getPathLastPoint(path)).toStrictEqual([30, 40]);
+    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
   });
 
-  it('returns the last point after appendPathRectangle', () => {
+  it('returns the MOVE_TO origin after appendPathRectangle (ends with CLOSE)', () => {
     const path = createPath();
     appendPathRectangle(path, 10, 20, 100, 50);
-    expect(getPathLastPoint(path)).toStrictEqual([10, 70]);
+    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
   });
 
   it('returns the endpoint after appendPathArc', () => {
@@ -363,10 +363,10 @@ describe('getPathLastPoint', () => {
     expect(last[1]).toBeCloseTo(20);
   });
 
-  it('returns the last point after appendPathPolygon', () => {
+  it('returns the MOVE_TO origin after appendPathPolygon (ends with CLOSE)', () => {
     const path = createPath();
     appendPathPolygon(path, [0, 0, 100, 0, 100, 100]);
-    expect(getPathLastPoint(path)).toStrictEqual([100, 100]);
+    expect(getPathLastPoint(path)).toStrictEqual([0, 0]);
   });
 
   it('returns the last point after appendPathPolyline', () => {
