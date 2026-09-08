@@ -9,6 +9,8 @@ import type {
   Scene2DDocument,
 } from '@flighthq/types/contract';
 
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+
 // Operation-scoped asynchronous boundary for a document's sounds, the twin of loadScene2DImageResources.
 // Each selected reference decodes once into the resource it already handed out, so a trigger bound before
 // the load hears samples after it without being rebound. No resolver state survives this call.
@@ -43,7 +45,17 @@ export async function loadScene2DAudioResources(
     if (resources[i] === null) unresolved.push(selected[i]);
     else resolved.push(selected[i]);
   }
-  return { document, resolved, unresolved };
+  const result = { document, resolved, unresolved };
+  if (unresolved.length > 0) {
+    reportScene2DResourceFailure({
+      operation: 'loadScene2DAudioResources',
+      reason: 'audio-resources-unresolved',
+      total: selected.length,
+      unresolved: unresolved.length,
+      url: null,
+    });
+  }
+  return result;
 }
 
 // A document with no external sounds never needs a fetch seam, so the default reports the miss rather than

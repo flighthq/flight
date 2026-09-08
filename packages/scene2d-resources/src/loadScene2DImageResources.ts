@@ -10,6 +10,8 @@ import type {
   TextureSource,
 } from '@flighthq/types/contract';
 
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+
 // Operation-scoped asynchronous boundary for a document's pixels. Each selected reference decodes once and
 // binds into every Texture waiting on it, so a bitmap character placed a hundred times costs one decode and
 // a hundred assignments. No resolver state survives this call.
@@ -49,7 +51,17 @@ export async function loadScene2DImageResources(
     bindScene2DImageResourceTextures(reference, source);
     resolved.push(reference);
   }
-  return { document, resolved, unresolved };
+  const result = { document, resolved, unresolved };
+  if (unresolved.length > 0) {
+    reportScene2DResourceFailure({
+      operation: 'loadScene2DImageResources',
+      reason: 'image-resources-unresolved',
+      total: selected.length,
+      unresolved: unresolved.length,
+      url: null,
+    });
+  }
+  return result;
 }
 
 // Fans one decoded source out to every Texture the reference names. setTextureSource bumps each texture's

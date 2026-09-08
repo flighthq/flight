@@ -8,6 +8,8 @@ import type {
   Scene2DDocumentImporterRegistry,
 } from '@flighthq/types/contract';
 
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+
 export function createScene2DDocumentFromBytes(
   source: Uint8Array,
   registry: Readonly<Scene2DDocumentImporterRegistry>,
@@ -18,8 +20,24 @@ export function createScene2DDocumentFromBytes(
     if (!entry.matches(source, context)) continue;
     const document = entry.importDocument(source, context);
     if (document !== null && document.sourceKind === null) document.sourceKind = entry.kind;
+    if (document === null) {
+      reportScene2DResourceFailure({
+        operation: 'createScene2DDocumentFromBytes',
+        reason: 'document-import-failed',
+        total: 1,
+        unresolved: 1,
+        url: context.url,
+      });
+    }
     return document;
   }
+  reportScene2DResourceFailure({
+    operation: 'createScene2DDocumentFromBytes',
+    reason: 'document-importer-missing',
+    total: 1,
+    unresolved: 1,
+    url: context.url,
+  });
   return null;
 }
 

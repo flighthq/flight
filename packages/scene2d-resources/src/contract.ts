@@ -1,10 +1,12 @@
 export * from './builtInScene2DDocumentImporters';
+export * from './enableScene2DResourceFailureGuards';
 export * from './loadScene2DAudioResources';
 export * from './loadScene2DImageResources';
 export * from './resolveScene2DResources';
 export * from './scene2DDocument';
 export * from './scene2DDocumentImporterRegistry';
 export * from './scene2DDocumentSource';
+export { explainScene2DResourceCoverage, setScene2DResourceFailureGuard } from './scene2DResourceDiagnostics';
 export * from './scene2DSlotReference';
 export { initializeScene2DDocument, initializeScene2DSlotReference } from './scene2DDocument';
 export { initializeScene2DDocumentImporterRegistry } from './scene2DDocumentImporterRegistry';
