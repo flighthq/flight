@@ -50,6 +50,12 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> extend
   // large scenes. `null` (default) uses the linear tree walk.
   spatialIndex: SpatialIndex2D | null;
   signalSubscriberCounts: Map<InteractionSignalName, number>;
+  // When true (the default), a `'touch'` pointer dispatches no rollover/over/out and applies no cursor.
+  // A finger has no hover: the browser's emulated hover leaves the last-tapped node permanently rolled
+  // over once the finger lifts, and a hover cursor applied for it never clears. Press, click, and up
+  // are unaffected — only the hover family is suppressed. Set `false` for a stylus-like device where
+  // the platform reports touch but a real hover position exists.
+  suppressTouchHover: boolean;
   trackedSignalSlots: Map<N, Map<InteractionSignalName, Map<AnyInteractionSignalSlot, AnyInteractionSignalSlot>>>;
   trackedSubscribersOnly: boolean;
 }
@@ -61,6 +67,7 @@ export interface InteractionManagerOptions {
   enabled?: boolean;
   precise?: boolean;
   spatialIndex?: SpatialIndex2D | null;
+  suppressTouchHover?: boolean;
   trackedSubscribersOnly?: boolean;
 }
 

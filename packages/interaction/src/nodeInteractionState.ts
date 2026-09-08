@@ -9,6 +9,14 @@ import type {
   NodeRuntime,
 } from '@flighthq/types/contract';
 
+/**
+ * Whether the hit-test walk descends into this node's children. Default `true` — unlike
+ * `isNodeHitTestEnabled`, gating children is opt-OUT, so an untouched node behaves as it always did.
+ */
+export function areNodeChildrenHitTestEnabled(source: Readonly<NodeAny>): boolean {
+  return getNodeInteractionState(source)?.childrenHitTestEnabled ?? true;
+}
+
 export function createNodeInteractionState(): NodeInteractionState {
   const out = allocateEntity<NodeInteractionState>();
   initializeNodeInteractionState(out);
@@ -46,10 +54,11 @@ export function getNodeTabIndex(source: Readonly<NodeAny>): number {
 
 /**
  * Allocates a `NodeInteractionState` with all fields at their defaults: NOT a hit candidate (hit
- * testing is opt-in), no hit area, no cursor, not focusable. Prefer this over an object literal so
+ * testing is opt-in), children hit-testable, no hit area, no cursor, not focusable. Prefer this over an object literal so
  * every field is set consistently.
  */
 export function initializeNodeInteractionState(out: EntityConstruction<NodeInteractionState>): void {
+  out.childrenHitTestEnabled = true;
   out.cursor = null;
   out.focusable = false;
   out.hitArea = null;
@@ -78,6 +87,14 @@ export function isNodePointerDoubleClickEnabled(source: Readonly<NodeAny>): bool
  * performs no manager lookup or backend work; cursor application is explicit through
  * `invalidateInteractionCursor`.
  */
+/**
+ * Gates whether the hit-test walk descends into this node's children. Set `false` to make a composed
+ * control report itself instead of its parts; its own geometry still hit-tests per `hitTestEnabled`.
+ */
+export function setNodeChildrenHitTestEnabled(source: NodeAny, enabled: boolean): void {
+  enableNodeInteractionState(source).childrenHitTestEnabled = enabled;
+}
+
 export function setNodeCursor(source: NodeAny, cursor: Cursor | null): void {
   enableNodeInteractionState(source).cursor = cursor;
 }

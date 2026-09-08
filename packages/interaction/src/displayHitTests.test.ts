@@ -9,7 +9,6 @@ import {
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
-  defaultTextInputHitTestHandler,
 } from './displayHitTests';
 
 function makeNode2D() {
@@ -74,17 +73,5 @@ describe('defaultTextHitTestHandler', () => {
   it('returns false when point is outside local bounds', () => {
     const obj = makeNode2D();
     expect(defaultTextHitTestHandler(obj, 200, 200)).toBe(false);
-  });
-});
-
-describe('defaultTextInputHitTestHandler', () => {
-  it('returns true when point is within local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultTextInputHitTestHandler(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false when point is outside local bounds', () => {
-    const obj = makeNode2D();
-    expect(defaultTextInputHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });

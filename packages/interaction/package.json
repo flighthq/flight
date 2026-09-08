@@ -39,13 +39,13 @@
   },
   "dependencies": {
     "@flighthq/bitmap": "*",
+    "@flighthq/clip": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/registry": "*",
-    "@flighthq/scene2d": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
@@ -55,9 +55,10 @@
   },
   "devDependencies": {
     "@flighthq/quadbatch": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/tilemap": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Hit testing: point-in-node tests and object overlap detection",
+  "description": "Interaction: pointer event dispatch, hit testing, focus, and cursor management",
   "sideEffects": false
 }

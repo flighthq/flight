@@ -690,6 +690,50 @@ describe('dispatchInteractionPointerMove', () => {
     dispatchInteractionPointerMove(manager, 500, 500);
     expect(order).toEqual(['out', 'rollOut']);
   });
+
+  it('suppresses the hover family for a touch pointer by default, but still fires the move', () => {
+    const { child, manager } = createHitScene3D();
+    const order: string[] = [];
+    const signals = enableInteractionSignals(child);
+    connectSignal(signals.onPointerRollOver, () => order.push('rollOver'));
+    connectSignal(signals.onPointerOver, () => order.push('over'));
+    connectSignal(signals.onPointerMove, () => order.push('move'));
+
+    dispatchInteractionPointerMove(manager, 50, 50, 0, { pointerType: 'touch' });
+    expect(order).toEqual(['move']);
+
+    // A mouse over the same point is unaffected — suppression is per-event, not a manager-wide latch.
+    dispatchInteractionPointerMove(manager, 50, 50, 0, { pointerType: 'mouse' });
+    expect(order).toEqual(['move', 'rollOver', 'over', 'move']);
+  });
+
+  it('applies no cursor for a touch pointer, and leaves a prior mouse hover state intact', () => {
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
+    addNodeChild(root, child);
+    const applied: (Cursor | null)[] = [];
+    const manager = createInteractionManager(root, { cursorBackend: { setCursor: (c) => applied.push(c) } });
+    setNodeCursor(child, 'pointer');
+
+    dispatchInteractionPointerMove(manager, 50, 50, 0, { pointerType: 'touch' });
+    expect(applied).toEqual([]);
+
+    // The touch left no rollover state behind, so the mouse entering still reads as a fresh enter.
+    dispatchInteractionPointerMove(manager, 50, 50, 0, { pointerType: 'mouse' });
+    expect(applied.at(-1)).toBe('pointer');
+  });
+
+  it('dispatches touch hover when suppressTouchHover is off', () => {
+    const { child, manager } = createHitScene3D();
+    manager.suppressTouchHover = false;
+    let rolled = 0;
+    connectSignal(enableInteractionSignals(child).onPointerRollOver, () => rolled++);
+
+    dispatchInteractionPointerMove(manager, 50, 50, 0, { pointerType: 'touch' });
+    expect(rolled).toBe(1);
+  });
 });
 
 describe('dispatchInteractionPointerUp', () => {

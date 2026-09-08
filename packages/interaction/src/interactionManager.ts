@@ -297,10 +297,14 @@ export function dispatchInteractionPointerMove<N extends NodeAny>(
   resetPointerDoubleClickIfInvalid(manager, state, target, x, y, button, options?.timeStamp);
   if (target === null && oldTarget === null) return;
 
-  state.pointerOverTarget = target;
+  // A finger has no hover. When suppressed, the rollover bookkeeping is left completely untouched —
+  // not just un-dispatched — so `pointerOverTarget` still reflects the last real hover and the
+  // rollOut/rollOver pairing invariant holds if a mouse later shares this pointer id.
+  const hover = !(manager.suppressTouchHover && (options?.pointerType ?? 'mouse') === 'touch');
+  if (hover) state.pointerOverTarget = target;
   setPointerData(target, null, x, y, button, 0, 0, options);
 
-  if (target !== oldTarget) {
+  if (hover && target !== oldTarget) {
     dispatchPointerRolloverChange(manager, oldTarget, target);
   }
 
@@ -404,6 +408,7 @@ export function initializeInteractionManager<N extends NodeAny>(
   out.precise = options.precise ?? false;
   out.root = root;
   out.spatialIndex = options.spatialIndex ?? null;
+  out.suppressTouchHover = options.suppressTouchHover ?? true;
   out.signalSubscriberCounts = new Map();
   out.trackedSignalSlots = new Map();
   out.trackedSubscribersOnly = options.trackedSubscribersOnly ?? false;

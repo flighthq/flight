@@ -1,5 +1,6 @@
 export {
   applyNodeInteractiveStates,
+  areNodeChildrenHitTestEnabled,
   captureInteractionPointer,
   clearFocus,
   connectFocusNavigation,
@@ -67,6 +68,7 @@ export {
   releaseInteractionPointer,
   setFocusedNode,
   setInteractionConnectGuard,
+  setNodeChildrenHitTestEnabled,
   setNodeCursor,
   setNodeFocusable,
   setNodeHitArea,

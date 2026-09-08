@@ -1,3 +1,4 @@
+import { clipRegionContainsPoint } from '@flighthq/clip/contract';
 import {
   containsRectanglePointXY,
   intersectsRectangle,
@@ -44,7 +45,10 @@ export function describeGraphHit(node: NodeAny, x: number, y: number, out: HitTe
 /**
  * Coarse pick: front-to-back (reverse child order), the first node whose bounding geometry contains
  * world-space (x, y), or null. Eligibility is opt-in (`hitTestEnabled`, default off); a node with a
- * `hitArea` is an atomic unit that consumes the hit and hides its children. Cheap — the bbox path.
+ * `hitArea` is an atomic unit that consumes the hit and hides its children, and one with
+ * `childrenHitTestEnabled` false presents only itself. A node's `clip` region excludes its whole
+ * subtree from the walk when the point falls outside it, matching what the renderers draw. Cheap — the
+ * bbox path.
  **/
 export function findGraphHitTarget<Traits extends object>(
   source: Node<Traits>,
@@ -107,7 +111,11 @@ export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Trai
   );
 }
 
-/** Coarse any-hit query: whether the node or any descendant is hit at (x, y). Traversal order is irrelevant to the boolean. */
+/**
+ * Coarse any-hit query: whether the node or any descendant is hit at (x, y). Traversal order is
+ * irrelevant to the boolean, but the same eligibility, `hitArea`, children-gate, and `clip` rules as
+ * `findGraphHitTarget` apply.
+ **/
 export function hitTestGraphPoint<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
   return anyHit(source as NodeAny, x, y, false);
 }
@@ -159,6 +167,7 @@ export function registerHitTestPrecise(kind: Kind, fn: HitTestPreciseFunction): 
 // Front-to-back DFS for the first hit; shared by findGraphHitTarget(Precise).
 function findFirstHit(node: NodeAny, x: number, y: number, precise: boolean): NodeAny | null {
   if (!node.enabled) return null;
+  if (!containsNodeClipPoint(node, x, y)) return null;
 
   const state = getNodeInteractionState(node);
   const enabled = state?.hitTestEnabled === true;
@@ -168,7 +177,7 @@ function findFirstHit(node: NodeAny, x: number, y: number, precise: boolean): No
     return hitAreaContainsPoint(node, hitArea, x, y) ? node : null;
   }
 
-  const children = getNodeRuntime(node).children;
+  const children = (state?.childrenHitTestEnabled ?? true) ? getNodeRuntime(node).children : null;
   if (children !== null) {
     for (let i = children.length - 1; i >= 0; i--) {
       const hit = findFirstHit(children[i] as NodeAny, x, y, precise);
@@ -183,6 +192,7 @@ function findFirstHit(node: NodeAny, x: number, y: number, precise: boolean): No
 // DFS any-hit; order-independent boolean.
 function anyHit(node: NodeAny, x: number, y: number, precise: boolean): boolean {
   if (!node.enabled) return false;
+  if (!containsNodeClipPoint(node, x, y)) return false;
 
   const state = getNodeInteractionState(node);
   const enabled = state?.hitTestEnabled === true;
@@ -191,7 +201,7 @@ function anyHit(node: NodeAny, x: number, y: number, precise: boolean): boolean 
   if (enabled && hitArea !== null) return hitAreaContainsPoint(node, hitArea, x, y);
   if (enabled && testNodeGeometry(node, x, y, precise)) return true;
 
-  const children = getNodeRuntime(node).children;
+  const children = (state?.childrenHitTestEnabled ?? true) ? getNodeRuntime(node).children : null;
   if (children !== null) {
     for (const child of children) {
       if (anyHit(child as NodeAny, x, y, precise)) return true;
@@ -203,6 +213,7 @@ function anyHit(node: NodeAny, x: number, y: number, precise: boolean): boolean 
 // Front-to-back DFS collecting every hit; shared by findGraphHitTargets(Precise).
 function collectHits(node: NodeAny, x: number, y: number, precise: boolean, out: NodeAny[]): void {
   if (!node.enabled) return;
+  if (!containsNodeClipPoint(node, x, y)) return;
 
   const state = getNodeInteractionState(node);
   const enabled = state?.hitTestEnabled === true;
@@ -213,7 +224,7 @@ function collectHits(node: NodeAny, x: number, y: number, precise: boolean, out:
     return;
   }
 
-  const children = getNodeRuntime(node).children;
+  const children = (state?.childrenHitTestEnabled ?? true) ? getNodeRuntime(node).children : null;
   if (children !== null) {
     for (let i = children.length - 1; i >= 0; i--) collectHits(children[i] as NodeAny, x, y, precise, out);
   }
@@ -230,6 +241,19 @@ function testNodeGeometry(node: NodeAny, x: number, y: number, precise: boolean)
   }
   const coarse = hitTestRegistry.get(node.kind);
   return coarse ? coarse(node, x, y) : false;
+}
+
+// Whether world-space (x, y) survives this node's clip region. A `Node2D.clip` masks the node's own
+// content AND its whole subtree — that is the bracket the renderers push and pop — so a point outside
+// it can hit nothing below this node, and every walk returns early rather than recursing. The region is
+// in the node's local space (renderers transform it by the node's own matrix), the same space
+// `hitTestGraphLocalBounds` uses, so the point inverts through the world matrix once. Nodes without a
+// clip, and non-Node2D kinds, are unclipped and always pass.
+function containsNodeClipPoint(node: NodeAny, x: number, y: number): boolean {
+  const clip = (node as Node2D).clip;
+  if (clip === null || clip === undefined) return true;
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as Node2D), x, y);
+  return clipRegionContainsPoint(clip, hitTestScratchPoint.x, hitTestScratchPoint.y);
 }
 
 // Resolves a `hitArea` region against world-space (x, y). Local-space forms (`'bounds'`, `Rectangle`,
