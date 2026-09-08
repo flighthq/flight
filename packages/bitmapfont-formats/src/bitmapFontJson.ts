@@ -51,9 +51,10 @@ function parseBitmapFontJsonRecord(text: string, diagnostics: ImportDiagnostic[]
   let droppedChars = 0;
   let droppedKernings = 0;
   const rawChars = root.chars;
-  if (!Array.isArray(rawChars)) return null;
+  const charIterable = Array.isArray(rawChars) ? rawChars : isObject(rawChars) ? Object.values(rawChars) : null;
+  if (charIterable === null) return null;
   const chars: BitmapFontCharRecord[] = [];
-  for (const raw of rawChars) {
+  for (const raw of charIterable) {
     const char = readJsonChar(raw);
     if (char === null) droppedChars++;
     else chars.push(char);
