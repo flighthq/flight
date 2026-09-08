@@ -425,6 +425,7 @@ export * from './MarqueeSelection';
 export * from './MarqueeSelectionRuntime';
 export * from './MatcapMaterial';
 export * from './Material';
+export * from './MaterialConversionExplanation';
 export * from './Matrix';
 export * from './Matrix3';
 export * from './Matrix4';

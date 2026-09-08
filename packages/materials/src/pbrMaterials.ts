@@ -1,5 +1,7 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import type {
+  MaterialConversionExplanation,
+  MaterialConversionGuard,
   NonEntityCreateResult,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterial,
@@ -7,6 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
+import { explainSpecularGlossinessConversion } from './explainMaterialConversion';
 import { createSurfaceMaterial } from './surfaceMaterial';
 
 // Converts a legacy specular-glossiness material to a metallic-roughness property block.
@@ -73,6 +76,11 @@ export function convertSpecularGlossinessToStandardPbr(
   out.emissiveMap = emissiveMap;
   out.emissiveStrength = emissiveStrength;
   out.metallic = metallic;
+  // Reported, not silent: the drop makes a materially different surface, and the guard seam is how a
+  // caller finds out. Core carries the seam and never the message — see enableMaterialConversionGuards.
+  if (source.specularGlossinessMap !== null) {
+    reportMaterialConversionDrop(explainSpecularGlossinessConversion(source), 'convertSpecularGlossinessToStandardPbr');
+  }
   out.metallicRoughnessMap = null;
   out.normalMap = normalMap;
   out.normalScale = normalScale;
@@ -163,3 +171,22 @@ function packLinear(r: number, g: number, b: number, a: number): number {
 
 const scratchLinear: [number, number, number, number] = [0, 0, 0, 0];
 const scratchLinear2: [number, number, number, number] = [0, 0, 0, 0];
+
+// Routes one dropped-map explanation to the installed guard, or nowhere when none is installed. Both
+// converters report through this rather than reaching for the module slot themselves, so the seam has
+// exactly one caller-visible shape.
+export function reportMaterialConversionDrop(
+  explanation: Readonly<MaterialConversionExplanation>,
+  conversion: string,
+): void {
+  _conversionGuard?.(explanation, conversion);
+}
+
+// Installs the caller-facing guard invoked when a material conversion discards a map it cannot carry.
+// The core carries the seam and never the message: `@flighthq/materials` has no dependency on
+// `@flighthq/log`, and the wording lives in the separately-importable `enableMaterialConversionGuards`.
+export function setMaterialConversionGuard(guard: MaterialConversionGuard | null): void {
+  _conversionGuard = guard;
+}
+
+let _conversionGuard: MaterialConversionGuard | null = null;
