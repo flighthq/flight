@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
-import type { Entity, Matrix4Like, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction, Matrix4Like } from '@flighthq/types/contract';
 import type {
   OrthographicProjection,
   OrthographicProjectionOptions,
@@ -9,18 +9,14 @@ import type {
   Projection,
 } from '@flighthq/types/contract';
 
-export function createOrthographicProjection(
-  opts: Readonly<OrthographicProjectionOptions>,
-): OrthographicProjection & Entity {
-  const out = allocateEntity<OrthographicProjection & Entity>();
+export function createOrthographicProjection(opts: Readonly<OrthographicProjectionOptions>): OrthographicProjection {
+  const out = allocateEntity<OrthographicProjection>();
   initializeOrthographicProjection(out, opts);
   return finishEntity(out);
 }
 
-export function createPerspectiveProjection(
-  opts: Readonly<PerspectiveProjectionOptions>,
-): PerspectiveProjection & Entity {
-  const out = allocateEntity<PerspectiveProjection & Entity>();
+export function createPerspectiveProjection(opts: Readonly<PerspectiveProjectionOptions>): PerspectiveProjection {
+  const out = allocateEntity<PerspectiveProjection>();
   initializePerspectiveProjection(out, opts);
   return finishEntity(out);
 }
@@ -40,7 +36,7 @@ export function getOrthographicProjectionTexelSize(
 // view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the
 // clip-plane distances live on the owning Camera3D, not the projection.
 export function initializeOrthographicProjection(
-  out: EntityConstruction<OrthographicProjection & Entity>,
+  out: EntityConstruction<OrthographicProjection>,
   opts: Readonly<OrthographicProjectionOptions>,
 ): void {
   out.halfHeight = opts.halfHeight;
@@ -51,7 +47,7 @@ export function initializeOrthographicProjection(
 // Builds a perspective projection descriptor from a vertical field of view (radians) and a
 // viewport aspect ratio (width / height). The clip-plane distances live on the owning Camera3D.
 export function initializePerspectiveProjection(
-  out: EntityConstruction<PerspectiveProjection & Entity>,
+  out: EntityConstruction<PerspectiveProjection>,
   opts: Readonly<PerspectiveProjectionOptions>,
 ): void {
   out.aspect = opts.aspect ?? 1;
