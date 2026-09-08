@@ -122,9 +122,9 @@ function buildBitmapTextWords(glyphSource: GlyphSource, paragraph: string, lette
   for (const character of paragraph) {
     const codepoint = character.codePointAt(0);
     if (codepoint === undefined || codepoint === CARRIAGE_RETURN) continue;
-    if (codepoint === SPACE) {
+    if (isWhitespace(codepoint)) {
       flush();
-      const spaceEntry = glyphSource.getGlyphEntry(SPACE);
+      const spaceEntry = glyphSource.getGlyphEntry(codepoint);
       pendingGap += (spaceEntry !== null ? spaceEntry.advance : 0) + letterSpacing;
       continue;
     }
@@ -181,11 +181,16 @@ function ensureBoundsRectangle(runtime: BitmapTextRuntime): Rectangle {
 
 // Greedy line fill: split the text on explicit newlines into paragraphs, then within each paragraph
 // pack words onto lines, breaking before a word when `wrapWidth` is set and it would overflow. A word
-// wider than `wrapWidth` occupies its own overflowing line (no mid-word breaking).
-function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTextData>): BitmapTextLine[] {
+// wider than `wrapWidth` occupies its own overflowing line (no mid-word breaking). When `maxLines` is
+// set, lines beyond the limit are discarded and `truncated` is set in the result; when `ellipsis` is
+// non-empty, the last visible line is trimmed to fit the ellipsis suffix within `wrapWidth`.
+function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTextData>): BitmapTextLayoutResult {
   const lines: BitmapTextLine[] = [];
   const paragraphs = data.text.split('\n');
-  for (let pi = 0; pi < paragraphs.length; pi++) {
+  let truncated = false;
+  const maxLines = data.maxLines;
+
+  outer: for (let pi = 0; pi < paragraphs.length; pi++) {
     const tokens = buildBitmapTextWords(glyphSource, paragraphs[pi], data.letterSpacing);
     let current: BitmapTextLine = { words: [], gaps: [], width: 0, paragraphEnd: false };
     for (const token of tokens) {
@@ -194,6 +199,10 @@ function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTe
         current.words.length > 0 &&
         current.width + token.gap + token.word.width > data.wrapWidth;
       if (wraps) {
+        if (maxLines !== null && lines.length + 1 >= maxLines) {
+          truncated = true;
+          break outer;
+        }
         lines.push(current);
         current = { words: [token.word], gaps: [], width: token.word.width, paragraphEnd: false };
       } else {
@@ -205,10 +214,21 @@ function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTe
         current.width += token.word.width;
       }
     }
+    if (maxLines !== null && lines.length + 1 >= maxLines && pi < paragraphs.length - 1) {
+      truncated = true;
+      current.paragraphEnd = true;
+      lines.push(current);
+      break;
+    }
     current.paragraphEnd = true;
     lines.push(current);
   }
-  return lines;
+
+  if (truncated && data.ellipsis.length > 0 && lines.length > 0) {
+    appendEllipsis(glyphSource, data, lines);
+  }
+
+  return { lines, truncated };
 }
 
 // One layout pass: the glyph placement itself, with no version bookkeeping. Split out from
@@ -227,13 +247,18 @@ function layoutBitmapTextPages(bitmapText: BitmapText, runtime: BitmapTextRuntim
   const glyphSource = data.glyphSource;
   if (glyphSource === null || data.text.length === 0) {
     setEmptyRectangle(bounds);
+    runtime.lineCount = 0;
+    runtime.truncated = false;
     invalidateNodeLocalBounds(bitmapText);
     return;
   }
 
   const metrics = glyphSource.getGlyphMetrics();
   const lineAdvance = (metrics.ascent + metrics.descent + metrics.lineGap) * data.lineHeight;
-  const lines = layoutBitmapTextLines(glyphSource, data);
+  const result = layoutBitmapTextLines(glyphSource, data);
+  const lines = result.lines;
+  runtime.lineCount = lines.length;
+  runtime.truncated = result.truncated;
   const refWidth = data.wrapWidth ?? maxLineWidth(lines);
   const pages = new Map<number, BitmapTextPageContext>();
   let minX = Infinity;
@@ -302,6 +327,11 @@ function setEmptyRectangle(out: Rectangle): void {
   out.height = 0;
 }
 
+interface BitmapTextLayoutResult {
+  lines: BitmapTextLine[];
+  truncated: boolean;
+}
+
 // One placed glyph within a word: its codepoint, the source entry (atlas rect + bearing + advance),
 // and the pen x within the word before the glyph's bearing is applied.
 interface BitmapTextGlyph {
@@ -347,7 +377,52 @@ const BITMAP_TEXT_LAYOUT_ATTEMPTS = 3;
 // renderer reads. Kept internal so callers never hand-write i*2.
 const BITMAP_TEXT_TRANSFORM_STRIDE = 2;
 
+function appendEllipsis(glyphSource: GlyphSource, data: Readonly<BitmapTextData>, lines: BitmapTextLine[]): void {
+  const lastLine = lines[lines.length - 1];
+  const ellipsisTokens = buildBitmapTextWords(glyphSource, data.ellipsis, data.letterSpacing);
+  let ellipsisWidth = 0;
+  const ellipsisGlyphs: BitmapTextGlyph[] = [];
+  for (const token of ellipsisTokens) {
+    ellipsisWidth += token.gap + token.word.width;
+    for (const glyph of token.word.glyphs) ellipsisGlyphs.push(glyph);
+  }
+
+  if (data.wrapWidth !== null) {
+    while (lastLine.words.length > 0 && lastLine.width + ellipsisWidth > data.wrapWidth) {
+      lastLine.words.pop();
+      if (lastLine.gaps.length > 0) {
+        lastLine.width -= lastLine.gaps.pop()!;
+      }
+      lastLine.width = 0;
+      for (let i = 0; i < lastLine.words.length; i++) {
+        lastLine.width += lastLine.words[i].width;
+        if (i < lastLine.gaps.length) lastLine.width += lastLine.gaps[i];
+      }
+    }
+  }
+
+  if (ellipsisGlyphs.length > 0) {
+    const pen = lastLine.width;
+    for (const glyph of ellipsisGlyphs) {
+      glyph.penWithinWord += pen;
+    }
+    lastLine.words.push({ glyphs: ellipsisGlyphs, width: ellipsisWidth });
+    lastLine.width += ellipsisWidth;
+  }
+}
+
+function isWhitespace(codepoint: number): boolean {
+  return (
+    codepoint === 0x20 ||
+    codepoint === 0x09 ||
+    codepoint === 0xa0 ||
+    codepoint === 0x2002 ||
+    codepoint === 0x2003 ||
+    codepoint === 0x2009 ||
+    codepoint === 0x3000
+  );
+}
+
 const CARRIAGE_RETURN = 0x0d;
-const SPACE = 0x20;
 
 let _layoutGuard: ((reason: string, attempts: number) => void) | null = null;

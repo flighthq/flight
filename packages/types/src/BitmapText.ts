@@ -16,6 +16,10 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 // color-adjustment stack (`setNodeColorAdjustmentsTint`), folded on the backends that realize adjustments.
 export interface BitmapTextData extends Node2DData {
   align: BitmapTextAlign;
+  // The string appended to the visible text when truncation hides trailing content. Empty string
+  // disables the suffix; a typical value is '…' (ellipsis). Only meaningful when `maxLines`
+  // limits the visible line count.
+  ellipsis: string;
   // The bound glyph source supplying per-glyph atlas rects, advances, kerning, and line metrics. A
   // live runtime binding (a method object), NOT serializable — a scene serialized with a BitmapText
   // must re-bind this on load, the same way `ParticleEmitterData.atlas` and `MovieClipData.timeline`
@@ -25,6 +29,9 @@ export interface BitmapTextData extends Node2DData {
   letterSpacing: number;
   // Multiplier on the metric line advance (`ascent + descent + lineGap`). 1 = metrics-driven spacing.
   lineHeight: number;
+  // Maximum number of visible lines. Lines beyond this limit are discarded and the last visible
+  // line is trimmed to fit `ellipsis`. Null disables the limit.
+  maxLines: number | null;
   text: string;
   // Wrap width in pixels; a line breaks at the last word boundary that fits. Null disables wrapping.
   wrapWidth: number | null;
@@ -49,6 +56,9 @@ export interface BitmapTextRuntime extends Node2DRuntime {
   // `refreshBitmapTextGlyphLayout` re-lays-out when they differ — without it, a repack that relocated
   // the glyphs leaves these pages sampling whatever now occupies their rects.
   glyphLayoutVersion: number;
+  // The number of laid-out lines produced by the last `updateBitmapText`, after maxLines truncation.
+  // 0 before the first layout or when text is empty.
+  lineCount: number;
   // Cached local bounds of the laid-out text, written by `updateBitmapText` and copied out by
   // `computeBitmapTextLocalBoundsRectangle`. Null before the first layout.
   localBoundsRectangle: Rectangle | null;
@@ -57,6 +67,8 @@ export interface BitmapTextRuntime extends Node2DRuntime {
   // (from `getGlyphAtlasImage(page)`) through its own `TextureAtlas`. A single-page source yields exactly
   // one page. Created by `createBitmapText` (page 0) and grown by `updateBitmapText`.
   pages: BitmapTextPage[];
+  // Whether the last layout truncated lines due to `maxLines`. False before the first layout.
+  truncated: boolean;
 }
 
 export interface BitmapText extends Node2D {
@@ -67,8 +79,10 @@ export interface BitmapText extends Node2D {
 // node's defaults (`left` align, no wrap, no letter spacing, 1× line height, empty text).
 export interface BitmapTextOptions {
   align?: BitmapTextAlign;
+  ellipsis?: string;
   letterSpacing?: number;
   lineHeight?: number;
+  maxLines?: number | null;
   text?: string;
   wrapWidth?: number | null;
 }
