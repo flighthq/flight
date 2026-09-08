@@ -8,7 +8,7 @@ import {
   createPath,
   forEachPathSegment,
 } from '@flighthq/path/contract';
-import type { Path } from '@flighthq/types/contract';
+import type { Path, SvgPathDataFormatOptions } from '@flighthq/types/contract';
 
 /**
  * Parses an SVG path `d` string into the end of an existing `path`, appending its contours via the
@@ -310,7 +310,7 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
  * `options.precision`, when given, rounds every coordinate to that many decimal places and drops
  * trailing zeros; the default emits full-precision numbers (also trailing-zero-free).
  */
-export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<{ precision?: number }>): string {
+export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<SvgPathDataFormatOptions>): string {
   const precision = options?.precision;
   const parts: string[] = [];
   forEachPathSegment(path, (segment) => {
