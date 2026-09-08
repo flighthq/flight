@@ -43,6 +43,10 @@ describe('testSegmentAabbCollision2D', () => {
     expect(testSegmentAabbCollision2D(segment(5, 5, 5, 5), box)).toBe(true);
     expect(testSegmentAabbCollision2D(segment(20, 20, 20, 20), box)).toBe(false);
   });
+
+  it('rejects zero-extent boxes', () => {
+    expect(testSegmentAabbCollision2D(segment(0, 0, 1, 0), { minX: 0, minY: 0, maxX: 0, maxY: 1 })).toBe(false);
+  });
 });
 
 describe('testSegmentCapsuleCollision2D', () => {
@@ -74,6 +78,10 @@ describe('testSegmentCapsuleCollision2D', () => {
     expect(testSegmentCapsuleCollision2D({ x0: -5, y0: 1, x1: 5, y1: 1 }, point)).toBe(true);
     expect(testSegmentCapsuleCollision2D({ x0: -5, y0: 2, x1: 5, y1: 2 }, point)).toBe(false);
   });
+
+  it('rejects a non-positive capsule radius', () => {
+    expect(testSegmentCapsuleCollision2D(segment(-1, 0, 1, 0), { x0: 0, y0: 0, x1: 0, y1: 0, radius: 0 })).toBe(false);
+  });
 });
 
 describe('testSegmentCircleCollision2D', () => {
@@ -93,6 +101,10 @@ describe('testSegmentCircleCollision2D', () => {
 
   it('is false for a segment that misses the circle', () => {
     expect(testSegmentCircleCollision2D(segment(-10, 5, 10, 5), circle)).toBe(false);
+  });
+
+  it('rejects a non-positive circle radius', () => {
+    expect(testSegmentCircleCollision2D(segment(0, 0, 1, 0), { x: 0, y: 0, radius: 0 })).toBe(false);
   });
 });
 

@@ -17,6 +17,7 @@ const RELATIVE_EPSILON = 1e-9;
 
 // Whether a segment overlaps an axis-aligned box (Liang–Barsky slab clip; inclusive).
 export function testSegmentAabbCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionAabb2D>): boolean {
+  if (!isValidAabb(b)) return false;
   return isSegmentOverlappingBox(a.x0, a.y0, a.x1, a.y1, b.minX, b.minY, b.maxX, b.maxY);
 }
 
@@ -27,12 +28,14 @@ export function testSegmentCapsuleCollision2D(
   a: Readonly<CollisionSegment2D>,
   b: Readonly<CollisionCapsule2D>,
 ): boolean {
+  if (!isValidCapsule(b)) return false;
   const distanceSquared = segmentSegmentDistanceSquared(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1);
   return distanceSquared <= b.radius * b.radius;
 }
 
 // Whether a segment overlaps a circle (nearest point on the segment within the radius; inclusive).
 export function testSegmentCircleCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionCircle2D>): boolean {
+  if (!isValidCircle(b)) return false;
   const x0 = a.x0;
   const y0 = a.y0;
   const dx = a.x1 - x0;
@@ -53,6 +56,7 @@ export function testSegmentCircleCollision2D(a: Readonly<CollisionSegment2D>, b:
 // Whether a segment overlaps an oriented box (transformed into the box's local frame, then tested as
 // segment-vs-AABB; inclusive).
 export function testSegmentObbCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionObb2D>): boolean {
+  if (!isValidObb(b)) return false;
   const cos = Math.cos(b.rotation);
   const sin = Math.sin(b.rotation);
   const d0x = a.x0 - b.x;
@@ -245,6 +249,44 @@ function isPointOnSegment(x: number, y: number, x0: number, y0: number, x1: numb
 
 function relativeEpsilon(extent: number): number {
   return extent > 0 ? extent * RELATIVE_EPSILON : Number.EPSILON;
+}
+
+function isValidAabb(shape: Readonly<CollisionAabb2D>): boolean {
+  return (
+    Number.isFinite(shape.minX) &&
+    Number.isFinite(shape.minY) &&
+    Number.isFinite(shape.maxX) &&
+    Number.isFinite(shape.maxY) &&
+    shape.maxX > shape.minX &&
+    shape.maxY > shape.minY
+  );
+}
+
+function isValidCircle(shape: Readonly<CollisionCircle2D>): boolean {
+  return Number.isFinite(shape.x) && Number.isFinite(shape.y) && Number.isFinite(shape.radius) && shape.radius > 0;
+}
+
+function isValidCapsule(shape: Readonly<CollisionCapsule2D>): boolean {
+  return (
+    Number.isFinite(shape.x0) &&
+    Number.isFinite(shape.y0) &&
+    Number.isFinite(shape.x1) &&
+    Number.isFinite(shape.y1) &&
+    Number.isFinite(shape.radius) &&
+    shape.radius > 0
+  );
+}
+
+function isValidObb(shape: Readonly<CollisionObb2D>): boolean {
+  return (
+    Number.isFinite(shape.x) &&
+    Number.isFinite(shape.y) &&
+    Number.isFinite(shape.halfW) &&
+    Number.isFinite(shape.halfH) &&
+    Number.isFinite(shape.rotation) &&
+    shape.halfW > 0 &&
+    shape.halfH > 0
+  );
 }
 
 const clipRange = { t0: 0, t1: 1 };
