@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spring2D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
-import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
+import { addSpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
 
 // Add independent velocity impulses to both axes without allocating or changing either value.
-export function applySpringImpulse2D(spring2D: Spring2D, velocityX: number, velocityY: number): void {
-  applySpringImpulse(spring2D.x, velocityX);
-  applySpringImpulse(spring2D.y, velocityY);
+export function addSpringImpulse2D(spring2D: Spring2D, velocityX: number, velocityY: number): void {
+  addSpringImpulse(spring2D.x, velocityX);
+  addSpringImpulse(spring2D.y, velocityY);
 }
 
 export function createSpring2D(

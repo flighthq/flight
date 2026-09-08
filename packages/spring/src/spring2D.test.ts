@@ -2,7 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  applySpringImpulse2D,
+  addSpringImpulse2D,
   createSpring2D,
   initializeSpring2D,
   isSpring2DSettled,
@@ -11,11 +11,11 @@ import {
 } from './spring2D';
 import { createSpringConfig } from './springConfig';
 
-describe('applySpringImpulse2D', () => {
+describe('addSpringImpulse2D', () => {
   it('adds each velocity component without changing either value', () => {
     const spring = createSpring2D(10, 20, 1, 2);
 
-    applySpringImpulse2D(spring, 3, -5);
+    addSpringImpulse2D(spring, 3, -5);
 
     expect(spring.x).toMatchObject({ value: 10, velocity: 4 });
     expect(spring.y).toMatchObject({ value: 20, velocity: -3 });

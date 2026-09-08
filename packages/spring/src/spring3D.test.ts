@@ -2,7 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  applySpringImpulse3D,
+  addSpringImpulse3D,
   createSpring3D,
   initializeSpring3D,
   isSpring3DSettled,
@@ -11,11 +11,11 @@ import {
 } from './spring3D';
 import { createSpringConfig } from './springConfig';
 
-describe('applySpringImpulse3D', () => {
+describe('addSpringImpulse3D', () => {
   it('adds each velocity component without changing any value', () => {
     const spring = createSpring3D(10, 20, 30, 1, 2, 3);
 
-    applySpringImpulse3D(spring, 3, -5, 7);
+    addSpringImpulse3D(spring, 3, -5, 7);
 
     expect(spring.x).toMatchObject({ value: 10, velocity: 4 });
     expect(spring.y).toMatchObject({ value: 20, velocity: -3 });
