@@ -15,17 +15,18 @@ export function dashPath(
   out: Path,
   tolerance = 0.25,
 ): void {
-  out.commands.length = 0;
-  out.data.length = 0;
-  out.winding = source.winding;
-
   const totalDashLength = dashTotal(dash);
   if (totalDashLength <= 0) {
     copyCommands(source, out);
     return;
   }
 
+  // Flatten BEFORE clearing — source must be fully read before out is touched (alias safety).
   const contours = flattenPath(source, tolerance);
+  out.commands.length = 0;
+  out.data.length = 0;
+  out.winding = source.winding;
+
   for (const contour of contours) {
     applyDashToContour(contour, dash, dashOffset, totalDashLength, out);
   }
@@ -113,6 +114,10 @@ function applyDashToContour(
 }
 
 function copyCommands(source: Readonly<Path>, out: Path): void {
+  if (source === out) return;
+  out.commands.length = 0;
+  out.data.length = 0;
+  out.winding = source.winding;
   for (let i = 0; i < source.commands.length; i++) {
     out.commands.push(source.commands[i]);
   }

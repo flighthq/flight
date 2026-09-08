@@ -80,6 +80,18 @@ describe('dashPath', () => {
     expect(moves.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('is alias-safe when source and out are the same path', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 100, 0);
+    appendPathLineTo(path, 100, 100);
+    const ref = createPath();
+    dashPath(path, [15, 10], 0, ref);
+    dashPath(path, [15, 10], 0, path);
+    expect(path.commands).toStrictEqual(ref.commands);
+    expect(path.data).toStrictEqual(ref.data);
+  });
+
   it('preserves winding rule', () => {
     const source = createPath('evenOdd');
     appendPathMoveTo(source, 0, 0);
