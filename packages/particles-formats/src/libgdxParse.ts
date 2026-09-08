@@ -11,7 +11,6 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-/** @deprecated Use `LibgdxParseResult`. */
 /** Parse a libGDX 2D Particle Editor `.p` file string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
