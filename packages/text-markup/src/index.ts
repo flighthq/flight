@@ -1,5 +1,8 @@
 export {
   createMarkupTagRegistry,
+  disableTextMarkupGuards,
+  enableTextMarkupGuards,
+  explainTextMarkup,
   formatTextMarkup,
   parseTextMarkup,
   registerMarkupClassStyles,

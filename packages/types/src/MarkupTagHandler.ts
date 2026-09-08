@@ -25,8 +25,11 @@ export interface MarkupTagEffect {
   text?: string;
 }
 
-// Maps a tag's parsed, entity-decoded attributes to its formatting or structural contribution. Pure
-// and self-contained: the same attributes always yield the same result, and the handler has no view
-// of the document beyond its own tag. Registered by lowercase tag name in a `MarkupTagRegistry`; the
-// registered set is the supported dialect.
-export type MarkupTagHandler = (attributes: Readonly<Record<string, string>>) => Readonly<MarkupTagResult>;
+// Maps a tag's parsed, entity-decoded attributes and enclosing resolved format to its formatting or
+// structural contribution. The enclosing format lets relative authoring values become absolute at the
+// parse seam (`<font size="+2">`) while the stored TextFormat model stays context-free. Registered by
+// lowercase tag name in a `MarkupTagRegistry`; the registered set is the supported dialect.
+export type MarkupTagHandler = (
+  attributes: Readonly<Record<string, string>>,
+  enclosingFormat: Readonly<TextFormat>,
+) => Readonly<MarkupTagResult>;

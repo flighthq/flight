@@ -8,9 +8,13 @@ import type {
   RichTextContent,
   TextFormat,
   TextFormatRange,
+  TextMarkupExplanation,
+  TextMarkupGuard,
+  TextMarkupIssue,
 } from '@flighthq/types/contract';
 
 import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry';
+import { reportTextMarkupIssue } from './textMarkupGuards';
 
 /**
  * Serializes a `RichTextContent` back into `htmlText`-subset markup — the inverse of
@@ -26,22 +30,23 @@ import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTag
  * break before their content; the resulting `\n` carries no block format and re-parses as a plain
  * newline that the block tag's own collapse rule does not double, so the fixed point holds. Format
  * fields with no `htmlText` representation (`kerning`, `letterSpacing`) cannot be expressed and are
- * omitted; `parseTextMarkup` never produces them, so the fixed point is unaffected.
+ * omitted; `parseTextMarkup` never produces them, so the fixed point is unaffected. `<span class>`
+ * names likewise do not survive serialization: the content model stores the resolved TextFormat, not
+ * the class token that produced it, so formatting emits the equivalent standard tags instead.
  */
+export function explainTextMarkup(html: string, registry?: Readonly<MarkupTagRegistry>): TextMarkupExplanation {
+  const issues: TextMarkupIssue[] = [];
+  parseTextMarkupInternal(html, registry, (issue) => issues.push(issue));
+  return { issues };
+}
+
 export function formatTextMarkup(content: Readonly<RichTextContent>): string {
   const text = content.text;
   if (text.length === 0) return '';
 
-  const formats = resolveMarkupFormats(content);
+  const runs = resolveMarkupFormatRuns(content);
   let output = '';
-  let runStart = 0;
-  while (runStart < text.length) {
-    const format = formats[runStart];
-    let runEnd = runStart + 1;
-    while (runEnd < text.length && equalsMarkupFormat(formats[runEnd], format)) runEnd++;
-    output += formatMarkupRun(format, text.slice(runStart, runEnd));
-    runStart = runEnd;
-  }
+  for (const run of runs) output += formatMarkupRun(run.format, text.slice(run.start, run.end));
   return output;
 }
 
@@ -68,6 +73,14 @@ export function formatTextMarkup(content: Readonly<RichTextContent>): string {
  * result is always a valid `RichTextContent`.
  */
 export function parseTextMarkup(html: string, registry?: Readonly<MarkupTagRegistry>): RichTextContent {
+  return parseTextMarkupInternal(html, registry, reportTextMarkupIssue);
+}
+
+function parseTextMarkupInternal(
+  html: string,
+  registry: Readonly<MarkupTagRegistry> | undefined,
+  report: TextMarkupGuard,
+): RichTextContent {
   const handlers = (registry ?? getDefaultMarkupTagRegistry()).handlers;
   const content = createRichTextContent();
   const stack: TextFormat[] = [{}];
@@ -76,7 +89,7 @@ export function parseTextMarkup(html: string, registry?: Readonly<MarkupTagRegis
   let match: RegExpExecArray | null;
   while ((match = tagPattern.exec(html)) !== null) {
     appendMarkupText(content, html.slice(index, match.index), stack[stack.length - 1]);
-    handleMarkupToken(content, handlers, match[0], stack);
+    handleMarkupToken(content, handlers, match[0], match.index, stack, report);
     index = match.index + match[0].length;
   }
   appendMarkupText(content, html.slice(index), stack[stack.length - 1]);
@@ -273,7 +286,9 @@ function handleMarkupToken(
   content: RichTextContent,
   handlers: Readonly<Map<string, MarkupTagHandler>>,
   token: string,
+  offset: number,
   stack: TextFormat[],
+  report: TextMarkupGuard,
 ): void {
   // The tag body is everything between the angle brackets; drop comments (`<!-- -->`), doctypes
   // (`<!…>`), processing instructions (`<?…>`), and the degenerate empty `<>`.
@@ -295,14 +310,23 @@ function handleMarkupToken(
   const top = stack[stack.length - 1];
   const handler = handlers.get(name);
   if (handler === undefined) {
+    report({ kind: 'unknown-tag', offset, tag: name, value: null });
     // Unregistered tag: keep the enclosed text, apply no format. Push a copy of the current format so
     // the matching close pops it without disturbing an enclosing tag.
     if (!selfClosing) stack.push({ ...top });
     return;
   }
 
-  const attributes = parseMarkupAttributes(separator === -1 ? '' : body.slice(separator + 1));
-  const result = normalizeMarkupTagResult(handler(attributes));
+  let attributes = parseMarkupAttributes(separator === -1 ? '' : body.slice(separator + 1));
+  if (name === 'a' && attributes.href !== undefined && !isSafeMarkupHref(attributes.href)) {
+    report({ kind: 'unsafe-href', offset, tag: name, value: attributes.href });
+    attributes = { ...attributes };
+    delete attributes.href;
+  }
+  const result = normalizeMarkupTagResult(handler(attributes, top));
+  if (name === 'font' && attributes.color !== undefined && result.format?.color === undefined) {
+    report({ kind: 'unresolved-font-color', offset, tag: name, value: attributes.color });
+  }
 
   // A void insertion tag (text, no format) inserts literal text and never pushes — e.g. `<br>`.
   if (result.format === undefined && result.text !== undefined) {
@@ -336,6 +360,15 @@ function parseMarkupAttributes(source: string): Record<string, string> {
   return attributes;
 }
 
+function isSafeMarkupHref(value: string): boolean {
+  let compact = '';
+  for (const character of value.trim()) {
+    if (character.charCodeAt(0) > 0x20) compact += character;
+  }
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(compact)?.[1].toLowerCase();
+  return scheme === undefined || scheme === 'http' || scheme === 'https' || scheme === 'mailto' || scheme === 'tel';
+}
+
 function pushMarkupRange(ranges: TextFormatRange[], format: Readonly<TextFormat>, start: number, end: number): void {
   if (start === end) return;
   // Unformatted text carries no range — plain text produces an empty `formatRanges`.
@@ -349,22 +382,102 @@ function pushMarkupRange(ranges: TextFormatRange[], format: Readonly<TextFormat>
   ranges.push(createTextFormatRange({ ...format }, start, end));
 }
 
-function resolveMarkupFormats(content: Readonly<RichTextContent>): TextFormat[] {
+function resolveMarkupFormatRuns(
+  content: Readonly<RichTextContent>,
+): Array<{ start: number; end: number; format: TextFormat }> {
   const length = content.text.length;
-  const formats: TextFormat[] = new Array(length);
-  for (let i = 0; i < length; i++) formats[i] = {};
-  // Ranges apply in array order; a later range overrides an earlier one on overlap.
+  const boundaryFlags = new Uint8Array(length + 1);
+  boundaryFlags[0] = 1;
+  boundaryFlags[length] = 1;
+  const ranges: Array<{ start: number; end: number; format: Readonly<TextFormat> }> = [];
   for (const range of content.formatRanges) {
-    const start = Math.max(0, Math.min(length, range.start));
-    const end = Math.max(start, Math.min(length, range.end));
-    for (let i = start; i < end; i++) formats[i] = { ...formats[i], ...range.format };
+    if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) continue;
+    const start = Math.max(0, Math.min(length, Math.ceil(range.start)));
+    const end = Math.max(start, Math.min(length, Math.ceil(range.end)));
+    if (start === end) continue;
+    boundaryFlags[start] = 1;
+    boundaryFlags[end] = 1;
+    ranges.push({ start, end, format: range.format });
   }
-  return formats;
+
+  const boundaries: number[] = [];
+  const boundaryIndex = new Int32Array(length + 1);
+  for (let i = 0; i <= length; i++) {
+    if (boundaryFlags[i] === 0) continue;
+    boundaryIndex[i] = boundaries.length;
+    boundaries.push(i);
+  }
+
+  const formats: TextFormat[] = Array.from({ length: boundaries.length - 1 }, () => ({}));
+  // Later ranges win field-by-field. Walking them backwards and union-skipping intervals already
+  // assigned for each field visits every range boundary a constant number of times, rather than
+  // allocating and repeatedly spreading one TextFormat object per character.
+  for (const key of markupFormatKeys) {
+    const next = new Int32Array(formats.length + 1);
+    for (let i = 0; i < next.length; i++) next[i] = i;
+    for (let r = ranges.length - 1; r >= 0; r--) {
+      const range = ranges[r];
+      if (!Object.prototype.hasOwnProperty.call(range.format, key)) continue;
+      const end = boundaryIndex[range.end];
+      let i = findNextUnassigned(next, boundaryIndex[range.start]);
+      while (i < end) {
+        (formats[i] as Record<keyof TextFormat, unknown>)[key] = range.format[key];
+        next[i] = findNextUnassigned(next, i + 1);
+        i = next[i];
+      }
+    }
+  }
+
+  const runs: Array<{ start: number; end: number; format: TextFormat }> = [];
+  for (let i = 0; i < formats.length; i++) {
+    const previous = runs[runs.length - 1];
+    if (previous !== undefined && equalsMarkupFormat(previous.format, formats[i])) {
+      previous.end = boundaries[i + 1];
+    } else {
+      runs.push({ start: boundaries[i], end: boundaries[i + 1], format: formats[i] });
+    }
+  }
+  return runs;
+}
+
+function findNextUnassigned(next: Int32Array, index: number): number {
+  let root = index;
+  while (next[root] !== root) root = next[root];
+  while (next[index] !== index) {
+    const parent = next[index];
+    next[index] = root;
+    index = parent;
+  }
+  return root;
 }
 
 let defaultMarkupTagRegistry: MarkupTagRegistry | null = null;
 
 const emptyMarkupFormat: Readonly<TextFormat> = {};
+
+const markupFormatKeys: readonly (keyof TextFormat)[] = [
+  'align',
+  'blockIndent',
+  'bold',
+  'bullet',
+  'color',
+  'font',
+  'indent',
+  'italic',
+  'kerning',
+  'leading',
+  'leftMargin',
+  'letterSpacing',
+  'listMarker',
+  'rightMargin',
+  'size',
+  'strikethrough',
+  'tabStops',
+  'target',
+  'underline',
+  'url',
+  'variations',
+];
 
 const markupAttributeEscapes: Readonly<Record<string, string>> = {
   '"': '&quot;',
