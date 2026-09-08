@@ -201,6 +201,8 @@ function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTe
       if (wraps) {
         if (maxLines !== null && lines.length + 1 >= maxLines) {
           truncated = true;
+          current.paragraphEnd = false;
+          lines.push(current);
           break outer;
         }
         lines.push(current);

@@ -16,7 +16,14 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createBitmapText, getBitmapTextBounds, getBitmapTextPages, isBitmapTextGlyphLayoutStale } from './bitmapText';
+import {
+  createBitmapText,
+  getBitmapTextBounds,
+  getBitmapTextLineCount,
+  getBitmapTextPages,
+  isBitmapTextGlyphLayoutStale,
+  isBitmapTextTruncated,
+} from './bitmapText';
 import { refreshBitmapTextGlyphLayout, setBitmapTextLayoutGuard, updateBitmapText } from './updateBitmapText';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
@@ -476,6 +483,69 @@ describe('updateBitmapText', () => {
     expect(bounds.x).toBe(0);
     expect(bounds.width).toBe(16); // B (page 1) at x=10, width 6 → right edge 16
     expect(bounds.height).toBe(8);
+  });
+
+  it('limits visible lines to maxLines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB\nA', maxLines: 2 });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(2);
+    expect(isBitmapTextTruncated(text)).toBe(true);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+  });
+
+  it('does not truncate when line count fits within maxLines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB', maxLines: 3 });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(2);
+    expect(isBitmapTextTruncated(text)).toBe(false);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+  });
+
+  it('truncates word-wrapped lines at maxLines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'AA AA AA', wrapWidth: 30, maxLines: 2 });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(2);
+    expect(isBitmapTextTruncated(text)).toBe(true);
+  });
+
+  it('appends ellipsis glyphs to the last visible line when truncated', () => {
+    const source = createTestGlyphSource();
+    const text = createBitmapText(source, { text: 'A\nB\nA', maxLines: 1, ellipsis: 'B' });
+    updateBitmapText(text);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(isBitmapTextTruncated(text)).toBe(true);
+  });
+
+  it('treats tab as whitespace word break', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\tB' });
+    updateBitmapText(text);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+    expect(page.transforms[0]).toBe(0);
+    expect(page.transforms[2]).toBeGreaterThan(0);
+  });
+
+  it('treats non-breaking space as whitespace word break', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A B' });
+    updateBitmapText(text);
+    const page = getBitmapTextPages(text)[0]!;
+    expect(page.instanceCount).toBe(2);
+  });
+
+  it('sets lineCount to 0 for empty text', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: '' });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(0);
+    expect(isBitmapTextTruncated(text)).toBe(false);
+  });
+
+  it('reports lineCount accurately for multi-line text', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB\nA\nB' });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(4);
   });
 });
 
