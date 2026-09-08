@@ -1,0 +1,13 @@
+{
+  "webgl": {
+    "sha256": "ae98ad282b5a5f720be3ea286297ba25a80a2dcd9ec6d0e39bdfed583d000f0e",
+    "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
+      "frames": 0,
+      "sourceHash": "29565882fcad2eccbc3b8696e76e62b98eb67206c621f9c6138b41de9ea21bc8",
+      "targetKind": null,
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
+  }
+}

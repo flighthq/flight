@@ -12,6 +12,9 @@ describe('anisotropyPbrGlExtension', () => {
       createAnisotropyPbrExtension(),
     );
     expect(contribution.contributePunctual).toContain('flightDistributionGgxAnisotropic');
+    expect(contribution.contributePunctual).toContain('flightVisibilitySmithGgxAnisotropic');
+    expect(contribution.contributePunctual).toContain('flightAnisotropyD * flightAnisotropyVis - d * vis');
+    expect(contribution.fragmentFunctions).toContain('1.0 + lambdaV + lambdaL');
     expect(contribution.contributeIbl).toContain('flightAnisotropyReflection');
   });
 });

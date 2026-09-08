@@ -38,7 +38,16 @@ export const anisotropyPbrGlExtension: GlPbrExtensionRegistration = {
   float flightAb = max(roughness * roughness * (1.0 - flightAnisotropyStrength), 1e-3);
   float flightAnisotropyD = flightDistributionGgxAnisotropic(
     nDotH, dot(flightAnisotropyTangent, halfVec), dot(flightAnisotropyBitangent, halfVec), flightAt, flightAb);
-  direct += (flightAnisotropyD - d) * vis * fresnel * lightColor * nDotL;`,
+  float flightAnisotropyVis = flightVisibilitySmithGgxAnisotropic(
+    nDotV,
+    nDotL,
+    dot(flightAnisotropyTangent, V),
+    dot(flightAnisotropyBitangent, V),
+    dot(flightAnisotropyTangent, L),
+    dot(flightAnisotropyBitangent, L),
+    flightAt,
+    flightAb);
+  direct += (flightAnisotropyD * flightAnisotropyVis - d * vis) * fresnel * lightColor * nDotL;`,
       finalize: '',
       fragmentDeclarations: `
 uniform float u_flightAnisotropyStrength;
@@ -51,6 +60,18 @@ ${hasMap ? '  vec2 uv = u_flightAnisotropyMapUvSet == 1 ? v_pbrExtensionUv1 : v_
 float flightDistributionGgxAnisotropic(float nDotH, float tDotH, float bDotH, float at, float ab) {
   float value = tDotH * tDotH / (at * at) + bDotH * bDotH / (ab * ab) + nDotH * nDotH;
   return 1.0 / max(PI * at * ab * value * value, 1e-7);
+}
+float flightSmithLambdaGgxAnisotropic(float nDotW, float tDotW, float bDotW, float at, float ab) {
+  float projectedRoughnessSquared = at * at * tDotW * tDotW + ab * ab * bDotW * bDotW;
+  float nDotWSquared = max(nDotW * nDotW, 1e-7);
+  return 0.5 * (sqrt(1.0 + projectedRoughnessSquared / nDotWSquared) - 1.0);
+}
+float flightVisibilitySmithGgxAnisotropic(
+  float nDotV, float nDotL, float tDotV, float bDotV, float tDotL, float bDotL, float at, float ab
+) {
+  float lambdaV = flightSmithLambdaGgxAnisotropic(nDotV, tDotV, bDotV, at, ab);
+  float lambdaL = flightSmithLambdaGgxAnisotropic(nDotL, tDotL, bDotL, at, ab);
+  return 1.0 / max(1.0 + lambdaV + lambdaL, 1e-7);
 }`,
       key: `anisotropy:${hasMap ? 'm' : '-'}`,
       textureCount: hasMap ? 1 : 0,

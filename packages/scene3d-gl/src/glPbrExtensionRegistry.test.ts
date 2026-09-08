@@ -1,7 +1,9 @@
+import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlPbrExtensionRegistration } from '@flighthq/types/contract';
+import { createGlPipeline, getGlRenderStateRuntime, registerGlTextureResolver } from '@flighthq/render-gl/contract';
+import { createTexture, getTextureUvMatrix } from '@flighthq/texture/contract';
+import type { GlPbrExtensionRegistration, GlRenderTarget, TextureSource } from '@flighthq/types/contract';
 
 import {
   bindGlPbrExtensions,
@@ -39,6 +41,38 @@ describe('bindGlPbrExtensions', () => {
     registerGlPbrExtension(state, extension.kind, registration);
     expect(bindGlPbrExtensions(state, {}, [extension])).toBe(true);
   });
+
+  it('uploads the selected UV set and the bound texture own transform', () => {
+    const { state, gl } = makeGlScene3DState();
+    const extension = createAnisotropyPbrExtension();
+    const texture = createTexture({
+      source: { kind: 'test.ready' } as TextureSource,
+      uvOffset: createVector2(0.25, 0.5),
+      uvRotation: Math.PI / 4,
+      uvScale: createVector2(2, 3),
+    });
+    const transformedRegistration: GlPbrExtensionRegistration = {
+      ...registration,
+      bind(context): void {
+        context.bindTexture('u_map', 'u_mapUvSet', 'u_mapTransform', texture, 1);
+      },
+    };
+    registerGlTextureResolver(state, 'test.ready', () => ({ straightAlpha: false, texture: {} as WebGLTexture }));
+    registerGlPbrExtension(state, extension.kind, transformedRegistration);
+
+    expect(bindGlPbrExtensions(state, {}, [extension])).toBe(true);
+
+    const uvSetCall = gl.calls.find(
+      (call) => call.name === 'uniform1i' && (call.args[0] as { name?: string }).name === 'u_mapUvSet',
+    );
+    const transformCall = gl.calls.find(
+      (call) => call.name === 'uniformMatrix3fv' && (call.args[0] as { name?: string }).name === 'u_mapTransform',
+    );
+    const expected = createMatrix3();
+    getTextureUvMatrix(expected, texture);
+    expect(uvSetCall?.args[1]).toBe(1);
+    expect(Array.from(transformCall?.args[2] as Float32Array)).toEqual(Array.from(expected.m));
+  });
 });
 
 describe('explainGlPbrExtensions', () => {
@@ -48,6 +82,61 @@ describe('explainGlPbrExtensions', () => {
     expect(explainGlPbrExtensions(state, [extension, extension])).toEqual([
       { code: 'missing-registration', kind: 'AnisotropyPbrExtension' },
       { code: 'duplicate-kind', kind: 'AnisotropyPbrExtension' },
+    ]);
+  });
+
+  it('reports unsupported extensions and extension texture-unit exhaustion', () => {
+    const { state } = makeGlScene3DState();
+    const extension = createAnisotropyPbrExtension();
+    registerGlPbrExtension(state, extension.kind, {
+      ...registration,
+      isSupported: () => false,
+    });
+    expect(explainGlPbrExtensions(state, [extension])).toEqual([
+      { code: 'unsupported-extension', kind: 'AnisotropyPbrExtension' },
+    ]);
+
+    registerGlPbrExtension(state, extension.kind, {
+      ...registration,
+      createShaderContribution: () => ({
+        ...registration.createShaderContribution(
+          { hasTransmissionSceneColor: () => false, isTextureReady: () => false },
+          extension,
+        ),
+        textureCount: 6,
+      }),
+    });
+    expect(explainGlPbrExtensions(state, [extension])).toEqual([
+      { code: 'texture-unit-exhaustion', kind: 'ExtendedPbrMaterial' },
+    ]);
+  });
+
+  it('reports transmission feedback from the active render target', () => {
+    const { state } = makeGlScene3DState();
+    const extension = createAnisotropyPbrExtension();
+    const sceneColorTexture = {} as WebGLTexture;
+    registerGlPbrExtension(state, extension.kind, {
+      ...registration,
+      createShaderContribution: () => ({
+        ...registration.createShaderContribution(
+          { hasTransmissionSceneColor: () => true, isTextureReady: () => false },
+          extension,
+        ),
+        samplesTransmissionSceneColor: true,
+      }),
+    });
+    getGlScene3DRuntime(state).pbrTransmissionSceneColor = {
+      height: 32,
+      mipLevelCount: 6,
+      texture: sceneColorTexture,
+      width: 32,
+    };
+    getGlRenderStateRuntime(state).currentRenderTarget = {
+      textures: [sceneColorTexture],
+    } as GlRenderTarget;
+
+    expect(explainGlPbrExtensions(state, [extension])).toEqual([
+      { code: 'framebuffer-feedback', kind: 'AnisotropyPbrExtension' },
     ]);
   });
 });
