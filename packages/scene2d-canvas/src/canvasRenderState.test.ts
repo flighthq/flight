@@ -14,6 +14,9 @@ import {
   getCanvasRenderStateRuntime,
   getCanvasRenderStateTextureResolvers,
   registerCanvasRenderStateTeardown,
+  resolveCanvasTextureSmoothing,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
 } from './canvasTestSupport';
 import { scene2dCanvasPipeline } from './scene2dCanvasPipeline';
 
@@ -255,5 +258,69 @@ describe('registerCanvasRenderStateTeardown', () => {
 
     expect(teardown).toHaveBeenCalledOnce();
     expect(teardown).toHaveBeenCalledWith(state);
+  });
+});
+
+describe('resolveCanvasTextureSmoothing', () => {
+  it('returns true when smoothing is allowed and filter is not nearest', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    expect(resolveCanvasTextureSmoothing(state, 'linear')).toBe(true);
+  });
+
+  it('returns false when the mag filter starts with nearest', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    expect(resolveCanvasTextureSmoothing(state, 'nearest')).toBe(false);
+  });
+
+  it('returns false when allowSmoothing is disabled on the state', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    state.allowSmoothing = false;
+    expect(resolveCanvasTextureSmoothing(state, 'linear')).toBe(false);
+  });
+});
+
+describe('setCanvasGlobalAlpha', () => {
+  it('writes globalAlpha on the context', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasGlobalAlpha(state, 0.5);
+    expect(state.context.globalAlpha).toBe(0.5);
+  });
+
+  it('skips redundant writes', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasGlobalAlpha(state, 0.7);
+    const spy = vi.spyOn(state.context, 'globalAlpha', 'set');
+    setCanvasGlobalAlpha(state, 0.7);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('writes again after a value change', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasGlobalAlpha(state, 0.3);
+    setCanvasGlobalAlpha(state, 0.6);
+    expect(state.context.globalAlpha).toBe(0.6);
+  });
+});
+
+describe('setCanvasImageSmoothing', () => {
+  it('writes imageSmoothingEnabled on the context', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasImageSmoothing(state, false);
+    expect(state.context.imageSmoothingEnabled).toBe(false);
+  });
+
+  it('skips redundant writes', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasImageSmoothing(state, true);
+    const spy = vi.spyOn(state.context, 'imageSmoothingEnabled', 'set');
+    setCanvasImageSmoothing(state, true);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('writes again after a value change', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    setCanvasImageSmoothing(state, false);
+    setCanvasImageSmoothing(state, true);
+    expect(state.context.imageSmoothingEnabled).toBe(true);
   });
 });
