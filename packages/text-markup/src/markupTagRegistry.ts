@@ -128,7 +128,7 @@ function createMarkupSpanTagHandler(registry: Readonly<MarkupTagRegistry>): Mark
 // re-registering the handler. Color parsing goes through the seam only (`resolveMarkupHexColor` when
 // unset), which is what keeps the named-color table off this handler's import graph.
 function createMarkupFontTagHandler(registry: Readonly<MarkupTagRegistry>): MarkupTagHandler {
-  return (attributes: Readonly<Record<string, string>>): Partial<TextFormat> => {
+  return (attributes: Readonly<Record<string, string>>, enclosingFormat: Readonly<TextFormat>): Partial<TextFormat> => {
     const format: TextFormat = {};
     const color = attributes.color;
     if (color !== undefined) {
@@ -139,7 +139,11 @@ function createMarkupFontTagHandler(registry: Readonly<MarkupTagRegistry>): Mark
     const size = attributes.size;
     if (size !== undefined) {
       const parsed = parseMarkupNumber(size);
-      if (parsed !== null) format.size = parsed;
+      if (parsed !== null) {
+        const trimmed = size.trim();
+        const isRelative = trimmed.startsWith('+') || trimmed.startsWith('-');
+        format.size = isRelative && enclosingFormat.size !== undefined ? enclosingFormat.size + parsed : parsed;
+      }
     }
     const face = attributes.face ?? attributes.font;
     if (face !== undefined && face.length > 0) format.font = face;

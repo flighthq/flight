@@ -4,7 +4,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry';
-import { formatTextMarkup, parseTextMarkup } from './textMarkup';
+import { explainTextMarkup, formatTextMarkup, parseTextMarkup } from './textMarkup';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
   for (const range of content.formatRanges) {
@@ -12,6 +12,24 @@ function formatAt(content: RichTextContent, index: number): TextFormat {
   }
   return {};
 }
+
+describe('explainTextMarkup', () => {
+  it('reports unknown tags, unresolved colors, and sanitized href values as plain data', () => {
+    expect(
+      explainTextMarkup('<widget>x</widget><font color="mystery">y</font><a href="javascript:run()">z</a>'),
+    ).toEqual({
+      issues: [
+        { kind: 'unknown-tag', offset: 0, tag: 'widget', value: null },
+        { kind: 'unresolved-font-color', offset: 18, tag: 'font', value: 'mystery' },
+        { kind: 'unsafe-href', offset: 48, tag: 'a', value: 'javascript:run()' },
+      ],
+    });
+  });
+
+  it('returns no issues for fully represented safe markup', () => {
+    expect(explainTextMarkup('<b>x</b><a href="https://flight.dev">y</a>')).toEqual({ issues: [] });
+  });
+});
 
 describe('formatTextMarkup', () => {
   it('returns an empty string for empty content', () => {
@@ -74,6 +92,30 @@ describe('formatTextMarkup', () => {
     };
     expect(formatTextMarkup(content)).toBe('<li type="square">item</li>');
   });
+
+  it('resolves overlapping ranges by array order without allocating formats per character', () => {
+    const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
+      formatRanges: [
+        createTextFormatRange({ bold: true, color: 0xff0000ff }, 0, 5),
+        createTextFormatRange({ color: 0x0000ffff, italic: true }, 2, 4),
+      ],
+      text: 'abcde',
+    };
+    expect(formatTextMarkup(content)).toBe(
+      '<font color="#ff0000"><b>ab</b></font><font color="#0000ff"><b><i>cd</i></b></font><font color="#ff0000"><b>e</b></font>',
+    );
+  });
+
+  it('serializes resolved span classes as standard tags rather than retaining class names', () => {
+    const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
+      formatRanges: [createTextFormatRange({ bold: true }, 0, 1)],
+      text: 'x',
+    };
+    expect(formatTextMarkup(content)).toBe('<b>x</b>');
+    expect(formatTextMarkup(content)).not.toContain('class');
+  });
 });
 
 describe('parseTextMarkup', () => {
@@ -135,6 +177,13 @@ describe('parseTextMarkup', () => {
     expect(formatAt(parseTextMarkup('<font size="24" face="Arial">x</font>'), 0)).toEqual({ font: 'Arial', size: 24 });
   });
 
+  it('resolves relative font sizes against the enclosing absolute size', () => {
+    const content = parseTextMarkup('<font size="16">a<font size="+2">b</font><font size="-1">c</font></font>');
+    expect(formatAt(content, 0).size).toBe(16);
+    expect(formatAt(content, 1).size).toBe(18);
+    expect(formatAt(content, 2).size).toBe(15);
+  });
+
   it('ignores an unparseable font color rather than throwing', () => {
     expect(formatAt(parseTextMarkup('<font color="notacolor">x</font>'), 0).color).toBeUndefined();
   });
@@ -142,6 +191,12 @@ describe('parseTextMarkup', () => {
   it('parses anchors into url and target', () => {
     const format = formatAt(parseTextMarkup('<a href="https://a.test" target="_blank">x</a>'), 0);
     expect(format).toEqual({ target: '_blank', url: 'https://a.test' });
+  });
+
+  it('drops unsafe href schemes while retaining anchor text and harmless target metadata', () => {
+    const content = parseTextMarkup('<a href="java\nscript:run()" target="_blank">x</a>');
+    expect(content.text).toBe('x');
+    expect(formatAt(content, 0)).toEqual({ target: '_blank' });
   });
 
   it('parses p align into the align field', () => {
