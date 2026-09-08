@@ -2,6 +2,7 @@ import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } fr
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';
+import { getGlRenderStateRuntime } from './glRenderState';
 
 // Presents `target` onto `dest` (the canvas when null): the generic, subject-agnostic final step that
 // puts a finished render target on screen. It reads the target's DECLARED color space — 'linear' content
@@ -26,6 +27,7 @@ function getGlCopyProgram(state: GlRenderState): GlFullscreenProgram {
   if (program === undefined) {
     program = compileGlFullscreenProgram(state.gl, COPY_FRAGMENT_SRC);
     _programs.set(state.gl, program);
+    getGlRenderStateRuntime(state).context.teardowns.push((gl) => gl.deleteProgram(program!.program));
   }
   return program;
 }

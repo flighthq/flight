@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, getEntityRuntime, hasEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type {
@@ -7,6 +7,8 @@ import type {
   Rectangle,
   RenderProxy2D,
   RenderViewport2D,
+  HasBoundsRectangleRuntime,
+  HasTransform2DRuntime,
   Spatial2DNode,
 } from '@flighthq/types/contract';
 
@@ -91,7 +93,12 @@ export function isRenderProxyInViewport(
 // Nodes that pass through createRenderProxy2D carry both HasTransform2D and HasBoundsRectangle,
 // making them Spatial2DNode — the bounds runtime is guaranteed present.
 function isSpatial2DNode(source: unknown): source is Spatial2DNode {
-  return source !== null && typeof source === 'object' && 'pivotX' in source && 'skewX' in source;
+  if (source === null || typeof source !== 'object') return false;
+  if (!hasEntityRuntime(source as Parameters<typeof hasEntityRuntime>[0])) return false;
+  const runtime = getEntityRuntime(source as Parameters<typeof getEntityRuntime>[0]) as Partial<
+    HasBoundsRectangleRuntime & HasTransform2DRuntime
+  >;
+  return typeof runtime.computeLocalBoundsRectangle === 'function' && 'worldMatrix' in runtime;
 }
 
 // Module-level scratch rectangles used by isRenderableInViewport to avoid allocation on every call.

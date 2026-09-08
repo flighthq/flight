@@ -163,6 +163,7 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   if (quadVao === undefined) {
     quadVao = gl.createVertexArray()!;
     _quadVaos.set(gl, quadVao);
+    runtime.context.teardowns.push((ownerGl) => ownerGl.deleteVertexArray(quadVao!));
   }
   gl.bindVertexArray(quadVao);
 

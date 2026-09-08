@@ -1,6 +1,7 @@
 import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
+import { getGlRenderStateRuntime } from './glRenderState';
 
 // The linear->sRGB OETF present pass: encode a linear render-target texture into display sRGB as a
 // fullscreen pass. scene-gl materials write linear HDR radiance into an rgba16f target and tonemap
@@ -26,6 +27,7 @@ function getGlLinearToSrgbProgram(state: GlRenderState): GlFullscreenProgram {
   if (program === undefined) {
     program = compileGlFullscreenProgram(state.gl, LINEAR_TO_SRGB_FRAGMENT_SRC);
     _programs.set(state.gl, program);
+    getGlRenderStateRuntime(state).context.teardowns.push((gl) => gl.deleteProgram(program!.program));
   }
   return program;
 }
