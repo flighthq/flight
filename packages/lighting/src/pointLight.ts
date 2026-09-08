@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3 } from '@flighthq/geometry/contract';
 import type { PointLight, PointLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+import { ALL_LIGHT_LAYERS, PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a point light's data, including a fresh `position` vector.
 export function clonePointLight(source: Readonly<PointLight>): PointLight {
@@ -12,6 +12,8 @@ export function clonePointLight(source: Readonly<PointLight>): PointLight {
   out.enabled = source.enabled;
   out.intensity = source.intensity;
   out.intensityUnit = source.intensityUnit;
+  out.layerMask = source.layerMask;
+  out.priority = source.priority;
   out.kind = PointLightKind;
   out.normalBias = source.normalBias;
   out.pcfRadius = source.pcfRadius;
@@ -42,6 +44,8 @@ export function initializePointLight(out: EntityConstruction<PointLight>, option
   out.enabled = options?.enabled ?? true;
   out.intensity = options?.intensity ?? 1;
   out.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  out.layerMask = options?.layerMask ?? ALL_LIGHT_LAYERS;
+  out.priority = options?.priority ?? 0;
   out.kind = PointLightKind;
   out.normalBias = options?.normalBias ?? 0;
   out.pcfRadius = options?.pcfRadius ?? 0;

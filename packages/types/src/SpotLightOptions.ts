@@ -5,6 +5,10 @@ import type { Vector3Like } from './Vector3';
 // spot lights do not consume them.
 export interface SpotLightOptions {
   castsShadow?: boolean;
+  // Receiver layers this light affects. Default -1 (every layer).
+  layerMask?: number;
+  // Forward-budget ranking override, applied before contribution strength. Default 0.
+  priority?: number;
   // Packed sRGB RGBA (`0xRRGGBBAA`), seeding SpotLight.color. Default 0xffffffff.
   color?: number;
   // Distance falloff exponent. Defaults to the inverse-square value 2.

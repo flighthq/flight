@@ -145,3 +145,58 @@ describe('selectScene3DForwardLights', () => {
     expect(out.indices).toEqual([1, 0]);
   });
 });
+
+describe('selectScene3DForwardLights layer and priority policy', () => {
+  it('skips a light whose layerMask does not meet the receiver, freeing its budget slot', () => {
+    // The filter has to run BEFORE ranking: a light the receiver cannot see must not occupy a slot a
+    // visible light would have taken. Both lights here would otherwise be selected.
+    const visible = createPointLight({ intensity: 1, layerMask: 0b01, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const hidden = createPointLight({ intensity: 10, layerMask: 0b10, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [hidden, visible], spot: [] },
+      createBoundingSphere(0, 0, 0, 0),
+      0b01,
+    );
+    expect(out.point).toHaveLength(1);
+    expect(out.point[0]).toBe(visible);
+  });
+
+  it('lights every layer by default, so an unconfigured light is not silently dark', () => {
+    const light = createPointLight({ intensity: 1, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [light], spot: [] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point).toHaveLength(1);
+  });
+
+  it('ranks priority above contribution, so a key light outranks a brighter incidental one', () => {
+    const key = createPointLight({ intensity: 1, priority: 1, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const brighter = createPointLight({ intensity: 50, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [brighter, key], spot: [] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point[0]).toBe(key);
+  });
+
+  it('falls back to contribution within one priority, preserving the previous order exactly', () => {
+    // Every light at the default 0 must reproduce pure-contribution order, which is what makes the
+    // field additive rather than a behaviour change for existing scenes.
+    const dim = createPointLight({ intensity: 1, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const bright = createPointLight({ intensity: 50, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [dim, bright], spot: [] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point[0]).toBe(bright);
+  });
+});
