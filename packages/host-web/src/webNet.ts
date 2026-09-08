@@ -108,7 +108,9 @@ async function _readNetResponseWithProgress(
     emitSignal(progress, {
       phase: 'download',
       loaded: buffer.byteLength,
-      total: total >= 0 ? total : buffer.byteLength,
+      // Unknown totals stay 0 in both the streaming and buffer fallback paths. The loaded byte count
+      // becoming known after buffering does not retroactively make the response's declared total known.
+      total: total >= 0 ? total : 0,
     });
     return buffer;
   }
