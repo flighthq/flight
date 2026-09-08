@@ -2,7 +2,7 @@
 package: '@flighthq/application'
 status: solid
 score: 85
-updated: 2026-09-02
+updated: 2026-09-08
 ingested:
   - status.md
   - charter.md
@@ -22,7 +22,7 @@ Full re-survey of the live tree (2026-09-02). Supersedes the 2026-08-25 fast-ass
 
 ### Loop (`application.ts` — 420 lines, 19 exported functions)
 
-- **Lifecycle:** `createApplication` (Entity-backed via `createEntity`), `startApplicationLoop(host, app, options?)` over `HasAppLoop & HasAppVisibilityQuery`, `stopApplicationLoop`, `pauseApplicationLoop`/`resumeApplicationLoop` (pause re-seeds `lastTime = -1` to avoid dumping the gap), `stepApplicationLoop(app, deltaTime, options?)` for deterministic headless ticking, `isApplicationRunning`, `disposeApplication` (correct `dispose*`).
+- **Lifecycle:** `createApplication` (Entity-backed via `allocateEntity`/`finishEntity`), `startApplicationLoop(host, app, options?)` over `HasAppLoop & HasAppVisibilityQuery`, `stopApplicationLoop`, `pauseApplicationLoop`/`resumeApplicationLoop` (pause re-seeds `lastTime = -1` to avoid dumping the gap), `stepApplicationLoop(app, deltaTime, options?)` for deterministic headless ticking, `isApplicationRunning`, `disposeApplication` (correct `dispose*`).
 - **Fixed timestep:** `stepApplicationLoop` is now self-sufficient with explicit `ApplicationStepOptions` (`fixedTimeStep`, `maxDeltaTime`, `maxUpdatesPerFrame`). Accumulator drains in whole steps emitting `onFixedUpdate(fixedDeltaTime)`; `interpolationAlpha` = fractional remainder; iteration cap flushes residual (spiral guard). Residual carries across calls, including across variable-step interludes (`application.ts:259-269`). Prior review gap 1 is resolved.
 - **Metrics:** `deltaTime`/`elapsedTime`/`frameCount` maintained per tick; `getApplicationFrameRate` rolling 60-sample window. `maxDeltaTime` defaults to 250ms.
 - **Error isolation:** `invokeWithApplicationErrorHandling` wraps `onFixedUpdate`, `onUpdate`, and `onRender` emission. The triplicated guard from the prior review (gap 3) is now a single internal function used by both `startApplicationLoop` and `stepApplicationLoop` via `applyApplicationStep`.
@@ -54,7 +54,7 @@ Full re-survey of the live tree (2026-09-02). Supersedes the 2026-08-25 fast-ass
 
 ### Tests
 
-- **153 test cases** across 3 colocated test files (59 in `application.test.ts`, 89 in `window.test.ts`, 5 in `applicationRenderView.test.ts`).
+- **187 test cases** across 3 colocated test files (74 in `application.test.ts`, 107 in `window.test.ts`, 6 in `applicationRenderView.test.ts`). _(Counts refreshed 2026-09-08.)_
 - Tests use recording backends (`RecordingWindowBackend`, `RecordingFullscreenBackend`, etc.) and manual loop backends for deterministic control.
 - Every exported function has at least one `describe` block; `describe` blocks are alphabetized and mirror exported names.
 - The `computeWindowDeviceTransform` aliased-out test (read-before-write) is present.
@@ -94,7 +94,7 @@ Full re-survey of the live tree (2026-09-02). Supersedes the 2026-08-25 fast-ass
 - **Types-first:** All types (`Application`, `ApplicationWindow`, `ApplicationLoopOptions`, `ApplicationStepOptions`, `LoopBackend`, `WindowBackend`, `ApplicationRenderView`, `ApplicationRenderViewResize`, and the many `Has*` host traits) live in `@flighthq/types`. The implementation exports functions only. Satisfied.
 - **Export lanes:** Two blessed lanes (`.` and `./contract`), no subpath exports. Public lane is a selective re-export; contract lane is `export *`. Satisfied.
 - **Side-effect-free:** `sideEffects: false` declared. No top-level registrations, listeners, or mutations. Satisfied.
-- **Entity invariant:** `createApplication` and `createApplicationWindow` both use `createEntity`. `createApplicationRenderView` uses `createEntity` and `createEntityRuntime`. Satisfied (recently landed per status 2026-08-29).
+- **Entity invariant:** `createApplication`, `createApplicationWindow`, and `createApplicationRenderView` all use `allocateEntity`/`finishEntity`. Satisfied (ratified entity construction model).
 - **Naming:** Full unabbreviated type names in all exported functions. Globally unique names. Satisfied.
 - **Sentinels not throws:** `getApplicationMainWindow` returns `null`, `getApplicationFrameRate` returns `0`, `attachWindow` returns `boolean`. No throws for expected failures. Satisfied.
 - **`Readonly<>`:** Applied on parameters where appropriate (`Readonly<ApplicationLoopOptions>`, `Readonly<ApplicationStepOptions>`, `Readonly<ApplicationWindow>` on read-only params, `Readonly<WindowOptions>`). Satisfied.
@@ -103,10 +103,10 @@ Full re-survey of the live tree (2026-09-02). Supersedes the 2026-08-25 fast-ass
 
 ### Contract/docs revision candidates
 
-- **Charter "What it is" numbers** (70 exports / 2 files / 133 tests) are stale — should read 82 exports / 3 source files / 153 tests.
+- **Charter "What it is" numbers** (70 exports / 2 files / 133 tests) are stale — should read 82 exports / 3 source files / 187 tests.
 - **Charter North star 2** references `*Backend` seam "pending migration" for windowing — the migration has substantially landed with the `WindowOperationHost<Operation>` pattern and `Has*` trait injection. The note is stale.
 - **Prior review (this file, as of 2026-08-25)** references `getWindowDisplay` returning `-1` and a `getWindowBackend`/`setWindowBackend`/`createWebWindowBackend` seam — both removed (commit `3cca7a65a` "remove absent display lookup" and the host-injection refactor). These are no longer in the tree.
-- **Assessment Directed item 5** ("Complete the Entity constructor invariant") is fully landed per status 2026-08-29 — both `Application` and `ApplicationWindow` now use `createEntity`. This should be marked LANDED.
+- **Assessment Directed item 5** ("Complete the Entity constructor invariant") is fully landed — all three factories use `allocateEntity`/`finishEntity` under the ratified entity construction model. This should be marked LANDED.
 
 ## Candidate open directions
 

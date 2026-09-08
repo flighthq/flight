@@ -2,7 +2,7 @@
 package: '@flighthq/camera'
 status: solid
 score: 84
-updated: 2026-09-02
+updated: 2026-09-08
 ingested:
   - charter.md
   - status.md
@@ -15,7 +15,7 @@ ingested:
 
 ## Verdict
 
-**Solid -- 84/100.** The package is the unified 2D and 3D camera math domain: projection descriptors (perspective, orthographic), view-matrix construction, view-projection composition, picking rays, world/screen projection, frustum extraction and culling predicates, frustum corners, basis/eye extraction, linear-depth recovery, directional-shadow framing, parallax, zoom-to-cursor, and visible-bounds culling for Camera2D. 102 unit tests pass across 17 colocated test files covering every source module. The delegation fix from the prior review's scene-gl finding has landed (glMeshProgram now calls `getCamera3DPosition`), and `getCamera3DLinearDepth` correctly branches on projection kind. Two points above the prior review: the migration is complete and depth recovery is projection-aware. The remaining gaps are additive projection models (off-axis, reversed-Z, infinite-far), the Camera2D Entity invariant, one per-call allocation in frustumCorners, and a stale comment.
+**Solid -- 84/100.** _(Stale items retired 2026-09-08: Camera2D and projection descriptors are now Entity-backed — gaps 3–4 and open direction 3 resolved. A re-score is warranted.)_ The package is the unified 2D and 3D camera math domain: projection descriptors (perspective, orthographic), view-matrix construction, view-projection composition, picking rays, world/screen projection, frustum extraction and culling predicates, frustum corners, basis/eye extraction, linear-depth recovery, directional-shadow framing, parallax, zoom-to-cursor, and visible-bounds culling for Camera2D. The delegation fix from the prior review's scene-gl finding has landed (glMeshProgram now calls `getCamera3DPosition`), and `getCamera3DLinearDepth` correctly branches on projection kind. All `create*` factories use `allocateEntity`/`finishEntity`. The remaining gaps are additive projection models (off-axis, reversed-Z, infinite-far), one per-call allocation in frustumCorners, and a stale comment.
 
 ## Present capabilities
 
@@ -55,9 +55,9 @@ Concrete absences relative to AAA camera-math completeness and the charter's in-
 
 2. **No reversed-Z or infinite-far perspective.** Also in scope per charter (2026-07-03 decision). `getCamera3DLinearDepth` (`depth.ts:29`) assumes `[-1, 1]` NDC range. Status.md notes this is blocked on the depth-range convention shared with `render-gl` / `render-wgpu`.
 
-3. **Camera2D is not Entity-backed.** `createCamera2D` (`camera2d.ts:7-20`) returns a plain structural object, not an Entity. `Camera2D` (`types/src/Camera2D.ts:13`) does not extend Entity. This violates the repository-wide `create*` -> Entity invariant and the directed assessment item #3.
+3. **~~Camera2D is not Entity-backed.~~** — resolved 2026-09-08. `createCamera2D` now uses `allocateEntity`/`finishEntity`.
 
-4. **Projection descriptors are non-Entity plain objects.** `createOrthographicProjection` and `createPerspectiveProjection` (`projection.ts:14,24`) return `{kind, ...fields}` literals. Under the `create*` = Entity rule, they must either become Entity-backed or adopt a non-`create*` vocabulary (e.g. a descriptor name). Same directed item #3.
+4. **~~Projection descriptors are non-Entity plain objects.~~** — resolved 2026-09-08. `createOrthographicProjection` and `createPerspectiveProjection` now return `& Entity` via `allocateEntity`/`finishEntity`.
 
 5. **`getCamera3DFrustumCorners` allocates on every call.** `frustumCorners.ts:34` builds a fresh `ndcCorners` array literal and `:45-58` pushes eight `[wx,wy,wz]` triples into a fresh `results` array. The file already has module-level matrix scratch (`:70-71`); these two arrays should receive the same treatment or the eight intermediate results should be computed into local scalars before writing `out`.
 
@@ -102,7 +102,7 @@ Questions the charter does not answer that this review had to assume or leave op
 
 2. **Is the `PerspectiveProjection.aspect` stored field intended to survive?** It is written by `setCamera3DAspect` but never read by any camera function (the `aspect` parameter always wins). Either it should become the default when no argument is supplied, or it should be removed and `setCamera3DAspect` dropped. The charter does not rule on this.
 
-3. **Should `Camera2D` extend Entity?** The charter records the 2026-07-15 merge decision but does not address whether Camera2D takes on the Entity invariant. Camera3D extends Entity and `createCamera3D` calls `createEntity`; Camera2D does not. The assessment's directed item #3 names this but the charter carries no matching decision.
+3. **~~Should `Camera2D` extend Entity?~~** — resolved 2026-09-08. `Camera2D` is now Entity-backed; `createCamera2D` uses `allocateEntity`/`finishEntity`.
 
 4. **Is an oblique clip plane in scope?** Portal/mirror/water-reflection cameras typically need `setCamera3DObliqueClipPlane`, which modifies the near plane of the projection matrix. The charter says nothing about it.
 
