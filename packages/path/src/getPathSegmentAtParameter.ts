@@ -1,6 +1,34 @@
 import type { Path, Vector2Like } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
+// Returns the signed curvature κ at parameter `t` on a cubic bezier.
+// κ = (B'x·B''y − B'y·B''x) / |B'|³. Positive = left turn in y-down screen space.
+// Returns 0 at degenerate points where the tangent vanishes.
+export function getCubicBezierCurvature(
+  x0: number,
+  y0: number,
+  c1x: number,
+  c1y: number,
+  c2x: number,
+  c2y: number,
+  x1: number,
+  y1: number,
+  t: number,
+): number {
+  const u = 1 - t;
+  const u2 = u * u;
+  const t2 = t * t;
+  const dx = 3 * (u2 * (c1x - x0) + 2 * u * t * (c2x - c1x) + t2 * (x1 - c2x));
+  const dy = 3 * (u2 * (c1y - y0) + 2 * u * t * (c2y - c1y) + t2 * (y1 - c2y));
+  const ddx = 6 * (u * (c2x - 2 * c1x + x0) + t * (x1 - 2 * c2x + c1x));
+  const ddy = 6 * (u * (c2y - 2 * c1y + y0) + t * (y1 - 2 * c2y + c1y));
+  const cross = dx * ddy - dy * ddx;
+  const speed2 = dx * dx + dy * dy;
+  const speed = Math.sqrt(speed2);
+  if (speed === 0) return 0;
+  return cross / (speed2 * speed);
+}
+
 // Returns the point at parameter `t` (0..1) on a cubic bezier
 // P0 → C1 → C2 → P1 using de Casteljau. Writes into `out`.
 export function getCubicBezierPoint(
@@ -48,6 +76,16 @@ export function getCubicBezierTangent(
   return out;
 }
 
+// Returns the signed curvature at parameter `t` on the n-th segment of `path`. Lines return 0.
+// Returns `null` if `segmentIndex` is out of range.
+export function getPathSegmentCurvatureAtParameter(
+  path: Readonly<Path>,
+  segmentIndex: number,
+  t: number,
+): number | null {
+  return walkPathSegmentCurvature(path, segmentIndex, t);
+}
+
 // Evaluates the point at parameter `t` on the n-th segment of `path` (0-indexed, counting
 // segments in path-walk order: MOVE_TO does not count as a segment; LINE_TO, CURVE_TO,
 // CUBIC_CURVE_TO each count as one). Writes into `out`. Returns `true` on success; `false` if
@@ -74,6 +112,30 @@ export function getPathSegmentTangentAtParameter(
   out: Vector2Like,
 ): boolean {
   return walkPathSegment(path, segmentIndex, t, out, true);
+}
+
+// Returns the signed curvature κ at parameter `t` on a quadratic bezier.
+// The second derivative is constant: B''(t) = 2(P1 − 2C + P0).
+// Returns 0 at degenerate points where the tangent vanishes.
+export function getQuadraticBezierCurvature(
+  x0: number,
+  y0: number,
+  cx: number,
+  cy: number,
+  x1: number,
+  y1: number,
+  t: number,
+): number {
+  const u = 1 - t;
+  const dx = 2 * (u * (cx - x0) + t * (x1 - cx));
+  const dy = 2 * (u * (cy - y0) + t * (y1 - cy));
+  const ddx = 2 * (x1 - 2 * cx + x0);
+  const ddy = 2 * (y1 - 2 * cy + y0);
+  const cross = dx * ddy - dy * ddx;
+  const speed2 = dx * dx + dy * dy;
+  const speed = Math.sqrt(speed2);
+  if (speed === 0) return 0;
+  return cross / (speed2 * speed);
 }
 
 // Returns the point at parameter `t` (0..1) on a quadratic bezier defined by (x0,y0) → (cx,cy) → (x1,y1).
@@ -213,4 +275,66 @@ function walkPathSegment(
     }
   }
   return false;
+}
+
+function walkPathSegmentCurvature(path: Readonly<Path>, segmentIndex: number, t: number): number | null {
+  const commands = path.commands;
+  const data = path.data;
+  let currentSegment = 0;
+  let x = 0;
+  let y = 0;
+  let di = 0;
+  for (let ci = 0; ci < commands.length; ci++) {
+    const command = commands[ci];
+    if (command === PathCommand.MOVE_TO) {
+      x = data[di];
+      y = data[di + 1];
+      di += 2;
+    } else if (command === PathCommand.WIDE_MOVE_TO) {
+      x = data[di + 2];
+      y = data[di + 3];
+      di += 4;
+    } else if (command === PathCommand.LINE_TO) {
+      di += 2;
+      if (currentSegment === segmentIndex) return 0;
+      x = data[di - 2];
+      y = data[di - 1];
+      currentSegment++;
+    } else if (command === PathCommand.WIDE_LINE_TO) {
+      di += 4;
+      if (currentSegment === segmentIndex) return 0;
+      x = data[di - 2];
+      y = data[di - 1];
+      currentSegment++;
+    } else if (command === PathCommand.CURVE_TO) {
+      const cx = data[di];
+      const cy = data[di + 1];
+      const x1 = data[di + 2];
+      const y1 = data[di + 3];
+      di += 4;
+      if (currentSegment === segmentIndex) {
+        return getQuadraticBezierCurvature(x, y, cx, cy, x1, y1, t);
+      }
+      x = x1;
+      y = y1;
+      currentSegment++;
+    } else if (command === PathCommand.CUBIC_CURVE_TO) {
+      const c1x = data[di];
+      const c1y = data[di + 1];
+      const c2x = data[di + 2];
+      const c2y = data[di + 3];
+      const x1 = data[di + 4];
+      const y1 = data[di + 5];
+      di += 6;
+      if (currentSegment === segmentIndex) {
+        return getCubicBezierCurvature(x, y, c1x, c1y, c2x, c2y, x1, y1, t);
+      }
+      x = x1;
+      y = y1;
+      currentSegment++;
+    } else if (command === PathCommand.CLOSE) {
+      // CLOSE is not a parametric segment.
+    }
+  }
+  return null;
 }
