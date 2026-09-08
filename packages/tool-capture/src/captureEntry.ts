@@ -16,7 +16,7 @@ import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
 import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { getBaselineField, setBaselineField } from './baselineStore.js';
+import { getBaselineField, setBaselineCaptureEvidence, setBaselineField } from './baselineStore.js';
 import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBuildIdentity } from './captureBuildIdentity.js';
@@ -708,10 +708,23 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
             `refusing to baseline ${entry.name}/${renderer}: capture produced the known blank frame (${hash.slice(0, 12)}…). Re-run where the backend can actually present, or fix the render.`,
           );
         }
-        // Record what produced THIS hash, stamped against sha256 specifically — the fingerprint is
-        // written by a different pass and carries its own. Value and provenance share one store write,
-        // so a crash cannot leave a fresh hash attributed to an older capture's conditions.
-        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash, captureProvenance);
+        if (verifiedFingerprint === null) {
+          // Pages without Flight's verifier can contribute only the screenshot hash. Keep supporting
+          // those external/example targets without inventing a fingerprint for pixels they did not
+          // publish through the verification bridge.
+          setBaselineField(root, tool, entry.name, renderer, 'sha256', hash, captureProvenance);
+        } else {
+          // Both values describe the same decoded frame and share the provenance object constructed
+          // above. Replace them atomically: sequential field writes cannot refresh a fully-stamped
+          // baseline after source changes because either first write would temporarily create a
+          // provenance mismatch and must correctly be refused by the store.
+          setBaselineCaptureEvidence(root, tool, entry.name, renderer, {
+            fingerprint: verifiedFingerprint,
+            fingerprintProvenance: captureProvenance,
+            sha256: hash,
+            sha256Provenance: captureProvenance,
+          });
+        }
         baselineHash = hash;
         changed = false;
       } else {
