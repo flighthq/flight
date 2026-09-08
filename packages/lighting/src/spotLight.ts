@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { SpotLight, SpotLightConeAngles, SpotLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+import { ALL_LIGHT_LAYERS, SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
 export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
@@ -14,6 +14,8 @@ export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
   out.innerConeCos = source.innerConeCos;
   out.intensity = source.intensity;
   out.intensityUnit = source.intensityUnit;
+  out.layerMask = source.layerMask;
+  out.priority = source.priority;
   out.kind = SpotLightKind;
   out.normalBias = source.normalBias;
   out.outerConeCos = source.outerConeCos;
@@ -58,6 +60,8 @@ export function initializeSpotLight(light: EntityConstruction<SpotLight>, option
   light.innerConeCos = 1;
   light.intensity = options?.intensity ?? 1;
   light.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  light.layerMask = options?.layerMask ?? ALL_LIGHT_LAYERS;
+  light.priority = options?.priority ?? 0;
   light.kind = SpotLightKind;
   light.normalBias = options?.normalBias ?? 0;
   light.outerConeCos = 1;

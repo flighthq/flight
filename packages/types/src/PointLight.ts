@@ -20,6 +20,17 @@ export interface PointLight extends Light {
   enabled: boolean;
   intensity: number;
   intensityUnit: LightUnit;
+  // Which receiver layers this light affects, as a bitmask. A light contributes to a receiver only when
+  // the two masks share a bit, so a light can be scoped to a subset of the scene without moving it. All
+  // bits set (-1) is "every layer", which is what an unconfigured light means — the default must not be
+  // 0, which would silently light nothing.
+  layerMask: number;
+  // Author's ranking override for forward-budget selection, applied BEFORE contribution strength. A
+  // key light with priority 1 outranks a brighter incidental light at 0, which is the whole point:
+  // contribution alone drops the light the scene is *about* when something closer is briefly brighter.
+  // Equal priorities fall through to contribution, so leaving every light at 0 preserves the previous
+  // pure-contribution behaviour exactly.
+  priority: number;
   kind: 'PointLight';
   normalBias: number;
   pcfRadius: number;
