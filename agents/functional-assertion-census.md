@@ -7,11 +7,11 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 371 |
+| able | 372 |
 | blind | 0 |
 | gap | 0 |
 | exempt | 0 |
-| **total** | **371** |
+| **total** | **372** |
 
 `able` means at least one throw threshold depends on a named sample point, spatial bound or
 neighbourhood, or multiple distinct call-site regions. `blind` means its thresholds use only
@@ -208,6 +208,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/material-matcap.webgpu.ts` | able | L147: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-normal.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-normal.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-pbr-extension-composition.webgl.ts` | able | L234: getBitmapPixelLuminance is thresholded at named coordinates (centerX, centerY) |
 | `functional/scenes/material-phong.webgl.ts` | able | L180: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-phong.webgpu.ts` | able | L171: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-sheen.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
