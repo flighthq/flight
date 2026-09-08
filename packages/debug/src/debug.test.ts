@@ -85,6 +85,29 @@ describe('disableDebug', () => {
     expect(getLogChannelLevel('render')).toBeNull();
   });
 
+  it('preserves channel overrides the caller set before the session', () => {
+    setLogChannelLevel('unrelated', LogLevel.Error);
+    registerDebugSubsystem('render', { channels: ['render'] });
+    enableDebug({ subsystems: ['render'], sink: createMemoryLogSink(1).sink });
+
+    expect(getLogChannelLevel('render')).toBe(LogLevel.Debug);
+
+    disableDebug();
+    expect(getLogChannelLevel('render')).toBeNull();
+    expect(getLogChannelLevel('unrelated')).toBe(LogLevel.Error);
+  });
+
+  it('restores a pre-existing override on a channel debug also raised', () => {
+    setLogChannelLevel('render', LogLevel.Warn);
+    registerDebugSubsystem('render', { channels: ['render'] });
+    enableDebug({ subsystems: ['render'], level: LogLevel.Verbose, sink: createMemoryLogSink(1).sink });
+
+    expect(getLogChannelLevel('render')).toBe(LogLevel.Verbose);
+
+    disableDebug();
+    expect(getLogChannelLevel('render')).toBe(LogLevel.Warn);
+  });
+
   it('is a no-op when debug is not enabled', () => {
     expect(isDebugEnabled()).toBe(false);
     expect(() => disableDebug()).not.toThrow();
