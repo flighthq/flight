@@ -1,4 +1,4 @@
-import type { LightUnit } from '@flighthq/types/contract';
+import type { LightUnit, PhotometricLightLike } from '@flighthq/types/contract';
 import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Scales a light intensity by an exposure value in photographic stops: each +1 EV doubles the
@@ -36,6 +36,26 @@ export function convertLightIntensity(fromUnit: LightUnit, toUnit: LightUnit, va
 // model lands; they are chosen to be memorable and to land typical values near 1, not to be exact.
 export function getLightLinearIntensity(unit: LightUnit, value: number): number {
   return value * LINEAR_PER_UNIT[unit];
+}
+
+// Reads a light's intensity back in the photometric unit it was authored in. This is the accessor that
+// connects `intensityUnit` to the light carrying it: without it, a descriptor's unit is a label nothing
+// consumes, and a caller wanting "how many lux is this sun" has to remember the anchor and divide by
+// hand. A `Unitless` light returns its linear intensity unchanged, because that IS its authored reading.
+//
+// Exact inverse of setLightPhotometricIntensity, so a round trip returns the original value.
+export function getLightPhotometricIntensity(light: Readonly<PhotometricLightLike>): number {
+  return convertLightIntensity(UnitlessLightUnit, light.intensityUnit, light.intensity);
+}
+
+// Writes a light's intensity from a reading in the unit the light declares. The stored `intensity` stays
+// the dimensionless multiplier the shaders consume — this converts on the way in rather than teaching
+// the render path about units, which is the same split getLightLinearIntensity already draws.
+//
+// Reads `intensityUnit` before writing `intensity`, so passing the light as its own source is safe.
+export function setLightPhotometricIntensity(out: PhotometricLightLike, value: number): void {
+  const unit = out.intensityUnit;
+  out.intensity = getLightLinearIntensity(unit, value);
 }
 
 // The renderer-linear multiplier produced by one unit of each LightUnit. Unitless is the native
