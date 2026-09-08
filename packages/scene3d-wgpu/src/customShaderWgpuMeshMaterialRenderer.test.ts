@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
@@ -46,7 +46,7 @@ function makeCamera(): Camera3D {
   return createCamera3D({
     far: 100,
     near: 0.1,
-    projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
   });
 }
 

@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type { Scene3DLightBlock } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
@@ -40,7 +40,7 @@ describe('shadedWgpuMeshMaterialRenderer', () => {
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
-      projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+      projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
     });
     shadedWgpuMeshMaterialRenderer.bind(state, createShadedMaterial(), LIGHTS, camera);
     const module = fake.calls.find((call) => call.name === 'createShaderModule');

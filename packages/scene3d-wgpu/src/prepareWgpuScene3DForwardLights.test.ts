@@ -1,4 +1,8 @@
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import {
+  createCamera3D,
+  createPerspectiveProjection,
+  setCamera3DViewMatrix4FromLookAt,
+} from '@flighthq/camera/contract';
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
@@ -14,7 +18,7 @@ function camera(): Camera3D {
   const result = createCamera3D({
     far: 100,
     near: 0.1,
-    projection: { aspect: 1, fovY: Math.PI / 2, kind: 'perspective' },
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 2 }),
   });
   setCamera3DViewMatrix4FromLookAt(result, { x: 4, y: 0, z: 20 }, { x: 4, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return result;

@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type { Camera3D, Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
@@ -10,7 +10,11 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 // the backdrop pass — mirroring scene-gl's skybox test.
 
 function makeCamera(): Camera3D {
-  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
 }
 
 function completeEnvironment(): Environment {

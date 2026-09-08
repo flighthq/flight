@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
@@ -57,7 +57,11 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 
 function makeCamera(): Camera3D {
-  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
 }
 
 function makeLights(): Scene3DLightBlock {
@@ -1148,7 +1152,7 @@ describe('writeWgpuFrameUniform', () => {
     const camera = createCamera3D({
       far: 11,
       near: 1,
-      projection: { halfHeight: 1, halfWidth: 1, kind: 'orthographic' },
+      projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
     });
     writeWgpuFrameUniform(state, camera, makeLights());
 

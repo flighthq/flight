@@ -2,6 +2,7 @@ import {
   configureDirectionalShadowCamera3D,
   createCamera3D,
   createOrthographicProjection,
+  createPerspectiveProjection,
   getOrthographicProjectionTexelSize,
 } from '@flighthq/camera/contract';
 import { createAabb, createMatrix4, createVector3 } from '@flighthq/geometry/contract';
@@ -52,7 +53,7 @@ function makeShadowCamera(): Camera3D {
   const camera = createCamera3D({
     far: 10,
     near: 0.1,
-    projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
   });
   configureDirectionalShadowCamera3D(camera, { x: 0, y: -1, z: -1 }, createAabb(-1, -1, -1, 1, 1, 1));
   return camera;
@@ -196,7 +197,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
-      projection: { aspect: 1, fovY: Math.PI / 4, kind: 'perspective' },
+      projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 4 }),
     });
 
     expect(() => drawWgpuScene3DShadowMap(state, makeShadowScene3D(), camera, SHADOW_LIGHT)).toThrow(
@@ -347,7 +348,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
-      projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+      projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
     });
     drawWgpuScene3D(state, scene, camera, LIGHTS);
 
