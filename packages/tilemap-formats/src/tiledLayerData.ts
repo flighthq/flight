@@ -1,4 +1,9 @@
-import type { TiledCompression, TiledInflate } from '@flighthq/types/contract';
+import type {
+  TiledCompression,
+  TiledInflate,
+  TiledLayerDataExplanation,
+  TiledLayerDataFailure,
+} from '@flighthq/types/contract';
 
 // Decodes the two textual encodings Tiled uses for a tile layer's `<data>`/`data` payload into a flat
 // array of raw 32-bit GIDs (row-major, flip bits intact). The `xml`/array forms are handled inline by
@@ -15,9 +20,15 @@ export function decodeTiledBase64Layer(
 ): Uint32Array | null {
   let bytes = decodeBase64(text);
   if (compression !== null) {
-    if (inflate === undefined) return null;
+    if (inflate === undefined) {
+      _guard?.('compressed-without-inflate', compression);
+      return null;
+    }
     const inflated = inflate(bytes, compression);
-    if (inflated === null) return null;
+    if (inflated === null) {
+      _guard?.('inflate-failed', compression);
+      return null;
+    }
     bytes = inflated;
   }
   const count = bytes.length >>> 2;
@@ -42,6 +53,32 @@ export function decodeTiledCsvLayer(text: string): Uint32Array {
   return Uint32Array.from(out);
 }
 
+// Explains whether an encoded layer payload decodes, and when it does not, which of the two causes it
+// was. `decodeTiledBase64Layer` collapses both into `null`, and they call for opposite fixes: a missing
+// seam is the caller's wiring, a failing seam is the payload. Separately importable and pure — it
+// re-runs the decode rather than retaining anything, so a build that never asks carries none of it.
+export function explainTiledLayerData(
+  text: string,
+  compression: TiledCompression | null,
+  inflate?: TiledInflate,
+): TiledLayerDataExplanation {
+  if (compression === null) return { preservedAsZeroGrid: false, reason: 'decoded' };
+  if (inflate === undefined) return { preservedAsZeroGrid: true, reason: 'compressed-without-inflate' };
+  const inflated = inflate(decodeBase64(text), compression);
+  if (inflated === null) return { preservedAsZeroGrid: true, reason: 'inflate-failed' };
+  return { preservedAsZeroGrid: false, reason: 'decoded' };
+}
+
+// Installs the caller-facing guard invoked when an encoded layer payload cannot be decoded and is
+// preserved as an all-zero grid. The core carries the seam and never the message:
+// `@flighthq/tilemap-formats` has no dependency on `@flighthq/log`, and the wording lives in the
+// separately-importable `enableTilemapFormatsGuards`.
+export function setTiledLayerDataGuard(
+  guard: ((reason: TiledLayerDataFailure, compression: TiledCompression) => void) | null,
+): void {
+  _guard = guard;
+}
+
 // Portable base64 decode that works in Node.js (Vitest) and browsers alike, avoiding the
 // browser-only atob() global. Non-base64 characters (whitespace, newlines) are stripped first.
 function decodeBase64(s: string): Uint8Array {
@@ -61,3 +98,5 @@ function decodeBase64(s: string): Uint8Array {
 }
 
 const BASE64_TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+let _guard: ((reason: TiledLayerDataFailure, compression: TiledCompression) => void) | null = null;

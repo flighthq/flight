@@ -10,6 +10,15 @@ import type {
 
 import { formatTiledColor } from './tiledColor';
 
+// Re-emits a standalone tileset as a TSX document. Same writer as an embedded tileset, minus the
+// `firstgid` a standalone file has no map to be positioned in. Pairs with parseTiledTileset, so a TSX
+// sidecar round-trips through the codec the way a TMX map already does.
+export function formatTiledTileset(tileset: Readonly<TiledTileset>): string {
+  const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>'];
+  writeTileset(lines, tileset, null);
+  return lines.join('\n');
+}
+
 // Re-emits a `TiledMap` as TMX XML, lossless for the modeled fields so that
 // `parseTiledTmx(formatTiledTmx(map))` reproduces `map`. Tile layers are written as CSV `<data>`
 // (the raw GIDs, flip bits intact). Fields the document does not model — Tiled editor chrome, wang
@@ -25,6 +34,9 @@ export function formatTiledTmx(map: Readonly<TiledMap>): string {
   open += attr('tilewidth', map.tileWidth) + attr('tileheight', map.tileHeight);
   open += attr('infinite', map.infinite ? 1 : 0);
   if (map.backgroundColor !== null) open += attr('backgroundcolor', formatTiledColor(map.backgroundColor));
+  if (map.staggerAxis !== null) open += attr('staggeraxis', map.staggerAxis);
+  if (map.staggerIndex !== null) open += attr('staggerindex', map.staggerIndex);
+  if (map.hexSideLength !== null) open += attr('hexsidelength', map.hexSideLength);
   lines.push(`${open}>`);
 
   for (const ref of map.tilesets) writeTilesetRef(lines, ref);
@@ -49,6 +61,12 @@ function formatLayerBaseAttrs(layer: Readonly<TiledLayer>): string {
   if (!layer.visible) out += attr('visible', 0);
   if (layer.offsetX !== 0) out += attr('offsetx', layer.offsetX);
   if (layer.offsetY !== 0) out += attr('offsety', layer.offsetY);
+  // Each of these is emitted only when it differs from Tiled's default, so a document that declared
+  // none re-emits without them — otherwise a round trip would grow attributes the source never had.
+  if (layer.tintColor !== null) out += attr('tintcolor', formatTiledColor(layer.tintColor));
+  if (layer.parallaxX !== 1) out += attr('parallaxx', layer.parallaxX);
+  if (layer.parallaxY !== 1) out += attr('parallaxy', layer.parallaxY);
+  if (layer.class !== '') out += attr('class', layer.class);
   return out;
 }
 
@@ -74,7 +92,10 @@ function writeLayer(lines: string[], layer: Readonly<TiledLayer>): void {
     return;
   }
   if (layer.type === 'imagelayer') {
-    lines.push(`<imagelayer${base}>`);
+    let imageOpen = `<imagelayer${base}`;
+    if (layer.repeatX) imageOpen += attr('repeatx', 1);
+    if (layer.repeatY) imageOpen += attr('repeaty', 1);
+    lines.push(`${imageOpen}>`);
     lines.push(`<image${attr('source', layer.image)}/>`);
     writeProperties(lines, layer.properties);
     lines.push('</imagelayer>');
@@ -94,6 +115,8 @@ function writeObject(lines: string[], object: Readonly<TiledObject>): void {
   open += attr('x', object.x) + attr('y', object.y);
   if (object.width !== 0) open += attr('width', object.width);
   if (object.height !== 0) open += attr('height', object.height);
+  if (object.rotation !== 0) open += attr('rotation', object.rotation);
+  if (!object.visible) open += attr('visible', 0);
 
   const hasBody =
     object.point ||
@@ -126,13 +149,22 @@ function writeProperties(lines: string[], properties: readonly TiledProperty[]):
   lines.push('</properties>');
 }
 
-function writeTileset(lines: string[], tileset: Readonly<TiledTileset>, firstGid: number): void {
-  let open = `<tileset${attr('firstgid', firstGid)}${attr('name', tileset.name)}`;
+// `firstGid` is null for a standalone TSX document, where the tileset owns no place in a map's GID
+// space. That is the only difference between the embedded and standalone forms, which is why
+// formatTiledTileset shares this writer rather than duplicating it.
+function writeTileset(lines: string[], tileset: Readonly<TiledTileset>, firstGid: number | null): void {
+  let open = '<tileset';
+  if (firstGid !== null) open += attr('firstgid', firstGid);
+  open += attr('name', tileset.name);
   open += attr('tilewidth', tileset.tileWidth) + attr('tileheight', tileset.tileHeight);
   open += attr('tilecount', tileset.tileCount) + attr('columns', tileset.columns);
   if (tileset.margin !== 0) open += attr('margin', tileset.margin);
   if (tileset.spacing !== 0) open += attr('spacing', tileset.spacing);
+  if (tileset.objectAlignment !== 'unspecified') open += attr('objectalignment', tileset.objectAlignment);
   lines.push(`${open}>`);
+  if (tileset.tileOffsetX !== 0 || tileset.tileOffsetY !== 0) {
+    lines.push(`<tileoffset${attr('x', tileset.tileOffsetX)}${attr('y', tileset.tileOffsetY)}/>`);
+  }
   if (tileset.image !== null) {
     lines.push(
       `<image${attr('source', tileset.image)}${attr('width', tileset.imageWidth)}${attr('height', tileset.imageHeight)}/>`,

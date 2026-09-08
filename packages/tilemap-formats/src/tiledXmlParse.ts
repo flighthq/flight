@@ -5,7 +5,10 @@ import type {
   TiledLayer,
   TiledMap,
   TiledObject,
+  TiledObjectAlignment,
   TiledOrientation,
+  TiledStaggerAxis,
+  TiledStaggerIndex,
   TiledParseOptions,
   TiledProperty,
   TiledPropertyType,
@@ -103,6 +106,7 @@ export function parseTiledTmx(
   }
 
   const background = getXmlElementAttribute(root, 'backgroundcolor');
+  const hexSide = getXmlElementAttribute(root, 'hexsidelength');
   return {
     backgroundColor: background !== null ? parseTiledColor(background) : null,
     height: attrNumber(root, 'height', 0),
@@ -113,6 +117,9 @@ export function parseTiledTmx(
     renderOrder: asRenderOrder(getXmlElementAttribute(root, 'renderorder')),
     tileHeight: attrNumber(root, 'tileheight', 0),
     tileWidth: attrNumber(root, 'tilewidth', 0),
+    hexSideLength: hexSide !== null ? Number(hexSide) : null,
+    staggerAxis: asStaggerAxis(getXmlElementAttribute(root, 'staggeraxis')),
+    staggerIndex: asStaggerIndex(getXmlElementAttribute(root, 'staggerindex')),
     tiledVersion: getXmlElementAttribute(root, 'tiledversion'),
     tilesets,
     version: attrString(root, 'version', '1.0'),
@@ -144,16 +151,26 @@ function buildTiledLayerBaseFromXml(element: Readonly<XmlElement>): {
   offsetX: number;
   offsetY: number;
   opacity: number;
+  parallaxX: number;
+  parallaxY: number;
   properties: readonly TiledProperty[];
+  tintColor: number | null;
   visible: boolean;
+  class: string;
 } {
+  const tint = getXmlElementAttribute(element, 'tintcolor');
   return {
+    class: attrString(element, 'class', ''),
     id: attrNumber(element, 'id', 0),
     name: attrString(element, 'name', ''),
     offsetX: attrNumber(element, 'offsetx', 0),
     offsetY: attrNumber(element, 'offsety', 0),
     opacity: attrNumber(element, 'opacity', 1),
+    // 1 is lockstep with the camera, so an absent attribute defaults to 1 rather than 0.
+    parallaxX: attrNumber(element, 'parallaxx', 1),
+    parallaxY: attrNumber(element, 'parallaxy', 1),
     properties: buildTiledPropertiesFromXml(element),
+    tintColor: tint !== null ? parseTiledColor(tint) : null,
     visible: attrBool(element, 'visible', true),
   };
 }
@@ -196,7 +213,13 @@ function buildTiledLayerFromXml(
   }
   if (element.name === 'imagelayer') {
     const image = getXmlElementChildByName(element, 'image');
-    return { ...base, image: image !== null ? attrString(image, 'source', '') : '', type: 'imagelayer' };
+    return {
+      ...base,
+      image: image !== null ? attrString(image, 'source', '') : '',
+      repeatX: attrBool(element, 'repeatx', false),
+      repeatY: attrBool(element, 'repeaty', false),
+      type: 'imagelayer',
+    };
   }
   if (element.name === 'group') {
     const layers: TiledLayer[] = [];
@@ -281,7 +304,9 @@ function buildTiledObjectFromXml(element: Readonly<XmlElement>): TiledObject {
     polygon: polygon !== null ? parseTiledPoints(attrString(polygon, 'points', '')) : null,
     polyline: polyline !== null ? parseTiledPoints(attrString(polyline, 'points', '')) : null,
     properties: buildTiledPropertiesFromXml(element),
+    rotation: attrNumber(element, 'rotation', 0),
     type: attrString(element, 'type', attrString(element, 'class', '')),
+    visible: attrBool(element, 'visible', true),
     width: attrNumber(element, 'width', 0),
     x: attrNumber(element, 'x', 0),
     y: attrNumber(element, 'y', 0),
@@ -309,6 +334,7 @@ function buildTiledTilesetFromXml(
     reportMissingXmlAttribute(element, 'tilewidth', diagnostics, 'buildTiledTilesetFromXml', path);
   }
   const image = getXmlElementChildByName(element, 'image');
+  const tileOffset = getXmlElementChildByName(element, 'tileoffset');
   return {
     columns: attrNumber(element, 'columns', 0),
     image: image !== null ? attrString(image, 'source', '') : null,
@@ -316,8 +342,11 @@ function buildTiledTilesetFromXml(
     imageWidth: image !== null ? attrNumber(image, 'width', 0) : 0,
     margin: attrNumber(element, 'margin', 0),
     name: attrString(element, 'name', ''),
+    objectAlignment: asObjectAlignment(getXmlElementAttribute(element, 'objectalignment')),
     properties: buildTiledPropertiesFromXml(element),
     spacing: attrNumber(element, 'spacing', 0),
+    tileOffsetX: tileOffset !== null ? attrNumber(tileOffset, 'x', 0) : 0,
+    tileOffsetY: tileOffset !== null ? attrNumber(tileOffset, 'y', 0) : 0,
     tileCount: attrNumber(element, 'tilecount', 0),
     tileHeight: attrNumber(element, 'tileheight', 0),
     tileWidth: attrNumber(element, 'tilewidth', 0),
@@ -398,6 +427,32 @@ function asCompression(value: string | null): TiledCompression | null {
 
 function asOrientation(value: string | null): TiledOrientation {
   return value === 'isometric' || value === 'staggered' || value === 'hexagonal' ? value : 'orthogonal';
+}
+
+// `unspecified` is Tiled's own marker for "not declared", so an unknown or absent value maps to it
+// rather than to a resolved corner — the effective default depends on the map orientation.
+function asObjectAlignment(value: string | null): TiledObjectAlignment {
+  return value === 'topleft' ||
+    value === 'top' ||
+    value === 'topright' ||
+    value === 'left' ||
+    value === 'center' ||
+    value === 'right' ||
+    value === 'bottomleft' ||
+    value === 'bottom' ||
+    value === 'bottomright'
+    ? value
+    : 'unspecified';
+}
+
+// Null rather than a default for both stagger fields: an orthogonal document declares neither, and
+// inventing one would re-emit an attribute the source never had.
+function asStaggerAxis(value: string | null): TiledStaggerAxis | null {
+  return value === 'x' || value === 'y' ? value : null;
+}
+
+function asStaggerIndex(value: string | null): TiledStaggerIndex | null {
+  return value === 'even' || value === 'odd' ? value : null;
 }
 
 function asPropertyType(value: string | null): TiledPropertyType {

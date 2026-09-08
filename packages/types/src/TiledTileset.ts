@@ -26,6 +26,21 @@ export interface TiledTilesetTile {
 // atlas image path for a single-image tileset (null for an image-collection tileset, where each tile
 // carries its own `image`). Sizes/margin/spacing describe the grid the codec resolves into runtime
 // Tilemap atlas/layout data at projection time.
+// Which corner or edge of a tile object its (x, y) position addresses. `unspecified` is Tiled's own
+// default marker and is preserved rather than resolved here, because the effective default depends on
+// the map's orientation — resolving it in the document would bake one orientation's answer in.
+export type TiledObjectAlignment =
+  | 'unspecified'
+  | 'topleft'
+  | 'top'
+  | 'topright'
+  | 'left'
+  | 'center'
+  | 'right'
+  | 'bottomleft'
+  | 'bottom'
+  | 'bottomright';
+
 export interface TiledTileset {
   name: string;
   tileWidth: number;
@@ -37,6 +52,13 @@ export interface TiledTileset {
   imageHeight: number;
   margin: number;
   spacing: number;
+  // Pixel offset applied when drawing every tile of this tileset, from `<tileoffset x y/>`. Zero on
+  // both axes when the tileset declares none. RENDER-RELEVANT: a consumer that ignores it places every
+  // tile of the tileset wrong, which is why it is modeled rather than left to the projection.
+  tileOffsetX: number;
+  tileOffsetY: number;
+  // Which point of a tile object its position addresses. `unspecified` when the tileset declares none.
+  objectAlignment: TiledObjectAlignment;
   tiles: readonly TiledTilesetTile[];
   properties: readonly TiledProperty[];
 }

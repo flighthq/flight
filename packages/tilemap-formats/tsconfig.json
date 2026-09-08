@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../importdiagnostics" },
+    { "path": "../log" },
     { "path": "../tilemap" },
     { "path": "../types" },
     { "path": "../xml" }
