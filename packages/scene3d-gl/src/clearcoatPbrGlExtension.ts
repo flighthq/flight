@@ -26,30 +26,30 @@ export const clearcoatPbrGlExtension: GlPbrExtensionRegistration = {
     const roughnessMap = context.isTextureReady(extension.clearcoatRoughnessMap);
     const normalMap = context.isTextureReady(extension.clearcoatNormalMap);
     return {
-      applySurface: normalMap
-        ? `
-  vec3 flightClearcoatTangentNormal = texture(u_flightClearcoatNormalMap, flightClearcoatNormalUv()).xyz * 2.0 - 1.0;
-  flightClearcoatTangentNormal.xy *= u_flightClearcoatNormalScale;
-  normal = normalize(mat3(tangent, bitangent, normal) * flightClearcoatTangentNormal);
-  nDotV = max(dot(normal, viewDir), 1e-4);`
-        : '',
+      applySurface: '',
       contributeIbl: `
   float flightClearcoatFactor = clamp(u_flightClearcoat * flightClearcoatFactorSample(), 0.0, 1.0);
   float flightClearcoatRough = clamp(u_flightClearcoatRoughness * flightClearcoatRoughnessSample(), 0.04, 1.0);
-  vec3 flightClearcoatF = fresnelSchlickRoughness(max(dot(N, V), 1e-4), vec3(0.04), flightClearcoatRough) * flightClearcoatFactor;
-  vec3 flightClearcoatR = reflect(-V, N);
+  vec3 flightClearcoatN = flightClearcoatNormal(N, tangentDir, bitangentDir);
+  float flightClearcoatNDotV = max(dot(flightClearcoatN, V), 1e-4);
+  vec3 flightClearcoatF = fresnelSchlickRoughness(flightClearcoatNDotV, vec3(0.04), flightClearcoatRough) * flightClearcoatFactor;
+  vec3 flightClearcoatR = reflect(-V, flightClearcoatN);
   vec3 flightClearcoatPrefiltered = textureLod(u_iblPrefiltered, flightClearcoatR, flightClearcoatRough * u_iblMaxMip).rgb;
-  vec2 flightClearcoatBrdf = texture(u_iblBrdf, vec2(max(dot(N, V), 1e-4), flightClearcoatRough)).rg;
+  vec2 flightClearcoatBrdf = texture(u_iblBrdf, vec2(flightClearcoatNDotV, flightClearcoatRough)).rg;
   ambient = ambient * (1.0 - flightClearcoatF) +
     flightClearcoatPrefiltered * (flightClearcoatF * flightClearcoatBrdf.x + flightClearcoatBrdf.y) * occ * u_iblIntensity;`,
       contributePunctual: `
   float flightClearcoatFactor = clamp(u_flightClearcoat * flightClearcoatFactorSample(), 0.0, 1.0);
   float flightClearcoatRough = clamp(u_flightClearcoatRoughness * flightClearcoatRoughnessSample(), 0.04, 1.0);
-  float flightClearcoatD = distributionGgx(nDotH, flightClearcoatRough);
-  float flightClearcoatVis = visibilitySmith(nDotV, nDotL, flightClearcoatRough);
+  vec3 flightClearcoatN = flightClearcoatNormal(N, tangentDir, bitangentDir);
+  float flightClearcoatNDotV = max(dot(flightClearcoatN, V), 1e-4);
+  float flightClearcoatNDotL = max(dot(flightClearcoatN, L), 0.0);
+  float flightClearcoatNDotH = max(dot(flightClearcoatN, halfVec), 0.0);
+  float flightClearcoatD = distributionGgx(flightClearcoatNDotH, flightClearcoatRough);
+  float flightClearcoatVis = visibilitySmith(flightClearcoatNDotV, flightClearcoatNDotL, flightClearcoatRough);
   vec3 flightClearcoatF = fresnelSchlick(vDotH, vec3(0.04)) * flightClearcoatFactor;
   direct = direct * (1.0 - flightClearcoatF) +
-    flightClearcoatD * flightClearcoatVis * flightClearcoatF * lightColor * nDotL;`,
+    flightClearcoatD * flightClearcoatVis * flightClearcoatF * lightColor * flightClearcoatNDotL;`,
       finalize: '',
       fragmentDeclarations: `
 uniform float u_flightClearcoat;
@@ -63,7 +63,19 @@ ${mapUvFunction('Clearcoat', factorMap)}
 ${mapUvFunction('ClearcoatRoughness', roughnessMap)}
 ${mapUvFunction('ClearcoatNormal', normalMap)}
 float flightClearcoatFactorSample() { return ${factorMap ? 'texture(u_flightClearcoatMap, flightClearcoatUv()).r' : '1.0'}; }
-float flightClearcoatRoughnessSample() { return ${roughnessMap ? 'texture(u_flightClearcoatRoughnessMap, flightClearcoatRoughnessUv()).g' : '1.0'}; }`,
+float flightClearcoatRoughnessSample() { return ${roughnessMap ? 'texture(u_flightClearcoatRoughnessMap, flightClearcoatRoughnessUv()).g' : '1.0'}; }
+vec3 flightClearcoatNormal(vec3 N, vec3 tangentDir, vec3 bitangentDir) {
+  ${
+    normalMap
+      ? `vec3 tangentNormal = texture(u_flightClearcoatNormalMap, flightClearcoatNormalUv()).xyz * 2.0 - 1.0;
+  tangentNormal.xy *= u_flightClearcoatNormalScale;
+  vec3 T = normalize(tangentDir - N * dot(tangentDir, N));
+  float handedness = dot(cross(N, T), bitangentDir) < 0.0 ? -1.0 : 1.0;
+  vec3 B = normalize(cross(N, T)) * handedness;
+  return normalize(mat3(T, B, N) * tangentNormal);`
+      : 'return N;'
+  }
+}`,
       key: `clearcoat:${factorMap ? 'f' : '-'}${roughnessMap ? 'r' : '-'}${normalMap ? 'n' : '-'}`,
       textureCount: Number(factorMap) + Number(roughnessMap) + Number(normalMap),
     };
