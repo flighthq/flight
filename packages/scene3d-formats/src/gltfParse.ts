@@ -1,4 +1,5 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { packLinearToColor } from '@flighthq/color/contract';
 import {
   composeMatrix4FromTransform3D,
@@ -413,11 +414,7 @@ function buildGltfCameras(
         name: definition.name,
         near: perspective.znear,
         node: nodeIndices[node],
-        projection: {
-          aspect: perspective.aspectRatio ?? 1,
-          fovY: perspective.yfov,
-          kind: 'perspective',
-        },
+        projection: createPerspectiveProjection({ aspect: perspective.aspectRatio ?? 1, fovY: perspective.yfov }),
         transform: cloneGltfTransform(nodeWorldTransforms[node]),
       });
       continue;
@@ -440,11 +437,7 @@ function buildGltfCameras(
         name: definition.name,
         near: orthographic.znear,
         node: nodeIndices[node],
-        projection: {
-          halfHeight: orthographic.ymag,
-          halfWidth: orthographic.xmag,
-          kind: 'orthographic',
-        },
+        projection: createOrthographicProjection({ halfHeight: orthographic.ymag, halfWidth: orthographic.xmag }),
         transform: cloneGltfTransform(nodeWorldTransforms[node]),
       });
       continue;

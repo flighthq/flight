@@ -2731,10 +2731,10 @@ describe('parseGltf', () => {
 
     expect(document.cameras).toHaveLength(2);
     expect(document.cameras[0]).toMatchObject({ far: Number.POSITIVE_INFINITY, name: 'view', near: 0.1, node: 0 });
-    expect(document.cameras[0].projection).toEqual({ aspect: 1.5, fovY: 1, kind: 'perspective' });
+    expect(document.cameras[0].projection).toMatchObject({ aspect: 1.5, fovY: 1, kind: 'perspective' });
     expect(document.cameras[0].transform.position).toMatchObject({ x: 1, y: 2, z: 3 });
     expect(document.cameras[1]).toMatchObject({ far: 50, near: 0, node: 1 });
-    expect(document.cameras[1].projection).toEqual({ halfHeight: 3, halfWidth: 4, kind: 'orthographic' });
+    expect(document.cameras[1].projection).toMatchObject({ halfHeight: 3, halfWidth: 4, kind: 'orthographic' });
     expect(document.cameras[1].transform.position).toMatchObject({ x: 5, y: 7, z: 9 });
   });
 

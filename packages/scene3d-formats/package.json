@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
+    "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/compression": "*",
     "@flighthq/geometry": "*",

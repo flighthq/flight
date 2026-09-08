@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
 import {
   copyMatrix4,
@@ -1983,19 +1984,17 @@ function buildAwdDocumentCamera(
   let projection: Projection;
   if (camera.projectionType === AWD2_CAMERA_PROJECTION_PERSPECTIVE) {
     // Away3D's fieldOfView drives the VERTICAL scale of the frustum, so it maps to fovY directly.
-    projection = { aspect: 1, fovY: camera.fov * DEG_TO_RAD, kind: 'perspective' };
+    projection = createPerspectiveProjection({ fovY: camera.fov * DEG_TO_RAD });
   } else if (camera.projectionType === AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC) {
-    projection = {
+    projection = createOrthographicProjection({
       halfHeight: AWD2_CAMERA_DEFAULT_ORTHO_HALF_EXTENT,
       halfWidth: AWD2_CAMERA_DEFAULT_ORTHO_HALF_EXTENT,
-      kind: 'orthographic',
-    };
+    });
   } else if (camera.projectionType === AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER) {
-    projection = {
+    projection = createOrthographicProjection({
       halfHeight: Math.abs(camera.top - camera.bottom) / 2,
       halfWidth: Math.abs(camera.right - camera.left) / 2,
-      kind: 'orthographic',
-    };
+    });
     // Flight's orthographic volume is centred on the view axis; AWD's off-center form can sit the volume
     // anywhere. The extents survive, the offset does not — an authored asymmetry the file really stated.
     if (camera.right + camera.left !== 0 || camera.top + camera.bottom !== 0) {

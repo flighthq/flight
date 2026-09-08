@@ -1,3 +1,4 @@
+import { createPerspectiveProjection } from '@flighthq/camera/contract';
 import {
   createMatrix4,
   createQuaternion,
@@ -943,11 +944,7 @@ function appendThreeDsCameraDocument(camera: Readonly<ThreeDsCamera>, document: 
     far: camera.far ?? THREE_DS_DEFAULT_FAR,
     ...(camera.name.length > 0 ? { name: camera.name } : {}),
     near: camera.near ?? THREE_DS_DEFAULT_NEAR,
-    projection: {
-      aspect: 1,
-      fovY: 2 * Math.atan(THREE_DS_CAMERA_APERTURE_MM / (2 * focalLength)),
-      kind: 'perspective',
-    },
+    projection: createPerspectiveProjection({ fovY: 2 * Math.atan(THREE_DS_CAMERA_APERTURE_MM / (2 * focalLength)) }),
     transform,
   });
 }
