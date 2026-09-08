@@ -29,7 +29,3 @@ export function defaultShapeHitTestHandler(source: NodeAny, x: number, y: number
 export function defaultTextHitTestHandler(source: NodeAny, x: number, y: number): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
-
-export function defaultTextInputHitTestHandler(source: NodeAny, x: number, y: number): boolean {
-  return hitTestGraphLocalBounds(source, x, y);
-}

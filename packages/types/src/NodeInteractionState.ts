@@ -12,7 +12,7 @@ import type { HitArea } from './NodeInteraction';
  * NOT a hit candidate (hit testing is opt-in), no cursor, not focusable.
  *
  * Two systems share this one cell without sharing a flag. `hitTestEnabled`/`hitArea` are read by the
- * pointer hit-test walk (`findGraphHitTarget`/`hitTestGraphPoint`); `cursor` is read by pointer dispatch
+ * pointer hit-test walk (`findGraphHitTarget`/`hitTestGraphPoint`), as is `childrenHitTestEnabled`; `cursor` is read by pointer dispatch
  * on rollover; `focusable`/`tabIndex` are read by a keyboard focus/navigation manager and are never
  * consulted on the pointer path.
  */
@@ -20,6 +20,13 @@ export interface NodeInteractionState extends Entity {
   // Opt-in eligibility: whether this node participates in hit testing at all. Defaults to `false` — a
   // node is a hit candidate only after it volunteers. Also the on/off toggle for a volunteered node.
   hitTestEnabled: boolean;
+  // Whether the hit-test walk descends into this node's children. Defaults to `true` — the opposite
+  // default from `hitTestEnabled`, because gating children is a deliberate act of hiding a subtree,
+  // not an opt-in capability. Setting it `false` makes the node's own geometry the only thing under it
+  // that can be hit, which is how a composed control (a button with a label and an icon inside) reports
+  // itself rather than its parts. Independent of `hitTestEnabled`: a node may present its own region,
+  // its children's, both, or neither. Reproduces the OpenFL `mouseChildren` gate.
+  childrenHitTestEnabled: boolean;
   // The region this node presents when hit-tested; `null` uses its own kind geometry. Setting a hitArea
   // makes the node an atomic unit — the walk stops recursing into children and the hit resolves here.
   hitArea: HitArea | null;

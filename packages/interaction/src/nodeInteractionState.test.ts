@@ -2,6 +2,7 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
+  areNodeChildrenHitTestEnabled,
   createNodeInteractionState,
   enableNodeInteractionState,
   getNodeCursor,
@@ -12,6 +13,7 @@ import {
   isNodeFocusable,
   isNodeHitTestEnabled,
   isNodePointerDoubleClickEnabled,
+  setNodeChildrenHitTestEnabled,
   setNodeCursor,
   setNodeFocusable,
   setNodeHitArea,
@@ -20,9 +22,22 @@ import {
   setNodeTabIndex,
 } from './nodeInteractionState';
 
+describe('areNodeChildrenHitTestEnabled', () => {
+  it('defaults to true with no cell, and reads the cell once one exists', () => {
+    const obj = createDisplayObject();
+    expect(areNodeChildrenHitTestEnabled(obj)).toBe(true);
+    // Creating the cell for an unrelated reason must not flip the default.
+    setNodeHitTestEnabled(obj, true);
+    expect(areNodeChildrenHitTestEnabled(obj)).toBe(true);
+    setNodeChildrenHitTestEnabled(obj, false);
+    expect(areNodeChildrenHitTestEnabled(obj)).toBe(false);
+  });
+});
+
 describe('createNodeInteractionState', () => {
   it('returns a cell with every field at its default', () => {
     expect(createNodeInteractionState()).toMatchObject({
+      childrenHitTestEnabled: true,
       cursor: null,
       focusable: false,
       hitArea: null,
@@ -109,6 +124,16 @@ describe('isNodePointerDoubleClickEnabled', () => {
     expect(isNodePointerDoubleClickEnabled(obj)).toBe(false);
     setNodePointerDoubleClickEnabled(obj, true);
     expect(isNodePointerDoubleClickEnabled(obj)).toBe(true);
+  });
+});
+
+describe('setNodeChildrenHitTestEnabled', () => {
+  it('gates and re-opens child traversal', () => {
+    const obj = createDisplayObject();
+    setNodeChildrenHitTestEnabled(obj, false);
+    expect(areNodeChildrenHitTestEnabled(obj)).toBe(false);
+    setNodeChildrenHitTestEnabled(obj, true);
+    expect(areNodeChildrenHitTestEnabled(obj)).toBe(true);
   });
 });
 

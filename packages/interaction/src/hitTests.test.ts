@@ -1,7 +1,8 @@
+import { createClipRegionFromCircle, createClipRegionFromRectangle } from '@flighthq/clip/contract';
 import { createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { appendPathRectangle, createPath } from '@flighthq/path/contract';
-import { createDisplayObject, createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { createDisplayObject, createNode2D, getNode2DRuntime, setNode2DClip } from '@flighthq/scene2d/contract';
 import type { Node2D, Node2DRuntime, HitTestResult, NodeAny } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
@@ -19,7 +20,7 @@ import {
   registerHitTest,
   registerHitTestPrecise,
 } from './hitTests';
-import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
+import { setNodeChildrenHitTestEnabled, setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
 
 // A precise provider over local bounds: 0 (hit) inside, -1 outside — the boolean-precise shape.
 function boundsPrecise(source: NodeAny, x: number, y: number): number {
@@ -109,6 +110,48 @@ describe('findGraphHitTarget', () => {
     expect(findGraphHitTarget(obj, 20, 20)).toBeNull();
   });
 
+  it('stops descending when the children gate is closed, still reporting the node itself', () => {
+    const parent = boundsObject(200, 200);
+    const child = boundsObject(50, 50);
+    addNodeChild(parent, child);
+    // Front-to-back, the child normally wins the shared point.
+    expect(findGraphHitTarget(parent, 25, 25)).toBe(child);
+    setNodeChildrenHitTestEnabled(parent, false);
+    expect(findGraphHitTarget(parent, 25, 25)).toBe(parent);
+    // The gate hides the subtree, not the parent's own opt-in: closing both leaves nothing.
+    setNodeHitTestEnabled(parent, false);
+    expect(findGraphHitTarget(parent, 25, 25)).toBeNull();
+  });
+
+  it('excludes a clipped node and its whole subtree when the point falls outside the clip', () => {
+    const parent = boundsObject(200, 200);
+    const child = boundsObject(200, 200);
+    addNodeChild(parent, child);
+    setNode2DClip(parent, createClipRegionFromRectangle(createRectangle(0, 0, 40, 40)));
+    expect(findGraphHitTarget(parent, 20, 20)).toBe(child);
+    // Inside both nodes' bounds but outside the parent's clip: the child is masked away too.
+    expect(findGraphHitTarget(parent, 100, 100)).toBeNull();
+  });
+
+  it('applies the exact clip winding, not just the clip bounding box', () => {
+    const obj = boundsObject(100, 100);
+    setNode2DClip(obj, createClipRegionFromCircle(50, 50, 40));
+    expect(findGraphHitTarget(obj, 50, 50)).toBe(obj);
+    // (15, 15) is inside the circle's bounding box but outside the circle itself.
+    expect(findGraphHitTarget(obj, 15, 15)).toBeNull();
+  });
+
+  it('resolves a clip region in the node local space, through the world transform', () => {
+    const obj = boundsObject(100, 100);
+    obj.x = 40;
+    obj.y = 40;
+    invalidateNodeLocalTransform(obj);
+    setNode2DClip(obj, createClipRegionFromRectangle(createRectangle(0, 0, 20, 20)));
+    // World (50, 50) is local (10, 10) — inside the clip. World (80, 80) is local (40, 40) — outside.
+    expect(findGraphHitTarget(obj, 50, 50)).toBe(obj);
+    expect(findGraphHitTarget(obj, 80, 80)).toBeNull();
+  });
+
   it('resolves a path hitArea by winding, and a node proxy in the proxy world space', () => {
     const pathObj = createDisplayObject();
     setNodeHitTestEnabled(pathObj, true);
@@ -166,6 +209,18 @@ describe('findGraphHitTargets', () => {
     const result = findGraphHitTargets(obj, 50, 50, out);
     expect(result).toBe(out);
     expect(out).toEqual([obj]);
+  });
+
+  it('drops a gated subtree and a clipped subtree from the stack', () => {
+    const parent = boundsObject(200, 200);
+    const child = boundsObject(200, 200);
+    addNodeChild(parent, child);
+    expect(findGraphHitTargets(parent, 50, 50)).toEqual([child, parent]);
+    setNodeChildrenHitTestEnabled(parent, false);
+    expect(findGraphHitTargets(parent, 50, 50)).toEqual([parent]);
+    setNodeChildrenHitTestEnabled(parent, true);
+    setNode2DClip(parent, createClipRegionFromRectangle(createRectangle(0, 0, 20, 20)));
+    expect(findGraphHitTargets(parent, 50, 50)).toEqual([]);
   });
 });
 
@@ -229,6 +284,19 @@ describe('hitTestGraphPoint', () => {
     const child = boundsObject(100, 100);
     addNodeChild(parent, child);
     expect(hitTestGraphPoint(parent, 50, 50)).toBe(false);
+  });
+
+  it('respects the children gate and the clip region', () => {
+    const parent = createDisplayObject();
+    const child = boundsObject(100, 100);
+    addNodeChild(parent, child);
+    expect(hitTestGraphPoint(parent, 50, 50)).toBe(true);
+    setNodeChildrenHitTestEnabled(parent, false);
+    expect(hitTestGraphPoint(parent, 50, 50)).toBe(false);
+    setNodeChildrenHitTestEnabled(parent, true);
+    setNode2DClip(parent, createClipRegionFromRectangle(createRectangle(0, 0, 20, 20)));
+    expect(hitTestGraphPoint(parent, 50, 50)).toBe(false);
+    expect(hitTestGraphPoint(parent, 10, 10)).toBe(true);
   });
 });
 
