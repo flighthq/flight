@@ -27,18 +27,16 @@ export function destroyWgpuFullscreenPipeline(_state: WgpuRenderState, _pipeline
   // on the caller's side to allow collection.
 }
 
-// Draws a fullscreen pass into the current render target (or a provided explicit target).
-// Binds `inputs[i]` as texture @group(1+i) @binding(0), calls `setUniforms` for per-pass
-// uploads (pass null if the shader declares no uniforms), then draws 3 vertices.
+// Draws a fullscreen pass into the current render target. Binds `inputs[i]` as texture
+// @group(1+i) @binding(0), calls `setUniforms` for per-pass uploads (pass null if the shader
+// declares no uniforms), then draws 3 vertices.
 //
 // Requires an open render pass (renderWgpuBackground or beginWgpuRenderPass must have been
-// called first). `dest` is retained for API compatibility, but the destination is fixed when the
-// caller opens the render pass and cannot be changed by this draw helper.
+// called first). The destination is fixed when the caller opens the render pass.
 export function drawWgpuFullscreenPass(
   state: WgpuRenderState,
   wgpuPipeline: Readonly<WgpuFullscreenPipeline>,
   inputs: ReadonlyArray<Readonly<WgpuRenderTarget>>,
-  _dest: Readonly<WgpuRenderTarget> | null,
   setUniforms: ((state: WgpuRenderState, uniformBindGroupLayout: GPUBindGroupLayout) => GPUBindGroup) | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);

@@ -52,7 +52,7 @@ describe('drawWgpuFullscreenPass', () => {
     renderWgpuBackground(state);
     const pipeline = createWgpuFullscreenPipeline(state, SIMPLE_FRAGMENT_WGSL, 1);
     const target = createWgpuRenderTarget(state, 64, 64);
-    expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null, null)).not.toThrow();
+    expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 
@@ -60,7 +60,7 @@ describe('drawWgpuFullscreenPass', () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuFullscreenPipeline(state, SIMPLE_FRAGMENT_WGSL, 1);
     const target = createWgpuRenderTarget(state, 64, 64);
-    expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null, null)).not.toThrow();
+    expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null)).not.toThrow();
   });
 });
 describe('initializeWgpuFullscreenPipeline', () => {
