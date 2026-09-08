@@ -112,3 +112,46 @@ export interface LoadScene2DAudioResourcesOptions {
   select?: (reference: Readonly<AudioResourceReference>) => boolean;
   signal?: AbortSignal;
 }
+
+// One aggregate lane in explainScene2DResourceCoverage. Counts are document-wide rather than scoped
+// to the last load selection, so a caller can ask one stable question after any combination of loads.
+export interface Scene2DResourceCoverageCount {
+  readonly resolved: number;
+  readonly total: number;
+}
+
+// Complete when every authored image/audio reference is resolved and every required application slot
+// has content. Optional slots deliberately do not affect completeness.
+export interface Scene2DResourceCoverageExplanation {
+  readonly audioResources: Readonly<Scene2DResourceCoverageCount>;
+  readonly complete: boolean;
+  readonly imageResources: Readonly<Scene2DResourceCoverageCount>;
+  readonly requiredSlots: Readonly<Scene2DResourceCoverageCount>;
+}
+
+export type Scene2DResourceFailureOperation =
+  | 'createScene2DDocumentFromBytes'
+  | 'loadScene2DAudioResources'
+  | 'loadScene2DDocumentFromUrl'
+  | 'loadScene2DImageResources'
+  | 'resolveScene2DResources';
+
+export type Scene2DResourceFailureReason =
+  | 'audio-resources-unresolved'
+  | 'document-fetch-failed'
+  | 'document-import-failed'
+  | 'document-importer-missing'
+  | 'image-resources-unresolved'
+  | 'required-slots-unresolved';
+
+// Plain-data notice installed by enableScene2DResourceFailureGuards. The aggregate counts keep the
+// hook operation-scoped and avoid retaining document graphs in diagnostic sinks.
+export interface Scene2DResourceFailureNotice {
+  readonly operation: Scene2DResourceFailureOperation;
+  readonly reason: Scene2DResourceFailureReason;
+  readonly total: number;
+  readonly unresolved: number;
+  readonly url: string | null;
+}
+
+export type Scene2DResourceFailureGuard = (notice: Readonly<Scene2DResourceFailureNotice>) => void;
