@@ -24,5 +24,11 @@ export {
   renderDomScene2D,
   setDomCssFilter,
 } from './contract';
-export { createDomSvgConvolutionFilter, createDomSvgDisplacementMapFilter, getDomSvgFilter } from './domSvgFilter';
+export {
+  applyDomSvgFilterToNode,
+  createDomSvgConvolutionFilter,
+  createDomSvgDisplacementMapFilter,
+  getDomSvgFilter,
+  removeDomSvgFilterFromNode,
+} from './domSvgFilter';
 export { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer';
