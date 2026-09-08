@@ -239,7 +239,26 @@ describe('captureEntry browser contract', () => {
         : replaceDomElementScreenshot(session.context, options.domScreenshotReplacement);
     const screenshotPath = join(artifactRoot, 'functional', options.name, options.renderer, 'screenshot.png');
     const baselinePath = join(artifactRoot, 'functional', 'baselines', `${options.name}.json`);
-    const baseline = `${JSON.stringify({ [options.renderer]: { sha256: 'existing-baseline' } }, null, 2)}\n`;
+    const oldProvenance = {
+      computationId: 'grid-average-rgb-v1',
+      frames: 1,
+      sourceHash: 'old-source',
+      targetKind: options.renderer,
+      verifyPublished: true,
+      warmupFrames: 0,
+    };
+    const baseline = `${JSON.stringify(
+      {
+        [options.renderer]: {
+          fingerprint: '2:000000ffffff',
+          fingerprintProvenance: oldProvenance,
+          sha256: 'existing-baseline',
+          sha256Provenance: oldProvenance,
+        },
+      },
+      null,
+      2,
+    )}\n`;
     mkdirSync(join(artifactRoot, 'functional', options.name, options.renderer), { recursive: true });
     if (options.staleScreenshot) writeFileSync(screenshotPath, 'stale screenshot');
     if (options.updateBaseline) {
@@ -416,6 +435,24 @@ describe('captureEntry browser contract', () => {
     },
     30_000,
   );
+
+  it('atomically refreshes both evidence fields when verified baseline source changes', async () => {
+    const captured = await captureFixture({ name: 'raster-canvas', renderer: 'canvas', updateBaseline: true });
+    expect(captured.status).toMatchObject({ state: 'ready', error: null, changed: false });
+    const baseline = JSON.parse(captured.baselineAfter!) as Record<
+      string,
+      {
+        fingerprint: string;
+        fingerprintProvenance: Record<string, unknown>;
+        sha256: string;
+        sha256Provenance: Record<string, unknown>;
+      }
+    >;
+    expect(baseline['canvas'].fingerprint).toBe(`test:${captured.status.hash}`);
+    expect(baseline['canvas'].sha256).toBe(captured.status.hash);
+    expect(baseline['canvas'].fingerprintProvenance).toEqual(baseline['canvas'].sha256Provenance);
+    expect(baseline['canvas'].fingerprintProvenance.sourceHash).not.toBe('old-source');
+  }, 30_000);
 
   it('preserves the page-image fallback for unverified DOM observe captures', async () => {
     const captured = await captureFixture({ name: 'dom-observe', renderer: 'dom', observe: true, verify: false });
