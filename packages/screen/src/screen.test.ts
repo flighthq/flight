@@ -265,6 +265,20 @@ describe('getScreenBounds', () => {
 });
 
 describe('getScreenById', () => {
+  it('reuses one scratch array across derived screen queries', () => {
+    const host = createScreenQueryHost(createSeparatedScreens());
+    const out = createScreenInfo();
+
+    getScreenById(host, 1, out);
+    getScreenContainingRect(host, { x: 10, y: 10, width: 20, height: 20 }, out);
+    getScreenNearestPoint(host, { x: 10, y: 10 }, out);
+    getScreenNearestRect(host, { x: 10, y: 10, width: 20, height: 20 }, out);
+
+    const calls = vi.mocked(host.screen.query.getScreens).mock.calls;
+    expect(calls).toHaveLength(4);
+    expect(calls.every(([screens]) => screens === calls[0][0])).toBe(true);
+  });
+
   it('copies a matching screen into out and returns null without a match', () => {
     const first = createTestScreen(10, 0, 0, 100, 100);
     const second = createTestScreen(20, 300, 0, 200, 150, { label: 'external', scaleFactor: 2 });

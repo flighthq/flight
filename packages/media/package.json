@@ -41,6 +41,7 @@
     "@flighthq/audio": "*",
     "@flighthq/entity": "*",
     "@flighthq/log": "*",
+    "@flighthq/math": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*",
     "@flighthq/video": "*"

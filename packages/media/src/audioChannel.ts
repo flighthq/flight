@@ -1,3 +1,4 @@
+import { clamp } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AudioBufferHandle,
@@ -239,10 +240,6 @@ function emitChannelSignal(
 ): void {
   const signals = getAudioChannelSignals(channel);
   if (signals !== null) emitSignal(signals[name]);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
 }
 
 function completeAudioChannel(channel: AudioChannel): void {

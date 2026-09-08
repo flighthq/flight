@@ -118,7 +118,8 @@ export function getScreenBounds(
 }
 
 export function getScreenById(host: HasScreenQuery, id: number, out: ScreenInfo): ScreenInfo | null {
-  const screens: ScreenInfo[] = [];
+  const screens = _scratchScreens;
+  screens.length = 0;
   getScreens(host, screens);
   const found = screens.find((screen) => screen.id === id);
   if (found === undefined) return null;
@@ -131,7 +132,8 @@ export function getScreenContainingRect(
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
 ): ScreenInfo {
-  const screens: ScreenInfo[] = [];
+  const screens = _scratchScreens;
+  screens.length = 0;
   getScreens(host, screens);
   if (screens.length === 0) return fillDefaultScreenInfo(out);
   let best = screens[0];
@@ -173,7 +175,8 @@ export function getScreenDetailPermission(host: HasScreenDetails): Promise<Scree
 }
 
 export function getScreenNearestPoint(host: HasScreenQuery, point: Readonly<Vector2Like>, out: ScreenInfo): ScreenInfo {
-  const screens: ScreenInfo[] = [];
+  const screens = _scratchScreens;
+  screens.length = 0;
   getScreens(host, screens);
   if (screens.length === 0) return fillDefaultScreenInfo(out);
   for (const screen of screens) {
@@ -203,7 +206,8 @@ export function getScreenNearestPoint(host: HasScreenQuery, point: Readonly<Vect
 }
 
 export function getScreenNearestRect(host: HasScreenQuery, rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
-  const screens: ScreenInfo[] = [];
+  const screens = _scratchScreens;
+  screens.length = 0;
   getScreens(host, screens);
   const containing = screens.find(
     (screen) =>
@@ -309,6 +313,7 @@ export function screenToDipRect(
 const _permissionSubscriptions = new WeakMap<ScreenPermissionChange, () => void>();
 const _signalSubscriptions = new WeakMap<ScreenSignals, () => void>();
 const _scratchPoint = { x: 0, y: 0 };
+const _scratchScreens: ScreenInfo[] = [];
 
 function copyScreenInfo(src: Readonly<ScreenInfo>, dst: ScreenInfo): void {
   Object.assign(dst, stripEntityRuntime(src));
