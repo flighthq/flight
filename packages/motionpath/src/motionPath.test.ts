@@ -7,9 +7,11 @@ import {
   getMotionPathHeading,
   getMotionPathPosition,
   getMotionPathProgress,
+  isMotionPathAtEnd,
   initializeMotionPath,
   setMotionPathDistance,
   setMotionPathProgress,
+  setMotionPathDirection,
   updateMotionPath,
 } from './motionPath';
 
@@ -97,6 +99,29 @@ describe('getMotionPathProgress', () => {
 describe('initializeMotionPath', () => {
   it('is the construction initializer of createMotionPath', () => {
     expect(typeof initializeMotionPath).toBe('function');
+  });
+});
+
+describe('isMotionPathAtEnd', () => {
+  it('reports the terminal edge in the current direction', () => {
+    const mp = createMotionPath(line());
+    expect(isMotionPathAtEnd(mp)).toBe(false);
+    setMotionPathDistance(mp, 100);
+    expect(isMotionPathAtEnd(mp)).toBe(true);
+    setMotionPathDirection(mp, -1);
+    expect(isMotionPathAtEnd(mp)).toBe(false);
+    setMotionPathDistance(mp, 0);
+    expect(isMotionPathAtEnd(mp)).toBe(true);
+  });
+});
+
+describe('setMotionPathDirection', () => {
+  it('changes traversal direction without changing distance', () => {
+    const mp = createMotionPath(line());
+    setMotionPathDistance(mp, 25);
+    setMotionPathDirection(mp, -1);
+    expect(mp.direction).toBe(-1);
+    expect(mp.distance).toBe(25);
   });
 });
 
