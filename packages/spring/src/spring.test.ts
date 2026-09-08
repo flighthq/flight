@@ -1,5 +1,5 @@
 import {
-  applySpringImpulse,
+  addSpringImpulse,
   createSpring,
   initializeSpring,
   isSpringSettled,
@@ -9,12 +9,12 @@ import {
 } from './spring';
 import { createSpringConfig } from './springConfig';
 
-describe('applySpringImpulse', () => {
+describe('addSpringImpulse', () => {
   it('adds velocity without changing position and composes repeated impulses', () => {
     const spring = createSpring(12, 3);
 
-    applySpringImpulse(spring, 4);
-    applySpringImpulse(spring, -1.5);
+    addSpringImpulse(spring, 4);
+    addSpringImpulse(spring, -1.5);
 
     expect(spring.value).toBe(12);
     expect(spring.velocity).toBe(5.5);
@@ -65,6 +65,15 @@ describe('isSpringSettled', () => {
     expect(isSpringSettled(spring, 10)).toBe(false);
   });
 
+  it('never settles while an undamped spring keeps oscillating', () => {
+    const spring = createSpring(0);
+    const config = createSpringConfig(1, 0);
+    for (let i = 0; i < 600; i++) {
+      updateSpring(spring, 10, config, 1 / 60);
+      expect(isSpringSettled(spring, 10)).toBe(false);
+    }
+  });
+
   it('honors custom epsilons', () => {
     const spring = createSpring(10.4, 0.4);
     expect(isSpringSettled(spring, 10)).toBe(false);
@@ -88,6 +97,44 @@ describe('resetSpring', () => {
 });
 
 describe('updateSpring', () => {
+  it('preserves oscillation energy when dampingRatio is exactly zero', () => {
+    const frequency = 2;
+    const target = 3;
+    const spring = createSpring(7, -4);
+    const config = createSpringConfig(frequency, 0);
+    const omega = Math.PI * 2 * frequency;
+    const initialEnergy = spring.velocity * spring.velocity + omega * omega * (spring.value - target) ** 2;
+
+    for (let i = 0; i < 600; i++) updateSpring(spring, target, config, 1 / 60);
+
+    const finalEnergy = spring.velocity * spring.velocity + omega * omega * (spring.value - target) ** 2;
+    expect(finalEnergy).toBeCloseTo(initialEnergy, 8);
+  });
+
+  it('uses the critical solution exactly at and inside CRITICAL_BAND without a boundary discontinuity', () => {
+    const criticalBand = 1e-4;
+    const step = (dampingRatio: number): { value: number; velocity: number } => {
+      const spring = createSpring(4, -3);
+      updateSpring(spring, -2, createSpringConfig(3, dampingRatio), 0.2);
+      return { value: spring.value, velocity: spring.velocity };
+    };
+
+    const critical = step(1);
+    expect(step(1 - criticalBand)).toEqual(critical);
+    expect(step(1 - criticalBand * 0.5)).toEqual(critical);
+    expect(step(1 + criticalBand * 0.5)).toEqual(critical);
+    expect(step(1 + criticalBand)).toEqual(critical);
+
+    const underdamped = step(1 - criticalBand * 2);
+    const overdamped = step(1 + criticalBand * 2);
+    expect(underdamped).not.toEqual(critical);
+    expect(overdamped).not.toEqual(critical);
+    expect(underdamped.value).toBeCloseTo(critical.value, 3);
+    expect(underdamped.velocity).toBeCloseTo(critical.velocity, 2);
+    expect(overdamped.value).toBeCloseTo(critical.value, 3);
+    expect(overdamped.velocity).toBeCloseTo(critical.velocity, 2);
+  });
+
   it('converges monotonically to the target with no overshoot when critically damped', () => {
     const spring = createSpring(0);
     const config = createSpringConfig(1, 1);

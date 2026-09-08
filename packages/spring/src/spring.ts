@@ -5,7 +5,7 @@ import type { Spring, SpringConfig, EntityConstruction } from '@flighthq/types/c
 // Add `velocity` to the spring's current velocity without changing its position. This is the
 // allocation-free flick/throw control: repeated impulses compose additively, and the next analytic
 // step carries their combined velocity into the motion.
-export function applySpringImpulse(spring: Spring, velocity: number): void {
+export function addSpringImpulse(spring: Spring, velocity: number): void {
   spring.velocity += velocity;
 }
 
@@ -28,8 +28,9 @@ export function initializeSpring(out: EntityConstruction<Spring>, value: number 
 // a spring passing through the target at speed (an underdamped overshoot) is not settled.
 //
 // Settle is a property of position and velocity alone, independent of the `SpringConfig` that drove
-// the motion, so no config is taken. Epsilons default to a UI-scale tolerance; pass tighter or
-// looser values for the value's actual units.
+// the motion, so no config is taken. An undamped spring with nonzero oscillation energy never settles:
+// its energy alternates between displacement and velocity without letting both reach zero. Epsilons
+// default to a UI-scale tolerance; pass tighter or looser values for the value's actual units.
 export function isSpringSettled(
   spring: Readonly<Spring>,
   target: number,
