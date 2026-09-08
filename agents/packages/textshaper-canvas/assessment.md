@@ -10,15 +10,7 @@ Sorted from `review.md` (`solid — 80`), judging the `integration-b2824e3d8` de
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/textshaper-canvas`, no cross-package coupling, no breaking change, no open design decision.
-
-- **Fix the advance-cache key to include `letterSpacing` (and every advance-affecting field the context sets).** The key is `${fontString}\x00${text}` (`canvasTextShaper.ts:83`), but `computeTextFormatFontString` encodes only style/weight/size/family — not `letterSpacing` — and the cache lookup short-circuits (lines 85-86) before `ctx.letterSpacing` is set (lines 93-95). The letterSpacing plumbing this delta adds is dead on the second measurement of any `(font, text)` pair. Incorporate `letterSpacing` into the key. Purely internal — no signature/seam change. — review.md §7.
-
-- **Add a colocated regression test that pins the cache-key fix.** jsdom's `measureText` returns 0, so a width assertion is impossible — but the _key_ is testable: assert that two `measureText` calls differing only in `letterSpacing` do not collapse to one cache entry (observe the second call still sets `ctx.letterSpacing`, or assert distinct keying). The within-package guard for the §7 defect; the value-correctness test is the parked functional scene. — review.md §7.
-
-- **Return a non-zero `unitsPerEm` (identity `size`) from `getFontMetrics` instead of `0`.** `FontMetrics`'s own doc says callers divide by `unitsPerEm`; returning `0` (line 76) makes a contract-following consumer divide by zero. `unitsPerEm: size` makes the documented inverse a safe no-op — the identity Canvas can honestly supply, since it cannot read OS/2 font units. Within-package half of the §6 defect; no header change. — review.md §6.
-
-- **Probe a descender glyph in the `getFontMetrics` ascent/descent fallback.** When `fontBoundingBox*` is undefined the code falls through to `actualBoundingBox*` of `'H'` (lines 61-62), whose descent is ~0, collapsing descent to near-zero on engines lacking `fontBoundingBox*`. Probe `'g'`/`'y'` for the fallback descent. Engine-dependent, no design decision. — review.md "Minor".
+_All items retired to Approved — verified 2026-09-08._
 
 ## Backlog
 
@@ -42,7 +34,15 @@ Parked: needs a charter decision, crosses a package boundary, belongs to another
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
+Verified in current tree 2026-09-08. All four items were already implemented; retirement is a verification pass, not a code change.
+
+- **Cache key includes `letterSpacing`.** `canvasTextShaper.ts:103` keys on `${fontString}\x00${format.letterSpacing ?? 0}\x00${text}`. Verified present. — from review.md §7.
+
+- **Regression test pins the cache-key fix.** `canvasTextShaper.test.ts:110-141` uses a spy to assert that two `measureText` calls differing only in `letterSpacing` produce distinct cache lookups (measureSpy called twice, not once). Verified present. — from review.md §7.
+
+- **`unitsPerEm` returns identity `size`, not `0`.** `canvasTextShaper.ts:91` returns `unitsPerEm: size`. Test at lines 168-179 asserts `unitsPerEm === 16` for `size: 16` and `12` for the default. Verified present. — from review.md §6.
+
+- **Descender glyph probe in `getFontMetrics` fallback.** `canvasTextShaper.ts:68` probes `'g'` via `ctx.measureText('g')` and line 73 uses `descenderMeasure.actualBoundingBoxDescent` in the `??` fallback chain, so the fallback descent reflects a real below-baseline extent instead of collapsing to ~0 from `'H'`. Verified present. — from review.md "Minor".
 
 ## Notes for the charter's Open directions
 
