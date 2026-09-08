@@ -102,25 +102,34 @@ export function isAbsoluteFilePath(path: string): boolean {
   return path.length >= 2 && /^[A-Za-z]:/.test(path);
 }
 
+// Joins segments into one path and resolves it, so the result is what normalizeFilePath would return
+// for the same segments spelled as a single string. The two must agree: a caller who builds a path by
+// joining and a caller who normalizes a literal have to get the same answer, or the same file has two
+// spellings depending on which entry point produced it.
 export function joinFilePath(...segments: readonly string[]): string {
-  const parts: string[] = [];
-  for (const segment of segments) {
-    for (const part of segment.split('/')) {
-      if (part === '' || part === '.') continue;
-      parts.push(part);
-    }
-  }
-  const prefix = segments.length > 0 && segments[0]?.startsWith('/') === true ? '/' : '';
-  return prefix + parts.join('/');
+  const absolute = segments.length > 0 && segments[0]?.startsWith('/') === true;
+  return formatResolvedPath(resolvePathSegments(segments.join('/'), absolute), absolute);
 }
 
 export function makeDirectory(host: HasStorageFileSystem, path: string): Promise<boolean> {
   return host.storage.fileSystem.makeDirectory?.(path) ?? Promise.resolve(false);
 }
 
+// Collapses empty and `.` segments and RESOLVES `..` against the segment before it, so a path has one
+// spelling. Absolute and relative paths differ at the root, and the difference is deliberate:
+//
+//   normalizeFilePath('/a/b/../c')   -> '/a/c'
+//   normalizeFilePath('/a/../../b')  -> '/b'      root clamps; there is nothing above it
+//   normalizeFilePath('a/../../b')   -> '../b'    a leading `..` is KEPT
+//
+// The relative case is the one worth stating. A relative path can genuinely refer to a parent, so
+// dropping the leading `..` would not merely lose information — it would rewrite a path that escapes its
+// base into one that appears not to, which is the wrong direction to be wrong in for a caller checking
+// containment. Clamping at the root of an ABSOLUTE path is safe for the mirror-image reason: `/..` has
+// no referent other than `/`, which is POSIX's own answer.
 export function normalizeFilePath(path: string): string {
-  const prefix = path.startsWith('/') ? '/' : '';
-  return prefix + splitPath(path).join('/');
+  const absolute = path.startsWith('/');
+  return formatResolvedPath(resolvePathSegments(path, absolute), absolute);
 }
 
 export function openFileReadStream(
@@ -377,4 +386,34 @@ function globToRegExp(pattern: string): RegExp {
 
 function splitPath(path: string): string[] {
   return path.split('/').filter((segment) => segment !== '' && segment !== '.');
+}
+
+// A relative path that resolves to nothing is `.`, not the empty string: `a/..` names the directory the
+// path started from, and returning '' would hand the caller a falsy value that concatenates wrongly and
+// reads as "no path" rather than "here". This matches POSIX, and it is the answer for the `..`
+// cancellations this resolution newly makes reachable. An absolute path that resolves to nothing is `/`.
+function formatResolvedPath(segments: readonly string[], absolute: boolean): string {
+  if (absolute) return '/' + segments.join('/');
+  return segments.length === 0 ? '.' : segments.join('/');
+}
+
+// Drops empty and `.` segments and applies each `..` to the segment before it. A `..` with nothing to
+// apply to is dropped when `absolute` (root clamps) and kept when relative (it still refers to a
+// parent). Only a LEADING run of `..` can survive in a relative path, because any `..` after a real
+// segment consumes that segment instead.
+function resolvePathSegments(path: string, absolute: boolean): string[] {
+  const out: string[] = [];
+  for (const segment of splitPath(path)) {
+    if (segment !== '..') {
+      out.push(segment);
+      continue;
+    }
+    const previous = out[out.length - 1];
+    if (previous !== undefined && previous !== '..') {
+      out.pop();
+      continue;
+    }
+    if (!absolute) out.push('..');
+  }
+  return out;
 }
