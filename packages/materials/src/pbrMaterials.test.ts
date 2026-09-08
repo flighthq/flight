@@ -6,6 +6,8 @@ import {
   createSpecularGlossinessPbrMaterial,
   createStandardPbrMaterial,
   createStandardPbrMaterialProperties,
+  reportMaterialConversionDrop,
+  setMaterialConversionGuard,
 } from './pbrMaterials';
 
 describe('convertSpecularGlossinessToStandardPbr', () => {
@@ -102,5 +104,25 @@ describe('createStandardPbrMaterialProperties', () => {
 
   it('applies overrides', () => {
     expect(createStandardPbrMaterialProperties({ roughness: 0.5 }).roughness).toBe(0.5);
+  });
+});
+
+describe('reportMaterialConversionDrop', () => {
+  it('routes to the installed guard and stops once uninstalled', () => {
+    const seen: string[] = [];
+    setMaterialConversionGuard((_explanation, conversion) => seen.push(conversion));
+    reportMaterialConversionDrop({ droppedMaps: ['x'], reason: null }, 'first');
+    setMaterialConversionGuard(null);
+    reportMaterialConversionDrop({ droppedMaps: ['x'], reason: null }, 'second');
+    // The core carries the seam and never the message: what is asserted here is the routing, and the
+    // wording belongs to enableMaterialConversionGuards and is tested there.
+    expect(seen).toEqual(['first']);
+  });
+});
+
+describe('setMaterialConversionGuard', () => {
+  it('is a no-op reporter when nothing is installed, so the production path costs nothing', () => {
+    setMaterialConversionGuard(null);
+    expect(() => reportMaterialConversionDrop({ droppedMaps: [], reason: null }, 'none')).not.toThrow();
   });
 });

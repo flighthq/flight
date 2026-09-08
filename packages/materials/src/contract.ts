@@ -9,6 +9,8 @@ export * from './material';
 export * from './materialPresets';
 export * from './materialValidation';
 export * from './pbrExtension';
+export * from './enableMaterialConversionGuards';
+export * from './explainMaterialConversion';
 export * from './pbrMaterials';
 export * from './phongToPbr';
 export * from './sheenPbrExtension';

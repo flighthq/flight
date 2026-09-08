@@ -16,6 +16,9 @@
       "path": "../entity"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../types"
     }
   ],

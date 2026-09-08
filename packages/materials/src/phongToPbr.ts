@@ -1,7 +1,8 @@
 import { getColorLuminance } from '@flighthq/color/contract';
 import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from '@flighthq/types/contract';
 
-import { createStandardPbrMaterial } from './pbrMaterials';
+import { explainPhongConversion } from './explainMaterialConversion';
+import { createStandardPbrMaterial, reportMaterialConversionDrop } from './pbrMaterials';
 
 // Migrates a classic `PhongMaterial` to a metallic-roughness `StandardPbrMaterial` whose surface
 // reads equivalently. A reference (not exact) mapping: the Phong reflection-vector lobe and the
@@ -18,6 +19,11 @@ export function convertPhongToStandardPbrMaterial(
   phong: Readonly<PhongMaterial>,
   opts?: Readonly<Partial<StandardPbrMaterialProperties>>,
 ): StandardPbrMaterial {
+  // Reported, not silent: Phong's specularMap has no standard-PBR slot, so it is discarded here and the
+  // guard seam is how a caller finds out. Core carries the seam, never the message.
+  if (phong.specularMap !== null) {
+    reportMaterialConversionDrop(explainPhongConversion(phong), 'convertPhongToStandardPbrMaterial');
+  }
   return createStandardPbrMaterial({
     baseColor: phong.diffuse,
     baseColorMap: phong.diffuseMap,
