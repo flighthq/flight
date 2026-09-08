@@ -5,7 +5,12 @@ import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  resolveCanvasTextureSmoothing,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
@@ -27,12 +32,10 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   const quadTransform = acquireMatrix();
   const stride = data.transformType === 'vector2' ? 2 : 6;
 
-  context.globalAlpha = quadBatch.alpha;
+  setCanvasGlobalAlpha(state, quadBatch.alpha);
 
-  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
-  if (!smoothing) {
-    context.imageSmoothingEnabled = false;
-  }
+  const smoothing = resolveCanvasTextureSmoothing(state, atlas.texture.sampler.magFilter);
+  if (!smoothing) setCanvasImageSmoothing(state, false);
 
   const restoreMaterial = applyCanvasMaterial(state, quadBatch.material);
 
@@ -95,9 +98,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   context.setTransform(1, 0, 0, 1, 0, 0);
   releaseMatrix(quadTransform);
 
-  if (!smoothing) {
-    context.imageSmoothingEnabled = true;
-  }
+  if (!smoothing) setCanvasImageSmoothing(state, true);
 
   // popClip(state);
   // rectanglePool.releaseMatrix(rect);

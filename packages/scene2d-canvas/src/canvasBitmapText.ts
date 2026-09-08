@@ -11,7 +11,11 @@ import type {
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Draws a BitmapText leaf on Canvas 2D: one `drawImage` per glyph, per glyph-atlas page. Canvas realizes
@@ -27,8 +31,8 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
   const roundPixels = state.roundPixels;
 
   state.applyBlendMode?.(state, node.blendMode);
-  context.globalAlpha = node.alpha;
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
+  setCanvasGlobalAlpha(state, node.alpha);
+  if (!state.allowSmoothing) setCanvasImageSmoothing(state, false);
   const restoreMaterial = applyCanvasMaterial(state, node.material);
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
@@ -64,7 +68,7 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
 
   if (restoreMaterial) context.restore();
   context.setTransform(1, 0, 0, 1, 0, 0);
-  if (!state.allowSmoothing) context.imageSmoothingEnabled = true;
+  if (!state.allowSmoothing) setCanvasImageSmoothing(state, true);
 }
 
 export const defaultCanvasBitmapTextRenderer: SpriteRenderer = {

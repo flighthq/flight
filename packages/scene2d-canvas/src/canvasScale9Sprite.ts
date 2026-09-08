@@ -9,7 +9,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  resolveCanvasTextureSmoothing,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { CANVAS_SCALE9_SPRITE_SLICE_STRIDE, writeCanvasScale9SpriteSlices } from './canvasScale9SpriteSlices';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 import { setCanvasTransform } from './canvasTransform';
@@ -40,10 +45,10 @@ export function drawCanvasScale9Sprite(state: CanvasRenderState, renderProxy: Re
 
   const context = state.context;
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  context.globalAlpha = renderProxy.alpha;
+  setCanvasGlobalAlpha(state, renderProxy.alpha);
 
-  const smoothing = state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
-  if (!smoothing) context.imageSmoothingEnabled = false;
+  const smoothing = resolveCanvasTextureSmoothing(state, texture.sampler.magFilter);
+  if (!smoothing) setCanvasImageSmoothing(state, false);
 
   const { scaleX, scaleY } = source;
   const sliceCount = writeCanvasScale9SpriteSlices(
@@ -76,7 +81,7 @@ export function drawCanvasScale9Sprite(state: CanvasRenderState, renderProxy: Re
     }
   }
 
-  if (!smoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
 // Scale9Sprite extends Sprite and reuses the sprite runtime, so it reuses the sprite renderer data and

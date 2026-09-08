@@ -3,7 +3,12 @@ import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  resolveCanvasTextureSmoothing,
+  setCanvasGlobalAlpha,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
@@ -22,9 +27,9 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   const numRegions = regions.length;
   const transform = tilemapNode.transform2D;
   const roundPixels = state.roundPixels;
-  context.globalAlpha = tilemapNode.alpha;
-  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
-  if (!smoothing) context.imageSmoothingEnabled = false;
+  setCanvasGlobalAlpha(state, tilemapNode.alpha);
+  const smoothing = resolveCanvasTextureSmoothing(state, atlas.texture.sampler.magFilter);
+  if (!smoothing) setCanvasImageSmoothing(state, false);
 
   const restoreMaterial = applyCanvasMaterial(state, tilemapNode.material);
 
@@ -57,7 +62,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   if (restoreMaterial) context.restore();
 
   context.setTransform(1, 0, 0, 1, 0, 0);
-  if (!smoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
 export const defaultCanvasTilemapRenderer: SpriteRenderer = {
