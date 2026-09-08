@@ -101,6 +101,24 @@ describe('isAbsoluteFilePath', () => {
 
 describe('joinFilePath', () => {
   it('joins and normalizes separators', () => expect(filesystem.joinFilePath('/a', '.', 'b')).toBe('/a/b'));
+
+  it('resolves a dot-dot segment against the segment before it', () => {
+    expect(filesystem.joinFilePath('/a/b', '../c')).toBe('/a/c');
+    expect(filesystem.joinFilePath('a', 'b', '..', 'c')).toBe('a/c');
+  });
+
+  it('agrees with normalizeFilePath, so a path has one spelling whichever entry point built it', () => {
+    // Joining and normalizing must not disagree, or the same file has two names depending on how the
+    // caller happened to construct it.
+    for (const parts of [
+      ['/a/b', '../c'],
+      ['a', '..', '..', 'b'],
+      ['/a', '..', '..'],
+      ['a', '..'],
+    ]) {
+      expect(filesystem.joinFilePath(...parts)).toBe(filesystem.normalizeFilePath(parts.join('/')));
+    }
+  });
 });
 
 describe('makeDirectory', () => {
@@ -111,6 +129,33 @@ describe('makeDirectory', () => {
 
 describe('normalizeFilePath', () => {
   it('removes empty and dot segments', () => expect(filesystem.normalizeFilePath('/a//./b')).toBe('/a/b'));
+
+  it('resolves a dot-dot segment against the segment before it', () => {
+    expect(filesystem.normalizeFilePath('/a/b/../c')).toBe('/a/c');
+    expect(filesystem.normalizeFilePath('a/b/../../c')).toBe('c');
+    expect(filesystem.normalizeFilePath('/a/b/..')).toBe('/a');
+  });
+
+  it('clamps an absolute path at the root, which has nothing above it', () => {
+    expect(filesystem.normalizeFilePath('/..')).toBe('/');
+    expect(filesystem.normalizeFilePath('/a/../../b')).toBe('/b');
+  });
+
+  it('KEEPS a leading dot-dot on a relative path, which still refers to a parent', () => {
+    // The direction that matters. Dropping these would not merely lose information: it would rewrite a
+    // path that escapes its base into one that appears not to, so a caller checking containment would
+    // be told the wrong answer.
+    expect(filesystem.normalizeFilePath('..')).toBe('..');
+    expect(filesystem.normalizeFilePath('a/../../b')).toBe('../b');
+    expect(filesystem.normalizeFilePath('a/../../..')).toBe('../..');
+  });
+
+  it('resolves a relative path that cancels out to `.` rather than to the empty string', () => {
+    // '' is falsy and concatenates wrongly; '.' says "the directory it started from", which is what the
+    // path means.
+    expect(filesystem.normalizeFilePath('a/..')).toBe('.');
+    expect(filesystem.normalizeFilePath('.')).toBe('.');
+  });
 });
 
 describe('openFileReadStream', () => {
