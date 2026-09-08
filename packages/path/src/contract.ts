@@ -6,6 +6,7 @@ export * from './fitPathCurves';
 export * from './flattenPath';
 export * from './forEachPathSegment';
 export * from './getPathBounds';
+export * from './getPathCurvatureAtDistance';
 export * from './getPathContourLengths';
 export * from './getPathLength';
 export * from './getPathNearestPoint';
