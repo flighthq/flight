@@ -5,6 +5,8 @@ export * from './domCache';
 export * from './domClip';
 export * from './domClipRectangle';
 export * from './domCSSFilterBinding';
+export * from './domSvgFilter';
+export * from './domSvgFilter';
 export * from './domNode2D';
 export { invalidateDomFontResource } from './domFontSource';
 export * from './domImageSource';
