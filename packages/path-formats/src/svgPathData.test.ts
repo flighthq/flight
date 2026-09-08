@@ -2,7 +2,7 @@ import { createPath, forEachPathSegment } from '@flighthq/path/contract';
 import type { Path, PathSegment } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { appendSvgPathData, formatSvgPathData, parseSvgPathData } from './svgPathData';
+import { appendSvgPathData, explainSvgPathData, formatSvgPathData, parseSvgPathData } from './svgPathData';
 
 function collectSegments(path: Readonly<Path>): PathSegment[] {
   const segments: PathSegment[] = [];
@@ -23,6 +23,24 @@ describe('appendSvgPathData', () => {
   it('returns false on malformed input', () => {
     const path = createPath();
     expect(appendSvgPathData(path, 'L10 10')).toBe(false);
+  });
+
+  it('does not partially mutate the destination on malformed input', () => {
+    const path = createPath();
+    appendSvgPathData(path, 'M1 2 L3 4');
+    const commands = [...path.commands];
+    const data = [...path.data];
+    expect(appendSvgPathData(path, 'M10 20 L30')).toBe(false);
+    expect(path.commands).toEqual(commands);
+    expect(path.data).toEqual(data);
+  });
+});
+
+describe('explainSvgPathData', () => {
+  it('returns null for valid input and locates malformed input', () => {
+    expect(explainSvgPathData('M0 0 L1 1')).toBeNull();
+    expect(explainSvgPathData('L10 10')).toEqual({ position: 0, reason: 'expected-moveto' });
+    expect(explainSvgPathData('M0 0 X10 10')).toEqual({ position: 5, reason: 'expected-command' });
   });
 });
 
@@ -154,6 +172,12 @@ describe('parseSvgPathData', () => {
     expect(last.y).toBeCloseTo(0, 6);
   });
 
+  it('starts an arc after close at the closed subpath origin', () => {
+    const path = parseSvgPathData('M0 0 L10 0 Z A5 5 0 0 1 10 0');
+    const expected = parseSvgPathData('M0 0 L10 0 Z M0 0 A5 5 0 0 1 10 0');
+    expect(collectSegments(path as Path)).toEqual(collectSegments(expected as Path));
+  });
+
   it('closes contours and returns the current point to the subpath start', () => {
     const path = parseSvgPathData('M0 0 L10 0 L10 10 Z L5 5');
     const segments = collectSegments(path as Path);
@@ -176,6 +200,19 @@ describe('parseSvgPathData', () => {
       { kind: 'moveTo', x: 10, y: 10 },
       { kind: 'lineTo', x: 20, y: -15 },
     ]);
+  });
+
+  it('tokenizes leading dots, packed decimals, explicit plus signs, and trailing dots', () => {
+    const path = parseSvgPathData('M.5.5 L+2 +3 L10. 20.');
+    expect(collectSegments(path as Path)).toEqual([
+      { kind: 'moveTo', x: 0.5, y: 0.5 },
+      { kind: 'lineTo', x: 2, y: 3 },
+      { kind: 'lineTo', x: 10, y: 20 },
+    ]);
+  });
+
+  it('rejects a dangling exponent after backtracking the numeric token', () => {
+    expect(parseSvgPathData('M1e 0')).toBeNull();
   });
 
   it('accepts large finite coordinates at both signs', () => {

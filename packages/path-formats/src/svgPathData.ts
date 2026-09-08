@@ -16,14 +16,31 @@ import type { Path } from '@flighthq/types/contract';
  * (lowercase) `M L H V C S Q T A Z`, implicit repeated commands, and the smooth-curve shorthands
  * `S`/`T` (reflecting the previous cubic/quadratic control point). Returns `false` without further
  * mutation guarantee on structurally malformed input (a leading command that is not moveto, an
- * unknown command letter, or a missing/short coordinate run); returns `true` when the whole string
- * parses. An empty or whitespace-only string is well-formed and appends nothing.
+ * unknown command letter, or a missing/short coordinate run). A failed parse leaves `path`
+ * unchanged; returns `true` when the whole string parses. An empty or whitespace-only string is
+ * well-formed and appends nothing.
  *
  * Elliptic arcs (`A`/`a`) are appended through `appendPathArcTo`, which approximates them as cubic
  * bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`) therefore sees
  * cubics, not an arc verb. The geometry round-trips; the arc command does not.
  */
 export function appendSvgPathData(path: Path, d: string): boolean {
+  const scratch = createPath();
+  if (parseSvgPathDataInto(scratch, d) !== null) return false;
+  path.commands.push(...scratch.commands);
+  path.data.push(...scratch.data);
+  return true;
+}
+
+/**
+ * Explains why an SVG path `d` string cannot be parsed. Returns `null` for well-formed input, or
+ * the input position and a stable reason for malformed input.
+ */
+export function explainSvgPathData(d: string): { position: number; reason: string } | null {
+  return parseSvgPathDataInto(createPath(), d);
+}
+
+function parseSvgPathDataInto(path: Path, d: string): { position: number; reason: string } | null {
   const length = d.length;
   let pos = 0;
 
@@ -105,11 +122,13 @@ export function appendSvgPathData(path: Path, d: string): boolean {
     if (pos >= length) break;
 
     const commandLetter = d[pos];
-    if (!isSvgCommandLetter(commandLetter)) return false;
+    if (!isSvgCommandLetter(commandLetter)) return { position: pos, reason: 'expected-command' };
     pos++;
 
     // Path data must open with a moveto.
-    if (lastKind === '' && commandLetter !== 'M' && commandLetter !== 'm') return false;
+    if (lastKind === '' && commandLetter !== 'M' && commandLetter !== 'm') {
+      return { position: pos - 1, reason: 'expected-moveto' };
+    }
 
     if (commandLetter === 'Z' || commandLetter === 'z') {
       appendPathClose(path);
@@ -127,7 +146,9 @@ export function appendSvgPathData(path: Path, d: string): boolean {
       if (!first) {
         skipSeparators();
         if (pos >= length) break;
-        if (isSvgCommandLetter(d[pos])) break;
+        // Any letter ends the current operand run. The outer command reader then distinguishes a
+        // supported command from an unknown one and can report the latter at its actual position.
+        if (isAsciiLetter(d[pos])) break;
       }
 
       const relative = active >= 'a';
@@ -136,7 +157,7 @@ export function appendSvgPathData(path: Path, d: string): boolean {
       if (upper === 'M') {
         const nx = readNumber();
         const ny = readNumber();
-        if (nx === null || ny === null) return false;
+        if (nx === null || ny === null) return { position: pos, reason: 'expected-coordinate-pair' };
         currentX = relative ? currentX + nx : nx;
         currentY = relative ? currentY + ny : ny;
         startX = currentX;
@@ -146,20 +167,20 @@ export function appendSvgPathData(path: Path, d: string): boolean {
       } else if (upper === 'L') {
         const nx = readNumber();
         const ny = readNumber();
-        if (nx === null || ny === null) return false;
+        if (nx === null || ny === null) return { position: pos, reason: 'expected-coordinate-pair' };
         currentX = relative ? currentX + nx : nx;
         currentY = relative ? currentY + ny : ny;
         appendPathLineTo(path, currentX, currentY);
         lastKind = 'L';
       } else if (upper === 'H') {
         const nx = readNumber();
-        if (nx === null) return false;
+        if (nx === null) return { position: pos, reason: 'expected-coordinate' };
         currentX = relative ? currentX + nx : nx;
         appendPathLineTo(path, currentX, currentY);
         lastKind = 'L';
       } else if (upper === 'V') {
         const ny = readNumber();
-        if (ny === null) return false;
+        if (ny === null) return { position: pos, reason: 'expected-coordinate' };
         currentY = relative ? currentY + ny : ny;
         appendPathLineTo(path, currentX, currentY);
         lastKind = 'L';
@@ -170,7 +191,9 @@ export function appendSvgPathData(path: Path, d: string): boolean {
         const y2 = readNumber();
         const x = readNumber();
         const y = readNumber();
-        if (x1 === null || y1 === null || x2 === null || y2 === null || x === null || y === null) return false;
+        if (x1 === null || y1 === null || x2 === null || y2 === null || x === null || y === null) {
+          return { position: pos, reason: 'expected-cubic-coordinates' };
+        }
         const c1x = relative ? currentX + x1 : x1;
         const c1y = relative ? currentY + y1 : y1;
         const c2x = relative ? currentX + x2 : x2;
@@ -188,7 +211,9 @@ export function appendSvgPathData(path: Path, d: string): boolean {
         const y2 = readNumber();
         const x = readNumber();
         const y = readNumber();
-        if (x2 === null || y2 === null || x === null || y === null) return false;
+        if (x2 === null || y2 === null || x === null || y === null) {
+          return { position: pos, reason: 'expected-smooth-cubic-coordinates' };
+        }
         const reflect = lastKind === 'C' || lastKind === 'S';
         const c1x = reflect ? 2 * currentX - lastControl2X : currentX;
         const c1y = reflect ? 2 * currentY - lastControl2Y : currentY;
@@ -207,7 +232,9 @@ export function appendSvgPathData(path: Path, d: string): boolean {
         const y1 = readNumber();
         const x = readNumber();
         const y = readNumber();
-        if (x1 === null || y1 === null || x === null || y === null) return false;
+        if (x1 === null || y1 === null || x === null || y === null) {
+          return { position: pos, reason: 'expected-quadratic-coordinates' };
+        }
         const cx = relative ? currentX + x1 : x1;
         const cy = relative ? currentY + y1 : y1;
         const ax = relative ? currentX + x : x;
@@ -221,7 +248,7 @@ export function appendSvgPathData(path: Path, d: string): boolean {
       } else if (upper === 'T') {
         const x = readNumber();
         const y = readNumber();
-        if (x === null || y === null) return false;
+        if (x === null || y === null) return { position: pos, reason: 'expected-coordinate-pair' };
         const reflect = lastKind === 'Q' || lastKind === 'T';
         const cx = reflect ? 2 * currentX - lastQuadControlX : currentX;
         const cy = reflect ? 2 * currentY - lastQuadControlY : currentY;
@@ -250,16 +277,19 @@ export function appendSvgPathData(path: Path, d: string): boolean {
           x === null ||
           y === null
         ) {
-          return false;
+          return { position: pos, reason: 'expected-arc-parameters' };
         }
         const ax = relative ? currentX + x : x;
         const ay = relative ? currentY + y : y;
+        // appendPathArcTo discovers its start through the path's last stored point. CLOSE stores no
+        // coordinates, so anchor the SVG pen at the subpath origin before asking it to build cubics.
+        if (lastKind === 'Z') appendPathMoveTo(path, currentX, currentY);
         appendPathArcTo(path, rx, ry, (rotationDegrees * Math.PI) / 180, largeArc === 1, sweep === 1, ax, ay);
         currentX = ax;
         currentY = ay;
         lastKind = 'A';
       } else {
-        return false;
+        return { position: pos - 1, reason: 'unsupported-command' };
       }
 
       first = false;
@@ -268,7 +298,7 @@ export function appendSvgPathData(path: Path, d: string): boolean {
     }
   }
 
-  return true;
+  return null;
 }
 
 /**
@@ -313,7 +343,7 @@ export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<{ pre
  */
 export function parseSvgPathData(d: string): Path | null {
   const path = createPath();
-  if (!appendSvgPathData(path, d)) return null;
+  if (parseSvgPathDataInto(path, d) !== null) return null;
   return path;
 }
 
@@ -326,4 +356,9 @@ function formatSvgNumber(value: number, precision?: number): string {
 
 function isSvgCommandLetter(c: string): boolean {
   return 'MmLlHhVvCcSsQqTtAaZz'.indexOf(c) !== -1;
+}
+
+function isAsciiLetter(c: string): boolean {
+  const code = c.charCodeAt(0);
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
 }
