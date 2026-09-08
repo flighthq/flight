@@ -66,10 +66,12 @@ function parseStarlingXml(xml: string): StarlingDocument {
 // pixels; the spritesheet layer normalizes them to the 0..1 range, so re-divide the atlas's raw pivot
 // by the source size here.
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const sourceWidth = region.originalWidth ?? region.width;
-  const sourceHeight = region.originalHeight ?? region.height;
+  const width = region.rotated ? region.height : region.width;
+  const height = region.rotated ? region.width : region.height;
+  const sourceWidth = region.originalWidth ?? width;
+  const sourceHeight = region.originalHeight ?? height;
   return createSpritesheetFrameData({
-    height: region.height,
+    height,
     name: region.name ?? '',
     offsetX: region.sourceX,
     offsetY: region.sourceY,
@@ -78,7 +80,7 @@ function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrame
     rotated: region.rotated,
     sourceHeight,
     sourceWidth,
-    width: region.width,
+    width,
     x: region.x,
     y: region.y,
   });
@@ -122,25 +124,29 @@ function documentToData(
   doc: StarlingDocument,
   regions: readonly TextureAtlasRegion[],
   frameDuration: number,
+  imageWidth: number,
+  imageHeight: number,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SpritesheetData {
   const frames = regions.map(frameFromRegion);
   const frameNames = frames.map((f) => f.name);
   const animations = inferAnimations(frameNames, frameDuration);
 
-  reportImportDiagnostic(
-    diagnostics,
-    ImportDiagnosticSeverity.Recover,
-    'spritesheet.starling.missing-dimensions',
-    'documentToData',
-  );
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'spritesheet.starling.missing-dimensions',
+      'documentToData',
+    );
+  }
 
   return createSpritesheetData({
     animations,
     frames,
     imageFile: doc.imagePath,
-    imageHeight: 0,
-    imageWidth: 0,
+    imageHeight,
+    imageWidth,
     scale: 1,
   });
 }
@@ -154,7 +160,14 @@ export function parseStarlingSpritesheet(
   options?: StarlingParseOptions,
   diagnostics?: ImportDiagnostic[],
 ): SpritesheetData {
-  return documentToData(parseStarlingXml(xml), regionsFromXml(xml), options?.frameDuration ?? 100, diagnostics);
+  return documentToData(
+    parseStarlingXml(xml),
+    regionsFromXml(xml),
+    options?.frameDuration ?? 100,
+    options?.imageWidth ?? 0,
+    options?.imageHeight ?? 0,
+    diagnostics,
+  );
 }
 
 export function parseStarlingSpritesheetDocument(
@@ -163,5 +176,15 @@ export function parseStarlingSpritesheetDocument(
   diagnostics?: ImportDiagnostic[],
 ): StarlingParsed {
   const document = parseStarlingXml(xml);
-  return { data: documentToData(document, regionsFromXml(xml), options?.frameDuration ?? 100, diagnostics), document };
+  return {
+    data: documentToData(
+      document,
+      regionsFromXml(xml),
+      options?.frameDuration ?? 100,
+      options?.imageWidth ?? 0,
+      options?.imageHeight ?? 0,
+      diagnostics,
+    ),
+    document,
+  };
 }

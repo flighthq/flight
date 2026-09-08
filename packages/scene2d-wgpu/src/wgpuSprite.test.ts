@@ -96,7 +96,41 @@ describe('drawWgpuSprite', () => {
     drawWgpuSprite(state, getOrCreateRenderProxy2D(state, sprite));
 
     const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
-    expect(data.slice(6, 12)).toEqual(new Float32Array([100, 80, 140 / 720, 160 / 480, 240 / 720, 240 / 480]));
+    expect(data[0]).toBeCloseTo(100);
+    expect(data[3]).toBeCloseTo(80);
+    expect(data[6]).toBeCloseTo(140 / 720);
+    expect(data[7]).toBeCloseTo(160 / 480);
+    expect(data[8]).toBeCloseTo(100 / 720);
+    expect(data[11]).toBeCloseTo(80 / 480);
+    submitWgpuRenderPass(state);
+  });
+
+  it('packs a quarter-turned Texture view as affine UV axes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerWgpuRenderTextureResolver(state);
+    registerWgpuStandardMaterial(state);
+    const texture = createRenderTexture({ height: 50, width: 100 });
+    renderIntoWgpuRenderTexture(state, texture, () => {});
+    texture.uvOffset.x = 0.1;
+    texture.uvOffset.y = 0.4;
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+    const sprite = createSprite({ data: { texture } });
+    prepareScene2DRender(state, sprite);
+
+    drawWgpuSprite(state, getOrCreateRenderProxy2D(state, sprite));
+
+    const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data[0]).toBeCloseTo(15);
+    expect(data[3]).toBeCloseTo(20);
+    expect(data[6]).toBeCloseTo(0.1);
+    expect(data[7]).toBeCloseTo(0.4);
+    expect(data[8]).toBeCloseTo(0);
+    expect(data[9]).toBeCloseTo(-0.3);
+    expect(data[10]).toBeCloseTo(0.2);
+    expect(data[11]).toBeCloseTo(0);
     submitWgpuRenderPass(state);
   });
 });

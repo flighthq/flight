@@ -45,6 +45,17 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });
+
+  it('swaps non-square atlas extents through a quarter-turn UV view', () => {
+    const imageTexture = texture(100, 50);
+    imageTexture.uvScale.x = 0.3;
+    imageTexture.uvScale.y = 0.2;
+    imageTexture.uvRotation = -Math.PI / 2;
+    const out = createRectangle();
+    computeSpriteLocalBoundsRectangle(out, createSprite({ data: { texture: imageTexture } }) as unknown as Node);
+    expect(out.width).toBeCloseTo(15);
+    expect(out.height).toBeCloseTo(20);
+  });
 });
 
 describe('createSprite', () => {

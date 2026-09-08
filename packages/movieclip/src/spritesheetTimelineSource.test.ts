@@ -56,6 +56,26 @@ describe('createSpritesheetTimelineSource', () => {
     expect(children!.length).toBe(1); // reused across frames, not one-per-frame
   });
 
+  it('applies normalized frame pivots against the original frame size and clears absent pivots', () => {
+    const sheet = makeSheet(2);
+    sheet.atlas!.regions[0].originalWidth = 80;
+    sheet.atlas!.regions[0].originalHeight = 40;
+    sheet.frames[0].pivotX = 0.25;
+    sheet.frames[0].pivotY = 0.75;
+    const anim = createSpritesheetAnimation({ frameDuration: 100, frames: [0, 1] });
+    const source = createSpritesheetTimelineSource(sheet, anim);
+    const target = createDisplayObject();
+
+    source.constructFrame(target as Node2D, 1);
+    const bitmap = getNode2DRuntime(target).children![0] as Sprite;
+    expect(bitmap.pivotX).toBe(20);
+    expect(bitmap.pivotY).toBe(30);
+
+    source.constructFrame(target as Node2D, 2);
+    expect(bitmap.pivotX).toBe(0);
+    expect(bitmap.pivotY).toBe(0);
+  });
+
   it('does not throw when the spritesheet has no atlas', () => {
     const sheet = createSpritesheet({ atlas: null });
     sheet.frames = [];

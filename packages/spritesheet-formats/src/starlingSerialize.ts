@@ -2,9 +2,9 @@ import type { SpritesheetData, StarlingDocument, StarlingSubTexture } from '@fli
 
 function frameToSubTexture(frame: Readonly<SpritesheetData['frames'][0]>): StarlingSubTexture {
   const st: StarlingSubTexture = {
-    height: frame.height,
+    height: frame.rotated ? frame.width : frame.height,
     name: frame.name,
-    width: frame.width,
+    width: frame.rotated ? frame.height : frame.width,
     x: frame.x,
     y: frame.y,
   };

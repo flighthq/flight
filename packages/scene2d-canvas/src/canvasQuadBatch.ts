@@ -2,6 +2,7 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
@@ -49,16 +50,14 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
     if (stride === 2) {
       const dx = transforms[offset];
       const dy = transforms[offset + 1];
-      context.drawImage(
+      drawCanvasAtlasRegion(
+        context,
         image,
-        region.x,
-        region.y,
-        region.width,
-        region.height,
+        region,
         roundPixels ? dx | 0 : dx,
         roundPixels ? dy | 0 : dy,
-        region.width,
-        region.height,
+        region.rotated ? region.height : region.width,
+        region.rotated ? region.width : region.height,
       );
     } else {
       setMatrixFromFloat32Array(quadTransform, offset, transforms);
@@ -78,7 +77,15 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
         quadTransform.ty,
       );
 
-      context.drawImage(image, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
+      drawCanvasAtlasRegion(
+        context,
+        image,
+        region,
+        0,
+        0,
+        region.rotated ? region.height : region.width,
+        region.rotated ? region.width : region.height,
+      );
     }
   }
 

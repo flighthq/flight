@@ -1,6 +1,7 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
@@ -61,7 +62,15 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
 
     context.globalAlpha = nodeAlpha * alphas[i];
     context.setTransform(a, b, c, d, tx, ty);
-    context.drawImage(imageSource, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
+    drawCanvasAtlasRegion(
+      context,
+      imageSource,
+      region,
+      0,
+      0,
+      region.rotated ? region.height : region.width,
+      region.rotated ? region.width : region.height,
+    );
   }
 
   if (!smoothing) context.imageSmoothingEnabled = true;

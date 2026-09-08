@@ -139,8 +139,7 @@ describe('parseTexturePackerAtlasDocument', () => {
     expect(atlas.regions[0].rotated).toBe(false);
     expect(atlas.regions[1].rotated).toBe(true);
   });
-  it('swaps width/height for rotated regions', () => {
-    // Rotated 90°: packed w=32,h=32 with rotation → logical w=h, h=w (same here since square)
+  it('preserves packed width/height for rotated regions', () => {
     const rotatedDoc: TexturePackerAtlasArrayDocument = {
       frames: [
         {
@@ -156,9 +155,8 @@ describe('parseTexturePackerAtlasDocument', () => {
     };
     const atlas = createTextureAtlas();
     parseTexturePackerAtlasDocument(rotatedDoc, atlas);
-    // When rotated: logical width = packed h, logical height = packed w
-    expect(atlas.regions[0].width).toBe(40);
-    expect(atlas.regions[0].height).toBe(20);
+    expect(atlas.regions[0].width).toBe(20);
+    expect(atlas.regions[0].height).toBe(40);
   });
   it('clears existing regions before parsing', () => {
     const atlas = createTextureAtlas();

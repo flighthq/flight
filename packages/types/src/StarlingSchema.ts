@@ -47,4 +47,8 @@ export interface StarlingParsed {
 export interface StarlingParseOptions {
   /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
   frameDuration?: number;
+  /** Atlas image height, which Starling XML itself does not declare. */
+  imageHeight?: number;
+  /** Atlas image width, which Starling XML itself does not declare. */
+  imageWidth?: number;
 }

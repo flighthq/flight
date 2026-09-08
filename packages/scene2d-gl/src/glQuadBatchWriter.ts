@@ -14,15 +14,17 @@ import type {
   GlRenderState,
   Material,
   MaterialData,
+  MatrixLike,
   SamplerLike,
 } from '@flighthq/types/contract';
 
-// Base per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
-// [0-1]  a, b         — world-space 2D matrix column 1
-// [2-3]  c, d         — world-space 2D matrix column 2
+// Base per-instance layout (13 floats = 52 bytes, world-space axes + affine UVs + alpha):
+// [0-1]  axisUX/Y     — world-space horizontal quad axis, already multiplied by width
+// [2-3]  axisVX/Y     — world-space vertical quad axis, already multiplied by height
 // [4-5]  tx, ty       — world-space translation
-// [6-7]  width, height — region size in pixels
-// [8-11] u0,v0,u1,v1  — atlas UV rect
+// [6-7]  uvOrigin     — UV at the drawn top-left corner
+// [8-9]  uvAxisU      — UV delta across the drawn horizontal axis
+// [10-11] uvAxisV     — UV delta across the drawn vertical axis
 // [12]   alpha        — per-instance alpha
 // Attribute locations 0 (a_corner) and 1-6 are a fixed contract; material shaders extend from
 // location 7. The base buffer and a material's own per-instance buffer share only the instance
@@ -42,8 +44,8 @@ layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec2 a_matAB;
 layout(location = 2) in vec2 a_matCD;
 layout(location = 3) in vec2 a_matTXTY;
-layout(location = 4) in vec2 a_size;
-layout(location = 5) in vec4 a_uvRect;
+layout(location = 4) in vec4 a_uvOriginAxisU;
+layout(location = 5) in vec2 a_uvAxisV;
 layout(location = 6) in float a_alpha;
 
 uniform mat3 u_world;
@@ -52,14 +54,13 @@ out vec2 v_texCoord;
 out float v_alpha;
 
 void main() {
-  vec2 local = a_corner * a_size;
   vec2 worldPos = vec2(
-    a_matAB.x * local.x + a_matCD.x * local.y + a_matTXTY.x,
-    a_matAB.y * local.x + a_matCD.y * local.y + a_matTXTY.y
+    a_matAB.x * a_corner.x + a_matCD.x * a_corner.y + a_matTXTY.x,
+    a_matAB.y * a_corner.x + a_matCD.y * a_corner.y + a_matTXTY.y
   );
   vec3 clip = u_world * vec3(worldPos, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_texCoord = a_uvOriginAxisU.xy + a_uvOriginAxisU.zw * a_corner.x + a_uvAxisV * a_corner.y;
   v_alpha = a_alpha;
 }`;
 
@@ -86,8 +87,8 @@ function compileQuadBatchWriterShader(gl: GlContext): GlQuadBatchShader {
     locMatAB: 1,
     locMatCD: 2,
     locMatTXTY: 3,
-    locSize: 4,
-    locUvRect: 5,
+    locUvOriginAxisU: 4,
+    locUvAxisV: 5,
     locAlpha: 6,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
@@ -118,10 +119,10 @@ export function bindGlQuadBatchBaseAttributes(state: GlRenderState, locCorner: n
   gl.vertexAttribPointer(3, 2, gl.FLOAT, false, stride, 16);
   gl.vertexAttribDivisor(3, 1);
   gl.enableVertexAttribArray(4);
-  gl.vertexAttribPointer(4, 2, gl.FLOAT, false, stride, 24);
+  gl.vertexAttribPointer(4, 4, gl.FLOAT, false, stride, 24);
   gl.vertexAttribDivisor(4, 1);
   gl.enableVertexAttribArray(5);
-  gl.vertexAttribPointer(5, 4, gl.FLOAT, false, stride, 32);
+  gl.vertexAttribPointer(5, 2, gl.FLOAT, false, stride, 40);
   gl.vertexAttribDivisor(5, 1);
   gl.enableVertexAttribArray(6);
   gl.vertexAttribPointer(6, 1, gl.FLOAT, false, stride, 48);
@@ -363,4 +364,51 @@ export function useGlQuadBatchProgram(state: GlRenderState, program: WebGLProgra
     state.gl.useProgram(program);
   }
   runtime.context.currentShader = { locations: null, program };
+}
+
+export function writeGlQuadBatchAffineInstance(
+  data: Float32Array,
+  base: number,
+  transform: Readonly<MatrixLike>,
+  width: number,
+  height: number,
+  uvOriginX: number,
+  uvOriginY: number,
+  uvAxisUX: number,
+  uvAxisUY: number,
+  uvAxisVX: number,
+  uvAxisVY: number,
+  alpha: number,
+): void {
+  data[base] = transform.a * width;
+  data[base + 1] = transform.b * width;
+  data[base + 2] = transform.c * height;
+  data[base + 3] = transform.d * height;
+  data[base + 4] = transform.tx;
+  data[base + 5] = transform.ty;
+  data[base + 6] = uvOriginX;
+  data[base + 7] = uvOriginY;
+  data[base + 8] = uvAxisUX;
+  data[base + 9] = uvAxisUY;
+  data[base + 10] = uvAxisVX;
+  data[base + 11] = uvAxisVY;
+  data[base + 12] = alpha;
+}
+
+// Packs the common axis-aligned UV rectangle into the affine base record. Geometry dimensions are
+// folded into the world axes once per instance, freeing the same two floats for the second UV axis;
+// the record therefore supports rotated atlas views without growing beyond 52 bytes.
+export function writeGlQuadBatchInstance(
+  data: Float32Array,
+  base: number,
+  transform: Readonly<MatrixLike>,
+  width: number,
+  height: number,
+  u0: number,
+  v0: number,
+  u1: number,
+  v1: number,
+  alpha: number,
+): void {
+  writeGlQuadBatchAffineInstance(data, base, transform, width, height, u0, v0, u1 - u0, 0, 0, v1 - v0, alpha);
 }

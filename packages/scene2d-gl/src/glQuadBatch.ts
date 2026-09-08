@@ -19,14 +19,8 @@ import {
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
+  writeGlQuadBatchAffineInstance,
 } from './glQuadBatchWriter';
-
-// Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
-// [0-3]  a, b, c, d   — world-space 2D matrix
-// [4-5]  tx, ty       — world-space translation
-// [6-7]  width, height — region size in pixels
-// [8-11] u0,v0,u1,v1  — atlas UV rect
-// [12]   alpha        — per-instance alpha
 
 function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -87,12 +81,12 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     if (isVector2) {
       const dx = transforms[i * 2],
         dy = transforms[i * 2 + 1];
-      instanceData[writeBase] = pa;
-      instanceData[writeBase + 1] = pb;
-      instanceData[writeBase + 2] = pc;
-      instanceData[writeBase + 3] = pd;
-      instanceData[writeBase + 4] = pa * dx + pc * dy + ptx;
-      instanceData[writeBase + 5] = pb * dx + pd * dy + pty;
+      quadTransform.a = pa;
+      quadTransform.b = pb;
+      quadTransform.c = pc;
+      quadTransform.d = pd;
+      quadTransform.tx = pa * dx + pc * dy + ptx;
+      quadTransform.ty = pb * dx + pd * dy + pty;
     } else {
       const offset = i * 6;
       const la = transforms[offset],
@@ -101,20 +95,14 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
         ld = transforms[offset + 3];
       const ltx = transforms[offset + 4],
         lty = transforms[offset + 5];
-      instanceData[writeBase] = pa * la + pc * lb;
-      instanceData[writeBase + 1] = pb * la + pd * lb;
-      instanceData[writeBase + 2] = pa * lc + pc * ld;
-      instanceData[writeBase + 3] = pb * lc + pd * ld;
-      instanceData[writeBase + 4] = pa * ltx + pc * lty + ptx;
-      instanceData[writeBase + 5] = pb * ltx + pd * lty + pty;
+      quadTransform.a = pa * la + pc * lb;
+      quadTransform.b = pb * la + pd * lb;
+      quadTransform.c = pa * lc + pc * ld;
+      quadTransform.d = pb * lc + pd * ld;
+      quadTransform.tx = pa * ltx + pc * lty + ptx;
+      quadTransform.ty = pb * ltx + pd * lty + pty;
     }
-    instanceData[writeBase + 6] = region.width;
-    instanceData[writeBase + 7] = region.height;
-    instanceData[writeBase + 8] = region.x * iw;
-    instanceData[writeBase + 9] = region.y * ih;
-    instanceData[writeBase + 10] = (region.x + region.width) * iw;
-    instanceData[writeBase + 11] = (region.y + region.height) * ih;
-    instanceData[writeBase + 12] = alpha;
+    writeAtlasRegionInstance(instanceData, writeBase, quadTransform, region, iw, ih, alpha);
     packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorScaleBias =
@@ -134,3 +122,34 @@ export const defaultGlQuadBatchRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: submitGlQuadBatch,
 };
+
+function writeAtlasRegionInstance(
+  data: Float32Array,
+  base: number,
+  transform: typeof quadTransform,
+  region: Readonly<{ height: number; rotated: boolean; width: number; x: number; y: number }>,
+  iw: number,
+  ih: number,
+  alpha: number,
+): void {
+  const u0 = region.x * iw;
+  const v0 = region.y * ih;
+  const u1 = (region.x + region.width) * iw;
+  const v1 = (region.y + region.height) * ih;
+  writeGlQuadBatchAffineInstance(
+    data,
+    base,
+    transform,
+    region.rotated ? region.height : region.width,
+    region.rotated ? region.width : region.height,
+    u0,
+    region.rotated ? v1 : v0,
+    region.rotated ? 0 : u1 - u0,
+    region.rotated ? v0 - v1 : 0,
+    region.rotated ? u1 - u0 : 0,
+    region.rotated ? 0 : v1 - v0,
+    alpha,
+  );
+}
+
+const quadTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

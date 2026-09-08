@@ -16,6 +16,7 @@ import type {
   TintMaterialData,
   Material,
   MaterialData,
+  MatrixLike,
   SamplerLike,
   WgpuMaterialRenderer,
   WgpuQuadBatchResources,
@@ -28,10 +29,11 @@ import type { BlendMode } from '@flighthq/types/contract';
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color adjustment). A material
 // that needs per-instance data writes it into a parallel material storage buffer instead.
-// [0-3]   a, b, c, d   — world-space 2D matrix
+// [0-3]   axisUX/Y, axisVX/Y — world-space quad axes, already multiplied by width/height
 // [4-5]   tx, ty       — world-space translation
-// [6-7]   width, height — region size in pixels
-// [8-11]  u0,v0,u1,v1  — atlas UV rect
+// [6-7]   uvOrigin     — UV at the drawn top-left corner
+// [8-9]   uvAxisU      — UV delta across the drawn horizontal axis
+// [10-11] uvAxisV      — UV delta across the drawn vertical axis
 // [12]    alpha        — per-instance alpha
 export const QUAD_BATCH_INSTANCE_FLOATS = 13;
 const QUAD_BATCH_INSTANCE_STRIDE = QUAD_BATCH_INSTANCE_FLOATS * 4;
@@ -49,10 +51,10 @@ struct Uniforms {
 }
 
 struct InstanceData {
-  a : f32, b : f32, c : f32, d : f32,
+  axisUX : f32, axisUY : f32, axisVX : f32, axisVY : f32,
   tx : f32, ty : f32,
-  width : f32, height : f32,
-  u0 : f32, v0 : f32, u1 : f32, v1 : f32,
+  uvOriginX : f32, uvOriginY : f32,
+  uvAxisUX : f32, uvAxisUY : f32, uvAxisVX : f32, uvAxisVY : f32,
   alpha : f32,
 }
 
@@ -71,14 +73,15 @@ fn quadBaseVertex(vi : u32, ii : u32) -> BaseVertex {
   let inst = instances[ii];
   let xi = (vi == 1u || vi == 2u || vi == 4u);
   let yi = (vi == 2u || vi == 4u || vi == 5u);
-  let lx = select(0.0, inst.width, xi);
-  let ly = select(0.0, inst.height, yi);
-  let wx = inst.a * lx + inst.c * ly + inst.tx;
-  let wy = inst.b * lx + inst.d * ly + inst.ty;
+  let cx = select(0.0, 1.0, xi);
+  let cy = select(0.0, 1.0, yi);
+  let wx = inst.axisUX * cx + inst.axisVX * cy + inst.tx;
+  let wy = inst.axisUY * cx + inst.axisVY * cy + inst.ty;
   let p = uni.matrix * vec3f(wx, wy, 1.0);
   var bv : BaseVertex;
   bv.position = vec4f(p.x, p.y, 0.0, 1.0);
-  bv.uv = vec2f(select(inst.u0, inst.u1, xi), select(inst.v0, inst.v1, yi));
+  bv.uv = vec2f(inst.uvOriginX, inst.uvOriginY) +
+    vec2f(inst.uvAxisUX, inst.uvAxisUY) * cx + vec2f(inst.uvAxisVX, inst.uvAxisVY) * cy;
   bv.alpha = inst.alpha;
   return bv;
 }
@@ -372,6 +375,52 @@ export function recordWgpuQuadBatchColorScaleBias(
 // and the offscreen cache bake via refreshWgpuRenderCache (the bake flushes on its own state).
 export function resetWgpuQuadBatchWriterBufferPool(state: WgpuRenderState): void {
   getWgpuRenderStateRuntime(state).quadBatchWriterBufferCursor = 0;
+}
+
+// Affine UVs and pre-scaled geometry share the original 13-float record: rotated Texture views add
+// neither storage-buffer bandwidth nor another per-instance allocation.
+export function writeWgpuQuadBatchAffineInstance(
+  data: Float32Array,
+  base: number,
+  transform: Readonly<MatrixLike>,
+  width: number,
+  height: number,
+  uvOriginX: number,
+  uvOriginY: number,
+  uvAxisUX: number,
+  uvAxisUY: number,
+  uvAxisVX: number,
+  uvAxisVY: number,
+  alpha: number,
+): void {
+  data[base] = transform.a * width;
+  data[base + 1] = transform.b * width;
+  data[base + 2] = transform.c * height;
+  data[base + 3] = transform.d * height;
+  data[base + 4] = transform.tx;
+  data[base + 5] = transform.ty;
+  data[base + 6] = uvOriginX;
+  data[base + 7] = uvOriginY;
+  data[base + 8] = uvAxisUX;
+  data[base + 9] = uvAxisUY;
+  data[base + 10] = uvAxisVX;
+  data[base + 11] = uvAxisVY;
+  data[base + 12] = alpha;
+}
+
+export function writeWgpuQuadBatchInstance(
+  data: Float32Array,
+  base: number,
+  transform: Readonly<MatrixLike>,
+  width: number,
+  height: number,
+  u0: number,
+  v0: number,
+  u1: number,
+  v1: number,
+  alpha: number,
+): void {
+  writeWgpuQuadBatchAffineInstance(data, base, transform, width, height, u0, v0, u1 - u0, 0, 0, v1 - v0, alpha);
 }
 
 // Claims the next per-frame pool slot, allocating one if the frame has more flushes than any prior

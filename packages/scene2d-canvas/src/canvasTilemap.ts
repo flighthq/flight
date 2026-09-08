@@ -1,6 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
@@ -41,16 +42,14 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
       const dx = col * tileWidth;
       const dy = row * tileHeight;
 
-      context.drawImage(
+      drawCanvasAtlasRegion(
+        context,
         image,
-        region.x,
-        region.y,
-        region.width,
-        region.height,
+        region,
         roundPixels ? dx | 0 : dx,
         roundPixels ? dy | 0 : dy,
-        region.width,
-        region.height,
+        tileWidth,
+        tileHeight,
       );
     }
   }

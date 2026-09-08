@@ -63,10 +63,12 @@ describe('drawWgpuScale9Sprite', () => {
       [135, 157, 50, 30],
     ]);
     const center = 4 * QUAD_BATCH_INSTANCE_FLOATS;
-    expect(runtime.quadBatchWriterInstanceData[center + 8]).toBeCloseTo(10 / 90);
-    expect(runtime.quadBatchWriterInstanceData[center + 9]).toBeCloseTo(20 / 60);
-    expect(runtime.quadBatchWriterInstanceData[center + 10]).toBeCloseTo(40 / 90);
-    expect(runtime.quadBatchWriterInstanceData[center + 11]).toBeCloseTo(30 / 60);
+    expect(runtime.quadBatchWriterInstanceData[center + 6]).toBeCloseTo(10 / 90);
+    expect(runtime.quadBatchWriterInstanceData[center + 7]).toBeCloseTo(20 / 60);
+    expect(runtime.quadBatchWriterInstanceData[center + 8]).toBeCloseTo(30 / 90);
+    expect(runtime.quadBatchWriterInstanceData[center + 9]).toBeCloseTo(0);
+    expect(runtime.quadBatchWriterInstanceData[center + 10]).toBeCloseTo(0);
+    expect(runtime.quadBatchWriterInstanceData[center + 11]).toBeCloseTo(10 / 60);
     submitWgpuRenderPass(state);
   });
 
@@ -117,7 +119,7 @@ function createScale9RenderProxy(texture: Texture2D): RenderProxy2D {
 function readQuadGeometry(data: Float32Array): number[][] {
   return Array.from({ length: 9 }, (_, index) => {
     const offset = index * QUAD_BATCH_INSTANCE_FLOATS;
-    return Array.from(data.slice(offset + 4, offset + 8));
+    return [data[offset + 4], data[offset + 5], data[offset], data[offset + 3]];
   });
 }
 

@@ -1,7 +1,13 @@
+import { createMatrix3 } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureSourceKind, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import {
+  getTextureSourceKind,
+  getTextureUvMatrix,
+  getTextureViewSize,
+  hasTextureSource,
+} from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scale9Sprite, Scene2DRenderer } from '@flighthq/types/contract';
 import { BatchFormat, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
@@ -10,6 +16,7 @@ import {
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
+  writeGlQuadBatchAffineInstance,
 } from './glQuadBatchWriter';
 import { buildGlScale9Mapper } from './glScale9Mapper';
 
@@ -22,8 +29,9 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   const texture = source.data.texture;
   if (texture === null || texture.dimension !== '2d' || !hasTextureSource(texture)) return;
 
-  const width = Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
-  const height = Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);
+  getTextureViewSize(scale9ViewSize, texture);
+  const width = scale9ViewSize.x;
+  const height = scale9ViewSize.y;
   if (width <= 0 || height <= 0) return;
 
   const mapper = buildGlScale9Mapper(
@@ -42,24 +50,15 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
   ensureGlQuadBatchShader(state);
 
-  let u0 = texture.uvOffset.x;
-  let v0 = texture.uvOffset.y;
-  let u1 = u0 + texture.uvScale.x;
-  let v1 = v0 + texture.uvScale.y;
-  if (texture.flipX) [u0, u1] = [u1, u0];
-  if (texture.flipY) [v0, v1] = [v1, v0];
-  if (getTextureSourceKind(texture) === RenderTargetTextureSourceKind) {
-    v0 = 1 - v0;
-    v1 = 1 - v1;
-  }
+  getTextureUvMatrix(scale9UvMatrix, texture);
+  const uv = scale9UvMatrix.m;
+  const reflectV = getTextureSourceKind(texture) === RenderTargetTextureSourceKind;
 
   const grid = source.data.scale9Grid;
   const sourceX = [0, grid.x, grid.x + grid.width, width];
   const sourceY = [0, grid.y, grid.y + grid.height, height];
   const targetX = sourceX.map(mapper.mapX);
   const targetY = sourceY.map(mapper.mapY);
-  const textureU = sourceX.map((x) => u0 + ((u1 - u0) * x) / width);
-  const textureV = sourceY.map((y) => v0 + ((v1 - v0) * y) / height);
 
   const base = prepareGlQuadBatchWrite(
     state,
@@ -86,19 +85,31 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
       const instanceIndex = startCount + row * 3 + column;
       const x = targetX[column];
       const y = targetY[row];
-      data[writeBase] = a;
-      data[writeBase + 1] = b;
-      data[writeBase + 2] = c;
-      data[writeBase + 3] = d;
-      data[writeBase + 4] = a * x + c * y + transform.tx;
-      data[writeBase + 5] = b * x + d * y + transform.ty;
-      data[writeBase + 6] = targetX[column + 1] - x;
-      data[writeBase + 7] = targetY[row + 1] - y;
-      data[writeBase + 8] = textureU[column];
-      data[writeBase + 9] = textureV[row];
-      data[writeBase + 10] = textureU[column + 1];
-      data[writeBase + 11] = textureV[row + 1];
-      data[writeBase + 12] = renderProxy.alpha;
+      const localU = sourceX[column] / width;
+      const localV = sourceY[row] / height;
+      const deltaU = (sourceX[column + 1] - sourceX[column]) / width;
+      const deltaV = (sourceY[row + 1] - sourceY[row]) / height;
+      const uvOriginY = uv[7] + uv[1] * localU + uv[4] * localV;
+      sliceTransform.a = a;
+      sliceTransform.b = b;
+      sliceTransform.c = c;
+      sliceTransform.d = d;
+      sliceTransform.tx = a * x + c * y + transform.tx;
+      sliceTransform.ty = b * x + d * y + transform.ty;
+      writeGlQuadBatchAffineInstance(
+        data,
+        writeBase,
+        sliceTransform,
+        targetX[column + 1] - x,
+        targetY[row + 1] - y,
+        uv[6] + uv[0] * localU + uv[3] * localV,
+        reflectV ? 1 - uvOriginY : uvOriginY,
+        uv[0] * deltaU,
+        (reflectV ? -uv[1] : uv[1]) * deltaU,
+        uv[3] * deltaV,
+        (reflectV ? -uv[4] : uv[4]) * deltaV,
+        renderProxy.alpha,
+      );
       packGlQuadBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
       recordGlQuadBatchColorScaleBias(state, colorScaleBias, instanceIndex);
       writeBase += INSTANCE_FLOATS;
@@ -114,3 +125,7 @@ export const defaultGlScale9SpriteRenderer: Scene2DRenderer = {
   isDirty: isSpriteRendererDirty,
   submit: drawGlScale9Sprite,
 };
+
+const scale9UvMatrix = createMatrix3();
+const scale9ViewSize = { x: 0, y: 0 };
+const sliceTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

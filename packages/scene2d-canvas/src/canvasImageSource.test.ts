@@ -177,4 +177,24 @@ describe('resolveCanvasTextureWindowSource', () => {
     const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
     expect(resolveCanvasTextureWindowSource(getCanvasRenderStateTextureResolvers(state), texture)).toBe(source);
   });
+
+  it('materializes a rotated non-square atlas view at its upright size', () => {
+    const state = makeState();
+    registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
+    const source = document.createElement('canvas');
+    source.width = 100;
+    source.height = 50;
+    const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
+    texture.uvOffset.x = 0.1;
+    texture.uvOffset.y = 0.4;
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+
+    const result = resolveCanvasTextureWindowSource(getCanvasRenderStateTextureResolvers(state), texture);
+
+    expect(result).toBeInstanceOf(HTMLCanvasElement);
+    expect((result as HTMLCanvasElement).width).toBe(15);
+    expect((result as HTMLCanvasElement).height).toBe(20);
+  });
 });

@@ -19,6 +19,7 @@ import {
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
+  writeGlQuadBatchAffineInstance,
 } from './glQuadBatchWriter';
 
 function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void {
@@ -80,19 +81,30 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
 
       const dx = col * tileWidth;
       const dy = row * tileHeight;
-      instanceData[writeBase] = pa;
-      instanceData[writeBase + 1] = pb;
-      instanceData[writeBase + 2] = pc;
-      instanceData[writeBase + 3] = pd;
-      instanceData[writeBase + 4] = pa * dx + pc * dy + ptx;
-      instanceData[writeBase + 5] = pb * dx + pd * dy + pty;
-      instanceData[writeBase + 6] = tileWidth;
-      instanceData[writeBase + 7] = tileHeight;
-      instanceData[writeBase + 8] = region.x * iw;
-      instanceData[writeBase + 9] = region.y * ih;
-      instanceData[writeBase + 10] = (region.x + region.width) * iw;
-      instanceData[writeBase + 11] = (region.y + region.height) * ih;
-      instanceData[writeBase + 12] = alpha;
+      tileTransform.a = pa;
+      tileTransform.b = pb;
+      tileTransform.c = pc;
+      tileTransform.d = pd;
+      tileTransform.tx = pa * dx + pc * dy + ptx;
+      tileTransform.ty = pb * dx + pd * dy + pty;
+      const u0 = region.x * iw;
+      const v0 = region.y * ih;
+      const u1 = (region.x + region.width) * iw;
+      const v1 = (region.y + region.height) * ih;
+      writeGlQuadBatchAffineInstance(
+        instanceData,
+        writeBase,
+        tileTransform,
+        tileWidth,
+        tileHeight,
+        u0,
+        region.rotated ? v1 : v0,
+        region.rotated ? 0 : u1 - u0,
+        region.rotated ? v0 - v1 : 0,
+        region.rotated ? u1 - u0 : 0,
+        region.rotated ? 0 : v1 - v0,
+        alpha,
+      );
       packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorScaleBias =
@@ -117,3 +129,5 @@ export const defaultGlTilemapRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: submitGlTilemap,
 };
+
+const tileTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

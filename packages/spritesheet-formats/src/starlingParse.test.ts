@@ -153,6 +153,14 @@ describe('parseStarlingSpritesheet', () => {
     expect(diagnostics[0].kind).toBe('spritesheet.starling.missing-dimensions');
     expect(diagnostics[0].severity).toBe('Recover');
   });
+
+  it('uses supplied atlas dimensions without reporting them missing', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const data = parseStarlingSpritesheet(ATLAS_XML, { imageHeight: 256, imageWidth: 512 }, diagnostics);
+    expect(data.imageWidth).toBe(512);
+    expect(data.imageHeight).toBe(256);
+    expect(diagnostics).toHaveLength(0);
+  });
 });
 
 describe('parseStarlingSpritesheetDocument', () => {

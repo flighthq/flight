@@ -39,7 +39,12 @@ function frameToEntry(frame: Readonly<SpritesheetData['frames'][0]>): TexturePac
     frame.sourceWidth !== frame.width ||
     frame.sourceHeight !== frame.height;
   return {
-    frame: { h: frame.height, w: frame.width, x: frame.x, y: frame.y },
+    frame: {
+      h: frame.rotated ? frame.width : frame.height,
+      w: frame.rotated ? frame.height : frame.width,
+      x: frame.x,
+      y: frame.y,
+    },
     ...(frame.pivotX !== null && frame.pivotY !== null ? { pivot: { x: frame.pivotX, y: frame.pivotY } } : {}),
     rotated: frame.rotated,
     sourceSize: { h: frame.sourceHeight, w: frame.sourceWidth },

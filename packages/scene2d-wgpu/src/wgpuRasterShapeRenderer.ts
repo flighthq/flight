@@ -11,6 +11,7 @@ import {
   packWgpuQuadBatchMaterialInstance,
   prepareWgpuQuadBatchWrite,
   recordWgpuQuadBatchColorScaleBias,
+  writeWgpuQuadBatchInstance,
 } from './wgpuQuadBatchWriter';
 import {
   acquireWgpuShapeRasterSurface,
@@ -102,19 +103,13 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   );
   const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
   const d = runtime.quadBatchWriterInstanceData;
-  d[base] = t.a;
-  d[base + 1] = t.b;
-  d[base + 2] = t.c;
-  d[base + 3] = t.d;
-  d[base + 4] = tx;
-  d[base + 5] = ty;
-  d[base + 6] = w;
-  d[base + 7] = h;
-  d[base + 8] = 0;
-  d[base + 9] = 0;
-  d[base + 10] = 1;
-  d[base + 11] = 1;
-  d[base + 12] = renderProxy.alpha;
+  rasterShapeTransform.a = t.a;
+  rasterShapeTransform.b = t.b;
+  rasterShapeTransform.c = t.c;
+  rasterShapeTransform.d = t.d;
+  rasterShapeTransform.tx = tx;
+  rasterShapeTransform.ty = ty;
+  writeWgpuQuadBatchInstance(d, base, rasterShapeTransform, w, h, 0, 0, 1, 1, renderProxy.alpha);
   packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
   recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
@@ -134,3 +129,5 @@ export const defaultWgpuRasterShapeRenderer: Scene2DRenderer = {
   destroyData: destroyWgpuShapeData,
   submit: drawWgpuRasterShape,
 };
+
+const rasterShapeTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

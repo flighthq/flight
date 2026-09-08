@@ -1,3 +1,4 @@
+import { createMatrix3 } from '@flighthq/geometry/contract';
 import {
   getWgpuRenderStateRuntime,
   resolveWgpuMaterialRenderer,
@@ -5,7 +6,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { getTextureUvMatrix, getTextureViewSize, hasTextureSource } from '@flighthq/texture/contract';
 import type { RenderProxy2D, Scale9Sprite, Scene2DRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -14,6 +15,7 @@ import {
   prepareWgpuQuadBatchWrite,
   QUAD_BATCH_INSTANCE_FLOATS,
   recordWgpuQuadBatchColorScaleBias,
+  writeWgpuQuadBatchAffineInstance,
 } from './wgpuQuadBatchWriter';
 import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
 
@@ -27,8 +29,9 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
   const { scale9Grid, texture } = source.data;
   if (texture === null || texture.dimension !== '2d' || !hasTextureSource(texture)) return;
 
-  const width = Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
-  const height = Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);
+  getTextureViewSize(scale9ViewSize, texture);
+  const width = scale9ViewSize.x;
+  const height = scale9ViewSize.y;
   const scaleX = source.scaleX;
   const scaleY = source.scaleY;
   const mapper = buildWgpuScale9Mapper({ height, width, x: 0, y: 0 }, scale9Grid, scaleX, scaleY);
@@ -40,19 +43,13 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
   const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
 
-  let u0 = texture.uvOffset.x;
-  let v0 = texture.uvOffset.y;
-  let u1 = u0 + texture.uvScale.x;
-  let v1 = v0 + texture.uvScale.y;
-  if (texture.flipX) [u0, u1] = [u1, u0];
-  if (texture.flipY) [v0, v1] = [v1, v0];
+  getTextureUvMatrix(scale9UvMatrix, texture);
+  const uv = scale9UvMatrix.m;
 
   const sourceXs = [0, scale9Grid.x, scale9Grid.x + scale9Grid.width, width];
   const sourceYs = [0, scale9Grid.y, scale9Grid.y + scale9Grid.height, height];
   const targetXs = sourceXs.map(mapper.mapX);
   const targetYs = sourceYs.map(mapper.mapY);
-  const us = sourceXs.map((value) => u0 + ((u1 - u0) * value) / width);
-  const vs = sourceYs.map((value) => v0 + ((v1 - v0) * value) / height);
 
   const base = prepareWgpuQuadBatchWrite(
     state,
@@ -82,19 +79,30 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
     for (let column = 0; column < 3; column++) {
       const x = targetXs[column];
       const sliceWidth = targetXs[column + 1] - x;
-      data[writeBase] = a;
-      data[writeBase + 1] = b;
-      data[writeBase + 2] = c;
-      data[writeBase + 3] = d;
-      data[writeBase + 4] = a * x + c * y + transform.tx;
-      data[writeBase + 5] = b * x + d * y + transform.ty;
-      data[writeBase + 6] = sliceWidth;
-      data[writeBase + 7] = sliceHeight;
-      data[writeBase + 8] = us[column];
-      data[writeBase + 9] = vs[row];
-      data[writeBase + 10] = us[column + 1];
-      data[writeBase + 11] = vs[row + 1];
-      data[writeBase + 12] = renderProxy.alpha;
+      const localU = sourceXs[column] / width;
+      const localV = sourceYs[row] / height;
+      const deltaU = (sourceXs[column + 1] - sourceXs[column]) / width;
+      const deltaV = (sourceYs[row + 1] - sourceYs[row]) / height;
+      sliceTransform.a = a;
+      sliceTransform.b = b;
+      sliceTransform.c = c;
+      sliceTransform.d = d;
+      sliceTransform.tx = a * x + c * y + transform.tx;
+      sliceTransform.ty = b * x + d * y + transform.ty;
+      writeWgpuQuadBatchAffineInstance(
+        data,
+        writeBase,
+        sliceTransform,
+        sliceWidth,
+        sliceHeight,
+        uv[6] + uv[0] * localU + uv[3] * localV,
+        uv[7] + uv[1] * localU + uv[4] * localV,
+        uv[0] * deltaU,
+        uv[1] * deltaU,
+        uv[3] * deltaV,
+        uv[4] * deltaV,
+        renderProxy.alpha,
+      );
       packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startCount + instance);
       recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startCount + instance);
       writeBase += QUAD_BATCH_INSTANCE_FLOATS;
@@ -110,3 +118,7 @@ export const defaultWgpuScale9SpriteRenderer: Scene2DRenderer = {
   isDirty: isSpriteRendererDirty,
   submit: drawWgpuScale9Sprite,
 };
+
+const scale9UvMatrix = createMatrix3();
+const scale9ViewSize = { x: 0, y: 0 };
+const sliceTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

@@ -261,6 +261,24 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUv
   m[8] = 1; // (2,2)
 }
 
+// Writes the logical pixel size of the Texture's transformed unit-square view. A UV quarter-turn on
+// a non-square atlas swaps the packed axes, so multiplying the backing width/height by uvScale alone
+// is insufficient. Measuring both transformed axes in source-pixel space handles rotation, negative
+// scales, and flips without allocating a matrix. An unbound or empty source produces a zero size.
+export function getTextureViewSize(out: Vector2Like, texture: Readonly<TextureLike>): void {
+  const source = getFirstTextureSource(texture);
+  if (source === null || source.width <= 0 || source.height <= 0) {
+    out.x = 0;
+    out.y = 0;
+    return;
+  }
+
+  const cosR = Math.cos(texture.uvRotation);
+  const sinR = Math.sin(texture.uvRotation);
+  out.x = Math.hypot(source.width * texture.uvScale.x * cosR, source.height * texture.uvScale.x * sinR);
+  out.y = Math.hypot(source.width * texture.uvScale.y * sinR, source.height * texture.uvScale.y * cosR);
+}
+
 // Returns the width declared by the active source, or -1 when unbound.
 export function getTextureWidth(texture: Readonly<TextureLike>): number {
   return getFirstTextureSource(texture)?.width ?? -1;

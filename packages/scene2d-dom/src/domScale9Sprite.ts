@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
+import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
   EntityConstruction,
@@ -32,9 +33,11 @@ export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderPr
   if (texture === null || texture.dimension !== '2d') return;
   const image = resolveDomTexture(state, texture);
   if (image === null) return;
-  const tw = getTextureWidth(texture),
-    th = getTextureHeight(texture),
+  getTextureViewSize(scale9ViewSize, texture);
+  const tw = scale9ViewSize.x,
+    th = scale9ViewSize.y,
     g = source.data.scale9Grid;
+  if (tw <= 0 || th <= 0) return;
   const width = Math.max(1, tw * source.scaleX),
     height = Math.max(1, th * source.scaleY);
   if (data.element === null) {
@@ -64,10 +67,17 @@ export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderPr
       p.style.left = `${dx[c]}px`;
       p.style.top = `${dy[r]}px`;
       const ctx = p.getContext('2d')!;
-      ctx.setTransform(pr, 0, 0, pr, 0, 0);
+      const sourceWidth = xs[c + 1]! - xs[c]!;
+      const sourceHeight = ys[r + 1]! - ys[r]!;
       ctx.imageSmoothingEnabled = state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
-      ctx.clearRect(0, 0, w, h);
-      if (w > 0 && h > 0) ctx.drawImage(image, xs[c]!, ys[r]!, xs[c + 1]! - xs[c]!, ys[r + 1]! - ys[r]!, 0, 0, w, h);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, p.width, p.height);
+      if (w > 0 && h > 0 && sourceWidth > 0 && sourceHeight > 0) {
+        const scaleX = (pr * w) / sourceWidth;
+        const scaleY = (pr * h) / sourceHeight;
+        ctx.setTransform(scaleX, 0, 0, scaleY, -xs[c]! * scaleX, -ys[r]! * scaleY);
+        drawCanvasTextureView(ctx, image, texture, tw, th);
+      }
     }
   data.element.style.width = `${width}px`;
   data.element.style.height = `${height}px`;
@@ -90,3 +100,4 @@ export const defaultDomScale9SpriteRenderer: Scene2DRenderer = {
   createData: createDomScale9SpriteData,
   submit: drawDomScale9Sprite,
 };
+const scale9ViewSize = { x: 0, y: 0 };

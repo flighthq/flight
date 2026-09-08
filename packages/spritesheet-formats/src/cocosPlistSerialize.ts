@@ -74,7 +74,9 @@ function escapeXml(s: string): string {
 }
 
 function frameToEntry(frame: Readonly<SpritesheetFrameData>): CocosPlistFrame {
-  const rectStr = `{{${frame.x},${frame.y}},{${frame.width},${frame.height}}}`;
+  const packedWidth = frame.rotated ? frame.height : frame.width;
+  const packedHeight = frame.rotated ? frame.width : frame.height;
+  const rectStr = `{{${frame.x},${frame.y}},{${packedWidth},${packedHeight}}}`;
   const offsetStr = `{${frame.offsetX},${frame.offsetY}}`;
   const sourceSizeStr = `{${frame.sourceWidth},${frame.sourceHeight}}`;
   const sizeStr = `{${frame.width},${frame.height}}`;

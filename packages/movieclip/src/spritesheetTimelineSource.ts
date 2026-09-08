@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
+import { getTextureAtlasRegionById, getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
 import type {
   Entity,
   Node2D,
@@ -70,9 +70,15 @@ export function initializeSpritesheetTimelineSource(
 
     const sheetFrame = spritesheet.frames[frames[frame - 1]];
     if (sheetFrame === undefined) return;
+    const region = getTextureAtlasRegionById(atlas, sheetFrame.id);
+    if (region === null) return;
     bitmap.data.texture = getTextureAtlasRegionTexture(atlas, sheetFrame.id);
     bitmap.x = sheetFrame.offsetX - animation.originX;
     bitmap.y = sheetFrame.offsetY - animation.originY;
+    const frameWidth = region.originalWidth ?? (region.rotated ? region.height : region.width);
+    const frameHeight = region.originalHeight ?? (region.rotated ? region.width : region.height);
+    bitmap.pivotX = sheetFrame.pivotX === null ? 0 : sheetFrame.pivotX * frameWidth;
+    bitmap.pivotY = sheetFrame.pivotY === null ? 0 : sheetFrame.pivotY * frameHeight;
     invalidateNodeLocalTransform(bitmap);
   };
 }

@@ -1,7 +1,8 @@
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasTextureResolvers, Texture } from '@flighthq/types/contract';
 
 import { acquireCanvasTextureResolverSurface, resolveCanvasTexture } from './canvasTextureResolver';
+import { drawCanvasTextureView } from './canvasTextureView';
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows
 // return the source directly. Sub-rect/flip windows are materialized once per render state and
@@ -35,9 +36,10 @@ export function resolveCanvasTextureWindowSource(
 
   const backingWidth = getTextureWidth(texture);
   const backingHeight = getTextureHeight(texture);
-  const sourceWidth = Math.abs(uvScaleX * backingWidth);
-  const sourceHeight = Math.abs(uvScaleY * backingHeight);
-  if (backingWidth <= 0 || backingHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) return null;
+  getTextureViewSize(textureWindowViewSize, texture);
+  const viewWidth = textureWindowViewSize.x;
+  const viewHeight = textureWindowViewSize.y;
+  if (backingWidth <= 0 || backingHeight <= 0 || viewWidth <= 0 || viewHeight <= 0) return null;
 
   const imageVersion = image?.version ?? -1;
   const cache = (resolvers.textureWindowElementCache ??= new WeakMap());
@@ -59,23 +61,16 @@ export function resolveCanvasTextureWindowSource(
   }
 
   const surface = acquireCanvasTextureResolverSurface(resolvers, {
-    height: Math.max(1, Math.ceil(sourceHeight)),
+    height: Math.max(1, Math.ceil(viewHeight)),
     pixelRatio: 1,
-    width: Math.max(1, Math.ceil(sourceWidth)),
+    width: Math.max(1, Math.ceil(viewWidth)),
   });
   if (surface === null) return null;
   const { canvas: element, context } = surface;
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, element.width, element.height);
   context.imageSmoothingEnabled = !texture.sampler.magFilter.startsWith('nearest');
-
-  const sourceX = Math.min(uvOffsetX * backingWidth, (uvOffsetX + uvScaleX) * backingWidth);
-  const sourceY = Math.min(uvOffsetY * backingHeight, (uvOffsetY + uvScaleY) * backingHeight);
-  const flipX = texture.flipX !== uvScaleX < 0;
-  const flipY = texture.flipY !== uvScaleY < 0;
-  context.save();
-  context.translate(flipX ? element.width : 0, flipY ? element.height : 0);
-  context.scale(flipX ? -1 : 1, flipY ? -1 : 1);
-  context.drawImage(source, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, element.width, element.height);
-  context.restore();
+  drawCanvasTextureView(context, source, texture, element.width, element.height);
 
   entry = {
     element,
@@ -94,3 +89,5 @@ export function resolveCanvasTextureWindowSource(
   cache?.set(texture, entry);
   return element;
 }
+
+const textureWindowViewSize = { x: 0, y: 0 };

@@ -8,6 +8,7 @@ import type {
   SpriteRenderer,
 } from '@flighthq/types/contract';
 
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
@@ -48,16 +49,14 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
       if (region.width <= 0 || region.height <= 0) continue;
       const dx = transforms[i * 2];
       const dy = transforms[i * 2 + 1];
-      context.drawImage(
+      drawCanvasAtlasRegion(
+        context,
         domImage,
-        region.x,
-        region.y,
-        region.width,
-        region.height,
+        region,
         roundPixels ? dx | 0 : dx,
         roundPixels ? dy | 0 : dy,
-        region.width,
-        region.height,
+        region.rotated ? region.height : region.width,
+        region.rotated ? region.width : region.height,
       );
     }
   }

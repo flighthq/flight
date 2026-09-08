@@ -72,11 +72,24 @@ describe('drawGlScale9Sprite', () => {
     ].map((segment) => segment.map(Math.fround));
     const actualSegments = Array.from({ length: 9 }, (_, index) => {
       const base = index * INSTANCE_FLOATS;
-      expect(Array.from(runtime.quadBatchWriterInstanceData.slice(base, base + 4))).toEqual([1, 0, 0, 1]);
       expect(runtime.quadBatchWriterInstanceData[base + 12]).toBe(1);
-      return Array.from(runtime.quadBatchWriterInstanceData.slice(base + 4, base + 12));
+      const d = runtime.quadBatchWriterInstanceData;
+      return [
+        d[base + 4],
+        d[base + 5],
+        d[base],
+        d[base + 3],
+        d[base + 6],
+        d[base + 7],
+        d[base + 6] + d[base + 8],
+        d[base + 7] + d[base + 11],
+      ];
     });
-    expect(actualSegments).toEqual(expectedSegments);
+    for (let segment = 0; segment < expectedSegments.length; segment++) {
+      for (let value = 0; value < expectedSegments[segment].length; value++) {
+        expect(actualSegments[segment][value]).toBeCloseTo(expectedSegments[segment][value]);
+      }
+    }
   });
 
   it('records material and color data from index zero after a texture-change flush', () => {

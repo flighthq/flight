@@ -15,6 +15,7 @@ import {
   getTextureSource,
   getTextureSourceKind,
   getTextureUvMatrix,
+  getTextureViewSize,
   getTextureWidth,
   hasTextureSource,
   hasTextureUvTransform,
@@ -460,6 +461,27 @@ describe('getTextureUvMatrix', () => {
     expect(out.m[4]).toBeCloseTo(2 * cosR); // (1,1) sy*cos(r)
     expect(out.m[6]).toBeCloseTo(0.1); // (0,2) tx
     expect(out.m[7]).toBeCloseTo(0.2); // (1,2) ty
+  });
+});
+
+describe('getTextureViewSize', () => {
+  it('measures the transformed UV axes in backing pixels', () => {
+    const texture = createTexture({ dimension: '2d', source: { height: 50, width: 100 } as ImageResource });
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+    const out = createVector2();
+
+    getTextureViewSize(out, texture);
+
+    expect(out.x).toBeCloseTo(15);
+    expect(out.y).toBeCloseTo(20);
+  });
+
+  it('returns an empty view for an unbound texture', () => {
+    const out = createVector2(4, 5);
+    getTextureViewSize(out, createTexture());
+    expect(out).toMatchObject({ x: 0, y: 0 });
   });
 });
 

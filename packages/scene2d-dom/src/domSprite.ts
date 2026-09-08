@@ -1,5 +1,6 @@
+import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
   Renderable,
@@ -8,6 +9,7 @@ import type {
   Scene2DRenderer,
   Sprite,
   SpriteIdentityRendererData,
+  Texture2D,
 } from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
@@ -40,24 +42,27 @@ export function drawDomSprite(state: DomRenderState, renderProxy: RenderProxy2D)
 
   const textureWidth = getTextureWidth(texture);
   const textureHeight = getTextureHeight(texture);
-  const sourceRectangle = {
-    height: Math.abs(texture.uvScale.y * textureHeight),
-    width: Math.abs(texture.uvScale.x * textureWidth),
-    x: texture.uvOffset.x * textureWidth,
-    y: texture.uvOffset.y * textureHeight,
-  };
+  getTextureViewSize(spriteViewSize, texture);
+  const viewWidth = spriteViewSize.x;
+  const viewHeight = spriteViewSize.y;
+  if (viewWidth <= 0 || viewHeight <= 0) return;
   const isFullTexture =
-    sourceRectangle.x === 0 &&
-    sourceRectangle.y === 0 &&
-    sourceRectangle.width === textureWidth &&
-    sourceRectangle.height === textureHeight;
+    texture.uvOffset.x === 0 &&
+    texture.uvOffset.y === 0 &&
+    texture.uvScale.x === 1 &&
+    texture.uvScale.y === 1 &&
+    texture.uvRotation === 0 &&
+    !texture.flipX &&
+    !texture.flipY &&
+    viewWidth === textureWidth &&
+    viewHeight === textureHeight;
 
   if (isFullTexture && source instanceof HTMLVideoElement) {
     renderSpriteAsVideo(state, renderProxy, data, source);
   } else if (isFullTexture && source instanceof HTMLImageElement) {
     renderSpriteAsImage(state, renderProxy, data, source);
   } else {
-    renderSpriteAsCanvas(state, renderProxy, data, source, sourceRectangle);
+    renderSpriteAsCanvas(state, renderProxy, data, source, texture, viewWidth, viewHeight);
   }
 }
 
@@ -66,7 +71,9 @@ function renderSpriteAsCanvas(
   renderProxy: RenderProxy2D,
   data: DomSpriteData,
   source: CanvasImageSource,
-  sourceRectangle: { x: number; y: number; width: number; height: number },
+  texture: Readonly<Texture2D>,
+  viewWidth: number,
+  viewHeight: number,
 ): void {
   data.image = null;
   data.video = null;
@@ -76,27 +83,16 @@ function renderSpriteAsCanvas(
     prepareDomElement(data.canvas);
   }
 
-  const texture = (renderProxy.source as Sprite).data.texture!;
   const pixelRatio = state.pixelRatio;
-  data.canvas.width = sourceRectangle.width * pixelRatio;
-  data.canvas.height = sourceRectangle.height * pixelRatio;
-  data.canvas.style.width = `${sourceRectangle.width}px`;
-  data.canvas.style.height = `${sourceRectangle.height}px`;
+  data.canvas.width = Math.ceil(viewWidth * pixelRatio);
+  data.canvas.height = Math.ceil(viewHeight * pixelRatio);
+  data.canvas.style.width = `${viewWidth}px`;
+  data.canvas.style.height = `${viewHeight}px`;
 
   const context = data.context!;
-  if (pixelRatio !== 1) context.scale(pixelRatio, pixelRatio);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   context.imageSmoothingEnabled = state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
-  context.drawImage(
-    source,
-    sourceRectangle.x,
-    sourceRectangle.y,
-    sourceRectangle.width,
-    sourceRectangle.height,
-    0,
-    0,
-    sourceRectangle.width,
-    sourceRectangle.height,
-  );
+  drawCanvasTextureView(context, source, texture, viewWidth, viewHeight);
   applyDomStyle(state, data.canvas, renderProxy);
   applyDomSpriteSampling(state, data.canvas, renderProxy);
   setDomRendererElement(state, data.canvas);
@@ -149,3 +145,5 @@ export const defaultDomSpriteRenderer: Scene2DRenderer = {
   isDirty: isSpriteRendererDirty,
   submit: drawDomSprite,
 };
+
+const spriteViewSize = { x: 0, y: 0 };
