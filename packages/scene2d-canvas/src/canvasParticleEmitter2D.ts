@@ -3,7 +3,11 @@ import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import {
+  getCanvasRenderStateTextureResolvers,
+  resolveCanvasTextureSmoothing,
+  setCanvasImageSmoothing,
+} from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
@@ -25,8 +29,8 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  const smoothing = state.allowSmoothing && !atlas.texture.sampler.magFilter.startsWith('nearest');
-  if (!smoothing) context.imageSmoothingEnabled = false;
+  const smoothing = resolveCanvasTextureSmoothing(state, atlas.texture.sampler.magFilter);
+  if (!smoothing) setCanvasImageSmoothing(state, false);
 
   for (let i = 0; i < particleCount; i++) {
     const id = ids[i];
@@ -35,10 +39,11 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
     if (region.width <= 0 || region.height <= 0) continue;
 
     const tt = i * 4;
+    const scale = transforms[tt + 3];
+    if (scale === 0 || alphas[i] <= 0) continue;
     const px = transforms[tt];
     const py = transforms[tt + 1];
     const rotation = transforms[tt + 2];
-    const scale = transforms[tt + 3];
 
     // Build world matrix. In world-space mode particle positions are already in
     // world (pixel) space, so we skip the node transform.
@@ -74,7 +79,7 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
     );
   }
 
-  if (!smoothing) context.imageSmoothingEnabled = true;
+  if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
 export const defaultCanvasParticleEmitter2DRenderer: SpriteRenderer = {
