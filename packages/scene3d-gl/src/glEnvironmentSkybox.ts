@@ -4,6 +4,60 @@ import type { GlContext, Camera3D, Environment, GlRenderState } from '@flighthq/
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 
+// Frees the skybox program, VAO and vertex buffer cached for `state`. These are module-local (keyed by
+// state) rather than held on the scene runtime, so they cannot be reached from it; destroyGlScene3DRuntime
+// calls this to fold them into the one-call teardown, the same way it reaches the IBL bake programs. A
+// no-op when no skybox has been drawn for the state, and safe to call twice — deleting an
+// already-deleted GL object is a silent no-op.
+export function destroyGlEnvironmentSkybox(state: GlRenderState): void {
+  const sky = _skyboxes.get(state);
+  if (sky === undefined) return;
+  const gl = state.gl;
+  gl.deleteProgram(sky.program);
+  gl.deleteVertexArray(sky.vao);
+  gl.deleteBuffer(sky.vertexBuffer);
+  _skyboxes.delete(state);
+}
+
+interface GlSkybox {
+  locEnvCube: WebGLUniformLocation | null;
+  locInverseViewProjection: WebGLUniformLocation | null;
+  locIntensity: WebGLUniformLocation | null;
+  program: WebGLProgram;
+  vao: WebGLVertexArrayObject;
+  // Retained solely so teardown can free it. The VAO holds the only other reference once the attribute
+  // pointer is set, and a VAO does not own its buffers, so dropping this handle leaks the buffer for the
+  // lifetime of the context.
+  vertexBuffer: WebGLBuffer;
+}
+
+function ensureGlSkybox(state: GlRenderState): GlSkybox {
+  const gl = state.gl;
+  let sky = _skyboxes.get(state);
+  if (sky !== undefined) return sky;
+
+  const program = linkGlSkyboxProgram(gl);
+  const vao = gl.createVertexArray()!;
+  gl.bindVertexArray(vao);
+  const buffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, _quad, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+
+  sky = {
+    locEnvCube: gl.getUniformLocation(program, 'u_envCube'),
+    locInverseViewProjection: gl.getUniformLocation(program, 'u_inverseViewProjection'),
+    locIntensity: gl.getUniformLocation(program, 'u_intensity'),
+    program,
+    vao,
+    vertexBuffer: buffer,
+  };
+  _skyboxes.set(state, sky);
+  return sky;
+}
+
 // Draws the environment's radiance cubemap as the scene backdrop: a screen-filling pass that, per
 // pixel, reconstructs the world-space view ray from the inverse view-projection and samples the cube.
 // The quad is emitted at the far plane (clip z = w) with depth writes off, so it fills only pixels the
@@ -48,40 +102,6 @@ export function drawGlEnvironmentSkybox(
   gl.depthMask(prevDepthMask);
   if (prevDepthTest) gl.enable(gl.DEPTH_TEST);
   if (prevBlend) gl.enable(gl.BLEND);
-}
-
-interface GlSkybox {
-  locEnvCube: WebGLUniformLocation | null;
-  locInverseViewProjection: WebGLUniformLocation | null;
-  locIntensity: WebGLUniformLocation | null;
-  program: WebGLProgram;
-  vao: WebGLVertexArrayObject;
-}
-
-function ensureGlSkybox(state: GlRenderState): GlSkybox {
-  const gl = state.gl;
-  let sky = _skyboxes.get(state);
-  if (sky !== undefined) return sky;
-
-  const program = linkGlSkyboxProgram(gl);
-  const vao = gl.createVertexArray()!;
-  gl.bindVertexArray(vao);
-  const buffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, _quad, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  gl.bindVertexArray(null);
-
-  sky = {
-    locEnvCube: gl.getUniformLocation(program, 'u_envCube'),
-    locInverseViewProjection: gl.getUniformLocation(program, 'u_inverseViewProjection'),
-    locIntensity: gl.getUniformLocation(program, 'u_intensity'),
-    program,
-    vao,
-  };
-  _skyboxes.set(state, sky);
-  return sky;
 }
 
 function linkGlSkyboxProgram(gl: GlContext): WebGLProgram {

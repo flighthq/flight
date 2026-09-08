@@ -1,12 +1,17 @@
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type {
+  Bitmap,
+  Environment,
   GlRenderStateRuntime,
   GlRenderTarget,
   Matrix4,
   GlMeshProgram,
   GlScene3DIbl,
+  Texture,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import {
   destroyGlScene3DRuntime,
   ensureGlInstanceColorPalette,
@@ -87,6 +92,42 @@ describe('destroyGlScene3DRuntime', () => {
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
     expect(scene.skinPalette).toBeNull();
+  });
+});
+
+describe('destroyGlScene3DRuntime skybox ownership', () => {
+  it('reaches the skybox program, VAO and vertex buffer, which live outside the runtime', () => {
+    const { state, gl } = makeGlScene3DState();
+    const face = {
+      data: new Uint8ClampedArray(4 * 4 * 4),
+      height: 4,
+      kind: BitmapTextureSourceKind,
+      width: 4,
+    } as Bitmap;
+    const environment = {
+      environment: {
+        colorSpace: 'srgb',
+        dimension: 'cube',
+        sampler: {},
+        sources: [face, face, face, face, face, face],
+      } as unknown as Texture,
+      intensity: 1,
+    } as Environment;
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    drawGlEnvironmentSkybox(state, environment, camera, 1);
+
+    const countAfter = (name: string) => gl.calls.filter((call) => call.name === name).length;
+    const before = { buffer: countAfter('deleteBuffer'), vao: countAfter('deleteVertexArray') };
+    destroyGlScene3DRuntime(state);
+
+    // These were the only scene3d-gl GPU resources the one-call teardown could not reach: they are
+    // module-cached by state rather than held on the runtime, so the runtime has to know to ask.
+    expect(countAfter('deleteBuffer')).toBeGreaterThan(before.buffer);
+    expect(countAfter('deleteVertexArray')).toBeGreaterThan(before.vao);
   });
 });
 

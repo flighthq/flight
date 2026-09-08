@@ -93,6 +93,12 @@ function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: stri
 // it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
 // glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels the HAS_SKIN vertex
 // scene2d reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
+//
+// An unbound lane is a DELIBERATE fallback, not an oversight: GL reads an unbound float attribute as
+// zero, so a material whose map names UV set 1 over a geometry without `uv1` still draws — every texel
+// of that map just samples the map's origin texel. That keeps UV1 a vertex-layout fact with no HAS_UV1
+// define or material-registry branch, at the cost of a failure with no symptom at the draw call.
+// `explainGlMeshGeometryUvSets` is the query that names it.
 const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
   color0: 4,
   joints0: 6,

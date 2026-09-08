@@ -50,6 +50,17 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   if (prevCullFace) gl.enable(gl.CULL_FACE);
   if (prevBlend) gl.enable(gl.BLEND);
 
+  // A rebake replaces the two baked cubes, so the pair it displaces is freed here rather than left for
+  // teardown: destroyGlScene3DRuntime only ever sees the CURRENT set, so without this every rebake
+  // before teardown orphans an irradiance and a prefiltered cube for the lifetime of the context. The
+  // BRDF LUT is deliberately not freed — it is environment-independent and was reused above, so the
+  // texture being assigned is the same object already held.
+  const previous = runtime.ibl;
+  if (previous !== null) {
+    gl.deleteTexture(previous.irradianceCube);
+    gl.deleteTexture(previous.prefilteredCube);
+  }
+
   runtime.ibl = {
     brdfLut,
     intensity: environment.intensity,

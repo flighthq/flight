@@ -17,6 +17,34 @@ describe('bakeGlEnvironmentIbl', () => {
   });
 });
 
+describe('bakeGlEnvironmentIbl rebake ownership', () => {
+  it('frees the irradiance and prefiltered cubes it replaces, and keeps the reused BRDF LUT', () => {
+    const { state, gl } = makeGlScene3DState();
+    const runtime = getGlScene3DRuntime(state);
+    // Stand in for a prior bake. The GPU bake needs a float-cube render path jsdom does not have, so the
+    // replaced set is planted directly — what is under test is the ownership handoff, not the bake.
+    const previous = {
+      brdfLut: {} as WebGLTexture,
+      intensity: 1,
+      irradianceCube: {} as WebGLTexture,
+      prefilteredCube: {} as WebGLTexture,
+      prefilteredMipCount: 5,
+    };
+    runtime.ibl = previous;
+    runtime.environmentSourceCube = {} as WebGLTexture;
+
+    const environment = { environment: null, intensity: 2 } as unknown as Environment;
+    bakeGlEnvironmentIbl(state, environment);
+
+    const deleted = gl.calls.filter((call) => call.name === 'deleteTexture').map((call) => call.args[0]);
+    expect(deleted).toContain(previous.irradianceCube);
+    expect(deleted).toContain(previous.prefilteredCube);
+    // The LUT is environment-independent and is carried forward into the new set, so freeing it would
+    // delete a texture the runtime still points at.
+    expect(deleted).not.toContain(previous.brdfLut);
+  });
+});
+
 describe('destroyGlEnvironmentIblBakePrograms', () => {
   // The bake shader programs are created only along the float-cube render path, which jsdom cannot
   // drive (see the note above); their teardown is exercised end-to-end by the functional capture.

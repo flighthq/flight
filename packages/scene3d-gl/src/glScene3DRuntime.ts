@@ -14,6 +14,7 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
+import { destroyGlEnvironmentSkybox } from './glEnvironmentSkybox';
 // Frees every state-scoped GPU resource scene-gl created for `state`: all cached mesh-material and PBR
 // programs, the IBL set (irradiance / prefiltered / BRDF textures + the bake framebuffer), the source
 // environment cubemap, the IBL bake shader programs, and the directional shadow map (its depth texture
@@ -48,6 +49,7 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
     scene.environmentSourceCube = null;
   }
   destroyGlEnvironmentIblBakePrograms(state);
+  destroyGlEnvironmentSkybox(state);
 
   if (scene.shadowTarget !== null) {
     destroyGlRenderTarget(state, scene.shadowTarget);

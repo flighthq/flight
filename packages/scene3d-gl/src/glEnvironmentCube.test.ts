@@ -1,7 +1,13 @@
 import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
+import {
+  destroyGlEnvironmentSourceCube,
+  ensureGlEnvironmentSourceCube,
+  getGlCubeFaceTarget,
+  updateGlEnvironmentCubeFace,
+} from './glEnvironmentCube';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
@@ -27,6 +33,43 @@ function dataOnlyEnvironment(size: number): Environment {
   } as unknown as Texture;
   return { environment: cube, intensity: 1 } as Environment;
 }
+
+describe('destroyGlEnvironmentSourceCube', () => {
+  it('is a no-op when nothing is cached', () => {
+    const { state, gl } = makeGlScene3DState();
+    const before = gl.calls.length;
+    destroyGlEnvironmentSourceCube(state);
+    expect(gl.calls.length).toBe(before);
+  });
+
+  it('frees the cached cube and clears the cache, so the next ensure uploads again', () => {
+    const { state, gl } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    const first = ensureGlEnvironmentSourceCube(state, environment);
+    expect(first).not.toBeNull();
+    // Identity caching is the whole reason this verb has to exist: without dropping the cache, a caller
+    // that changes the cube keeps rendering the first one forever.
+    expect(ensureGlEnvironmentSourceCube(state, environment)).toBe(first);
+
+    destroyGlEnvironmentSourceCube(state);
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture').map((call) => call.args[0])).toContain(first);
+
+    // The mock hands out one shared texture sentinel, so a fresh handle is not observable here; that a
+    // SECOND upload happened is, and it is the actual claim — the cache was dropped rather than reused.
+    const uploadsBefore = gl.calls.filter((call) => call.name === 'createTexture').length;
+    expect(ensureGlEnvironmentSourceCube(state, environment)).not.toBeNull();
+    expect(gl.calls.filter((call) => call.name === 'createTexture').length).toBe(uploadsBefore + 1);
+  });
+
+  it('clears the colour space with the cube it belonged to', () => {
+    const { state } = makeGlScene3DState();
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
+    expect(getGlScene3DRuntime(state).environmentSourceCubeColorSpace).toBe('srgb');
+    destroyGlEnvironmentSourceCube(state);
+    // Left behind, it would pick the internal format for a face restamped onto the NEXT cube.
+    expect(getGlScene3DRuntime(state).environmentSourceCubeColorSpace).toBe('linear');
+  });
+});
 
 describe('ensureGlEnvironmentSourceCube', () => {
   it('returns null when the environment has no source cube', () => {
