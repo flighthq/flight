@@ -7,7 +7,7 @@ import {
 } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
-  SpineParsed,
+  SpineParseResult,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
@@ -18,8 +18,6 @@ import type {
   SpineTintKeyframe,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
-// ─── Value helpers (operate on raw JSON, no document allocation) ─────────────
 
 /** Parse a JSON string and assert the root is a plain object, throwing a clear,
  *  format-tagged error otherwise. Particle assets are frequently hand-edited or
@@ -122,8 +120,6 @@ function validateSpineRecordEntries(value: unknown, path: string): void {
   if (!Array.isArray(value)) return;
   for (let i = 0; i < value.length; i++) requireSpineRecord(value[i], `${path}[${i}]`);
 }
-
-// ─── Shared raw → config mapping ─────────────────────────────────────────────
 
 function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   const lifeLow = rangeLow(raw.life, 500) / 1000;
@@ -268,8 +264,6 @@ function spineSpawnShape(value: unknown): SpineParticleDocument['spawnShape'] {
   return 'point';
 }
 
-// ─── Document construction (load path only) ──────────────────────────────────
-
 function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
   const s = (key: string, fallback: string): string => {
     const value = raw[key];
@@ -339,8 +333,6 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
   };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 /** Parse a Spine particle effect JSON string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
@@ -351,7 +343,7 @@ export function parseSpineParticle(json: string): ParticleEmitterConfig {
 
 /** Parse a Spine particle effect JSON string and preserve the full document for
  *  round-trip serialisation via `serializeSpineParticle`. */
-export function parseSpineParticleDocument(json: string): SpineParsed {
+export function parseSpineParticleDocument(json: string): SpineParseResult {
   const raw = parseSpineJson(json);
   return { config: rawToConfig(raw), diagnostics: collectSpineDiagnostics(raw), document: rawToDocument(raw) };
 }

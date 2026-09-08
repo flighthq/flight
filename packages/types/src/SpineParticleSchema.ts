@@ -67,10 +67,13 @@ export interface SpineParticleDocument {
   images: string[];
 }
 
-export interface SpineParsed {
+export interface SpineParseResult {
   config: ParticleEmitterConfig;
   document: SpineParticleDocument;
   /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
    *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
   diagnostics: ImportDiagnostic[];
 }
+
+/** @deprecated Use `SpineParseResult`. */
+export type SpineParsed = SpineParseResult;

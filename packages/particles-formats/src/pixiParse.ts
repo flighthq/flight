@@ -150,6 +150,8 @@ function rawToConfig(raw: PixiRaw): ParticleEmitterConfig {
     lifetimeMax,
     speedMin,
     speedMax,
+    // Pixi authors clockwise screen-space degrees with +Y down. Flight's canvas
+    // emitter direction uses that same axis convention, so positive sine is intentional.
     directionX: Math.cos(angleMid),
     directionY: Math.sin(angleMid),
     spread,

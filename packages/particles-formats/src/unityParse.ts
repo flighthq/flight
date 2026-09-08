@@ -8,7 +8,7 @@ import {
 import type {
   ImportDiagnostic,
   UnityParseOptions,
-  UnityParsed,
+  UnityParseResult,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
@@ -27,8 +27,6 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 const DEFAULT_PPU = 100;
 const DEFAULT_GRAVITY = 9.81;
-
-// ─── Value helpers (shared by both paths) ────────────────────────────────────
 
 /** Parse a JSON string and assert the root is a plain object, throwing a clear,
  *  format-tagged error otherwise. Particle assets are frequently hand-edited or
@@ -83,8 +81,6 @@ function colorAt(obj: unknown, def: UnityColor): UnityColor {
   }
   return { ...def };
 }
-
-// ─── Shared raw → config mapping ─────────────────────────────────────────────
 
 function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitterConfig {
   const physicsGravity = rn(raw.physicsGravity, DEFAULT_GRAVITY);
@@ -354,8 +350,6 @@ function unityBlendMode(raw: Record<string, unknown>): ParticleBlendMode | null 
   return null;
 }
 
-// ─── Document construction (load path only) ──────────────────────────────────
-
 function readMinMax(obj: unknown, defConst = 1): UnityMinMaxValue {
   if (obj == null) return { mode: 'constant', constant: defConst };
   if (typeof obj === 'number') return { mode: 'constant', constant: obj };
@@ -441,8 +435,6 @@ function rawToDocument(raw: Record<string, unknown>): UnityParticleDocument {
   };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 /** Parse a Unity Shuriken particle system JSON string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
@@ -453,7 +445,7 @@ export function parseUnityParticle(json: string, options?: UnityParseOptions): P
 
 /** Parse a Unity Shuriken particle system JSON string and preserve the full document
  *  for round-trip serialisation via `serializeUnityParticle`. */
-export function parseUnityParticleDocument(json: string, options?: UnityParseOptions): UnityParsed {
+export function parseUnityParticleDocument(json: string, options?: UnityParseOptions): UnityParseResult {
   const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
   const raw = parseUnityJson(json);
   return { config: rawToConfig(raw, ppu), diagnostics: collectUnityDiagnostics(raw), document: rawToDocument(raw) };

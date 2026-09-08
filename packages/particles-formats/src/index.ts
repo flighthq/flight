@@ -18,6 +18,7 @@ export {
   parseStarlingPexDocument,
   parseUnityParticle,
   parseUnityParticleDocument,
+  registerBuiltInParticleFormats,
   registerParticleFormat,
   serializeLibgdxParticle,
   serializeLibgdxParticleDocument,

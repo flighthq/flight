@@ -8,6 +8,10 @@ import {
 } from '@flighthq/types/contract';
 
 import { detectParticleFormat } from './detect';
+import { unregisterParticleFormat } from './formatRegistry';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats';
+
+beforeEach(() => registerBuiltInParticleFormats());
 
 const PLIST_SNIPPET = `<?xml version="1.0" encoding="utf-8"?>
 <plist version="1.0">
@@ -95,5 +99,9 @@ describe('detectParticleFormat', () => {
   });
   it('returns null for XML that is not a plist or PEX', () => {
     expect(detectParticleFormat('<svg width="100"><circle/></svg>')).toBeNull();
+  });
+  it('does not detect a built-in format after its codec is unregistered', () => {
+    unregisterParticleFormat(PixiParticleFormatKind);
+    expect(detectParticleFormat(PIXI_JSON)).toBeNull();
   });
 });

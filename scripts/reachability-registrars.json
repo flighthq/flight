@@ -707,6 +707,10 @@
     },
     {
       "packageName": "particles-formats",
+      "registrar": "registerBuiltInParticleFormats"
+    },
+    {
+      "packageName": "particles-formats",
       "registrar": "registerParticleFormat"
     },
     {
