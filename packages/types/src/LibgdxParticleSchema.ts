@@ -81,8 +81,6 @@ export interface LibgdxParseResult {
   diagnostics: ImportDiagnostic[];
 }
 
-export type LibgdxParsed = LibgdxParseResult;
-
 export interface LibgdxSerializeOptions {
   /** Side length of the particle texture in pixels — reverses the normalisation
    *  applied during parsing. Defaults to 1. */

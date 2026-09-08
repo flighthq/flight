@@ -8,7 +8,6 @@ import type {
   ParticleEmitterConfig,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-/** @deprecated Use `PixiParseResult`. */
 /** Parse a Pixi.js / pixi-particle-emitter JSON config string directly to a ParticleEmitterConfig.
  *
  *  Supports the pixi-particle-emitter v3/v4/v5 config shape.

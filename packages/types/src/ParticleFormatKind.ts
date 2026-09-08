@@ -10,8 +10,6 @@ export const LibgdxParticleFormatKind = 'Libgdx';
 export const StarlingPexFormatKind = 'StarlingPex';
 /** Identifies the Pixi.js / pixi-particle-emitter JSON format. */
 export const PixiParticleFormatKind = 'Pixi';
-/** Identifies the Phaser particle manager JSON format (Phaser 3+). */
-export const PhaserParticleFormatKind = 'Phaser';
 /** Union of the string constants above. Extend via `registerParticleFormat` for
  *  custom / vendor-namespaced formats — this union covers the built-in set only. */
 export type ParticleFormatKind =
@@ -21,5 +19,4 @@ export type ParticleFormatKind =
   | typeof LibgdxParticleFormatKind
   | typeof StarlingPexFormatKind
   | typeof PixiParticleFormatKind
-  | typeof PhaserParticleFormatKind
   | (string & Record<never, never>);

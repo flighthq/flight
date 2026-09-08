@@ -12,7 +12,6 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-/** @deprecated Use `StarlingPexParseResult`. */
 /** Parse a Starling / Sparrow PEX XML string directly to a ParticleEmitterConfig.
  *
  *  Handles both attribute-style (`<attribute name="X" value="Y"/>`) and
