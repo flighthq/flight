@@ -9,7 +9,7 @@ import {
   getDomSvgFilter,
 } from './domSvgFilter';
 
-describe('DOM SVG filters', () => {
+describe('createDomSvgConvolutionFilter', () => {
   it('formats the exact convolution filter primitive', () => {
     const effect = {
       kind: 'ConvolutionEffect' as const,
@@ -25,7 +25,9 @@ describe('DOM SVG filters', () => {
       '<feConvolveMatrix order="3 3" kernelMatrix="0 1 0 1 -4 1 0 1 0" divisor="2" bias="1" edgeMode="duplicate" preserveAlpha="false"/>',
     );
   });
+});
 
+describe('createDomSvgDisplacementMapFilter', () => {
   it('formats the displacement map as turbulence plus displacement', () => {
     const effect = {
       kind: 'DisplacementEffect' as const,
@@ -37,11 +39,22 @@ describe('DOM SVG filters', () => {
     expect(createDomSvgDisplacementMapFilter(effect)).toContain('scale="9"');
     expect(createDomSvgDisplacementMapFilter(effect)).toContain('seed="2"');
   });
+});
 
-  it('caches canonical filter bodies per render state', () => {
+describe('enableDomRasterFilterSupport', () => {
+  it('enables filter resolution for a render state', () => {
     const state = createDomRenderState(document.createElement('div'));
     const effect = { kind: 'DisplacementEffect' as const, intensity: 3 } as unknown as DisplacementEffect;
     expect(getDomSvgFilter(state, effect)).toBeNull();
+    enableDomRasterFilterSupport(state);
+    expect(getDomSvgFilter(state, effect)).toBeTruthy();
+  });
+});
+
+describe('getDomSvgFilter', () => {
+  it('caches canonical filter bodies per render state', () => {
+    const state = createDomRenderState(document.createElement('div'));
+    const effect = { kind: 'DisplacementEffect' as const, intensity: 3 } as unknown as DisplacementEffect;
     enableDomRasterFilterSupport(state);
     const first = getDomSvgFilter(state, effect);
     expect(first).toBeTruthy();
