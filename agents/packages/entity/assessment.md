@@ -11,16 +11,7 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 ## Directed
 
 1. **~~Track the proposed `create*` Entity convention as an advisory.~~** — retired 2026-09-07. The allocate-initialize-finish model (`allocateEntity` → `initialize*` → `finishEntity`) is now the strict ruleset with 1,808 `finishEntity` usages across the codebase. `npm run construction:check` enforces pairing as a CI gate; `npm run entity-contracts:check` audits the Entity return shape. The convention is enforced, not advisory.
-2. **Make the migration semantic rather than a cast or verb-table exercise.** The generated API currently
-   exposes `create*` for structural products (`Scene3DDocument`, Standard PBR property blocks, projection
-   descriptors), collections (`createScenesFrom*`), runtime records, backend descriptors, DOM elements,
-   and native GL handles. Review each public function in its package context: some products should become
-   Entities, while others need a more truthful operation name. `build*`, `compute*`, `parse*`, `allocate*`,
-   and `compile*` are **not** approved blanket mappings from return shape to verb. Do not fake the convention
-   by casting a browser-native `WebGLProgram` or an array to Entity. `npm run entity-contracts:check` audits
-   this: it reads both export lanes rather than `index.ts` alone, derives the census every run with no
-   baseline to keep in sync, and fails rather than advising. The advisory `api:create-entity` pair it
-   replaced was retired once it was enforced.
+2. **~~Make the migration semantic rather than a cast or verb-table exercise.~~** — retired 2026-09-08. The uniform Entity construction model is retained for all `create*` products, including pure data descriptors (adjustments, effects, projections, PBR extensions, physics configs/results, sensor readings). The null runtime slot cost is trivial (one pointer), and the single-constructor discipline enforces V8 hidden-class monomorphism at kind-dispatched hot paths — a measured benefit that outweighs the per-descriptor overhead. No `*Like` input seam exists for these types, so consumers already depend on the concrete constructor. `npm run entity-contracts:check` and `npm run construction:check` enforce the convention as CI gates.
 
 ## Recommended
 
