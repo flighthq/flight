@@ -1,5 +1,6 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
@@ -56,8 +57,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
         region,
         roundPixels ? dx | 0 : dx,
         roundPixels ? dy | 0 : dy,
-        region.rotated ? region.height : region.width,
-        region.rotated ? region.width : region.height,
+        region.rotation !== TextureAtlasRotation.None ? region.height : region.width,
+        region.rotation !== TextureAtlasRotation.None ? region.width : region.height,
       );
     } else {
       setMatrixFromFloat32Array(quadTransform, offset, transforms);
@@ -83,8 +84,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
         region,
         0,
         0,
-        region.rotated ? region.height : region.width,
-        region.rotated ? region.width : region.height,
+        region.rotation !== TextureAtlasRotation.None ? region.height : region.width,
+        region.rotation !== TextureAtlasRotation.None ? region.width : region.height,
       );
     }
   }

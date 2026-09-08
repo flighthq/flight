@@ -9,6 +9,7 @@ import {
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createGlRenderTarget } from '@flighthq/render-gl/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   GlContext,
   GlRenderState,
@@ -95,8 +96,9 @@ export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, 
     const id = ids[i];
     if (id < 0 || id >= numRegions) continue;
     const region = regions[id];
-    const rw = region.rotated ? region.height : region.width;
-    const rh = region.rotated ? region.width : region.height;
+    const rotated = region.rotation !== TextureAtlasRotation.None;
+    const rw = rotated ? region.height : region.width;
+    const rh = rotated ? region.width : region.height;
     if (rw <= 0 || rh <= 0) continue;
 
     const tt = i * 4;
@@ -167,8 +169,9 @@ export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) =>
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
-      const w = region.rotated ? region.height : region.width;
-      const h = region.rotated ? region.width : region.height;
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const w = rotated ? region.height : region.width;
+      const h = rotated ? region.width : region.height;
       if (w <= 0 || h <= 0) continue;
 
       // World-space instance transform = batch world transform ∘ per-instance local transform.

@@ -13,6 +13,7 @@ import type {
   TextureAtlas,
   TextureAtlasRegion,
 } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { destroyWgpuParticleEmitter3DResources, drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
@@ -57,15 +58,12 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
 function makeAtlasEmitter(
   regionWidth: number,
   regionHeight: number,
-  rotated = false,
-  rotationDirection?: 'clockwise' | 'counterclockwise',
+  rotation = TextureAtlasRotation.None,
 ): ParticleEmitter3D {
   const emitter = makeEmitterWithParticles(1);
   const image = createImageResource(createReadyImageElementForTest(128, 128));
   emitter.data.atlas = {
-    regions: [
-      { id: 0, rotated, rotationDirection, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion,
-    ],
+    regions: [{ id: 0, rotation, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
     texture: createTexture({ dimension: '2d', source: image }),
   } as TextureAtlas;
   return emitter;
@@ -159,7 +157,7 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
   it('unrotates a packed region while preserving its logical billboard aspect ratio', () => {
     const { state, fake } = makeAtlasWgpuScene3DState();
     const scene = createNode3D(Node3DKind);
-    addNodeChild(scene, makeAtlasEmitter(32, 64, true));
+    addNodeChild(scene, makeAtlasEmitter(32, 64, TextureAtlasRotation.Clockwise90));
     drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
     expect(instanceData[13]).toBeCloseTo(-1);
@@ -174,7 +172,7 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
   it('uses the height sign bit for a counterclockwise packed region', () => {
     const { state, fake } = makeAtlasWgpuScene3DState();
     const scene = createNode3D(Node3DKind);
-    addNodeChild(scene, makeAtlasEmitter(32, 64, true, 'counterclockwise'));
+    addNodeChild(scene, makeAtlasEmitter(32, 64, TextureAtlasRotation.Counterclockwise90));
     drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
     expect(instanceData[13]).toBeCloseTo(1);

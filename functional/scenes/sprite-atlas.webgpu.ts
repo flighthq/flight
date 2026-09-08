@@ -19,6 +19,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   SpriteKind,
+  TextureAtlasRotation,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
@@ -92,7 +93,7 @@ atlas.regions.push(
   createTextureAtlasRegion({
     height: ROTATED_WIDTH,
     id: 2,
-    rotated: true,
+    rotation: TextureAtlasRotation.Clockwise90,
     width: ROTATED_HEIGHT,
     x: ROTATED_X,
     y: ROTATED_Y,

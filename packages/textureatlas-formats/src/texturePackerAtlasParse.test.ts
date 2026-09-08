@@ -1,4 +1,5 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TexturePackerAtlasArrayDocument, TexturePackerAtlasHashDocument } from '@flighthq/types/contract';
 
 import { parseTexturePackerAtlasDocument, parseTexturePackerAtlasJson } from './texturePackerAtlasParse';
@@ -136,8 +137,8 @@ describe('parseTexturePackerAtlasDocument', () => {
   it('sets rotated on rotated regions', () => {
     const atlas = createTextureAtlas();
     parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
-    expect(atlas.regions[0].rotated).toBe(false);
-    expect(atlas.regions[1].rotated).toBe(true);
+    expect(atlas.regions[0].rotation).toBe(TextureAtlasRotation.None);
+    expect(atlas.regions[1].rotation).toBe(TextureAtlasRotation.Clockwise90);
   });
   it('preserves packed width/height for rotated regions', () => {
     const rotatedDoc: TexturePackerAtlasArrayDocument = {

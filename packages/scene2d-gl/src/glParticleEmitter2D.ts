@@ -3,6 +3,7 @@ import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/c
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   GlContext,
   GlRenderState,
@@ -205,11 +206,10 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
     instanceData[base + 11] = (region.y + region.height) * ih;
     // A negative stored width marks clockwise packing; a negative height marks libGDX's opposite
     // convention. The shader takes abs for geometry, so direction costs no extra instance bytes.
-    const counterclockwise = region.rotationDirection === 'counterclockwise';
-    instanceData[base + 12] =
-      region.rotated && !counterclockwise ? -region.height : region.rotated ? region.height : region.width;
-    instanceData[base + 13] =
-      region.rotated && counterclockwise ? -region.width : region.rotated ? region.width : region.height;
+    const rotated = region.rotation !== TextureAtlasRotation.None;
+    const counterclockwise = region.rotation === TextureAtlasRotation.Counterclockwise90;
+    instanceData[base + 12] = rotated && !counterclockwise ? -region.height : rotated ? region.height : region.width;
+    instanceData[base + 13] = rotated && counterclockwise ? -region.width : rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

@@ -1,9 +1,14 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
 
-export type TextureAtlasRotationDirection = 'clockwise' | 'counterclockwise';
+export enum TextureAtlasRotation {
+  Counterclockwise90 = -1,
+  None = 0,
+  Clockwise90 = 1,
+}
 
 export interface TextureAtlasRegion extends Entity {
-  // Packed page-rectangle extent. When rotated is true, logical drawn width/height are height/width.
+  // Packed page-rectangle extent. When rotation is not None, logical drawn width/height are
+  // height/width.
   height: number;
   id: number;
   name: string | null;
@@ -15,11 +20,9 @@ export interface TextureAtlasRegion extends Entity {
   pageName: string | null;
   pivotX: number | null;
   pivotY: number | null;
-  // True when the packer transposed the region with one cardinal quarter-turn.
-  rotated: boolean;
-  // Rotation applied by the packer. Older hand-authored regions omit this and retain the
-  // TexturePacker/Starling clockwise convention; libGDX atlases explicitly use counterclockwise.
-  rotationDirection?: TextureAtlasRotationDirection;
+  // Cardinal quarter-turn applied by the packer. The single enum is both the rotation flag and its
+  // direction, so these cannot disagree.
+  rotation: TextureAtlasRotation;
   sourceX: number;
   sourceY: number;
   trimmed: boolean;

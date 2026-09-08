@@ -6,7 +6,7 @@ import {
   createTextureAtlas,
   createTextureAtlasFromImageResource,
 } from '@flighthq/textureatlas/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
+import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
@@ -87,7 +87,7 @@ describe('drawCanvasQuadBatch', () => {
     const atlas = makeAtlas();
     atlas.regions[0].width = 20;
     atlas.regions[0].height = 40;
-    atlas.regions[0].rotated = true;
+    atlas.regions[0].rotation = TextureAtlasRotation.Clockwise90;
     const qb = createQuadBatch();
     qb.data.atlas = atlas;
     reserveQuadBatch(qb, 1);
@@ -110,8 +110,7 @@ describe('drawCanvasQuadBatch', () => {
     const atlas = makeAtlas();
     atlas.regions[0].width = 20;
     atlas.regions[0].height = 40;
-    atlas.regions[0].rotated = true;
-    atlas.regions[0].rotationDirection = 'counterclockwise';
+    atlas.regions[0].rotation = TextureAtlasRotation.Counterclockwise90;
     const qb = createQuadBatch();
     qb.data.atlas = atlas;
     reserveQuadBatch(qb, 1);

@@ -1,4 +1,5 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
 import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
@@ -47,8 +48,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
         let origH = 0;
         let offsetX = 0;
         let offsetY = 0;
-        let rotated = false;
-        let rotationDirection: 'clockwise' | 'counterclockwise' = 'counterclockwise';
+        let rotation = TextureAtlasRotation.None;
         let index = -1;
         // Read region key:value pairs
         while (i < lines.length) {
@@ -61,11 +61,11 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
           switch (key) {
             case 'rotate':
               if (value === 'true') {
-                rotated = true;
+                rotation = TextureAtlasRotation.Counterclockwise90;
               } else if (value !== 'false') {
                 const degrees = parseFloat(value);
-                rotated = degrees === 90 || degrees === 270;
-                rotationDirection = degrees === 270 ? 'clockwise' : 'counterclockwise';
+                if (degrees === 90) rotation = TextureAtlasRotation.Counterclockwise90;
+                else if (degrees === 270) rotation = TextureAtlasRotation.Clockwise90;
               }
               break;
             case 'xy': {
@@ -98,6 +98,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
           }
         }
         const name = index >= 0 ? `${regionName}_${index}` : regionName;
+        const rotated = rotation !== TextureAtlasRotation.None;
         const logicalWidth = rotated ? atlasH : atlasW;
         const logicalHeight = rotated ? atlasW : atlasH;
         const trimmed = origW > 0 && origH > 0 && (origW !== logicalWidth || origH !== logicalHeight);
@@ -111,8 +112,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
             pageName,
             pivotX: null,
             pivotY: null,
-            rotated,
-            rotationDirection,
+            rotation,
             sourceX: offsetX,
             sourceY: offsetY,
             trimmed,

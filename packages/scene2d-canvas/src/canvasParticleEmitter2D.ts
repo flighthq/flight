@@ -1,4 +1,5 @@
 import { noopRendererData } from '@flighthq/render/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
@@ -68,8 +69,8 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
       region,
       0,
       0,
-      region.rotated ? region.height : region.width,
-      region.rotated ? region.width : region.height,
+      region.rotation !== TextureAtlasRotation.None ? region.height : region.width,
+      region.rotation !== TextureAtlasRotation.None ? region.width : region.height,
     );
   }
 

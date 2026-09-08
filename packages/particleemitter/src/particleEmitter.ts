@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   EntityConstruction,
   MethodsOf,
@@ -163,8 +164,9 @@ export function computeParticleEmitter2DLocalBoundsRectangle(
     const scale = transforms[tt + 3];
     const cosR = Math.cos(rotation) * scale;
     const sinR = Math.sin(rotation) * scale;
-    const w = region.rotated ? region.height : region.width;
-    const h = region.rotated ? region.width : region.height;
+    const rotated = region.rotation !== TextureAtlasRotation.None;
+    const w = rotated ? region.height : region.width;
+    const h = rotated ? region.width : region.height;
     // Four corners of the quad at local (0,0)-(w,h) after rotate+scale+translate
     const x0 = px;
     const y0 = py;

@@ -1,3 +1,4 @@
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TextureAtlasRegion } from '@flighthq/types/contract';
 
 // Draws one packed atlas rectangle upright in the current local coordinate system. TexturePacker and
@@ -13,7 +14,7 @@ export function drawCanvasAtlasRegion(
   width: number,
   height: number,
 ): void {
-  if (!region.rotated) {
+  if (region.rotation === TextureAtlasRotation.None) {
     context.drawImage(source, region.x, region.y, region.width, region.height, x, y, width, height);
     return;
   }
@@ -21,7 +22,7 @@ export function drawCanvasAtlasRegion(
   const scaleX = width / region.height;
   const scaleY = height / region.width;
   context.save();
-  if (region.rotationDirection === 'counterclockwise') {
+  if (region.rotation === TextureAtlasRotation.Counterclockwise90) {
     context.transform(0, scaleY, -scaleX, 0, x + scaleX * (region.y + region.height), y - scaleY * region.x);
   } else {
     context.transform(0, -scaleY, scaleX, 0, x - scaleX * region.y, y + scaleY * (region.x + region.width));

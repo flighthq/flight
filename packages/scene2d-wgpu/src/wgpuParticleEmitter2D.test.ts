@@ -11,7 +11,12 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import {
+  CompressedImageTextureSourceKind,
+  EntityRuntimeKey,
+  RegistryEntryState,
+  TextureAtlasRotation,
+} from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -113,12 +118,11 @@ describe('drawWgpuParticleEmitter2D', () => {
     const region: {
       height: number;
       id: number;
-      rotated: boolean;
-      rotationDirection?: 'clockwise' | 'counterclockwise';
+      rotation: TextureAtlasRotation;
       width: number;
       x: number;
       y: number;
-    } = { height: 40, id: 0, rotated: true, width: 20, x: 0, y: 0 };
+    } = { height: 40, id: 0, rotation: TextureAtlasRotation.Clockwise90, width: 20, x: 0, y: 0 };
     const renderProxy = {
       alpha: 1,
       blendMode: null,
@@ -144,7 +148,7 @@ describe('drawWgpuParticleEmitter2D', () => {
     expect(runtime.particleInstanceData![12]).toBe(-40);
     expect(runtime.particleInstanceData![13]).toBe(20);
 
-    region.rotationDirection = 'counterclockwise';
+    region.rotation = TextureAtlasRotation.Counterclockwise90;
     drawWgpuParticleEmitter2D(state, renderProxy);
     expect(runtime.particleInstanceData![12]).toBe(40);
     expect(runtime.particleInstanceData![13]).toBe(-20);

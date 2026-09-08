@@ -12,7 +12,7 @@ import type {
   TextureAtlasRegion,
   TintMaterialData,
 } from '@flighthq/types/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
+import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_DELETED_ID,
@@ -55,7 +55,16 @@ function makeQuadAtlas(...regions: TextureAtlasRegion[]): TextureAtlas {
 }
 
 function makeQuadRegion(id = 0, width = 32, height = 32): TextureAtlasRegion {
-  return { id, x: 0, y: 0, width, height, pivotX: null, pivotY: null } as TextureAtlasRegion;
+  return {
+    id,
+    x: 0,
+    y: 0,
+    width,
+    height,
+    pivotX: null,
+    pivotY: null,
+    rotation: TextureAtlasRotation.None,
+  } as TextureAtlasRegion;
 }
 
 describe('appendQuadBatchInstance', () => {
@@ -173,7 +182,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   });
 
   it('returns zero bounds when instanceCount is 0', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas } });
     const out = createRectangle(1, 2, 3, 4);
@@ -183,7 +192,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   });
 
   it('computes AABB over all quads for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion(0, 32, 16);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
     quadBatch.data.ids = new Uint16Array([0, 0]);
@@ -198,7 +207,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
 
   it('uses the upright logical extent of a rotated region for bounds', () => {
     const region = makeQuadRegion(0, 10, 20);
-    region.rotated = true;
+    region.rotation = TextureAtlasRotation.Clockwise90;
     const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([5, 7]);
@@ -208,7 +217,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   });
 
   it('skips quads with out-of-range region ids for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
     quadBatch.data.ids = new Uint16Array([0, 99]);
@@ -220,7 +229,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   });
 
   it('computes AABB over all quads for matrix3x2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 10, height: 10, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion(0, 10, 10);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
     quadBatch.data.ids = new Uint16Array([0]);
@@ -235,7 +244,7 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   });
 
   it('does not store the result on the batch', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion(0, 32, 16);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
@@ -493,7 +502,7 @@ describe('getQuadBatchTransformStride', () => {
 
 describe('hitTestQuadBatchPoint', () => {
   it('delegates to hitTestQuadBatchPointXY', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
@@ -532,7 +541,7 @@ describe('hitTestQuadBatchPointExactXY', () => {
 
   it('hit-tests the upright logical extent of a rotated region', () => {
     const region = makeQuadRegion(0, 10, 20);
-    region.rotated = true;
+    region.rotation = TextureAtlasRotation.Clockwise90;
     const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([0, 0]);
@@ -575,14 +584,14 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 
   it('returns -1 when instanceCount is 0', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas } });
     expect(hitTestQuadBatchPointXY(quadBatch, 0, 0)).toBe(-1);
   });
 
   it('returns the index of a hit quad for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
     quadBatch.data.ids = new Uint16Array([0, 0]);
@@ -592,7 +601,7 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 
   it('returns -1 when point is outside all quads for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
@@ -602,7 +611,7 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 
   it('returns the first hit index when quads overlap for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
     quadBatch.data.ids = new Uint16Array([0, 0]);
@@ -611,7 +620,7 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 
   it('returns -1 for out-of-range region id for vector2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([99]);
@@ -620,7 +629,7 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 
   it('returns the index of a hit quad for matrix3x2 transforms', () => {
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
     quadBatch.data.ids = new Uint16Array([0]);

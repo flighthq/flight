@@ -3,6 +3,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   ColorScaleBias,
   GlRenderState,
@@ -91,19 +92,20 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
       const v0 = region.y * ih;
       const u1 = (region.x + region.width) * iw;
       const v1 = (region.y + region.height) * ih;
-      const counterclockwise = region.rotationDirection === 'counterclockwise';
+      const rotated = region.rotation !== TextureAtlasRotation.None;
+      const counterclockwise = region.rotation === TextureAtlasRotation.Counterclockwise90;
       writeGlQuadBatchAffineInstance(
         instanceData,
         writeBase,
         tileTransform,
         tileWidth,
         tileHeight,
-        region.rotated ? (counterclockwise ? u0 : u1) : u0,
-        region.rotated && counterclockwise ? v1 : v0,
-        region.rotated ? 0 : u1 - u0,
-        region.rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
-        region.rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
-        region.rotated ? 0 : v1 - v0,
+        rotated ? (counterclockwise ? u0 : u1) : u0,
+        rotated && counterclockwise ? v1 : v0,
+        rotated ? 0 : u1 - u0,
+        rotated ? (counterclockwise ? v0 - v1 : v1 - v0) : 0,
+        rotated ? (counterclockwise ? u1 - u0 : u0 - u1) : 0,
+        rotated ? 0 : v1 - v0,
         alpha,
       );
       packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);

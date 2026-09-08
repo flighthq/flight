@@ -5,7 +5,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -13,7 +13,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -25,7 +25,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -33,7 +33,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -45,7 +45,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -53,7 +53,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "95da746629fd76bd777e985b37f0b1eee2dd537d0533e12d47f833546a72293c",
+      "sourceHash": "ddfeb31995ec9cc058cd5ffbf816c4a6de0a8f2aa39b75ad6f152780463c92ae",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
