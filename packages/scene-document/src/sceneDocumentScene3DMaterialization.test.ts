@@ -1,3 +1,4 @@
+import { createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createTransform3D, createVector3, setQuaternionFromAxisAngle } from '@flighthq/geometry/contract';
 import {
   createAmbientLight,
@@ -65,7 +66,7 @@ describe('createFlightDocumentFromScene3D', () => {
         far: 1000,
         name: 'main',
         near: 0.1,
-        projection: { aspect: 1.5, fovY: 1.0, kind: 'perspective' },
+        projection: createPerspectiveProjection({ aspect: 1.5, fovY: 1.0 }),
         transform: createTransform3D(),
       },
     ];
@@ -136,7 +137,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         {
           far: 500,
           near: 0.5,
-          projection: { aspect: 1.77, fovY: 1.047, kind: 'perspective' },
+          projection: createPerspectiveProjection({ aspect: 1.77, fovY: 1.047 }),
           transform: createTransform3D(),
         },
       ],
@@ -163,7 +164,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         {
           far: 500,
           near: 0.5,
-          projection: { aspect: 1.77, fovY: 1.047, kind: 'perspective' },
+          projection: createPerspectiveProjection({ aspect: 1.77, fovY: 1.047 }),
           transform,
         },
       ],
@@ -188,7 +189,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
           far: 500,
           near: 0.5,
           node: 2,
-          projection: { aspect: 1.77, fovY: 1.047, kind: 'perspective' },
+          projection: createPerspectiveProjection({ aspect: 1.77, fovY: 1.047 }),
           transform,
         },
       ],

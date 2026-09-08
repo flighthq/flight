@@ -1,3 +1,4 @@
+import { createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { createAmbientLight } from '@flighthq/lighting/contract';
 import type { FlightDocument } from '@flighthq/types/contract';
@@ -146,7 +147,7 @@ describe('formatFlightDocumentText', () => {
               far: 1000,
               name: 'main camera',
               near: 0.1,
-              projection: { aspect: 16 / 9, fovY: 1, kind: 'perspective' },
+              projection: createPerspectiveProjection({ aspect: 16 / 9, fovY: 1 }),
               transform: cameraTransform,
             },
           ],
