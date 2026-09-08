@@ -1,5 +1,6 @@
 export {
   detectSpritesheetFormat,
+  formatLibgdxAtlas,
   getSpritesheetFormat,
   getSpritesheetFormatKinds,
   parseAsepriteSpritesheet,

@@ -41,6 +41,60 @@ function makeLitProgram(): GlLitProgram {
 }
 
 describe('bindGlMeshLightBlock', () => {
+  it('binds IBL only when its environment source revision is current', () => {
+    const { state, gl } = makeGlScene3DState();
+    const runtime = getGlScene3DRuntime(state);
+    runtime.environmentSourceRevision = 2;
+    runtime.ibl = {
+      brdfLut: {} as WebGLTexture,
+      environmentSourceRevision: 2,
+      intensity: 0.75,
+      irradianceCube: {} as WebGLTexture,
+      prefilteredCube: {} as WebGLTexture,
+      prefilteredMipCount: 5,
+    };
+    bindGlMeshLightBlock(state, makeLitProgram(), {
+      ambientCount: 0,
+      data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
+      directionalCount: 0,
+      hemisphereCount: 0,
+      pointCount: 0,
+      spotCount: 0,
+      version: 1,
+    });
+    const enabled = gl.calls.find(
+      (call) => call.name === 'uniform1f' && (call.args[0] as { name?: string })?.name === 'u_iblEnabled',
+    );
+    expect(enabled?.args[1]).toBe(1);
+  });
+
+  it('disables a stale IBL bake after the environment source revision advances', () => {
+    const { state, gl } = makeGlScene3DState();
+    const runtime = getGlScene3DRuntime(state);
+    runtime.environmentSourceRevision = 2;
+    runtime.ibl = {
+      brdfLut: {} as WebGLTexture,
+      environmentSourceRevision: 1,
+      intensity: 1,
+      irradianceCube: {} as WebGLTexture,
+      prefilteredCube: {} as WebGLTexture,
+      prefilteredMipCount: 5,
+    };
+    bindGlMeshLightBlock(state, makeLitProgram(), {
+      ambientCount: 0,
+      data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
+      directionalCount: 0,
+      hemisphereCount: 0,
+      pointCount: 0,
+      spotCount: 0,
+      version: 1,
+    });
+    const enabled = gl.calls.find(
+      (call) => call.name === 'uniform1f' && (call.args[0] as { name?: string })?.name === 'u_iblEnabled',
+    );
+    expect(enabled?.args[1]).toBe(0);
+  });
+
   it('uploads the directional, ambient, count, shadow-gate, and ibl-gate uniforms from the packed block', () => {
     const { state, gl } = makeGlScene3DState();
     const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);

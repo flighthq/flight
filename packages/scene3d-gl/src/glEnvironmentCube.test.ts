@@ -1,4 +1,4 @@
-import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
+import type { Bitmap, CubeTexture, Environment } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import {
@@ -16,22 +16,27 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function dataFace(size: number): Bitmap {
   return {
+    alphaType: 'straight',
     data: new Uint8ClampedArray(size * size * 4),
+    format: 'rgba8unorm',
+    gamut: 'srgb',
     height: size,
     kind: BitmapTextureSourceKind,
+    version: 0,
     width: size,
   } as Bitmap;
 }
 
-function dataOnlyEnvironment(size: number): Environment {
+function dataOnlyEnvironment(size: number): Environment & { environment: CubeTexture } {
   const face = dataFace(size);
   const cube = {
     colorSpace: 'srgb',
-    sampler: {},
     dimension: 'cube',
+    sampler: {},
     sources: [face, face, face, face, face, face],
-  } as unknown as Texture;
-  return { environment: cube, intensity: 1 } as Environment;
+    version: 0,
+  } as unknown as CubeTexture;
+  return { environment: cube, intensity: 1 } as Environment & { environment: CubeTexture };
 }
 
 describe('destroyGlEnvironmentSourceCube', () => {
@@ -69,6 +74,15 @@ describe('destroyGlEnvironmentSourceCube', () => {
     // Left behind, it would pick the internal format for a face restamped onto the NEXT cube.
     expect(getGlScene3DRuntime(state).environmentSourceCubeColorSpace).toBe('linear');
   });
+
+  it('advances the source revision so an existing IBL bake becomes stale', () => {
+    const { state } = makeGlScene3DState();
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
+    const runtime = getGlScene3DRuntime(state);
+    const before = runtime.environmentSourceRevision;
+    destroyGlEnvironmentSourceCube(state);
+    expect(runtime.environmentSourceRevision).toBe((before + 1) >>> 0);
+  });
 });
 
 describe('ensureGlEnvironmentSourceCube', () => {
@@ -102,6 +116,55 @@ describe('ensureGlEnvironmentSourceCube', () => {
     ensureGlEnvironmentSourceCube(state, environment);
     expect(gl.calls.filter((c) => c.name === 'texImage2D').every((c) => c.args[2] === gl.RGBA)).toBe(true);
   });
+
+  it('replaces the cached upload when the cube Texture identity changes', () => {
+    const { state, gl } = makeGlScene3DState();
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
+    const uploadsBefore = gl.calls.filter((call) => call.name === 'texImage2D').length;
+
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(8));
+
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture')).toHaveLength(1);
+    expect(gl.calls.filter((call) => call.name === 'texImage2D')).toHaveLength(uploadsBefore + 6);
+  });
+
+  it('replaces the cached upload when the cube Texture version changes', () => {
+    const { state, gl } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, environment);
+    environment.environment!.version++;
+    ensureGlEnvironmentSourceCube(state, environment);
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture')).toHaveLength(1);
+  });
+
+  it('replaces the cached upload when a shared face payload version changes', () => {
+    const { state, gl } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, environment);
+    environment.environment!.sources[0]!.version++;
+    ensureGlEnvironmentSourceCube(state, environment);
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture')).toHaveLength(1);
+  });
+
+  it('reuses a shared cube when only the Environment identity and intensity change', () => {
+    const { state, gl } = makeGlScene3DState();
+    const first = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, first);
+    const createdBefore = gl.calls.filter((call) => call.name === 'createTexture').length;
+
+    ensureGlEnvironmentSourceCube(state, { environment: first.environment, intensity: 3 } as Environment);
+
+    expect(gl.calls.filter((call) => call.name === 'createTexture')).toHaveLength(createdBefore);
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture')).toHaveLength(0);
+  });
+
+  it('drops a prior cached cube when the next Environment has no complete source', () => {
+    const { state, gl } = makeGlScene3DState();
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
+    expect(ensureGlEnvironmentSourceCube(state, { environment: null, intensity: 1 } as Environment)).toBeNull();
+    expect(gl.calls.filter((call) => call.name === 'deleteTexture')).toHaveLength(1);
+    expect(getGlScene3DRuntime(state).environmentSourceTexture).toBeNull();
+  });
 });
 
 describe('getGlCubeFaceTarget', () => {
@@ -126,5 +189,15 @@ describe('updateGlEnvironmentCubeFace', () => {
     expect(afterBuild).toBe(6);
     expect(updateGlEnvironmentCubeFace(state, 2, dataFace(4))).toBe(true);
     expect(gl.calls.filter((c) => c.name === 'texImage2D').length).toBe(afterBuild + 1);
+  });
+
+  it('advances the source revision so baked lighting cannot silently sample the old face', () => {
+    const { state } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    ensureGlEnvironmentSourceCube(state, environment);
+    const runtime = getGlScene3DRuntime(state);
+    const before = runtime.environmentSourceRevision;
+    expect(updateGlEnvironmentCubeFace(state, 2, environment.environment!.sources[2]!)).toBe(true);
+    expect(runtime.environmentSourceRevision).toBe((before + 1) >>> 0);
   });
 });

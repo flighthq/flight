@@ -49,6 +49,7 @@ describe('destroyGlScene3DRuntime', () => {
     scene.activeMeshProgram = scene.programCache.get('a')!;
     scene.ibl = {
       brdfLut: {} as WebGLTexture,
+      environmentSourceRevision: 1,
       intensity: 1,
       irradianceCube: {} as WebGLTexture,
       prefilteredCube: {} as WebGLTexture,
@@ -56,6 +57,10 @@ describe('destroyGlScene3DRuntime', () => {
     } satisfies GlScene3DIbl;
     scene.iblBakeFramebuffer = {} as WebGLFramebuffer;
     scene.environmentSourceCube = {} as WebGLTexture;
+    scene.environmentSourceCubeFaceVersions = [1, 1, 1, 1, 1, 1];
+    scene.environmentSourceRevision = 1;
+    scene.environmentSourceTexture = {} as Texture;
+    scene.environmentSourceTextureVersion = 1;
     const depthTexture = {} as WebGLTexture;
     scene.shadowTarget = {
       colorRenderbuffers: [],
@@ -89,6 +94,9 @@ describe('destroyGlScene3DRuntime', () => {
     expect(scene.ibl).toBeNull();
     expect(scene.iblBakeFramebuffer).toBeNull();
     expect(scene.environmentSourceCube).toBeNull();
+    expect(scene.environmentSourceCubeFaceVersions).toEqual([]);
+    expect(scene.environmentSourceTexture).toBeNull();
+    expect(scene.environmentSourceTextureVersion).toBe(-1);
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
     expect(scene.skinPalette).toBeNull();

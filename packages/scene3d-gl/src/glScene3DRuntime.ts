@@ -48,6 +48,10 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
     gl.deleteTexture(scene.environmentSourceCube);
     scene.environmentSourceCube = null;
   }
+  scene.environmentSourceCubeColorSpace = 'linear';
+  scene.environmentSourceCubeFaceVersions = [];
+  scene.environmentSourceTexture = null;
+  scene.environmentSourceTextureVersion = -1;
   destroyGlEnvironmentIblBakePrograms(state);
   destroyGlEnvironmentSkybox(state);
 
@@ -153,6 +157,10 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       blendedPool: [],
       environmentSourceCube: null,
       environmentSourceCubeColorSpace: 'linear',
+      environmentSourceCubeFaceVersions: [],
+      environmentSourceRevision: 0,
+      environmentSourceTexture: null,
+      environmentSourceTextureVersion: -1,
       ibl: null,
       iblBakeFramebuffer: null,
       opaqueDrawList: [],

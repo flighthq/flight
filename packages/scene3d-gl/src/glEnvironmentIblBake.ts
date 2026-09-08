@@ -22,6 +22,10 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   gl.getExtension('EXT_color_buffer_float');
   gl.getExtension('OES_texture_float_linear');
   const runtime = getGlScene3DRuntime(state);
+  if (runtime.ibl?.environmentSourceRevision === runtime.environmentSourceRevision) {
+    runtime.ibl.intensity = environment.intensity;
+    return;
+  }
 
   if (runtime.iblBakeFramebuffer === null) runtime.iblBakeFramebuffer = gl.createFramebuffer();
   const fbo = runtime.iblBakeFramebuffer!;
@@ -63,6 +67,7 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
 
   runtime.ibl = {
     brdfLut,
+    environmentSourceRevision: runtime.environmentSourceRevision,
     intensity: environment.intensity,
     irradianceCube,
     prefilteredCube,

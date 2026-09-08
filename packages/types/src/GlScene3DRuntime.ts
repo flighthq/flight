@@ -9,6 +9,7 @@ import type { MeshGeometry } from './MeshGeometry';
 import type { PbrExtension } from './PbrExtension';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
+import type { Texture } from './Texture';
 import type { TextureColorSpace } from './Texture';
 
 // The directional shadow resource for this state, set by drawGlScene3DShadowMap and read by the lit bind
@@ -30,6 +31,9 @@ export interface GlScene3DShadow {
 // integration LUT. `intensity` scales the environment's contribution (Environment.intensity).
 export interface GlScene3DIbl {
   brdfLut: WebGLTexture;
+  // Source revision this bake represents. A source identity/version change advances the runtime's
+  // revision immediately, so the light bind stops sampling this set until an explicit rebake replaces it.
+  environmentSourceRevision: number;
   intensity: number;
   irradianceCube: WebGLTexture;
   prefilteredCube: WebGLTexture;
@@ -102,6 +106,16 @@ export interface GlScene3DRuntime {
   deformGuard?: ((mesh: Mesh) => void) | null;
   environmentSourceCube: WebGLTexture | null;
   environmentSourceCubeColorSpace: TextureColorSpace;
+  // Snapshot of the six face payload revisions uploaded into environmentSourceCube. Texture.version
+  // catches view/source-slot changes; these catch in-place pixel changes fanned out by a shared source.
+  environmentSourceCubeFaceVersions: readonly number[];
+  // Advances whenever the source cube's GPU content changes or is destroyed. GlScene3DIbl stamps this
+  // value so a source change disables stale baked lighting before the caller explicitly rebakes it.
+  environmentSourceRevision: number;
+  // Source Texture identity/version the cached GL cubemap was derived from. Environment identity is not
+  // part of the key: two Environment descriptors may share one radiance cube and vary only intensity.
+  environmentSourceTexture: Texture | null;
+  environmentSourceTextureVersion: number;
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
   // Opt-in forward-light selection guard, null until enableGlScene3DForwardLightSelectionGuards installs
