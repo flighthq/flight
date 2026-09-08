@@ -1,6 +1,4 @@
 import type { Entity } from './Entity';
-import type { ShapedRun } from './ShapedRun';
 
-export interface TextShaperCache extends Entity {
-  readonly _entries: Map<string, ShapedRun>;
-}
+// Opaque handle whose cached runs and lifetime state are owned by @flighthq/textshaper.
+export interface TextShaperCache extends Entity {}

@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
+  EntityRuntime,
   HasTextShaper,
   ShapeRunOptions,
   ShapedRun,
@@ -8,6 +9,7 @@ import type {
   TextShaperBackend,
   TextShaperCache,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getTextShaperBackend } from './textShaper';
 import { shapeTextRun } from './textShaperRun';
@@ -16,7 +18,7 @@ import { shapeTextRun } from './textShaperRun';
 // for continued use after clearing. Does not release the cache object itself (use
 // `disposeTextShaperCache` for that).
 export function clearTextShaperCache(cache: TextShaperCache): void {
-  cache._entries.clear();
+  _getTextShaperCacheRuntime(cache)?.entries.clear();
 }
 
 export function createTextShaperCache(): TextShaperCache {
@@ -29,12 +31,16 @@ export function createTextShaperCache(): TextShaperCache {
 // call. Prefer `clearTextShaperCache` when you want to reuse the cache object; use
 // `disposeTextShaperCache` only when the cache lifetime is over.
 export function disposeTextShaperCache(cache: TextShaperCache): void {
-  cache._entries.clear();
+  const runtime = _getTextShaperCacheRuntime(cache);
+  if (runtime === null) return;
+  runtime.entries.clear();
+  cache[EntityRuntimeKey] = undefined;
 }
 
 // Allocates a new, empty TextShaperCache.
 export function initializeTextShaperCache(out: EntityConstruction<TextShaperCache>): void {
-  out._entries = new Map();
+  const runtime: TextShaperCacheRuntime = { binding: null, entries: new Map() };
+  out[EntityRuntimeKey] = runtime;
 }
 
 // Shapes `text` in `format` with `options`, returning a cached ShapedRun when an equivalent call
@@ -49,14 +55,24 @@ export function shapeTextRunCached(
   options?: Readonly<ShapeRunOptions>,
   host?: HasTextShaper,
 ): ShapedRun | null {
+  const runtime = _getTextShaperCacheRuntime(cache);
+  if (runtime === null) return null;
   const backend = getTextShaperBackend(host);
   if (backend === null) return null;
   const key = `${_getBackendCacheId(backend)}\x00${_makeCacheKey(text, format, options)}`;
-  const existing = cache._entries.get(key);
+  const existing = runtime.entries.get(key);
   if (existing !== undefined) return existing;
   const result = shapeTextRun(text, format, options, host);
-  if (result !== null) cache._entries.set(key, result);
+  if (result !== null) runtime.entries.set(key, result);
   return result;
+}
+
+interface TextShaperCacheRuntime extends EntityRuntime {
+  entries: Map<string, ShapedRun>;
+}
+
+function _getTextShaperCacheRuntime(cache: TextShaperCache): TextShaperCacheRuntime | null {
+  return (cache[EntityRuntimeKey] as TextShaperCacheRuntime | undefined) ?? null;
 }
 
 // Backend identity is allocation state, not capability state: it only scopes cached values and

@@ -1,8 +1,10 @@
 import { sendNetRequest } from '@flighthq/net/contract';
 import type { AudioResource, AudioResourceUrl, HasMediaAudioCodec, HasNetHttp } from '@flighthq/types/contract';
 
+import { hasAudioDecoder } from './audioDecoderRegistry';
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
 import { createAudioResource } from './audioResource';
+import { decodeAudioResourceBytes } from './decodeAudioResourceBytes';
 
 // Builds a resource from raw PCM channel data without needing an AudioContext. Each entry in
 // `channels` holds one channel's Float32 samples; all are expected to share the first channel's
@@ -20,8 +22,7 @@ export function createAudioResourceFromSamples(channels: readonly Float32Array[]
   return createAudioResource(buffer);
 }
 
-// Web Audio's decodeAudioData content-sniffs the container, so `mimeType` is advisory here (threaded
-// for loader-family symmetry and non-web backends); the decoder ignores it.
+// MIME type selects a registered decoder when present; Web Audio otherwise content-sniffs the container.
 export async function loadAudioResourceFromBase64(
   context: AudioContext,
   base64: string,
@@ -43,31 +44,33 @@ export async function loadAudioResourceFromBlob(
   return loadAudioResourceFromBytes(context, new Uint8Array(arrayBuffer), blob.type || undefined, signal);
 }
 
-// Decodes encoded audio bytes into a resource. Copies the viewed region into a fresh ArrayBuffer
-// before decoding so the caller's Uint8Array is not detached by decodeAudioData. `mimeType` is
-// advisory (see loadAudioResourceFromBase64): decodeAudioData sniffs the container itself.
+// Decodes encoded audio bytes into a resource. A registered MIME-specific decoder wins; Web Audio
+// otherwise content-sniffs the container. Rejects when a registered decoder reports an expected miss.
 export async function loadAudioResourceFromBytes(
   context: AudioContext,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
 ): Promise<AudioResource> {
-  signal?.throwIfAborted();
-  const buffer = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  const audioBuffer = await context.decodeAudioData(buffer);
-  // decodeAudioData cannot be cancelled, so an abort landing mid-decode cannot stop the work — but it
-  // must still stop the result, or an aborted load resolves with a resource the caller no longer wants
-  // and is indistinguishable from one it asked for. This is the whole family's abort barrier: every
-  // loader here funnels through this function, so checking after the await is what makes "an aborted
-  // load never resolves" true for all of them rather than only for the pre-abort fast path above.
-  signal?.throwIfAborted();
-  return createAudioResource(audioBuffer);
+  const resource = await decodeAudioResourceBytes(context, bytes, mimeType, signal ?? new AbortController().signal);
+  if (resource === null) throw new Error(`Failed to decode audio${mimeType === undefined ? '' : `: ${mimeType}`}`);
+  return resource;
 }
 
 export async function loadAudioResourceFromUrl(
   host: HasNetHttp,
   context: AudioContext,
   url: string,
+  signal?: AbortSignal,
+): Promise<AudioResource> {
+  return _loadAudioResourceFromUrl(host, context, url, inferAudioMimeType(url) ?? undefined, signal);
+}
+
+async function _loadAudioResourceFromUrl(
+  host: HasNetHttp,
+  context: AudioContext,
+  url: string,
+  mimeType: string | undefined,
   signal?: AbortSignal,
 ): Promise<AudioResource> {
   const response = await sendNetRequest(
@@ -80,7 +83,12 @@ export async function loadAudioResourceFromUrl(
   // existing reject-on-failure contract; the transport itself remains caller-replaceable.
   if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
   if (!(response.body instanceof ArrayBuffer)) throw new Error(`Failed to load audio: ${url} (invalid body)`);
-  return loadAudioResourceFromBytes(context, new Uint8Array(response.body), response.headers['content-type'], signal);
+  return loadAudioResourceFromBytes(
+    context,
+    new Uint8Array(response.body),
+    response.headers['content-type'] ?? mimeType,
+    signal,
+  );
 }
 
 export async function loadAudioResourceFromUrls(
@@ -89,18 +97,26 @@ export async function loadAudioResourceFromUrls(
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
 ): Promise<AudioResource> {
-  const selected = selectAudioResourceUrl(host, sources);
+  const selected = _selectAudioResourceSource(host, sources);
   if (selected === null) return createAudioResource();
-  return loadAudioResourceFromUrl(host, context, selected, signal);
+  const mimeType = selected.type ?? inferAudioMimeType(selected.url) ?? undefined;
+  return _loadAudioResourceFromUrl(host, context, selected.url, mimeType, signal);
 }
 
 export function selectAudioResourceUrl(
   host: Readonly<HasMediaAudioCodec>,
   sources: readonly AudioResourceUrl[],
 ): string | null {
+  return _selectAudioResourceSource(host, sources)?.url ?? null;
+}
+
+function _selectAudioResourceSource(
+  host: Readonly<HasMediaAudioCodec>,
+  sources: readonly AudioResourceUrl[],
+): AudioResourceUrl | null {
   for (const source of sources) {
     const type = source.type ?? inferAudioMimeType(source.url) ?? '';
-    if (canPlayAudioType(host, type)) return source.url;
+    if (hasAudioDecoder(type) || canPlayAudioType(host, type)) return source;
   }
   return null;
 }

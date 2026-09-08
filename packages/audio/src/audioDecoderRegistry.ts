@@ -29,7 +29,7 @@ export function unregisterAudioDecoder(mimeType: string): void {
 // registering after the default one.
 //
 // This registry is for formats the platform cannot decode on its own. Anything the browser understands
-// (MP3, WAV, Ogg) needs no entry: the resolver falls through to the platform decoder, which content-sniffs.
-// Registering here is how a SWF ADPCM or Nellymoser decoder becomes reachable without this package, or the
-// resolver, knowing that those formats exist.
+// (MP3, WAV, Ogg) needs no entry: references and loaders fall through to the platform decoder, which
+// content-sniffs. Registering here is how a SWF ADPCM or Nellymoser decoder becomes reachable without the
+// caller knowing that those formats exist.
 const decoders = new Map<string, AudioDecoder>();
