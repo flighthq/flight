@@ -1,8 +1,8 @@
 export {
   clearGeolocationWatch,
-  createGeoPosition,
-  getCurrentGeoPosition,
-  getCurrentGeoPositionResult,
+  createGeolocationPosition,
+  getCurrentGeolocationPosition,
+  getCurrentGeolocationPositionResult,
   isGeolocationAvailable,
   promptForGeolocationAccess,
   watchGeolocationPosition,
