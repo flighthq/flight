@@ -250,13 +250,27 @@ export function createPath(winding: PathWinding = 'nonZero'): Path {
   return finishEntity(out);
 }
 
-// Every point-producing command (MOVE_TO, LINE_TO, CURVE_TO, CUBIC_CURVE_TO, and their
-// WIDE variants) stores its anchor as the last two values pushed to `data[]`. CLOSE and
-// NO_OP push no data. So the last anchor is always at the tail of the data array — O(1).
+// Returns the current pen position after the last command. For most commands this is the
+// last anchor in the data stream. After CLOSE the SVG/Canvas pen resets to the subpath
+// origin (the most recent MOVE_TO), so this walks backward to find it.
 export function getPathLastPoint(path: Readonly<Path>): [number, number] | null {
-  const data = path.data;
+  const { commands, data } = path;
   if (data.length < 2) return null;
-  return [data[data.length - 2], data[data.length - 1]];
+  const last = commands.length - 1;
+  if (last < 0) return null;
+
+  if (commands[last] !== PathCommand.CLOSE) {
+    return [data[data.length - 2], data[data.length - 1]];
+  }
+
+  let di = data.length;
+  for (let ci = last - 1; ci >= 0; ci--) {
+    const cmd = commands[ci];
+    di -= pathCommandDataCount(cmd);
+    if (cmd === PathCommand.MOVE_TO) return [data[di], data[di + 1]];
+    if (cmd === PathCommand.WIDE_MOVE_TO) return [data[di + 2], data[di + 3]];
+  }
+  return null;
 }
 
 // Appends a quarter-circle arc (90°) centered at (cx, cy) with the given radius, from `startAngle`
@@ -369,6 +383,13 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
   const cosAngle = Math.max(-1, Math.min(1, dot / (lenU * lenV)));
   const angle = Math.acos(cosAngle);
   return ux * vy - uy * vx < 0 ? -angle : angle;
+}
+
+function pathCommandDataCount(cmd: PathCommand): number {
+  if (cmd === PathCommand.MOVE_TO || cmd === PathCommand.LINE_TO) return 2;
+  if (cmd === PathCommand.CURVE_TO || cmd === PathCommand.WIDE_MOVE_TO || cmd === PathCommand.WIDE_LINE_TO) return 4;
+  if (cmd === PathCommand.CUBIC_CURVE_TO) return 6;
+  return 0;
 }
 
 // Optimal cubic Bezier arc approximation constant: 4*(sqrt(2)-1)/3.
