@@ -1,12 +1,13 @@
 ---
 package: '@flighthq/menu'
-updated: 2026-07-13
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # menu — Assessment
 
-See [charter](./charter.md) for blessed direction.
+See [charter](./charter.md) for blessed direction. Re-verified against the 2026-09-02 live review:
+solid, 70/100, with 56 colocated tests and no unretired sweep item.
 
 > 2026-07-13: rebuilt against the live tree. The prior "No sweep-safe items" verdict was reasoned from the unlanded builder bundle (see review.md provenance correction); the live tree does have sweep-safe work.
 

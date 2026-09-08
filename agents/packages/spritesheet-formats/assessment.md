@@ -1,12 +1,14 @@
 ---
 package: '@flighthq/spritesheet-formats'
-updated: 2026-07-30
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # spritesheet-formats — Assessment
 
-See [charter](./charter.md) for blessed direction.
+See [charter](./charter.md) for blessed direction. Re-verified against the 2026-09-02 live review:
+partial, 62/100, with 22 source files and 142 tests. The three remaining deficits are diagnostics,
+type-import routing, and libGDX round-trip fidelity; none is retired without an approved implementation.
 
 ## Closed 2026-07-30
 

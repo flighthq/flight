@@ -1,17 +1,18 @@
 ---
 package: '@flighthq/scene3d'
-updated: 2026-07-21
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
-# scene — Assessment
+# scene3d — Assessment
 
 See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-No sweep-safe items from this review. The remaining work crosses render, picking, mesh deformation, or
-resource-policy seams.
+No sweep-safe items from the 2026-09-02 review. The live package is solid (70/100), with 171 tests
+across 18 colocated files; remaining work crosses render, picking, mesh deformation, or resource-policy
+seams.
 
 ## Depth gaps
 

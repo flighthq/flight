@@ -1,12 +1,12 @@
 ---
 package: '@flighthq/tween'
-updated: 2026-07-31
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # tween — Assessment
 
-Sorted from the depth review (76/100, solid), the landed coverage expansion, and the direction session
+Re-verified against the 2026-09-02 live review (65/100, solid; 118 tests and 26 exports), the landed coverage expansion, and the direction session
 (2026-07-02). Six decisions blessed. The package is a professional-grade property tweener with broad
 coverage. The two largest remaining gaps — the value-interpolator seam and the programmatic timeline —
 are both design decisions now blessed in the charter, ready for implementation. All four sweep items
