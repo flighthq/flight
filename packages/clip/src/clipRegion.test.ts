@@ -3,8 +3,10 @@ import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/c
 
 import {
   acquireClipRegion,
+  clipRegionContainsClipRegion,
   clipRegionContainsPoint,
   clipRegionContainsRectangle,
+  clipRegionIntersectsClipRegion,
   clipRegionIntersectsRectangle,
   cloneClipRegion,
   copyClipRegion,
@@ -15,6 +17,8 @@ import {
   createClipRegionFromRectangle,
   createClipRegionFromRoundedRectangle,
   equalsClipRegion,
+  explainClipRegion,
+  explainClipRegionContours,
   getClipRegionBounds,
   initializeClipRegionFromContours,
   initializeClipRegionFromPath,
@@ -25,8 +29,11 @@ import {
   isClipRegionRectangular,
   normalizeClipRegion,
   releaseClipRegion,
+  setClipRegionContoursGuard,
   setClipRegionReleaseGuard,
+  setClipRegionToContours,
   setClipRegionToRectangle,
+  setClipRegionUseGuard,
   transformClipRegion,
   unionClipRegions,
 } from './clipRegion';
@@ -75,6 +82,14 @@ describe('acquireClipRegion', () => {
   });
 });
 
+describe('clipRegionContainsClipRegion', () => {
+  it('uses bounds conservatively for contour regions', () => {
+    const outer = createClipRegionFromContours([[0, 0, 10, 0, 0, 10]], 'nonZero');
+    const inner = createClipRegionFromRectangle(createRectangle(8, 8, 1, 1));
+    expect(clipRegionContainsClipRegion(outer, inner)).toBe(true);
+  });
+});
+
 describe('clipRegionContainsPoint', () => {
   it('returns true when the point is inside a rectangular clip', () => {
     const clip = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
@@ -114,6 +129,14 @@ describe('clipRegionContainsRectangle', () => {
   it('returns false when a rectangle extends outside the clip', () => {
     const clip = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
     expect(clipRegionContainsRectangle(clip, createRectangle(5, 5, 20, 20))).toBe(false);
+  });
+});
+
+describe('clipRegionIntersectsClipRegion', () => {
+  it('tests region bounds and rejects disjoint regions', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const b = createClipRegionFromRectangle(createRectangle(20, 20, 5, 5));
+    expect(clipRegionIntersectsClipRegion(a, b)).toBe(false);
   });
 });
 
@@ -317,6 +340,32 @@ describe('equalsClipRegion', () => {
   });
 });
 
+describe('explainClipRegion', () => {
+  it('reports released ownership and conservative contour predicates', () => {
+    const clip = acquireClipRegion();
+    expect(explainClipRegion(clip)).toEqual({ conservative: false, status: 'active' });
+    releaseClipRegion(clip);
+    expect(explainClipRegion(clip)).toEqual({ conservative: false, status: 'released' });
+    acquireClipRegion();
+  });
+});
+
+describe('explainClipRegionContours', () => {
+  it('reports malformed coordinate runs', () => {
+    expect(explainClipRegionContours([[0, 0, 1]])).toEqual({
+      contourIndex: 0,
+      coordinateCount: 3,
+      reason: 'odd-coordinate-count',
+    });
+    expect(explainClipRegionContours([[0, 0, 1, 1]])).toEqual({
+      contourIndex: 0,
+      coordinateCount: 4,
+      reason: 'too-few-points',
+    });
+    expect(explainClipRegionContours([[0, 0, 1, 0, 0, 1]])).toBeNull();
+  });
+});
+
 describe('getClipRegionBounds', () => {
   it('copies the clip rect into the out rectangle', () => {
     const clip = createClipRegionFromRectangle(createRectangle(3, 4, 15, 25));
@@ -511,6 +560,13 @@ describe('normalizeClipRegion', () => {
     // A 90-degree-rotated rectangle remains an axis-aligned rectangle, so it normalizes.
     expect(out.contours).toBeNull();
   });
+
+  it('is alias-safe for contour input', () => {
+    const clip = createClipRegionFromContours([[0, 0, 10, 0, 5, 10]], 'evenOdd');
+    normalizeClipRegion(clip, clip);
+    expect(clip.contours).toEqual([[0, 0, 10, 0, 5, 10]]);
+    expect(clip.winding).toBe('evenOdd');
+  });
 });
 
 describe('releaseClipRegion', () => {
@@ -520,6 +576,17 @@ describe('releaseClipRegion', () => {
     const reused = acquireClipRegion();
     expect(reused).toBe(clip);
     releaseClipRegion(reused);
+  });
+});
+
+describe('setClipRegionContoursGuard', () => {
+  it('installs and removes the invalid-contour diagnostic seam', () => {
+    const reports: number[] = [];
+    setClipRegionContoursGuard(() => reports.push(1));
+    createClipRegionFromContours([[0, 0, 1]], 'nonZero');
+    setClipRegionContoursGuard(null);
+    createClipRegionFromContours([[0, 0, 1]], 'nonZero');
+    expect(reports).toEqual([1]);
   });
 });
 
@@ -561,6 +628,19 @@ describe('setClipRegionReleaseGuard', () => {
     expect(doubled).toEqual([]);
   });
 });
+
+describe('setClipRegionToContours', () => {
+  it('deep-copies contours, recomputes bounds, and bumps version', () => {
+    const contours = [[2, 3, 12, 3, 7, 13]];
+    const clip = createClipRegionFromRectangle(createRectangle());
+    setClipRegionToContours(clip, contours, 'evenOdd');
+    contours[0][0] = 99;
+    expect(clip.contours).toEqual([[2, 3, 12, 3, 7, 13]]);
+    expect(clip.rect).toMatchObject({ x: 2, y: 3, width: 10, height: 10 });
+    expect(clip.winding).toBe('evenOdd');
+    expect(clip.version).toBe(1);
+  });
+});
 describe('setClipRegionToRectangle', () => {
   it('retargets a contour clip to a rectangle form and bumps version', () => {
     const path = createPath();
@@ -575,6 +655,20 @@ describe('setClipRegionToRectangle', () => {
     expect(clip.rect.width).toBe(20);
     expect(clip.rect.height).toBe(30);
     expect(clip.version).toBe(1);
+  });
+});
+
+describe('setClipRegionUseGuard', () => {
+  it('installs and removes the use-after-release diagnostic seam', () => {
+    const reports: number[] = [];
+    setClipRegionUseGuard(() => reports.push(1));
+    const clip = acquireClipRegion();
+    releaseClipRegion(clip);
+    clipRegionContainsPoint(clip, 0, 0);
+    setClipRegionUseGuard(null);
+    clipRegionContainsPoint(clip, 0, 0);
+    acquireClipRegion();
+    expect(reports).toEqual([1]);
   });
 });
 
@@ -626,6 +720,12 @@ describe('transformClipRegion', () => {
     transformClipRegion(clip, clip, matrix);
     expect(clip.rect.x).toBeCloseTo(5);
     expect(clip.rect.y).toBeCloseTo(5);
+  });
+
+  it('is alias-safe when out === clip for contour form', () => {
+    const clip = createClipRegionFromContours([[0, 0, 10, 0, 5, 10]], 'nonZero');
+    transformClipRegion(clip, clip, createMatrix(1, 0, 0, 1, 5, 7));
+    expect(clip.contours).toEqual([[5, 7, 15, 7, 10, 17]]);
   });
 });
 
