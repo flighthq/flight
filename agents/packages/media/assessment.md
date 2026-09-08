@@ -1,30 +1,47 @@
 ---
 package: '@flighthq/media'
-updated: 2026-07-31
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # media — Assessment
 
-Verified against the live tree on 2026-07-31 (6 source files, 4 test files, 65 tests, 42 exports), the prior review (64/100), and the direction session (2026-07-02). Four charter decisions blessed. The package has correctness holes and ~14 lost functions.
+Refreshed 2026-09-08 from the 2026-09-02 review and live source. Review scored 45/100 with `stopAllAudioMixerChannels` bug, missing channel-level APIs, and `clamp` triplication as primary findings. The bug and most channel-level gaps are now resolved. 7 source files (up from 6), 6 test files (up from 4), ~140 test cases (up from 65). Score revised to 62/100 — the remaining gaps are `clamp` triplication and Gold-tier domain surface.
+
+## Directed
+
+_None._
 
 ## Recommended
 
-_None open._ All four items landed and were re-verified against live source on 2026-07-30, and the counts above were refreshed on 2026-07-31 after the audio-mixer guard landed; they are recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as work. The sweep that verified them found a separate live defect in the mixer's pause/resume scope, since fixed — see [status](./status.md).
+- **Extract duplicated `clamp` helper.** Repeated at `audioChannel.ts:244`, `audioMixer.ts:246`, `videoChannel.ts:159`. Should be a shared internal utility or imported from `@flighthq/math`.
 
-## Landed
+## Depth gaps
 
-1. ~~**Fix `pauseAllAudioMixerChannels` / `resumeAllAudioMixerChannels`.**~~ Landed: both now stop and restart the source nodes rather than flipping flags. The 2026-07-30 sweep found and fixed a second defect in the same pair — resume was restoring *every* paused channel, not the ones the mixer paused.
-2. ~~**Add `destroyAudioMixer`.**~~ Landed; stops routed channels, tears down the Web Audio graph, unregisters from the reverse map, and deletes the runtime.
-3. ~~**Bound `busToMixerRuntimes`.**~~ Landed; the reverse map entry is removed when its last mixer unregisters.
-4. ~~**Package Map description update.**~~ Landed.
+1. **No video backend seam.** No `VideoDeviceBackend` type or registration exists. Video playback has no explicit dependency model equivalent to the audio device backend.
+2. **Spatial audio absent.** No `PannerNode` integration, no 3D positioning.
+3. **Analyser/metering absent.** No `AnalyserNode` wrapper, no peak/RMS/waveform extraction.
+4. **Streaming source absent.** No `MediaElementAudioSourceNode` carrier — long tracks must fully decode.
+5. **Crossfade absent.** No crossfade primitive or transition helpers.
+6. **Caption/subtitle absent.** No `TextTrack` integration.
 
 ## Backlog
 
-- **Rebuild lost functions.** _Parked — destination depends on media's survival (Open direction #1)._ Charter Decision #2. ~14 functions: panning, muting, loop points, disposal, signals.
-- **AudioContext ownership design.** _Parked — Open direction #2._
-- **Expansion (spatial, analyser, streaming, crossfade, etc.).** _Parked — Open direction #3._
-- **Media existence question.** _Parked — Open direction #1._ Blocks all major design work.
+- **AudioContext ownership design.** Parked — Open direction #2.
+- **Media existence question.** Parked — Open direction #1. Blocks all major design work.
+
+## Landed
+
+1. ~~**Fix `pauseAllAudioMixerChannels` / `resumeAllAudioMixerChannels`.**~~ Landed.
+2. ~~**Add `destroyAudioMixer`.**~~ Landed.
+3. ~~**Bound `busToMixerRuntimes`.**~~ Landed.
+4. ~~**Package Map description update.**~~ Landed.
+5. ~~**`stopAllAudioMixerChannels` bug.**~~ Landed 2026-09-08. Now delegates to `stopAudioChannel(channel)` for each active channel.
+6. ~~**Channel mute (`setAudioChannelMuted`/`isAudioChannelMuted`/`setVideoChannelMuted`).**~~ Landed.
+7. ~~**Channel pan (`setAudioChannelPan`).**~~ Landed.
+8. ~~**Loop region (`setAudioChannelLoopRegion`).**~~ Landed.
+9. ~~**Channel signals (`enableAudioChannelSignals`/`enableVideoChannelSignals`/`getAudioChannelSignals`/`getVideoChannelSignals`).**~~ Landed.
+10. ~~**Channel disposal (`destroyAudioChannel`/`destroyVideoChannel`).**~~ Landed.
 
 ## Approved
 
