@@ -14,7 +14,7 @@ import {
   normalizeShapeStrokeWidth,
 } from '@flighthq/shape/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
+import type { CanvasShapeCommand, LineScaleMode, Matrix, Texture } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 
@@ -385,6 +385,7 @@ export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
     const thickness = normalizeShapeStrokeWidth(buf[i] as number);
     const color = buf[i + 1] as number;
     const alpha = buf[i + 2] as number;
+    const scaleMode = buf[i + 4] as LineScaleMode;
     const caps = buf[i + 5] as string;
     const joints = buf[i + 6] as string;
     const miterLimit = normalizeShapeStrokeMiterLimit(buf[i + 7] as number);
@@ -392,6 +393,7 @@ export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
     state.hasStroke = thickness > 0;
     if (state.hasStroke) {
       state.strokeWidth = thickness;
+      state.lineScaleMode = scaleMode;
       state.strokeStyle = rgbaString(color, alpha);
       context.lineCap = caps === 'none' ? 'butt' : (caps as CanvasLineCap);
       context.lineJoin = joints as CanvasLineJoin;

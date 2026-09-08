@@ -11,7 +11,7 @@ import type {
 import { RenderRegistry } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
@@ -24,7 +24,7 @@ export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderPro
 
   const context = state.context;
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  context.globalAlpha = renderProxy.alpha;
+  setCanvasGlobalAlpha(state, renderProxy.alpha);
   setCanvasTransform(state, context, renderProxy.transform2D);
 
   renderCanvasShapeCommands(context, state, commands, getCanvasRenderStateTextureResolvers(state));
@@ -82,6 +82,7 @@ function createCanvasShapeDrawState(
     hasPendingPath: false,
     hasCurrentPoint: false,
     hasStroke: false,
+    lineScaleMode: 'normal',
     strokeStyle: '',
     strokeWidth: 1,
     windingRule: 'evenodd',
@@ -105,10 +106,31 @@ function flushCanvasShapePath(context: CanvasRenderingContext2D, state: CanvasSh
   }
   if (state.hasStroke) {
     context.strokeStyle = state.strokeStyle;
-    context.lineWidth = state.strokeWidth;
+    context.lineWidth = resolveStrokeWidth(context, state.strokeWidth, state.lineScaleMode);
     context.stroke();
   }
   state.hasPendingPath = false;
   state.hasCurrentPoint = false;
   context.beginPath();
+}
+
+// Compensates the authored stroke width for the context's current transform according to the
+// LineScaleMode. 'normal' passes through; 'none' divides by the geometric-mean scale so the
+// stroke appears at constant device-pixel width; 'horizontal'/'vertical' compensate one axis only.
+function resolveStrokeWidth(
+  context: CanvasRenderingContext2D,
+  width: number,
+  mode: CanvasShapeDrawState['lineScaleMode'],
+): number {
+  if (mode === 'normal') return width;
+  const t = context.getTransform();
+  const sx = Math.sqrt(t.a * t.a + t.b * t.b);
+  const sy = Math.sqrt(t.c * t.c + t.d * t.d);
+  if (mode === 'none') {
+    const s = Math.sqrt(sx * sy);
+    return s > 0 ? width / s : width;
+  }
+  if (mode === 'horizontal') return sx > 0 ? width / sx : width;
+  // 'vertical'
+  return sy > 0 ? width / sy : width;
 }
