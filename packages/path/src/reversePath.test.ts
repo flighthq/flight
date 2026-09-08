@@ -38,14 +38,18 @@ describe('reversePath', () => {
   });
 
   it('is alias-safe when out is the same as source', () => {
-    const path = createPath();
+    const path = createPath('evenOdd');
     appendPathMoveTo(path, 0, 0);
     appendPathLineTo(path, 10, 0);
-    appendPathLineTo(path, 20, 0);
+    appendPathLineTo(path, 20, 10);
+    appendPathClose(path);
+    const expected = createPath();
+    reversePath(path, expected);
+
     reversePath(path, path);
-    expect(path.data[0]).toBe(20);
-    expect(path.data[1]).toBe(0);
-    expect(path.data[4]).toBe(0);
-    expect(path.data[5]).toBe(0);
+
+    expect(path.commands).toStrictEqual(expected.commands);
+    expect(path.data).toStrictEqual(expected.data);
+    expect(path.winding).toBe(expected.winding);
   });
 });

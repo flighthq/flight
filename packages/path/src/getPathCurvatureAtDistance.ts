@@ -22,10 +22,7 @@ function samplePathCurvature(contours: Readonly<number[][]>, distance: number): 
     const n = contour.length >> 1;
     if (n < 2) continue;
 
-    if (remaining <= 0) {
-      if (n < 3) return 0;
-      return mengerCurvature(contour[0], contour[1], contour[2], contour[3], contour[4], contour[5]);
-    }
+    if (remaining <= 0) return curvatureAtVertex(contour, n, 0);
 
     for (let i = 1; i < n; i++) {
       const dx = contour[i * 2] - contour[(i - 1) * 2];
@@ -33,17 +30,8 @@ function samplePathCurvature(contours: Readonly<number[][]>, distance: number): 
       const segLen = Math.sqrt(dx * dx + dy * dy);
 
       if (remaining <= segLen) {
-        const prev = Math.max(0, i - 1);
-        const next = Math.min(n - 1, i + 1);
-        if (prev === i || i === next) return 0;
-        return mengerCurvature(
-          contour[prev * 2],
-          contour[prev * 2 + 1],
-          contour[i * 2],
-          contour[i * 2 + 1],
-          contour[next * 2],
-          contour[next * 2 + 1],
-        );
+        const nearest = segLen === 0 || remaining * 2 >= segLen ? i : i - 1;
+        return curvatureAtVertex(contour, n, nearest);
       }
       remaining -= segLen;
     }
@@ -59,6 +47,19 @@ function samplePathCurvature(contours: Readonly<number[][]>, distance: number): 
     last[(n - 2) * 2 + 1],
     last[(n - 1) * 2],
     last[(n - 1) * 2 + 1],
+  );
+}
+
+function curvatureAtVertex(contour: Readonly<number[]>, count: number, vertex: number): number {
+  if (count < 3) return 0;
+  const middle = Math.max(1, Math.min(count - 2, vertex));
+  return mengerCurvature(
+    contour[(middle - 1) * 2],
+    contour[(middle - 1) * 2 + 1],
+    contour[middle * 2],
+    contour[middle * 2 + 1],
+    contour[(middle + 1) * 2],
+    contour[(middle + 1) * 2 + 1],
   );
 }
 

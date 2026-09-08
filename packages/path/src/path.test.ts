@@ -75,6 +75,20 @@ describe('appendPathArc', () => {
 });
 
 describe('appendPathArcTo', () => {
+  it('starts after CLOSE from the subpath origin', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 10, 20);
+    appendPathLineTo(path, 30, 40);
+    appendPathClose(path);
+    appendPathArcTo(path, 10, 10, 0, false, true, 30, 20);
+
+    const expected = createPath();
+    appendPathMoveTo(expected, 10, 20);
+    appendPathArcTo(expected, 10, 10, 0, false, true, 30, 20);
+
+    expect(path.data.slice(4)).toStrictEqual(expected.data.slice(2));
+  });
+
   it('appends a LINE_TO when radiusX is 0', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);

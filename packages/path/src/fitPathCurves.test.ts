@@ -53,6 +53,23 @@ describe('fitPathCurves', () => {
     expect(out.commands).toStrictEqual([]);
   });
 
+  it('is alias-safe when source and out are the same path', () => {
+    const path = createPath('evenOdd');
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 25, 20);
+    appendPathLineTo(path, 50, 30);
+    appendPathLineTo(path, 75, 20);
+    appendPathLineTo(path, 100, 0);
+    const expected = createPath();
+    fitPathCurves(path, 1, expected);
+
+    fitPathCurves(path, 1, path);
+
+    expect(path.commands).toStrictEqual(expected.commands);
+    expect(path.data).toStrictEqual(expected.data);
+    expect(path.winding).toBe(expected.winding);
+  });
+
   it('preserves winding rule', () => {
     const source = createPath('evenOdd');
     appendPathMoveTo(source, 0, 0);

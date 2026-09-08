@@ -1,4 +1,5 @@
 import { getPathCurvatureAtDistance } from './getPathCurvatureAtDistance';
+import { getPathLength } from './getPathLength';
 import { appendPathCircle, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
 
 describe('getPathCurvatureAtDistance', () => {
@@ -34,7 +35,11 @@ describe('getPathCurvatureAtDistance', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
     appendPathCurveTo(path, 50, 100, 100, 0);
-    const kEnd = getPathCurvatureAtDistance(path, 9999);
-    expect(typeof kEnd).toBe('number');
+    const tolerance = 0.01;
+    const length = getPathLength(path, tolerance);
+    const kEnd = getPathCurvatureAtDistance(path, length, tolerance);
+    const kBeyond = getPathCurvatureAtDistance(path, length + 100, tolerance);
+    expect(kEnd).not.toBe(0);
+    expect(kBeyond).toBeCloseTo(kEnd, 12);
   });
 });
