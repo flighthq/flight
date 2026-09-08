@@ -961,6 +961,7 @@ export * from './Skeleton2DDrawOrderTimeline';
 export * from './Skeleton2DGuards';
 export * from './Skeleton2DSlotAnimationTarget';
 export * from './SvgDocumentImport';
+export * from './SvgPathDataFormatOptions';
 export * from './Skeleton2DImport';
 export * from './SpineBinaryVersion';
 export * from './Scene2DDocument';
