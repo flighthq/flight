@@ -1,12 +1,12 @@
 ---
 package: '@flighthq/textureatlas'
-updated: 2026-08-01
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # textureatlas — Assessment
 
-Based on the 2026-07-03 review (partial, 45/100). All four items approved 2026-07-02 have landed: the `loadTextureAtlasFromBytes` rename, the xml re-export removal, `detectTextureAtlasFormat`, and the Package Map descriptions are all verified in source and in the codebase map — dropped from Recommended. Formats-package work (Cocos plist parser, multipage threading through parsers) now belongs to the `textureatlas-formats` cell, which exists as its own folder.
+Based on the 2026-09-02 live review (solid, 70/100; 36 exports and 122 tests). All four items approved 2026-07-02 have landed: the `loadTextureAtlasFromBytes` rename, the xml re-export removal, `detectTextureAtlasFormat`, and the Package Map descriptions are all verified in source and in the codebase map — dropped from Recommended. Formats-package work now belongs to the `textureatlas-formats` cell.
 
 ## Recommended
 

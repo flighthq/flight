@@ -1,12 +1,12 @@
 ---
 package: '@flighthq/font'
-updated: 2026-08-01
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # font — Assessment
 
-Based on the 2026-07-13 re-verified review (partial, 52/100). The 2026-07-09 deepening (commit 30d20a43) landed and is verified in source: the escaping bug is fixed via the shared `getFontShorthand`, `detectFontFormat(bytes)` sniffs the sfnt magic bytes, `isFontLoaded`/`whenFontsReady` cover load status, and `inferFontFormat` is renamed `inferFontFormatFromUrl` — four of the five previously Recommended items, all removed below.
+Based on the 2026-09-02 live review (partial, 58/100; 10 source files, 10 test files, 73 tests). The 2026-07-09 deepening landed and is verified in source: the escaping bug is fixed via the shared `getFontShorthand`, `detectFontFormat(bytes)` sniffs the sfnt magic bytes, `isFontLoaded`/`whenFontsReady` cover load status, and `inferFontFormat` is renamed `inferFontFormatFromUrl`.
 
 The review's central finding is unchanged: the dual entity model (`Font` string handle vs `FontResource` FontFace holder, each with a parallel loader quartet) is the top gap — "nothing else is worth polishing until there is one font entity." That merge is charter Open direction #1 (undecided, needs the text/textlayout consumer perspective), so the entity-model work and everything sequenced behind it stays parked.
 
