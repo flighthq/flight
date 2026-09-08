@@ -24,7 +24,7 @@ export type Projection = OrthographicProjection | PerspectiveProjection;
 
 // Perspective projection: a vertical field of view in radians and a viewport aspect ratio
 // (width / height). The clip-plane distances live on the owning Camera3D (near/far).
-export interface PerspectiveProjection {
+export interface PerspectiveProjection extends Entity {
   aspect: number;
   fovY: number;
   kind: 'perspective';
@@ -32,7 +32,7 @@ export interface PerspectiveProjection {
 
 // Orthographic projection: the half-extents of the view volume in view-space units. The full
 // visible width is 2*halfWidth and height 2*halfHeight. Clip-plane distances live on the Camera3D.
-export interface OrthographicProjection {
+export interface OrthographicProjection extends Entity {
   halfHeight: number;
   halfWidth: number;
   kind: 'orthographic';
