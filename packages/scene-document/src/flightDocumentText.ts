@@ -1,3 +1,4 @@
+import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
@@ -766,7 +767,7 @@ function readProjection(value: unknown, path: string, context: FlightDocumentTex
     const halfWidth = value['halfWidth'];
     if (typeof halfHeight !== 'number') return refuse(context, appendPath(path, 'halfHeight'));
     if (typeof halfWidth !== 'number') return refuse(context, appendPath(path, 'halfWidth'));
-    return { halfHeight, halfWidth, kind };
+    return createOrthographicProjection({ halfHeight, halfWidth });
   }
   if (kind === 'perspective') {
     if (!hasOnlyKeys(value, PERSPECTIVE_PROJECTION_KEYS)) return refuse(context, path);
@@ -774,7 +775,7 @@ function readProjection(value: unknown, path: string, context: FlightDocumentTex
     const fovY = value['fovY'];
     if (typeof aspect !== 'number') return refuse(context, appendPath(path, 'aspect'));
     if (typeof fovY !== 'number') return refuse(context, appendPath(path, 'fovY'));
-    return { aspect, fovY, kind };
+    return createPerspectiveProjection({ aspect, fovY });
   }
   return refuse(context, appendPath(path, 'kind'));
 }
