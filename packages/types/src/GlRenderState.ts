@@ -208,8 +208,8 @@ export interface GlQuadBatchShader {
   locMatAB: number;
   locMatCD: number;
   locMatTXTY: number;
-  locSize: number;
-  locUvRect: number;
+  locUvOriginAxisU: number;
+  locUvAxisV: number;
   locAlpha: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;

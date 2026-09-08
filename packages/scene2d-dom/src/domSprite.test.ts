@@ -74,4 +74,28 @@ describe('drawDomSprite', () => {
   it('uses the source video element directly', () => {
     expect(drawElement(document.createElement('video'))?.tagName).toBe('VIDEO');
   });
+
+  it('renders a rotated non-square atlas view into an upright canvas', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 50;
+    const state = createDomRenderState(document.createElement('div'));
+    registerDomImageTextureResolver(state);
+    registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+    const texture = createTexture({ dimension: '2d', source: createImageResourceFromCanvas(canvas) });
+    texture.uvOffset.x = 0.1;
+    texture.uvOffset.y = 0.4;
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+
+    drawDomSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+
+    const element = getDomRenderStateRuntime(state).domCurrentElement as HTMLCanvasElement;
+    expect(element.tagName).toBe('CANVAS');
+    expect(element.width).toBe(15);
+    expect(element.height).toBe(20);
+    expect(element.style.width).toBe('15px');
+    expect(element.style.height).toBe('20px');
+  });
 });

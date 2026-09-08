@@ -2,11 +2,9 @@
 //
 // A Sprite carries no pixels of its own: it references a TextureAtlas plus a region id, and the renderer
 // blits that region's source rectangle from the atlas image. This is the foundational atlas-batch path and
-// the recipe every sprite/tilemap/particle feature builds on. The scene builds ONE atlas image whose left
-// half is red (region 0) and right half is green (region 1), then places two Sprites at different screen
-// positions — one bound to region 0, one to region 1. The scene assertion is visual on purpose: it proves the same
-// atlas, addressed by two different region ids, produces two differently-colored sprites at two locations,
-// and that a Sprite draws its region's footprint and nothing outside it (empty area stays background).
+// the recipe every sprite/tilemap/particle feature builds on. The scene includes ordinary red/green
+// regions and a non-square, clockwise-packed region whose upright image is blue over yellow. The latter
+// catches ignored UV rotation, swapped dimensions, wrong atlas denominators, and wrong turn direction.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -16,6 +14,7 @@ import {
   createSprite,
   createTexture,
   createTextureAtlas,
+  createTextureAtlasRegion,
   getTextureAtlasRegionTexture,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -28,12 +27,18 @@ const HEIGHT = 600;
 
 // Each atlas region is REGION x REGION pixels. The atlas image is 2*REGION wide (red half | green half).
 const REGION = 64;
+const ROTATED_WIDTH = 48;
+const ROTATED_HEIGHT = 80;
+const ROTATED_X = REGION * 2;
+const ROTATED_Y = 16;
 
 // Sprite A (red, region 0) top-left, and Sprite B (green, region 1) top-left, in logical space.
 const A_X = 180;
 const A_Y = 200;
 const B_X = 520;
 const B_Y = 360;
+const C_X = 340;
+const C_Y = 380;
 
 declareAntialiasingPolicy('aa');
 
@@ -43,7 +48,7 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with exactly two flat 64x64 squares: a red one spanning x 180-244, ' +
+    'An 800x600 opaque black field with two flat 64x64 squares and one upright 48x80 rectangle: a red square spanning x 180-244, ' +
     'y 200-264, and a green one spanning x 488-552, y 328-392. The two are placed by different ' +
     'anchors — the red square is positioned by its top-left corner at (180,200), while the green one ' +
     'is positioned by its CENTRE at (520,360), so it sits half a square up and to the left of that ' +
@@ -51,19 +56,30 @@ const { render, width } = await createFunctionalTarget({
     'whose left half is red and right half is green, and each square shows only its own half — the red ' +
     'square contains no green and the green square no red, with no sliver or seam of the other colour ' +
     'along any edge. Neither square is graded or blended, and everything outside those two footprints, ' +
-    'including the whole span between them, is pure black.',
+    'including the whole span between them, is pure black. The third rectangle spans x 340-388 and y 380-460; ' +
+    'its top 30 pixels are blue and its lower 50 pixels are yellow even though those texels are stored clockwise ' +
+    'in a packed 80x48 atlas rectangle.',
 });
 
-// Build one atlas image: left half solid red, right half solid green.
+// Build one non-square atlas page. The third logical image is drawn through a clockwise quarter-turn,
+// exactly as TexturePacker stores a rotated frame.
 function makeAtlasCanvas(): HTMLCanvasElement {
   const c = document.createElement('canvas');
-  c.width = REGION * 2;
-  c.height = REGION;
+  c.width = ROTATED_X + ROTATED_HEIGHT;
+  c.height = 96;
   const ctx = c.getContext('2d')!;
   ctx.fillStyle = 'rgb(255,0,0)';
   ctx.fillRect(0, 0, REGION, REGION);
   ctx.fillStyle = 'rgb(0,255,0)';
   ctx.fillRect(REGION, 0, REGION, REGION);
+  ctx.save();
+  ctx.translate(ROTATED_X + ROTATED_HEIGHT, ROTATED_Y);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = 'rgb(0,96,255)';
+  ctx.fillRect(0, 0, ROTATED_WIDTH, 30);
+  ctx.fillStyle = 'rgb(255,224,0)';
+  ctx.fillRect(0, 30, ROTATED_WIDTH, ROTATED_HEIGHT - 30);
+  ctx.restore();
   return c;
 }
 
@@ -72,6 +88,16 @@ const atlas = createTextureAtlas({
 });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
 addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot
+atlas.regions.push(
+  createTextureAtlasRegion({
+    height: ROTATED_WIDTH,
+    id: 2,
+    rotated: true,
+    width: ROTATED_HEIGHT,
+    x: ROTATED_X,
+    y: ROTATED_Y,
+  }),
+);
 
 const root = createDisplayObject();
 
@@ -90,6 +116,13 @@ spriteB.x = B_X;
 spriteB.y = B_Y;
 addNodeChild(root, spriteB);
 invalidateNodeLocalTransform(spriteB);
+
+const spriteC = createSprite();
+spriteC.data.texture = getTextureAtlasRegionTexture(atlas, 2);
+spriteC.x = C_X;
+spriteC.y = C_Y;
+addNodeChild(root, spriteC);
+invalidateNodeLocalTransform(spriteC);
 
 render(root);
 
@@ -118,6 +151,19 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   if (!isBackground(gap)) {
     throw new Error(`[sprite-atlas] gap between sprites not background — got #${hex(gap)}`);
   }
+
+  const cTop = at(C_X + ROTATED_WIDTH / 2, C_Y + 10);
+  if (!isBlue(cTop)) {
+    throw new Error(`[sprite-atlas] rotated region top not blue — got #${hex(cTop)}`);
+  }
+  const cBottom = at(C_X + ROTATED_WIDTH / 2, C_Y + ROTATED_HEIGHT - 10);
+  if (!isYellow(cBottom)) {
+    throw new Error(`[sprite-atlas] rotated region bottom not yellow — got #${hex(cBottom)}`);
+  }
+  const cPackedWidthLeak = at(C_X + ROTATED_HEIGHT - 4, C_Y + 10);
+  if (!isBackground(cPackedWidthLeak)) {
+    throw new Error(`[sprite-atlas] rotated region kept its packed width — got #${hex(cPackedWidthLeak)}`);
+  }
 }
 
 function channel(rgb: number, shift: number): number {
@@ -128,6 +174,12 @@ function isRed(rgb: number): boolean {
 }
 function isGreen(rgb: number): boolean {
   return channel(rgb, 8) > 180 && channel(rgb, 16) < 90 && channel(rgb, 0) < 90;
+}
+function isBlue(rgb: number): boolean {
+  return channel(rgb, 0) > 180 && channel(rgb, 16) < 90 && channel(rgb, 8) < 150;
+}
+function isYellow(rgb: number): boolean {
+  return channel(rgb, 16) > 180 && channel(rgb, 8) > 160 && channel(rgb, 0) < 90;
 }
 function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;

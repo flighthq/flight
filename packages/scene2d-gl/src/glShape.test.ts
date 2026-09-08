@@ -297,7 +297,7 @@ describe('drawGlShape', () => {
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     const d = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
-    expect(d[6]).toBe(64); // width from mocked bounds
-    expect(d[7]).toBe(48); // height from mocked bounds
+    expect(d[0]).toBe(64); // width folded into horizontal world axis
+    expect(d[3]).toBe(48); // height folded into vertical world axis
   });
 });

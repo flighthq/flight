@@ -42,7 +42,12 @@ function frameToEntry(frame: Readonly<SpritesheetData['frames'][0]>, durationMs:
     frame.sourceHeight !== frame.height;
   return {
     duration: durationMs,
-    frame: { h: frame.height, w: frame.width, x: frame.x, y: frame.y },
+    frame: {
+      h: frame.rotated ? frame.width : frame.height,
+      w: frame.rotated ? frame.height : frame.width,
+      x: frame.x,
+      y: frame.y,
+    },
     rotated: frame.rotated,
     sourceSize: { h: frame.sourceHeight, w: frame.sourceWidth },
     spriteSourceSize: {

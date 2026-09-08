@@ -87,7 +87,9 @@ function applyFrame(
   const sourceSize = entry.sourceSize;
   const spriteSourceSize = entry.spriteSourceSize;
   const region = createTextureAtlasRegion({
-    height: entry.rotated ? frame.w : frame.h,
+    // TextureAtlasRegion is the packed page rectangle. Rotation changes how consumers walk that
+    // rectangle; it does not change the rectangle's stored width/height.
+    height: frame.h,
     id: atlas.regions.length,
     name: normalized,
     originalHeight: trimmed && sourceSize !== undefined ? sourceSize.h : null,
@@ -98,7 +100,7 @@ function applyFrame(
     sourceX: spriteSourceSize !== undefined ? spriteSourceSize.x : 0,
     sourceY: spriteSourceSize !== undefined ? spriteSourceSize.y : 0,
     trimmed,
-    width: entry.rotated ? frame.h : frame.w,
+    width: frame.w,
     x: frame.x,
     y: frame.y,
   });

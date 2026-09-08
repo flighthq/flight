@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
   EntityConstruction,
   MethodsOf,
@@ -25,8 +25,14 @@ export function cloneSprite(source: Readonly<Sprite>): Sprite {
 export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const sprite = source as Readonly<Sprite>;
   const texture = sprite.data.texture;
-  out.width = texture === null ? 0 : Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
-  out.height = texture === null ? 0 : Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);
+  if (texture === null) {
+    out.width = 0;
+    out.height = 0;
+  } else {
+    getTextureViewSize(spriteViewSize, texture);
+    out.width = spriteViewSize.x;
+    out.height = spriteViewSize.y;
+  }
   const runtime = getNode2DRuntime(sprite) as SpriteRuntime;
   runtime.localBoundsTexture = texture;
   runtime.localBoundsTextureVersion = texture?.version ?? -1;
@@ -103,3 +109,5 @@ const defaultMethods: Partial<MethodsOf<SpriteRuntime> & Pick<SpriteRuntime, 'is
   computeLocalBoundsRectangle: computeSpriteLocalBoundsRectangle,
   isLocalBoundsRectangleValid: isSpriteLocalBoundsRectangleValid,
 };
+
+const spriteViewSize = { x: 0, y: 0 };

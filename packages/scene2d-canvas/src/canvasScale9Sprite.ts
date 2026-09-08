@@ -1,5 +1,5 @@
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
   MatrixLike,
@@ -11,7 +11,7 @@ import type {
 import { drawCanvasScene2D } from './canvasNode2D';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { CANVAS_SCALE9_SPRITE_SLICE_STRIDE, writeCanvasScale9SpriteSlices } from './canvasScale9SpriteSlices';
-import { resolveCanvasTexture } from './canvasTextureResolver';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 import { setCanvasTransform } from './canvasTransform';
 
 // Draws a textured node in nine pieces so its border keeps its authored thickness at any size. This is
@@ -28,15 +28,14 @@ export function drawCanvasScale9Sprite(state: CanvasRenderState, renderProxy: Re
   const source = renderProxy.source as Scale9Sprite;
   const texture = source.data.texture;
   if (texture === null || texture.dimension !== '2d') return;
-  const drawable = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture);
+  const drawable = resolveCanvasTextureWindowSource(getCanvasRenderStateTextureResolvers(state), texture);
   if (drawable === null) return;
 
-  const textureWidth = getTextureWidth(texture);
-  const textureHeight = getTextureHeight(texture);
-  const sourceX = texture.uvOffset.x * textureWidth;
-  const sourceY = texture.uvOffset.y * textureHeight;
-  const sourceWidth = Math.abs(texture.uvScale.x * textureWidth);
-  const sourceHeight = Math.abs(texture.uvScale.y * textureHeight);
+  getTextureViewSize(scale9ViewSize, texture);
+  const sourceX = 0;
+  const sourceY = 0;
+  const sourceWidth = scale9ViewSize.x;
+  const sourceHeight = scale9ViewSize.y;
   if (sourceWidth <= 0 || sourceHeight <= 0) return;
 
   const context = state.context;
@@ -91,6 +90,7 @@ export const defaultCanvasScale9SpriteRenderer: Scene2DRenderer = {
 };
 
 const _slices: number[] = [];
+const scale9ViewSize = { x: 0, y: 0 };
 
 // Removes the node's own scale from the transform so the nine slices, which are already laid out at the
 // node's scaled size, are not scaled a second time. Identical to the Scale9Shape path — the two must

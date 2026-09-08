@@ -50,13 +50,16 @@ out vec2 v_uv;
 out vec4 v_color;
 
 void main() {
-  float lx = a_corner.x * a_size.x;
+  bool rotated = a_size.x < 0.0;
+  float lx = a_corner.x * abs(a_size.x);
   float ly = a_corner.y * a_size.y;
   float rx = a_cosScale * lx - a_sinScale * ly + a_pos.x;
   float ry = a_sinScale * lx + a_cosScale * ly + a_pos.y;
   vec3 clip = u_world * vec3(rx, ry, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_uv    = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_uv = rotated
+    ? vec2(mix(a_uvRect.x, a_uvRect.z, a_corner.y), mix(a_uvRect.w, a_uvRect.y, a_corner.x))
+    : mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_color = a_color;
 }`;
 
@@ -197,8 +200,10 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
     instanceData[base + 9] = region.y * ih;
     instanceData[base + 10] = (region.x + region.width) * iw;
     instanceData[base + 11] = (region.y + region.height) * ih;
-    instanceData[base + 12] = region.width;
-    instanceData[base + 13] = region.height;
+    // A negative stored width is the zero-bandwidth rotated-region flag; the shader takes abs for
+    // geometry and walks the UV rectangle one corner back.
+    instanceData[base + 12] = region.rotated ? -region.height : region.width;
+    instanceData[base + 13] = region.rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

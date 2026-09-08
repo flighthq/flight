@@ -69,14 +69,15 @@ fn vs_main(
   let inst = instances[ii];
   let xi = (vi == 1u || vi == 2u || vi == 4u);
   let yi = (vi == 2u || vi == 4u || vi == 5u);
-  let lx = select(0.0, inst.width, xi);
+  let rotated = inst.width < 0.0;
+  let lx = select(0.0, abs(inst.width), xi);
   let ly = select(0.0, inst.height, yi);
   // Rotate and translate in world space
   let rx = inst.cosScale * lx - inst.sinScale * ly + inst.px;
   let ry = inst.sinScale * lx + inst.cosScale * ly + inst.py;
   let p = uni.matrix * vec3f(rx, ry, 1.0);
-  let u = select(inst.u0, inst.u1, xi);
-  let v = select(inst.v0, inst.v1, yi);
+  let u = select(select(inst.u0, inst.u1, xi), select(inst.u0, inst.u1, yi), rotated);
+  let v = select(select(inst.v0, inst.v1, yi), select(inst.v1, inst.v0, xi), rotated);
   var out : VertexOut;
   out.position = vec4f(p.x, p.y, 0.0, 1.0);
   out.uv = vec2f(u, v);
@@ -262,8 +263,8 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
     instanceData[base + 9] = region.y * ih;
     instanceData[base + 10] = (region.x + region.width) * iw;
     instanceData[base + 11] = (region.y + region.height) * ih;
-    instanceData[base + 12] = region.width;
-    instanceData[base + 13] = region.height;
+    instanceData[base + 12] = region.rotated ? -region.height : region.width;
+    instanceData[base + 13] = region.rotated ? region.width : region.height;
     base += INSTANCE_FLOATS;
     drawCount++;
   }

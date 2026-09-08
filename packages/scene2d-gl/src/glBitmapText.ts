@@ -18,6 +18,7 @@ import {
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
+  writeGlQuadBatchAffineInstance,
 } from './glQuadBatchWriter';
 
 // Per-instance stride, matching the QuadBatch/Tilemap sprite path (13 floats: world transform + region +
@@ -88,19 +89,30 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
 
       const dx = transforms[i * 2];
       const dy = transforms[i * 2 + 1];
-      instanceData[writeBase] = pa;
-      instanceData[writeBase + 1] = pb;
-      instanceData[writeBase + 2] = pc;
-      instanceData[writeBase + 3] = pd;
-      instanceData[writeBase + 4] = pa * dx + pc * dy + ptx;
-      instanceData[writeBase + 5] = pb * dx + pd * dy + pty;
-      instanceData[writeBase + 6] = region.width;
-      instanceData[writeBase + 7] = region.height;
-      instanceData[writeBase + 8] = region.x * iw;
-      instanceData[writeBase + 9] = region.y * ih;
-      instanceData[writeBase + 10] = (region.x + region.width) * iw;
-      instanceData[writeBase + 11] = (region.y + region.height) * ih;
-      instanceData[writeBase + 12] = alpha;
+      glyphTransform.a = pa;
+      glyphTransform.b = pb;
+      glyphTransform.c = pc;
+      glyphTransform.d = pd;
+      glyphTransform.tx = pa * dx + pc * dy + ptx;
+      glyphTransform.ty = pb * dx + pd * dy + pty;
+      const u0 = region.x * iw;
+      const v0 = region.y * ih;
+      const u1 = (region.x + region.width) * iw;
+      const v1 = (region.y + region.height) * ih;
+      writeGlQuadBatchAffineInstance(
+        instanceData,
+        writeBase,
+        glyphTransform,
+        region.rotated ? region.height : region.width,
+        region.rotated ? region.width : region.height,
+        u0,
+        region.rotated ? v1 : v0,
+        region.rotated ? 0 : u1 - u0,
+        region.rotated ? v0 - v1 : 0,
+        region.rotated ? u1 - u0 : 0,
+        region.rotated ? 0 : v1 - v0,
+        alpha,
+      );
       packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
       recordGlQuadBatchColorScaleBias(state, nodeColorScaleBias, startInstance + drawCount);
       writeBase += QUAD_BATCH_INSTANCE_FLOATS;
@@ -116,3 +128,5 @@ export const defaultGlBitmapTextRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: submitGlBitmapText,
 };
+
+const glyphTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };

@@ -35,6 +35,7 @@ export * from './canvasTextLabel';
 export * from './canvasTextMeasure';
 export * from './canvasTilemap';
 export * from './canvasTextureResolver';
+export * from './canvasTextureView';
 export * from './canvasTextureWindowSource';
 export * from './canvasTransform';
 export * from './enableCanvasTextureResolverGuards';

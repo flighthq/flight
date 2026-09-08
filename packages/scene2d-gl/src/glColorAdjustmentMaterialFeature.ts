@@ -98,8 +98,8 @@ layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec2 a_matAB;
 layout(location = 2) in vec2 a_matCD;
 layout(location = 3) in vec2 a_matTXTY;
-layout(location = 4) in vec2 a_size;
-layout(location = 5) in vec4 a_uvRect;
+layout(location = 4) in vec4 a_uvOriginAxisU;
+layout(location = 5) in vec2 a_uvAxisV;
 layout(location = 6) in float a_alpha;
 layout(location = 7) in vec4 a_colorScale;
 layout(location = 8) in vec4 a_colorBias;
@@ -112,14 +112,13 @@ out vec4 v_colorScale;
 out vec4 v_colorBias;
 
 void main() {
-  vec2 local = a_corner * a_size;
   vec2 worldPos = vec2(
-    a_matAB.x * local.x + a_matCD.x * local.y + a_matTXTY.x,
-    a_matAB.y * local.x + a_matCD.y * local.y + a_matTXTY.y
+    a_matAB.x * a_corner.x + a_matCD.x * a_corner.y + a_matTXTY.x,
+    a_matAB.y * a_corner.x + a_matCD.y * a_corner.y + a_matTXTY.y
   );
   vec3 clip = u_world * vec3(worldPos, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_texCoord = a_uvOriginAxisU.xy + a_uvOriginAxisU.zw * a_corner.x + a_uvAxisV * a_corner.y;
   v_alpha = a_alpha;
   v_colorScale = a_colorScale;
   v_colorBias = a_colorBias;
@@ -134,8 +133,8 @@ layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec2 a_matAB;
 layout(location = 2) in vec2 a_matCD;
 layout(location = 3) in vec2 a_matTXTY;
-layout(location = 4) in vec2 a_size;
-layout(location = 5) in vec4 a_uvRect;
+layout(location = 4) in vec4 a_uvOriginAxisU;
+layout(location = 5) in vec2 a_uvAxisV;
 layout(location = 6) in float a_alpha;
 layout(location = 7) in vec4 a_colorScale;
 
@@ -146,14 +145,13 @@ out float v_alpha;
 out vec4 v_colorScale;
 
 void main() {
-  vec2 local = a_corner * a_size;
   vec2 worldPos = vec2(
-    a_matAB.x * local.x + a_matCD.x * local.y + a_matTXTY.x,
-    a_matAB.y * local.x + a_matCD.y * local.y + a_matTXTY.y
+    a_matAB.x * a_corner.x + a_matCD.x * a_corner.y + a_matTXTY.x,
+    a_matAB.y * a_corner.x + a_matCD.y * a_corner.y + a_matTXTY.y
   );
   vec3 clip = u_world * vec3(worldPos, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_texCoord = a_uvOriginAxisU.xy + a_uvOriginAxisU.zw * a_corner.x + a_uvAxisV * a_corner.y;
   v_alpha = a_alpha;
   v_colorScale = a_colorScale;
 }`;
@@ -203,8 +201,8 @@ layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec2 a_matAB;
 layout(location = 2) in vec2 a_matCD;
 layout(location = 3) in vec2 a_matTXTY;
-layout(location = 4) in vec2 a_size;
-layout(location = 5) in vec4 a_uvRect;
+layout(location = 4) in vec4 a_uvOriginAxisU;
+layout(location = 5) in vec2 a_uvAxisV;
 layout(location = 6) in float a_alpha;
 layout(location = 7) in vec4 a_ctRow0;
 layout(location = 8) in vec4 a_ctRow1;
@@ -220,14 +218,13 @@ out vec4 v_ctRow2;
 out vec4 v_ctRow3;
 out vec4 v_colorBias;
 void main() {
-  vec2 local = a_corner * a_size;
   vec2 worldPos = vec2(
-    a_matAB.x * local.x + a_matCD.x * local.y + a_matTXTY.x,
-    a_matAB.y * local.x + a_matCD.y * local.y + a_matTXTY.y
+    a_matAB.x * a_corner.x + a_matCD.x * a_corner.y + a_matTXTY.x,
+    a_matAB.y * a_corner.x + a_matCD.y * a_corner.y + a_matTXTY.y
   );
   vec3 clip = u_world * vec3(worldPos, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
-  v_texCoord = mix(a_uvRect.xy, a_uvRect.zw, a_corner);
+  v_texCoord = a_uvOriginAxisU.xy + a_uvOriginAxisU.zw * a_corner.x + a_uvAxisV * a_corner.y;
   v_alpha = a_alpha;
   v_ctRow0 = a_ctRow0;
   v_ctRow1 = a_ctRow1;

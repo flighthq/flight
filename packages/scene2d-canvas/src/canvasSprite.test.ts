@@ -82,4 +82,30 @@ describe('drawCanvasSprite', () => {
     expect(draw).toHaveBeenCalledOnce();
     expect(draw.mock.calls[0].slice(1, 5)).toEqual([0, 0, 48, 24]);
   });
+
+  it('draws a packed quarter-turn directly without allocating a window surface', () => {
+    const state = makeState();
+    const image = createImageResource(globalThis.document.createElement('canvas'));
+    image.width = 100;
+    image.height = 50;
+    const texture = createTexture({ dimension: '2d', source: image });
+    texture.uvOffset.x = 0.1;
+    texture.uvOffset.y = 0.4;
+    texture.uvScale.x = 0.3;
+    texture.uvScale.y = 0.2;
+    texture.uvRotation = -Math.PI / 2;
+    const draw = vi.spyOn(state.context, 'drawImage');
+    const transform = vi.spyOn(state.context, 'transform');
+    const createElement = vi.spyOn(document, 'createElement');
+
+    drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+
+    expect(draw).toHaveBeenCalledOnce();
+    const args = draw.mock.calls[0].slice(1) as number[];
+    expect(args[0]).toBeCloseTo(10);
+    expect(args[1]).toBeCloseTo(5);
+    [20, 15, 10, 5, 20, 15].forEach((expected, index) => expect(args[index + 2]).toBeCloseTo(expected));
+    expect(transform).toHaveBeenCalledOnce();
+    expect(createElement).not.toHaveBeenCalled();
+  });
 });

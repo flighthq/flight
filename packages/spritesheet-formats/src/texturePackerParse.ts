@@ -19,17 +19,19 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
+  const width = region.rotated ? region.height : region.width;
+  const height = region.rotated ? region.width : region.height;
   return createSpritesheetFrameData({
-    height: region.height,
+    height,
     name: region.name ?? '',
     offsetX: region.sourceX,
     offsetY: region.sourceY,
     pivotX: region.pivotX,
     pivotY: region.pivotY,
     rotated: region.rotated,
-    sourceHeight: region.originalHeight ?? region.height,
-    sourceWidth: region.originalWidth ?? region.width,
-    width: region.width,
+    sourceHeight: region.originalHeight ?? height,
+    sourceWidth: region.originalWidth ?? width,
+    width,
     x: region.x,
     y: region.y,
   });

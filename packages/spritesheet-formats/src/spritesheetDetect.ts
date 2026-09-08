@@ -92,7 +92,12 @@ function getRegistry(): KeyedTable<RegisteredFormatEntry> {
   });
   bindSpritesheetFormat(STARLING, {
     detect: detectStarling,
-    parse: (text, opts) => parseStarlingSpritesheet(text, { frameDuration: opts.frameDuration }),
+    parse: (text, opts) =>
+      parseStarlingSpritesheet(text, {
+        frameDuration: opts.frameDuration,
+        imageHeight: opts.imageHeight,
+        imageWidth: opts.imageWidth,
+      }),
   });
   bindSpritesheetFormat(LIBGDX_ATLAS, {
     detect: detectLibgdxAtlas,

@@ -1,6 +1,7 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
 
 export interface TextureAtlasRegion extends Entity {
+  // Packed page-rectangle extent. When rotated is true, logical drawn width/height are height/width.
   height: number;
   id: number;
   name: string | null;
@@ -18,6 +19,7 @@ export interface TextureAtlasRegion extends Entity {
   trimmed: boolean;
   x: number;
   y: number;
+  // Packed page-rectangle extent. See height.
   width: number;
 }
 

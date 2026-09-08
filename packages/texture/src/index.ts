@@ -28,6 +28,7 @@ export {
   getTextureHeight,
   getTextureInverseUvMatrix,
   getTextureUvMatrix,
+  getTextureViewSize,
   getTextureWidth,
   getVideoTextureHeight,
   getVideoTextureInverseUvMatrix,
