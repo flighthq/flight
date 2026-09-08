@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -15,7 +15,7 @@ function makeCamera() {
   const cam = createCamera3D({
     far: 100,
     near: 0.1,
-    projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
   });
   cam.view = createMatrix4();
   return cam;

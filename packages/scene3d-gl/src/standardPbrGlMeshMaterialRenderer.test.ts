@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
@@ -8,7 +8,11 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
-  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
 }
 
 function makeLights(): Scene3DLightBlock {

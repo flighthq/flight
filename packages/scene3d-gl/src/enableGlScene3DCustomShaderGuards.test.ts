@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
@@ -18,7 +18,11 @@ const GL_FLOAT_MAT3 = 0x8b5b;
 const GL_FLOAT_MAT4 = 0x8b5c;
 
 function makeCamera(): Camera3D {
-  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
 }
 
 const NO_LIGHTS: Scene3DLightBlock = {

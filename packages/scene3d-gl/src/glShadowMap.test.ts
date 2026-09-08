@@ -1,6 +1,7 @@
 import {
   createCamera3D,
   createOrthographicProjection,
+  createPerspectiveProjection,
   getOrthographicProjectionTexelSize,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
@@ -237,7 +238,7 @@ describe('drawGlScene3DShadowMap', () => {
     const camera = createCamera3D({
       far: 100,
       near: 0.1,
-      projection: { aspect: 1, fovY: Math.PI / 4, kind: 'perspective' },
+      projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 4 }),
     });
 
     expect(() => drawGlScene3DShadowMap(state, createNode3D(Node3DKind), camera, SHADOW_LIGHT)).toThrow(
