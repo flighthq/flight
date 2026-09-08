@@ -66,4 +66,20 @@ describe('decimatePath', () => {
     decimatePath(createPath(), 1, out);
     expect(out.commands).toStrictEqual([]);
   });
+
+  it('is alias-safe when source and out are the same path', () => {
+    const path = createPath('evenOdd');
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 25, 0.1);
+    appendPathLineTo(path, 50, -0.1);
+    appendPathLineTo(path, 100, 0);
+    const expected = createPath();
+    decimatePath(path, 1, expected);
+
+    decimatePath(path, 1, path);
+
+    expect(path.commands).toStrictEqual(expected.commands);
+    expect(path.data).toStrictEqual(expected.data);
+    expect(path.winding).toBe(expected.winding);
+  });
 });

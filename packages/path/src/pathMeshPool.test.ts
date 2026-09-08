@@ -57,6 +57,20 @@ describe('acquirePathMeshTyped', () => {
     expect(mesh.indices.length).toBeGreaterThan(0);
     releasePathMeshTyped(mesh);
   });
+  it('reuses a released wrapper and its typed arrays', () => {
+    const path = createPath();
+    appendPathRectangle(path, 0, 0, 100, 50);
+    const first = acquirePathMeshTyped(path);
+    const vertices = first.vertices;
+    const indices = first.indices;
+    releasePathMeshTyped(first);
+
+    const second = acquirePathMeshTyped(path);
+    expect(second).toBe(first);
+    expect(second.vertices).toBe(vertices);
+    expect(second.indices).toBe(indices);
+    releasePathMeshTyped(second);
+  });
 });
 
 describe('releasePathMesh', () => {
