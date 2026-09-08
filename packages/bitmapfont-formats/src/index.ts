@@ -1,6 +1,7 @@
 export {
   explainBitmapFontParse,
   formatBitmapFontFnt,
+  parseBitmapFontBinary,
   parseBitmapFontFnt,
   parseBitmapFontJson,
   parseBitmapFontXml,
