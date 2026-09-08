@@ -4,15 +4,13 @@ import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
   ParticleDesignerParseOptions,
-  ParticleDesignerParsed,
+  ParticleDesignerParseResult,
   ParticleBlendMode,
   ParticleEmitterConfig,
   ParticleDesignerDocument,
   ParticleDesignerRawDict,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
-// ─── Minimal plist XML parser ────────────────────────────────────────────────
 
 function parsePlistRawDict(xml: string): ParticleDesignerRawDict {
   const result: ParticleDesignerRawDict = {};
@@ -71,8 +69,6 @@ function str(d: ParticleDesignerRawDict, key: string, def = ''): string {
   const v = d[key];
   return typeof v === 'string' ? v : def;
 }
-
-// ─── Shared conversion logic operating directly on the raw dict ──────────────
 
 function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): ParticleEmitterConfig {
   const angleRad = num(d, 'angle', 90) * DEG_TO_RAD;
@@ -145,8 +141,6 @@ function pdBlendMode(src: number, dst: number): ParticleBlendMode | null {
   return null;
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 /** Parse a Particle Designer plist XML string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
@@ -213,7 +207,7 @@ function collectParticleDesignerDiagnostics(d: ParticleDesignerRawDict): ImportD
 export function parseParticleDesignerPlistDocument(
   plistXml: string,
   options?: ParticleDesignerParseOptions,
-): ParticleDesignerParsed {
+): ParticleDesignerParseResult {
   const textureSize = options?.textureSize ?? 1;
   const d = parsePlistRawDict(plistXml);
   const document: ParticleDesignerDocument = {

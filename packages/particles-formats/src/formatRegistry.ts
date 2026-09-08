@@ -2,20 +2,13 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
+  ParseParticleConfigOptions,
+  ParticleConfigParseResult,
   ParticleFormatCodec,
   ParticleFormatKind,
-  ParticleConfigParseResult,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-/** Contract for a particle format codec registered via `registerParticleFormat`.
- *
- *  A codec provides the three operations needed to integrate a format into the
- *  unified dispatcher: format detection, config parse, and serialize.
- *
- *  `detect` should return `true` when the text is confidently recognized as this format —
- *  it must not throw. `parseToConfig` and `parseToDocument` may throw on genuinely
- *  malformed input; the dispatcher catches errors and returns a `particles.parse-error` diagnostic. */
 /** Detect the format of `text` by consulting all registered codecs in registration order.
  *
  *  Returns the first `kind` whose codec's `detect` returns `true`, or `null` when no
@@ -50,7 +43,11 @@ export function getRegisteredParticleFormats(): ReadonlyArray<string> {
  *  Returns a `ParticleConfigParseResult` with the config, format, and any structured import diagnostics.
  *  When no codec is registered for `kind`, returns a default config with a `particles.unknown-format` Reject
  *  diagnostic. Codec errors are caught and returned as a `particles.parse-error` Reject. */
-export function parseRegisteredParticleFormat(text: string, kind: string): ParticleConfigParseResult {
+export function parseRegisteredParticleFormat(
+  text: string,
+  kind: string,
+  options?: Readonly<ParseParticleConfigOptions>,
+): ParticleConfigParseResult {
   const codec = _registry.get(kind);
   if (!codec) {
     const diagnostics: ImportDiagnostic[] = [];
@@ -66,7 +63,7 @@ export function parseRegisteredParticleFormat(text: string, kind: string): Parti
     return { config: createParticleEmitterConfig(), diagnostics, format: kind };
   }
   try {
-    const result = codec.parseToDocument(text);
+    const result = codec.parseToDocument(text, options);
     return { config: result.config, diagnostics: result.diagnostics, format: kind };
   } catch (err) {
     const diagnostics: ImportDiagnostic[] = [];
@@ -86,12 +83,8 @@ export function parseRegisteredParticleFormat(text: string, kind: string): Parti
 /** Register a particle format codec for the given `kind`.
  *
  *  Last-write-wins: registering the same kind again replaces the previous codec.
- *  Built-in kinds (bare names, no dot) are registered at module load time by the
- *  format packages themselves; custom/vendor kinds use a dotted namespace prefix
- *  (e.g. `'acme.Custom'`).
- *
- *  This function must be called explicitly — there is no implicit registration at
- *  module load time. */
+ *  Custom/vendor kinds should use a dotted namespace prefix (e.g. `'acme.Custom'`).
+ *  Call `registerBuiltInParticleFormats` explicitly to install the built-in codecs. */
 export function registerParticleFormat(kind: ParticleFormatKind, codec: ParticleFormatCodec): void {
   _registry.set(kind, codec);
 }

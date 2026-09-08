@@ -6,23 +6,10 @@ import type {
   ParticleConfigParseResult,
   ParticleEmitterConfig,
 } from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  LibgdxParticleFormatKind,
-  ParticleDesignerFormatKind,
-  PixiParticleFormatKind,
-  SpineParticleFormatKind,
-  StarlingPexFormatKind,
-  UnityParticleFormatKind,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { detectParticleFormat } from './detect';
-import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
-import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
-import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse';
-import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
-import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
-import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
+import { getParticleFormatCodec } from './formatRegistry';
 /** Parse any supported particle format string to a ParticleEmitterConfig.
  *
  *  Calls `detectParticleFormat` internally and routes to the format-specific
@@ -34,17 +21,13 @@ import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
 export function parseParticleConfig(text: string, options?: ParseParticleConfigOptions): ParticleEmitterConfig {
   const format = detectParticleFormat(text);
   if (format === null) return createParticleEmitterConfig();
+  const codec = getParticleFormatCodec(format);
+  if (codec === null) return createParticleEmitterConfig();
   try {
-    if (format === LibgdxParticleFormatKind) return parseLibgdxParticle(text, options);
-    if (format === ParticleDesignerFormatKind) return parseParticleDesignerPlist(text, options);
-    if (format === PixiParticleFormatKind) return parsePixiParticle(text);
-    if (format === SpineParticleFormatKind) return parseSpineParticle(text);
-    if (format === StarlingPexFormatKind) return parseStarlingPex(text, options);
-    if (format === UnityParticleFormatKind) return parseUnityParticle(text, options);
+    return codec.parseToConfig(text, options);
   } catch {
     return createParticleEmitterConfig();
   }
-  return createParticleEmitterConfig();
 }
 
 /** Parse any supported particle format string and return the config, detected
@@ -71,31 +54,23 @@ export function parseParticleConfigDocument(
     );
     return { config: createParticleEmitterConfig(), diagnostics, format: null };
   }
+  const codec = getParticleFormatCodec(format);
+  if (codec === null) {
+    const diagnostics: ImportDiagnostic[] = [];
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'particles.unknown-format',
+      'parseParticleConfigDocument',
+      {
+        reason: 'no-registered-parser',
+      },
+    );
+    return { config: createParticleEmitterConfig(), diagnostics, format };
+  }
   try {
-    if (format === LibgdxParticleFormatKind) {
-      const result = parseLibgdxParticleDocument(text, options);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
-    if (format === ParticleDesignerFormatKind) {
-      const result = parseParticleDesignerPlistDocument(text, options);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
-    if (format === PixiParticleFormatKind) {
-      const result = parsePixiParticleDocument(text);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
-    if (format === SpineParticleFormatKind) {
-      const result = parseSpineParticleDocument(text);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
-    if (format === StarlingPexFormatKind) {
-      const result = parseStarlingPexDocument(text, options);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
-    if (format === UnityParticleFormatKind) {
-      const result = parseUnityParticleDocument(text, options);
-      return { config: result.config, diagnostics: result.diagnostics, format };
-    }
+    const result = codec.parseToDocument(text, options);
+    return { config: result.config, diagnostics: result.diagnostics, format };
   } catch (err) {
     const diagnostics: ImportDiagnostic[] = [];
     reportImportDiagnostic(
@@ -109,15 +84,4 @@ export function parseParticleConfigDocument(
     );
     return { config: createParticleEmitterConfig(), diagnostics, format };
   }
-  const diagnostics: ImportDiagnostic[] = [];
-  reportImportDiagnostic(
-    diagnostics,
-    ImportDiagnosticSeverity.Reject,
-    'particles.unknown-format',
-    'parseParticleConfigDocument',
-    {
-      reason: 'no-registered-parser',
-    },
-  );
-  return { config: createParticleEmitterConfig(), diagnostics, format };
 }

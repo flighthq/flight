@@ -138,13 +138,16 @@ export interface UnityParseOptions {
   pixelsPerUnit?: number;
 }
 
-export interface UnityParsed {
+export interface UnityParseResult {
   config: ParticleEmitterConfig;
   document: UnityParticleDocument;
   /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
    *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
   diagnostics: ImportDiagnostic[];
 }
+
+/** @deprecated Use `UnityParseResult`. */
+export type UnityParsed = UnityParseResult;
 
 export interface UnitySerializeOptions {
   /** Pixels-per-unit — reverses the conversion applied during parsing.  Defaults to 100. */

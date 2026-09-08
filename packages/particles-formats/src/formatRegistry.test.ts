@@ -10,6 +10,7 @@ import {
   registerParticleFormat,
   unregisterParticleFormat,
 } from './formatRegistry';
+import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig';
 
 // A minimal test codec for use across all tests
 const TEST_KIND = 'test.MyFormat';
@@ -102,6 +103,19 @@ describe('parseRegisteredParticleFormat', () => {
     expect(crumb!.detail?.message).toBe('bad input');
     unregisterParticleFormat(TEST_KIND);
   });
+  it('passes shared parse options to the registered codec', () => {
+    let textureSize: number | undefined;
+    registerParticleFormat(TEST_KIND, {
+      ...testCodec,
+      parseToDocument: (text, options) => {
+        textureSize = options?.textureSize;
+        return testCodec.parseToDocument(text, options);
+      },
+    });
+    parseRegisteredParticleFormat('MY_FORMAT:75', TEST_KIND, { textureSize: 32 });
+    expect(textureSize).toBe(32);
+    unregisterParticleFormat(TEST_KIND);
+  });
 });
 
 describe('registerParticleFormat', () => {
@@ -111,6 +125,15 @@ describe('registerParticleFormat', () => {
     registerParticleFormat(TEST_KIND, codec1);
     registerParticleFormat(TEST_KIND, codec2);
     expect(getParticleFormatCodec(TEST_KIND)).toBe(codec2);
+    unregisterParticleFormat(TEST_KIND);
+  });
+  it('extends both unified parsers without editing their dispatch code', () => {
+    registerParticleFormat(TEST_KIND, testCodec);
+    expect(parseParticleConfig('MY_FORMAT:125').maxParticles).toBe(125);
+    expect(parseParticleConfigDocument('MY_FORMAT:125')).toMatchObject({
+      diagnostics: [],
+      format: TEST_KIND,
+    });
     unregisterParticleFormat(TEST_KIND);
   });
 });

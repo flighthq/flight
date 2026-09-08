@@ -6,6 +6,7 @@ export * from './parseParticleConfig';
 export * from './particleDesignerParse';
 export * from './particleDesignerSerialize';
 export * from './pixiParse';
+export * from './registerBuiltInParticleFormats';
 export * from './spineParse';
 export * from './spineSerialize';
 export * from './starlingPexParse';

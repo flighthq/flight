@@ -95,6 +95,12 @@ describe('parsePixiParticle', () => {
     expect(c.scaleMin).toBeCloseTo(0.5);
     expect(c.scaleMax).toBeCloseTo(1.5);
   });
+  it('maps clockwise Pixi screen-space angles with positive Y down', () => {
+    const json = JSON.stringify({ ...JSON.parse(FIRE_PIXI), angle: { min: 90, max: 90 } });
+    const config = parsePixiParticle(json);
+    expect(config.directionX).toBeCloseTo(0);
+    expect(config.directionY).toBeCloseTo(1);
+  });
   it('throws a clear, format-tagged error on invalid JSON', () => {
     expect(() => parsePixiParticle('{not valid')).toThrow(/Invalid Pixi particle JSON/);
   });

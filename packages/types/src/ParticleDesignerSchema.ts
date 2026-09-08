@@ -89,13 +89,16 @@ export interface ParticleDesignerParseOptions {
   textureSize?: number;
 }
 
-export interface ParticleDesignerParsed {
+export interface ParticleDesignerParseResult {
   config: ParticleEmitterConfig;
   document: ParticleDesignerDocument;
   /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
    *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
   diagnostics: ImportDiagnostic[];
 }
+
+/** @deprecated Use `ParticleDesignerParseResult`. */
+export type ParticleDesignerParsed = ParticleDesignerParseResult;
 
 export interface ParticleDesignerSerializeOptions {
   /** Side length of the particle texture in pixels — reverses the normalisation
