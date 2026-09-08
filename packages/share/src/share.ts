@@ -52,6 +52,10 @@ export function initializeShareSignals(out: EntityConstruction<ShareSignals>): v
   out.onShareResult = createSignal();
 }
 
+export function isShareFileValid(file: Readonly<ShareFile>): boolean {
+  return file.name !== '' && file.mimeType !== '' && file.dataUrl.startsWith('data:') && file.dataUrl.includes(',');
+}
+
 export function shareContent(host: HasShareContent, content: Readonly<ShareContent>): Promise<boolean> {
   if (!hasShareContentFields(content)) return Promise.resolve(false);
   return host.share.content.shareContent(content);
@@ -89,5 +93,5 @@ const _attachedSignals = new Set<ShareSignals>();
 
 function filesContent(files: readonly ShareFile[]): ShareFilesContent | null {
   const first = files[0];
-  return first === undefined ? null : { files: [first, ...files.slice(1)] };
+  return first === undefined || !files.every(isShareFileValid) ? null : { files: [first, ...files.slice(1)] };
 }

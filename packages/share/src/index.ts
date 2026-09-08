@@ -6,6 +6,7 @@ export {
   disposeShareSignals,
   enableShareSignals,
   hasShareContentFields,
+  isShareFileValid,
   shareContent,
   shareContentWithResult,
   shareFiles,
