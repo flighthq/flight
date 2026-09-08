@@ -397,6 +397,7 @@ export * from './LassoSelection';
 export * from './Lifecycle';
 export * from './Light';
 export * from './LightUnit';
+export * from './PhotometricLightLike';
 export * from './LinearColor';
 export * from './LocaleInput';
 export * from './LodMesh';
