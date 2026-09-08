@@ -1,5 +1,6 @@
 export * from './baselineStore';
 export * from './captureBrowser';
+export * from './captureFrameClock';
 export * from './captureBatchManifest';
 export * from './captureBenchmark';
 export * from './captureEntries';

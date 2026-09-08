@@ -8,6 +8,7 @@
 
 import type { Browser, BrowserContext } from '@playwright/test';
 
+import { CAPTURE_FRAME_DURATION_MS } from './captureFrameClock.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 
 export interface CaptureBrowserSession {
@@ -72,7 +73,7 @@ export async function launchBrowser(
   // whatever the runner default happened to be when they were written.
   const timeoutMs = options.timeoutMs ?? getCaptureTimeoutMs();
   await context.addInitScript(
-    (args: { frames: number; verify: boolean; observe: boolean; timeoutMs: number }) => {
+    (args: { frames: number; verify: boolean; observe: boolean; timeoutMs: number; frameDurationMs: number }) => {
       const flags = window as unknown as {
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
@@ -85,7 +86,7 @@ export async function launchBrowser(
         __ftVerification?: { fingerprint?: string | null; state?: 'pending' | 'passed' | 'failed' };
         __ftWarmupFrames?: number;
       };
-      const { frames, verify, observe, timeoutMs } = args;
+      const { frames, verify, observe, timeoutMs, frameDurationMs } = args;
       flags.__flightCapture = true;
       flags.__flightCaptureVerify = verify;
       // Set before the frame-halt early-return below: the verifier reads this budget in every mode.
@@ -234,6 +235,7 @@ export async function launchBrowser(
       const observeWarmupCeiling = frames + 120;
       let count = 0;
       let lastCountedFrameTime = -1;
+      let deterministicFrameTime = 0;
       const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
       // Expose the un-hijacked rAF so the render verifier can await a genuine presented frame before it
       // reads the canvas back. The override below stops invoking callbacks past the halt frame, so a
@@ -328,13 +330,14 @@ export async function launchBrowser(
             // else: still warming up — fall through to render another frame
           }
           if (isNewFrame) {
+            deterministicFrameTime = count * frameDurationMs;
             count++;
             lastCountedFrameTime = time;
           }
-          callback(time);
+          callback(deterministicFrameTime);
         });
     },
-    { frames: captureFrames, verify, observe, timeoutMs },
+    { frames: captureFrames, verify, observe, timeoutMs, frameDurationMs: CAPTURE_FRAME_DURATION_MS },
   );
 
   return { browser, context };
