@@ -6,7 +6,7 @@ import { createWebNetBackend, initializeWebNetBackend, webNetBackend } from './w
 interface FakeResponseInit {
   status?: number;
   statusText?: string;
-  headers?: Record<string, string>;
+  headers?: HeadersInit;
   url?: string;
   text?: string;
   json?: unknown;
@@ -17,11 +17,7 @@ interface FakeResponseInit {
 
 function fakeResponse(init: FakeResponseInit): Response {
   const status = init.status ?? 200;
-  const headerMap = new Map<string, string>(Object.entries(init.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
-  const headers = {
-    get: (name: string) => headerMap.get(name.toLowerCase()) ?? null,
-    forEach: (cb: (value: string, key: string) => void) => headerMap.forEach((v, k) => cb(v, k)),
-  };
+  const headers = new Headers(init.headers);
   const body =
     init.streamChunks !== undefined ? { getReader: () => makeReader(init.streamChunks as Uint8Array[]) } : null;
   return {
@@ -268,11 +264,34 @@ describe('createWebNetBackend', () => {
     expect(res.body).toBe('hi!!!');
   });
 
+  it('uses zero for an unknown total in the no-stream progress fallback', async () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+    globalThis.fetch = (async () => fakeResponse({ arraybuffer: bytes.buffer })) as unknown as typeof fetch;
+    const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
+    const ticks: NetProgress[] = [];
+    progress.emit = (tick) => ticks.push({ ...tick });
+    await createWebNetBackend().sendNetRequest({ method: 'GET', responseType: 'arraybuffer', url: 'u' }, { progress });
+    expect(ticks).toEqual([{ loaded: 3, phase: 'download', total: 0 }]);
+  });
+
   it('reads response headers into a plain record', async () => {
     globalThis.fetch = (async () =>
       fakeResponse({ headers: { 'content-type': 'text/plain' }, text: 'x' })) as unknown as typeof fetch;
     const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
     expect(res.headers['content-type']).toBe('text/plain');
+  });
+
+  it('flattens repeated response headers with a comma separator', async () => {
+    globalThis.fetch = (async () =>
+      fakeResponse({
+        headers: [
+          ['x-flight-value', 'first'],
+          ['x-flight-value', 'second'],
+        ],
+        text: 'x',
+      })) as unknown as typeof fetch;
+    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
+    expect(res.headers['x-flight-value']).toBe('first, second');
   });
 });
 

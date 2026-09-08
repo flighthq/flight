@@ -49,6 +49,17 @@ export interface NetRequest {
   redirect?: NetRedirect;
 }
 
+// Plain-data notice emitted through the optional hook installed by enableNetGuards. The request is
+// retained by reference so a diagnostic sink can correlate it with its own operation metadata without
+// the transport path copying request bodies.
+export interface NetGuardNotice {
+  readonly operation: 'sendNetRequest';
+  readonly reason: 'body-on-get-or-head' | 'negative-timeout' | 'progress-not-emitted';
+  readonly request: Readonly<NetRequest>;
+}
+
+export type NetGuard = (notice: Readonly<NetGuardNotice>) => void;
+
 // A plain-data HTTP response. `ok` is true for a 2xx status. `status` is 0 with `ok` false for a
 // failed transport (network error, DNS, timeout, caller abort); the real status otherwise. `body` is
 // decoded per the request's responseType. `url` is the final URL after any followed redirects.
@@ -59,6 +70,17 @@ export interface NetResponse {
   headers: Readonly<Record<string, string>>;
   body: NetResponseBody;
   url: string;
+}
+
+// Why a response carries one of the transport's silent failure sentinels. Status 0 always denotes a
+// transport failure; the web and native backends use the canonical statusText values 'aborted' and
+// 'timeout' when those more specific causes are known. A nonzero response with a null body denotes the
+// body-decoding sentinel. Null means the response carries neither sentinel.
+export interface NetResponseExplanation {
+  readonly reason: 'aborted' | 'decode-failure' | 'timeout' | 'transport-failure';
+  readonly status: number;
+  readonly statusText: string;
+  readonly url: string;
 }
 
 // One up/download progress tick, emitted through NetRequestOptions.progress. `total` is 0 when the
