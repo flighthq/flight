@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { FlowStack, FlowState, EntityConstruction } from '@flighthq/types/contract';
 
+import { reportFlowGuard } from './flowGuards';
+
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
 // bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the
 // whole stack is being torn down, not layered. After this the stack has depth 0.
@@ -77,11 +79,18 @@ export function popFlowState(stack: FlowStack): FlowState | null {
 // (`onPause`), then `state` is pushed and entered (`onEnter`) — pause-then-enter, so the outgoing
 // state is suspended before the incoming one starts.
 export function pushFlowState(stack: FlowStack, state: Readonly<FlowState>): void {
+  if (transitionDepth > 0) reportFlowGuard('transition-during-transition');
+  if (stack.states.includes(state as FlowState)) reportFlowGuard('duplicate-state-push');
   const states = stack.states;
   const previousTop = states.length > 0 ? states[states.length - 1] : null;
-  previousTop?.onPause?.();
-  states.push(state);
-  state.onEnter?.();
+  transitionDepth++;
+  try {
+    previousTop?.onPause?.();
+    states.push(state);
+    state.onEnter?.();
+  } finally {
+    transitionDepth--;
+  }
 }
 
 // Swap the active top for `state` in place, keeping the stack depth the same. The current top (if
@@ -89,14 +98,27 @@ export function pushFlowState(stack: FlowStack, state: Readonly<FlowState>): voi
 // because it stays covered throughout — replace swaps the top layer, it does not uncover the one
 // below. On an empty stack this is just a push-and-enter.
 export function replaceFlowState(stack: FlowStack, state: Readonly<FlowState>): void {
+  if (transitionDepth > 0) reportFlowGuard('transition-during-transition');
   const states = stack.states;
   if (states.length > 0) {
     const previousTop = states.pop() as FlowState;
-    previousTop.onExit?.();
+    transitionDepth++;
+    try {
+      previousTop.onExit?.();
+    } finally {
+      transitionDepth--;
+    }
   }
   states.push(state);
-  state.onEnter?.();
+  transitionDepth++;
+  try {
+    state.onEnter?.();
+  } finally {
+    transitionDepth--;
+  }
 }
+
+let transitionDepth = 0;
 
 // Tick the stack for one frame. The active top always updates (`onUpdate(deltaTime)`); then, walking
 // downward, each visited state that sets `updateBelow` also ticks the state immediately beneath it,
