@@ -1,4 +1,4 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import {
   createAnisotropyPbrExtension,
@@ -23,7 +23,11 @@ const NO_LIGHTS: Scene3DLightBlock = {
 };
 
 function createCamera(): Camera3D {
-  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
 }
 
 function getGuardMessages(material: ReturnType<typeof createExtendedPbrMaterial>): string[] {
