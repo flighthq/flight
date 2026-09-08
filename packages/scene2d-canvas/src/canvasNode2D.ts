@@ -1,6 +1,6 @@
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { CanvasRenderState, Node2D, Scene2DRenderer, RenderProxy2D } from '@flighthq/types/contract';
+import type { CanvasRenderState, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 
 import { resolveCanvasCssFilter } from './canvasCSSFilterBinding';
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -31,6 +31,7 @@ export function renderCanvasScene2D(state: CanvasRenderState, source: Node2D): v
     clipHooks?.popClip(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
+    if (isCanvasTransformDegenerate(data)) continue;
 
     clipHooks?.pushClip(state, data, current);
 
@@ -49,4 +50,13 @@ export function renderCanvasScene2D(state: CanvasRenderState, source: Node2D): v
   }
 
   clipHooks?.finalize(state);
+}
+
+// Zero-determinant transforms collapse the node to a line or point — Canvas 2D would draw nothing
+// visible but still pay transform setup and draw-call overhead. isRenderProxyVisible catches the
+// a===0 && d===0 case (identity-scaled to zero); this catches the remaining degenerate orientations
+// (e.g. rotated then scaled to zero on one axis) via the full 2×2 determinant.
+function isCanvasTransformDegenerate(data: RenderProxy2D): boolean {
+  const t = data.transform2D;
+  return t.a * t.d - t.b * t.c === 0;
 }
