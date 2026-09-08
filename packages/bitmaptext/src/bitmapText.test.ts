@@ -10,14 +10,18 @@ import {
   createBitmapTextData,
   createBitmapTextRuntime,
   getBitmapTextBounds,
+  getBitmapTextLineCount,
   getBitmapTextPages,
   initializeBitmapTextData,
   isBitmapTextGlyphLayoutStale,
+  isBitmapTextTruncated,
   reserveBitmapText,
   setBitmapTextAlign,
+  setBitmapTextEllipsis,
   setBitmapTextGlyphSource,
   setBitmapTextLetterSpacing,
   setBitmapTextLineHeight,
+  setBitmapTextMaxLines,
   setBitmapTextText,
   setBitmapTextWrapWidth,
 } from './bitmapText';
@@ -106,30 +110,35 @@ describe('createBitmapText', () => {
 });
 
 describe('createBitmapTextData', () => {
-  it('defaults to left-aligned empty unwrapped text', () => {
+  it('defaults to left-aligned empty unwrapped text with no truncation', () => {
     const data = createBitmapTextData();
     expect(data.align).toBe('left');
+    expect(data.ellipsis).toBe('');
     expect(data.glyphSource).toBeNull();
     expect(data.letterSpacing).toBe(0);
     expect(data.lineHeight).toBe(1);
+    expect(data.maxLines).toBeNull();
     expect(data.text).toBe('');
     expect(data.wrapWidth).toBeNull();
   });
 
   it('honors provided overrides', () => {
-    const data = createBitmapTextData({ align: 'right', text: 'x', wrapWidth: 50 });
+    const data = createBitmapTextData({ align: 'right', ellipsis: '...', maxLines: 2, text: 'x', wrapWidth: 50 });
     expect(data.align).toBe('right');
+    expect(data.ellipsis).toBe('...');
+    expect(data.maxLines).toBe(2);
     expect(data.text).toBe('x');
     expect(data.wrapWidth).toBe(50);
   });
 });
 
 describe('createBitmapTextRuntime', () => {
-  it('starts with null bounds and no pages', () => {
+  it('starts with null bounds, no pages, zero lines, and no truncation', () => {
     const runtime = createBitmapTextRuntime();
+    expect(runtime.lineCount).toBe(0);
     expect(runtime.localBoundsRectangle).toBeNull();
     expect(runtime.pages).toEqual([]);
-    // Below every real version, so a node that has never been laid out reads stale.
+    expect(runtime.truncated).toBe(false);
     expect(runtime.glyphLayoutVersion).toBe(-1);
   });
 });
@@ -143,6 +152,31 @@ describe('getBitmapTextBounds', () => {
     expect(bounds.y).toBe(0);
     expect(bounds.width).toBe(16); // B at x=10, region width 6 → right edge 16
     expect(bounds.height).toBe(8);
+  });
+});
+
+describe('getBitmapTextLineCount', () => {
+  it('returns 0 before the first layout', () => {
+    const text = createBitmapText(createTestGlyphSource());
+    expect(getBitmapTextLineCount(text)).toBe(0);
+  });
+
+  it('returns 1 for a single-line text', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(1);
+  });
+
+  it('counts lines from explicit newlines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB\nA' });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(3);
+  });
+
+  it('counts lines from word wrapping', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'AA AA AA', wrapWidth: 30 });
+    updateBitmapText(text);
+    expect(getBitmapTextLineCount(text)).toBe(3);
   });
 });
 
@@ -189,6 +223,31 @@ describe('isBitmapTextGlyphLayoutStale', () => {
   });
 });
 
+describe('isBitmapTextTruncated', () => {
+  it('reads false before the first layout', () => {
+    const text = createBitmapText(createTestGlyphSource());
+    expect(isBitmapTextTruncated(text)).toBe(false);
+  });
+
+  it('reads false when maxLines is not set', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB\nA' });
+    updateBitmapText(text);
+    expect(isBitmapTextTruncated(text)).toBe(false);
+  });
+
+  it('reads true when lines exceed maxLines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB\nA', maxLines: 2 });
+    updateBitmapText(text);
+    expect(isBitmapTextTruncated(text)).toBe(true);
+  });
+
+  it('reads false when lines fit within maxLines', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'A\nB', maxLines: 3 });
+    updateBitmapText(text);
+    expect(isBitmapTextTruncated(text)).toBe(false);
+  });
+});
+
 describe('reserveBitmapText', () => {
   it('grows each page quad-array capacity', () => {
     const text = createBitmapText(createTestGlyphSource());
@@ -204,6 +263,14 @@ describe('setBitmapTextAlign', () => {
     const text = createBitmapText(createTestGlyphSource());
     setBitmapTextAlign(text, 'justify');
     expect(text.data.align).toBe('justify');
+  });
+});
+
+describe('setBitmapTextEllipsis', () => {
+  it('mutates the ellipsis field', () => {
+    const text = createBitmapText(createTestGlyphSource());
+    setBitmapTextEllipsis(text, '...');
+    expect(text.data.ellipsis).toBe('...');
   });
 });
 
@@ -229,6 +296,16 @@ describe('setBitmapTextLineHeight', () => {
     const text = createBitmapText(createTestGlyphSource());
     setBitmapTextLineHeight(text, 2);
     expect(text.data.lineHeight).toBe(2);
+  });
+});
+
+describe('setBitmapTextMaxLines', () => {
+  it('mutates the maxLines field', () => {
+    const text = createBitmapText(createTestGlyphSource());
+    setBitmapTextMaxLines(text, 3);
+    expect(text.data.maxLines).toBe(3);
+    setBitmapTextMaxLines(text, null);
+    expect(text.data.maxLines).toBeNull();
   });
 });
 
