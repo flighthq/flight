@@ -9,3 +9,4 @@ export {
   replaceFlowState,
   updateFlowStack,
 } from './contract';
+export { disableFlowGuards, enableFlowGuards } from './flowGuards';
