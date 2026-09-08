@@ -184,7 +184,7 @@ export function initializeTrayCreateSuccessResult<Tray extends TrayIcon>(
 
 export function isTrayDestroyed(tray: Readonly<TrayIcon>): boolean {
   const runtime = getTrayRuntime(tray);
-  return runtime === null || runtime.state !== 'active' || runtime.lifecycle.isDestroyed(tray);
+  return runtime !== null && (runtime.state !== 'active' || runtime.lifecycle.isDestroyed(tray));
 }
 
 export function isTrayIconAnimating(tray: Readonly<TrayIcon>): boolean {
