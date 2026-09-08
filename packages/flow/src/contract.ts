@@ -10,5 +10,4 @@ export {
   replaceFlowState,
   updateFlowStack,
 } from './flow';
-export { initializeFlowStack } from './flow';
 export { disableFlowGuards, enableFlowGuards } from './flowGuards';
