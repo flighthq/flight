@@ -3,8 +3,7 @@ import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { AttachmentSkin2D, Bone2D, EntityConstruction, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
 
-// 6 floats per bone in the flat 2×3 affine buffers (a, b, c, d, tx, ty), matching the Matrix field order.
-const MATRIX_STRIDE = 6;
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
 
 // Deep-copies the bone array (each Bone2D cloned) and the transform buffers, producing an independently
 // posable skeleton. Slots and their attachments are SHARED (attachments are immutable setup data); use a
@@ -246,6 +245,25 @@ export function initializeSkeleton2D(
   out.skins = skins;
   out.slots = slots;
   out.worldMatrices = worldMatrices;
+}
+
+// Restores the animated local transform fields in `pose` from an immutable `setup` skeleton.
+export function resetSkeleton2DToSetup(setup: Readonly<Skeleton2D>, pose: Skeleton2D): void {
+  if (setup === pose) throw new Error('resetSkeleton2DToSetup: setup and pose must be distinct skeletons');
+  if (setup.bones.length !== pose.bones.length) {
+    throw new Error('resetSkeleton2DToSetup: setup and pose must contain the same number of bones');
+  }
+  for (let i = 0; i < setup.bones.length; i++) {
+    const source = setup.bones[i];
+    const target = pose.bones[i];
+    target.rotation = source.rotation;
+    target.scaleX = source.scaleX;
+    target.scaleY = source.scaleY;
+    target.shearX = source.shearX;
+    target.shearY = source.shearY;
+    target.x = source.x;
+    target.y = source.y;
+  }
 }
 
 // inverse-bind at identity (`inverseMatrix` returns false) rather than producing NaNs.

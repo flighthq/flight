@@ -1,8 +1,7 @@
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import type { PointAttachment2D, Skeleton2D, Vector2Like } from '@flighthq/types/contract';
 
-// 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
-const MATRIX_STRIDE = 6;
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
 
 // Writes a point attachment's world position into `out`. Requires `computeSkeleton2DWorldTransforms` to
 // have filled `skeleton.worldMatrices`. Out-parameter, allocation-free.

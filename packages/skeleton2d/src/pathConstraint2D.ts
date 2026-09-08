@@ -19,10 +19,8 @@ import {
 
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D';
 import { computeSkeleton2DBoneWorldTransform } from './skeleton2d';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
 import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint';
-
-// 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
-const MATRIX_STRIDE = 6;
 
 function assignPathFields(
   out: EntityConstruction<Path>,

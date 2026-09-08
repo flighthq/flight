@@ -127,6 +127,20 @@ export function addPhysics3DCollider(
   return collider;
 }
 
+// Applies an instantaneous angular momentum change at the centre of mass.
+export function applyPhysics3DAngularImpulse(body: RigidBody3D, x: number, y: number, z: number): boolean {
+  assertPhysics3DBodyNotStepping(body);
+  if (body.type !== 'dynamic' || body.fixedRotation || !isFinitePhysics3DVector(x, y, z)) return false;
+  refreshRigidBody3DWorldInertia(body);
+  readRigidBody3DWorldInverseInertia(body, scratchInverseInertia);
+  applySymmetricTensor(scratchInverseInertia, x, y, z, scratchVector);
+  body.angularVelocityX += scratchVector[0];
+  body.angularVelocityY += scratchVector[1];
+  body.angularVelocityZ += scratchVector[2];
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
+}
+
 // Accumulates a finite force at the body's centre of mass, to be consumed by the next step. Returning
 // false makes an ignored non-dynamic or invalid action observable without letting it poison the world.
 export function applyPhysics3DForce(body: RigidBody3D, x: number, y: number, z: number): boolean {
