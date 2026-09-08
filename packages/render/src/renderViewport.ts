@@ -1,12 +1,11 @@
-import { allocateEntity, finishEntity, getEntityRuntime, hasEntityRuntime } from '@flighthq/entity/contract';
+import { getEntityRuntime, hasEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type {
-  EntityConstruction,
   Matrix,
   Rectangle,
   RenderProxy2D,
-  RenderViewport2D,
+  Viewport,
   HasBoundsRectangleRuntime,
   HasTransform2DRuntime,
   Spatial2DNode,
@@ -28,26 +27,6 @@ export function computeRenderProxyWorldBounds(
   return true;
 }
 
-export function createRenderViewport2D(x: number, y: number, width: number, height: number): RenderViewport2D {
-  const out = allocateEntity<RenderViewport2D>();
-  initializeRenderViewport2D(out, x, y, width, height);
-  return finishEntity(out);
-}
-
-// Allocates and returns a new RenderViewport2D with the given screen-space region.
-export function initializeRenderViewport2D(
-  out: EntityConstruction<RenderViewport2D>,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): void {
-  out.height = height;
-  out.width = width;
-  out.x = x;
-  out.y = y;
-}
-
 // Returns true when `source` may be visible within `viewport`. Conservative: returns true when
 // the source carries no spatial traits (bounds unknown). When spatial bounds are available, uses
 // an inclusive overlap test on all four edges so that a zero-size object touching any viewport
@@ -55,7 +34,7 @@ export function initializeRenderViewport2D(
 // transformed into screen space before the overlap test.
 export function isRenderableInViewport(
   source: unknown,
-  viewport: Readonly<RenderViewport2D>,
+  viewport: Readonly<Viewport>,
   renderTransform2D?: Readonly<Matrix> | null,
 ): boolean {
   if (!computeRenderProxyWorldBounds(_scratchBounds, source)) return true;
@@ -83,7 +62,7 @@ export function isRenderableInViewport(
 // isRenderableInViewport using the proxy's source.
 export function isRenderProxyInViewport(
   proxy: Readonly<RenderProxy2D>,
-  viewport: Readonly<RenderViewport2D>,
+  viewport: Readonly<Viewport>,
   renderTransform2D?: Readonly<Matrix> | null,
 ): boolean {
   return isRenderableInViewport(proxy.source, viewport, renderTransform2D);

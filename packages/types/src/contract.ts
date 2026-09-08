@@ -572,7 +572,6 @@ export * from './RenderState';
 export * from './RenderProxyVisitor';
 export * from './RenderStateStats';
 export * from './RenderTarget';
-export * from './RenderViewport2D';
 export * from './ResourceLoader';
 export * from './ResourceLoaderItemSignals';
 export * from './ResourceLoaderOptions';
