@@ -1,31 +1,34 @@
 ---
 package: '@flighthq/textshaper'
-updated: 2026-08-01
+updated: 2026-09-08
 basedOn: ./review.md
 ---
 
 # textshaper — Assessment
 
-Verified against the live tree (7 source files + textshaper-canvas 2 source files, ~102 tests, ~20 exports) and the direction session (2026-07-02). Six charter decisions blessed. Types are present in `@flighthq/types` (stale review was false alarm). Depth review: 66/100.
+Refreshed 2026-09-08 from the 2026-09-02 re-review (`review.md`). Prior assessment's 7 landed items confirmed still landed. All 10 review gaps verified open against source. 126 test cases across 9 test files. Score aligned to review: 62/100.
+
+## Directed
+
+_None._
 
 ## Recommended
 
-_None open._ Re-verified against live source on 2026-08-01 (11 source files, 9 test files, 111 tests,
-30 main exports). The remaining sweep item landed and is recorded under [Landed](#landed), outside this
-section so the TODO generator stops reporting it as work.
+Strictly sweep-safe: within `@flighthq/textshaper`, no unresolved design decision.
 
-## Landed
+- **Alphabetize `index.ts` exports.** `disposeTextShaperSignals` precedes `disableTextShaperGuards` — out of order.
+- **Resolve `disposeTextShaperCache` / `clearTextShaperCache` duplication.** Both bodies are `cache._entries.clear()`. `dispose` has comment-only finality with no enforcement. Either remove one or give `dispose` distinct teardown semantics.
+- **Fix `getCaretPositionsForRun` xOffset contradiction.** Comment at `textShaperCluster.ts:8` promises xOffset awareness; line 18 sums only `xAdvance`. Comment-vs-code correctness bug.
+- **Fix `TextShaperCache._entries` public-as-internal.** `types/src/TextShaperCache.ts:5` exposes `_entries` as a public `readonly` field. Should be on the runtime or behind an accessor.
 
-1. ~~**Rename `shapeText` to `measureText`.**~~ Landed; `measureText` is the exported name and the call sites in `textshaper-canvas` and `textlayout` follow it.
-2. ~~**Forward `options` through `shapeTextRunInto`.**~~ Landed; the parameter is present and forwarded to the backend.
-3. ~~**Drop gratuitous cast in `getFontUnitScale`.**~~ Landed; reads `format.size ?? 12` directly.
-4. ~~**Fix signal type mismatch.**~~ Landed; `onBackendChanged` is built with `createSignal`.
-5. ~~**Normalize unused `format` parameter naming.**~~ Landed; the glyph-introspection wrappers use `_format` consistently.
-6. ~~**Package Map description update.**~~ Landed.
-7. ~~**Add `enableTextShaperGuards` for the pool brackets.**~~ Landed. The separately importable guard
-   module warns when a shaped run is released twice, while core continues to ignore the repeated release
-   and preserve the pool invariant. Correct acquire/release pairs and the disabled production default
-   remain silent; colocated tests cover the low-level seam and caller-facing logger.
+## Depth gaps
+
+1. **Full-glyph tier has zero real callers.** `textshaper-canvas` does not implement `shapeRun`; no callers of `shapeTextRun`/`shapeTextRuns`/`shapeTextRunCached` exist outside tests. The glyph tier is architecturally complete but inert.
+2. **Public lane omits backend registration.** `getTextShaperBackend`/`setTextShaperBackend`/`explainTextShaperOperation`/`hasTextShaperOperation` are contract-only. End users cannot set a backend without importing `./contract`.
+3. **`itemizeText` self-contained bidi table.** No dependency on `@flighthq/textbidi`; status.md confirms undecided.
+4. **Font introspection absent.** No `getFontFeatures`/`getFontScripts`/`getFontVariationAxes` in source or backend type.
+5. **No incremental reshape.** No `reshapeTextRun` or equivalent.
+6. **No font-fallback seam.** No `FontFallbackBackend`; ownership undecided.
 
 ## Backlog
 
@@ -33,6 +36,16 @@ section so the TODO generator stops reporting it as work.
 - **HarfBuzz backend.** Per charter Open direction #2. Separate package, wasm strategy needed.
 - **textlayout → `ShapedRun` migration.** Per charter Open direction #3. Cross-package coordination.
 - **`FontFallbackBackend` seam.** Per charter Open direction #4.
+
+## Landed
+
+1. ~~**Rename `shapeText` to `measureText`.**~~ Landed.
+2. ~~**Forward `options` through `shapeTextRunInto`.**~~ Landed.
+3. ~~**Drop gratuitous cast in `getFontUnitScale`.**~~ Landed.
+4. ~~**Fix signal type mismatch.**~~ Landed.
+5. ~~**Normalize unused `format` parameter naming.**~~ Landed.
+6. ~~**Package Map description update.**~~ Landed.
+7. ~~**Add `enableTextShaperGuards` for the pool brackets.**~~ Landed.
 
 ## Approved
 
