@@ -324,6 +324,11 @@ describe('initializeTrayCreateSuccessResult', () => {
 });
 
 describe('isTrayDestroyed', () => {
+  it('does not treat an unknown tray as destroyed', () => {
+    const tray = finishEntity(allocateEntity<TrayIcon>());
+    expect(isTrayDestroyed(tray)).toBe(false);
+  });
+
   it('tracks the pinned lifecycle', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
