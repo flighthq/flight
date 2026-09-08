@@ -6,7 +6,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 export function createWgpuFullscreenPipeline(
   state: WgpuRenderState,
@@ -32,24 +32,24 @@ export function destroyWgpuFullscreenPipeline(_state: WgpuRenderState, _pipeline
 // uploads (pass null if the shader declares no uniforms), then draws 3 vertices.
 //
 // Requires an open render pass (renderWgpuBackground or beginWgpuRenderPass must have been
-// called first). When `dest` is null the current open pass is used as-is; when `dest` is
-// provided, its bind group is set via the caller's render pass.
+// called first). `dest` is retained for API compatibility, but the destination is fixed when the
+// caller opens the render pass and cannot be changed by this draw helper.
 export function drawWgpuFullscreenPass(
   state: WgpuRenderState,
   wgpuPipeline: Readonly<WgpuFullscreenPipeline>,
   inputs: ReadonlyArray<Readonly<WgpuRenderTarget>>,
-  dest: Readonly<WgpuRenderTarget> | null,
+  _dest: Readonly<WgpuRenderTarget> | null,
   setUniforms: ((state: WgpuRenderState, uniformBindGroupLayout: GPUBindGroupLayout) => GPUBindGroup) | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const pass = dest !== null ? runtime.renderPass : runtime.renderPass;
-  if (pass === null) return;
+  const pass = runtime.renderPass;
+  const resources = runtime.context.resources;
+  if (pass === null || resources === null) return;
   pass.setPipeline(wgpuPipeline.pipeline);
   if (setUniforms !== null) {
     const uniformBindGroup = setUniforms(state, wgpuPipeline.uniformBindGroupLayout);
     pass.setBindGroup(0, uniformBindGroup);
   }
-  const resources = getWgpuRenderStateDeviceResources(state);
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     const layout = wgpuPipeline.textureBindGroupLayouts[i];
