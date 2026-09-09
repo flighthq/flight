@@ -1,7 +1,12 @@
 export {
+  disableTextSegmentGuards,
+  enableTextSegmentGuards,
+  explainTextSegmenterBackend,
   getNextGraphemeBoundary,
+  getNextSentenceBoundary,
   getNextWordBoundary,
   getPreviousGraphemeBoundary,
+  getPreviousSentenceBoundary,
   getPreviousWordBoundary,
   getWordRangeAt,
   segmentGraphemes,

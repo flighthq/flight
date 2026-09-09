@@ -6,9 +6,11 @@ import type {
   TextSegmentGranularity,
   TextSegmenterBackend,
 } from '@flighthq/types/contract';
+import { vi } from 'vitest';
 
 import {
   createWebTextSegmenterBackend,
+  explainTextSegmenterBackend,
   getTextSegmenterBackend,
   initializeWebTextSegmenterBackend,
   setTextSegmenterBackend,
@@ -30,7 +32,10 @@ function recordingBackend(): RecordingBackend {
   return finishEntity(out);
 }
 
-afterEach(() => setTextSegmenterBackend(null));
+afterEach(() => {
+  setTextSegmenterBackend(null);
+  vi.unstubAllGlobals();
+});
 
 describe('createWebTextSegmenterBackend', () => {
   it('segments a ZWJ family emoji as a single grapheme', () => {
@@ -53,6 +58,33 @@ describe('createWebTextSegmenterBackend', () => {
       { start: 1, end: 2, text: 'b' },
       { start: 2, end: 3, text: 'c' },
     ]);
+  });
+});
+
+describe('explainTextSegmenterBackend', () => {
+  it('reports the bundled Intl provider as available', () => {
+    expect(explainTextSegmenterBackend()).toEqual({
+      available: true,
+      backend: 'web-intl',
+      intlSegmenterAvailable: true,
+    });
+  });
+
+  it('identifies a custom provider independently of Intl availability', () => {
+    expect(explainTextSegmenterBackend(segmenterHost(recordingBackend()))).toEqual({
+      available: true,
+      backend: 'custom',
+      intlSegmenterAvailable: true,
+    });
+  });
+
+  it('reports the bundled provider unavailable when the runtime primitive is absent', () => {
+    vi.stubGlobal('Intl', { Segmenter: undefined });
+    expect(explainTextSegmenterBackend()).toEqual({
+      available: false,
+      backend: 'web-intl',
+      intlSegmenterAvailable: false,
+    });
   });
 });
 
@@ -108,3 +140,7 @@ describe('webTextSegmenterBackend', () => {
     ]);
   });
 });
+
+function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
+  return { text: { segmenter } };
+}
