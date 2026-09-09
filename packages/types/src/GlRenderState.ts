@@ -6,6 +6,7 @@ import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader'
 import type { GlContext } from './GlContext';
 import type { GlContextRuntime } from './GlContextRuntime';
 import type { GlContextState } from './GlContextState';
+import type { GlCubeRenderTarget } from './GlCubeRenderTarget';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
@@ -180,7 +181,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   currentMaskDepth?: number;
   currentScissorRect?: GlScissorRect | null;
   currentFramebuffer: WebGLFramebuffer | null;
-  currentRenderTarget?: GlRenderTarget | null;
+  currentRenderTarget?: GlCubeRenderTarget | GlRenderTarget | null;
   renderTargetViewport: GlViewportRect | null;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
   quadVertexData: Float32Array;

@@ -275,6 +275,7 @@ export * from './GlContextLoss';
 export * from './GlContextRuntime';
 export * from './GlContextState';
 export * from './GlCullFaceKind';
+export * from './GlCubeRenderTarget';
 export * from './GlCustomMaterialShaderSource';
 export * from './WgpuCustomMaterialShaderSource';
 export * from './GlDebugProgram';

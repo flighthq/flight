@@ -101,7 +101,7 @@ export function declareGlRenderTargetColorSpace(state: GlRenderState, colorSpace
   const target = getGlRenderStateRuntime(state).currentRenderTarget;
   if (target == null) return false;
   target.colorSpace = colorSpace;
-  target.requestedAxes = { ...target.requestedAxes, colorSpace };
+  if ('requestedAxes' in target) target.requestedAxes = { ...target.requestedAxes, colorSpace };
   return true;
 }
 
