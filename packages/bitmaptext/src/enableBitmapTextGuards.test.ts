@@ -1,6 +1,7 @@
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas/contract';
 import { setLogSink } from '@flighthq/log/contract';
-import type { GlyphAtlas, GlyphRasterizerBackend, LogEntry } from '@flighthq/types/contract';
+import type { GlyphAtlas, GlyphEntry, GlyphRasterizerBackend, GlyphSource, LogEntry } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createBitmapText } from './bitmapText';
@@ -47,12 +48,35 @@ function createTinyGlyphAtlas(): GlyphAtlas {
   });
 }
 
+function createLimitedGlyphSource(codepoints: readonly number[]): GlyphSource {
+  const glyphs = new Map<number, GlyphEntry>();
+  for (const cp of codepoints) {
+    glyphs.set(cp, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 });
+  }
+  return {
+    [EntityRuntimeKey]: undefined,
+    getGlyphAtlasImage: () => null,
+    getGlyphEntry: (cp) => glyphs.get(cp) ?? null,
+    getGlyphKerning: () => 0,
+    getGlyphLayoutVersion: () => 0,
+    getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
+  };
+}
+
 describe('disableBitmapTextGuards', () => {
   it('stops the guard reporting later layouts', () => {
     enableBitmapTextGuards();
     disableBitmapTextGuards();
     const source = createGlyphSourceFromGlyphAtlas(createTinyGlyphAtlas());
     updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
+    expect(messages()).toBe('');
+  });
+
+  it('stops the missing-glyph guard from reporting', () => {
+    enableBitmapTextGuards();
+    disableBitmapTextGuards();
+    const source = createLimitedGlyphSource([0x41]);
+    updateBitmapText(createBitmapText(source, { text: 'AB' }));
     expect(messages()).toBe('');
   });
 });
@@ -73,5 +97,23 @@ describe('enableBitmapTextGuards', () => {
     updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
     expect(messages()).toContain('never settled');
     expect(messages()).toContain('Enlarge the glyph atlas');
+  });
+
+  it('warns when a codepoint has no glyph in the source', () => {
+    enableBitmapTextGuards();
+    const source = createLimitedGlyphSource([0x41]);
+    updateBitmapText(createBitmapText(source, { text: 'AB' }));
+    expect(messages()).toContain('U+0042');
+    expect(messages()).toContain('explainBitmapTextMissingGlyphs');
+  });
+
+  it('says nothing when all codepoints have glyphs', () => {
+    enableBitmapTextGuards();
+    const source = createLimitedGlyphSource([0x41, 0x42]);
+    updateBitmapText(createBitmapText(source, { text: 'AB' }));
+    const missingMessages = entries.filter((e) =>
+      String((e.data as { message?: unknown } | undefined)?.message ?? '').includes('no glyph'),
+    );
+    expect(missingMessages).toHaveLength(0);
   });
 });

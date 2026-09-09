@@ -1,11 +1,12 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setBitmapTextLayoutGuard } from './updateBitmapText';
+import { setBitmapTextLayoutGuard, setBitmapTextMissingGlyphGuard } from './updateBitmapText';
 
 /** Uninstalls the guard installed by `enableBitmapTextGuards`. */
 export function disableBitmapTextGuards(): void {
   setBitmapTextLayoutGuard(null);
+  setBitmapTextMissingGlyphGuard(null);
 }
 
 /**
@@ -26,6 +27,21 @@ export function disableBitmapTextGuards(): void {
  */
 export function enableBitmapTextGuards(): void {
   setBitmapTextLayoutGuard(warnOnBitmapTextLayoutBlocked);
+  setBitmapTextMissingGlyphGuard(warnOnBitmapTextMissingGlyph);
+}
+
+function warnOnBitmapTextMissingGlyph(codepoint: number): void {
+  logOnce(
+    `bitmaptext:missing-glyph:${codepoint}`,
+    LogLevel.Warn,
+    {
+      message:
+        `updateBitmapText: no glyph for codepoint U+${codepoint.toString(16).toUpperCase().padStart(4, '0')} ` +
+        `(${String.fromCodePoint(codepoint)}) — the glyph source does not contain this character, so it is ` +
+        'skipped during layout. Use explainBitmapTextMissingGlyphs for a full inventory.',
+    },
+    'bitmaptext',
+  );
 }
 
 function warnOnBitmapTextLayoutBlocked(_reason: string, attempts: number): void {
