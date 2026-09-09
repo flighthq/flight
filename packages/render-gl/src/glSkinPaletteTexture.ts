@@ -29,11 +29,11 @@ export function initializeGlSkinPaletteTexture(out: EntityConstruction<GlSkinPal
 }
 
 // Uploads a joint-matrix palette into the data texture and binds it. `jointMatrices` is the flat
-// column-major palette (16 floats per joint), `jointCount` how many joints it holds. Always uploads
-// via texImage2D; texture parameters are set once when capacity grows. Leaves the palette texture
-// bound on TEXTURE_2D of the active texture unit (the caller selects the unit and sets the sampler
-// uniform). Reads `jointMatrices`/`jointCount` before any allocation, so it is safe against an
-// aliased struct.
+// column-major palette (16 floats per joint), `jointCount` how many joints it holds. Allocates
+// storage via texImage2D on first use or when capacity grows; subsequent same-capacity uploads use
+// texSubImage2D. Leaves the palette texture bound on TEXTURE_2D of the active texture unit (the
+// caller selects the unit and sets the sampler uniform). Reads `jointMatrices`/`jointCount` before
+// any allocation, so it is safe against an aliased struct.
 export function uploadGlSkinPaletteTexture(
   gl: GlContext,
   palette: GlSkinPaletteTexture,
@@ -48,14 +48,14 @@ export function uploadGlSkinPaletteTexture(
   const width = jointCount * texelsPerJoint;
   gl.bindTexture(gl.TEXTURE_2D, palette.texture);
 
-  // texSubImage2D for RGBA32F full-width replacement has produced silent data loss on at least one
-  // driver (no GL error, readback zeros). texImage2D is negligible cost for palette-sized textures.
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
   if (jointCount > palette.jointCapacity) {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     palette.jointCapacity = jointCount;
+  } else {
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, 1, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
   }
 }

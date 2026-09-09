@@ -97,7 +97,7 @@ describe('uploadGlSkinPaletteTexture', () => {
     expect(bind?.args[1]).toBe(palette.texture);
   });
 
-  it('uses texImage2D without resetting parameters when the palette fits the current capacity', () => {
+  it('uses texSubImage2D without resetting parameters when the palette fits the current capacity', () => {
     const { gl, calls } = makeGl();
     const palette = createGlSkinPaletteTexture(gl);
     uploadGlSkinPaletteTexture(gl, palette, makePalette(4), 4);
@@ -105,12 +105,14 @@ describe('uploadGlSkinPaletteTexture', () => {
 
     uploadGlSkinPaletteTexture(gl, palette, makePalette(2), 2);
 
-    const upload = calls.find((c) => c.name === 'texImage2D');
-    expect(upload).toBeDefined();
-    expect(upload?.args[3]).toBe(8); // width = 2 joints * 4
+    const sub = calls.find((c) => c.name === 'texSubImage2D');
+    expect(sub).toBeDefined();
+    expect(sub?.args[2]).toBe(0); // xoffset
+    expect(sub?.args[3]).toBe(0); // yoffset
+    expect(sub?.args[4]).toBe(8); // width = 2 joints * 4
     expect(palette.jointCapacity).toBe(4); // capacity unchanged
     expect(calls.some((c) => c.name === 'texParameteri')).toBe(false);
-    expect(calls.some((c) => c.name === 'texSubImage2D')).toBe(false);
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(false);
   });
 
   it('grows storage (reallocates) when the palette exceeds the current capacity', () => {

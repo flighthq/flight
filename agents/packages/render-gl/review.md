@@ -120,9 +120,9 @@ Each item was verified against source in `packages/render-gl/src/` on 2026-09-02
 - **GPU readback.** `readGlRenderTargetPixels` reads into a provided `out` buffer with framebuffer
   restore on early return. (`glReadback.ts`)
 - **Skin palette texture.** `createGlSkinPaletteTexture` / `uploadGlSkinPaletteTexture` /
-  `destroyGlSkinPaletteTexture` for joint-matrix data textures. Uses `texImage2D` unconditionally
-  rather than `texSubImage2D` for updates — `texSubImage2D` as a full-width RGBA32F replacement
-  has produced silent data loss on at least one driver. (`glSkinPaletteTexture.ts`)
+  `destroyGlSkinPaletteTexture` for joint-matrix data textures. Uses `texImage2D` on first
+  allocation or capacity growth, `texSubImage2D` for same-capacity updates.
+  (`glSkinPaletteTexture.ts`)
 - **Canvas element factory.** `createGlCanvasElement` / `createGlRenderSurface` /
   `explainGlRenderSurfaceAbsence` with pluggable provider. (`glElement.ts`)
 - **Context creation.** `createGlContextFromCanvasElement` wraps `canvas.getContext('webgl2')`.
