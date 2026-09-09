@@ -1,6 +1,7 @@
 export * from './basis';
 export * from './camera';
 export * from './camera2d';
+export * from './cubeCapture';
 export * from './culling';
 export * from './depth';
 export * from './enableCameraGuards';
@@ -11,6 +12,7 @@ export * from './parallax';
 export * from './picking';
 export * from './projection';
 export * from './projection2d';
+export * from './reflection';
 export * from './shadowCamera';
 export * from './viewMatrix';
 export * from './visibleBounds';

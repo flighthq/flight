@@ -1,4 +1,5 @@
 export {
+  applyObliqueNearClipPlane,
   areCameraGuardsEnabled,
   configureDirectionalShadowCamera3D,
   configureDirectionalShadowCamera3DTightFit,
@@ -24,6 +25,7 @@ export {
   getCamera3DViewProjectionMatrix4,
   getCamera3DViewSpaceZ,
   getCamera3DWorldToScreen,
+  getCubeCaptureFaceCamera3D,
   getOrthographicProjectionTexelSize,
   intersectCamera3DRayWithPlane,
   isBoxInCamera3DFrustum,
@@ -32,6 +34,7 @@ export {
   isPointInCamera3DFrustum,
   isSphereInCamera3DFrustum,
   projectCamera2DPoint,
+  reflectCamera3DByPlane,
   setCamera3DAspect,
   setCamera3DJitter,
   setCamera3DViewMatrix4FromLookAt,
