@@ -11,7 +11,8 @@ import type {
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
-import { CANONICAL_LAYOUT, CANONICAL_FLOATS_PER_VERTEX } from './shared';
+import { appendColladaMaterials } from './colladaMaterial';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
 const Y_UP_ROOT = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as const;
 const Z_UP_ROOT = [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
 const X_UP_ROOT = [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
@@ -53,8 +54,8 @@ function numbers(element: XmlElement | undefined): number[] {
   return element?.text.trim().split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite) ?? [];
 }
 
-/** Parses COLLADA foundation metadata and coordinate conventions into a format-neutral document. */
-export function parseCollada(xml: string, _options?: Readonly<ColladaImportOptions>): ColladaParseResult {
+/** Parses COLLADA metadata, coordinate conventions, and common-profile materials into a format-neutral document. */
+export function parseCollada(xml: string, options?: Readonly<ColladaImportOptions>): ColladaParseResult {
   const diagnostics: ImportDiagnostic[] = [];
   const document = emptyDocument();
   const root = parseXmlDocument(xml);
@@ -80,14 +81,6 @@ export function parseCollada(xml: string, _options?: Readonly<ColladaImportOptio
       { from: upAxis, to: 'Y_UP' },
     );
   walk(root, (element) => {
-    if (element.name === 'profile_GLSL' || element.name === 'profile_CG')
-      reportImportDiagnostic(
-        diagnostics,
-        ImportDiagnosticSeverity.Skip,
-        'collada.unsupported-profile',
-        'parseCollada',
-        { profile: element.name },
-      );
     if (element.name.startsWith('instance_') && !element.attributes.url)
       reportImportDiagnostic(
         diagnostics,
@@ -97,6 +90,15 @@ export function parseCollada(xml: string, _options?: Readonly<ColladaImportOptio
         { element: element.name },
       );
   });
+  const materialIndices = new Map<string, number>();
+  appendColladaMaterials(
+    root,
+    document.materials,
+    document.resources,
+    materialIndices,
+    options?.baseUrl ?? null,
+    diagnostics,
+  );
   const sources = new Map<string, number[]>();
   for (const source of descendants(root, 'source')) {
     const id = idOf(source);
