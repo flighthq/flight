@@ -193,8 +193,8 @@ skinMatrix = w.x*fetchJointMatrix(int(j.x)) + w.y*fetchJointMatrix(int(j.y)) + �
 The palette texture is per-state (`GlSceneRuntime.skinPalette`, a `GlSkinPaletteTexture` created lazily by
 `ensureGlSkinPalette` and grown to the largest skeleton seen), uploaded per draw by
 `uploadGlSkinPaletteTexture` (`@flighthq/render-gl`) into an RGBA32F single-row texture on the
-`SKIN_PALETTE_TEXTURE_UNIT` (12). The upload uses `texImage2D` unconditionally — `texSubImage2D` as a full-width
-RGBA32F replacement has produced silent data loss on at least one driver. Because the palette is a **texture read with texelFetch (GLSL ES 3.0
+`SKIN_PALETTE_TEXTURE_UNIT` (12). The upload uses `texImage2D` on first allocation or capacity growth,
+`texSubImage2D` for same-capacity updates. Because the palette is a **texture read with texelFetch (GLSL ES 3.0
 core — no float-filter extension)**, the joint count is bounded by `MAX_TEXTURE_SIZE` (thousands of
 joints), so there is **no per-context uniform-budget capacity cap and no CPU-skinning fallback** — the old
 `getGlSkinJointCapacity` + `isGpuSkinnedDraw` capacity gate is gone. `drawGlScene`'s `isGpuSkinnedDraw`

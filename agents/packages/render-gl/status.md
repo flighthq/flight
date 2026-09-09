@@ -142,12 +142,10 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **2026-09-09** — `uploadGlSkinPaletteTexture` now uses `texImage2D` unconditionally instead of
-  `texSubImage2D` for same-capacity updates. `texSubImage2D` used as a full-width RGBA32F
-  replacement (same width as the allocated texture) produced silent data loss on at least one
-  driver — `getError` returned 0, but readback was zeros. The SDK's API usage was spec-correct;
-  whether this is a driver-specific issue or a broader `texSubImage2D`-as-full-replacement edge
-  case is not established. `texImage2D` is negligible cost for palette-sized textures.
+- **2026-09-09** — Reverted the unconditional `texImage2D` change in `uploadGlSkinPaletteTexture`
+  back to `texSubImage2D` for same-capacity updates. The original change was based on a downstream
+  misdiagnosis (instanced mesh rendering failure attributed to `texSubImage2D` silent data loss);
+  the instanced mesh example confirmed the SDK path works correctly and the issue was game-side.
   (`glSkinPaletteTexture.ts`)
 - **2026-08-31** — Fixed-function ownership sweep, three more defects. `drawGlFullscreenPass` now owns
   the `BLEND` enable bit (it set factors but not the bit, and `drawGlScene3D` ends a blended-subset pass
