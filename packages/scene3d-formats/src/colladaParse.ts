@@ -1,3 +1,4 @@
+import { createAnimationTrack } from '@flighthq/animation/contract';
 import {
   composeMatrix4FromTransform3D,
   createMatrix4,
@@ -9,14 +10,18 @@ import {
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createMeshGeometry } from '@flighthq/mesh/contract';
 import type {
+  AnimationInterpolation,
   ColladaImportOptions,
   ColladaParseResult,
   ColladaUpAxis,
   ImportDiagnostic,
   Matrix4Like,
+  Scene3DAnimationPath,
   Scene3DDocument,
+  Scene3DDocumentAnimationChannel,
   Scene3DDocumentNode,
   Scene3DDocumentScene,
+  Scene3DDocumentSkin,
   Transform3D,
   XmlElement,
 } from '@flighthq/types/contract';
@@ -74,12 +79,13 @@ function numbers(element: XmlElement | undefined): number[] {
   return element?.text.trim().split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite) ?? [];
 }
 interface ColladaDecodedSkin {
+  bindShapeMatrix: number[];
   controllerId: string;
+  geometryRef: string;
+  influences: Array<Array<{ joint: string; weight: number }>>;
+  inverseBindMatrices: number[][];
   jointNames: string[];
   jointSids: string[];
-  inverseBindMatrices: number[][];
-  influences: Array<Array<{ joint: string; weight: number }>>;
-  bindShapeMatrix: number[];
 }
 interface ColladaDecodedAnimationChannel {
   target: string;
@@ -96,6 +102,13 @@ export function decodeColladaAnimations(
 ): ColladaDecodedAnimationChannel[] {
   const root = parseXmlDocument(xml);
   if (!root) return [];
+  return decodeColladaAnimationsFromRoot(root, diagnostics);
+}
+
+function decodeColladaAnimationsFromRoot(
+  root: XmlElement,
+  diagnostics: ImportDiagnostic[],
+): ColladaDecodedAnimationChannel[] {
   const out: ColladaDecodedAnimationChannel[] = [];
   for (const animation of descendants(root, 'animation')) {
     const values = new Map<string, string[] | number[]>();
@@ -158,10 +171,15 @@ export function decodeColladaAnimations(
 export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
   const root = parseXmlDocument(xml);
   if (!root) return [];
+  return decodeColladaControllersFromRoot(root, diagnostics);
+}
+
+function decodeColladaControllersFromRoot(root: XmlElement, diagnostics: ImportDiagnostic[]): ColladaDecodedSkin[] {
   const out: ColladaDecodedSkin[] = [];
   for (const controller of descendants(root, 'controller')) {
     const skin = child(controller, 'skin');
     if (!skin || !idOf(controller)) continue;
+    const geometryRef = skin.attributes.source?.replace(/^#/, '') ?? '';
     const sourceValues = new Map<string, string[] | number[]>();
     for (const source of skin.children.filter((e) => e.name === 'source')) {
       const id = idOf(source);
@@ -213,12 +231,13 @@ export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnos
         { controller: idOf(controller)! },
       );
     out.push({
+      bindShapeMatrix: numbers(child(skin, 'bind_shape_matrix')),
       controllerId: idOf(controller)!,
+      geometryRef,
+      influences,
+      inverseBindMatrices,
       jointNames,
       jointSids: jointNames.slice(),
-      inverseBindMatrices,
-      influences,
-      bindShapeMatrix: numbers(child(skin, 'bind_shape_matrix')),
     });
   }
   return out;
@@ -275,6 +294,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     options?.baseUrl ?? null,
     diagnostics,
   );
+  const geometryIdToMeshIndex = new Map<string, number>();
   const sources = new Map<string, number[]>();
   for (const source of descendants(root, 'source')) {
     const id = idOf(source);
@@ -346,6 +366,8 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
       vertices[i * 12 + 7] = 1;
     }
     const topology = primitive.name === 'lines' ? 'line-list' : 'triangle-list';
+    const geoId = idOf(geometry);
+    if (geoId) geometryIdToMeshIndex.set(geoId, document.meshes.length);
     document.meshes.push({
       geometry: createMeshGeometry({
         indices: Uint32Array.from(indices),
@@ -358,9 +380,25 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     });
   }
 
+  const decodedSkins = decodeColladaControllersFromRoot(root, diagnostics);
+  const controllerMap = new Map<string, ColladaDecodedSkin>();
+  for (const skin of decodedSkins) controllerMap.set(skin.controllerId, skin);
+
+  const decodedAnimChannels = decodeColladaAnimationsFromRoot(root, diagnostics);
+
   const nodeLibrary = buildColladaIdMap(child(root, 'library_nodes'), 'node');
   const visualSceneLibrary = buildColladaIdMap(child(root, 'library_visual_scenes'), 'visual_scene');
-  buildColladaSceneHierarchy(document, root, visualSceneLibrary, nodeLibrary, rootTransform, diagnostics);
+  buildColladaSceneHierarchy(
+    document,
+    root,
+    visualSceneLibrary,
+    nodeLibrary,
+    rootTransform,
+    geometryIdToMeshIndex,
+    controllerMap,
+    decodedAnimChannels,
+    diagnostics,
+  );
 
   return { document, diagnostics, upAxis, rootTransform };
 }
@@ -375,12 +413,21 @@ function buildColladaIdMap(library: XmlElement | undefined, elementName: string)
   return map;
 }
 
+interface ColladaDeferredControllerBinding {
+  controllerId: string;
+  nodeIndex: number;
+  skeletonRoot: string | null;
+}
+
 function buildColladaSceneHierarchy(
   document: Scene3DDocument,
   root: XmlElement,
   visualSceneLibrary: Map<string, XmlElement>,
   nodeLibrary: Map<string, XmlElement>,
   rootTransform: readonly number[],
+  geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
+  decodedAnimChannels: readonly ColladaDecodedAnimationChannel[],
   diagnostics: ImportDiagnostic[],
 ): void {
   const sceneElement = child(root, 'scene');
@@ -424,10 +471,23 @@ function buildColladaSceneHierarchy(
     rootTransform[13] === 0 &&
     rootTransform[14] === 0;
 
+  const nodeIdMap = new Map<string, number>();
+  const deferredControllers: ColladaDeferredControllerBinding[] = [];
   const instanceStack = new Set<string>();
   const rootNodeIndices: number[] = [];
   for (const nodeElement of children(visualScene, 'node')) {
-    rootNodeIndices.push(buildColladaNode(document, nodeElement, nodeLibrary, instanceStack, diagnostics));
+    rootNodeIndices.push(
+      buildColladaNode(
+        document,
+        nodeElement,
+        nodeLibrary,
+        instanceStack,
+        geometryIdToMeshIndex,
+        nodeIdMap,
+        deferredControllers,
+        diagnostics,
+      ),
+    );
   }
 
   if (!isIdentityRoot) {
@@ -435,6 +495,9 @@ function buildColladaSceneHierarchy(
       applyColladaRootTransform(document.nodes[nodeIndex], rootMatrix);
     }
   }
+
+  resolveColladaSkins(document, deferredControllers, controllerMap, geometryIdToMeshIndex, nodeIdMap, diagnostics);
+  resolveColladaAnimations(document, decodedAnimChannels, nodeIdMap, diagnostics);
 
   const scene: Scene3DDocumentScene = {
     name: visualScene.attributes.name,
@@ -456,6 +519,9 @@ function buildColladaNode(
   nodeElement: XmlElement,
   nodeLibrary: Map<string, XmlElement>,
   instanceStack: Set<string>,
+  geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  nodeIdMap: Map<string, number>,
+  deferredControllers: ColladaDeferredControllerBinding[],
   diagnostics: ImportDiagnostic[],
 ): number {
   const nodeIndex = document.nodes.length;
@@ -469,12 +535,28 @@ function buildColladaNode(
   document.nodes.push(node);
 
   const nodeId = nodeElement.attributes.id;
-  if (nodeId !== undefined) instanceStack.add(nodeId);
+  const nodeSid = nodeElement.attributes.sid;
+  if (nodeId !== undefined) {
+    instanceStack.add(nodeId);
+    nodeIdMap.set(nodeId, nodeIndex);
+  }
+  if (nodeSid !== undefined) nodeIdMap.set(nodeSid, nodeIndex);
 
   for (const childElement of nodeElement.children) {
     const name = localName(childElement);
     if (name === 'node') {
-      node.children.push(buildColladaNode(document, childElement, nodeLibrary, instanceStack, diagnostics));
+      node.children.push(
+        buildColladaNode(
+          document,
+          childElement,
+          nodeLibrary,
+          instanceStack,
+          geometryIdToMeshIndex,
+          nodeIdMap,
+          deferredControllers,
+          diagnostics,
+        ),
+      );
     } else if (name === 'instance_node') {
       const url = childElement.attributes.url;
       if (url === undefined || !url.startsWith('#')) {
@@ -509,12 +591,280 @@ function buildColladaNode(
         );
         continue;
       }
-      node.children.push(buildColladaNode(document, referenced, nodeLibrary, instanceStack, diagnostics));
+      node.children.push(
+        buildColladaNode(
+          document,
+          referenced,
+          nodeLibrary,
+          instanceStack,
+          geometryIdToMeshIndex,
+          nodeIdMap,
+          deferredControllers,
+          diagnostics,
+        ),
+      );
+    } else if (name === 'instance_geometry') {
+      const url = childElement.attributes.url;
+      if (url?.startsWith('#')) {
+        const meshIndex = geometryIdToMeshIndex.get(url.slice(1));
+        if (meshIndex !== undefined) node.mesh = meshIndex;
+      }
+    } else if (name === 'instance_controller') {
+      const url = childElement.attributes.url;
+      if (url?.startsWith('#')) {
+        const skeletonEl = child(childElement, 'skeleton');
+        const skeletonRoot = skeletonEl?.text.trim().replace(/^#/, '') ?? null;
+        deferredControllers.push({ controllerId: url.slice(1), nodeIndex, skeletonRoot });
+      }
     }
   }
 
   if (nodeId !== undefined) instanceStack.delete(nodeId);
   return nodeIndex;
+}
+
+function resolveColladaSkins(
+  document: Scene3DDocument,
+  deferred: readonly ColladaDeferredControllerBinding[],
+  controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
+  geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  nodeIdMap: ReadonlyMap<string, number>,
+  diagnostics: ImportDiagnostic[],
+): void {
+  for (const binding of deferred) {
+    const decoded = controllerMap.get(binding.controllerId);
+    if (!decoded) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.missing-reference',
+        'parseCollada',
+        { element: 'instance_controller', url: `#${binding.controllerId}` },
+      );
+      continue;
+    }
+    const meshIndex = geometryIdToMeshIndex.get(decoded.geometryRef);
+    if (meshIndex !== undefined) document.nodes[binding.nodeIndex].mesh = meshIndex;
+
+    const joints: number[] = [];
+    const inverseBind: Scene3DDocumentSkin['inverseBind'] = [];
+    for (let i = 0; i < decoded.jointNames.length; i++) {
+      const jointName = decoded.jointNames[i];
+      const jointIndex = nodeIdMap.get(jointName);
+      if (jointIndex === undefined) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'collada.missing-reference',
+          'parseCollada',
+          { element: 'skin joint', joint: jointName },
+        );
+        continue;
+      }
+      joints.push(jointIndex);
+      // COLLADA inverse-bind matrices are row-major; transpose to column-major.
+      const rowMajor = decoded.inverseBindMatrices[i];
+      const m = new Float32Array(16);
+      if (rowMajor && rowMajor.length >= 16) {
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) m[c * 4 + r] = rowMajor[r * 4 + c];
+      } else {
+        m[0] = 1;
+        m[5] = 1;
+        m[10] = 1;
+        m[15] = 1;
+      }
+      inverseBind.push({ m });
+    }
+
+    const skinIndex = document.skins.length;
+    document.skins.push({ inverseBind, joints });
+    if (meshIndex !== undefined) document.meshes[meshIndex].skin = skinIndex;
+  }
+}
+
+function resolveColladaAnimations(
+  document: Scene3DDocument,
+  channels: readonly ColladaDecodedAnimationChannel[],
+  nodeIdMap: ReadonlyMap<string, number>,
+  diagnostics: ImportDiagnostic[],
+): void {
+  if (channels.length === 0) return;
+
+  const resolvedChannels: Scene3DDocumentAnimationChannel[] = [];
+  let duration = 0;
+
+  for (const ch of channels) {
+    const slashIndex = ch.target.indexOf('/');
+    if (slashIndex < 0) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'collada.unsupported-animation-target',
+        'parseCollada',
+        { target: ch.target },
+      );
+      continue;
+    }
+    const nodeId = ch.target.slice(0, slashIndex);
+    const property = ch.target.slice(slashIndex + 1);
+
+    const nodeIndex = nodeIdMap.get(nodeId);
+    if (nodeIndex === undefined) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'collada.animation-target-unresolved',
+        'parseCollada',
+        { target: ch.target },
+      );
+      continue;
+    }
+
+    const interp = mapColladaInterpolation(ch.interpolation);
+    const maxTime = ch.times.length > 0 ? ch.times[ch.times.length - 1] : 0;
+
+    if (property === 'matrix' || property === 'transform') {
+      if (ch.values.length < ch.times.length * 16) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'collada.animation-cardinality',
+          'parseCollada',
+          { target: ch.target, expected: ch.times.length * 16, actual: ch.values.length },
+        );
+        continue;
+      }
+      const tValues: number[] = [];
+      const rValues: number[] = [];
+      const sValues: number[] = [];
+      for (let k = 0; k < ch.times.length; k++) {
+        const offset = k * 16;
+        const rv = ch.values;
+        // Row-major → column-major, then decompose.
+        setMatrix4(
+          __scratch,
+          rv[offset],
+          rv[offset + 4],
+          rv[offset + 8],
+          rv[offset + 12],
+          rv[offset + 1],
+          rv[offset + 5],
+          rv[offset + 9],
+          rv[offset + 13],
+          rv[offset + 2],
+          rv[offset + 6],
+          rv[offset + 10],
+          rv[offset + 14],
+          rv[offset + 3],
+          rv[offset + 7],
+          rv[offset + 11],
+          rv[offset + 15],
+        );
+        const trs = createTransform3D();
+        decomposeMatrix4ToTransform3D(trs, __scratch);
+        tValues.push(trs.position.x, trs.position.y, trs.position.z);
+        rValues.push(trs.rotation.x, trs.rotation.y, trs.rotation.z, trs.rotation.w);
+        sValues.push(trs.scale.x, trs.scale.y, trs.scale.z);
+      }
+      resolvedChannels.push(
+        {
+          node: nodeIndex,
+          path: 'Translation',
+          track: createAnimationTrack({ components: 3, interpolation: interp, times: ch.times, values: tValues }),
+        },
+        {
+          node: nodeIndex,
+          path: 'Rotation',
+          track: createAnimationTrack({
+            components: 4,
+            interpolation: interp,
+            quaternion: true,
+            times: ch.times,
+            values: rValues,
+          }),
+        },
+        {
+          node: nodeIndex,
+          path: 'Scale',
+          track: createAnimationTrack({ components: 3, interpolation: interp, times: ch.times, values: sValues }),
+        },
+      );
+      duration = Math.max(duration, maxTime);
+      continue;
+    }
+
+    let path: Scene3DAnimationPath;
+    let components: number;
+    let quaternion = false;
+    let values: ArrayLike<number> = ch.values;
+
+    if (property === 'translate' || property === 'translation') {
+      path = 'Translation';
+      components = 3;
+    } else if (property === 'scale') {
+      path = 'Scale';
+      components = 3;
+    } else if (property.endsWith('.ANGLE')) {
+      const axisName = property.slice(0, -6);
+      let ax = 0;
+      let ay = 0;
+      let az = 0;
+      if (axisName === 'rotateX' || axisName === 'rotationX') ax = 1;
+      else if (axisName === 'rotateY' || axisName === 'rotationY') ay = 1;
+      else if (axisName === 'rotateZ' || axisName === 'rotationZ') az = 1;
+      else {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'collada.unsupported-animation-target',
+          'parseCollada',
+          { target: ch.target },
+        );
+        continue;
+      }
+      path = 'Rotation';
+      components = 4;
+      quaternion = true;
+      const qValues: number[] = [];
+      for (let k = 0; k < ch.values.length; k++) {
+        const halfRad = ((ch.values[k] * Math.PI) / 180) * 0.5;
+        const s = Math.sin(halfRad);
+        qValues.push(ax * s, ay * s, az * s, Math.cos(halfRad));
+      }
+      values = qValues;
+    } else {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'collada.unsupported-animation-target',
+        'parseCollada',
+        { target: ch.target },
+      );
+      continue;
+    }
+
+    resolvedChannels.push({
+      node: nodeIndex,
+      path,
+      track: createAnimationTrack({ components, interpolation: interp, quaternion, times: ch.times, values }),
+    });
+    duration = Math.max(duration, maxTime);
+  }
+
+  if (resolvedChannels.length > 0) {
+    document.animations.push({ channels: resolvedChannels, duration });
+  }
+}
+
+function mapColladaInterpolation(modes: readonly string[]): AnimationInterpolation {
+  if (modes.length === 0) return 'Linear';
+  const first = modes[0];
+  if (modes.every((m) => m === first)) {
+    if (first === 'STEP') return 'Step';
+    if (first === 'BEZIER') return 'Linear';
+    return 'Linear';
+  }
+  return 'Linear';
 }
 
 function composeColladaTransformElements(nodeElement: XmlElement): Transform3D {
