@@ -12,9 +12,18 @@ describe('parseCollada', () => {
     expect(result.upAxis).toBe('Y_UP');
     expect(result.rootTransform).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
+  it('returns converted materials and external resources from the public parser', () => {
+    const result = parseCollada(
+      '<COLLADA><library_images><image id="albedo"><init_from>albedo.png</init_from></image></library_images><library_effects><effect id="fx"><profile_COMMON><newparam sid="surface"><surface><init_from>albedo</init_from></surface></newparam><newparam sid="sampler"><sampler2D><source>surface</source></sampler2D></newparam><technique><lambert><diffuse><texture texture="sampler"/></diffuse></lambert></technique></profile_COMMON></effect></library_effects><library_materials><material id="mat"><instance_effect url="#fx"/></material></library_materials></COLLADA>',
+      { baseUrl: '/models' },
+    );
+    expect(result.document.materials).toHaveLength(1);
+    expect(result.document.resources).toHaveLength(1);
+    expect(result.document.resources[0]).toMatchObject({ basePath: '/models', uri: 'albedo.png' });
+  });
   it('reports coordinate conversion and unsupported profiles', () => {
     const result = parseCollada(
-      '<COLLADA><asset><up_axis>Z_UP</up_axis></asset><library_effects><profile_GLSL/></library_effects></COLLADA>',
+      '<COLLADA><asset><up_axis>Z_UP</up_axis></asset><library_effects><effect id="custom"><profile_GLSL/></effect></library_effects></COLLADA>',
     );
     expect(result.diagnostics.map((d) => [d.kind, d.severity])).toEqual([
       ['collada.coordinate-conversion', ImportDiagnosticSeverity.Recover],
