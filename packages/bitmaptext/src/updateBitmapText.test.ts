@@ -24,7 +24,12 @@ import {
   isBitmapTextGlyphLayoutStale,
   isBitmapTextTruncated,
 } from './bitmapText';
-import { refreshBitmapTextGlyphLayout, setBitmapTextLayoutGuard, updateBitmapText } from './updateBitmapText';
+import {
+  refreshBitmapTextGlyphLayout,
+  setBitmapTextLayoutGuard,
+  setBitmapTextMissingGlyphGuard,
+  updateBitmapText,
+} from './updateBitmapText';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
 // (so line tops sit at y=0), a space advances 5 with no pixels, and the pair (A, B) kerns by -2. All
@@ -234,6 +239,26 @@ describe('setBitmapTextLayoutGuard', () => {
     updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
 
     expect(calls).toBe(1);
+  });
+});
+
+describe('setBitmapTextMissingGlyphGuard', () => {
+  afterEach(() => setBitmapTextMissingGlyphGuard(null));
+
+  it('fires for each missing codepoint during layout', () => {
+    const seen: number[] = [];
+    setBitmapTextMissingGlyphGuard((cp) => seen.push(cp));
+    const source = createTestGlyphSource();
+    updateBitmapText(createBitmapText(source, { text: 'AC' }));
+    expect(seen).toEqual([0x43]);
+  });
+
+  it('stays silent when all codepoints have glyphs', () => {
+    const seen: number[] = [];
+    setBitmapTextMissingGlyphGuard((cp) => seen.push(cp));
+    const source = createTestGlyphSource();
+    updateBitmapText(createBitmapText(source, { text: 'AB' }));
+    expect(seen).toEqual([]);
   });
 });
 
