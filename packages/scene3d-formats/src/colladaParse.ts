@@ -26,6 +26,8 @@ import type {
   ImportDiagnostic,
   Light,
   Matrix4Like,
+  MeshMorph,
+  MorphTarget,
   Scene3DAnimationPath,
   Scene3DDocument,
   Scene3DDocumentAnimationChannel,
@@ -501,6 +503,10 @@ function decodeColladaAnimationsFromRoot(
 export function decodeColladaMorphs(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedMorph[] {
   const root = parseXmlDocument(xml);
   if (!root) return [];
+  return decodeColladaMorphsFromRoot(root, diagnostics);
+}
+
+function decodeColladaMorphsFromRoot(root: XmlElement, diagnostics: ImportDiagnostic[]): ColladaDecodedMorph[] {
   const out: ColladaDecodedMorph[] = [];
   for (const controller of descendants(root, 'controller')) {
     const morph = child(controller, 'morph');
@@ -669,6 +675,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
   );
   const cameraDefinitions = decodeColladaCameraDefinitions(root, diagnostics);
   const geometryIdToMeshIndex = new Map<string, number>();
+  const geometryPositions = new Map<string, number[]>();
   const geometryPrimitiveSymbols = new Map<string, string[]>();
   const sources = new Map<string, number[]>();
   for (const source of descendants(root, 'source')) {
@@ -744,6 +751,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     const geoId = idOf(geometry);
     if (geoId) {
       geometryIdToMeshIndex.set(geoId, document.meshes.length);
+      geometryPositions.set(geoId, pos);
       const primitiveSymbol = primitive.attributes.material;
       if (primitiveSymbol) geometryPrimitiveSymbols.set(geoId, [primitiveSymbol]);
     }
@@ -763,6 +771,10 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
   const controllerMap = new Map<string, ColladaDecodedSkin>();
   for (const skin of decodedSkins) controllerMap.set(skin.controllerId, skin);
 
+  const decodedMorphs = decodeColladaMorphsFromRoot(root, diagnostics);
+  const morphMap = new Map<string, ColladaDecodedMorph>();
+  for (const morph of decodedMorphs) morphMap.set(morph.controllerId, morph);
+
   const decodedAnimChannels = decodeColladaAnimationsFromRoot(root, diagnostics);
   const lightDefinitions = parseColladaLightDefinitions(root, diagnostics);
 
@@ -776,9 +788,11 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     rootTransform,
     geometryIdToMeshIndex,
     cameraDefinitions,
+    geometryPositions,
     geometryPrimitiveSymbols,
     materialIndices,
     controllerMap,
+    morphMap,
     decodedAnimChannels,
     lightDefinitions,
     diagnostics,
@@ -822,9 +836,11 @@ function buildColladaSceneHierarchy(
   rootTransform: readonly number[],
   geometryIdToMeshIndex: ReadonlyMap<string, number>,
   cameraDefinitions: ReadonlyMap<string, ColladaCameraDefinition | null>,
+  geometryPositions: ReadonlyMap<string, number[]>,
   geometryPrimitiveSymbols: ReadonlyMap<string, string[]>,
   materialIndices: ReadonlyMap<string, number>,
   controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
+  morphMap: ReadonlyMap<string, ColladaDecodedMorph>,
   decodedAnimChannels: readonly ColladaDecodedAnimationChannel[],
   lightDefinitions: ReadonlyMap<string, ColladaLightDefinition | null>,
   diagnostics: ImportDiagnostic[],
@@ -907,7 +923,9 @@ function buildColladaSceneHierarchy(
     document,
     deferredControllers,
     controllerMap,
+    morphMap,
     geometryIdToMeshIndex,
+    geometryPositions,
     geometryPrimitiveSymbols,
     nodeIdMap,
     diagnostics,
@@ -1290,14 +1308,18 @@ function resolveColladaSkins(
   document: Scene3DDocument,
   deferred: readonly ColladaDeferredControllerBinding[],
   controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
+  morphMap: ReadonlyMap<string, ColladaDecodedMorph>,
   geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  geometryPositions: ReadonlyMap<string, number[]>,
   geometryPrimitiveSymbols: ReadonlyMap<string, string[]>,
   nodeIdMap: ReadonlyMap<string, number>,
   diagnostics: ImportDiagnostic[],
 ): void {
   for (const binding of deferred) {
     const decoded = controllerMap.get(binding.controllerId);
-    if (!decoded) {
+    const morph = decoded ? morphMap.get(decoded.geometryRef) : morphMap.get(binding.controllerId);
+
+    if (!decoded && !morph) {
       reportImportDiagnostic(
         diagnostics,
         ImportDiagnosticSeverity.Recover,
@@ -1307,51 +1329,97 @@ function resolveColladaSkins(
       );
       continue;
     }
-    let meshIndex = geometryIdToMeshIndex.get(decoded.geometryRef);
+
+    const geometryRef = morph ? morph.baseGeometry : decoded!.geometryRef;
+    let meshIndex = geometryIdToMeshIndex.get(geometryRef);
     if (meshIndex !== undefined) {
       meshIndex = applyColladaMaterialOverrides(
         document,
         meshIndex,
-        geometryPrimitiveSymbols.get(decoded.geometryRef),
+        geometryPrimitiveSymbols.get(geometryRef),
         binding.materialOverrides,
       );
       document.nodes[binding.nodeIndex].mesh = meshIndex;
     }
 
-    const joints: number[] = [];
-    const inverseBind: Scene3DDocumentSkin['inverseBind'] = [];
-    for (let i = 0; i < decoded.jointNames.length; i++) {
-      const jointName = decoded.jointNames[i];
-      const jointIndex = nodeIdMap.get(jointName);
-      if (jointIndex === undefined) {
-        reportImportDiagnostic(
-          diagnostics,
-          ImportDiagnosticSeverity.Recover,
-          'collada.missing-reference',
-          'parseCollada',
-          { element: 'skin joint', joint: jointName },
-        );
-        continue;
-      }
-      joints.push(jointIndex);
-      // COLLADA inverse-bind matrices are row-major; transpose to column-major.
-      const rowMajor = decoded.inverseBindMatrices[i];
-      const m = new Float32Array(16);
-      if (rowMajor && rowMajor.length >= 16) {
-        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) m[c * 4 + r] = rowMajor[r * 4 + c];
-      } else {
-        m[0] = 1;
-        m[5] = 1;
-        m[10] = 1;
-        m[15] = 1;
-      }
-      inverseBind.push({ m });
+    if (morph && meshIndex !== undefined) {
+      const morphResult = buildColladaMeshMorph(morph, geometryPositions, diagnostics);
+      if (morphResult) document.meshes[meshIndex].morph = morphResult;
     }
 
-    const skinIndex = document.skins.length;
-    document.skins.push({ inverseBind, joints });
-    if (meshIndex !== undefined) document.meshes[meshIndex].skin = skinIndex;
+    if (decoded) {
+      const joints: number[] = [];
+      const inverseBind: Scene3DDocumentSkin['inverseBind'] = [];
+      for (let i = 0; i < decoded.jointNames.length; i++) {
+        const jointName = decoded.jointNames[i];
+        const jointIndex = nodeIdMap.get(jointName);
+        if (jointIndex === undefined) {
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Recover,
+            'collada.missing-reference',
+            'parseCollada',
+            { element: 'skin joint', joint: jointName },
+          );
+          continue;
+        }
+        joints.push(jointIndex);
+        // COLLADA inverse-bind matrices are row-major; transpose to column-major.
+        const rowMajor = decoded.inverseBindMatrices[i];
+        const m = new Float32Array(16);
+        if (rowMajor && rowMajor.length >= 16) {
+          for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) m[c * 4 + r] = rowMajor[r * 4 + c];
+        } else {
+          m[0] = 1;
+          m[5] = 1;
+          m[10] = 1;
+          m[15] = 1;
+        }
+        inverseBind.push({ m });
+      }
+
+      const skinIndex = document.skins.length;
+      document.skins.push({ inverseBind, joints });
+      if (meshIndex !== undefined) document.meshes[meshIndex].skin = skinIndex;
+    }
   }
+}
+
+function buildColladaMeshMorph(
+  morph: ColladaDecodedMorph,
+  geometryPositions: ReadonlyMap<string, number[]>,
+  diagnostics: ImportDiagnostic[],
+): MeshMorph | null {
+  const basePos = geometryPositions.get(morph.baseGeometry);
+  if (!basePos) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'collada.missing-reference', 'parseCollada', {
+      element: 'morph base geometry',
+      geometry: morph.baseGeometry,
+    });
+    return null;
+  }
+  const vertexCount = Math.floor(basePos.length / 3);
+  const targets: MorphTarget[] = [];
+  for (const targetId of morph.targets) {
+    const targetPos = geometryPositions.get(targetId);
+    if (!targetPos) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.missing-reference',
+        'parseCollada',
+        { element: 'morph target geometry', geometry: targetId },
+      );
+      continue;
+    }
+    const positionDeltas = new Float32Array(vertexCount * 3);
+    for (let i = 0; i < vertexCount * 3; i++) {
+      positionDeltas[i] = morph.method === 'NORMALIZED' ? (targetPos[i] ?? 0) - (basePos[i] ?? 0) : (targetPos[i] ?? 0);
+    }
+    targets.push({ normalDeltas: null, positionDeltas, tangentDeltas: null });
+  }
+  if (targets.length === 0) return null;
+  return { targets, weights: Float32Array.from(morph.weights.slice(0, targets.length)) };
 }
 
 function resolveColladaAnimations(
