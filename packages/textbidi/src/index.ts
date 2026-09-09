@@ -1,1 +1,8 @@
-export { getBidiRuns, reorderBidiLine, resolveBidiLevels } from './contract';
+export {
+  disableTextBidiGuards,
+  enableTextBidiGuards,
+  explainBidiClassBackend,
+  getBidiRuns,
+  reorderBidiLine,
+  resolveBidiLevels,
+} from './contract';

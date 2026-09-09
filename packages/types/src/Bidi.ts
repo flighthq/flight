@@ -47,6 +47,27 @@ export interface BidiClassBackend extends Entity {
   getBidiClass(codepoint: number): BidiClass;
 }
 
+export type BidiClassBackendKind = 'compact' | 'custom';
+
+// Pull-style description of the class provider selected for a bidi operation. Compact coverage is
+// enumerated because its silent default-L behavior is meaningful; custom-provider coverage is owned by
+// that provider and therefore reported as unknown rather than guessed.
+export interface BidiClassBackendExplanation {
+  backend: BidiClassBackendKind;
+  coverage: 'common-script-ranges' | 'provider-defined';
+  coveredCodePointRanges: BidiCodePointRange[];
+  fallbackClass: BidiClass | null;
+  tableValid: boolean | null;
+}
+
+export interface BidiCodePointRange {
+  end: number;
+  start: number;
+}
+
+// Optional compact-table miss seam installed by enableTextBidiGuards. Null is the production default.
+export type TextBidiGuard = (codepoint: number) => void;
+
 // The paragraph base direction fed to the algorithm. 'ltr'/'rtl' fix the base level (0/1); 'auto'
 // derives it from the first strong character (UAX #9 rules P2/P3) — L → ltr, R/AL → rtl, none → ltr.
 export type BidiDirection = 'ltr' | 'rtl' | 'auto';

@@ -1,5 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BidiClass, BidiClassBackend, EntityConstruction } from '@flighthq/types/contract';
+import type {
+  BidiClass,
+  BidiClassBackend,
+  BidiClassBackendExplanation,
+  BidiCodePointRange,
+  EntityConstruction,
+} from '@flighthq/types/contract';
+
+import { reportTextBidiCompactTableMiss } from './textBidiGuards';
 
 // Builds the compact bundled bidi-class backend: a from-scratch UAX #9 class lookup over a sorted
 // range table (binary search), covering the COMMON scripts — Basic Latin + Latin-1, the combining
@@ -12,7 +20,22 @@ import type { BidiClass, BidiClassBackend, EntityConstruction } from '@flighthq/
 export function createCompactBidiClassBackend(): BidiClassBackend {
   const out = allocateEntity<BidiClassBackend>();
   initializeCompactBidiClassBackend(out);
-  return finishEntity(out);
+  const backend = finishEntity(out);
+  _compactBackends.add(backend);
+  return backend;
+}
+
+/** Describes the selected provider and the coverage boundary Flight can state for it. */
+export function explainBidiClassBackend(bidiClassBackend?: BidiClassBackend): BidiClassBackendExplanation {
+  const backend = bidiClassBackend ?? getBidiClassBackend();
+  const compact = _compactBackends.has(backend);
+  return {
+    backend: compact ? 'compact' : 'custom',
+    coverage: compact ? 'common-script-ranges' : 'provider-defined',
+    coveredCodePointRanges: compact ? getCompactBidiClassCoverageRanges() : [],
+    fallbackClass: compact ? 'L' : null,
+    tableValid: compact ? isCompactBidiClassTableValid() : null,
+  };
 }
 
 // Returns the legacy installed bidi-class backend, lazily creating the compact default the first time
@@ -59,7 +82,28 @@ function getCompactBidiClass(codepoint: number): BidiClass {
       return _classOrder[_ranges[base + 2]];
     }
   }
+  reportTextBidiCompactTableMiss(codepoint);
   return 'L';
+}
+
+function getCompactBidiClassCoverageRanges(): BidiCodePointRange[] {
+  const out: BidiCodePointRange[] = [];
+  for (let i = 0; i < _ranges.length; i += 3) out.push({ start: _ranges[i], end: _ranges[i + 1] });
+  return out;
+}
+
+function isCompactBidiClassTableValid(): boolean {
+  if (_ranges.length % 3 !== 0) return false;
+  let previousEnd = -1;
+  for (let i = 0; i < _ranges.length; i += 3) {
+    const start = _ranges[i];
+    const end = _ranges[i + 1];
+    const ordinal = _ranges[i + 2];
+    if (start > end || start <= previousEnd) return false;
+    if (!Number.isInteger(ordinal) || ordinal < 0 || ordinal >= _classOrder.length) return false;
+    previousEnd = end;
+  }
+  return true;
 }
 
 // Class ordinals used inside the flat range table, so the table is pure numbers (compact, and cheap to
@@ -250,3 +294,5 @@ const _ranges: readonly number[] = [
 ];
 
 const _rangeCount = _ranges.length / 3;
+
+const _compactBackends = new WeakSet<BidiClassBackend>();

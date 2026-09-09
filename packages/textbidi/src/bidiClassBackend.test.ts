@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   createCompactBidiClassBackend,
+  explainBidiClassBackend,
   getBidiClassBackend,
   initializeCompactBidiClassBackend,
   setBidiClassBackend,
@@ -33,6 +34,33 @@ describe('createCompactBidiClassBackend', () => {
   it('resolves uncovered codepoints to the LTR default', () => {
     const backend = createCompactBidiClassBackend();
     expect(backend.getBidiClass(0x4e2d)).toBe('L'); // CJK ideograph, outside the compact table
+  });
+});
+
+describe('explainBidiClassBackend', () => {
+  it('describes the compact fallback and proves its flattened table invariants', () => {
+    const explanation = explainBidiClassBackend(createCompactBidiClassBackend());
+    expect(explanation.backend).toBe('compact');
+    expect(explanation.coverage).toBe('common-script-ranges');
+    expect(explanation.fallbackClass).toBe('L');
+    expect(explanation.tableValid).toBe(true);
+    for (let i = 0; i < explanation.coveredCodePointRanges.length; i++) {
+      const range = explanation.coveredCodePointRanges[i];
+      expect(range.start).toBeLessThanOrEqual(range.end);
+      if (i > 0) expect(range.start).toBeGreaterThan(explanation.coveredCodePointRanges[i - 1].end);
+    }
+  });
+
+  it('does not claim a custom provider coverage boundary', () => {
+    const custom: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
+    const explanation = explainBidiClassBackend(custom);
+    expect(explanation).toEqual({
+      backend: 'custom',
+      coverage: 'provider-defined',
+      coveredCodePointRanges: [],
+      fallbackClass: null,
+      tableValid: null,
+    });
   });
 });
 

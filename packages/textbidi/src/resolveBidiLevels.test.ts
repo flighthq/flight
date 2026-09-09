@@ -206,6 +206,16 @@ describe('resolveBidiLevels', () => {
     expect(levels).toEqual([0, 0, 0, 0, 1, 1, 1, 1]);
   });
 
+  it('resolves both brackets from enclosed opposite-direction text via N0', () => {
+    const levels = Array.from(resolveBidiLevels(`${HEBREW}(${HEBREW})abc`, 'ltr'));
+    expect(levels).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]);
+  });
+
+  it('pairs nested brackets within one isolating run sequence', () => {
+    const levels = Array.from(resolveBidiLevels(`${HEBREW}([abc])${HEBREW}`, 'rtl'));
+    expect(levels).toEqual([1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1]);
+  });
+
   it('resolves an LRO override forcing all content to L (X6)', () => {
     // LTR paragraph. LRO forces the override direction L onto all characters until PDF.
     // "a" + LRO + שלום + PDF + "b": the Hebrew under LRO is overridden to L class.
