@@ -53,6 +53,83 @@ function idOf(element: XmlElement): string | null {
 function numbers(element: XmlElement | undefined): number[] {
   return element?.text.trim().split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite) ?? [];
 }
+interface ColladaDecodedSkin {
+  controllerId: string;
+  jointNames: string[];
+  jointSids: string[];
+  inverseBindMatrices: number[][];
+  influences: Array<Array<{ joint: string; weight: number }>>;
+  bindShapeMatrix: number[];
+}
+/** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
+export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
+  const root = parseXmlDocument(xml);
+  if (!root) return [];
+  const out: ColladaDecodedSkin[] = [];
+  for (const controller of descendants(root, 'controller')) {
+    const skin = child(controller, 'skin');
+    if (!skin || !idOf(controller)) continue;
+    const sourceValues = new Map<string, string[] | number[]>();
+    for (const source of skin.children.filter((e) => e.name === 'source')) {
+      const id = idOf(source);
+      if (!id) continue;
+      const arr = child(source, 'Name_array') ?? child(source, 'IDREF_array') ?? child(source, 'float_array');
+      if (arr)
+        sourceValues.set(id, arr.name === 'float_array' ? numbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean));
+    }
+    const joints = child(skin, 'joints');
+    const jointInput = joints?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'JOINT');
+    const matrixInput = joints?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'INV_BIND_MATRIX');
+    const jointNames =
+      (sourceValues.get(jointInput?.attributes.source?.replace(/^#/, '') ?? '') as string[] | undefined) ?? [];
+    const matrixValues =
+      (sourceValues.get(matrixInput?.attributes.source?.replace(/^#/, '') ?? '') as number[] | undefined) ?? [];
+    const inverseBindMatrices: number[][] = [];
+    for (let i = 0; i + 15 < matrixValues.length; i += 16) inverseBindMatrices.push(matrixValues.slice(i, i + 16));
+    const weights = child(skin, 'vertex_weights');
+    const vcount = numbers(child(weights, 'vcount'));
+    const v = numbers(child(weights, 'v'));
+    const weightInputs = weights?.children.filter((e) => e.name === 'input') ?? [];
+    const jointOffset = Number(weightInputs.find((e) => e.attributes.semantic === 'JOINT')?.attributes.offset ?? 0);
+    const weightOffset = Number(weightInputs.find((e) => e.attributes.semantic === 'WEIGHT')?.attributes.offset ?? 1);
+    const stride = Math.max(1, ...weightInputs.map((e) => Number(e.attributes.offset ?? 0) + 1));
+    const weightSource = sourceValues.get(
+      weightInputs.find((e) => e.attributes.semantic === 'WEIGHT')?.attributes.source?.replace(/^#/, '') ?? '',
+    ) as number[] | undefined;
+    const influences: Array<Array<{ joint: string; weight: number }>> = [];
+    let cursor = 0;
+    for (const count of vcount) {
+      const values: Array<{ joint: string; weight: number }> = [];
+      for (let i = 0; i < count; i++) {
+        const ji = v[cursor + i * stride + jointOffset];
+        const wi = v[cursor + i * stride + weightOffset];
+        if (jointNames[ji] !== undefined && weightSource?.[wi] !== undefined)
+          values.push({ joint: jointNames[ji], weight: weightSource[wi] });
+      }
+      const sum = values.reduce((s, x) => s + x.weight, 0);
+      for (const x of values) x.weight = sum > 0 ? x.weight / sum : 0;
+      influences.push(values);
+      cursor += count * stride;
+    }
+    if (cursor !== v.length)
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.vertex-weight-count-mismatch',
+        'decodeColladaControllers',
+        { controller: idOf(controller)! },
+      );
+    out.push({
+      controllerId: idOf(controller)!,
+      jointNames,
+      jointSids: jointNames.slice(),
+      inverseBindMatrices,
+      influences,
+      bindShapeMatrix: numbers(child(skin, 'bind_shape_matrix')),
+    });
+  }
+  return out;
+}
 
 /** Parses COLLADA metadata, coordinate conventions, and common-profile materials into a format-neutral document. */
 export function parseCollada(xml: string, options?: Readonly<ColladaImportOptions>): ColladaParseResult {

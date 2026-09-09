@@ -1,7 +1,7 @@
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseCollada } from './colladaParse';
+import { decodeColladaControllers, parseCollada } from './colladaParse';
 
 describe('parseCollada', () => {
   it('reads asset metadata and preserves Y-up identity', () => {
@@ -54,5 +54,13 @@ describe('parseCollada', () => {
       vertices[25],
       vertices[26],
     ]).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  });
+  it('decodes skin joint names, inverse binds, and normalized vertex weights', () => {
+    const xml =
+      '<COLLADA><library_controllers><controller id="c"><skin source="#g"><bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix><source id="j"><Name_array>root child</Name_array></source><source id="w"><float_array>1 3</float_array></source><joints><input semantic="JOINT" source="#j"/><input semantic="INV_BIND_MATRIX" source="#m"/></joints><source id="m"><float_array>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array></source><vertex_weights count="1"><input semantic="JOINT" source="#j" offset="0"/><input semantic="WEIGHT" source="#w" offset="1"/><vcount>2</vcount><v>0 0 1 1</v></vertex_weights></skin></controller></library_controllers></COLLADA>';
+    const skins = decodeColladaControllers(xml);
+    expect(skins[0].controllerId).toBe('c');
+    expect(skins[0].jointNames).toEqual(['root', 'child']);
+    expect(skins[0].influences[0].map((x) => x.weight)).toEqual([0.25, 0.75]);
   });
 });
