@@ -1,4 +1,5 @@
 export {
+  parseCollada,
   GltfAnisotropyExtensionHandler,
   GltfClearcoatExtensionHandler,
   GltfEmissiveStrengthExtensionHandler,

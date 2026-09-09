@@ -27,7 +27,8 @@
     { "path": "../shading" },
     { "path": "../skeleton3d" },
     { "path": "../texture" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../xml" }
   ],
   "include": ["src"]
 }

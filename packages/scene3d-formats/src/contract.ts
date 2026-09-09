@@ -1,4 +1,5 @@
 export * from './awd2Parse';
+export * from './colladaParse';
 export * from './gltfParse';
 export { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
 export { GltfClearcoatExtensionHandler } from './gltfClearcoat';
