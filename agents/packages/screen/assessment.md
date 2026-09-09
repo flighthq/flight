@@ -39,4 +39,7 @@ _None._
 
 ## Approved
 
+1. **Implement `getScreenNearestRect` with actual nearest-screen logic** [2026-07-02 · blanket "platform integration suite sweep"]
+2. **Remove structural divider comments in test file** [2026-07-02 · blanket "platform integration suite sweep"]
+
 - [2026-07-02 · blanket "platform integration suite sweep"] `getScreenNearestRect` implementation, test divider removal

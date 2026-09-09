@@ -40,6 +40,8 @@ Parked: cross-package coordination, a larger scope, or waiting on an Open direct
 
 ## Approved
 
+_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
+
 Verified 2026-09-08.
 
 - **Docstring "private" word fixed in `glTestHelper.ts`.** Rephrased to remove inaccurate "private" — render-gl's glTestHelper is publicly exported. One-word fix applied in this verification pass. — from review.md #2.
