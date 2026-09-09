@@ -669,6 +669,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
   );
   const cameraDefinitions = decodeColladaCameraDefinitions(root, diagnostics);
   const geometryIdToMeshIndex = new Map<string, number>();
+  const geometryPrimitiveSymbols = new Map<string, string[]>();
   const sources = new Map<string, number[]>();
   for (const source of descendants(root, 'source')) {
     const id = idOf(source);
@@ -741,7 +742,11 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     }
     const topology = primitive.name === 'lines' ? 'line-list' : 'triangle-list';
     const geoId = idOf(geometry);
-    if (geoId) geometryIdToMeshIndex.set(geoId, document.meshes.length);
+    if (geoId) {
+      geometryIdToMeshIndex.set(geoId, document.meshes.length);
+      const primitiveSymbol = primitive.attributes.material;
+      if (primitiveSymbol) geometryPrimitiveSymbols.set(geoId, [primitiveSymbol]);
+    }
     document.meshes.push({
       geometry: createMeshGeometry({
         indices: Uint32Array.from(indices),
@@ -771,6 +776,8 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     rootTransform,
     geometryIdToMeshIndex,
     cameraDefinitions,
+    geometryPrimitiveSymbols,
+    materialIndices,
     controllerMap,
     decodedAnimChannels,
     lightDefinitions,
@@ -792,6 +799,7 @@ function buildColladaIdMap(library: XmlElement | undefined, elementName: string)
 
 interface ColladaDeferredControllerBinding {
   controllerId: string;
+  materialOverrides: ReadonlyMap<string, number>;
   nodeIndex: number;
   skeletonRoot: string | null;
 }
@@ -814,6 +822,8 @@ function buildColladaSceneHierarchy(
   rootTransform: readonly number[],
   geometryIdToMeshIndex: ReadonlyMap<string, number>,
   cameraDefinitions: ReadonlyMap<string, ColladaCameraDefinition | null>,
+  geometryPrimitiveSymbols: ReadonlyMap<string, string[]>,
+  materialIndices: ReadonlyMap<string, number>,
   controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
   decodedAnimChannels: readonly ColladaDecodedAnimationChannel[],
   lightDefinitions: ReadonlyMap<string, ColladaLightDefinition | null>,
@@ -874,6 +884,8 @@ function buildColladaSceneHierarchy(
         nodeLibrary,
         instanceStack,
         geometryIdToMeshIndex,
+        geometryPrimitiveSymbols,
+        materialIndices,
         nodeIdMap,
         deferredCameras,
         deferredControllers,
@@ -891,7 +903,15 @@ function buildColladaSceneHierarchy(
 
   resolveColladaCameras(document, deferredCameras, cameraDefinitions, rootNodeIndices, diagnostics);
   resolveColladaLights(document, deferredLights, lightDefinitions, rootNodeIndices, diagnostics);
-  resolveColladaSkins(document, deferredControllers, controllerMap, geometryIdToMeshIndex, nodeIdMap, diagnostics);
+  resolveColladaSkins(
+    document,
+    deferredControllers,
+    controllerMap,
+    geometryIdToMeshIndex,
+    geometryPrimitiveSymbols,
+    nodeIdMap,
+    diagnostics,
+  );
   resolveColladaAnimations(document, decodedAnimChannels, nodeIdMap, diagnostics);
 
   const scene: Scene3DDocumentScene = {
@@ -915,6 +935,8 @@ function buildColladaNode(
   nodeLibrary: Map<string, XmlElement>,
   instanceStack: Set<string>,
   geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  geometryPrimitiveSymbols: ReadonlyMap<string, string[]>,
+  materialIndices: ReadonlyMap<string, number>,
   nodeIdMap: Map<string, number>,
   deferredCameras: ColladaDeferredCameraBinding[],
   deferredControllers: ColladaDeferredControllerBinding[],
@@ -949,6 +971,8 @@ function buildColladaNode(
           nodeLibrary,
           instanceStack,
           geometryIdToMeshIndex,
+          geometryPrimitiveSymbols,
+          materialIndices,
           nodeIdMap,
           deferredCameras,
           deferredControllers,
@@ -997,6 +1021,8 @@ function buildColladaNode(
           nodeLibrary,
           instanceStack,
           geometryIdToMeshIndex,
+          geometryPrimitiveSymbols,
+          materialIndices,
           nodeIdMap,
           deferredCameras,
           deferredControllers,
@@ -1020,15 +1046,30 @@ function buildColladaNode(
     } else if (name === 'instance_geometry') {
       const url = childElement.attributes.url;
       if (url?.startsWith('#')) {
-        const meshIndex = geometryIdToMeshIndex.get(url.slice(1));
-        if (meshIndex !== undefined) node.mesh = meshIndex;
+        const geoId = url.slice(1);
+        const meshIndex = geometryIdToMeshIndex.get(geoId);
+        if (meshIndex !== undefined) {
+          node.mesh = applyColladaBindMaterial(
+            document,
+            meshIndex,
+            childElement,
+            geometryPrimitiveSymbols.get(geoId),
+            materialIndices,
+          );
+        }
       }
     } else if (name === 'instance_controller') {
       const url = childElement.attributes.url;
       if (url?.startsWith('#')) {
         const skeletonEl = child(childElement, 'skeleton');
         const skeletonRoot = skeletonEl?.text.trim().replace(/^#/, '') ?? null;
-        deferredControllers.push({ controllerId: url.slice(1), nodeIndex, skeletonRoot });
+        const materialOverrides = parseColladaBindMaterial(childElement, materialIndices);
+        deferredControllers.push({
+          controllerId: url.slice(1),
+          materialOverrides,
+          nodeIndex,
+          skeletonRoot,
+        });
       }
     } else if (name === 'instance_light') {
       const url = childElement.attributes.url;
@@ -1091,9 +1132,6 @@ function resolveColladaCameras(
   }
 }
 
-// Camera entries carry composed placement even though their `node` link remains available for later
-// animation, matching buildGltfCameras. The COLLADA graph is already acyclic here: instance_node cycles
-// were cut while materializing fresh document nodes, so an iterative root walk is sufficient.
 function buildColladaNodeWorldMatrices(
   nodes: readonly Scene3DDocumentNode[],
   rootNodeIndices: readonly number[],
@@ -1183,11 +1221,77 @@ function createColladaLight(definition: Readonly<ColladaLightDefinition>): Light
   });
 }
 
+function parseColladaBindMaterial(
+  instanceElement: XmlElement,
+  materialIndices: ReadonlyMap<string, number>,
+): Map<string, number> {
+  const symbolToIndex = new Map<string, number>();
+  const bindMaterial = child(instanceElement, 'bind_material');
+  if (!bindMaterial) return symbolToIndex;
+  const technique = child(bindMaterial, 'technique_common');
+  if (!technique) return symbolToIndex;
+  for (const inst of children(technique, 'instance_material')) {
+    const symbol = inst.attributes.symbol;
+    const target = inst.attributes.target?.replace(/^#/, '');
+    if (symbol && target) {
+      const materialIndex = materialIndices.get(target);
+      if (materialIndex !== undefined) symbolToIndex.set(symbol, materialIndex);
+    }
+  }
+  return symbolToIndex;
+}
+
+function resolveColladaPrimitiveSymbols(
+  symbols: readonly string[] | undefined,
+  symbolToIndex: ReadonlyMap<string, number>,
+): number[] {
+  if (!symbols || symbolToIndex.size === 0) return [];
+  const resolved: number[] = [];
+  for (const sym of symbols) {
+    const idx = symbolToIndex.get(sym);
+    if (idx !== undefined) resolved.push(idx);
+  }
+  return resolved;
+}
+
+function applyColladaBindMaterial(
+  document: Scene3DDocument,
+  meshIndex: number,
+  instanceElement: XmlElement,
+  primitiveSymbols: readonly string[] | undefined,
+  materialIndices: ReadonlyMap<string, number>,
+): number {
+  const symbolToIndex = parseColladaBindMaterial(instanceElement, materialIndices);
+  return applyColladaMaterialOverrides(document, meshIndex, primitiveSymbols, symbolToIndex);
+}
+
+function applyColladaMaterialOverrides(
+  document: Scene3DDocument,
+  meshIndex: number,
+  primitiveSymbols: readonly string[] | undefined,
+  symbolToIndex: ReadonlyMap<string, number>,
+): number {
+  const resolved = resolveColladaPrimitiveSymbols(primitiveSymbols, symbolToIndex);
+  if (resolved.length === 0) return meshIndex;
+  const mesh = document.meshes[meshIndex];
+  if (mesh.materials.length === 0) {
+    mesh.materials = resolved;
+    return meshIndex;
+  }
+  if (mesh.materials.length === resolved.length && mesh.materials.every((m, i) => m === resolved[i])) {
+    return meshIndex;
+  }
+  const cloneIndex = document.meshes.length;
+  document.meshes.push({ geometry: mesh.geometry, materials: resolved, name: mesh.name, skin: mesh.skin });
+  return cloneIndex;
+}
+
 function resolveColladaSkins(
   document: Scene3DDocument,
   deferred: readonly ColladaDeferredControllerBinding[],
   controllerMap: ReadonlyMap<string, ColladaDecodedSkin>,
   geometryIdToMeshIndex: ReadonlyMap<string, number>,
+  geometryPrimitiveSymbols: ReadonlyMap<string, string[]>,
   nodeIdMap: ReadonlyMap<string, number>,
   diagnostics: ImportDiagnostic[],
 ): void {
@@ -1203,8 +1307,16 @@ function resolveColladaSkins(
       );
       continue;
     }
-    const meshIndex = geometryIdToMeshIndex.get(decoded.geometryRef);
-    if (meshIndex !== undefined) document.nodes[binding.nodeIndex].mesh = meshIndex;
+    let meshIndex = geometryIdToMeshIndex.get(decoded.geometryRef);
+    if (meshIndex !== undefined) {
+      meshIndex = applyColladaMaterialOverrides(
+        document,
+        meshIndex,
+        geometryPrimitiveSymbols.get(decoded.geometryRef),
+        binding.materialOverrides,
+      );
+      document.nodes[binding.nodeIndex].mesh = meshIndex;
+    }
 
     const joints: number[] = [];
     const inverseBind: Scene3DDocumentSkin['inverseBind'] = [];
