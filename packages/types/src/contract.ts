@@ -415,6 +415,7 @@ export * from './LassoSelectionRuntime';
 export * from './Lifecycle';
 export * from './Light';
 export * from './LightLayerMask';
+export * from './LightProbe';
 export * from './LightUnit';
 export * from './PhotometricLightLike';
 export * from './LinearColor';
