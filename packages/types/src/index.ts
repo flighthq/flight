@@ -202,6 +202,7 @@ export * from './Node2D';
 export * from './Node2DAnimationPath';
 export * from './Node2DAnimationTarget';
 export * from './Node2DInteractionSignals';
+export * from './Scene2DPipelineCoverageExplanation';
 export * from './Scene2DRenderBlankReason';
 export * from './Scene2DRenderExplanation';
 export * from './Scene2DKindUsage';
