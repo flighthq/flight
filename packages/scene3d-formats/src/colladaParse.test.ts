@@ -65,15 +65,17 @@ describe('parseCollada', () => {
       expect(skins[0].influences[0].map((x) => x.weight)).toEqual([0.25, 0.75]);
     });
   });
-  it('decodes animation channel targets and interpolation modes', () => {
-    const xml =
-      '<COLLADA><library_animations><animation><source id="t"><float_array>0 1</float_array></source><source id="o"><float_array>0 2</float_array></source><source id="i"><Name_array>LINEAR STEP</Name_array></source><sampler><input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/><input semantic="INTERPOLATION" source="#i"/></sampler><channel source="#s" target="node/rotate.ANGLE"/></animation></library_animations></COLLADA>';
-    const channels = decodeColladaAnimations(xml);
-    expect(channels[0]).toMatchObject({
-      target: 'node/rotate.ANGLE',
-      times: [0, 1],
-      values: [0, 2],
-      interpolation: ['LINEAR', 'STEP'],
+  describe('decodeColladaAnimations', () => {
+    it('decodes animation channel targets and interpolation modes', () => {
+      const xml =
+        '<COLLADA><library_animations><animation><source id="t"><float_array>0 1</float_array></source><source id="o"><float_array>0 2</float_array></source><source id="i"><Name_array>LINEAR STEP</Name_array></source><sampler><input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/><input semantic="INTERPOLATION" source="#i"/></sampler><channel source="#s" target="node/rotate.ANGLE"/></animation></library_animations></COLLADA>';
+      const channels = decodeColladaAnimations(xml);
+      expect(channels[0]).toMatchObject({
+        target: 'node/rotate.ANGLE',
+        times: [0, 1],
+        values: [0, 2],
+        interpolation: ['LINEAR', 'STEP'],
+      });
     });
   });
 });
