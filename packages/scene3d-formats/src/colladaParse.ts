@@ -61,6 +61,79 @@ interface ColladaDecodedSkin {
   influences: Array<Array<{ joint: string; weight: number }>>;
   bindShapeMatrix: number[];
 }
+interface ColladaDecodedAnimationChannel {
+  target: string;
+  times: number[];
+  values: number[];
+  interpolation: string[];
+  inTangents: number[];
+  outTangents: number[];
+}
+/** Internal Arc 6a seam; channel targets remain authored ID/SID paths for later hierarchy binding. */
+export function decodeColladaAnimations(
+  xml: string,
+  diagnostics: ImportDiagnostic[] = [],
+): ColladaDecodedAnimationChannel[] {
+  const root = parseXmlDocument(xml);
+  if (!root) return [];
+  const out: ColladaDecodedAnimationChannel[] = [];
+  for (const animation of descendants(root, 'animation')) {
+    const values = new Map<string, string[] | number[]>();
+    for (const source of animation.children.filter((e) => e.name === 'source')) {
+      const id = idOf(source);
+      const arr = child(source, 'float_array') ?? child(source, 'Name_array');
+      if (id && arr)
+        values.set(id, arr.name === 'float_array' ? numbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean));
+    }
+    const sampler = child(animation, 'sampler');
+    const channel = child(animation, 'channel');
+    if (!sampler || !channel) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.missing-reference',
+        'decodeColladaAnimations',
+        { element: 'sampler/channel' },
+      );
+      continue;
+    }
+    const input = sampler.children.find((e) => e.name === 'input' && e.attributes.semantic === 'INPUT');
+    const output = sampler.children.find((e) => e.name === 'input' && e.attributes.semantic === 'OUTPUT');
+    const interp = sampler.children.find((e) => e.name === 'input' && e.attributes.semantic === 'INTERPOLATION');
+    const times = (values.get(input?.attributes.source?.replace(/^#/, '') ?? '') as number[] | undefined) ?? [];
+    const outputValues = (values.get(output?.attributes.source?.replace(/^#/, '') ?? '') as number[] | undefined) ?? [];
+    const interpolation =
+      (values.get(interp?.attributes.source?.replace(/^#/, '') ?? '') as string[] | undefined) ?? [];
+    for (const mode of interpolation)
+      if (mode !== 'LINEAR' && mode !== 'STEP' && mode !== 'BEZIER')
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'collada.unsupported-interpolation',
+          'decodeColladaAnimations',
+          { interpolation: mode },
+        );
+    if (!times.length || !outputValues.length) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.missing-reference',
+        'decodeColladaAnimations',
+        { element: 'animation source' },
+      );
+      continue;
+    }
+    out.push({
+      target: channel.attributes.target ?? '',
+      times,
+      values: outputValues,
+      interpolation,
+      inTangents: [],
+      outTangents: [],
+    });
+  }
+  return out;
+}
 /** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
 export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
   const root = parseXmlDocument(xml);
