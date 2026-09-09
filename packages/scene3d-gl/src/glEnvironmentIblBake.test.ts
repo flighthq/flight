@@ -1,8 +1,14 @@
-import type { Bitmap, CubeTexture, Environment } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
+import type { Bitmap, CubeTexture, Environment, GlCubeRenderTarget } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
-import { bakeGlEnvironmentIbl, destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
+import {
+  bakeGlEnvironmentCaptureIbl,
+  bakeGlEnvironmentIbl,
+  destroyGlEnvironmentIblBakePrograms,
+} from './glEnvironmentIblBake';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -30,6 +36,31 @@ function dataOnlyEnvironment(size: number): Environment & { environment: CubeTex
   } as unknown as CubeTexture;
   return { environment: cube, intensity: 1 } as Environment & { environment: CubeTexture };
 }
+
+function captureTarget(texture: WebGLTexture): GlCubeRenderTarget {
+  const target = allocateEntity<GlCubeRenderTarget>();
+  initializeGlCubeRenderTarget(target, 4, {} as WebGLFramebuffer, texture, null);
+  return finishEntity(target);
+}
+
+describe('bakeGlEnvironmentCaptureIbl', () => {
+  it('bakes a caller-owned capture texture without retaining it as an owned source cube', () => {
+    const { state, gl } = makeGlScene3DState();
+    const runtime = getGlScene3DRuntime(state);
+    const environment = dataOnlyEnvironment(4);
+    const previousSource = ensureGlEnvironmentSourceCube(state, environment)!;
+    const capturedTexture = { name: 'captured-cube' } as WebGLTexture;
+
+    bakeGlEnvironmentCaptureIbl(state, captureTarget(capturedTexture), 2.5);
+
+    expect(runtime.environmentSourceCube).toBeNull();
+    expect(runtime.environmentSourceTexture).toBeNull();
+    expect(runtime.ibl?.environmentSourceRevision).toBe(runtime.environmentSourceRevision);
+    expect(runtime.ibl?.intensity).toBe(2.5);
+    expect(gl.calls.some((call) => call.name === 'deleteTexture' && call.args[0] === previousSource)).toBe(true);
+    expect(gl.calls.some((call) => call.name === 'bindTexture' && call.args[1] === capturedTexture)).toBe(true);
+  });
+});
 
 describe('bakeGlEnvironmentIbl', () => {
   it('is a no-op leaving runtime.ibl null when the environment has no source cube', () => {

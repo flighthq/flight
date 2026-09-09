@@ -360,11 +360,17 @@ export function makeGlScene3DState(
 
   const runtime = createGlRenderStateRuntime(contextState, pipeline);
   Object.assign(runtime, {
+    clipForms: [],
     currentBlendSignature: null,
     currentFramebuffer: null,
+    currentMaskDepth: 0,
+    currentScissorRect: null,
     currentShader: null,
     currentTextureRealization: null,
+    flushPendingDraws: null,
     renderTargetViewport: null,
+    scissorStack: [],
+    teardowns: [],
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     textureSourcePremultipliedTextureCache: new WeakMap(),
     textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
