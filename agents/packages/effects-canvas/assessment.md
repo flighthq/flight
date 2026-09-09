@@ -47,6 +47,8 @@ The charter is a stub; these are decisions the review/roadmap had to assume past
 
 ## Approved
 
+_None. Approval is the user's verbal gate; nothing frozen yet._
+
 Verified 2026-09-08. Items 1-2 confirmed superseded — the code they target no longer exists.
 
 - **~~Remove dead `cr`/`cg`/`cb` bindings in `canvasSharpenEffect.ts`.~~** Superseded: `canvasSharpenEffect.ts` was deleted in the 2026-07-31 cleanup. No source file, no bindings to remove.

@@ -34,6 +34,8 @@ Parked: needs a charter decision, crosses a package boundary, belongs to another
 
 ## Approved
 
+_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
+
 Verified in current tree 2026-09-08. All four items were already implemented; retirement is a verification pass, not a code change.
 
 - **Cache key includes `letterSpacing`.** `canvasTextShaper.ts:103` keys on `${fontString}\x00${format.letterSpacing ?? 0}\x00${text}`. Verified present. — from review.md §7.
