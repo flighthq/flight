@@ -675,6 +675,10 @@
     },
     {
       "packageName": "interaction",
+      "registrar": "registerQuadBatchHitTest"
+    },
+    {
+      "packageName": "interaction",
       "registrar": "registerShapeHitTest"
     },
     {
@@ -684,6 +688,10 @@
     {
       "packageName": "interaction",
       "registrar": "registerTextHitTest"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerTilemapHitTest"
     },
     {
       "packageName": "layout",
