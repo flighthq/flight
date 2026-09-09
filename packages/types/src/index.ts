@@ -76,6 +76,7 @@ export * from './AnimationSampleAccumulator';
 export * from './AnimationStateMachine';
 export * from './AnimationTrack';
 export * from './AnimationTrackValidationDiagnostic';
+export * from './ColladaParse';
 export * from './AnimatedNormalModifier';
 export * from './App';
 export * from './AppearanceFlags';
