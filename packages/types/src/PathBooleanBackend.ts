@@ -15,7 +15,9 @@ export type PathBooleanContour = readonly number[];
 // through this seam for its self-overlap cleanup. Kept as plain-data-in, plain-data-out (no path or
 // entity types) so a heavier native/wasm kernel can implement the same seam. Result contours use the
 // winding convention that outer boundaries and holes are counter-wound relative to each other, so they
-// rebuild into a single `nonZero` path directly.
+// rebuild into a single `nonZero` path directly. Backends must be re-entrant: a guard or diagnostic
+// callback may initiate another boolean operation before the outer call returns, so implementations must
+// not retain per-call subject, clip, or result state in module globals.
 export interface PathBooleanBackend extends Entity {
   computePathBoolean(
     subject: readonly PathBooleanContour[],

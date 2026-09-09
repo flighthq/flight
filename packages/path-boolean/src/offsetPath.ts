@@ -13,7 +13,12 @@ import { resolvePathRegions } from './resolvePathRegions';
 // clean, hole-correct outline. `delta` is signed against a canonical orientation, so positive always
 // grows regardless of input winding. Over-deflating a region past self-collapse drops it, so the result
 // can be an empty path (no commands).
-export function offsetPath(path: Readonly<Path>, delta: number, options?: Readonly<PathOffsetOptions>): Path {
+export function offsetPath(
+  path: Readonly<Path>,
+  delta: number,
+  options?: Readonly<PathOffsetOptions>,
+  out?: Path,
+): Path {
   const join = options?.join ?? 'miter';
   const end = options?.end ?? 'butt';
   const miterLimit = options?.miterLimit ?? DEFAULT_MITER_LIMIT;
@@ -60,7 +65,7 @@ export function offsetPath(path: Readonly<Path>, delta: number, options?: Readon
   // corner's inner-miter emission overshoots on a feature narrower than 2·|delta|, it dissolves the
   // negatively-wound self-overlap that non-zero fill would have kept; it also merges touching rings and
   // emits a clean, hole-correct outline (empty ring set → empty path).
-  return resolvePathRegions(rawRings, 'positive');
+  return resolvePathRegions(rawRings, 'positive', out);
 }
 
 // Assembles one offset ring for a closed vertex loop by walking its vertices and emitting, at each, the

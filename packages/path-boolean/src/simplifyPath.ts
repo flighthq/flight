@@ -11,8 +11,8 @@ import { resolvePathRegions } from './resolvePathRegions';
 // under `nonZero` but punches an even-odd hole — which is why the fill rule travels with the operation.
 // Returns a fresh polygon-outline `Path` (holes traced counter-wound to their outer ring); empty or fully
 // degenerate input yields an empty path with no commands.
-export function simplifyPath(path: Readonly<Path>, options?: Readonly<PathBooleanOptions>): Path {
+export function simplifyPath(path: Readonly<Path>, options?: Readonly<PathBooleanOptions>, out?: Path): Path {
   const fillRule = options?.fillRule ?? 'nonZero';
   const contours = flattenPath(path, options?.tolerance);
-  return resolvePathRegions(contours, fillRule);
+  return resolvePathRegions(contours, fillRule, out);
 }

@@ -60,6 +60,14 @@ function ringCount(path: Readonly<Path>): number {
 const UNIT_SQUARE = [0, 0, 1, 0, 1, 1, 0, 1];
 
 describe('offsetPath', () => {
+  it('writes into an existing output and is alias-safe', () => {
+    const path = polygonPath([0, 0, 4, 0, 4, 4, 0, 4], true);
+    const result = offsetPath(path, 1, undefined, path);
+
+    expect(result).toBe(path);
+    expect(pathBounds(path)).toEqual({ minX: -1, minY: -1, maxX: 5, maxY: 5 });
+  });
+
   it('inflates a closed square by delta on every side with a miter join', () => {
     const result = offsetPath(polygonPath(UNIT_SQUARE, true), 1);
     const bounds = pathBounds(result);
