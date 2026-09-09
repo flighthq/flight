@@ -1,4 +1,5 @@
 export * from './booleanPaths';
+export * from './explainPathBoolean';
 export * from './martinezKernel';
 export * from './offsetPath';
 export * from './pathBooleanBackend';

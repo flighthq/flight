@@ -65,6 +65,15 @@ const BOWTIE = [0, 0, 2, 2, 2, 0, 0, 2];
 const UNIT_SQUARE = [0, 0, 3, 0, 3, 3, 0, 3];
 
 describe('simplifyPath', () => {
+  it('writes into an existing output and is alias-safe', () => {
+    const path = polygonPath(BOWTIE);
+    const result = simplifyPath(path, undefined, path);
+
+    expect(result).toBe(path);
+    expect(ringCount(path)).toBe(2);
+    expect(pathArea(path)).toBeCloseTo(2, 6);
+  });
+
   it('resolves a self-intersecting bowtie into two triangles', () => {
     const result = simplifyPath(polygonPath(BOWTIE));
     // The crossing splits the quad into two unit triangles meeting at (1, 1); their windings are opposite

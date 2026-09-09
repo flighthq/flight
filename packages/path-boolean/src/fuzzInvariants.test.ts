@@ -105,6 +105,25 @@ function areasClose(a: number, b: number, relative = 1e-3, absolute = 1e-3): boo
 }
 
 describe('fuzz invariants', () => {
+  it('same-winding self-overlap diverges between nonZero and evenOdd', () => {
+    const random = makeRandom(0x51a3e00d);
+    for (let iteration = 0; iteration < 40; iteration++) {
+      const vertices = randomConvexPolygon(random, 5 + (iteration % 8));
+      if (vertices.length < 6) continue;
+      const path = createPath('nonZero');
+      appendPathMoveTo(path, vertices[0], vertices[1]);
+      for (let repeat = 0; repeat < 2; repeat++) {
+        const start = repeat === 0 ? 2 : 0;
+        for (let i = start; i < vertices.length; i += 2) appendPathLineTo(path, vertices[i], vertices[i + 1]);
+      }
+      appendPathClose(path);
+      const nonZero = simplifyPath(path, { fillRule: 'nonZero' });
+      const evenOdd = simplifyPath(path, { fillRule: 'evenOdd' });
+      expect(pathArea(nonZero)).toBeGreaterThan(0);
+      expect(pathArea(evenOdd)).toBeCloseTo(0, 6);
+    }
+  });
+
   it('union is commutative: A ∪ B has the same area and ring count as B ∪ A', () => {
     const random = makeRandom(0x1234abcd);
     for (let iteration = 0; iteration < 40; iteration++) {

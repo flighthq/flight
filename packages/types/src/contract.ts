@@ -509,6 +509,7 @@ export * from './ClippingAttachment2D';
 export * from './PathAttachment2D';
 export * from './PointAttachment2D';
 export * from './PathBooleanBackend';
+export * from './PathBooleanExplanation';
 export * from './PathBooleanFillRule';
 export * from './PathBooleanOperation';
 export * from './PathBooleanOptions';

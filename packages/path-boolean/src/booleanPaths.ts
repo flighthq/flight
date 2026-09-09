@@ -1,7 +1,8 @@
-import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path/contract';
+import { flattenPath } from '@flighthq/path/contract';
 import type { Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types/contract';
 
 import { getPathBooleanBackend } from './pathBooleanBackend';
+import { writePathBooleanContours } from './writePathBooleanContours';
 
 // Runs an arbitrary boolean operation between two paths. `subject` and `clip` are flattened to polygon
 // contours at the option tolerance, combined by the active kernel under the fill rule, and the result
@@ -18,7 +19,7 @@ export function booleanPaths(
   const subjectContours = flattenPath(subject, options?.tolerance);
   const clipContours = flattenPath(clip, options?.tolerance);
   const result = getPathBooleanBackend().computePathBoolean(subjectContours, clipContours, operation, fillRule);
-  return writeContours(result, out);
+  return writePathBooleanContours(result, out);
 }
 
 // Subject minus clip: the region inside `a` and outside `b`. The only non-symmetric operation.
@@ -59,20 +60,4 @@ export function xorPaths(
   options?: Readonly<PathBooleanOptions>,
 ): Path {
   return booleanPaths(a, b, 'xor', out, options);
-}
-
-// Rebuilds kernel result contours into a path via the path builders. The result relies on non-zero fill
-// (holes are traced counter-wound to their outer ring), so the target path is forced to `nonZero`.
-function writeContours(contours: readonly (readonly number[])[], out?: Path): Path {
-  const path = out ?? createPath('nonZero');
-  path.commands.length = 0;
-  path.data.length = 0;
-  path.winding = 'nonZero';
-  for (const ring of contours) {
-    if (ring.length < 6) continue;
-    appendPathMoveTo(path, ring[0], ring[1]);
-    for (let i = 2; i < ring.length; i += 2) appendPathLineTo(path, ring[i], ring[i + 1]);
-    appendPathClose(path);
-  }
-  return path;
 }

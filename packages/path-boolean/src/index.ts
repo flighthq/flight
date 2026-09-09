@@ -1,6 +1,8 @@
 export {
   booleanPaths,
   differencePaths,
+  explainOffsetPath,
+  explainSimplifyPath,
   intersectPaths,
   offsetPath,
   simplifyPath,

@@ -1,7 +1,8 @@
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flattenPath } from '@flighthq/path/contract';
+import { flattenPath } from '@flighthq/path/contract';
 import type { Path, PathBooleanContour, PathBooleanOptions } from '@flighthq/types/contract';
 
 import { getPathBooleanBackend } from './pathBooleanBackend';
+import { writePathBooleanContours } from './writePathBooleanContours';
 
 // N-way union of a list of paths into one clean filled-region outline. Every path is flattened to polygon
 // contours at the option tolerance and the whole set is folded together in a single union pass through the
@@ -25,17 +26,7 @@ export function unionAllPaths(
       ? EMPTY_CONTOURS
       : getPathBooleanBackend().computePathBoolean(contours, EMPTY_CONTOURS, 'union', fillRule);
 
-  const path = out ?? createPath('nonZero');
-  path.commands.length = 0;
-  path.data.length = 0;
-  path.winding = 'nonZero';
-  for (const ring of result) {
-    if (ring.length < 6) continue;
-    appendPathMoveTo(path, ring[0], ring[1]);
-    for (let i = 2; i < ring.length; i += 2) appendPathLineTo(path, ring[i], ring[i + 1]);
-    appendPathClose(path);
-  }
-  return path;
+  return writePathBooleanContours(result, out);
 }
 
 const EMPTY_CONTOURS: readonly PathBooleanContour[] = [];
