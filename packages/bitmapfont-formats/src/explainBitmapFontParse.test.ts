@@ -1,3 +1,4 @@
+import type { TextureAtlas } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainBitmapFontParse } from './explainBitmapFontParse';
@@ -51,7 +52,7 @@ describe('explainBitmapFontParse', () => {
       pages: ['font.png'],
     });
     const result = explainBitmapFontParse(json, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => ({}) as TextureAtlas,
     });
     expect(result.success).toBe(true);
     expect(result.reason).toBe('ok');
@@ -66,7 +67,7 @@ describe('explainBitmapFontParse', () => {
       pages: ['font.png'],
     });
     const result = explainBitmapFontParse(json, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => ({}) as TextureAtlas,
     });
     expect(result.detectedFormat).toBe('json');
     expect(result.charCount).toBe(1);
@@ -83,7 +84,7 @@ describe('explainBitmapFontParse', () => {
       ],
     });
     const result = explainBitmapFontParse(json, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => ({}) as TextureAtlas,
     });
     expect(result.kerningCount).toBe(2);
   });
@@ -109,7 +110,7 @@ describe('explainBitmapFontParse', () => {
       'char id=65 x=0 y=0 width=10 height=10 xoffset=0 yoffset=0 xadvance=10 page=0',
     ].join('\n');
     const result = explainBitmapFontParse(fnt, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => ({}) as TextureAtlas,
     });
     expect(result.detectedFormat).toBe('fnt');
     expect(result.success).toBe(true);
@@ -126,7 +127,7 @@ describe('explainBitmapFontParse', () => {
       '</font>',
     ].join('\n');
     const result = explainBitmapFontParse(xml, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => ({}) as TextureAtlas,
     });
     expect(result.detectedFormat).toBe('xml');
     expect(result.success).toBe(true);
