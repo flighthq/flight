@@ -935,6 +935,115 @@ describe('parseCollada', () => {
     expect(document.animations).toHaveLength(0);
     expect(diagnostics.some((d) => d.kind === 'collada.animation-target-unresolved')).toBe(true);
   });
+  it('resolves morph instance_controller to MeshMorph with position deltas', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_geometries>',
+      '<geometry id="base"><mesh>',
+      '<source id="bp"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="bv"><input semantic="POSITION" source="#bp"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#bv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '<geometry id="target1"><mesh>',
+      '<source id="tp"><float_array>0 1 0 1 1 0 0 2 0</float_array></source>',
+      '<vertices id="tv"><input semantic="POSITION" source="#tp"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#tv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '</library_geometries>',
+      '<library_controllers>',
+      '<controller id="morph1"><morph source="#base" method="NORMALIZED">',
+      '<source id="mt"><IDREF_array>target1</IDREF_array></source>',
+      '<source id="mw"><float_array>0.5</float_array></source>',
+      '<targets>',
+      '<input semantic="MORPH_TARGET" source="#mt"/>',
+      '<input semantic="MORPH_WEIGHT" source="#mw"/>',
+      '</targets>',
+      '</morph></controller>',
+      '</library_controllers>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="n" name="MorphNode"><instance_controller url="#morph1"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.nodes[0].mesh).toBe(0);
+    const morph = document.meshes[0].morph;
+    expect(morph).toBeDefined();
+    expect(morph!.targets).toHaveLength(1);
+    expect(morph!.weights).toEqual(Float32Array.from([0.5]));
+    // NORMALIZED: delta = target - base. base=(0,0,0)(1,0,0)(0,1,0), target=(0,1,0)(1,1,0)(0,2,0)
+    const deltas = morph!.targets[0].positionDeltas;
+    expect(deltas).toHaveLength(9);
+    near(deltas[0], 0);
+    near(deltas[1], 1);
+    near(deltas[2], 0);
+    near(deltas[3], 0);
+    near(deltas[4], 1);
+    near(deltas[5], 0);
+    near(deltas[6], 0);
+    near(deltas[7], 1);
+    near(deltas[8], 0);
+    expect(morph!.targets[0].normalDeltas).toBeNull();
+    expect(morph!.targets[0].tangentDeltas).toBeNull();
+  });
+
+  it('resolves skin-wrapping-morph controller chain', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_geometries>',
+      '<geometry id="base"><mesh>',
+      '<source id="bp"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="bv"><input semantic="POSITION" source="#bp"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#bv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '<geometry id="tgt"><mesh>',
+      '<source id="tp"><float_array>0 0 1 1 0 1 0 1 1</float_array></source>',
+      '<vertices id="tv"><input semantic="POSITION" source="#tp"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#tv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '</library_geometries>',
+      '<library_controllers>',
+      '<controller id="morph1"><morph source="#base" method="NORMALIZED">',
+      '<source id="mt"><IDREF_array>tgt</IDREF_array></source>',
+      '<source id="mw"><float_array>1</float_array></source>',
+      '<targets>',
+      '<input semantic="MORPH_TARGET" source="#mt"/>',
+      '<input semantic="MORPH_WEIGHT" source="#mw"/>',
+      '</targets>',
+      '</morph></controller>',
+      '<controller id="skin1"><skin source="#morph1">',
+      '<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>',
+      '<source id="jn"><Name_array>Bone</Name_array></source>',
+      '<source id="wt"><float_array>1</float_array></source>',
+      '<source id="ibm"><float_array>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array></source>',
+      '<joints><input semantic="JOINT" source="#jn"/><input semantic="INV_BIND_MATRIX" source="#ibm"/></joints>',
+      '<vertex_weights count="1"><input semantic="JOINT" source="#jn" offset="0"/>',
+      '<input semantic="WEIGHT" source="#wt" offset="1"/>',
+      '<vcount>1</vcount><v>0 0</v></vertex_weights>',
+      '</skin></controller>',
+      '</library_controllers>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Bone" name="Bone"/>',
+      '<node id="n" name="Skinned"><instance_controller url="#skin1"><skeleton>#Bone</skeleton></instance_controller></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.nodes[1].mesh).toBe(0);
+    expect(document.skins).toHaveLength(1);
+    expect(document.meshes[0].skin).toBe(0);
+    const morph = document.meshes[0].morph;
+    expect(morph).toBeDefined();
+    expect(morph!.targets).toHaveLength(1);
+    // NORMALIZED: delta z = 1-0 = 1 for all vertices
+    const deltas = morph!.targets[0].positionDeltas;
+    near(deltas[2], 1);
+    near(deltas[5], 1);
+    near(deltas[8], 1);
+  });
+
   describe('decodeColladaMorphs', () => {
     it('decodes morph target IDs, weights, and method', () => {
       const xml =
