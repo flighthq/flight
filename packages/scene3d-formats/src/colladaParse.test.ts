@@ -304,6 +304,120 @@ describe('parseCollada', () => {
     expect(document.nodes).toHaveLength(0);
   });
 
+  it('imports and binds a perspective camera', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_cameras><camera id="view" name="Main View"><optics><technique_common><perspective>',
+      '<yfov>45</yfov><aspect_ratio>1.5</aspect_ratio><znear>0.25</znear><zfar>400</zfar>',
+      '</perspective></technique_common></optics></camera></library_cameras>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="camera-node"><translate>1 2 3</translate><instance_camera url="#view"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { diagnostics, document } = parseCollada(xml);
+    expect(diagnostics).toEqual([]);
+    expect(document.cameras).toHaveLength(1);
+    expect(document.cameras[0]).toMatchObject({ far: 400, name: 'Main View', near: 0.25, node: 0 });
+    expect(document.cameras[0].projection).toMatchObject({ aspect: 1.5, kind: 'perspective' });
+    if (document.cameras[0].projection.kind === 'perspective') {
+      near(document.cameras[0].projection.fovY, Math.PI / 4);
+    }
+    expect(document.cameras[0].transform.position).toMatchObject({ x: 1, y: 2, z: 3 });
+  });
+
+  it('imports and binds an orthographic camera', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_cameras><camera id="view"><optics><technique_common><orthographic>',
+      '<xmag>8</xmag><ymag>6</ymag><znear>0</znear><zfar>50</zfar>',
+      '</orthographic></technique_common></optics></camera></library_cameras>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="camera-node"><instance_camera url="#view"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { diagnostics, document } = parseCollada(xml);
+    expect(diagnostics).toEqual([]);
+    expect(document.cameras).toHaveLength(1);
+    expect(document.cameras[0]).toMatchObject({
+      far: 50,
+      near: 0,
+      node: 0,
+      projection: { halfHeight: 6, halfWidth: 8, kind: 'orthographic' },
+    });
+  });
+
+  it('reports a dropped instance_camera with a missing definition', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="camera-node"><instance_camera url="#missing"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { diagnostics, document } = parseCollada(xml);
+    expect(document.cameras).toEqual([]);
+    expect(diagnostics).toContainEqual({
+      detail: { element: 'instance_camera', url: '#missing' },
+      kind: 'collada.missing-reference',
+      origin: 'parseCollada',
+      severity: ImportDiagnosticSeverity.Drop,
+    });
+  });
+
+  it('composes the camera transform through its visual-scene hierarchy', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_cameras><camera id="view"><optics><technique_common><perspective>',
+      '<yfov>50</yfov><znear>0.5</znear><zfar>500</zfar>',
+      '</perspective></technique_common></optics></camera></library_cameras>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="parent"><translate>2 3 4</translate>',
+      '<node id="camera-node"><translate>5 6 7</translate><instance_camera url="#view"/></node>',
+      '</node></visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { diagnostics, document } = parseCollada(xml);
+    expect(diagnostics).toEqual([]);
+    expect(document.nodes[0].children).toEqual([1]);
+    expect(document.cameras[0].node).toBe(1);
+    expect(document.cameras[0].transform.position).toMatchObject({ x: 7, y: 9, z: 11 });
+  });
+
+  it('recovers incomplete perspective definitions with documented defaults', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_cameras><camera id="view"><optics><technique_common><perspective>',
+      '<znear>0.5</znear>',
+      '</perspective></technique_common></optics></camera></library_cameras>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="camera-node"><instance_camera url="#view"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { diagnostics, document } = parseCollada(xml);
+    expect(document.cameras[0]).toMatchObject({
+      far: 1000,
+      near: 0.5,
+      projection: { aspect: 1, kind: 'perspective' },
+    });
+    if (document.cameras[0].projection.kind === 'perspective') {
+      near(document.cameras[0].projection.fovY, Math.PI / 3);
+    }
+    expect(diagnostics).toContainEqual({
+      detail: { camera: 'view', fields: 'yfov,zfar', projection: 'perspective' },
+      kind: 'collada.camera-incomplete',
+      origin: 'parseCollada',
+      severity: ImportDiagnosticSeverity.Recover,
+    });
+  });
+
   it('binds instance_geometry to a mesh', () => {
     const xml = [
       '<COLLADA>',
