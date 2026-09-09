@@ -230,6 +230,23 @@ describe('sampleLightProbeGrid', () => {
     expect(out[0]).toBeCloseTo(15, 5);
   });
 
+  it('keeps a degenerate INNER axis from pulling in the neighbouring plane it indexes into', () => {
+    // Resolution 2x1x2. The degenerate y axis still carries a stride of nx, so its +1 corner is not
+    // out of range — it names a real probe in the z=1 plane. That corner weighs exactly 0, which is
+    // why it cannot contribute; a resolution-1 axis on the OUTSIDE (2x1x1) would only ever index past
+    // the end and so cannot distinguish a zero weight from a bounds check.
+    const probes = [taggedProbe(10), taggedProbe(20), taggedProbe(30), taggedProbe(40)];
+    const bounds = { max: createVector3(1, 1, 1), min: createVector3(0, 0, 0) };
+    const grid = createLightProbeGrid(probes, bounds, createVector3(2, 1, 2));
+    const out = new Float32Array(LIGHT_PROBE_SH_FLOATS);
+
+    expect(sampleLightProbeGrid(out, createVector3(0.5, 0.5, 0), grid)).toBe(true);
+    expect(out[0]).toBeCloseTo(15, 5);
+
+    expect(sampleLightProbeGrid(out, createVector3(0.5, 0.5, 1), grid)).toBe(true);
+    expect(out[0]).toBeCloseTo(35, 5);
+  });
+
   it('drops a disabled probe and renormalizes, so switching one off does not dim its neighbours', () => {
     const bounds = { max: createVector3(1, 1, 1), min: createVector3(0, 0, 0) };
     const probes = [taggedProbe(10), taggedProbe(20)];
