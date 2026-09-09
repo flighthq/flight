@@ -111,6 +111,7 @@ export * from './BitmapFontGlyphExplanation';
 export * from './BitmapFontParseExplanation';
 export * from './BitmapFontRecord';
 export * from './BitmapText';
+export * from './BitmapTextMissingGlyphs';
 export * from './BlendEffect';
 export * from './BlendMode';
 export * from './BlinnPhongMaterial';

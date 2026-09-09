@@ -35,6 +35,10 @@ export function setBitmapTextLayoutGuard(guard: ((reason: string, attempts: numb
   _layoutGuard = guard;
 }
 
+export function setBitmapTextMissingGlyphGuard(guard: ((codepoint: number) => void) | null): void {
+  _missingGlyphGuard = guard;
+}
+
 // Lays out `bitmapText`'s current string and rewrites its `BitmapTextPage` quads: one quad per visible
 // glyph, partitioned by the glyph's atlas page into one page's quads, positioned by the glyph source's
 // advances and kerning, broken on explicit newlines and (when `wrapWidth` is set) at word boundaries,
@@ -129,7 +133,10 @@ function buildBitmapTextWords(glyphSource: GlyphSource, paragraph: string, lette
       continue;
     }
     const entry = glyphSource.getGlyphEntry(codepoint);
-    if (entry === null) continue;
+    if (entry === null) {
+      _missingGlyphGuard?.(codepoint);
+      continue;
+    }
     if (previousCodepoint >= 0) pen += glyphSource.getGlyphKerning(previousCodepoint, codepoint);
     if (entry.width > 0 && entry.height > 0) glyphs.push({ codepoint, entry, penWithinWord: pen });
     pen += entry.advance + letterSpacing;
@@ -428,3 +435,4 @@ function isWhitespace(codepoint: number): boolean {
 const CARRIAGE_RETURN = 0x0d;
 
 let _layoutGuard: ((reason: string, attempts: number) => void) | null = null;
+let _missingGlyphGuard: ((codepoint: number) => void) | null = null;
