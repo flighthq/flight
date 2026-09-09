@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/net": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
