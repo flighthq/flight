@@ -17,7 +17,7 @@ type SavedGlPassState = {
   clipForms: ('rect' | 'contour')[];
   currentMaskDepth: number;
   framebuffer: WebGLFramebuffer | null;
-  renderTarget: GlRenderTarget | null;
+  renderTarget: ReturnType<typeof getGlRenderStateRuntime>['currentRenderTarget'];
   renderTargetViewport: GlViewportRect | null;
   renderTransform2D: Matrix | null;
   scissorRect: GlScissorRect | null;
@@ -160,7 +160,9 @@ export function endGlRenderPass(state: GlRenderState): void {
   if (stack.length === 0) _passStack.delete(gl);
 
   const runtime = getGlRenderStateRuntime(state);
-  const ended = runtime.currentRenderTarget ?? null;
+  // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
+  // target being ended here is always the 2D/MSAA target beginGlRenderPass installed.
+  const ended = runtime.currentRenderTarget as GlRenderTarget | null;
   restoreGlPassState(state, saved.ownerState);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, saved.previousState.framebuffer);

@@ -1,6 +1,7 @@
 export * from './glBackground';
 export * from './glCompressedTexture';
 export * from './glContext';
+export * from './glCubeRenderTarget';
 export * from './glDraw';
 export * from './glExternalTexture';
 export * from './glElement';
