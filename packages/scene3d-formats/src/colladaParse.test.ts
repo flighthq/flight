@@ -1044,6 +1044,182 @@ describe('parseCollada', () => {
     near(deltas[8], 1);
   });
 
+  it('exercises all five instance kinds with morph, skin, camera, light, material override, and animation', () => {
+    const xml = [
+      '<COLLADA>',
+
+      '<library_images><image id="tex"><init_from>albedo.png</init_from></image></library_images>',
+      '<library_effects>',
+      '<effect id="fxA"><profile_COMMON><newparam sid="s"><surface><init_from>tex</init_from></surface></newparam><newparam sid="sm"><sampler2D><source>s</source></sampler2D></newparam><technique><lambert><diffuse><texture texture="sm"/></diffuse></lambert></technique></profile_COMMON></effect>',
+      '<effect id="fxB"><profile_COMMON><newparam sid="s"><surface><init_from>tex</init_from></surface></newparam><newparam sid="sm"><sampler2D><source>s</source></sampler2D></newparam><technique><lambert><diffuse><texture texture="sm"/></diffuse></lambert></technique></profile_COMMON></effect>',
+      '</library_effects>',
+      '<library_materials>',
+      '<material id="MatA"><instance_effect url="#fxA"/></material>',
+      '<material id="MatB"><instance_effect url="#fxB"/></material>',
+      '</library_materials>',
+
+      '<library_geometries>',
+      '<geometry id="staticGeo"><mesh>',
+      '<source id="sp"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="sv"><input semantic="POSITION" source="#sp"/></vertices>',
+      '<triangles count="1" material="Sym"><input semantic="VERTEX" source="#sv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '<geometry id="baseGeo"><mesh>',
+      '<source id="bp"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="bv"><input semantic="POSITION" source="#bp"/></vertices>',
+      '<triangles count="1" material="Sym"><input semantic="VERTEX" source="#bv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '<geometry id="morphTarget"><mesh>',
+      '<source id="tp"><float_array>0 0 1 1 0 1 0 1 1</float_array></source>',
+      '<vertices id="tv"><input semantic="POSITION" source="#tp"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#tv" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry>',
+      '</library_geometries>',
+
+      '<library_controllers>',
+      '<controller id="morph1"><morph source="#baseGeo" method="NORMALIZED">',
+      '<source id="mt"><IDREF_array>morphTarget</IDREF_array></source>',
+      '<source id="mw"><float_array>0.75</float_array></source>',
+      '<targets><input semantic="MORPH_TARGET" source="#mt"/><input semantic="MORPH_WEIGHT" source="#mw"/></targets>',
+      '</morph></controller>',
+      '<controller id="skin1"><skin source="#morph1">',
+      '<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>',
+      '<source id="jn"><Name_array>JointA JointB</Name_array></source>',
+      '<source id="wt"><float_array>1 0</float_array></source>',
+      '<source id="ibm"><float_array>',
+      '1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 ',
+      '1 0 0 3  0 1 0 0  0 0 1 0  0 0 0 1',
+      '</float_array></source>',
+      '<joints><input semantic="JOINT" source="#jn"/><input semantic="INV_BIND_MATRIX" source="#ibm"/></joints>',
+      '<vertex_weights count="1"><input semantic="JOINT" source="#jn" offset="0"/>',
+      '<input semantic="WEIGHT" source="#wt" offset="1"/>',
+      '<vcount>1</vcount><v>0 0</v></vertex_weights>',
+      '</skin></controller>',
+      '</library_controllers>',
+
+      '<library_cameras>',
+      '<camera id="cam1" name="MainCam"><optics><technique_common><perspective>',
+      '<yfov>60</yfov><znear>0.1</znear><zfar>100</zfar>',
+      '</perspective></technique_common></optics></camera>',
+      '</library_cameras>',
+
+      '<library_lights>',
+      '<light id="lamp" name="Sun"><technique_common><directional><color>1 1 1</color></directional></technique_common></light>',
+      '</library_lights>',
+
+      '<library_animations><animation>',
+      '<source id="at"><float_array>0 1</float_array></source>',
+      '<source id="ao"><float_array>0 0 0 5 0 0</float_array></source>',
+      '<source id="ai"><Name_array>LINEAR LINEAR</Name_array></source>',
+      '<sampler id="as"><input semantic="INPUT" source="#at"/><input semantic="OUTPUT" source="#ao"/><input semantic="INTERPOLATION" source="#ai"/></sampler>',
+      '<channel source="#as" target="JointA/translate"/>',
+      '</animation></library_animations>',
+
+      '<library_nodes>',
+      '<node id="shared" name="SharedProp"><translate>10 0 0</translate></node>',
+      '</library_nodes>',
+
+      '<library_visual_scenes><visual_scene id="vs">',
+
+      '<node id="JointA" name="JointA"><translate>0 2 0</translate>',
+      '<node id="JointB" name="JointB"/>',
+      '</node>',
+
+      '<node id="staticNode" name="Static">',
+      '<instance_geometry url="#staticGeo">',
+      '<bind_material><technique_common><instance_material symbol="Sym" target="#MatA"/></technique_common></bind_material>',
+      '</instance_geometry>',
+      '</node>',
+
+      '<node id="skinnedNode" name="Skinned">',
+      '<instance_controller url="#skin1"><skeleton>#JointA</skeleton>',
+      '<bind_material><technique_common><instance_material symbol="Sym" target="#MatB"/></technique_common></bind_material>',
+      '</instance_controller>',
+      '</node>',
+
+      '<node id="camNode" name="CamNode"><translate>0 5 10</translate>',
+      '<instance_camera url="#cam1"/>',
+      '</node>',
+
+      '<node id="lightNode" name="LightNode"><translate>0 10 0</translate>',
+      '<instance_light url="#lamp"/>',
+      '</node>',
+
+      '<node id="refHost" name="RefHost">',
+      '<instance_node url="#shared"/>',
+      '</node>',
+
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+
+    const { document, diagnostics } = parseCollada(xml);
+    const errors = diagnostics.filter((d) => d.severity === 'Reject' || d.severity === 'Drop');
+    expect(errors).toEqual([]);
+
+    // instance_geometry: staticNode gets mesh 0 with MatA override
+    const staticIdx = document.nodes.findIndex((n) => n.name === 'Static');
+    expect(staticIdx).toBeGreaterThanOrEqual(0);
+    expect(document.nodes[staticIdx].mesh).toBe(0);
+    expect(document.meshes[0].materials).toEqual([0]);
+
+    // instance_controller: skinnedNode gets mesh with skin + morph + MatB override
+    const skinnedIdx = document.nodes.findIndex((n) => n.name === 'Skinned');
+    expect(skinnedIdx).toBeGreaterThanOrEqual(0);
+    const skinnedMesh = document.nodes[skinnedIdx].mesh!;
+    expect(skinnedMesh).toBeDefined();
+    const mesh = document.meshes[skinnedMesh];
+    expect(mesh.materials).toEqual([1]);
+    expect(mesh.skin).toBe(0);
+    expect(document.skins).toHaveLength(1);
+    expect(document.skins[0].joints).toHaveLength(2);
+    const morph = mesh.morph;
+    expect(morph).toBeDefined();
+    expect(morph!.targets).toHaveLength(1);
+    expect(morph!.weights).toEqual(Float32Array.from([0.75]));
+    near(morph!.targets[0].positionDeltas[2], 1);
+    near(morph!.targets[0].positionDeltas[5], 1);
+    near(morph!.targets[0].positionDeltas[8], 1);
+    // Second joint inverse bind: row-major [1,0,0,3,...] → column-major m[12]=3
+    expect(document.skins[0].inverseBind[1].m[12]).toBe(3);
+
+    // instance_camera: bound to camNode with position
+    expect(document.cameras).toHaveLength(1);
+    const cam = document.cameras[0];
+    expect(cam.name).toBe('MainCam');
+    const camNodeIdx = document.nodes.findIndex((n) => n.name === 'CamNode');
+    expect(cam.node).toBe(camNodeIdx);
+    near(cam.transform.position.y, 5);
+    near(cam.transform.position.z, 10);
+
+    // instance_light: bound to lightNode
+    expect(document.lights).toHaveLength(1);
+    const light = document.lights[0];
+    expect(light.name).toBe('Sun');
+    const lightNodeIdx = document.nodes.findIndex((n) => n.name === 'LightNode');
+    expect(light.node).toBe(lightNodeIdx);
+    expect(light.descriptor.kind).toBe(DirectionalLightKind);
+    near(light.transform.position.y, 10);
+
+    // instance_node: RefHost contains SharedProp as child
+    const refHostIdx = document.nodes.findIndex((n) => n.name === 'RefHost');
+    expect(refHostIdx).toBeGreaterThanOrEqual(0);
+    expect(document.nodes[refHostIdx].children).toHaveLength(1);
+    const sharedIdx = document.nodes[refHostIdx].children[0];
+    expect(document.nodes[sharedIdx].name).toBe('SharedProp');
+    near(document.nodes[sharedIdx].transform.position.x, 10);
+
+    // animation: translate channel targets JointA
+    expect(document.animations).toHaveLength(1);
+    const anim = document.animations[0];
+    expect(anim.channels).toHaveLength(1);
+    const jointAIdx = document.nodes.findIndex((n) => n.name === 'JointA');
+    expect(anim.channels[0].node).toBe(jointAIdx);
+    expect(anim.channels[0].path).toBe('Translation');
+    expect(anim.duration).toBe(1);
+  });
+
   describe('decodeColladaMorphs', () => {
     it('decodes morph target IDs, weights, and method', () => {
       const xml =
