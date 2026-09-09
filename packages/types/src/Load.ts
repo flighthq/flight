@@ -3,7 +3,7 @@ export interface LoadProgress {
   readonly url: string;
   readonly loaded: number;
   readonly total: number;
-  readonly phase: string;
+  readonly phase: 'download' | 'upload';
 }
 export interface LoadOptions {
   readonly signal?: AbortSignal;
