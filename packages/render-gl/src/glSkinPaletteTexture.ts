@@ -48,9 +48,8 @@ export function uploadGlSkinPaletteTexture(
   const width = jointCount * texelsPerJoint;
   gl.bindTexture(gl.TEXTURE_2D, palette.texture);
 
-  // Mesa llvmpipe silently drops texSubImage2D writes to RGBA32F textures wider than 1 texel
-  // (getError returns 0, but readback is zeros). texImage2D is reliable across all drivers and
-  // negligible cost for palette-sized textures, so use it unconditionally.
+  // texSubImage2D for RGBA32F full-width replacement has produced silent data loss on at least one
+  // driver (no GL error, readback zeros). texImage2D is negligible cost for palette-sized textures.
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
   if (jointCount > palette.jointCapacity) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
