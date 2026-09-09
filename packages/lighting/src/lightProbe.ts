@@ -149,8 +149,8 @@ export function sampleLightProbeGrid(
   const y = axisCoordinate(position.y, grid.bounds.min.y, grid.bounds.max.y, ny);
   const z = axisCoordinate(position.z, grid.bounds.min.z, grid.bounds.max.z, nz);
   // At the very top of an axis the floor IS the last probe index and the fraction is exactly 0, so the
-  // far corner at +1 — which would be out of range — is dropped by the zero-weight test below before
-  // any index is formed from it. That test, not a clamp here, is what keeps the corner pair in range.
+  // far corner at +1 can be past the end. That index is formed but never dereferenced into a value:
+  // the `probe === undefined` test below is what keeps an out-of-range corner harmless.
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
   const z0 = Math.floor(z);
@@ -165,10 +165,11 @@ export function sampleLightProbeGrid(
     const cy = (corner >> 1) & 1;
     const cz = (corner >> 2) & 1;
     const weight = (cx === 1 ? fx : 1 - fx) * (cy === 1 ? fy : 1 - fy) * (cz === 1 ? fz : 1 - fz);
-    // Skipping zero-weight corners is also what makes a resolution-1 axis safe: that axis pins its
-    // fraction to 0, so its far corner weighs nothing and is dropped before an index is ever formed
-    // from it. On such an axis the +1 corner would not even be out of range — with a stride of 1 it
-    // would silently name the neighbour along the NEXT axis — so the bail has to come first.
+    // A fast path, not a correctness guard. On an axis of resolution 1 — or exactly at a corner —
+    // most of the eight corners weigh nothing, and on a DEGENERATE INNER axis the +1 corner is not
+    // even out of range: with that axis contributing a stride of its own, the index names a real
+    // probe in the neighbouring plane. Reading it anyway would still be harmless, because a zero
+    // weight adds zero and leaves `totalWeight` alone; skipping just avoids the work.
     if (weight === 0) continue;
     const probe = grid.probes[x0 + cx + (y0 + cy) * nx + (z0 + cz) * nx * ny];
     if (probe === undefined || !probe.enabled) continue;
