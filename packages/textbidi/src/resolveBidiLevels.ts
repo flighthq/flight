@@ -10,10 +10,8 @@ import { getBidiClassBackend } from './bidiClassBackend';
 // X5a–X6a directional isolates (LRI/RLI/FSI/PDI with the overflow/valid isolate counters), X9 (the
 // explicit formatting characters and BN are removed from weak/neutral resolution — retained here as BN
 // so they keep a level for reordering), X10/BD13 (isolating run sequences with sos/eos), W1–W7 (weak
-// types), N1–N2 (neutral runs), and I1–I2 (implicit levels), then L1 (reset separators and trailing
-// whitespace to the paragraph level). N0 (the BD16 paired-bracket rule) is DEFERRED — mirrored
-// brackets in mixed text resolve as plain neutrals (N1/N2), not paired to their content's direction;
-// the full-coverage flight-rs backend / a later pass owns BD16. L2 visual reordering lives in
+// types), N0/BD16 (paired brackets), N1–N2 (neutral runs), and I1–I2 (implicit levels), then L1
+// (reset separators and trailing whitespace to the paragraph level). L2 visual reordering lives in
 // reorderBidiLine.
 //
 // Astral characters occupy two UTF-16 code units; both units are assigned the code point's class and
@@ -31,12 +29,15 @@ export function resolveBidiLevels(
   if (length === 0) return levels;
 
   const backend = bidiClassBackend ?? getBidiClassBackend();
+  const codepoints: number[] = new Array(length);
   const original: BidiClass[] = new Array(length);
   for (let i = 0; i < length; i++) {
     const codepoint = text.codePointAt(i) as number;
     const cls = backend.getBidiClass(codepoint);
+    codepoints[i] = codepoint;
     original[i] = cls;
     if (codepoint > 0xffff) {
+      codepoints[i + 1] = codepoint;
       original[i + 1] = cls; // trailing surrogate shares the class so both units resolve alike
       i++;
     }
@@ -54,7 +55,15 @@ export function resolveBidiLevels(
   const working = original.slice();
   const levelArray = new Array<number>(length);
   applyExplicitLevels(original, working, levelArray, matchingPdi, paragraphLevel);
-  resolveIsolatingRunSequences(original, working, levelArray, matchingPdi, matchingInitiator, paragraphLevel);
+  resolveIsolatingRunSequences(
+    codepoints,
+    original,
+    working,
+    levelArray,
+    matchingPdi,
+    matchingInitiator,
+    paragraphLevel,
+  );
   applyLineReset(original, levelArray, paragraphLevel);
 
   for (let i = 0; i < length; i++) levels[i] = levelArray[i];
@@ -215,6 +224,7 @@ function applyExplicitLevels(
 // across matching isolate initiator/PDI pairs), compute each sequence's sos/eos boundary types, and
 // resolve its weak (W1–W7), neutral (N1–N2), and implicit (I1–I2) levels.
 function resolveIsolatingRunSequences(
+  codepoints: readonly number[],
   original: readonly BidiClass[],
   working: BidiClass[],
   levelArray: number[],
@@ -271,13 +281,25 @@ function resolveIsolatingRunSequences(
       }
     }
 
-    resolveSequence(original, working, levelArray, kept, sequence, keptStart, keptEnd, matchingPdi, paragraphLevel);
+    resolveSequence(
+      codepoints,
+      original,
+      working,
+      levelArray,
+      kept,
+      sequence,
+      keptStart,
+      keptEnd,
+      matchingPdi,
+      paragraphLevel,
+    );
   }
 }
 
 // Resolves one isolating run sequence in place: computes sos/eos, runs W1–W7 / N1–N2 / I1–I2 over the
 // sequence's characters in logical order, and writes the final implicit levels into `levelArray`.
 function resolveSequence(
+  codepoints: readonly number[],
   original: readonly BidiClass[],
   working: BidiClass[],
   levelArray: number[],
@@ -363,10 +385,15 @@ function resolveSequence(
     else if (c === 'EN' && strong === 'L') ty[k] = 'L';
   }
 
+  // N0/BD16: paired brackets inherit a direction from their enclosed strong text as one unit. This
+  // runs after weak resolution and before the general neutral pass, exactly where EN/AN have their
+  // directional meaning but ordinary ON runs have not yet been collapsed by N1/N2.
+  const embeddingDir: BidiClass = seqLevel % 2 === 1 ? 'R' : 'L';
+  resolvePairedBrackets(codepoints, sequence, ty, embeddingDir, sos);
+
   // N1: a run of neutral/isolate-formatting characters between two characters of the same direction
   // (L, or R with EN/AN counting as R) takes that direction. N2: any remainder takes the embedding
-  // direction. (N0 bracket pairing is deferred — see resolveBidiLevels.)
-  const embeddingDir: BidiClass = seqLevel % 2 === 1 ? 'R' : 'L';
+  // direction.
   for (let k = 0; k < len; ) {
     if (isNeutralOrIsolate(ty[k])) {
       let j = k;
@@ -394,6 +421,79 @@ function resolveSequence(
     }
     levelArray[sequence[k]] = lvl;
   }
+}
+
+function resolvePairedBrackets(
+  codepoints: readonly number[],
+  sequence: readonly number[],
+  types: BidiClass[],
+  embeddingDirection: BidiClass,
+  sos: BidiClass,
+): void {
+  const stack: Array<{ close: number; position: number }> = [];
+  const pairs: Array<{ close: number; open: number }> = [];
+  for (let i = 0; i < sequence.length; i++) {
+    if (types[i] !== 'ON') continue;
+    const codepoint = codepoints[sequence[i]];
+    const closing = getBidiBracketClosing(codepoint);
+    if (closing !== -1) {
+      if (stack.length === 63) break;
+      stack.push({ close: closing, position: i });
+      continue;
+    }
+    for (let s = stack.length - 1; s >= 0; s--) {
+      if (stack[s].close !== codepoint) continue;
+      pairs.push({ open: stack[s].position, close: i });
+      stack.length = s;
+      break;
+    }
+  }
+
+  pairs.sort((a, b) => a.open - b.open);
+  const oppositeDirection: BidiClass = embeddingDirection === 'L' ? 'R' : 'L';
+  for (const pair of pairs) {
+    let containsEmbeddingDirection = false;
+    let containsOppositeDirection = false;
+    for (let i = pair.open + 1; i < pair.close; i++) {
+      const direction = strongBidiDirection(types[i]);
+      if (direction === embeddingDirection) {
+        containsEmbeddingDirection = true;
+        break;
+      }
+      if (direction === oppositeDirection) containsOppositeDirection = true;
+    }
+
+    let resolved: BidiClass | null = null;
+    if (containsEmbeddingDirection) {
+      resolved = embeddingDirection;
+    } else if (containsOppositeDirection) {
+      let precedingDirection = strongBidiDirection(sos) as BidiClass;
+      for (let i = pair.open - 1; i >= 0; i--) {
+        const direction = strongBidiDirection(types[i]);
+        if (direction === null) continue;
+        precedingDirection = direction;
+        break;
+      }
+      resolved = precedingDirection === oppositeDirection ? oppositeDirection : embeddingDirection;
+    }
+    if (resolved !== null) {
+      types[pair.open] = resolved;
+      types[pair.close] = resolved;
+    }
+  }
+}
+
+function getBidiBracketClosing(codepoint: number): number {
+  for (let i = 0; i < bidiBracketPairs.length; i += 2) {
+    if (bidiBracketPairs[i] === codepoint) return bidiBracketPairs[i + 1];
+  }
+  return -1;
+}
+
+function strongBidiDirection(type: BidiClass): BidiClass | null {
+  if (type === 'L') return 'L';
+  if (type === 'R' || type === 'EN' || type === 'AN') return 'R';
+  return null;
 }
 
 // L1: reset the level of segment/paragraph separators, and of any whitespace / isolate-formatting /
@@ -449,3 +549,18 @@ function nextEven(level: number): number {
 function nextOdd(level: number): number {
   return (level + 1) | 1;
 }
+
+// Unicode paired-bracket facts needed by BD16. Keeping the table independent of the class backend lets
+// a full-coverage provider participate in N0 without growing its interface; N0 consults entries only
+// when that provider classifies the character as ON.
+const bidiBracketPairs: readonly number[] = [
+  0x0028, 0x0029, 0x005b, 0x005d, 0x007b, 0x007d, 0x0f3a, 0x0f3b, 0x0f3c, 0x0f3d, 0x169b, 0x169c, 0x2045, 0x2046,
+  0x207d, 0x207e, 0x208d, 0x208e, 0x2308, 0x2309, 0x230a, 0x230b, 0x2329, 0x232a, 0x2768, 0x2769, 0x276a, 0x276b,
+  0x276c, 0x276d, 0x276e, 0x276f, 0x2770, 0x2771, 0x2772, 0x2773, 0x2774, 0x2775, 0x27c5, 0x27c6, 0x27e6, 0x27e7,
+  0x27e8, 0x27e9, 0x27ea, 0x27eb, 0x27ec, 0x27ed, 0x27ee, 0x27ef, 0x2983, 0x2984, 0x2985, 0x2986, 0x2987, 0x2988,
+  0x2989, 0x298a, 0x298b, 0x298c, 0x298d, 0x2990, 0x298e, 0x298f, 0x2991, 0x2992, 0x2993, 0x2994, 0x2995, 0x2996,
+  0x2997, 0x2998, 0x29d8, 0x29d9, 0x29da, 0x29db, 0x29fc, 0x29fd, 0x2e22, 0x2e23, 0x2e24, 0x2e25, 0x2e26, 0x2e27,
+  0x2e28, 0x2e29, 0x3008, 0x3009, 0x300a, 0x300b, 0x300c, 0x300d, 0x300e, 0x300f, 0x3010, 0x3011, 0x3014, 0x3015,
+  0x3016, 0x3017, 0x3018, 0x3019, 0x301a, 0x301b, 0xfe59, 0xfe5a, 0xfe5b, 0xfe5c, 0xfe5d, 0xfe5e, 0xff08, 0xff09,
+  0xff3b, 0xff3d, 0xff5b, 0xff5d, 0xff5f, 0xff60, 0xff62, 0xff63,
+];
