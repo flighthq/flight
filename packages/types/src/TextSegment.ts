@@ -34,3 +34,15 @@ export interface TextSegmentRange {
 export interface TextSegmenterBackend extends Entity {
   segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[];
 }
+
+export type TextSegmenterBackendKind = 'custom' | 'web-intl';
+
+// Pull-style description of the selected provider and whether its runtime primitive can answer now.
+export interface TextSegmenterBackendExplanation {
+  available: boolean;
+  backend: TextSegmenterBackendKind;
+  intlSegmenterAvailable: boolean;
+}
+
+// Optional missing-Intl seam installed by enableTextSegmentGuards. Null is the production default.
+export type TextSegmentGuard = () => void;

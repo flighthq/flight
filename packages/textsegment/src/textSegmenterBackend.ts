@@ -5,7 +5,10 @@ import type {
   TextSegment,
   TextSegmentGranularity,
   TextSegmenterBackend,
+  TextSegmenterBackendExplanation,
 } from '@flighthq/types/contract';
+
+import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
 // Builds the default web backend: a wrapper over the browser-native Intl.Segmenter. It ships no
 // Unicode tables — the engine already carries them — so the common path costs nothing in bundle
@@ -22,6 +25,18 @@ export function createWebTextSegmenterBackend(): TextSegmenterBackend {
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object; callers that omit a host receive it as the final fallback.
 export const webTextSegmenterBackend: TextSegmenterBackend = createWebTextSegmenterBackend();
+
+/** Describes which provider an operation would use and whether Intl.Segmenter is present. */
+export function explainTextSegmenterBackend(host?: HasTextSegmenter): TextSegmenterBackendExplanation {
+  const backend = getTextSegmenterBackend(host);
+  const web = backend === webTextSegmenterBackend;
+  const intlSegmenterAvailable = hasIntlSegmenter();
+  return {
+    available: !web || intlSegmenterAvailable,
+    backend: web ? 'web-intl' : 'custom',
+    intlSegmenterAvailable,
+  };
+}
 
 // Returns the explicit host's provider when supplied, then the legacy installed backend, and
 // finally the bundled web provider. The explicit dependency always wins, so independent callers
@@ -54,7 +69,10 @@ const _segmenterCache = new Map<string, Intl.Segmenter>();
 const _segmenterCacheCapacity = 64;
 
 function getCachedSegmenter(locale: string | undefined, granularity: TextSegmentGranularity): Intl.Segmenter | null {
-  if (typeof Intl === 'undefined' || typeof Intl.Segmenter === 'undefined') return null;
+  if (!hasIntlSegmenter()) {
+    reportTextSegmenterUnavailable();
+    return null;
+  }
   const key = `${locale ?? ''}|${granularity}`;
   const existing = _segmenterCache.get(key);
   if (existing !== undefined) return existing;
@@ -66,6 +84,10 @@ function getCachedSegmenter(locale: string | undefined, granularity: TextSegment
   }
   _segmenterCache.set(key, built);
   return built;
+}
+
+function hasIntlSegmenter(): boolean {
+  return typeof Intl !== 'undefined' && typeof Intl.Segmenter !== 'undefined';
 }
 
 function segmentWithIntlSegmenter(

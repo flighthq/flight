@@ -1,15 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HasTextSegmenter, TextSegmenterBackend } from '@flighthq/types/contract';
+import { vi } from 'vitest';
 
 import {
   getNextGraphemeBoundary,
+  getNextSentenceBoundary,
   getNextWordBoundary,
   getPreviousGraphemeBoundary,
+  getPreviousSentenceBoundary,
   getPreviousWordBoundary,
   getWordRangeAt,
 } from './textSegmentBoundary';
-import { setTextSegmenterBackend } from './textSegmenterBackend';
+import { setTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend';
 
 afterEach(() => setTextSegmenterBackend(null));
 
@@ -32,6 +35,23 @@ describe('getNextGraphemeBoundary', () => {
   it('clamps at text.length', () => {
     expect(getNextGraphemeBoundary(EMOJI_TEXT, EMOJI_LEN)).toBe(EMOJI_LEN);
     expect(getNextGraphemeBoundary(EMOJI_TEXT, 999)).toBe(EMOJI_LEN);
+  });
+});
+
+describe('getNextSentenceBoundary', () => {
+  it('advances to the next sentence start', () => {
+    expect(getNextSentenceBoundary('First. Second!', 0)).toBe(7);
+  });
+
+  it('clamps at text.length', () => {
+    expect(getNextSentenceBoundary('First.', 99)).toBe(6);
+  });
+
+  it('stops the bundled iterator without materializing backend TextSegment records', () => {
+    const segment = vi.spyOn(webTextSegmenterBackend, 'segment');
+    expect(getNextSentenceBoundary('First. Second!', 0)).toBe(7);
+    expect(segment).not.toHaveBeenCalled();
+    segment.mockRestore();
   });
 });
 
@@ -58,6 +78,16 @@ describe('getPreviousGraphemeBoundary', () => {
 
   it('steps back from the end onto the last cluster start', () => {
     expect(getPreviousGraphemeBoundary(EMOJI_TEXT, EMOJI_LEN)).toBe(B_START);
+  });
+});
+
+describe('getPreviousSentenceBoundary', () => {
+  it('steps back to the current sentence start', () => {
+    expect(getPreviousSentenceBoundary('First. Second!', 14)).toBe(7);
+  });
+
+  it('clamps at zero', () => {
+    expect(getPreviousSentenceBoundary('First.', -1)).toBe(0);
   });
 });
 
