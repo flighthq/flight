@@ -29,11 +29,11 @@ export function initializeGlSkinPaletteTexture(out: EntityConstruction<GlSkinPal
 }
 
 // Uploads a joint-matrix palette into the data texture and binds it. `jointMatrices` is the flat
-// column-major palette (16 floats per joint), `jointCount` how many joints it holds. Grows the texture
-// storage (reallocating, updating `palette.jointCapacity`) only when the palette exceeds the current
-// capacity; otherwise it writes the row in place with texSubImage2D. Leaves the palette texture bound
-// on TEXTURE_2D of the active texture unit (the caller selects the unit and sets the sampler uniform).
-// Reads `jointMatrices`/`jointCount` before any allocation, so it is safe against an aliased struct.
+// column-major palette (16 floats per joint), `jointCount` how many joints it holds. Always uploads
+// via texImage2D; texture parameters are set once when capacity grows. Leaves the palette texture
+// bound on TEXTURE_2D of the active texture unit (the caller selects the unit and sets the sampler
+// uniform). Reads `jointMatrices`/`jointCount` before any allocation, so it is safe against an
+// aliased struct.
 export function uploadGlSkinPaletteTexture(
   gl: GlContext,
   palette: GlSkinPaletteTexture,
@@ -48,17 +48,15 @@ export function uploadGlSkinPaletteTexture(
   const width = jointCount * texelsPerJoint;
   gl.bindTexture(gl.TEXTURE_2D, palette.texture);
 
-  // The palette must not be filtered or wrapped: texelFetch reads an exact texel, and NEAREST +
-  // CLAMP_TO_EDGE keep a driver from ever sampling a neighbor. Set once storage exists (on first
-  // upload and every reallocation), which is exactly when the capacity grows below.
+  // Mesa llvmpipe silently drops texSubImage2D writes to RGBA32F textures wider than 1 texel
+  // (getError returns 0, but readback is zeros). texImage2D is reliable across all drivers and
+  // negligible cost for palette-sized textures, so use it unconditionally.
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
   if (jointCount > palette.jointCapacity) {
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     palette.jointCapacity = jointCount;
-  } else {
-    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, 1, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
   }
 }
