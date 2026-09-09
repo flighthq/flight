@@ -1,3 +1,4 @@
+import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -116,7 +117,7 @@ describe('parseBitmapFontBinary', () => {
       pages: [{ file: 'font.png', id: 0 }],
     });
     const font = parseBitmapFontBinary(bytes, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => createTextureAtlas(),
     });
     expect(font).not.toBe(null);
     expect(font!.glyphs.has(65)).toBe(true);
@@ -135,7 +136,7 @@ describe('parseBitmapFontBinary', () => {
       pages: [{ file: 'font.png', id: 0 }],
     });
     const font = parseBitmapFontBinary(bytes, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => createTextureAtlas(),
     });
     expect(font).not.toBe(null);
     expect(font!.kerning.size).toBe(1);
@@ -154,7 +155,7 @@ describe('parseBitmapFontBinary', () => {
       ],
     });
     const font = parseBitmapFontBinary(bytes, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => createTextureAtlas(),
     });
     expect(font).not.toBe(null);
     expect(font!.pages).toHaveLength(2);
@@ -176,7 +177,7 @@ describe('parseBitmapFontBinary', () => {
       pages: [{ file: 'font.png', id: 0 }],
     });
     const font = parseBitmapFontBinary(bytes, {
-      resolvePage: () => ({ texture: null as never }),
+      resolvePage: () => createTextureAtlas(),
     });
     expect(font).not.toBe(null);
     const glyph = font!.glyphs.get(65)!;
