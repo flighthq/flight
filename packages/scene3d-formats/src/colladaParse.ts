@@ -95,6 +95,13 @@ interface ColladaDecodedAnimationChannel {
   inTangents: number[];
   outTangents: number[];
 }
+interface ColladaDecodedMorph {
+  controllerId: string;
+  baseGeometry: string;
+  method: 'RELATIVE' | 'NORMALIZED';
+  targets: string[];
+  weights: number[];
+}
 /** Internal Arc 6a seam; channel targets remain authored ID/SID paths for later hierarchy binding. */
 export function decodeColladaAnimations(
   xml: string,
@@ -103,6 +110,12 @@ export function decodeColladaAnimations(
   const root = parseXmlDocument(xml);
   if (!root) return [];
   return decodeColladaAnimationsFromRoot(root, diagnostics);
+}
+/** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
+export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
+  const root = parseXmlDocument(xml);
+  if (!root) return [];
+  return decodeColladaControllersFromRoot(root, diagnostics);
 }
 
 function decodeColladaAnimationsFromRoot(
@@ -167,11 +180,54 @@ function decodeColladaAnimationsFromRoot(
   }
   return out;
 }
-/** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
-export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
+/** Internal morph-controller seam for later binding to MeshMorph/document nodes. */
+export function decodeColladaMorphs(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedMorph[] {
   const root = parseXmlDocument(xml);
   if (!root) return [];
-  return decodeColladaControllersFromRoot(root, diagnostics);
+  const out: ColladaDecodedMorph[] = [];
+  for (const controller of descendants(root, 'controller')) {
+    const morph = child(controller, 'morph');
+    if (!morph || !idOf(controller)) continue;
+    const method = morph.attributes.method === 'NORMALIZED' ? 'NORMALIZED' : 'RELATIVE';
+    if (morph.attributes.method && morph.attributes.method !== 'RELATIVE' && morph.attributes.method !== 'NORMALIZED')
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'collada.unsupported-morph-method',
+        'decodeColladaMorphs',
+        { method: morph.attributes.method },
+      );
+    const targets = child(morph, 'targets');
+    const targetInput = targets?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'MORPH_TARGET');
+    const weightInput = targets?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'MORPH_WEIGHT');
+    const source = (ref: string | undefined, name: string) =>
+      descendants(morph, 'source')
+        .find((e) => idOf(e) === ref?.replace(/^#/, ''))
+        ?.children.find((e) => e.name === name)
+        ?.text.trim()
+        .split(/\s+/)
+        .filter(Boolean) ?? [];
+    const targetIds = source(targetInput?.attributes.source, 'IDREF_array');
+    const weights = source(weightInput?.attributes.source, 'float_array').map(Number).filter(Number.isFinite);
+    if (!targetIds.length || !weights.length) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'collada.missing-reference',
+        'decodeColladaMorphs',
+        { controller: idOf(controller)! },
+      );
+      continue;
+    }
+    out.push({
+      controllerId: idOf(controller)!,
+      baseGeometry: morph.attributes.source?.replace(/^#/, '') ?? '',
+      method,
+      targets: targetIds,
+      weights: weights.slice(0, targetIds.length),
+    });
+  }
+  return out;
 }
 
 function decodeColladaControllersFromRoot(root: XmlElement, diagnostics: ImportDiagnostic[]): ColladaDecodedSkin[] {
