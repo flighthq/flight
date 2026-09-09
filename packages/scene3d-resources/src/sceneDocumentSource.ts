@@ -1,12 +1,5 @@
-import { sendNetRequest } from '@flighthq/net/contract';
-import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  HasNetHttp,
-  NetProgress,
-  NetRequestOptions,
-  Scene3DDocument,
-  Scene3DDocumentLoadOptions,
-} from '@flighthq/types/contract';
+import { loadBytes, loadText } from '@flighthq/loader/contract';
+import type { HasNetHttp, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
@@ -25,13 +18,7 @@ export async function loadScene3DDocumentBytesFromUrl(
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Uint8Array | null> {
-  const response = await sendNetRequest(
-    host,
-    { method: 'GET', responseType: 'arraybuffer', url },
-    createScene3DDocumentNetRequestOptions(url, options),
-  );
-  if (!response.ok || !(response.body instanceof ArrayBuffer)) return null;
-  return new Uint8Array(response.body);
+  return loadBytes(host, url, options ? { signal: options.signal, progress: options.progress } : undefined);
 }
 
 // Fetches a scene file's text from a URL through the active @flighthq/net backend (responseType 'text'),
@@ -42,13 +29,7 @@ export async function loadScene3DDocumentTextFromUrl(
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<string | null> {
-  const response = await sendNetRequest(
-    host,
-    { method: 'GET', responseType: 'text', url },
-    createScene3DDocumentNetRequestOptions(url, options),
-  );
-  if (!response.ok || typeof response.body !== 'string') return null;
-  return response.body;
+  return loadText(host, url, options ? { signal: options.signal, progress: options.progress } : undefined);
 }
 
 // Carries the loaded model's directory onto relative external image references emitted by formats whose
@@ -61,21 +42,4 @@ export function setScene3DDocumentResourceBasePathFromUrl(document: Scene3DDocum
       resource.basePath = basePath;
     }
   }
-}
-
-function createScene3DDocumentNetRequestOptions(
-  url: string,
-  options?: Readonly<Scene3DDocumentLoadOptions>,
-): NetRequestOptions | undefined {
-  if (options === undefined) return undefined;
-  const out: NetRequestOptions = { signal: options.signal };
-  const outputProgress = options.progress;
-  if (outputProgress !== undefined) {
-    const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
-    connectSignal(progress, (event) => {
-      emitSignal(outputProgress, { loaded: event.loaded, phase: event.phase, total: event.total, url });
-    });
-    out.progress = progress;
-  }
-  return out;
 }

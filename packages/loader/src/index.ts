@@ -1,4 +1,6 @@
 export {
+  loadBytes,
+  loadText,
   cancelResourceLoad,
   createResourceLoader,
   disposeResourceLoader,
