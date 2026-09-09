@@ -1,8 +1,35 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import type { GlContext, Environment, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, Environment, GlCubeRenderTarget, GlRenderState } from '@flighthq/types/contract';
 
-import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
+import {
+  destroyGlEnvironmentSourceCube,
+  ensureGlEnvironmentSourceCube,
+  getGlCubeFaceTarget,
+} from './glEnvironmentCube';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
+
+// Bakes a backend-native environment capture into the same split-sum IBL resources used by
+// bakeGlEnvironmentIbl. A GlCubeRenderTarget cannot honestly be wrapped as Flight's cross-backend
+// Texture — it is already a GL handle with caller-owned lifetime — so this explicit bridge is the
+// wiring point for subsequent drawGlScene3D calls. Scene3DLightsLike continues to carry the direct
+// analytic lights; the baked environment is state-scoped, as the existing PBR bind expects.
+export function bakeGlEnvironmentCaptureIbl(
+  state: GlRenderState,
+  target: Readonly<GlCubeRenderTarget>,
+  intensity = 1,
+): void {
+  const runtime = getGlScene3DRuntime(state);
+  if (runtime.environmentSourceCube !== null) {
+    destroyGlEnvironmentSourceCube(state);
+  } else {
+    runtime.environmentSourceCubeColorSpace = 'linear';
+    runtime.environmentSourceCubeFaceVersions = [];
+    runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
+    runtime.environmentSourceTexture = null;
+    runtime.environmentSourceTextureVersion = -1;
+  }
+  bakeGlEnvironmentIblFromSource(state, target.texture, intensity);
+}
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set —
 // a diffuse irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF
@@ -18,12 +45,16 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   const sourceCube = ensureGlEnvironmentSourceCube(state, environment);
   if (sourceCube === null) return;
 
+  bakeGlEnvironmentIblFromSource(state, sourceCube, environment.intensity);
+}
+
+function bakeGlEnvironmentIblFromSource(state: GlRenderState, sourceCube: WebGLTexture, intensity: number): void {
   const gl = state.gl;
   gl.getExtension('EXT_color_buffer_float');
   gl.getExtension('OES_texture_float_linear');
   const runtime = getGlScene3DRuntime(state);
   if (runtime.ibl?.environmentSourceRevision === runtime.environmentSourceRevision) {
-    runtime.ibl.intensity = environment.intensity;
+    runtime.ibl.intensity = intensity;
     return;
   }
 
@@ -68,7 +99,7 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   runtime.ibl = {
     brdfLut,
     environmentSourceRevision: runtime.environmentSourceRevision,
-    intensity: environment.intensity,
+    intensity,
     irradianceCube,
     prefilteredCube,
     prefilteredMipCount,

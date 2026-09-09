@@ -274,6 +274,7 @@ export * from './GlCustomMaterialShaderSource';
 export * from './WgpuCustomMaterialShaderSource';
 export * from './GlDebugProgram';
 export * from './GlDepthFuncKind';
+export * from './GlEnvironmentCaptureOptions';
 export * from './GlFramebufferStatusKind';
 export * from './GlFullscreenProgram';
 export * from './GlitchEffect';

@@ -17,6 +17,7 @@ export * from './extendedPbrGlMeshMaterialRenderer';
 export * from './glClassicPrelude';
 export * from './glDebugPrelude';
 export * from './glEnvironmentCube';
+export * from './glEnvironmentCapture';
 export * from './glEnvironmentIblBake';
 export * from './glEnvironmentSkybox';
 export * from './glLitProgram';
