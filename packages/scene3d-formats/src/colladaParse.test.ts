@@ -1,4 +1,13 @@
-import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import { packLinearToColor } from '@flighthq/color/contract';
+import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/types/contract';
+import {
+  AmbientLightKind,
+  DirectionalLightKind,
+  ImportDiagnosticSeverity,
+  Node3DKind,
+  PointLightKind,
+  SpotLightKind,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { decodeColladaAnimations, decodeColladaControllers, decodeColladaMorphs, parseCollada } from './colladaParse';
@@ -41,6 +50,136 @@ describe('parseCollada', () => {
     const result = parseCollada('<COLLADA><instance_geometry/></COLLADA>');
     expect(result.diagnostics[0].kind).toBe('collada.missing-reference');
   });
+
+  it('imports ambient, directional, point, and spot technique_common lights', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_lights>',
+      '<light id="ambient" name="Fill"><technique_common><ambient><color>0.25 0.5 0.75</color></ambient></technique_common></light>',
+      '<light id="directional" name="Sun"><technique_common><directional><color>2 1 0.5</color></directional></technique_common></light>',
+      '<light id="point" name="Bulb"><technique_common><point><color>1 1 1</color><constant_attenuation>0</constant_attenuation><quadratic_attenuation>0.25</quadratic_attenuation></point></technique_common></light>',
+      '<light id="spot" name="Stage"><technique_common><spot><color>1 1 1</color><constant_attenuation>0</constant_attenuation><linear_attenuation>0.5</linear_attenuation><falloff_angle>60</falloff_angle><falloff_exponent>3</falloff_exponent></spot></technique_common></light>',
+      '</library_lights>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node><instance_light url="#ambient"/></node>',
+      '<node><instance_light url="#directional"/></node>',
+      '<node><instance_light url="#point"/></node>',
+      '<node><instance_light url="#spot"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(diagnostics).toEqual([]);
+    expect(document.lights).toHaveLength(4);
+
+    expect(document.lights[0]).toMatchObject({ name: 'Fill', node: 0 });
+    expect(document.lights[0].descriptor).toMatchObject({
+      color: packLinearToColor([0.25, 0.5, 0.75, 1]),
+      intensity: 1,
+      kind: AmbientLightKind,
+    });
+
+    const directional = document.lights[1].descriptor as DirectionalLight;
+    expect(document.lights[1]).toMatchObject({ name: 'Sun', node: 1 });
+    expect(directional).toMatchObject({
+      color: packLinearToColor([1, 0.5, 0.25, 1]),
+      direction: { x: 0, y: 0, z: -1 },
+      intensity: 2,
+      kind: DirectionalLightKind,
+    });
+
+    const point = document.lights[2].descriptor as PointLight;
+    expect(document.lights[2]).toMatchObject({ name: 'Bulb', node: 2 });
+    expect(point).toMatchObject({ decay: 2, intensity: 4, kind: PointLightKind, range: -1 });
+    expect(point.position).toMatchObject({ x: 0, y: 0, z: 0 });
+
+    const spot = document.lights[3].descriptor as SpotLight;
+    expect(document.lights[3]).toMatchObject({ name: 'Stage', node: 3 });
+    expect(spot).toMatchObject({
+      decay: 1,
+      direction: { x: 0, y: 0, z: -1 },
+      innerConeCos: 1,
+      intensity: 2,
+      kind: SpotLightKind,
+      range: -1,
+      spotBlend: 0.75,
+    });
+    expect(spot.outerConeCos).toBeCloseTo(Math.cos(Math.PI / 6));
+  });
+
+  it('binds each instance_light to its hierarchy node after root-axis conversion', () => {
+    const xml = [
+      '<COLLADA>',
+      '<asset><up_axis>Z_UP</up_axis></asset>',
+      '<library_lights><light id="lamp"><technique_common><point><color>1 1 1</color></point></technique_common></light></library_lights>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="parent"><translate>0 2 3</translate><instance_light url="#lamp"/>',
+      '<node id="child"><translate>4 5 6</translate><instance_light url="#lamp"/></node>',
+      '</node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.nodes[0].children).toEqual([1]);
+    expect(document.lights.map((light) => light.node)).toEqual([0, 1]);
+    expect(document.lights[0].transform.position).toMatchObject({ x: 0, y: 3, z: -2 });
+    expect(document.lights[1].transform.position).toMatchObject({ x: 4, y: 9, z: -7 });
+    expect(document.lights[0].descriptor).not.toBe(document.lights[1].descriptor);
+    expect(document.lights[0].transform).not.toBe(document.nodes[0].transform);
+    expect((document.lights[0].descriptor as PointLight).decay).toBe(0);
+  });
+
+  it('approximates mixed COLLADA attenuation at unit distance', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_lights><light id="mixed"><technique_common><point><color>1 1 1</color><constant_attenuation>1</constant_attenuation><linear_attenuation>2</linear_attenuation><quadratic_attenuation>1</quadratic_attenuation></point></technique_common></light></library_lights>',
+      '<library_visual_scenes><visual_scene id="vs"><node><instance_light url="#mixed"/></node></visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(document.lights[0].descriptor).toMatchObject({ decay: 1, intensity: 0.25 });
+    expect(diagnostics).toEqual([
+      expect.objectContaining({
+        detail: { constant: 1, light: 'mixed', linear: 2, quadratic: 1 },
+        kind: 'collada.light-attenuation-approximated',
+        severity: ImportDiagnosticSeverity.Recover,
+      }),
+    ]);
+  });
+
+  it('diagnoses malformed light definitions and missing instance_light references', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_lights>',
+      '<light><technique_common><ambient><color>1 1 1</color></ambient></technique_common></light>',
+      '<light id="bad-color"><technique_common><ambient><color>red 1 1</color></ambient></technique_common></light>',
+      '<light id="bad-attenuation"><technique_common><point><color>1 1 1</color><quadratic_attenuation>-1</quadratic_attenuation></point></technique_common></light>',
+      '<light id="bad-falloff"><technique_common><spot><color>1 1 1</color><falloff_exponent>NaN</falloff_exponent></spot></technique_common></light>',
+      '<light id="bad-type"><technique_common><ambient><color>1 1 1</color></ambient><point><color>1 1 1</color></point></technique_common></light>',
+      '</library_lights>',
+      '<library_visual_scenes><visual_scene id="vs"><node>',
+      '<instance_light/><instance_light url="#bad-color"/><instance_light url="#missing"/><instance_light url="other.dae#lamp"/>',
+      '</node></visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(document.lights).toEqual([]);
+    expect(
+      diagnostics.filter((diagnostic) => diagnostic.kind === 'collada.light-malformed').map((entry) => entry.detail),
+    ).toEqual([
+      { field: 'id', light: '(missing)' },
+      { field: 'color', light: 'bad-color' },
+      { field: 'quadratic_attenuation', light: 'bad-attenuation' },
+      { field: 'falloff_exponent', light: 'bad-falloff' },
+      { field: 'type', light: 'bad-type' },
+    ]);
+    expect(diagnostics.filter((diagnostic) => diagnostic.kind === 'collada.missing-reference')).toHaveLength(3);
+  });
+
   it('decodes a position source and triangle indices into Flight geometry', () => {
     const xml =
       '<COLLADA><library_geometries><geometry id="g"><mesh><source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source><vertices id="v"><input semantic="POSITION" source="#p"/></vertices><triangles count="1"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles></mesh></geometry></library_geometries></COLLADA>';
