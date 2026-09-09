@@ -562,15 +562,17 @@ describe('parseCollada', () => {
     expect(document.animations).toHaveLength(0);
     expect(diagnostics.some((d) => d.kind === 'collada.animation-target-unresolved')).toBe(true);
   });
-  it('decodes morph target IDs, weights, and method', () => {
-    const xml =
-      '<COLLADA><library_controllers><controller id="m"><morph source="#base" method="NORMALIZED"><source id="t"><IDREF_array>shapeA shapeB</IDREF_array></source><source id="w"><float_array>0.2 0.8</float_array></source><targets><input semantic="MORPH_TARGET" source="#t"/><input semantic="MORPH_WEIGHT" source="#w"/></targets></morph></controller></library_controllers></COLLADA>';
-    expect(decodeColladaMorphs(xml)[0]).toEqual({
-      controllerId: 'm',
-      baseGeometry: 'base',
-      method: 'NORMALIZED',
-      targets: ['shapeA', 'shapeB'],
-      weights: [0.2, 0.8],
+  describe('decodeColladaMorphs', () => {
+    it('decodes morph target IDs, weights, and method', () => {
+      const xml =
+        '<COLLADA><library_controllers><controller id="m"><morph source="#base" method="NORMALIZED"><source id="t"><IDREF_array>shapeA shapeB</IDREF_array></source><source id="w"><float_array>0.2 0.8</float_array></source><targets><input semantic="MORPH_TARGET" source="#t"/><input semantic="MORPH_WEIGHT" source="#w"/></targets></morph></controller></library_controllers></COLLADA>';
+      expect(decodeColladaMorphs(xml)[0]).toEqual({
+        controllerId: 'm',
+        baseGeometry: 'base',
+        method: 'NORMALIZED',
+        targets: ['shapeA', 'shapeB'],
+        weights: [0.2, 0.8],
+      });
     });
   });
 });
