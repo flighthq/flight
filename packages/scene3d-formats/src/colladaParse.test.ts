@@ -792,6 +792,126 @@ describe('parseCollada', () => {
     expect(diagnostics.some((d) => d.kind === 'collada.unsupported-animation-target')).toBe(true);
   });
 
+  it('applies bind_material overrides on instance_geometry', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_images><image id="tex"><init_from>tex.png</init_from></image></library_images>',
+      '<library_effects><effect id="fx"><profile_COMMON>',
+      '<newparam sid="surf"><surface><init_from>tex</init_from></surface></newparam>',
+      '<newparam sid="samp"><sampler2D><source>surf</source></sampler2D></newparam>',
+      '<technique><lambert><diffuse><texture texture="samp"/></diffuse></lambert></technique>',
+      '</profile_COMMON></effect></library_effects>',
+      '<library_materials><material id="MatA"><instance_effect url="#fx"/></material></library_materials>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1" material="DefaultSymbol"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="n" name="N">',
+      '<instance_geometry url="#g">',
+      '<bind_material><technique_common>',
+      '<instance_material symbol="DefaultSymbol" target="#MatA"/>',
+      '</technique_common></bind_material>',
+      '</instance_geometry>',
+      '</node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.meshes).toHaveLength(1);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.meshes[0].materials).toEqual([0]);
+  });
+
+  it('applies bind_material overrides on instance_controller', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_images><image id="tex"><init_from>tex.png</init_from></image></library_images>',
+      '<library_effects><effect id="fx"><profile_COMMON>',
+      '<newparam sid="surf"><surface><init_from>tex</init_from></surface></newparam>',
+      '<newparam sid="samp"><sampler2D><source>surf</source></sampler2D></newparam>',
+      '<technique><lambert><diffuse><texture texture="samp"/></diffuse></lambert></technique>',
+      '</profile_COMMON></effect></library_effects>',
+      '<library_materials><material id="MatB"><instance_effect url="#fx"/></material></library_materials>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1" material="SkinSymbol"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_controllers><controller id="skin1"><skin source="#g">',
+      '<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>',
+      '<source id="jn"><Name_array>Bone</Name_array></source>',
+      '<source id="wt"><float_array>1</float_array></source>',
+      '<source id="ibm"><float_array>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array></source>',
+      '<joints><input semantic="JOINT" source="#jn"/><input semantic="INV_BIND_MATRIX" source="#ibm"/></joints>',
+      '<vertex_weights count="1"><input semantic="JOINT" source="#jn" offset="0"/>',
+      '<input semantic="WEIGHT" source="#wt" offset="1"/>',
+      '<vcount>1</vcount><v>0 0</v></vertex_weights>',
+      '</skin></controller></library_controllers>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Bone" name="Bone"/>',
+      '<node id="MeshNode" name="MeshNode">',
+      '<instance_controller url="#skin1"><skeleton>#Bone</skeleton>',
+      '<bind_material><technique_common>',
+      '<instance_material symbol="SkinSymbol" target="#MatB"/>',
+      '</technique_common></bind_material>',
+      '</instance_controller>',
+      '</node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.meshes).toHaveLength(1);
+    expect(document.nodes[1].mesh).toBe(0);
+    expect(document.meshes[0].materials).toEqual([0]);
+    expect(document.skins).toHaveLength(1);
+    expect(document.meshes[0].skin).toBe(0);
+  });
+
+  it('clones mesh when two instances bind different materials to the same geometry', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_images><image id="tex"><init_from>tex.png</init_from></image></library_images>',
+      '<library_effects>',
+      '<effect id="fxA"><profile_COMMON><newparam sid="surf"><surface><init_from>tex</init_from></surface></newparam><newparam sid="samp"><sampler2D><source>surf</source></sampler2D></newparam><technique><lambert><diffuse><texture texture="samp"/></diffuse></lambert></technique></profile_COMMON></effect>',
+      '<effect id="fxB"><profile_COMMON><newparam sid="surf"><surface><init_from>tex</init_from></surface></newparam><newparam sid="samp"><sampler2D><source>surf</source></sampler2D></newparam><technique><lambert><diffuse><texture texture="samp"/></diffuse></lambert></technique></profile_COMMON></effect>',
+      '</library_effects>',
+      '<library_materials>',
+      '<material id="MatA"><instance_effect url="#fxA"/></material>',
+      '<material id="MatB"><instance_effect url="#fxB"/></material>',
+      '</library_materials>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1" material="Sym"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="n1" name="First">',
+      '<instance_geometry url="#g"><bind_material><technique_common>',
+      '<instance_material symbol="Sym" target="#MatA"/>',
+      '</technique_common></bind_material></instance_geometry>',
+      '</node>',
+      '<node id="n2" name="Second">',
+      '<instance_geometry url="#g"><bind_material><technique_common>',
+      '<instance_material symbol="Sym" target="#MatB"/>',
+      '</technique_common></bind_material></instance_geometry>',
+      '</node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.meshes).toHaveLength(2);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.nodes[1].mesh).toBe(1);
+    expect(document.meshes[0].materials).toEqual([0]);
+    expect(document.meshes[1].materials).toEqual([1]);
+    expect(document.meshes[0].geometry).toBe(document.meshes[1].geometry);
+  });
+
   it('diagnoses unresolvable animation target nodes', () => {
     const xml = [
       '<COLLADA>',
