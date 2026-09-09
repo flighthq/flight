@@ -977,6 +977,21 @@ describe('setRichTextContent', () => {
     setRichTextContent(richText, { [EntityRuntimeKey]: undefined, formatRanges: [], text: 'new' });
     expect(seen).toBe('old');
   });
+
+  it('does not copy or invalidate structurally unchanged content', () => {
+    const richText = createRichText({
+      data: { text: 'same', textFormatRanges: [createTextFormatRange({ bold: true }, 0, 4)] },
+    });
+    const ranges = richText.data.textFormatRanges;
+    const revision = getNodeLocalContentRevision(richText);
+    setRichTextContent(richText, {
+      [EntityRuntimeKey]: undefined,
+      formatRanges: [createTextFormatRange({ bold: true }, 0, 4)],
+      text: 'same',
+    });
+    expect(richText.data.textFormatRanges).toBe(ranges);
+    expect(getNodeLocalContentRevision(richText)).toBe(revision);
+  });
 });
 
 describe('setRichTextDefaultTextFormat', () => {
@@ -988,6 +1003,13 @@ describe('setRichTextDefaultTextFormat', () => {
     expect(richText.data.defaultTextFormat).toBe(format);
     expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
   });
+
+  it('does not invalidate for a structurally equal format', () => {
+    const richText = createRichText({ data: { defaultTextFormat: { size: 18, tabStops: [4, 8] } } });
+    const content = getNodeLocalContentRevision(richText);
+    setRichTextDefaultTextFormat(richText, { size: 18, tabStops: [4, 8] });
+    expect(getNodeLocalContentRevision(richText)).toBe(content);
+  });
 });
 
 describe('setRichTextFormatRange', () => {
@@ -995,6 +1017,23 @@ describe('setRichTextFormatRange', () => {
     const richText = createRichText({ data: { text: 'hello' } });
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     expect(richText.data.textFormatRanges).toMatchObject([{ start: 1, end: 4, format: { italic: true } }]);
+  });
+
+  it('does not append or invalidate an exact repeat of the most recent range', () => {
+    const richText = createRichText({ data: { text: 'hello' } });
+    setRichTextFormatRange(richText, { italic: true }, 1, 4);
+    const revision = getNodeLocalContentRevision(richText);
+    setRichTextFormatRange(richText, { italic: true }, 1, 4);
+    expect(richText.data.textFormatRanges).toHaveLength(1);
+    expect(getNodeLocalContentRevision(richText)).toBe(revision);
+  });
+
+  it('appends a new override when an equal older range was superseded', () => {
+    const richText = createRichText({ data: { text: 'hello' } });
+    setRichTextFormatRange(richText, { italic: true }, 1, 4);
+    setRichTextFormatRange(richText, { italic: false }, 1, 4);
+    setRichTextFormatRange(richText, { italic: true }, 1, 4);
+    expect(richText.data.textFormatRanges).toHaveLength(3);
   });
 });
 

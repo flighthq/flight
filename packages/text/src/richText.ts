@@ -447,6 +447,7 @@ export function setRichTextCondenseWhite(source: RichText, value: boolean): void
 // base default format still apply at layout, independent of how the content was produced.
 export function setRichTextContent(source: RichText, content: Readonly<RichTextContent>): void {
   const previousText = source.data.text;
+  if (equalsRichTextContent(source.data, content)) return;
   source.data.text = content.text;
   source.data.textFormatRanges = content.formatRanges.map((range) => ({ ...range }));
   invalidateRichTextContent(source);
@@ -454,6 +455,7 @@ export function setRichTextContent(source: RichText, content: Readonly<RichTextC
 }
 
 export function setRichTextDefaultTextFormat(source: RichText, value: TextFormat): void {
+  if (equalsRichTextFormat(source.data.defaultTextFormat, value)) return;
   source.data.defaultTextFormat = value;
   invalidateRichTextContent(source);
 }
@@ -464,6 +466,17 @@ export function setRichTextFormatRange(
   start = 0,
   end = source.data.text.length,
 ): void {
+  const previous = source.data.textFormatRanges[source.data.textFormatRanges.length - 1];
+  // Ranges are ordered overrides, so only an exact repeat of the most recent range is guaranteed to
+  // be semantically inert. An older equal range may have been superseded by a later one and must not
+  // suppress a new override.
+  if (
+    previous !== undefined &&
+    previous.start === start &&
+    previous.end === end &&
+    equalsRichTextFormat(previous.format, format)
+  )
+    return;
   source.data.textFormatRanges.push(createTextFormatRange(format, start, end));
   invalidateRichTextContent(source);
 }
@@ -574,6 +587,50 @@ const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
 function invalidateRichTextContent(source: RichText): void {
   invalidateNodeLocalContent(source);
   if (source.data.autoSize !== 'none') invalidateNodeLocalBounds(source);
+}
+
+function equalsRichTextContent(data: Readonly<RichTextData>, content: Readonly<RichTextContent>): boolean {
+  if (data.text !== content.text || data.textFormatRanges.length !== content.formatRanges.length) return false;
+  for (let i = 0; i < data.textFormatRanges.length; i++) {
+    const current = data.textFormatRanges[i];
+    const next = content.formatRanges[i];
+    if (
+      current.start !== next.start ||
+      current.end !== next.end ||
+      !equalsRichTextFormat(current.format, next.format)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function equalsRichTextFormat(a: Readonly<TextFormat>, b: Readonly<TextFormat>): boolean {
+  const aKeys = Object.keys(a) as Array<keyof TextFormat>;
+  const bKeys = Object.keys(b) as Array<keyof TextFormat>;
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (key === 'tabStops') {
+      const aStops = a.tabStops;
+      const bStops = b.tabStops;
+      if (aStops === bStops) continue;
+      if (aStops === undefined || bStops === undefined || aStops.length !== bStops.length) return false;
+      for (let i = 0; i < aStops.length; i++) if (aStops[i] !== bStops[i]) return false;
+    } else if (key === 'variations') {
+      const aVariations = a.variations;
+      const bVariations = b.variations;
+      if (aVariations === bVariations) continue;
+      if (aVariations === undefined || bVariations === undefined || aVariations.length !== bVariations.length)
+        return false;
+      for (let i = 0; i < aVariations.length; i++) {
+        if (aVariations[i].axis !== bVariations[i].axis || aVariations[i].value !== bVariations[i].value) return false;
+      }
+    } else if (a[key] !== b[key]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function computeRichTextMaxScrollHFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
