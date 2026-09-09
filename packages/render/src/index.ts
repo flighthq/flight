@@ -12,6 +12,7 @@ export {
   enableRenderRegistrySignals,
   explainRenderRegistryMisses,
   explainScene2DPipelineCoverage,
+  explainScene3DPipelineCoverage,
   packScene3DLightBlock,
   prepareScene2DRender,
   prepareScene3DRender,

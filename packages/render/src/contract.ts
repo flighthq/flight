@@ -13,6 +13,7 @@ export * from './renderQueue';
 export * from './raster2DSurface';
 export * from './explainScene2DCoverage';
 export * from './explainScene2DPipelineCoverage';
+export * from './explainScene3DPipelineCoverage';
 export * from './renderRegistryGuards';
 export * from './renderRegistrySignals';
 export * from './renderState';
