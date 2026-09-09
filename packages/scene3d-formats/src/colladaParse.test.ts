@@ -303,4 +303,263 @@ describe('parseCollada', () => {
     expect(document.scenes).toHaveLength(0);
     expect(document.nodes).toHaveLength(0);
   });
+
+  it('binds instance_geometry to a mesh', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="n" name="MeshNode"><instance_geometry url="#g"/></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.meshes).toHaveLength(1);
+    expect(document.nodes).toHaveLength(1);
+    expect(document.nodes[0].mesh).toBe(0);
+  });
+
+  it('resolves instance_controller to a skin with node-index joints and column-major inverse binds', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_controllers><controller id="skin1"><skin source="#g">',
+      '<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>',
+      '<source id="jn"><Name_array>Root Arm</Name_array></source>',
+      '<source id="wt"><float_array>1 0.5</float_array></source>',
+      '<source id="ibm"><float_array>',
+      '1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 ',
+      '1 0 0 2  0 1 0 0  0 0 1 0  0 0 0 1',
+      '</float_array></source>',
+      '<joints><input semantic="JOINT" source="#jn"/><input semantic="INV_BIND_MATRIX" source="#ibm"/></joints>',
+      '<vertex_weights count="1">',
+      '<input semantic="JOINT" source="#jn" offset="0"/>',
+      '<input semantic="WEIGHT" source="#wt" offset="1"/>',
+      '<vcount>1</vcount><v>0 0</v>',
+      '</vertex_weights>',
+      '</skin></controller></library_controllers>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Root" name="Root">',
+      '<node id="Arm" name="Arm"/>',
+      '</node>',
+      '<node id="MeshNode" name="MeshNode">',
+      '<instance_controller url="#skin1"><skeleton>#Root</skeleton></instance_controller>',
+      '</node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(diagnostics.filter((d) => d.severity === 'Reject' || d.severity === 'Drop')).toHaveLength(0);
+
+    expect(document.nodes).toHaveLength(3);
+    expect(document.nodes[0].name).toBe('Root');
+    expect(document.nodes[1].name).toBe('Arm');
+    expect(document.nodes[2].name).toBe('MeshNode');
+    expect(document.nodes[2].mesh).toBe(0);
+
+    expect(document.skins).toHaveLength(1);
+    const skin = document.skins[0];
+    expect(skin.joints).toEqual([0, 1]);
+    expect(skin.inverseBind).toHaveLength(2);
+    // First joint: identity
+    expect(skin.inverseBind[0].m[0]).toBe(1);
+    expect(skin.inverseBind[0].m[5]).toBe(1);
+    expect(skin.inverseBind[0].m[10]).toBe(1);
+    expect(skin.inverseBind[0].m[15]).toBe(1);
+    // Second joint: row-major [1,0,0,2 ...] → column-major m[12]=2 (translation X)
+    expect(skin.inverseBind[1].m[12]).toBe(2);
+
+    expect(document.meshes[0].skin).toBe(0);
+  });
+
+  it('resolves translate animation channel to Translation track', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 0.5 1</float_array></source>',
+      '<source id="o"><float_array>0 0 0  1 2 3  2 4 6</float_array></source>',
+      '<source id="i"><Name_array>LINEAR LINEAR LINEAR</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="Bone/translate"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Bone" name="Bone"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.animations).toHaveLength(1);
+    const anim = document.animations[0];
+    expect(anim.duration).toBe(1);
+    expect(anim.channels).toHaveLength(1);
+    const ch = anim.channels[0];
+    expect(ch.node).toBe(0);
+    expect(ch.path).toBe('Translation');
+    expect(ch.track.interpolation).toBe('Linear');
+    expect(ch.track.components).toBe(3);
+    expect(Array.from(ch.track.times)).toEqual([0, 0.5, 1]);
+    expect(Array.from(ch.track.values)).toEqual([0, 0, 0, 1, 2, 3, 2, 4, 6]);
+  });
+
+  it('resolves rotateY.ANGLE animation to quaternion Rotation track', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 1</float_array></source>',
+      '<source id="o"><float_array>0 90</float_array></source>',
+      '<source id="i"><Name_array>LINEAR LINEAR</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="Joint/rotateY.ANGLE"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Joint" name="Joint"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.animations).toHaveLength(1);
+    const ch = document.animations[0].channels[0];
+    expect(ch.path).toBe('Rotation');
+    expect(ch.track.quaternion).toBe(true);
+    expect(ch.track.components).toBe(4);
+    // Keyframe 0: 0 degrees → identity quaternion (0,0,0,1)
+    near(ch.track.values[0], 0);
+    near(ch.track.values[1], 0);
+    near(ch.track.values[2], 0);
+    near(ch.track.values[3], 1);
+    // Keyframe 1: 90 degrees about Y → (0, sin(45°), 0, cos(45°))
+    near(ch.track.values[4], 0);
+    near(ch.track.values[5], Math.sin(Math.PI / 4));
+    near(ch.track.values[6], 0);
+    near(ch.track.values[7], Math.cos(Math.PI / 4));
+  });
+
+  it('resolves matrix animation to decomposed TRS channels', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 1</float_array></source>',
+      '<source id="o"><float_array>',
+      '1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1 ',
+      '1 0 0 5  0 1 0 0  0 0 1 0  0 0 0 1',
+      '</float_array></source>',
+      '<source id="i"><Name_array>LINEAR LINEAR</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="Box/matrix"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="Box" name="Box"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.animations).toHaveLength(1);
+    const anim = document.animations[0];
+    expect(anim.channels).toHaveLength(3);
+    const paths = anim.channels.map((c) => c.path).sort();
+    expect(paths).toEqual(['Rotation', 'Scale', 'Translation']);
+    const tCh = anim.channels.find((c) => c.path === 'Translation')!;
+    expect(tCh.track.components).toBe(3);
+    // Keyframe 0: identity → translation (0,0,0)
+    near(tCh.track.values[0], 0);
+    near(tCh.track.values[1], 0);
+    near(tCh.track.values[2], 0);
+    // Keyframe 1: row-major [1,0,0,5 ...] → translation (5,0,0)
+    near(tCh.track.values[3], 5);
+    near(tCh.track.values[4], 0);
+    near(tCh.track.values[5], 0);
+  });
+
+  it('maps STEP interpolation to Step', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 1</float_array></source>',
+      '<source id="o"><float_array>0 0 0 1 1 1</float_array></source>',
+      '<source id="i"><Name_array>STEP STEP</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="N/scale"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="N" name="N"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document } = parseCollada(xml);
+    expect(document.animations[0].channels[0].track.interpolation).toBe('Step');
+  });
+
+  it('diagnoses unsupported animation target properties', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 1</float_array></source>',
+      '<source id="o"><float_array>0 1</float_array></source>',
+      '<source id="i"><Name_array>LINEAR LINEAR</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="N/visibility"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="N" name="N"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(document.animations).toHaveLength(0);
+    expect(diagnostics.some((d) => d.kind === 'collada.unsupported-animation-target')).toBe(true);
+  });
+
+  it('diagnoses unresolvable animation target nodes', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_animations><animation>',
+      '<source id="t"><float_array>0 1</float_array></source>',
+      '<source id="o"><float_array>0 0 0 1 1 1</float_array></source>',
+      '<source id="i"><Name_array>LINEAR LINEAR</Name_array></source>',
+      '<sampler id="s">',
+      '<input semantic="INPUT" source="#t"/><input semantic="OUTPUT" source="#o"/>',
+      '<input semantic="INTERPOLATION" source="#i"/>',
+      '</sampler>',
+      '<channel source="#s" target="Ghost/translate"/>',
+      '</animation></library_animations>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node id="N" name="N"/>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const { document, diagnostics } = parseCollada(xml);
+    expect(document.animations).toHaveLength(0);
+    expect(diagnostics.some((d) => d.kind === 'collada.animation-target-unresolved')).toBe(true);
+  });
 });
