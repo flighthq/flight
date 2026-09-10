@@ -44,7 +44,7 @@ function captureTarget(texture: WebGLTexture): GlCubeRenderTarget {
 }
 
 describe('bakeGlEnvironmentCaptureIbl', () => {
-  it('bakes a caller-owned capture texture without retaining it as an owned source cube', () => {
+  it('bakes from the capture texture without destroying the environment source cube', () => {
     const { state, gl } = makeGlScene3DState();
     const runtime = getGlScene3DRuntime(state);
     const environment = dataOnlyEnvironment(4);
@@ -53,11 +53,10 @@ describe('bakeGlEnvironmentCaptureIbl', () => {
 
     bakeGlEnvironmentCaptureIbl(state, captureTarget(capturedTexture), 2.5);
 
-    expect(runtime.environmentSourceCube).toBeNull();
-    expect(runtime.environmentSourceTexture).toBeNull();
+    expect(runtime.environmentSourceCube).toBe(previousSource);
     expect(runtime.ibl?.environmentSourceRevision).toBe(runtime.environmentSourceRevision);
     expect(runtime.ibl?.intensity).toBe(2.5);
-    expect(gl.calls.some((call) => call.name === 'deleteTexture' && call.args[0] === previousSource)).toBe(true);
+    expect(gl.calls.some((call) => call.name === 'deleteTexture' && call.args[0] === previousSource)).toBe(false);
     expect(gl.calls.some((call) => call.name === 'bindTexture' && call.args[1] === capturedTexture)).toBe(true);
   });
 });
