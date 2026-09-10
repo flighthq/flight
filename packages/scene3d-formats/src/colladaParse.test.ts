@@ -199,6 +199,82 @@ describe('parseCollada', () => {
       vertices[26],
     ]).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0]);
   });
+
+  it('reads TEXCOORD data into uv0 when present', () => {
+    const xml = [
+      '<COLLADA><library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<source id="t"><float_array>0 0 1 0 0.5 1</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1">',
+      '<input semantic="VERTEX" source="#v" offset="0"/>',
+      '<input semantic="TEXCOORD" source="#t" offset="1"/>',
+      '<p>0 0 1 1 2 2</p>',
+      '</triangles></mesh></geometry></library_geometries></COLLADA>',
+    ].join('');
+    const result = parseCollada(xml);
+    expect(result.document.meshes).toHaveLength(1);
+    const verts = result.document.meshes[0].geometry.vertices;
+    expect([verts[10], verts[11]]).toEqual([0, 0]);
+    expect([verts[22], verts[23]]).toEqual([1, 0]);
+    expect([verts[34], verts[35]]).toEqual([0.5, 1]);
+  });
+
+  it('reads NORMAL data into the normal attribute', () => {
+    const xml = [
+      '<COLLADA><library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<source id="n"><float_array>0 0 1 0 0 1 0 0 1</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1">',
+      '<input semantic="VERTEX" source="#v" offset="0"/>',
+      '<input semantic="NORMAL" source="#n" offset="1"/>',
+      '<p>0 0 1 1 2 2</p>',
+      '</triangles></mesh></geometry></library_geometries></COLLADA>',
+    ].join('');
+    const result = parseCollada(xml);
+    const verts = result.document.meshes[0].geometry.vertices;
+    expect([verts[3], verts[4], verts[5]]).toEqual([0, 0, 1]);
+  });
+
+  it('imports all triangles groups from a multi-material mesh', () => {
+    const xml = [
+      '<COLLADA><library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0 2 0 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1" material="mat0"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '<triangles count="1" material="mat1"><input semantic="VERTEX" source="#v" offset="0"/><p>1 2 3</p></triangles>',
+      '</mesh></geometry></library_geometries></COLLADA>',
+    ].join('');
+    const result = parseCollada(xml);
+    expect(result.document.meshes).toHaveLength(1);
+    const indices = Array.from(result.document.meshes[0].geometry.indices ?? []);
+    expect(indices).toEqual([0, 1, 2, 1, 2, 3]);
+  });
+
+  it('does not report missing-reference for instance_material elements', () => {
+    const xml = [
+      '<COLLADA>',
+      '<library_materials><material id="m"><instance_effect url="#fx"/></material></library_materials>',
+      '<library_effects><effect id="fx"><profile_COMMON><technique><lambert><diffuse><color>1 1 1 1</color></diffuse></lambert></technique></profile_COMMON></effect></library_effects>',
+      '<library_geometries><geometry id="g"><mesh>',
+      '<source id="p"><float_array>0 0 0 1 0 0 0 1 0</float_array></source>',
+      '<vertices id="v"><input semantic="POSITION" source="#p"/></vertices>',
+      '<triangles count="1" material="Sym"><input semantic="VERTEX" source="#v" offset="0"/><p>0 1 2</p></triangles>',
+      '</mesh></geometry></library_geometries>',
+      '<library_visual_scenes><visual_scene id="vs">',
+      '<node><instance_geometry url="#g"><bind_material><technique_common>',
+      '<instance_material symbol="Sym" target="#m"/>',
+      '</technique_common></bind_material></instance_geometry></node>',
+      '</visual_scene></library_visual_scenes>',
+      '<scene><instance_visual_scene url="#vs"/></scene>',
+      '</COLLADA>',
+    ].join('');
+    const result = parseCollada(xml);
+    const missingRef = result.diagnostics.filter((d) => d.kind === 'collada.missing-reference');
+    expect(missingRef).toHaveLength(0);
+  });
+
   describe('decodeColladaControllers', () => {
     it('decodes skin joint names, inverse binds, and normalized vertex weights', () => {
       const xml =
