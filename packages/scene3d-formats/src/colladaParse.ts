@@ -654,6 +654,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
       ln.startsWith('instance_') &&
       ln !== 'instance_visual_scene' &&
       ln !== 'instance_node' &&
+      ln !== 'instance_material' &&
       !element.attributes.url
     )
       reportImportDiagnostic(
@@ -687,77 +688,133 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     const mesh = child(geometry, 'mesh') ?? descendants(geometry, 'mesh')[0];
     if (!mesh) continue;
     const verticesMap = new Map<string, string>();
+    const verticesNormalMap = new Map<string, string>();
     for (const vertices of mesh.children.filter((e) => e.name === 'vertices'))
       for (const input of vertices.children.filter((e) => e.name === 'input')) {
         const semantic = input.attributes.semantic;
         const source = input.attributes.source?.replace(/^#/, '');
-        if (semantic === 'POSITION' && idOf(vertices) && source) verticesMap.set(idOf(vertices)!, source);
-      }
-    const primitive =
-      mesh.children.find((e) => ['triangles', 'polylist', 'lines'].includes(e.name)) ??
-      descendants(mesh, 'triangles')[0] ??
-      descendants(mesh, 'polylist')[0] ??
-      descendants(mesh, 'lines')[0];
-    if (!primitive) continue;
-    const inputs = primitive.children.filter((e) => e.name === 'input');
-    const stride = Math.max(1, ...inputs.map((e) => Number(e.attributes.offset ?? 0) + 1));
-    const semanticSources = new Map<string, string>();
-    const offsets = new Map<string, number>();
-    for (const input of inputs) {
-      let source = input.attributes.source?.replace(/^#/, '') ?? '';
-      if (input.attributes.semantic === 'VERTEX') source = verticesMap.get(source) ?? '';
-      if (source) {
-        const semantic = input.attributes.semantic === 'VERTEX' ? 'POSITION' : input.attributes.semantic;
-        semanticSources.set(semantic, source);
-        offsets.set(semantic, Number(input.attributes.offset ?? 0));
-      }
-    }
-    const pos =
-      sources.get(semanticSources.get('POSITION') ?? '') ??
-      (sources.size === 1 ? sources.values().next().value : undefined);
-    if (!pos) {
-      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'collada.missing-reference', 'parseCollada', {
-        element: 'POSITION',
-      });
-      continue;
-    }
-    const raw = numbers(child(primitive, 'p'));
-    const vertexCount = Math.floor(pos.length / 3);
-    const indices: number[] = [];
-    if (primitive.name === 'polylist') {
-      const counts = numbers(child(primitive, 'vcount'));
-      let cursor = 0;
-      for (const count of counts) {
-        for (let i = 1; i + 1 < count; i++) {
-          indices.push(
-            raw[cursor + offsets.get('POSITION')!],
-            raw[cursor + i * stride + offsets.get('POSITION')!],
-            raw[cursor + (i + 1) * stride + offsets.get('POSITION')!],
-          );
+        if (idOf(vertices) && source) {
+          if (semantic === 'POSITION') verticesMap.set(idOf(vertices)!, source);
+          if (semantic === 'NORMAL') verticesNormalMap.set(idOf(vertices)!, source);
         }
-        cursor += count * stride;
       }
-    } else for (let i = 0; i + stride - 1 < raw.length; i += stride) indices.push(raw[i + offsets.get('POSITION')!]);
-    const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
-    for (let i = 0; i < vertexCount; i++) {
-      vertices[i * 12] = pos[i * 3] ?? 0;
-      vertices[i * 12 + 1] = pos[i * 3 + 1] ?? 0;
-      vertices[i * 12 + 2] = pos[i * 3 + 2] ?? 0;
-      vertices[i * 12 + 3] = 0;
-      vertices[i * 12 + 4] = 1;
-      vertices[i * 12 + 7] = 1;
+    const primitives = mesh.children.filter((e) => ['triangles', 'polylist', 'lines'].includes(e.name));
+    if (primitives.length === 0) continue;
+    const vertexMap = new Map<string, number>();
+    const vertexData: number[][] = [];
+    const allIndices: number[] = [];
+    const primitiveSymbols: string[] = [];
+    let hasLines = false;
+    for (const primitive of primitives) {
+      const inputs = primitive.children.filter((e) => e.name === 'input');
+      const stride = Math.max(1, ...inputs.map((e) => Number(e.attributes.offset ?? 0) + 1));
+      const semanticSources = new Map<string, string>();
+      const offsets = new Map<string, number>();
+      for (const input of inputs) {
+        let source = input.attributes.source?.replace(/^#/, '') ?? '';
+        const semantic = input.attributes.semantic;
+        if (semantic === 'VERTEX') {
+          const posSource = verticesMap.get(source);
+          if (posSource) {
+            semanticSources.set('POSITION', posSource);
+            offsets.set('POSITION', Number(input.attributes.offset ?? 0));
+          }
+          const nrmSource = verticesNormalMap.get(source);
+          if (nrmSource) {
+            semanticSources.set('NORMAL', nrmSource);
+            offsets.set('NORMAL', Number(input.attributes.offset ?? 0));
+          }
+        } else if (source) {
+          semanticSources.set(semantic, source);
+          offsets.set(semantic, Number(input.attributes.offset ?? 0));
+        }
+      }
+      const pos = sources.get(semanticSources.get('POSITION') ?? '');
+      if (!pos) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'collada.missing-reference',
+          'parseCollada',
+          {
+            element: 'POSITION',
+          },
+        );
+        continue;
+      }
+      const nrm = sources.get(semanticSources.get('NORMAL') ?? '');
+      const uv = sources.get(semanticSources.get('TEXCOORD') ?? '');
+      const posOffset = offsets.get('POSITION') ?? 0;
+      const nrmOffset = offsets.get('NORMAL');
+      const uvOffset = offsets.get('TEXCOORD');
+      const raw = numbers(child(primitive, 'p'));
+      const tuples: number[][] = [];
+      if (primitive.name === 'polylist') {
+        const counts = numbers(child(primitive, 'vcount'));
+        let cursor = 0;
+        for (const count of counts) {
+          for (let i = 1; i + 1 < count; i++) {
+            tuples.push(raw.slice(cursor, cursor + stride));
+            tuples.push(raw.slice(cursor + i * stride, cursor + i * stride + stride));
+            tuples.push(raw.slice(cursor + (i + 1) * stride, cursor + (i + 1) * stride + stride));
+          }
+          cursor += count * stride;
+        }
+      } else {
+        for (let i = 0; i + stride - 1 < raw.length; i += stride) tuples.push(raw.slice(i, i + stride));
+      }
+      for (const tuple of tuples) {
+        const key = tuple.join(',');
+        let vertexIndex = vertexMap.get(key);
+        if (vertexIndex === undefined) {
+          vertexIndex = vertexData.length;
+          vertexMap.set(key, vertexIndex);
+          const pi = tuple[posOffset];
+          const px = pos[pi * 3] ?? 0;
+          const py = pos[pi * 3 + 1] ?? 0;
+          const pz = pos[pi * 3 + 2] ?? 0;
+          let nx = 0,
+            ny = 1,
+            nz = 0;
+          if (nrm && nrmOffset !== undefined) {
+            const ni = tuple[nrmOffset];
+            nx = nrm[ni * 3] ?? 0;
+            ny = nrm[ni * 3 + 1] ?? 1;
+            nz = nrm[ni * 3 + 2] ?? 0;
+          }
+          let u = 0,
+            v = 0;
+          if (uv && uvOffset !== undefined) {
+            const ui = tuple[uvOffset];
+            u = uv[ui * 2] ?? 0;
+            v = uv[ui * 2 + 1] ?? 0;
+          }
+          vertexData.push([px, py, pz, nx, ny, nz, 0, 0, 0, 1, u, v]);
+        }
+        allIndices.push(vertexIndex);
+      }
+      if (primitive.name === 'lines') hasLines = true;
+      const primitiveSymbol = primitive.attributes.material;
+      if (primitiveSymbol) primitiveSymbols.push(primitiveSymbol);
     }
-    const topology = primitive.name === 'lines' ? 'line-list' : 'triangle-list';
+    if (vertexData.length === 0) continue;
+    const vertices = new Float32Array(vertexData.length * CANONICAL_FLOATS_PER_VERTEX);
+    for (let i = 0; i < vertexData.length; i++) {
+      const d = vertexData[i];
+      const base = i * CANONICAL_FLOATS_PER_VERTEX;
+      for (let j = 0; j < CANONICAL_FLOATS_PER_VERTEX; j++) vertices[base + j] = d[j];
+    }
+    const pos = sources.get(verticesMap.values().next().value ?? '');
+    const topology = hasLines ? 'line-list' : 'triangle-list';
     const geoId = idOf(geometry);
     if (geoId) {
       geometryIdToMeshIndex.set(geoId, document.meshes.length);
-      geometryPositions.set(geoId, pos);
-      const primitiveSymbol = primitive.attributes.material;
-      if (primitiveSymbol) geometryPrimitiveSymbols.set(geoId, [primitiveSymbol]);
+      if (pos) geometryPositions.set(geoId, pos);
+      if (primitiveSymbols.length > 0) geometryPrimitiveSymbols.set(geoId, primitiveSymbols);
     }
     document.meshes.push({
       geometry: createMeshGeometry({
-        indices: Uint32Array.from(indices),
+        indices: Uint32Array.from(allIndices),
         layout: CANONICAL_LAYOUT,
         topology,
         vertices,
