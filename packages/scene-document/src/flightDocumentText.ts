@@ -267,7 +267,7 @@ function appendProjection(lines: string[], projection: Readonly<Projection>, ind
   if (projection.kind === 'orthographic') {
     lines.push(prefix + 'halfHeight: ' + formatNumber(projection.halfHeight));
     lines.push(prefix + 'halfWidth: ' + formatNumber(projection.halfWidth));
-  } else {
+  } else if (projection.kind === 'perspective') {
     lines.push(prefix + 'aspect: ' + formatNumber(projection.aspect));
     lines.push(prefix + 'fovY: ' + formatNumber(projection.fovY));
   }
