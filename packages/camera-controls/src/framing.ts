@@ -25,8 +25,10 @@ export function frameOrbitCameraControllerToSphere(
     const distance = getPerspectiveProjectionFrameDistanceToSphere(projection, sphere.radius, aspect, padding);
     if (!Number.isFinite(distance)) return false;
     controller.goalDistance = clamp(distance, controller.minDistance, controller.maxDistance);
-  } else {
+  } else if (projection.kind === 'orthographic') {
     setOrthographicProjectionFrameToSphere(projection, sphere.radius, aspect, padding);
+  } else {
+    return false;
   }
 
   controller.target.x = sphere.center.x;

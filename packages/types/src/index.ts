@@ -541,6 +541,7 @@ export * from './QuadTransformType';
 export * from './Quaternion';
 export * from './RadialBlurEffect';
 export * from './RandomSource';
+export * from './RawProjectionOptions';
 export * from './Ray3D';
 export * from './Rectangle';
 export * from './RectangleCollider';

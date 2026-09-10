@@ -47,6 +47,7 @@ export function reflectCamera3DByPlane(out: Camera3D, camera: Readonly<Camera3D>
   const jx = camera.jitter.x;
   const jy = camera.jitter.y;
   const projection = camera.projection;
+  const nearClipPlane = camera.nearClipPlane;
 
   setMatrix4(
     __scratchReflection,
@@ -73,6 +74,7 @@ export function reflectCamera3DByPlane(out: Camera3D, camera: Readonly<Camera3D>
   out.far = far;
   out.jitter.x = jx;
   out.jitter.y = jy;
+  out.nearClipPlane = nearClipPlane;
   out.projection = projection;
 }
 

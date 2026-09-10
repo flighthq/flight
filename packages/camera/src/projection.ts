@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
+import { createMatrix4, setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
 import type { EntityConstruction, Matrix4Like } from '@flighthq/types/contract';
 import type {
   OrthographicProjection,
@@ -7,6 +7,8 @@ import type {
   PerspectiveProjection,
   PerspectiveProjectionOptions,
   Projection,
+  RawProjection,
+  RawProjectionOptions,
 } from '@flighthq/types/contract';
 
 export function createOrthographicProjection(opts: Readonly<OrthographicProjectionOptions>): OrthographicProjection {
@@ -18,6 +20,12 @@ export function createOrthographicProjection(opts: Readonly<OrthographicProjecti
 export function createPerspectiveProjection(opts: Readonly<PerspectiveProjectionOptions>): PerspectiveProjection {
   const out = allocateEntity<PerspectiveProjection>();
   initializePerspectiveProjection(out, opts);
+  return finishEntity(out);
+}
+
+export function createRawProjection(opts: Readonly<RawProjectionOptions>): RawProjection {
+  const out = allocateEntity<RawProjection>();
+  initializeRawProjection(out, opts);
   return finishEntity(out);
 }
 
@@ -55,6 +63,15 @@ export function initializePerspectiveProjection(
   out.kind = 'perspective';
 }
 
+export function initializeRawProjection(
+  out: EntityConstruction<RawProjection>,
+  opts: Readonly<RawProjectionOptions>,
+): void {
+  out.kind = 'raw';
+  out.matrix = createMatrix4();
+  out.matrix.m.set(opts.matrix.m);
+}
+
 // True when the projection is an orthographic descriptor. Narrows the discriminated union.
 export function isOrthographicProjection(projection: Readonly<Projection>): projection is OrthographicProjection {
   return projection.kind === 'orthographic';
@@ -63,6 +80,11 @@ export function isOrthographicProjection(projection: Readonly<Projection>): proj
 // True when the projection is a perspective descriptor. Narrows the discriminated union.
 export function isPerspectiveProjection(projection: Readonly<Projection>): projection is PerspectiveProjection {
   return projection.kind === 'perspective';
+}
+
+// True when the projection is a raw (pre-built) matrix. Narrows the discriminated union.
+export function isRawProjection(projection: Readonly<Projection>): projection is RawProjection {
+  return projection.kind === 'raw';
 }
 
 // Writes the projection matrix for `projection` into `out`, delegating to geometry's perspective
@@ -82,6 +104,10 @@ export function setProjectionMatrix4(
 ): void {
   if (projection.kind === 'perspective') {
     setPerspectiveMatrix4(out, Math.tan(projection.fovY * 0.5), aspect, near, far);
+    return;
+  }
+  if (projection.kind === 'raw') {
+    out.m.set(projection.matrix.m);
     return;
   }
 
