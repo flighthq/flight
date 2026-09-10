@@ -1,11 +1,7 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { GlContext, Environment, GlCubeRenderTarget, GlRenderState } from '@flighthq/types/contract';
 
-import {
-  destroyGlEnvironmentSourceCube,
-  ensureGlEnvironmentSourceCube,
-  getGlCubeFaceTarget,
-} from './glEnvironmentCube';
+import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Bakes a backend-native environment capture into the same split-sum IBL resources used by
@@ -13,21 +9,18 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Texture — it is already a GL handle with caller-owned lifetime — so this explicit bridge is the
 // wiring point for subsequent drawGlScene3D calls. Scene3DLightsLike continues to carry the direct
 // analytic lights; the baked environment is state-scoped, as the existing PBR bind expects.
+//
+// The capture bake advances environmentSourceRevision without destroying the Environment source cube
+// — the capture uses its own GL texture, not the cube the skybox owns. Destroying the source cube
+// forced the skybox to rebuild it (another revision bump), putting the IBL's stored revision behind
+// the runtime's and disabling IBL for the subsequent lit draws.
 export function bakeGlEnvironmentCaptureIbl(
   state: GlRenderState,
   target: Readonly<GlCubeRenderTarget>,
   intensity = 1,
 ): void {
   const runtime = getGlScene3DRuntime(state);
-  if (runtime.environmentSourceCube !== null) {
-    destroyGlEnvironmentSourceCube(state);
-  } else {
-    runtime.environmentSourceCubeColorSpace = 'linear';
-    runtime.environmentSourceCubeFaceVersions = [];
-    runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
-    runtime.environmentSourceTexture = null;
-    runtime.environmentSourceTextureVersion = -1;
-  }
+  runtime.environmentSourceRevision = (runtime.environmentSourceRevision + 1) >>> 0;
   bakeGlEnvironmentIblFromSource(state, target.texture, intensity);
 }
 
