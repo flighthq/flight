@@ -47,6 +47,8 @@ export function uploadGlSkinPaletteTexture(
   // pose palette would, and the reasons not to are identical.
   const width = jointCount * texelsPerJoint;
   gl.bindTexture(gl.TEXTURE_2D, palette.texture);
+  // Raw float data — premultiply must be off. The image upload path leaves it on (sticky state).
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
   if (jointCount > palette.jointCapacity) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, 1, 0, gl.RGBA, gl.FLOAT, jointMatrices as Float32Array);
