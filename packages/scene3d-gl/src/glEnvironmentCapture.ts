@@ -11,6 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
+import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
 
 // Returns the backend-native cubemap produced by renderGlEnvironmentCapture. The handle can be bound
 // directly for GL-only sampling; bakeGlEnvironmentCaptureIbl is the higher-level bridge into Flight's
@@ -38,6 +39,7 @@ export function renderGlEnvironmentCapture(
 
   const excluded = options?.excludeNode;
   const excludedEnabled = excluded?.enabled;
+  const environment = options?.environment;
   // Exclusion is a synchronous draw-only override. Direct assignment deliberately avoids publishing
   // node-change signals for a state that never becomes observable outside this bracket.
   if (excluded !== undefined) excluded.enabled = false;
@@ -46,6 +48,7 @@ export function renderGlEnvironmentCapture(
       getCubeCaptureFaceCamera3D(camera, position, face);
       beginGlCubeRenderFace(state, cubeTarget, face);
       try {
+        if (environment) drawGlEnvironmentSkybox(state, environment, camera, 1);
         drawGlScene3D(state, scene, camera, lights);
       } finally {
         endGlCubeRenderFace(state);
