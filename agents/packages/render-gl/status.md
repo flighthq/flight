@@ -142,6 +142,12 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-09-10** — `uploadGlSkinPaletteTexture` now resets `UNPACK_PREMULTIPLY_ALPHA_WEBGL` to
+  false before uploading. The image upload path (`glDraw.ts`) sets it to true and never clears it;
+  on ANGLE/llvmpipe (and any backend that faithfully applies the flag to FLOAT uploads), the
+  premultiply zeroed the rotation/scale columns of instance matrices, making all instanced meshes
+  invisible. Most native GPU drivers silently ignore the flag for FLOAT type, masking the bug.
+  (`glSkinPaletteTexture.ts`)
 - **2026-09-09** — Reverted the unconditional `texImage2D` change in `uploadGlSkinPaletteTexture`
   back to `texSubImage2D` for same-capacity updates. The original change was based on a downstream
   misdiagnosis (instanced mesh rendering failure attributed to `texSubImage2D` silent data loss);

@@ -31,11 +31,13 @@ function makeGl(): { gl: WebGL2RenderingContext; calls: Call[] } {
     TEXTURE_MAG_FILTER: 0x2800,
     TEXTURE_WRAP_S: 0x2802,
     TEXTURE_WRAP_T: 0x2803,
+    UNPACK_PREMULTIPLY_ALPHA_WEBGL: 0x9241,
     createTexture: record('createTexture', { id: 'tex' }),
     deleteTexture: record('deleteTexture'),
     bindTexture: record('bindTexture'),
     texImage2D: record('texImage2D'),
     texSubImage2D: record('texSubImage2D'),
+    pixelStorei: record('pixelStorei'),
     texParameteri: record('texParameteri'),
   } as unknown as WebGL2RenderingContext;
   return { gl, calls };
@@ -95,6 +97,22 @@ describe('uploadGlSkinPaletteTexture', () => {
     const bind = calls.find((c) => c.name === 'bindTexture');
     expect(bind?.args[0]).toBe(gl.TEXTURE_2D);
     expect(bind?.args[1]).toBe(palette.texture);
+  });
+
+  it('disables UNPACK_PREMULTIPLY_ALPHA_WEBGL before uploading', () => {
+    const { gl, calls } = makeGl();
+    const palette = createGlSkinPaletteTexture(gl);
+    uploadGlSkinPaletteTexture(gl, palette, makePalette(2), 2);
+
+    const psi = calls.find((c) => c.name === 'pixelStorei' && c.args[0] === gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+    expect(psi).toBeDefined();
+    expect(psi?.args[1]).toBe(false);
+
+    const bindIdx = calls.findIndex((c) => c.name === 'bindTexture');
+    const psiIdx = calls.findIndex((c) => c.name === 'pixelStorei' && c.args[0] === gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+    const uploadIdx = calls.findIndex((c) => c.name === 'texImage2D');
+    expect(psiIdx).toBeGreaterThan(bindIdx);
+    expect(psiIdx).toBeLessThan(uploadIdx);
   });
 
   it('uses texSubImage2D without resetting parameters when the palette fits the current capacity', () => {
