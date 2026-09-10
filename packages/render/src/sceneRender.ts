@@ -1,6 +1,8 @@
+import { applyObliqueNearClipPlane } from '@flighthq/camera/contract';
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import {
   copyAabb,
+  copyMatrix4,
   createAabb,
   createFrustum,
   createMatrix4,
@@ -421,6 +423,8 @@ function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
     setPerspectiveMatrix4(scratchProjection, Math.tan(projection.fovY * 0.5), aspect, camera.near, camera.far);
+  } else if (projection.kind === 'raw') {
+    copyMatrix4(scratchProjection, projection.matrix);
   } else {
     setOrthographicMatrix4(
       scratchProjection,
@@ -433,6 +437,7 @@ function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D
     );
   }
   applyScene3DProjectionJitter(scratchProjection, camera.jitter.x, camera.jitter.y);
+  if (camera.nearClipPlane) applyObliqueNearClipPlane(scratchProjection, camera.nearClipPlane);
   multiplyMatrix4(out, scratchProjection, camera.view);
 }
 
@@ -456,6 +461,8 @@ function resolveScene3DViewportAspect(camera: Readonly<Camera3D>, viewportAspect
   if (projection.kind === 'perspective' && Number.isFinite(projection.aspect) && projection.aspect > 0) {
     return projection.aspect;
   }
+  // A raw projection owns its own aspect ratio — the fallback is only for callers
+  // that omit the viewport argument (standalone/headless preparation).
   return DEFAULT_VIEWPORT_ASPECT;
 }
 

@@ -1,15 +1,23 @@
-import { createMatrix4, createPerspectiveMatrix4, setOrthographicMatrix4 } from '@flighthq/geometry/contract';
+import {
+  createMatrix4,
+  createPerspectiveMatrix4,
+  setPerspectiveMatrix4,
+  setOrthographicMatrix4,
+} from '@flighthq/geometry/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { OrthographicProjection, PerspectiveProjection } from '@flighthq/types/contract';
 
 import {
   createOrthographicProjection,
   createPerspectiveProjection,
+  createRawProjection,
   getOrthographicProjectionTexelSize,
   initializeOrthographicProjection,
   initializePerspectiveProjection,
+  initializeRawProjection,
   isOrthographicProjection,
   isPerspectiveProjection,
+  isRawProjection,
   setProjectionMatrix4,
 } from './projection';
 
@@ -38,6 +46,20 @@ describe('createPerspectiveProjection', () => {
   });
 });
 
+describe('createRawProjection', () => {
+  it('builds a raw projection from a matrix, copying the data', () => {
+    const source = createPerspectiveMatrix4(Math.tan(Math.PI / 6), 1.5, 0.1, 100);
+    const projection = createRawProjection({ matrix: source });
+    expect(EntityRuntimeKey in projection).toBe(true);
+    expect(projection.kind).toBe('raw');
+    for (let i = 0; i < 16; i++) {
+      expect(projection.matrix.m[i]).toBeCloseTo(source.m[i]);
+    }
+    source.m[0] = 999;
+    expect(projection.matrix.m[0]).not.toBe(999);
+  });
+});
+
 describe('getOrthographicProjectionTexelSize', () => {
   it('uses the larger world-space texel footprint for a non-square projection and map', () => {
     const projection = createOrthographicProjection({ halfHeight: 20, halfWidth: 10 });
@@ -59,6 +81,12 @@ describe('initializePerspectiveProjection', () => {
   });
 });
 
+describe('initializeRawProjection', () => {
+  it('is the construction initializer of createRawProjection', () => {
+    expect(typeof initializeRawProjection).toBe('function');
+  });
+});
+
 describe('isOrthographicProjection', () => {
   it('is true for orthographic and false for perspective', () => {
     const ortho = createOrthographicProjection({ halfHeight: 1, halfWidth: 1 });
@@ -73,6 +101,17 @@ describe('isPerspectiveProjection', () => {
     const ortho = createOrthographicProjection({ halfHeight: 1, halfWidth: 1 });
     expect(isPerspectiveProjection(persp)).toBe(true);
     expect(isPerspectiveProjection(ortho)).toBe(false);
+  });
+});
+
+describe('isRawProjection', () => {
+  it('is true for raw and false for perspective and orthographic', () => {
+    const raw = createRawProjection({ matrix: createMatrix4() });
+    const persp = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const ortho = createOrthographicProjection({ halfHeight: 1, halfWidth: 1 });
+    expect(isRawProjection(raw)).toBe(true);
+    expect(isRawProjection(persp)).toBe(false);
+    expect(isRawProjection(ortho)).toBe(false);
   });
 });
 
@@ -103,6 +142,19 @@ describe('setProjectionMatrix4', () => {
     const expected = createPerspectiveMatrix4(Math.tan(fovY * 0.5), 2, 0.5, 50);
     for (let i = 0; i < 16; i++) {
       expect(out.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+
+  it('copies the raw projection matrix verbatim, ignoring aspect/near/far', () => {
+    const source = createMatrix4();
+    setPerspectiveMatrix4(source, Math.tan(Math.PI / 4), 1.5, 0.1, 100);
+    const projection = createRawProjection({ matrix: source });
+
+    const out = createMatrix4();
+    setProjectionMatrix4(out, projection, 999, 0, 1);
+
+    for (let i = 0; i < 16; i++) {
+      expect(out.m[i]).toBeCloseTo(source.m[i]);
     }
   });
 

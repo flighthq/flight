@@ -9,6 +9,7 @@ import {
 import type { Camera3D, Camera3DOptions, EntityConstruction, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
 
 import { setProjectionMatrix4 } from './projection';
+import { applyObliqueNearClipPlane } from './reflection';
 
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   const out = allocateEntity<Camera3D>();
@@ -41,6 +42,7 @@ export function getCamera3DInverseViewProjectionMatrix4(
 export function getCamera3DViewProjectionMatrix4(out: Matrix4Like, camera: Readonly<Camera3D>, aspect: number): void {
   setProjectionMatrix4(__scratchProjection, camera.projection, aspect, camera.near, camera.far);
   applyCamera3DProjectionJitter(__scratchProjection, camera.jitter.x, camera.jitter.y);
+  if (camera.nearClipPlane) applyObliqueNearClipPlane(__scratchProjection, camera.nearClipPlane);
   multiplyMatrix4(out, __scratchProjection, camera.view);
 }
 
@@ -55,6 +57,7 @@ export function initializeCamera3D(out: EntityConstruction<Camera3D>, opts: Read
   out.inverseViewProjection = createMatrix4();
   out.jitter = createVector2(0, 0);
   out.near = opts.near;
+  out.nearClipPlane = opts.nearClipPlane ?? null;
   out.projection = opts.projection;
   out.view = createMatrix4();
 }
@@ -71,6 +74,7 @@ export function setCamera3DAspect(camera: Camera3D, aspect: number): void {
     projection.aspect = aspect;
     return;
   }
+  if (projection.kind === 'raw') return;
   projection.halfWidth = projection.halfHeight * aspect;
 }
 

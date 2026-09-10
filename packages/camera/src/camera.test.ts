@@ -1,9 +1,11 @@
 import {
   createMatrix4,
+  createPlane,
   createVector3,
   inverseMatrix4,
   multiplyMatrix4,
   setMatrix4LookAt,
+  setPerspectiveMatrix4,
 } from '@flighthq/geometry/contract';
 
 import {
@@ -18,7 +20,13 @@ import {
   setCamera3DViewMatrix4FromMatrix4,
   updateCamera3DInverseViewProjection,
 } from './camera';
-import { createOrthographicProjection, createPerspectiveProjection, setProjectionMatrix4 } from './projection';
+import {
+  createOrthographicProjection,
+  createPerspectiveProjection,
+  createRawProjection,
+  setProjectionMatrix4,
+} from './projection';
+import { applyObliqueNearClipPlane } from './reflection';
 
 describe('createCamera3D', () => {
   it('stores projection, near, far and identity view/inverse with zero jitter', () => {
@@ -30,9 +38,21 @@ describe('createCamera3D', () => {
     expect(camera.far).toBe(100);
     expect(camera.jitter.x).toBe(0);
     expect(camera.jitter.y).toBe(0);
+    expect(camera.nearClipPlane).toBeNull();
     expect(camera.view.m[0]).toBe(1);
     expect(camera.view.m[5]).toBe(1);
     expect(camera.inverseViewProjection.m[10]).toBe(1);
+  });
+
+  it('accepts an optional nearClipPlane', () => {
+    const plane = createPlane(0, 1, 0, -2);
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      nearClipPlane: plane,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    expect(camera.nearClipPlane).toBe(plane);
   });
 });
 
@@ -108,6 +128,36 @@ describe('getCamera3DViewProjectionMatrix4', () => {
     expect(jittered.m[9]).toBeCloseTo(base.m[9] + 0.5);
   });
 
+  it('applies the oblique near clip plane when nearClipPlane is set', () => {
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1.5, fovY: Math.PI / 3 }),
+    });
+
+    const withoutClip = createMatrix4();
+    getCamera3DViewProjectionMatrix4(withoutClip, camera, 1.5);
+
+    camera.nearClipPlane = createPlane(0, 1, 0, -1);
+    const withClip = createMatrix4();
+    getCamera3DViewProjectionMatrix4(withClip, camera, 1.5);
+
+    // The oblique clip modifies the third row of the projection (m[2], m[6], m[10], m[14]).
+    // Verify it differs from the symmetric projection.
+    const differs = Array.from({ length: 16 }, (_, i) => withClip.m[i] !== withoutClip.m[i]);
+    expect(differs.some(Boolean)).toBe(true);
+
+    // Verify the result matches manual oblique clip application.
+    const projMatrix = createMatrix4();
+    setProjectionMatrix4(projMatrix, camera.projection, 1.5, camera.near, camera.far);
+    applyObliqueNearClipPlane(projMatrix, camera.nearClipPlane);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, projMatrix, camera.view);
+    for (let i = 0; i < 16; i++) {
+      expect(withClip.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+
   it('is safe when out aliases the camera view', () => {
     const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
     const camera = createCamera3D({ far: 100, near: 0.1, projection });
@@ -147,6 +197,17 @@ describe('setCamera3DAspect', () => {
     setCamera3DAspect(camera, 2);
     expect(projection.halfHeight).toBe(5);
     expect(projection.halfWidth).toBe(10);
+  });
+
+  it('is a no-op for a raw projection', () => {
+    const source = createMatrix4();
+    setPerspectiveMatrix4(source, 1, 1.5, 0.1, 100);
+    const projection = createRawProjection({ matrix: source });
+    const camera = createCamera3D({ far: 100, near: 0.1, projection });
+    setCamera3DAspect(camera, 999);
+    for (let i = 0; i < 16; i++) {
+      expect(projection.matrix.m[i]).toBeCloseTo(source.m[i]);
+    }
   });
 });
 

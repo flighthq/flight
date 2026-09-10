@@ -18,4 +18,8 @@ export * from './viewMatrix';
 export * from './visibleBounds';
 export * from './zoom';
 export { initializeCamera3D } from './camera';
-export { initializeOrthographicProjection, initializePerspectiveProjection } from './projection';
+export {
+  initializeOrthographicProjection,
+  initializePerspectiveProjection,
+  initializeRawProjection,
+} from './projection';
