@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
@@ -51,7 +52,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/camera": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/lighting": "*",
     "@flighthq/scene3d": "*",
