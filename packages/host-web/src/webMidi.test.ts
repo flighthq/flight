@@ -23,7 +23,7 @@ describe('createWebMidiAccessCapabilities', () => {
     >;
     expect(Object.keys(capabilities)).toEqual(['access']);
 
-    const outcome = await requiredMidiFunction('requestMidiAccess')({ midi: capabilities });
+    const outcome = await requiredMidiFunction('requestMidiAccess')(capabilities.access);
     expect(requestMIDIAccess).toHaveBeenCalledOnce();
     expect(requestMIDIAccess).toHaveBeenCalledWith();
     expect(outcome).toMatchObject({ reason: 'accepted' });
@@ -38,9 +38,9 @@ describe('createWebMidiAccessCapabilities', () => {
     const second = requiredWebFunction('createWebMidiAccessCapabilities')({
       requestMIDIAccess: async () => native.access,
     }) as Record<string, unknown>;
-    const firstOutcome = await requiredMidiFunction('requestMidiAccess')({ midi: first });
-    const repeatedOutcome = await requiredMidiFunction('requestMidiAccess')({ midi: first });
-    const secondOutcome = await requiredMidiFunction('requestMidiAccess')({ midi: second });
+    const firstOutcome = await requiredMidiFunction('requestMidiAccess')(first.access);
+    const repeatedOutcome = await requiredMidiFunction('requestMidiAccess')(first.access);
+    const secondOutcome = await requiredMidiFunction('requestMidiAccess')(second.access);
     expect((repeatedOutcome as { access: unknown }).access).toBe((firstOutcome as { access: unknown }).access);
     expect((secondOutcome as { access: unknown }).access).not.toBe((firstOutcome as { access: unknown }).access);
 
@@ -58,9 +58,9 @@ describe('createWebMidiAccessCapabilities', () => {
       .mockRejectedValueOnce(new Error('transport failed'));
     const capabilities = requiredWebFunction('createWebMidiAccessCapabilities')({ requestMIDIAccess });
     const request = requiredMidiFunction('requestMidiAccess');
-    await expect(request({ midi: capabilities })).resolves.toEqual({ reason: 'permission-denied' });
-    await expect(request({ midi: capabilities })).resolves.toEqual({ reason: 'security-restricted' });
-    await expect(request({ midi: capabilities })).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'permission-denied' });
+    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'security-restricted' });
+    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'operation-failed' });
   });
 
   it('maps hotplug, port state, and copied input messages and releases exact native listeners', async () => {
@@ -68,7 +68,9 @@ describe('createWebMidiAccessCapabilities', () => {
     const capabilities = requiredWebFunction('createWebMidiAccessCapabilities')({
       requestMIDIAccess: async () => native.access,
     });
-    const request = (await requiredMidiFunction('requestMidiAccess')({ midi: capabilities })) as { access: unknown };
+    const request = (await requiredMidiFunction('requestMidiAccess')((capabilities as { access: unknown }).access)) as {
+      access: unknown;
+    };
     const accessSubscription = requiredMidiFunction('createMidiAccessStateSubscription')() as AccessSignal;
     const changed: unknown[] = [];
     connectSignal(accessSubscription.onMidiAccessStateChange, (port: unknown) => changed.push(port));
@@ -118,7 +120,7 @@ describe('createWebMidiPermissionAccessCapabilities', () => {
       requestMIDIAccess,
     }) as Record<string, unknown>;
     expect(Object.keys(capabilities).sort()).toEqual(['access', 'permission']);
-    await expect(requiredMidiFunction('getMidiPermission')({ midi: capabilities })).resolves.toEqual({
+    await expect(requiredMidiFunction('getMidiPermission')(capabilities.permission)).resolves.toEqual({
       reason: 'ok',
       state: 'prompt',
     });

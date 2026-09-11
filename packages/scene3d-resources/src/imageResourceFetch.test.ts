@@ -6,10 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
-  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
-const fetchWebImageResource = createWebImageResourceFetch(host.graphics.image);
+const hostImage: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+const fetchWebImageResource = createWebImageResourceFetch(hostImage);
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
@@ -39,7 +37,7 @@ describe('createWebImageResourceFetch', () => {
       new AbortController().signal,
     );
     expect(imageContract.loadImageResourceFromUrl).toHaveBeenCalledWith(
-      host,
+      hostImage,
       'assets/textures/leaf.png',
       undefined,
       expect.anything(),

@@ -31,7 +31,7 @@ interface QueryProviderLike extends Entity {
 
 interface ShortcutApi {
   attachGlobalShortcut(
-    host: { readonly shortcut: { readonly trigger: TriggerProviderLike } },
+    hostShortcutTrigger: TriggerProviderLike,
     shortcut: GlobalShortcutLike,
   ): Promise<Readonly<{ reason: string }>>;
   createGlobalShortcut(
@@ -39,21 +39,21 @@ interface ShortcutApi {
   ):
     | Readonly<{ parseError: AcceleratorParseError; reason: 'unparseable' }>
     | Readonly<{ reason: 'created'; shortcut: GlobalShortcutLike }>;
-  destroyShortcutTrigger(host: { readonly shortcut: { readonly trigger: TriggerProviderLike } }): Promise<void>;
+  destroyShortcutTrigger(hostShortcutTrigger: TriggerProviderLike): Promise<void>;
   detachGlobalShortcut(
-    host: { readonly shortcut: { readonly trigger: TriggerProviderLike } },
+    hostShortcutTrigger: TriggerProviderLike,
     shortcut: GlobalShortcutLike,
   ): Promise<Readonly<{ reason: string }>>;
   disposeGlobalShortcut(
-    host: { readonly shortcut: { readonly trigger: TriggerProviderLike } },
+    hostShortcutTrigger: TriggerProviderLike,
     shortcut: GlobalShortcutLike,
   ): Promise<Readonly<{ reason: string }>>;
   queryGlobalShortcutConflict(
-    host: { readonly shortcut: { readonly query: QueryProviderLike } },
+    hostShortcutQuery: QueryProviderLike,
     accelerator: string,
   ): Promise<Readonly<{ reason: string }>>;
   queryGlobalShortcutRegistration(
-    host: { readonly shortcut: { readonly query: QueryProviderLike } },
+    hostShortcutQuery: QueryProviderLike,
     accelerator: string,
   ): Promise<Readonly<{ parseError?: AcceleratorParseError; reason: string }>>;
 }
@@ -97,18 +97,10 @@ function triggerProvider(
   };
 }
 
-function triggerHost(provider: TriggerProviderLike) {
-  return { shortcut: { trigger: provider } };
-}
-
-function queryHost(provider: QueryProviderLike) {
-  return { shortcut: { query: provider } };
-}
-
 describe('attachGlobalShortcut', () => {
   it('maps a native refusal to a method-tight outcome', async () => {
     const provider = triggerProvider({ subscribe: async () => ({ reason: 'refused' }) });
-    await expect(api().attachGlobalShortcut(triggerHost(provider), createShortcut('Control+K'))).resolves.toEqual({
+    await expect(api().attachGlobalShortcut(provider, createShortcut('Control+K'))).resolves.toEqual({
       reason: 'native-refused',
     });
   });
@@ -119,7 +111,7 @@ describe('attachGlobalShortcut', () => {
         throw new Error('provider failed');
       },
     });
-    await expect(api().attachGlobalShortcut(triggerHost(provider), createShortcut('Control+J'))).resolves.toEqual({
+    await expect(api().attachGlobalShortcut(provider, createShortcut('Control+J'))).resolves.toEqual({
       reason: 'trigger-provider-failed',
     });
   });
@@ -127,10 +119,10 @@ describe('attachGlobalShortcut', () => {
   it('reports an in-progress same-chord acquisition without invoking the provider twice', async () => {
     const pending = deferred<Readonly<{ reason: 'subscribed'; subscription: ShortcutSubscriptionLike }>>();
     const subscribe = vi.fn(() => pending.promise);
-    const host = triggerHost(triggerProvider({ subscribe }));
-    const first = api().attachGlobalShortcut(host, createShortcut('Control+P'));
+    const hostShortcutTrigger = triggerProvider({ subscribe });
+    const first = api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('Control+P'));
 
-    await expect(api().attachGlobalShortcut(host, createShortcut('ctrl+p'))).resolves.toEqual({
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('ctrl+p'))).resolves.toEqual({
       reason: 'registration-in-progress',
     });
     expect(subscribe).toHaveBeenCalledTimes(1);
@@ -139,11 +131,11 @@ describe('attachGlobalShortcut', () => {
   });
 
   it('does not overwrite the first live same-chord registration', async () => {
-    const host = triggerHost(triggerProvider());
-    await expect(api().attachGlobalShortcut(host, createShortcut('Control+B'))).resolves.toEqual({
+    const hostShortcutTrigger = triggerProvider();
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('Control+B'))).resolves.toEqual({
       reason: 'attached',
     });
-    await expect(api().attachGlobalShortcut(host, createShortcut('ctrl+b'))).resolves.toEqual({
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('ctrl+b'))).resolves.toEqual({
       reason: 'already-registered',
     });
   });
@@ -170,7 +162,7 @@ describe('createGlobalShortcut', () => {
 describe('destroyShortcutTrigger', () => {
   it('awaits the exact trigger provider destroy boundary', async () => {
     const destroy = vi.fn(async () => {});
-    await api().destroyShortcutTrigger(triggerHost(triggerProvider({ destroy })));
+    await api().destroyShortcutTrigger(triggerProvider({ destroy }));
     expect(destroy).toHaveBeenCalledTimes(1);
   });
 });
@@ -179,8 +171,8 @@ describe('detachGlobalShortcut', () => {
   it('uses the creator-pinned provider after Host replacement', async () => {
     const originUnsubscribe = vi.fn(async () => ({ reason: 'unsubscribed' as const }));
     const replacementUnsubscribe = vi.fn(async () => ({ reason: 'unsubscribed' as const }));
-    const origin = triggerHost(triggerProvider({ unsubscribe: originUnsubscribe }));
-    const replacement = triggerHost(triggerProvider({ unsubscribe: replacementUnsubscribe }));
+    const origin = triggerProvider({ unsubscribe: originUnsubscribe });
+    const replacement = triggerProvider({ unsubscribe: replacementUnsubscribe });
     const shortcut = createShortcut('Control+D');
     await api().attachGlobalShortcut(origin, shortcut);
 
@@ -194,12 +186,14 @@ describe('detachGlobalShortcut', () => {
       .fn<TriggerProviderLike['unsubscribe']>()
       .mockRejectedValueOnce(new Error('first release failed'))
       .mockResolvedValueOnce({ reason: 'unsubscribed' });
-    const host = triggerHost(triggerProvider({ unsubscribe }));
+    const hostShortcutTrigger = triggerProvider({ unsubscribe });
     const shortcut = createShortcut('Control+R');
-    await api().attachGlobalShortcut(host, shortcut);
+    await api().attachGlobalShortcut(hostShortcutTrigger, shortcut);
 
-    await expect(api().detachGlobalShortcut(host, shortcut)).resolves.toEqual({ reason: 'trigger-provider-failed' });
-    await expect(api().detachGlobalShortcut(host, shortcut)).resolves.toEqual({ reason: 'detached' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({
+      reason: 'trigger-provider-failed',
+    });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({ reason: 'detached' });
     expect(unsubscribe).toHaveBeenCalledTimes(2);
   });
 });
@@ -215,16 +209,18 @@ describe('disposeGlobalShortcut', () => {
       providerTrigger = trigger;
       return { reason: 'subscribed' as const, subscription: subscription() };
     });
-    const host = triggerHost(triggerProvider({ subscribe, unsubscribe }));
+    const hostShortcutTrigger = triggerProvider({ subscribe, unsubscribe });
     const shortcut = createShortcut('Control+X');
     const listener = vi.fn();
     connectSignal(shortcut.onTrigger, listener);
-    await api().attachGlobalShortcut(host, shortcut);
+    await api().attachGlobalShortcut(hostShortcutTrigger, shortcut);
 
-    await expect(api().disposeGlobalShortcut(host, shortcut)).resolves.toEqual({ reason: 'trigger-provider-failed' });
+    await expect(api().disposeGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({
+      reason: 'trigger-provider-failed',
+    });
     providerTrigger?.();
     expect(listener).not.toHaveBeenCalled();
-    await expect(api().detachGlobalShortcut(host, shortcut)).resolves.toEqual({ reason: 'detached' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({ reason: 'detached' });
   });
 });
 
@@ -236,15 +232,17 @@ describe('initializeGlobalShortcut', () => {
 
 describe('queryGlobalShortcutConflict', () => {
   it('uses the exact query witness and preserves its method-tight outcome', async () => {
-    const host = queryHost({ [EntityRuntimeKey]: undefined, isRegistered: async () => true });
-    await expect(api().queryGlobalShortcutConflict(host, 'Control+Q')).resolves.toEqual({ reason: 'registered' });
+    const hostShortcutQuery = { [EntityRuntimeKey]: undefined, isRegistered: async () => true };
+    await expect(api().queryGlobalShortcutConflict(hostShortcutQuery, 'Control+Q')).resolves.toEqual({
+      reason: 'registered',
+    });
   });
 });
 describe('queryGlobalShortcutRegistration', () => {
   it('parses before querying and returns the exact parse error without calling the provider', async () => {
     const isRegistered = vi.fn(async () => false);
-    const host = queryHost({ [EntityRuntimeKey]: undefined, isRegistered });
-    await expect(api().queryGlobalShortcutRegistration(host, 'Control+NotAKey')).resolves.toEqual({
+    const hostShortcutQuery = { [EntityRuntimeKey]: undefined, isRegistered };
+    await expect(api().queryGlobalShortcutRegistration(hostShortcutQuery, 'Control+NotAKey')).resolves.toEqual({
       parseError: { reason: 'unknown-key', token: 'NotAKey' },
       reason: 'unparseable',
     });
@@ -252,14 +250,14 @@ describe('queryGlobalShortcutRegistration', () => {
   });
 
   it('distinguishes registered, not registered, and an attempted query-provider fault', async () => {
-    const yes = queryHost({ [EntityRuntimeKey]: undefined, isRegistered: async () => true });
-    const no = queryHost({ [EntityRuntimeKey]: undefined, isRegistered: async () => false });
-    const failed = queryHost({
+    const yes = { [EntityRuntimeKey]: undefined, isRegistered: async () => true };
+    const no = { [EntityRuntimeKey]: undefined, isRegistered: async () => false };
+    const failed = {
       [EntityRuntimeKey]: undefined,
       isRegistered: async () => {
         throw new Error('query failed');
       },
-    });
+    };
     await expect(api().queryGlobalShortcutRegistration(yes, 'Control+Q')).resolves.toEqual({ reason: 'registered' });
     await expect(api().queryGlobalShortcutRegistration(no, 'Control+Q')).resolves.toEqual({ reason: 'not-registered' });
     await expect(api().queryGlobalShortcutRegistration(failed, 'Control+Q')).resolves.toEqual({
