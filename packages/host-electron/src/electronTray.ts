@@ -13,27 +13,27 @@ import type {
   HostTrayCapabilities,
   MenuItemTemplate,
   Signal,
-  TrayBalloonBackend,
+  HostTrayBalloonProvider,
   TrayBalloonEvent,
-  TrayBalloonEventsBackend,
-  TrayBoundsBackend,
-  TrayDoubleClickPolicyBackend,
+  HostTrayBalloonEventsProvider,
+  HostTrayBoundsProvider,
+  HostTrayDoubleClickPolicyProvider,
   TrayDropEvent,
-  TrayDropEventsBackend,
+  HostTrayDropEventsProvider,
   TrayIcon,
   TrayIconOptions,
-  TrayImageBackend,
+  HostTrayImageProvider,
   TrayInteractionEvent,
-  TrayInteractionEventsBackend,
-  TrayLifecycleBackend,
-  TrayMenuBackend,
+  HostTrayInteractionEventsProvider,
+  HostTrayLifecycleProvider,
+  HostTrayMenuProvider,
   TrayMenuSelectionEvent,
-  TrayMenuSelectionEventsBackend,
-  TrayPopupMenuBackend,
-  TrayPressedImageBackend,
-  TrayTemplateImageBackend,
-  TrayTitleBackend,
-  TrayTooltipBackend,
+  HostTrayMenuSelectionEventsProvider,
+  HostTrayPopupMenuProvider,
+  HostTrayPressedImageProvider,
+  HostTrayTemplateImageProvider,
+  HostTrayTitleProvider,
+  HostTrayTooltipProvider,
   Vector2Like,
 } from '@flighthq/types/contract';
 
@@ -66,50 +66,50 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
   const records = new Map<TrayIcon, TrayRecord>();
 
   const lifecycle = (() => {
-    const out = allocateEntity<TrayLifecycleBackend>();
+    const out = allocateEntity<HostTrayLifecycleProvider>();
     initializeTrayLifecycleBackend(out, records, electron, profile);
     return finishEntity(out);
   })();
 
   const image = (() => {
-    const out = allocateEntity<TrayImageBackend>();
+    const out = allocateEntity<HostTrayImageProvider>();
     initializeTrayImageBackend(out, records, electron);
     return finishEntity(out);
   })();
 
   const tooltip = (() => {
-    const out = allocateEntity<TrayTooltipBackend>();
+    const out = allocateEntity<HostTrayTooltipProvider>();
     initializeTrayTooltipBackend(out, records);
     return finishEntity(out);
   })();
 
   const menu = (() => {
-    const out = allocateEntity<TrayMenuBackend>();
+    const out = allocateEntity<HostTrayMenuProvider>();
     initializeTrayMenuBackend(out, records, electron);
     return finishEntity(out);
   })();
 
   const common = {
     bounds: (() => {
-      const out = allocateEntity<TrayBoundsBackend>();
+      const out = allocateEntity<HostTrayBoundsProvider>();
       initializeTrayBoundsBackend(out, records);
       return finishEntity(out);
     })(),
     image,
     interactionEvents: (() => {
-      const out = allocateEntity<TrayInteractionEventsBackend>();
+      const out = allocateEntity<HostTrayInteractionEventsProvider>();
       initializeTrayInteractionEventsBackend(out, records);
       return finishEntity(out);
     })(),
     lifecycle,
     menu,
     menuSelectionEvents: (() => {
-      const out = allocateEntity<TrayMenuSelectionEventsBackend>();
+      const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
       initializeTrayMenuSelectionEventsBackend(out, records);
       return finishEntity(out);
     })(),
     popupMenu: (() => {
-      const out = allocateEntity<TrayPopupMenuBackend>();
+      const out = allocateEntity<HostTrayPopupMenuProvider>();
       initializeTrayPopupMenuBackend(out, records);
       return finishEntity(out);
     })(),
@@ -119,27 +119,27 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
   if (profile === 'macos') {
     const macos = {
       doubleClickPolicy: (() => {
-        const out = allocateEntity<TrayDoubleClickPolicyBackend>();
+        const out = allocateEntity<HostTrayDoubleClickPolicyProvider>();
         initializeTrayDoubleClickPolicyBackend(out, records);
         return finishEntity(out);
       })(),
       dropEvents: (() => {
-        const out = allocateEntity<TrayDropEventsBackend>();
+        const out = allocateEntity<HostTrayDropEventsProvider>();
         initializeTrayDropEventsBackend(out, records);
         return finishEntity(out);
       })(),
       pressedImage: (() => {
-        const out = allocateEntity<TrayPressedImageBackend>();
+        const out = allocateEntity<HostTrayPressedImageProvider>();
         initializeTrayPressedImageBackend(out, records, electron);
         return finishEntity(out);
       })(),
       templateImage: (() => {
-        const out = allocateEntity<TrayTemplateImageBackend>();
+        const out = allocateEntity<HostTrayTemplateImageProvider>();
         initializeTrayTemplateImageBackend(out, records);
         return finishEntity(out);
       })(),
       title: (() => {
-        const out = allocateEntity<TrayTitleBackend>();
+        const out = allocateEntity<HostTrayTitleProvider>();
         initializeTrayTitleBackend(out, records);
         return finishEntity(out);
       })(),
@@ -154,12 +154,12 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
   if (profile === 'windows') {
     const windows = {
       balloon: (() => {
-        const out = allocateEntity<TrayBalloonBackend>();
+        const out = allocateEntity<HostTrayBalloonProvider>();
         initializeTrayBalloonBackend(out, records);
         return finishEntity(out);
       })(),
       balloonEvents: (() => {
-        const out = allocateEntity<TrayBalloonEventsBackend>();
+        const out = allocateEntity<HostTrayBalloonEventsProvider>();
         initializeTrayBalloonEventsBackend(out, records);
         return finishEntity(out);
       })(),
@@ -177,7 +177,7 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
 }
 
 export function initializeTrayBalloonBackend(
-  out: EntityConstruction<TrayBalloonBackend>,
+  out: EntityConstruction<HostTrayBalloonProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.display = async (
@@ -217,14 +217,14 @@ export function initializeTrayBalloonBackend(
 }
 
 export function initializeTrayBalloonEventsBackend(
-  out: EntityConstruction<TrayBalloonEventsBackend>,
+  out: EntityConstruction<HostTrayBalloonEventsProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null;
 }
 
 export function initializeTrayBoundsBackend(
-  out: EntityConstruction<TrayBoundsBackend>,
+  out: EntityConstruction<HostTrayBoundsProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {
@@ -239,7 +239,7 @@ export function initializeTrayBoundsBackend(
 }
 
 export function initializeTrayDoubleClickPolicyBackend(
-  out: EntityConstruction<TrayDoubleClickPolicyBackend>,
+  out: EntityConstruction<HostTrayDoubleClickPolicyProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.setIgnore = async (tray: TrayIcon, ignore: boolean) => {
@@ -250,14 +250,14 @@ export function initializeTrayDoubleClickPolicyBackend(
 }
 
 export function initializeTrayDropEventsBackend(
-  out: EntityConstruction<TrayDropEventsBackend>,
+  out: EntityConstruction<HostTrayDropEventsProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.dropEvents ?? null;
 }
 
 export function initializeTrayImageBackend(
-  out: EntityConstruction<TrayImageBackend>,
+  out: EntityConstruction<HostTrayImageProvider>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -281,14 +281,14 @@ export function initializeTrayImageBackend(
 }
 
 export function initializeTrayInteractionEventsBackend(
-  out: EntityConstruction<TrayInteractionEventsBackend>,
+  out: EntityConstruction<HostTrayInteractionEventsProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.interactionEvents ?? null;
 }
 
 export function initializeTrayLifecycleBackend(
-  out: EntityConstruction<TrayLifecycleBackend>,
+  out: EntityConstruction<HostTrayLifecycleProvider>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
   profile: DesktopOsProfile,
@@ -397,7 +397,7 @@ export function initializeTrayLifecycleBackend(
 }
 
 export function initializeTrayMenuBackend(
-  out: EntityConstruction<TrayMenuBackend>,
+  out: EntityConstruction<HostTrayMenuProvider>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -423,14 +423,14 @@ export function initializeTrayMenuBackend(
 }
 
 export function initializeTrayMenuSelectionEventsBackend(
-  out: EntityConstruction<TrayMenuSelectionEventsBackend>,
+  out: EntityConstruction<HostTrayMenuSelectionEventsProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.menuSelectionEvents ?? null;
 }
 
 export function initializeTrayPopupMenuBackend(
-  out: EntityConstruction<TrayPopupMenuBackend>,
+  out: EntityConstruction<HostTrayPopupMenuProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.popup = async (tray: TrayIcon, position?: Readonly<Vector2Like>) => {
@@ -447,7 +447,7 @@ export function initializeTrayPopupMenuBackend(
 }
 
 export function initializeTrayPressedImageBackend(
-  out: EntityConstruction<TrayPressedImageBackend>,
+  out: EntityConstruction<HostTrayPressedImageProvider>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -470,7 +470,7 @@ export function initializeTrayPressedImageBackend(
 }
 
 export function initializeTrayTemplateImageBackend(
-  out: EntityConstruction<TrayTemplateImageBackend>,
+  out: EntityConstruction<HostTrayTemplateImageProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.set = async (tray: TrayIcon, isTemplate: boolean) => {
@@ -487,7 +487,7 @@ export function initializeTrayTemplateImageBackend(
 }
 
 export function initializeTrayTitleBackend(
-  out: EntityConstruction<TrayTitleBackend>,
+  out: EntityConstruction<HostTrayTitleProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {
@@ -510,7 +510,7 @@ export function initializeTrayTitleBackend(
 }
 
 export function initializeTrayTooltipBackend(
-  out: EntityConstruction<TrayTooltipBackend>,
+  out: EntityConstruction<HostTrayTooltipProvider>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {

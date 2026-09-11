@@ -2,15 +2,11 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   EntityWithoutRuntime,
-  HasMenuApplication,
-  HasMenuHighlight,
-  HasMenuPopup,
-  HasMenuSelect,
-  MenuApplicationBackend,
-  MenuHighlightBackend,
+  HostMenuApplicationProvider,
+  HostMenuHighlightProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
   MenuItemTemplate,
-  MenuPopupBackend,
-  MenuSelectBackend,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -37,7 +33,10 @@ import {
 
 // A host exposing exactly the slots a test needs. Nothing is installed anywhere: two of these can be
 // live at once, which is the property the ambient model could not express.
-function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & { calls: string[] } {
+function popupHost(
+  result: string | null,
+  calls: string[] = [],
+): { readonly menu: { readonly popup: HostMenuPopupProvider } } & { calls: string[] } {
   return {
     calls,
     menu: {
@@ -53,7 +52,10 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
   };
 }
 
-function applicationHost(accepted: boolean, seen: MenuItemTemplate[][] = []): HasMenuApplication {
+function applicationHost(
+  accepted: boolean,
+  seen: MenuItemTemplate[][] = [],
+): { readonly menu: { readonly application: HostMenuApplicationProvider } } {
   return {
     menu: {
       application: (() => {
@@ -68,7 +70,10 @@ function applicationHost(accepted: boolean, seen: MenuItemTemplate[][] = []): Ha
   };
 }
 
-function selectHost(): HasMenuSelect & { emit(id: string): void; subscriberCount(): number } {
+function selectHost(): { readonly menu: { readonly select: HostMenuSelectProvider } } & {
+  emit(id: string): void;
+  subscriberCount(): number;
+} {
   const listeners = new Set<(id: string) => void>();
   return {
     emit(id: string): void {
@@ -92,7 +97,9 @@ function selectHost(): HasMenuSelect & { emit(id: string): void; subscriberCount
   };
 }
 
-function highlightHost(): HasMenuHighlight & { emit(id: string): void } {
+function highlightHost(): { readonly menu: { readonly highlight: HostMenuHighlightProvider } } & {
+  emit(id: string): void;
+} {
   const listeners = new Set<(id: string) => void>();
   return {
     emit(id: string): void {
@@ -119,7 +126,7 @@ describe('attachMenuHighlight', () => {
     const highlight = createMenuHighlight();
     const seen: string[] = [];
     connectSignal(highlight.onMenuItemHighlight, (id) => seen.push(id));
-    attachMenuHighlight(host, highlight);
+    attachMenuHighlight(host.menu.highlight, highlight);
     host.emit('open');
     expect(seen).toEqual(['open']);
   });
@@ -132,7 +139,7 @@ describe('attachMenuSelect', () => {
     const select = createMenuSelect();
     const seen: string[] = [];
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
-    attachMenuSelect(host, select);
+    attachMenuSelect(host.menu.select, select);
     host.emit('save');
     expect(seen).toEqual(['save']);
   });
@@ -143,8 +150,8 @@ describe('attachMenuSelect', () => {
     const select = createMenuSelect();
     const seen: string[] = [];
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
-    attachMenuSelect(host, select);
-    attachMenuSelect(host, select);
+    attachMenuSelect(host.menu.select, select);
+    attachMenuSelect(host.menu.select, select);
     expect(host.subscriberCount()).toBe(1);
     host.emit('save');
     expect(seen).toEqual(['save']);
@@ -201,24 +208,26 @@ describe('createMenuSelect', () => {
 });
 
 describe('destroyMenuApplication', () => {
-  function applicationHostWith(provider: EntityWithoutRuntime<MenuApplicationBackend>): HasMenuApplication {
+  function applicationHostWith(provider: EntityWithoutRuntime<HostMenuApplicationProvider>): {
+    readonly menu: { readonly application: HostMenuApplicationProvider };
+  } {
     (provider as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
-    return { menu: { application: provider as MenuApplicationBackend } };
+    return { menu: { application: provider as HostMenuApplicationProvider } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {
     let destroyed = 0;
     const shared = { destroy: () => destroyed++, setApplicationMenu: () => true };
     // ★ ALIAS SAFETY: two hosts, ONE provider object. Destroying it twice would clear a successor's menu.
-    destroyMenuApplication(applicationHostWith(shared), applicationHostWith(shared));
+    destroyMenuApplication(applicationHostWith(shared).menu.application, applicationHostWith(shared).menu.application);
     expect(destroyed).toBe(1);
   });
 
   it('never destroys an already-released provider a second time', () => {
     let destroyed = 0;
     const provider = { destroy: () => destroyed++, setApplicationMenu: () => true };
-    destroyMenuApplication(applicationHostWith(provider));
-    destroyMenuApplication(applicationHostWith(provider));
+    destroyMenuApplication(applicationHostWith(provider).menu.application);
+    destroyMenuApplication(applicationHostWith(provider).menu.application);
     expect(destroyed).toBe(1);
   });
 
@@ -232,9 +241,12 @@ describe('destroyMenuApplication', () => {
       setApplicationMenu: () => true,
     };
     const healthy = { destroy: () => (secondDestroyed = true), setApplicationMenu: () => true };
-    expect(() => destroyMenuApplication(applicationHostWith(failing), applicationHostWith(healthy))).toThrow(
-      'first failed',
-    );
+    expect(() =>
+      destroyMenuApplication(
+        applicationHostWith(failing).menu.application,
+        applicationHostWith(healthy).menu.application,
+      ),
+    ).toThrow('first failed');
     expect(secondDestroyed).toBe(true);
   });
 
@@ -250,14 +262,26 @@ describe('destroyMenuApplication', () => {
       setApplicationMenu: () => true,
     };
     const healthy = { destroy: () => healthyDestroyed++, setApplicationMenu: () => true };
-    expect(() => destroyMenuApplication(applicationHostWith(flaky), applicationHostWith(healthy))).toThrow();
-    expect(() => destroyMenuApplication(applicationHostWith(flaky), applicationHostWith(healthy))).not.toThrow();
+    expect(() =>
+      destroyMenuApplication(
+        applicationHostWith(flaky).menu.application,
+        applicationHostWith(healthy).menu.application,
+      ),
+    ).toThrow();
+    expect(() =>
+      destroyMenuApplication(
+        applicationHostWith(flaky).menu.application,
+        applicationHostWith(healthy).menu.application,
+      ),
+    ).not.toThrow();
     expect(attempts).toBe(2);
     expect(healthyDestroyed).toBe(1);
   });
 
   it('tolerates a provider that declares no destroy', () => {
-    expect(() => destroyMenuApplication(applicationHostWith({ setApplicationMenu: () => true }))).not.toThrow();
+    expect(() =>
+      destroyMenuApplication(applicationHostWith({ setApplicationMenu: () => true }).menu.application),
+    ).not.toThrow();
   });
 });
 
@@ -274,7 +298,7 @@ describe('detachMenuSelect', () => {
     const select = createMenuSelect();
     const seen: string[] = [];
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
-    attachMenuSelect(host, select);
+    attachMenuSelect(host.menu.select, select);
     host.emit('first');
     detachMenuSelect(select);
     host.emit('second');
@@ -289,8 +313,8 @@ describe('detachMenuSelect', () => {
     const dropped = createMenuSelect();
     const keptSeen: string[] = [];
     connectSignal(kept.onMenuItemSelect, (id) => keptSeen.push(id));
-    attachMenuSelect(host, kept);
-    attachMenuSelect(host, dropped);
+    attachMenuSelect(host.menu.select, kept);
+    attachMenuSelect(host.menu.select, dropped);
     detachMenuSelect(dropped);
     host.emit('still-here');
     expect(keptSeen).toEqual(['still-here']);
@@ -305,7 +329,7 @@ describe('disposeMenuHighlight', () => {
     const highlight = createMenuHighlight();
     const seen: string[] = [];
     connectSignal(highlight.onMenuItemHighlight, (id) => seen.push(id));
-    attachMenuHighlight(host, highlight);
+    attachMenuHighlight(host.menu.highlight, highlight);
     disposeMenuHighlight(highlight);
     host.emit('after-dispose');
     expect(seen).toEqual([]);
@@ -320,7 +344,7 @@ describe('disposeMenuSelect', () => {
     const select = createMenuSelect();
     const seen: string[] = [];
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
-    attachMenuSelect(host, select);
+    attachMenuSelect(host.menu.select, select);
     disposeMenuSelect(select);
     host.emit('after-dispose');
     expect(seen).toEqual([]);
@@ -360,12 +384,12 @@ describe('setApplicationMenu', () => {
   it('reports the provider result and delivers the items', () => {
     const seen: MenuItemTemplate[][] = [];
     const items = [{ id: 'quit', label: 'Quit' }];
-    expect(setApplicationMenu(applicationHost(true, seen), items)).toBe(true);
+    expect(setApplicationMenu(applicationHost(true, seen).menu.application, items)).toBe(true);
     expect(seen).toEqual([items]);
   });
 
   it('reports a refused install as false', () => {
-    expect(setApplicationMenu(applicationHost(false), [{ id: 'quit', label: 'Quit' }])).toBe(false);
+    expect(setApplicationMenu(applicationHost(false).menu.application, [{ id: 'quit', label: 'Quit' }])).toBe(false);
   });
 });
 describe('showContextMenu', () => {
@@ -374,8 +398,8 @@ describe('showContextMenu', () => {
   it('routes each call to the host it was given', async () => {
     const first = popupHost('from-first');
     const second = popupHost('from-second');
-    await expect(showContextMenu(first, [], 1, 2)).resolves.toBe('from-first');
-    await expect(showContextMenu(second, [], 3, 4)).resolves.toBe('from-second');
+    await expect(showContextMenu(first.menu.popup, [], 1, 2)).resolves.toBe('from-first');
+    await expect(showContextMenu(second.menu.popup, [], 3, 4)).resolves.toBe('from-second');
     expect(first.calls).toEqual(['popup@1,2']);
     expect(second.calls).toEqual(['popup@3,4']);
   });
@@ -385,7 +409,7 @@ describe('showContextMenu', () => {
     const order: string[] = [];
     connectSignal(signals.onContextMenuOpen, () => order.push('open'));
     connectSignal(signals.onContextMenuClose, () => order.push('close'));
-    await showContextMenu(popupHost('x'), [], 0, 0);
+    await showContextMenu(popupHost('x').menu.popup, [], 0, 0);
     expect(order).toEqual(['open', 'close']);
   });
 });

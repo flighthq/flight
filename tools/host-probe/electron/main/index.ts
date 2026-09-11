@@ -62,8 +62,8 @@ function installElectronProbe(): HostProbeInstallResult {
     ),
   ];
 
-  const appName = getAppName(host);
-  const appVersion = getAppVersion(host);
+  const appName = getAppName(host.app.name);
+  const appVersion = getAppVersion(host.app.version);
   results.push({
     detail: appName.length > 0 ? `${appName} ${appVersion}`.trim() : 'Electron app identity is empty',
     id: 'runtime.app-identity',
@@ -72,7 +72,7 @@ function installElectronProbe(): HostProbeInstallResult {
   });
 
   const screens: ReturnType<typeof getScreens> = [];
-  getScreens(host, screens);
+  getScreens(host.screen.query, screens);
   results.push({
     detail: `${screens.length} Electron screen(s)`,
     id: 'runtime.screen',
@@ -81,7 +81,7 @@ function installElectronProbe(): HostProbeInstallResult {
   });
 
   const probeWindow = createApplicationWindow();
-  const opened = openWindow(host, probeWindow, {
+  const opened = openWindow(host.window, probeWindow, {
     height: 120,
     title: 'Flight Host Probe Child',
     visible: false,
@@ -97,7 +97,7 @@ function installElectronProbe(): HostProbeInstallResult {
     kind: 'runtime',
     status: opened && browserWindow !== null ? 'pass' : 'fail',
   });
-  closeWindow(host, probeWindow);
+  closeWindow(host.window, probeWindow);
 
   return { changedCapabilities, results };
 }

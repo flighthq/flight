@@ -1,6 +1,6 @@
 import { sendNetRequest } from '@flighthq/net/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HasNetHttp, LoadOptions, LoadProgress, NetProgress } from '@flighthq/types/contract';
+import type { HostNetProvider, LoadOptions, LoadProgress, NetProgress } from '@flighthq/types/contract';
 function requestOptions(url: string, input?: Readonly<LoadOptions>) {
   if (!input) return undefined;
   if (!input.progress) return { signal: input.signal };
@@ -16,13 +16,13 @@ function requestOptions(url: string, input?: Readonly<LoadOptions>) {
   return { signal: input.signal, progress };
 }
 export async function loadBytes(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   url: string,
   input?: Readonly<LoadOptions>,
 ): Promise<Uint8Array | null> {
   try {
     const response = await sendNetRequest(
-      host,
+      hostNet,
       { method: 'GET', responseType: 'arraybuffer', url },
       requestOptions(url, input),
     );
@@ -31,10 +31,14 @@ export async function loadBytes(
     return null;
   }
 }
-export async function loadText(host: HasNetHttp, url: string, input?: Readonly<LoadOptions>): Promise<string | null> {
+export async function loadText(
+  hostNet: Readonly<HostNetProvider>,
+  url: string,
+  input?: Readonly<LoadOptions>,
+): Promise<string | null> {
   try {
     const response = await sendNetRequest(
-      host,
+      hostNet,
       { method: 'GET', responseType: 'text', url },
       requestOptions(url, input),
     );

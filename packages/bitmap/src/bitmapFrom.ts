@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, EntityConstruction, HasGraphicsBitmapReadback, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, EntityConstruction, HostBitmapReadbackProvider, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
 
 export function captureBitmapFromImageResource(
-  host: Readonly<HasGraphicsBitmapReadback>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
   resource: Readonly<ImageResource>,
 ): Bitmap | null {
-  return createBitmapFromImageSource(host, resource.source, resource.width, resource.height);
+  return createBitmapFromImageSource(hostBitmapReadback, resource.source, resource.width, resource.height);
 }
 
 export function createBitmapFromCanvas(
@@ -24,12 +24,12 @@ export function createBitmapFromCanvas(
 }
 
 export function createBitmapFromImageSource(
-  host: Readonly<HasGraphicsBitmapReadback>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
   source: CanvasImageSource,
   width: number,
   height: number,
 ): Bitmap | null {
-  return resolveBitmapReadback(host, source, width, height, 'bitmap').bitmap;
+  return resolveBitmapReadback(hostBitmapReadback, source, width, height, 'bitmap').bitmap;
 }
 
 export function initializeBitmapFromCanvas(

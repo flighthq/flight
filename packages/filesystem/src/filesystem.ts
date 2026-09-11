@@ -8,53 +8,53 @@ import type {
   FileSystemUsage,
   FileWalkOptions,
   FileWatchEvent,
-  HasStorageFileSystem,
+  HostFileSystemProvider,
 } from '@flighthq/types/contract';
 
 export function appendTextFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   data: string,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const append = host.storage.fileSystem.appendTextFile;
+  const append = hostFileSystem.appendTextFile;
   if (append === undefined) return Promise.resolve(false);
   return signal === undefined ? append(path, data) : append(path, data, signal);
 }
 
 export function canAccessFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   mode: 'readable' | 'writable' | 'executable',
 ): Promise<boolean> {
-  return host.storage.fileSystem.canAccessFile?.(path, mode) ?? Promise.resolve(false);
+  return hostFileSystem.canAccessFile?.(path, mode) ?? Promise.resolve(false);
 }
 
-export function copyFile(host: HasStorageFileSystem, from: string, to: string): Promise<boolean> {
-  return host.storage.fileSystem.copy?.(from, to) ?? Promise.resolve(false);
+export function copyFile(hostFileSystem: Readonly<HostFileSystemProvider>, from: string, to: string): Promise<boolean> {
+  return hostFileSystem.copy?.(from, to) ?? Promise.resolve(false);
 }
 
 // Symlinks are outside the honest host-provider surface until a real provider exists.
-export function createFileSymlink(_host: HasStorageFileSystem, _target: string, _linkPath: string): Promise<boolean> {
+export function createFileSymlink(_target: string, _linkPath: string): Promise<boolean> {
   return Promise.resolve(false);
 }
 
-export function directoryExists(host: HasStorageFileSystem, path: string): Promise<boolean> {
-  return host.storage.fileSystem.directoryExists?.(path) ?? Promise.resolve(false);
+export function directoryExists(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+  return hostFileSystem.directoryExists?.(path) ?? Promise.resolve(false);
 }
 
-export function fileExists(host: HasStorageFileSystem, path: string): Promise<boolean> {
-  return host.storage.fileSystem.fileExists?.(path) ?? Promise.resolve(false);
+export function fileExists(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+  return hostFileSystem.fileExists?.(path) ?? Promise.resolve(false);
 }
 
 export async function findFiles(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   rootPath: string,
   pattern: string,
   options?: Readonly<FileWalkOptions>,
 ): Promise<readonly FileEntry[]> {
-  const all = await readDirectoryRecursive(host, rootPath, options);
+  const all = await readDirectoryRecursive(hostFileSystem, rootPath, options);
   if (all.length === 0) return [];
   const re = globToRegExp(pattern);
   return all.filter((entry) => re.test(entry.name) || re.test(entry.path));
@@ -78,22 +78,22 @@ export function getFileExtensionName(path: string): string {
 }
 
 // POSIX permissions are outside the honest host-provider surface until a real provider exists.
-export function getFilePermissions(_host: HasStorageFileSystem, _path: string): Promise<FilePermissions | null> {
+export function getFilePermissions(_path: string): Promise<FilePermissions | null> {
   return Promise.resolve(null);
 }
 
 // Real-path resolution is outside the honest host-provider surface until a real provider exists.
-export function getFileRealPath(_host: HasStorageFileSystem, _path: string): Promise<string | null> {
+export function getFileRealPath(_path: string): Promise<string | null> {
   return Promise.resolve(null);
 }
 
 // Well-known native paths are outside the honest host-provider surface until a real provider exists.
-export function getFileSystemPath(_host: HasStorageFileSystem, _kind: FileSystemPathKind): string {
+export function getFileSystemPath(_kind: FileSystemPathKind): string {
   return '';
 }
 
-export function getFileSystemUsage(host: HasStorageFileSystem): Promise<FileSystemUsage | null> {
-  return host.storage.fileSystem.getFileSystemUsage?.() ?? Promise.resolve(null);
+export function getFileSystemUsage(hostFileSystem: Readonly<HostFileSystemProvider>): Promise<FileSystemUsage | null> {
+  return hostFileSystem.getFileSystemUsage?.() ?? Promise.resolve(null);
 }
 
 export function isAbsoluteFilePath(path: string): boolean {
@@ -111,8 +111,8 @@ export function joinFilePath(...segments: readonly string[]): string {
   return formatResolvedPath(resolvePathSegments(segments.join('/'), absolute), absolute);
 }
 
-export function makeDirectory(host: HasStorageFileSystem, path: string): Promise<boolean> {
-  return host.storage.fileSystem.makeDirectory?.(path) ?? Promise.resolve(false);
+export function makeDirectory(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+  return hostFileSystem.makeDirectory?.(path) ?? Promise.resolve(false);
 }
 
 // Collapses empty and `.` segments and RESOLVES `..` against the segment before it, so a path has one
@@ -133,159 +133,167 @@ export function normalizeFilePath(path: string): string {
 }
 
 export function openFileReadStream(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   signal?: AbortSignal,
 ): Promise<ReadableStream<Uint8Array> | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const open = host.storage.fileSystem.openFileReadStream;
+  const open = hostFileSystem.openFileReadStream;
   if (open === undefined) return Promise.resolve(null);
   return signal === undefined ? open(path) : open(path, signal);
 }
 
 export function openFileWriteStream(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   signal?: AbortSignal,
 ): Promise<WritableStream<Uint8Array> | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const open = host.storage.fileSystem.openFileWriteStream;
+  const open = hostFileSystem.openFileWriteStream;
   if (open === undefined) return Promise.resolve(null);
   return signal === undefined ? open(path) : open(path, signal);
 }
 
 export function readBinaryFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   signal?: AbortSignal,
 ): Promise<Uint8Array | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const read = host.storage.fileSystem.readBinaryFile;
+  const read = hostFileSystem.readBinaryFile;
   if (read === undefined) return Promise.resolve(null);
   return signal === undefined ? read(path) : read(path, signal);
 }
 
 export function readBinaryFileRange(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   offset: number,
   length: number,
   signal?: AbortSignal,
 ): Promise<Uint8Array | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const read = host.storage.fileSystem.readBinaryFileRange;
+  const read = hostFileSystem.readBinaryFileRange;
   if (read === undefined) return Promise.resolve(null);
   return signal === undefined ? read(path, offset, length) : read(path, offset, length, signal);
 }
 
 export async function readDialogHandleBinaryFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   handle: Readonly<FileDialogHandle>,
   signal?: AbortSignal,
 ): Promise<Uint8Array | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  if (handle.path !== null) return readBinaryFile(host, handle.path, signal);
+  if (handle.path !== null) return readBinaryFile(hostFileSystem, handle.path, signal);
   const read = getFileDialogHandleOperations(handle)?.readBinary;
   if (read === undefined) return null;
   return signal === undefined ? read() : read(signal);
 }
 
 export async function readDialogHandleTextFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   handle: Readonly<FileDialogHandle>,
   signal?: AbortSignal,
 ): Promise<string | null> {
   signal?.throwIfAborted();
-  if (handle.path !== null) return readTextFile(host, handle.path, signal);
+  if (handle.path !== null) return readTextFile(hostFileSystem, handle.path, signal);
   const read = getFileDialogHandleOperations(handle)?.readText;
   if (read === undefined) return null;
   return signal === undefined ? read() : read(signal);
 }
 
-export function readDirectory(host: HasStorageFileSystem, path: string, signal?: AbortSignal): Promise<FileEntry[]> {
+export function readDirectory(
+  hostFileSystem: Readonly<HostFileSystemProvider>,
+  path: string,
+  signal?: AbortSignal,
+): Promise<FileEntry[]> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const read = host.storage.fileSystem.readDirectory;
+  const read = hostFileSystem.readDirectory;
   if (read === undefined) return Promise.resolve([]);
   return signal === undefined ? read(path) : read(path, signal);
 }
 
 export function readDirectoryRecursive(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   options?: Readonly<FileWalkOptions>,
 ): Promise<readonly FileEntry[]> {
   if (options?.signal?.aborted) return Promise.reject(options.signal.reason);
-  const read = host.storage.fileSystem.readDirectoryRecursive;
+  const read = hostFileSystem.readDirectoryRecursive;
   if (read === undefined) return Promise.resolve([]);
   return options === undefined ? read(path) : read(path, options);
 }
 
 // Symlinks are outside the honest host-provider surface until a real provider exists.
-export function readFileSymlink(_host: HasStorageFileSystem, _path: string): Promise<string | null> {
+export function readFileSymlink(_path: string): Promise<string | null> {
   return Promise.resolve(null);
 }
 
-export function readTextFile(host: HasStorageFileSystem, path: string, signal?: AbortSignal): Promise<string | null> {
+export function readTextFile(
+  hostFileSystem: Readonly<HostFileSystemProvider>,
+  path: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const read = host.storage.fileSystem.readTextFile;
+  const read = hostFileSystem.readTextFile;
   if (read === undefined) return Promise.resolve(null);
   return signal === undefined ? read(path) : read(path, signal);
 }
 
-export function removeDirectory(host: HasStorageFileSystem, path: string, recursive?: boolean): Promise<boolean> {
-  return host.storage.fileSystem.removeDirectory?.(path, recursive) ?? Promise.resolve(false);
+export function removeDirectory(
+  hostFileSystem: Readonly<HostFileSystemProvider>,
+  path: string,
+  recursive?: boolean,
+): Promise<boolean> {
+  return hostFileSystem.removeDirectory?.(path, recursive) ?? Promise.resolve(false);
 }
 
-export function removeFile(host: HasStorageFileSystem, path: string): Promise<boolean> {
-  return host.storage.fileSystem.removeFile?.(path) ?? Promise.resolve(false);
+export function removeFile(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+  return hostFileSystem.removeFile?.(path) ?? Promise.resolve(false);
 }
 
-export function renameFile(host: HasStorageFileSystem, from: string, to: string): Promise<boolean> {
-  return host.storage.fileSystem.rename?.(from, to) ?? Promise.resolve(false);
+export function renameFile(
+  hostFileSystem: Readonly<HostFileSystemProvider>,
+  from: string,
+  to: string,
+): Promise<boolean> {
+  return hostFileSystem.rename?.(from, to) ?? Promise.resolve(false);
 }
 
 // POSIX permissions are outside the honest host-provider surface until a real provider exists.
-export function setFilePermissions(
-  _host: HasStorageFileSystem,
-  _path: string,
-  _permissions: Readonly<FilePermissions>,
-): Promise<boolean> {
+export function setFilePermissions(_path: string, _permissions: Readonly<FilePermissions>): Promise<boolean> {
   return Promise.resolve(false);
 }
 
-export function statFile(host: HasStorageFileSystem, path: string): Promise<FileStat | null> {
-  return host.storage.fileSystem.statFile?.(path) ?? Promise.resolve(null);
+export function statFile(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<FileStat | null> {
+  return hostFileSystem.statFile?.(path) ?? Promise.resolve(null);
 }
 
 // File watching is outside the honest host-provider surface until a real provider exists.
-export function watchPath(
-  _host: HasStorageFileSystem,
-  _path: string,
-  _listener: (event: Readonly<FileWatchEvent>) => void,
-): () => void {
+export function watchPath(_path: string, _listener: (event: Readonly<FileWatchEvent>) => void): () => void {
   return () => {};
 }
 
 export function writeBinaryFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   data: Readonly<Uint8Array>,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const write = host.storage.fileSystem.writeBinaryFile;
+  const write = hostFileSystem.writeBinaryFile;
   if (write === undefined) return Promise.resolve(false);
   return signal === undefined ? write(path, data) : write(path, data, signal);
 }
 
 export async function writeBinaryFileChunks(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   chunks: AsyncIterable<Readonly<Uint8Array>>,
   signal?: AbortSignal,
 ): Promise<boolean> {
   signal?.throwIfAborted();
-  const stream = await openFileWriteStream(host, path, signal);
+  const stream = await openFileWriteStream(hostFileSystem, path, signal);
   if (stream === null) return false;
   const writer = stream.getWriter();
   if (signal?.aborted) {
@@ -318,51 +326,51 @@ export async function writeBinaryFileChunks(
 }
 
 export async function writeDialogHandleBinaryFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   handle: Readonly<FileDialogHandle>,
   data: Readonly<Uint8Array>,
   signal?: AbortSignal,
 ): Promise<boolean> {
   signal?.throwIfAborted();
-  if (handle.path !== null) return writeBinaryFile(host, handle.path, data, signal);
+  if (handle.path !== null) return writeBinaryFile(hostFileSystem, handle.path, data, signal);
   const write = getFileDialogHandleOperations(handle)?.writeBinary;
   if (write === undefined) return false;
   return signal === undefined ? write(data) : write(data, signal);
 }
 
 export async function writeDialogHandleTextFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   handle: Readonly<FileDialogHandle>,
   data: string,
   signal?: AbortSignal,
 ): Promise<boolean> {
   signal?.throwIfAborted();
-  if (handle.path !== null) return writeTextFile(host, handle.path, data, signal);
+  if (handle.path !== null) return writeTextFile(hostFileSystem, handle.path, data, signal);
   const write = getFileDialogHandleOperations(handle)?.writeText;
   if (write === undefined) return false;
   return signal === undefined ? write(data) : write(data, signal);
 }
 
 export function writeFileAtomic(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   data: Readonly<Uint8Array> | string,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const write = host.storage.fileSystem.writeFileAtomic;
+  const write = hostFileSystem.writeFileAtomic;
   if (write === undefined) return Promise.resolve(false);
   return signal === undefined ? write(path, data) : write(path, data, signal);
 }
 
 export function writeTextFile(
-  host: HasStorageFileSystem,
+  hostFileSystem: Readonly<HostFileSystemProvider>,
   path: string,
   data: string,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (signal?.aborted) return Promise.reject(signal.reason);
-  const write = host.storage.fileSystem.writeTextFile;
+  const write = hostFileSystem.writeTextFile;
   if (write === undefined) return Promise.resolve(false);
   return signal === undefined ? write(path, data) : write(path, data, signal);
 }

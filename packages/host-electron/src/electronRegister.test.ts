@@ -79,8 +79,8 @@ describe('registerElectronBackends', () => {
       value: null,
     });
     expect(host.window.open).toBeTypeOf('function');
-    expect(getAppName(host)).toBe('ElectronApp');
-    expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');
+    expect(getAppName(host.app.name)).toBe('ElectronApp');
+    expect(await readClipboardText(host.clipboard.text)).toBe('ELECTRON-TEXT');
   });
 
   it('constructs the exact six Shell slots from an injected platform fact', () => {

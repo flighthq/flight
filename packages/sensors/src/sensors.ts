@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HasSystemSensors, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -11,7 +11,7 @@ import type {
   QuaternionReading,
   RotationRateReading,
   Sensors,
-  SensorsBackend,
+  HostSensorsProvider,
   SensorsPermissionState,
   SensorSubscribeOptions,
 } from '@flighthq/types/contract';
@@ -21,9 +21,9 @@ import type {
 //
 // Readings passed to signal listeners are scratch-reused objects. Listeners must not retain a
 // reference to a reading across callback boundaries — copy the values if they need to outlive the call.
-export function attachSensors(host: HasSystemSensors, sensors: Sensors): void {
+export function attachSensors(hostSensors: Readonly<HostSensorsProvider>, sensors: Sensors): void {
   detachSensors(sensors);
-  const backend = host.system.sensors;
+  const backend = hostSensors;
 
   const unsubscribeMotion = backend.subscribeMotion((acceleration, rotationRate) => {
     emitSignal(sensors.onAccelerometer, acceleration);
@@ -285,12 +285,12 @@ export function createSensors(): Sensors {
 // Rate control: the Generic Sensor API honors the `frequency` option; the devicemotion /
 // deviceorientation window event streams do not support rate control and always fire at the
 // browser's default interval.
-export function createWebSensorsBackend(): SensorsBackend {
+export function createWebSensorsBackend(): HostSensorsProvider {
   // Explicit type argument so the literal keeps its contextual method parameter types — without one,
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
   // the runtime slot: `allocateEntity<SensorsBackend>` cannot work, because allocateEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
-  const out = allocateEntity<SensorsBackend>();
+  const out = allocateEntity<HostSensorsProvider>();
   out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {
     return getWebSensorsPermissionState(sensor);
   };
@@ -567,55 +567,55 @@ export function disposeSensors(sensors: Sensors): void {
 // Queries the current permission state for the given sensor without triggering a permission prompt.
 // Returns 'unsupported' when the device has no such sensor.
 export function getSensorsPermissionState(
-  host: HasSystemSensors,
+  hostSensors: Readonly<HostSensorsProvider>,
   sensor?: 'motion' | 'orientation' | 'magnetometer',
 ): Promise<SensorsPermissionState> {
-  return host.system.sensors.getPermissionState(sensor);
+  return hostSensors.getPermissionState(sensor);
 }
 
 // True if the accelerometer (including gravity) is available on this device.
-export function hasAccelerometer(host: HasSystemSensors): boolean {
-  return host.system.sensors.isMotionSupported();
+export function hasAccelerometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isMotionSupported();
 }
 
 // True if ambient light sensing is available on this device/platform.
-export function hasAmbientLightSensor(host: HasSystemSensors): boolean {
-  return host.system.sensors.isAmbientLightSupported();
+export function hasAmbientLightSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isAmbientLightSupported();
 }
 
 // True if barometric pressure sensing is available.
-export function hasBarometer(host: HasSystemSensors): boolean {
-  return host.system.sensors.isBarometerSupported();
+export function hasBarometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isBarometerSupported();
 }
 
 // True if the gravity vector sensor (or derivation) is available on this device.
-export function hasGravitySensor(host: HasSystemSensors): boolean {
-  return host.system.sensors.isGravitySupported();
+export function hasGravitySensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isGravitySupported();
 }
 
 // True if the gyroscope (rotation rate) sensor is available.
-export function hasGyroscope(host: HasSystemSensors): boolean {
-  return host.system.sensors.isGyroscopeSupported();
+export function hasGyroscope(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isGyroscopeSupported();
 }
 
 // True if the linear acceleration (gravity-removed) sensor is available.
-export function hasLinearAccelerationSensor(host: HasSystemSensors): boolean {
-  return host.system.sensors.isLinearAccelerationSupported();
+export function hasLinearAccelerationSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isLinearAccelerationSupported();
 }
 
 // True if the magnetometer sensor is available.
-export function hasMagnetometer(host: HasSystemSensors): boolean {
-  return host.system.sensors.isMagnetometerSupported();
+export function hasMagnetometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isMagnetometerSupported();
 }
 
 // True if the device orientation sensor is available.
-export function hasOrientationSensor(host: HasSystemSensors): boolean {
-  return host.system.sensors.isOrientationSupported();
+export function hasOrientationSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isOrientationSupported();
 }
 
 // True if a proximity sensor is available.
-export function hasProximitySensor(host: HasSystemSensors): boolean {
-  return host.system.sensors.isProximitySupported();
+export function hasProximitySensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isProximitySupported();
 }
 
 // Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
@@ -709,13 +709,13 @@ export function initializeSensors(out: EntityConstruction<Sensors>): void {
 }
 
 // True if any motion sensors (accelerometer or gyroscope) are available on this device.
-export function isSensorsSupported(host: HasSystemSensors): boolean {
-  return host.system.sensors.isMotionSupported();
+export function isSensorsSupported(hostSensors: Readonly<HostSensorsProvider>): boolean {
+  return hostSensors.isMotionSupported();
 }
 
 // Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
-export function requestSensorsPermission(host: HasSystemSensors): Promise<boolean> {
-  return host.system.sensors.requestPermission();
+export function requestSensorsPermission(hostSensors: Readonly<HostSensorsProvider>): Promise<boolean> {
+  return hostSensors.requestPermission();
 }
 
 const _subscriptions = new WeakMap<Sensors, () => void>();

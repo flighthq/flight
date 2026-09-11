@@ -16,7 +16,7 @@ import type {
   WgpuDeviceState,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
-  WgpuHostBackend,
+  HostWgpuProvider,
   WgpuOffscreenRenderStateResult,
   WgpuPipeline,
   WgpuPresentationRenderState,
@@ -167,7 +167,7 @@ function initializeWgpuPresentationRenderState(
   options: Readonly<WgpuRenderOptions>,
   acquisition: Readonly<WgpuHostAcquisition>,
   pipeline: Readonly<WgpuPipeline>,
-  hostBackend: WgpuHostBackend,
+  hostBackend: HostWgpuProvider,
 ): WgpuPresentationRenderState {
   const { context, device, format } = acquisition;
 
@@ -524,7 +524,7 @@ function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDevic
 
 type WgpuAcquisitionOwnership = {
   acquisition: Readonly<WgpuHostAcquisition>;
-  hostBackend: WgpuHostBackend;
+  hostBackend: HostWgpuProvider;
   references: number;
 };
 

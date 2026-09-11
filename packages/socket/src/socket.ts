@@ -3,9 +3,8 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  HasNetSocket,
+  HostSocketProvider,
   Socket,
-  SocketBackend,
   SocketCloseInfo,
   SocketConnection,
   SocketEventSink,
@@ -47,7 +46,7 @@ export function closeSocket(socket: Socket, code?: number, reason?: string): voi
 // socket starts in 'connecting' and is left attached (delivering). Enable signals with
 // enableSocketSignals to observe events. A backend that does not support the transport yields a null
 // connection and the socket stays in 'connecting' until closed.
-export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions>): Socket {
+export function createSocket(hostSocket: Readonly<HostSocketProvider>, options: Readonly<SocketOptions>): Socket {
   const runtime: SocketRuntime = {
     connection: null,
     signals: null,
@@ -61,14 +60,14 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
   // The provider comes from the host the caller passed. A host that carries no socket transport
   // yields no connection rather than reaching a process-global fallback: absence is an answer here,
   // and the guard reports it.
-  const backend = host.net.socket;
+  const backend = hostSocket;
   runtime.connection = backend === undefined ? null : backend.openSocket(options, makeSocketEventSink(runtime));
   if (runtime.connection === null) _guard?.({ operation: 'createSocket', reason: 'no-connection', socket });
   return socket;
 }
 
-export function createWebSocketBackend(): SocketBackend & Entity {
-  const out = allocateEntity<SocketBackend & Entity>();
+export function createWebSocketBackend(): HostSocketProvider & Entity {
+  const out = allocateEntity<HostSocketProvider & Entity>();
   initializeWebSocketBackend(out);
   return finishEntity(out);
 }
@@ -122,7 +121,7 @@ export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState 
 // the package has no side effect; a host composes this value into its own net group. Returns a
 // null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
 // is likewise unsupported here and only reachable through a native backend.
-export function initializeWebSocketBackend(out: EntityConstruction<SocketBackend & Entity>): void {
+export function initializeWebSocketBackend(out: EntityConstruction<HostSocketProvider & Entity>): void {
   out.openSocket = (options, events): SocketConnection | null => {
     if (typeof WebSocket === 'undefined') return null;
     const ws =
@@ -151,8 +150,11 @@ export function initializeWebSocketBackend(out: EntityConstruction<SocketBackend
 // Opens a raw TCP byte stream through the socket provider selected by the caller's host. Browser and
 // other framed-only providers omit openTcpSocket, so unsupported raw TCP returns null without trying
 // openSocket or interpreting the endpoint as a WebSocket URL.
-export function openTcpSocket(host: HasNetSocket, options: Readonly<TcpSocketOptions>): TcpSocketConnection | null {
-  return host.net.socket?.openTcpSocket?.(options) ?? null;
+export function openTcpSocket(
+  hostSocket: Readonly<HostSocketProvider>,
+  options: Readonly<TcpSocketOptions>,
+): TcpSocketConnection | null {
+  return hostSocket?.openTcpSocket?.(options) ?? null;
 }
 
 // Sends a text or binary frame over the live connection without mutating or copying either argument.

@@ -1,4 +1,10 @@
-import type { HasTextShaper, ShapedRun, TextFormat, TextItem, TextShaperOptions } from '@flighthq/types/contract';
+import type {
+  HostTextShaperProvider,
+  ShapedRun,
+  TextFormat,
+  TextItem,
+  TextShaperOptions,
+} from '@flighthq/types/contract';
 
 import { shapeTextRun } from './textShaperRun';
 
@@ -77,7 +83,7 @@ export function shapeTextRuns(
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<TextShaperOptions>,
-  host?: HasTextShaper,
+  hostTextShaper?: Readonly<HostTextShaperProvider>,
 ): readonly ShapedRun[] {
   if (text.length === 0) return [];
   const items = itemizeText(text, format, options);
@@ -91,7 +97,7 @@ export function shapeTextRuns(
       direction: item.direction === 'TopToBottom' ? undefined : item.direction,
       script: item.script,
     };
-    const run = shapeTextRun(sub, format, runOptions, host);
+    const run = shapeTextRun(sub, format, runOptions, hostTextShaper);
     if (run !== null) result.push(run);
   }
   return result;

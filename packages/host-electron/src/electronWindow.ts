@@ -7,14 +7,14 @@ import type {
   ElectronBrowserWindow,
   NativeWindowHandle,
   WindowAttachmentOwnership,
-  WindowBackend,
+  HostWindowProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createElectronWindowBackend(
   electron: ElectronApi,
-): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
-  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+): HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>> {
+  const out = allocateEntity<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>();
   initializeElectronWindowBackend(out, electron);
   return finishEntity(out);
 }
@@ -46,7 +46,7 @@ export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
 // functions emit. Other methods look up the BrowserWindow and no-op when it is absent (already closed
 // or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the seam.
 export function initializeElectronWindowBackend(
-  out: EntityConstruction<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>,
+  out: EntityConstruction<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>,
   electron: ElectronApi,
 ): void {
   out.attach = (win, handle, ownership) => {

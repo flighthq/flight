@@ -4,7 +4,7 @@ import type {
   CapacitorHost,
   EntityConstruction,
   MobileOsProfile,
-  WindowBackend,
+  HostWindowProvider,
 } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
@@ -95,7 +95,7 @@ export function initializeCapacitorHost<Profile extends MobileOsProfile>(
     statusBarVisibility: statusBar,
   };
   out.updater = {};
-  out.window = finishEntity(allocateEntity<WindowBackend>());
+  out.window = finishEntity(allocateEntity<HostWindowProvider>());
 }
 
 // Returns the explicit Capacitor host. Run this once at app startup, passing an object that aggregates

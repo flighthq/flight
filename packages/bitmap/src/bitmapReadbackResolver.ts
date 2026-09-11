@@ -2,7 +2,7 @@ import type {
   Bitmap,
   BitmapReadbackBlockReason,
   BitmapReadbackMode,
-  HasGraphicsBitmapReadback,
+  HostBitmapReadbackProvider,
   HostImageSource,
 } from '@flighthq/types/contract';
 
@@ -12,12 +12,12 @@ interface BitmapReadbackResolution {
 }
 
 export function resolveBitmapReadback(
-  host: Readonly<HasGraphicsBitmapReadback>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
   source: HostImageSource,
   width: number,
   height: number,
   mode: BitmapReadbackMode,
 ): BitmapReadbackResolution {
   if (width <= 0 || height <= 0) return { bitmap: null, reason: 'empty-size' };
-  return host.graphics.bitmapReadback.readBitmap(source, width, height, mode);
+  return hostBitmapReadback.readBitmap(source, width, height, mode);
 }

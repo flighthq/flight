@@ -15,16 +15,16 @@ import type {
   TauriTrayCapabilitiesFor,
   TrayIcon,
   TrayIconOptions,
-  TrayImageBackend,
+  HostTrayImageProvider,
   TrayInteractionEvent,
-  TrayInteractionEventsBackend,
-  TrayLifecycleBackend,
-  TrayMenuBackend,
+  HostTrayInteractionEventsProvider,
+  HostTrayLifecycleProvider,
+  HostTrayMenuProvider,
   TrayMenuSelectionEvent,
-  TrayMenuSelectionEventsBackend,
-  TrayTemplateImageBackend,
-  TrayTitleBackend,
-  TrayTooltipBackend,
+  HostTrayMenuSelectionEventsProvider,
+  HostTrayTemplateImageProvider,
+  HostTrayTitleProvider,
+  HostTrayTooltipProvider,
 } from '@flighthq/types/contract';
 
 interface TrayRecord {
@@ -47,7 +47,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   const records = new Map<TrayIcon, TrayRecord>();
 
   const lifecycle = (() => {
-    const out = allocateEntity<TrayLifecycleBackend>();
+    const out = allocateEntity<HostTrayLifecycleProvider>();
     out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
       if (options.signal?.aborted) return { outcome: 'cancelled' as const };
       const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
@@ -122,7 +122,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   const image = (() => {
-    const out = allocateEntity<TrayImageBackend>();
+    const out = allocateEntity<HostTrayImageProvider>();
     out.set = async (tray: TrayIcon, icon: string) => {
       return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
     };
@@ -130,7 +130,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   const menu = (() => {
-    const out = allocateEntity<TrayMenuBackend>();
+    const out = allocateEntity<HostTrayMenuProvider>();
     out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
       const record = activeRecord(records, tray);
       if (record === null) return { outcome: 'tray-destroyed' as const };
@@ -201,14 +201,14 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     lifecycle,
     menu,
     menuSelectionEvents: (() => {
-      const out = allocateEntity<TrayMenuSelectionEventsBackend>();
+      const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
       out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
       return finishEntity(out);
     })(),
   };
 
   const title = (() => {
-    const out = allocateEntity<TrayTitleBackend>();
+    const out = allocateEntity<HostTrayTitleProvider>();
     out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
@@ -241,12 +241,12 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   }
 
   const interactionEvents = (() => {
-    const out = allocateEntity<TrayInteractionEventsBackend>();
+    const out = allocateEntity<HostTrayInteractionEventsProvider>();
     out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
     return finishEntity(out);
   })();
   const tooltip = (() => {
-    const out = allocateEntity<TrayTooltipBackend>();
+    const out = allocateEntity<HostTrayTooltipProvider>();
     out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
@@ -279,7 +279,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     );
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  const templateImageEntity = allocateEntity<TrayTemplateImageBackend>();
+  const templateImageEntity = allocateEntity<HostTrayTemplateImageProvider>();
   templateImageEntity.set = async (tray: TrayIcon, isTemplate: boolean) => {
     return update(records, tray, 'template-image-update-failed', async (record) =>
       record.icon.setIconAsTemplate(isTemplate),
@@ -304,14 +304,14 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
 
 export function initializeTauriTrayCapabilities(
   out: EntityConstruction<Entity>,
-  image: TrayImageBackend,
-  interactionEvents: TrayInteractionEventsBackend | null,
-  lifecycle: TrayLifecycleBackend,
-  menu: TrayMenuBackend,
-  menuSelectionEvents: TrayMenuSelectionEventsBackend,
-  templateImage: TrayTemplateImageBackend | null,
-  title: TrayTitleBackend | null,
-  tooltip: TrayTooltipBackend | null,
+  image: HostTrayImageProvider,
+  interactionEvents: HostTrayInteractionEventsProvider | null,
+  lifecycle: HostTrayLifecycleProvider,
+  menu: HostTrayMenuProvider,
+  menuSelectionEvents: HostTrayMenuSelectionEventsProvider,
+  templateImage: HostTrayTemplateImageProvider | null,
+  title: HostTrayTitleProvider | null,
+  tooltip: HostTrayTooltipProvider | null,
 ): void {
   (out as any).image = image;
   if (interactionEvents !== null) (out as any).interactionEvents = interactionEvents;

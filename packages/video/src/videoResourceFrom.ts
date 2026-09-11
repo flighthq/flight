@@ -1,5 +1,5 @@
 import type {
-  VideoCapabilityBackend,
+  HostVideoProvider,
   VideoResource,
   VideoResourceLoadOptions,
   VideoResourceUrl,
@@ -9,7 +9,7 @@ import { selectVideoResourceUrl } from './videoFormat';
 import { createVideoResource, disposeVideoResource } from './videoResource';
 
 export function createVideoResourceFromMediaStream(
-  backend: Readonly<VideoCapabilityBackend>,
+  backend: Readonly<HostVideoProvider>,
   stream: MediaStream,
 ): VideoResource | null {
   const element = (backend.createVideoElement?.() ?? null) as HTMLVideoElement | null;
@@ -19,7 +19,7 @@ export function createVideoResourceFromMediaStream(
 }
 
 export async function loadVideoResourceFromBlob(
-  backend: Readonly<VideoCapabilityBackend>,
+  backend: Readonly<HostVideoProvider>,
   blob: Blob,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,
@@ -37,7 +37,7 @@ export async function loadVideoResourceFromBlob(
 }
 
 export function loadVideoResourceFromUrl(
-  backend: Readonly<VideoCapabilityBackend>,
+  backend: Readonly<HostVideoProvider>,
   url: string,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,
@@ -84,7 +84,7 @@ export function loadVideoResourceFromUrl(
 }
 
 export function loadVideoResourceFromUrls(
-  backend: Readonly<VideoCapabilityBackend>,
+  backend: Readonly<HostVideoProvider>,
   sources: Readonly<VideoResourceUrl[]>,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,

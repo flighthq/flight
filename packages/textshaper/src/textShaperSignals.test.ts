@@ -1,4 +1,4 @@
-import type { TextShaperBackend } from '@flighthq/types/contract';
+import type { HostTextShaperProvider } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {
@@ -8,8 +8,8 @@ import {
   initializeTextShaperSignals,
 } from './textShaperSignals';
 
-const _stubBackend: TextShaperBackend = { measureText: () => 0 };
-const _stubBackend2: TextShaperBackend = { measureText: () => 1 };
+const _stubBackend: HostTextShaperProvider = { measureText: () => 0 };
+const _stubBackend2: HostTextShaperProvider = { measureText: () => 1 };
 
 afterEach(() => {
   disposeTextShaperSignals();
@@ -69,14 +69,14 @@ describe('initializeTextShaperSignals', () => {
 describe('setTextShaperBackend', () => {
   it('emits onBackendChanged with the new backend when signals are enabled', () => {
     const sigs = enableTextShaperSignals();
-    const received: (TextShaperBackend | null)[] = [];
+    const received: (HostTextShaperProvider | null)[] = [];
     sigs.onBackendChanged.emit = (b) => received.push(b);
     setTextShaperBackend(_stubBackend);
     expect(received).toEqual([_stubBackend]);
   });
   it('emits onBackendChanged with null when cleared', () => {
     const sigs = enableTextShaperSignals();
-    const received: (TextShaperBackend | null)[] = [];
+    const received: (HostTextShaperProvider | null)[] = [];
     sigs.onBackendChanged.emit = (b) => received.push(b);
     setTextShaperBackend(_stubBackend);
     setTextShaperBackend(null);

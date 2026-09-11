@@ -20,9 +20,9 @@ describe('getMidiPermission', () => {
       },
     };
     const getMidiPermission = requiredFunction('getMidiPermission');
-    await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'ok', state: 'prompt' });
-    await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'unsupported' });
-    await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(getMidiPermission(host.midi.permission)).resolves.toEqual({ reason: 'ok', state: 'prompt' });
+    await expect(getMidiPermission(host.midi.permission)).resolves.toEqual({ reason: 'unsupported' });
+    await expect(getMidiPermission(host.midi.permission)).resolves.toEqual({ reason: 'operation-failed' });
     expect(getPermission).toHaveBeenCalledTimes(3);
   });
 });

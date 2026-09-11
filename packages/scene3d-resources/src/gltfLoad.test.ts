@@ -2,7 +2,7 @@ import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type {
   GltfExtensionHandler,
-  HasNetHttp,
+  HostNetProvider,
   ImportDiagnostic,
   NetResponse,
   Scene3DDocument,
@@ -27,12 +27,12 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
-function fakeHost(): HasNetHttp {
-  const host: HasNetHttp = {
+function fakeHost(): { readonly net: { readonly http: HostNetProvider } } {
+  const host: { readonly net: { readonly http: HostNetProvider } } = {
     net: {
       http: {
         [EntityRuntimeKey]: undefined,
-        sendNetRequest: (request, options) => netContract.sendNetRequest(host, request, options),
+        sendNetRequest: (request, options) => netContract.sendNetRequest(host.net.http, request, options),
       },
     },
   };
@@ -61,7 +61,7 @@ describe('loadScene3DDocumentFromGlbUrl', () => {
     vi.mocked(scene3dFormatsContract.parseGlb).mockReturnValue(document);
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(response(new Uint8Array([1, 2, 3]).buffer));
 
-    const loaded = await loadScene3DDocumentFromGlbUrl(fakeHost(), 'models/ship.glb', {
+    const loaded = await loadScene3DDocumentFromGlbUrl(fakeHost().net.http, 'models/ship.glb', {
       diagnostics,
       extensionHandlers,
     });
@@ -86,7 +86,7 @@ describe('loadScene3DDocumentFromGlbUrl', () => {
       url: 'u',
     });
 
-    await expect(loadScene3DDocumentFromGlbUrl(fakeHost(), 'missing.glb')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGlbUrl(fakeHost().net.http, 'missing.glb')).resolves.toBeNull();
     expect(scene3dFormatsContract.parseGlb).not.toHaveBeenCalled();
   });
 });
@@ -105,7 +105,7 @@ describe('loadScene3DDocumentFromGltfUrl', () => {
         : response(new Uint8Array([8, 9]).buffer);
     });
 
-    const loaded = await loadScene3DDocumentFromGltfUrl(fakeHost(), 'models/ship.gltf', {
+    const loaded = await loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'models/ship.gltf', {
       diagnostics,
       extensionHandlers,
     });
@@ -123,14 +123,14 @@ describe('loadScene3DDocumentFromGltfUrl', () => {
 
   it('returns null when JSON or a required external buffer cannot load', async () => {
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(response('{'));
-    await expect(loadScene3DDocumentFromGltfUrl(fakeHost(), 'broken.gltf')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'broken.gltf')).resolves.toBeNull();
 
     vi.mocked(netContract.sendNetRequest).mockImplementation(async (_host, request) =>
       request.url.endsWith('.gltf')
         ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"missing.bin"}]}')
         : { body: null, headers: {}, ok: false, status: 404, statusText: 'x', url: request.url },
     );
-    await expect(loadScene3DDocumentFromGltfUrl(fakeHost(), 'models/ship.gltf')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'models/ship.gltf')).resolves.toBeNull();
     expect(scene3dFormatsContract.parseGltf).not.toHaveBeenCalled();
   });
 });

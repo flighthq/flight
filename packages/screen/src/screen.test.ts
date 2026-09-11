@@ -1,6 +1,11 @@
 import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { HasScreenQuery, ScreenChangeEvent, ScreenInfo, ScreenPermissionState } from '@flighthq/types/contract';
+import type {
+  HostScreenQueryProvider,
+  ScreenChangeEvent,
+  ScreenInfo,
+  ScreenPermissionState,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -45,7 +50,7 @@ describe('attachScreenPermissionChange', () => {
     const listener = vi.fn();
     connectSignal(permissionChange.onChange, listener);
 
-    attachScreenPermissionChange(harness.host, permissionChange);
+    attachScreenPermissionChange(harness.host.screen.permissionChange, permissionChange);
     harness.emit('granted');
 
     expect(listener).toHaveBeenCalledWith('granted');
@@ -69,7 +74,7 @@ describe('attachScreenSignals', () => {
       changedMetrics: { bounds: true, orientation: false, scaleFactor: true, workArea: false },
     };
 
-    attachScreenSignals(harness.host, signals);
+    attachScreenSignals(harness.host.screen.change, signals);
     harness.emit({ kind: 'ScreenAdded', screen, changedMetrics: null });
     harness.emit({ kind: 'ScreenRemoved', screen, changedMetrics: null });
     harness.emit(metricsEvent);
@@ -150,7 +155,7 @@ describe('detachScreenPermissionChange', () => {
   it('unsubscribes an attachment once and remains repeatable', () => {
     const harness = createPermissionChangeHarness();
     const permissionChange = createScreenPermissionChange();
-    attachScreenPermissionChange(harness.host, permissionChange);
+    attachScreenPermissionChange(harness.host.screen.permissionChange, permissionChange);
 
     detachScreenPermissionChange(permissionChange);
     detachScreenPermissionChange(permissionChange);
@@ -163,7 +168,7 @@ describe('detachScreenSignals', () => {
   it('unsubscribes an attachment once and remains repeatable', () => {
     const harness = createScreenChangeHarness();
     const signals = createScreenSignals();
-    attachScreenSignals(harness.host, signals);
+    attachScreenSignals(harness.host.screen.change, signals);
 
     detachScreenSignals(signals);
     detachScreenSignals(signals);
@@ -215,7 +220,7 @@ describe('disposeScreenPermissionChange', () => {
     const harness = createPermissionChangeHarness();
     const permissionChange = createScreenPermissionChange();
     connectSignal(permissionChange.onChange, vi.fn());
-    attachScreenPermissionChange(harness.host, permissionChange);
+    attachScreenPermissionChange(harness.host.screen.permissionChange, permissionChange);
 
     disposeScreenPermissionChange(permissionChange);
 
@@ -231,7 +236,7 @@ describe('disposeScreenSignals', () => {
     connectSignal(signals.onScreenAdded, vi.fn());
     connectSignal(signals.onScreenMetricsChanged, vi.fn());
     connectSignal(signals.onScreenRemoved, vi.fn());
-    attachScreenSignals(harness.host, signals);
+    attachScreenSignals(harness.host.screen.change, signals);
 
     disposeScreenSignals(signals);
 
@@ -248,7 +253,7 @@ describe('getPrimaryScreen', () => {
     const host = createScreenQueryHost([primary]);
     const out = createScreenInfo();
 
-    expect(getPrimaryScreen(host, out)).toBe(out);
+    expect(getPrimaryScreen(host.screen.query, out)).toBe(out);
     expect(host.screen.query.getPrimaryScreen).toHaveBeenCalledWith(out);
     expect(out).toMatchObject({ id: 3, x: 10, y: 20, width: 1920, height: 1080, isPrimary: true });
   });
@@ -269,10 +274,10 @@ describe('getScreenById', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
     const out = createScreenInfo();
 
-    getScreenById(host, 1, out);
-    getScreenContainingRect(host, { x: 10, y: 10, width: 20, height: 20 }, out);
-    getScreenNearestPoint(host, { x: 10, y: 10 }, out);
-    getScreenNearestRect(host, { x: 10, y: 10, width: 20, height: 20 }, out);
+    getScreenById(host.screen.query, 1, out);
+    getScreenContainingRect(host.screen.query, { x: 10, y: 10, width: 20, height: 20 }, out);
+    getScreenNearestPoint(host.screen.query, { x: 10, y: 10 }, out);
+    getScreenNearestRect(host.screen.query, { x: 10, y: 10, width: 20, height: 20 }, out);
 
     const calls = vi.mocked(host.screen.query.getScreens).mock.calls;
     expect(calls).toHaveLength(4);
@@ -285,9 +290,9 @@ describe('getScreenById', () => {
     const host = createScreenQueryHost([first, second]);
     const out = createScreenInfo();
 
-    expect(getScreenById(host, 20, out)).toBe(out);
+    expect(getScreenById(host.screen.query, 20, out)).toBe(out);
     expect(Object.entries(out)).toEqual(Object.entries(second));
-    expect(getScreenById(host, 99, out)).toBeNull();
+    expect(getScreenById(host.screen.query, 99, out)).toBeNull();
   });
 
   it('preserves the destination runtime while copying public screen data', () => {
@@ -300,7 +305,7 @@ describe('getScreenById', () => {
     const sourceRuntime = source[EntityRuntimeKey];
     const outRuntime = out[EntityRuntimeKey];
 
-    expect(getScreenById(createScreenQueryHost([source]), source.id, out)).toBe(out);
+    expect(getScreenById(createScreenQueryHost([source]).screen.query, source.id, out)).toBe(out);
 
     expect(Object.entries(out)).toEqual(Object.entries(source));
     expect(out[EntityRuntimeKey]).toBe(outRuntime);
@@ -316,7 +321,11 @@ describe('getScreenContainingRect', () => {
     const lowerRight = createTestScreen(2, 100, 80, 100, 100);
     const host = createScreenQueryHost([left, lowerRight]);
 
-    const result = getScreenContainingRect(host, { x: 50, y: 50, width: 100, height: 60 }, createScreenInfo());
+    const result = getScreenContainingRect(
+      host.screen.query,
+      { x: 50, y: 50, width: 100, height: 60 },
+      createScreenInfo(),
+    );
 
     expect(result.id).toBe(1);
   });
@@ -324,7 +333,11 @@ describe('getScreenContainingRect', () => {
   it('falls back to the screen nearest the rectangle center when none overlap', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenContainingRect(host, { x: 230, y: 20, width: 20, height: 20 }, createScreenInfo());
+    const result = getScreenContainingRect(
+      host.screen.query,
+      { x: 230, y: 20, width: 20, height: 20 },
+      createScreenInfo(),
+    );
 
     expect(result.id).toBe(2);
   });
@@ -332,7 +345,9 @@ describe('getScreenContainingRect', () => {
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(getScreenContainingRect(createScreenQueryHost([]), { x: 0, y: 0, width: 10, height: 10 }, out)).toBe(out);
+    expect(
+      getScreenContainingRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out),
+    ).toBe(out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
@@ -353,7 +368,7 @@ describe('getScreenCursorPosition', () => {
     const host = createScreenQueryHost([], { x: -20, y: 45 });
     const out = { x: 0, y: 0 };
 
-    expect(getScreenCursorPosition(host, out)).toBe(out);
+    expect(getScreenCursorPosition(host.screen.query, out)).toBe(out);
     expect(out).toEqual({ x: -20, y: 45 });
     expect(host.screen.query.getCursorPosition).toHaveBeenCalledWith(out);
   });
@@ -364,7 +379,7 @@ describe('getScreenCursorScreen', () => {
     const host = createScreenQueryHost(createSeparatedScreens(), { x: 340, y: 25 });
     const out = createScreenInfo();
 
-    expect(getScreenCursorScreen(host, out)).toBe(out);
+    expect(getScreenCursorScreen(host.screen.query, out)).toBe(out);
     expect(out.id).toBe(2);
   });
 });
@@ -373,7 +388,7 @@ describe('getScreenDetailPermission', () => {
   it('returns the permission state supplied by the host', async () => {
     const host = createScreenDetailsHost('granted', true);
 
-    await expect(getScreenDetailPermission(host)).resolves.toBe('granted');
+    await expect(getScreenDetailPermission(host.screen.details)).resolves.toBe('granted');
     expect(host.screen.details.queryPermission).toHaveBeenCalledOnce();
   });
 });
@@ -389,9 +404,9 @@ describe('getScreenNearestPoint', () => {
       createTestScreen(2, 0, 100, 100, 200),
     ]);
 
-    expect(getScreenNearestPoint(horizontalHost, { x: 20, y: 30 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(horizontalHost, { x: 100, y: 30 }, createScreenInfo()).id).toBe(2);
-    expect(getScreenNearestPoint(verticalHost, { x: 30, y: 100 }, createScreenInfo()).id).toBe(2);
+    expect(getScreenNearestPoint(horizontalHost.screen.query, { x: 20, y: 30 }, createScreenInfo()).id).toBe(1);
+    expect(getScreenNearestPoint(horizontalHost.screen.query, { x: 100, y: 30 }, createScreenInfo()).id).toBe(2);
+    expect(getScreenNearestPoint(verticalHost.screen.query, { x: 30, y: 100 }, createScreenInfo()).id).toBe(2);
   });
 
   it('selects the nearest screen center when the point is outside every screen', () => {
@@ -401,22 +416,22 @@ describe('getScreenNearestPoint', () => {
       createTestScreen(2, 300, 200, 100, 100),
     ]);
 
-    expect(getScreenNearestPoint(host, { x: 180, y: 50 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(host, { x: 240, y: 50 }, createScreenInfo()).id).toBe(2);
-    expect(getScreenNearestPoint(diagonalHost, { x: 200, y: 100 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(diagonalHost, { x: 200, y: 180 }, createScreenInfo()).id).toBe(2);
+    expect(getScreenNearestPoint(host.screen.query, { x: 180, y: 50 }, createScreenInfo()).id).toBe(1);
+    expect(getScreenNearestPoint(host.screen.query, { x: 240, y: 50 }, createScreenInfo()).id).toBe(2);
+    expect(getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 100 }, createScreenInfo()).id).toBe(1);
+    expect(getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 180 }, createScreenInfo()).id).toBe(2);
   });
 
   it('keeps the first screen when center distances tie', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    expect(getScreenNearestPoint(host, { x: 200, y: 50 }, createScreenInfo()).id).toBe(1);
+    expect(getScreenNearestPoint(host.screen.query, { x: 200, y: 50 }, createScreenInfo()).id).toBe(1);
   });
 
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(getScreenNearestPoint(createScreenQueryHost([]), { x: 5, y: 5 }, out)).toBe(out);
+    expect(getScreenNearestPoint(createScreenQueryHost([]).screen.query, { x: 5, y: 5 }, out)).toBe(out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
@@ -425,7 +440,11 @@ describe('getScreenNearestRect', () => {
   it('prefers a screen that fully contains the rectangle', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenNearestRect(host, { x: 320, y: 20, width: 40, height: 50 }, createScreenInfo());
+    const result = getScreenNearestRect(
+      host.screen.query,
+      { x: 320, y: 20, width: 40, height: 50 },
+      createScreenInfo(),
+    );
 
     expect(result.id).toBe(2);
   });
@@ -433,7 +452,11 @@ describe('getScreenNearestRect', () => {
   it('falls back to the screen nearest the rectangle center', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenNearestRect(host, { x: 170, y: 20, width: 20, height: 20 }, createScreenInfo());
+    const result = getScreenNearestRect(
+      host.screen.query,
+      { x: 170, y: 20, width: 20, height: 20 },
+      createScreenInfo(),
+    );
 
     expect(result.id).toBe(1);
   });
@@ -444,8 +467,8 @@ describe('getScreenNearestRect', () => {
     const host = createScreenQueryHost([left, right]);
     const rect = { x: 50, y: 10, width: 100, height: 50 };
 
-    expect(getScreenContainingRect(host, rect, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestRect(host, rect, createScreenInfo()).id).toBe(2);
+    expect(getScreenContainingRect(host.screen.query, rect, createScreenInfo()).id).toBe(1);
+    expect(getScreenNearestRect(host.screen.query, rect, createScreenInfo()).id).toBe(2);
   });
 
   it('honors inclusive rectangle boundaries and full extents when testing containment', () => {
@@ -462,19 +485,28 @@ describe('getScreenNearestRect', () => {
       createTestScreen(2, 0, 30, 100, 100),
     ]);
 
-    expect(getScreenNearestRect(boundsHost, { x: 0, y: 0, width: 100, height: 100 }, createScreenInfo()).id).toBe(1);
     expect(
-      getScreenNearestRect(horizontalExtentHost, { x: 40, y: 0, width: 60, height: 100 }, createScreenInfo()).id,
+      getScreenNearestRect(boundsHost.screen.query, { x: 0, y: 0, width: 100, height: 100 }, createScreenInfo()).id,
+    ).toBe(1);
+    expect(
+      getScreenNearestRect(
+        horizontalExtentHost.screen.query,
+        { x: 40, y: 0, width: 60, height: 100 },
+        createScreenInfo(),
+      ).id,
     ).toBe(2);
     expect(
-      getScreenNearestRect(verticalExtentHost, { x: 0, y: 40, width: 100, height: 60 }, createScreenInfo()).id,
+      getScreenNearestRect(verticalExtentHost.screen.query, { x: 0, y: 40, width: 100, height: 60 }, createScreenInfo())
+        .id,
     ).toBe(2);
   });
 
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(getScreenNearestRect(createScreenQueryHost([]), { x: 0, y: 0, width: 10, height: 10 }, out)).toBe(out);
+    expect(
+      getScreenNearestRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out),
+    ).toBe(out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
@@ -485,7 +517,7 @@ describe('getScreens', () => {
     const host = createScreenQueryHost([screen]);
     const out: ScreenInfo[] = [];
 
-    expect(getScreens(host, out)).toBe(out);
+    expect(getScreens(host.screen.query, out)).toBe(out);
     expect(out).toEqual([screen]);
     expect(host.screen.query.getScreens).toHaveBeenCalledWith(out);
   });
@@ -571,7 +603,7 @@ function createScreenDetailsHost(permission: ScreenPermissionState, requestResul
 function createScreenQueryHost(
   screens: readonly ScreenInfo[],
   cursor: Readonly<{ x: number; y: number }> = { x: 0, y: 0 },
-): HasScreenQuery {
+): { readonly screen: { readonly query: HostScreenQueryProvider } } {
   return {
     screen: {
       query: (() => {
@@ -625,7 +657,7 @@ describe('requestScreenDetails', () => {
   it('returns whether the host granted detailed screen access', async () => {
     const host = createScreenDetailsHost('prompt', true);
 
-    await expect(requestScreenDetails(host)).resolves.toBe(true);
+    await expect(requestScreenDetails(host.screen.details)).resolves.toBe(true);
     expect(host.screen.details.request).toHaveBeenCalledOnce();
   });
 });

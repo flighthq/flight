@@ -1,5 +1,4 @@
 import type { Entity } from './Entity';
-import type { HostShellCapabilities } from './Host';
 
 // Opening an external URL is security-sensitive, so every call must name the schemes it permits.
 // There is deliberately no default and no allow-all sentinel: callers decide policy before a provider
@@ -50,12 +49,6 @@ export interface ShellProcess extends Entity {
   readonly stdin: WritableStream<Uint8Array>;
   readonly stdout: ReadableStream<Uint8Array>;
   terminate(): void;
-}
-
-// Minimal host shape accepted by spawnShellProcess. A real Host satisfies it directly; an omitted
-// process slot is explicit unsupported capability and produces null before any provider call.
-export interface ShellProcessHost {
-  readonly shell: Pick<HostShellCapabilities, 'process'>;
 }
 
 // The seven provider interfaces are separate because host coverage differs by operation. An omitted

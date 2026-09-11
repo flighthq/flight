@@ -2,14 +2,14 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
   HostShellCapabilities,
-  ShellExternalBackend,
-  ShellPathOpenBackend,
-  ShellPathRevealBackend,
+  HostShellExternalProvider,
+  HostShellPathOpenProvider,
+  HostShellPathRevealProvider,
   TauriApi,
 } from '@flighthq/types/contract';
 
 export function initializeTauriShellExternalBackend(
-  out: EntityConstruction<ShellExternalBackend>,
+  out: EntityConstruction<HostShellExternalProvider>,
   opener: TauriApi['opener'],
 ): void {
   out.open = async (url) => {
@@ -23,7 +23,7 @@ export function initializeTauriShellExternalBackend(
 }
 
 export function initializeTauriShellPathOpenBackend(
-  out: EntityConstruction<ShellPathOpenBackend>,
+  out: EntityConstruction<HostShellPathOpenProvider>,
   opener: TauriApi['opener'],
 ): void {
   out.open = async (path) => {
@@ -37,7 +37,7 @@ export function initializeTauriShellPathOpenBackend(
 }
 
 export function initializeTauriShellPathRevealBackend(
-  out: EntityConstruction<ShellPathRevealBackend>,
+  out: EntityConstruction<HostShellPathRevealProvider>,
   opener: TauriApi['opener'],
 ): void {
   out.reveal = async (path) => {
@@ -56,12 +56,12 @@ export function makeTauriShellCapabilities(
   tauri: TauriApi,
 ): HostShellCapabilities & Required<Pick<HostShellCapabilities, 'external' | 'pathOpen' | 'pathReveal'>> {
   const opener = tauri.opener;
-  const external = allocateEntity<ShellExternalBackend>();
+  const external = allocateEntity<HostShellExternalProvider>();
   initializeTauriShellExternalBackend(external, opener);
-  const pathOpenOut = allocateEntity<ShellPathOpenBackend>();
+  const pathOpenOut = allocateEntity<HostShellPathOpenProvider>();
   initializeTauriShellPathOpenBackend(pathOpenOut, opener);
   const pathOpen = finishEntity(pathOpenOut);
-  const pathRevealOut = allocateEntity<ShellPathRevealBackend>();
+  const pathRevealOut = allocateEntity<HostShellPathRevealProvider>();
   initializeTauriShellPathRevealBackend(pathRevealOut, opener);
   const pathReveal = finishEntity(pathRevealOut);
   return { external, pathOpen, pathReveal };

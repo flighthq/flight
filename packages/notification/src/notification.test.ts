@@ -3,7 +3,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationCapabilities,
   Notification,
-  NotificationClickBackend,
+  HostNotificationClickProvider,
   NotificationEventBackendAttachOutcome,
 } from '@flighthq/types/contract';
 
@@ -52,7 +52,7 @@ function host<const TCapabilities extends HostNotificationCapabilities>(notifica
 
 function createClickBackend(options?: Readonly<{ attachFailure?: boolean; releaseFailure?: boolean }>) {
   const listeners = new Set<(notification: Readonly<Notification>) => void>();
-  const backend: NotificationClickBackend = {
+  const backend: HostNotificationClickProvider = {
     async attach(listener): Promise<NotificationEventBackendAttachOutcome> {
       if (options?.attachFailure === true) {
         return {
@@ -100,7 +100,7 @@ describe('attachNotificationActionSubscription', () => {
               };
             },
           },
-        }),
+        }).notification.action,
         subscription,
       ),
     ).resolves.toEqual({ reason: 'ok' });
@@ -115,7 +115,7 @@ describe('attachNotificationClickSubscription', () => {
     const attached = attachNotificationClickSubscription(
       host({
         click: createClickBackend({ attachFailure: true, releaseFailure: true }).backend,
-      }),
+      }).notification.click,
       subscription,
     );
     const disposed = disposeNotificationClickSubscription(subscription);
@@ -133,7 +133,9 @@ describe('attachNotificationClickSubscription', () => {
     const notification = createNotificationResource('n1', 'Title');
     const seen: Notification[] = [];
     connectSignal(subscription.onNotificationClick, (value) => seen.push(value));
-    await expect(attachNotificationClickSubscription(host({ click: backend }), subscription)).resolves.toEqual({
+    await expect(
+      attachNotificationClickSubscription(host({ click: backend }).notification.click, subscription),
+    ).resolves.toEqual({
       reason: 'ok',
     });
     for (const listener of listeners) listener(notification);
@@ -147,7 +149,9 @@ describe('attachNotificationDismissSubscription', () => {
   it('acquires and releases the dismiss event', async () => {
     const { backend } = createClickBackend();
     const subscription = createNotificationDismissSubscription();
-    await expect(attachNotificationDismissSubscription(host({ dismiss: backend }), subscription)).resolves.toEqual({
+    await expect(
+      attachNotificationDismissSubscription(host({ dismiss: backend }).notification.dismiss, subscription),
+    ).resolves.toEqual({
       reason: 'ok',
     });
     await expect(detachNotificationDismissSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
@@ -158,7 +162,9 @@ describe('attachNotificationReceivedSubscription', () => {
   it('acquires and releases the backend-emitted received event', async () => {
     const { backend } = createClickBackend();
     const subscription = createNotificationReceivedSubscription();
-    await expect(attachNotificationReceivedSubscription(host({ received: backend }), subscription)).resolves.toEqual({
+    await expect(
+      attachNotificationReceivedSubscription(host({ received: backend }).notification.received, subscription),
+    ).resolves.toEqual({
       reason: 'ok',
     });
     await expect(detachNotificationReceivedSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
@@ -186,7 +192,7 @@ describe('attachNotificationReplySubscription', () => {
               };
             },
           },
-        }),
+        }).notification.reply,
         subscription,
       ),
     ).resolves.toEqual({ reason: 'ok' });
@@ -243,7 +249,7 @@ describe('closeAllNotifications', () => {
               return outcome;
             },
           },
-        }),
+        }).notification.close,
       ),
     ).resolves.toBe(outcome);
   });
@@ -342,8 +348,10 @@ describe('destroyNotificationCapabilities', () => {
         },
       },
     });
-    await expect(destroyNotificationCapabilities(value)).resolves.toMatchObject({ reason: 'operation-failed' });
-    await expect(destroyNotificationCapabilities(value)).resolves.toEqual({
+    await expect(destroyNotificationCapabilities(value.notification.lifecycle)).resolves.toMatchObject({
+      reason: 'operation-failed',
+    });
+    await expect(destroyNotificationCapabilities(value.notification.lifecycle)).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -401,7 +409,7 @@ describe('disposeNotificationClickSubscription', () => {
   it('keeps a failed release observable', async () => {
     const subscription = createNotificationClickSubscription();
     await attachNotificationClickSubscription(
-      host({ click: createClickBackend({ releaseFailure: true }).backend }),
+      host({ click: createClickBackend({ releaseFailure: true }).backend }).notification.click,
       subscription,
     );
     await expect(disposeNotificationClickSubscription(subscription)).resolves.toEqual({
@@ -445,8 +453,8 @@ describe('getActiveNotifications', () => {
       },
     };
     const value = host({ activeList: backend });
-    const first = await getActiveNotifications(value);
-    const second = await getActiveNotifications(value);
+    const first = await getActiveNotifications(value.notification.activeList);
+    const second = await getActiveNotifications(value.notification.activeList);
     expect(first.reason).toBe('ok');
     expect(second.reason).toBe('ok');
     if (first.reason === 'ok' && second.reason === 'ok') expect(second.notifications[0]).toBe(first.notifications[0]);
@@ -466,7 +474,7 @@ describe('getNotificationPermission', () => {
               return { reason: 'operation-failed' };
             },
           },
-        }),
+        }).notification.permission,
       ),
     ).resolves.toEqual({ reason: 'operation-failed' });
   });
@@ -488,7 +496,7 @@ describe('getPendingNotifications', () => {
               return { reason: 'operation-failed' };
             },
           },
-        }),
+        }).notification.scheduling,
       ),
     ).resolves.toEqual({ reason: 'operation-failed' });
   });
@@ -519,7 +527,7 @@ describe('requestNotificationPermission', () => {
               return { reason: 'dismissed' };
             },
           },
-        }),
+        }).notification.permission,
       ),
     ).resolves.toEqual({ reason: 'dismissed' });
   });
@@ -541,7 +549,7 @@ describe('scheduleNotification', () => {
               return { precision: 'exact', reason: 'scheduled', scheduled };
             },
           },
-        }),
+        }).notification.scheduling,
         { title: 'Later' },
         { at: 1 },
       ),
@@ -560,7 +568,7 @@ describe('showNotification', () => {
               return { notification, reason: 'accepted' };
             },
           },
-        }),
+        }).notification.delivery,
         { title: 'Title' },
       ),
     ).resolves.toEqual({ notification, reason: 'accepted' });

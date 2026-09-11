@@ -6,7 +6,7 @@ import { createShadedMaterial } from '@flighthq/shading/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
-import type { HasGraphicsImage, Scene3D } from '@flighthq/types/contract';
+import type { HostImageProvider, Scene3D } from '@flighthq/types/contract';
 import type {
   EmbeddedImageResourceReference,
   ImageResource,
@@ -20,9 +20,9 @@ import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResol
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const host: HasGraphicsImage = {
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as HasGraphicsImage;
+} as { readonly graphics: { readonly image: HostImageProvider } };
 const testResources: EmbeddedImageResourceReference[] = [];
 
 function pendingRef(): EmbeddedImageResourceReference {
@@ -60,21 +60,21 @@ function sceneWithPendingTexture(): { mesh: Node3D; scene: Scene3D; texture: Tex
 describe('revealScene3DResourcesOnResolve', () => {
   it('hides every object carrying a pending texture to the start opacity up front', () => {
     const { mesh, scene } = sceneWithPendingTexture();
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     revealScene3DResourcesOnResolve(resolver, scene, createTweenManager());
     expect(mesh.alpha).toBe(0);
   });
 
   it('honors a custom from opacity', () => {
     const { mesh, scene } = sceneWithPendingTexture();
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     revealScene3DResourcesOnResolve(resolver, scene, createTweenManager(), { from: 0.2 });
     expect(mesh.alpha).toBeCloseTo(0.2);
   });
 
   it('fades the owning object to full opacity as its texture resolves', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
     expect(mesh.alpha).toBe(0);
@@ -96,7 +96,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     const scene = createScene3D();
     configureResources(scene);
     addNodeChild(scene.root, mesh);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
@@ -116,7 +116,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     const scene = createScene3D();
     configureResources(scene);
     addNodeChild(scene.root, mesh);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
@@ -143,7 +143,11 @@ describe('revealScene3DResourcesOnResolve', () => {
     configureResources(scene);
     addNodeChild(scene.root, mesh);
 
-    revealScene3DResourcesOnResolve(createBuiltInScene3DResourceResolver(host), scene, createTweenManager());
+    revealScene3DResourcesOnResolve(
+      createBuiltInScene3DResourceResolver(host.graphics.image),
+      scene,
+      createTweenManager(),
+    );
     expect(mesh.alpha).toBe(1);
   });
 
@@ -154,7 +158,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     const scene = createScene3D();
     configureResources(scene);
     addNodeChild(scene.root, mesh);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
 
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
@@ -177,7 +181,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     const scene = createScene3D();
     configureResources(scene);
     addNodeChild(scene.root, mesh);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
 
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
@@ -201,7 +205,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     configureResources(scene);
     addNodeChild(scene.root, a);
     addNodeChild(scene.root, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     revealScene3DResourcesOnResolve(resolver, scene, manager);
 
@@ -212,7 +216,7 @@ describe('revealScene3DResourcesOnResolve', () => {
 
   it('ignores a resolve event for a texture it is not tracking', () => {
     const { scene } = sceneWithPendingTexture();
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
 
@@ -223,7 +227,7 @@ describe('revealScene3DResourcesOnResolve', () => {
 
   it('disconnects the listener when the returned disposer runs', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const manager = createTweenManager();
     const dispose = revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
     dispose();

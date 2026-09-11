@@ -1,9 +1,9 @@
-import type { VideoCapabilityBackend, VideoResourceUrl } from '@flighthq/types/contract';
+import type { HostVideoProvider, VideoResourceUrl } from '@flighthq/types/contract';
 
 import { canPlayVideoType, detectVideoMimeType, inferVideoMimeType, selectVideoResourceUrl } from './videoFormat';
 
-const falseBackend: VideoCapabilityBackend = { canPlayType: () => false };
-const trueBackend: VideoCapabilityBackend = { canPlayType: () => true };
+const falseBackend: HostVideoProvider = { canPlayType: () => false };
+const trueBackend: HostVideoProvider = { canPlayType: () => true };
 
 describe('canPlayVideoType', () => {
   it('delegates to the backend', () => {
@@ -21,13 +21,13 @@ describe('canPlayVideoType', () => {
   });
 
   it('accepts only primitive true from a backend', () => {
-    expect(canPlayVideoType({ canPlayType: () => 'probably' } as unknown as VideoCapabilityBackend, 'video/mp4')).toBe(
+    expect(canPlayVideoType({ canPlayType: () => 'probably' } as unknown as HostVideoProvider, 'video/mp4')).toBe(
       false,
     );
   });
 
   it('normalizes backend exceptions to false', () => {
-    const backend: VideoCapabilityBackend = {
+    const backend: HostVideoProvider = {
       canPlayType(): boolean {
         throw new Error('unavailable');
       },
@@ -129,13 +129,13 @@ describe('selectVideoResourceUrl', () => {
   });
 
   it('picks the first source whose inferred type is playable', () => {
-    const backend: VideoCapabilityBackend = { canPlayType: (type) => type === 'video/webm' };
+    const backend: HostVideoProvider = { canPlayType: (type) => type === 'video/webm' };
     const selected = selectVideoResourceUrl(backend, [{ url: 'clip.mp4' }, { url: 'clip.webm' }]);
     expect(selected?.url).toBe('clip.webm');
   });
 
   it('honours an explicit type over the URL extension', () => {
-    const backend: VideoCapabilityBackend = { canPlayType: (type) => type === 'video/mp4' };
+    const backend: HostVideoProvider = { canPlayType: (type) => type === 'video/mp4' };
     const selected = selectVideoResourceUrl(backend, [{ url: 'stream', type: 'video/mp4' }]);
     expect(selected?.url).toBe('stream');
   });
@@ -172,7 +172,7 @@ describe('selectVideoResourceUrl', () => {
         throw new Error('unavailable');
       })
       .mockReturnValueOnce(true);
-    const selected = selectVideoResourceUrl({ canPlayType } as VideoCapabilityBackend, [
+    const selected = selectVideoResourceUrl({ canPlayType } as HostVideoProvider, [
       { url: 'first.mp4' },
       { url: 'second.webm' },
       { url: 'third.ogv' },

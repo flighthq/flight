@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasShareContent,
-  HasShareFiles,
+  HostShareContentProvider,
+  HostShareFilesProvider,
   ShareContent,
   ShareFile,
   ShareFilesContent,
@@ -17,13 +17,16 @@ export function attachShareSignals(signals: ShareSignals): void {
 
 // This is payload validation within the content capability. Capability presence itself is expressed
 // by HasShareContent, so a host without the slot is a type error rather than a false probe.
-export function canShareContent(host: HasShareContent, content: Readonly<ShareContent>): boolean {
-  return hasShareContentFields(content) && host.share.content.canShareContent(content);
+export function canShareContent(
+  hostShareContent: Readonly<HostShareContentProvider>,
+  content: Readonly<ShareContent>,
+): boolean {
+  return hasShareContentFields(content) && hostShareContent.canShareContent(content);
 }
 
-export function canShareFiles(host: HasShareFiles, files: readonly ShareFile[]): boolean {
+export function canShareFiles(hostShareFiles: Readonly<HostShareFilesProvider>, files: readonly ShareFile[]): boolean {
   const content = filesContent(files);
-  return content !== null && host.share.files.canShareContent(content);
+  return content !== null && hostShareFiles.canShareContent(content);
 }
 
 export function detachShareSignals(signals: ShareSignals): void {
@@ -59,37 +62,43 @@ export function isShareFileValid(file: Readonly<ShareFile>): boolean {
   return file.name !== '' && file.mimeType !== '' && file.dataUrl.startsWith('data:') && file.dataUrl.includes(',');
 }
 
-export function shareContent(host: HasShareContent, content: Readonly<ShareContent>): Promise<boolean> {
+export function shareContent(
+  hostShareContent: Readonly<HostShareContentProvider>,
+  content: Readonly<ShareContent>,
+): Promise<boolean> {
   if (!hasShareContentFields(content)) return Promise.resolve(false);
-  return host.share.content.shareContent(content);
+  return hostShareContent.shareContent(content);
 }
 
 export async function shareContentWithResult(
-  host: HasShareContent,
+  hostShareContent: Readonly<HostShareContentProvider>,
   content: Readonly<ShareContent>,
 ): Promise<ShareResult> {
   if (!hasShareContentFields(content)) {
     return { completed: false, activityType: null, dismissed: false };
   }
-  const result = await host.share.content.shareContentWithResult(content);
+  const result = await hostShareContent.shareContentWithResult(content);
   for (const signals of _attachedSignals) {
     emitSignal(signals.onShareResult, result);
   }
   return result;
 }
 
-export function shareFiles(host: HasShareFiles, files: readonly ShareFile[]): Promise<boolean> {
+export function shareFiles(
+  hostShareFiles: Readonly<HostShareFilesProvider>,
+  files: readonly ShareFile[],
+): Promise<boolean> {
   const content = filesContent(files);
   if (content === null) return Promise.resolve(false);
-  return host.share.files.shareContent(content);
+  return hostShareFiles.shareContent(content);
 }
 
-export function shareText(host: HasShareContent, text: string): Promise<boolean> {
-  return shareContent(host, { text });
+export function shareText(hostShareContent: Readonly<HostShareContentProvider>, text: string): Promise<boolean> {
+  return shareContent(hostShareContent, { text });
 }
 
-export function shareUrl(host: HasShareContent, url: string): Promise<boolean> {
-  return shareContent(host, { url });
+export function shareUrl(hostShareContent: Readonly<HostShareContentProvider>, url: string): Promise<boolean> {
+  return shareContent(hostShareContent, { url });
 }
 
 const _attachedSignals = new Set<ShareSignals>();

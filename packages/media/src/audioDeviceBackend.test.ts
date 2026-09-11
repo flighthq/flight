@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDeviceBackend } from '@flighthq/types/contract';
+import type { HostAudioDeviceProvider } from '@flighthq/types/contract';
 import type { AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
@@ -128,8 +128,8 @@ describe('hasAudioDeviceWebNodeAccess', () => {
   });
 });
 
-function stubBackend(): AudioDeviceBackend {
-  const out = allocateEntity<AudioDeviceBackend>();
+function stubBackend(): HostAudioDeviceProvider {
+  const out = allocateEntity<HostAudioDeviceProvider>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn().mockReturnValue(1);

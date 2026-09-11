@@ -1,4 +1,4 @@
-import type { FontMetrics, GlyphExtents, HasTextShaper, ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
+import type { FontMetrics, GlyphExtents, HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {
@@ -45,7 +45,7 @@ const _testMetrics: FontMetrics = {
 
 const _testExtents: GlyphExtents = { height: 10, width: 6, xBearing: 0, yBearing: -8 };
 
-function _makeFullBackend(): TextShaperBackend {
+function _makeFullBackend(): HostTextShaperProvider {
   return {
     // Code point 65 ('A') maps to glyph 10 and back; everything else is unknown.
     getCodePointForGlyph: (id) => (id === 10 ? 65 : -1),
@@ -299,8 +299,10 @@ describe('initializeShapedRun', () => {
 describe('shapeTextRun', () => {
   it('uses the explicitly supplied host instead of the legacy installed backend', () => {
     setTextShaperBackend({ measureText: () => 0 });
-    const host: HasTextShaper = { text: { shaper: _makeFullBackend() } };
-    expect(shapeTextRun('ab', {}, undefined, host)?.glyphCount).toBe(2);
+    const host: { readonly text: { readonly shaper: HostTextShaperProvider } } = {
+      text: { shaper: _makeFullBackend() },
+    };
+    expect(shapeTextRun('ab', {}, undefined, host.text.shaper)?.glyphCount).toBe(2);
   });
 
   it('returns null when no backend is set', () => {

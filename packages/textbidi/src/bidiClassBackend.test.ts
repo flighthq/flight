@@ -1,4 +1,4 @@
-import type { BidiClassBackend } from '@flighthq/types/contract';
+import type { HostBidiClassProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -52,7 +52,7 @@ describe('explainBidiClassBackend', () => {
   });
 
   it('does not claim a custom provider coverage boundary', () => {
-    const custom: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
+    const custom: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
     const explanation = explainBidiClassBackend(custom);
     expect(explanation).toEqual({
       backend: 'custom',
@@ -78,7 +78,7 @@ describe('initializeCompactBidiClassBackend', () => {
 describe('setBidiClassBackend', () => {
   it('routes resolveBidiLevels class lookups through the installed backend', () => {
     // A fake backend that reports every character as strong R forces the whole string to level 1.
-    const fake: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
+    const fake: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
     setBidiClassBackend(fake);
     expect(Array.from(resolveBidiLevels('abc', 'ltr'))).toEqual([1, 1, 1]);
   });

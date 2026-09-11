@@ -3,7 +3,7 @@ import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  HasTrayLifecycle,
+  HostTrayLifecycleProvider,
   HostTrayCapabilities,
   MenuItemTemplate,
   Signal,
@@ -61,7 +61,7 @@ interface TrayRuntime extends ReturnType<typeof createEntityRuntime> {
   animationWriteTail: Promise<void>;
   capabilities: Readonly<HostTrayCapabilities>;
   destroyPromise: Promise<TrayDestroyResult> | null;
-  lifecycle: HasTrayLifecycle['tray']['lifecycle'];
+  lifecycle: { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } }['tray']['lifecycle'];
   releases: Set<TrayReleaseRuntime>;
   state: 'active' | 'destroying' | 'partially-destroyed' | 'destroyed';
 }
@@ -70,10 +70,9 @@ interface TrayReleaseRuntime extends TrayEventRelease {
   released: boolean;
 }
 
-export async function createTrayIcon<HostType extends HasTrayLifecycle>(
-  host: HostType,
-  options: Readonly<TrayIconOptions> = {},
-): Promise<TrayCreateResult<TrayIconForHost<HostType>>> {
+export async function createTrayIcon<
+  HostType extends { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } },
+>(host: HostType, options: Readonly<TrayIconOptions> = {}): Promise<TrayCreateResult<TrayIconForHost<HostType>>> {
   const tray = finishEntity(allocateEntity<TrayIcon>()) as TrayIconForHost<HostType>;
   let result: TrayCreateProviderResult;
   try {
@@ -143,8 +142,8 @@ async function destroyTrayRuntime(tray: TrayIcon, runtime: TrayRuntime): Promise
   return result;
 }
 
-export function getTrayIcons(host: HasTrayLifecycle): readonly TrayIcon[] {
-  return host.tray.lifecycle.list();
+export function getTrayIcons(hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>): readonly TrayIcon[] {
+  return hostTrayLifecycle.list();
 }
 
 export function getTrayIconTitle(tray: TrayWithTitle): Promise<TrayTitleReadResult> {

@@ -1,11 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HasTextSegmenter,
-  TextSegment,
-  TextSegmentGranularity,
-  TextSegmenterBackend,
-} from '@flighthq/types/contract';
+import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
 import { setTextSegmenterBackend } from './textSegmenterBackend';
@@ -15,21 +10,23 @@ afterEach(() => setTextSegmenterBackend(null));
 describe('segmentGraphemes', () => {
   it('accepts an optional explicit segmenter host without breaking the existing signature', () => {
     expectTypeOf(segmentGraphemes).toEqualTypeOf<
-      (text: string, locale?: string, host?: HasTextSegmenter) => readonly TextSegment[]
+      (text: string, locale?: string, hostTextSegmenter?: Readonly<HostTextSegmenterProvider>) => readonly TextSegment[]
     >();
   });
 
   it('gives an explicit host precedence over the legacy installed backend', () => {
     setTextSegmenterBackend(taggingBackend('legacy'));
-    expect(segmentGraphemes('hi', undefined, segmenterHost(taggingBackend('explicit')))[0].text).toBe('explicit');
+    expect(segmentGraphemes('hi', undefined, segmenterHost(taggingBackend('explicit')).text.segmenter)[0].text).toBe(
+      'explicit',
+    );
   });
 
   it('isolates callers that interleave different explicit hosts', () => {
     const first = segmenterHost(taggingBackend('first'));
     const second = segmenterHost(taggingBackend('second'));
-    expect(segmentGraphemes('hi', undefined, first)[0].text).toBe('first');
-    expect(segmentGraphemes('hi', undefined, second)[0].text).toBe('second');
-    expect(segmentGraphemes('hi', undefined, first)[0].text).toBe('first');
+    expect(segmentGraphemes('hi', undefined, first.text.segmenter)[0].text).toBe('first');
+    expect(segmentGraphemes('hi', undefined, second.text.segmenter)[0].text).toBe('second');
+    expect(segmentGraphemes('hi', undefined, first.text.segmenter)[0].text).toBe('first');
   });
 
   it('treats a ZWJ family emoji as one grapheme', () => {
@@ -47,7 +44,7 @@ describe('segmentGraphemes', () => {
 
   it('threads the locale argument to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const fake = allocateEntity<TextSegmenterBackend>();
+    const fake = allocateEntity<HostTextSegmenterProvider>();
     fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text }];
@@ -58,12 +55,14 @@ describe('segmentGraphemes', () => {
   });
 });
 
-function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
+function segmenterHost(segmenter: HostTextSegmenterProvider): {
+  readonly text: { readonly segmenter: HostTextSegmenterProvider };
+} {
   return { text: { segmenter } };
 }
 
-function taggingBackend(tag: string): TextSegmenterBackend {
-  const out = allocateEntity<TextSegmenterBackend>();
+function taggingBackend(tag: string): HostTextSegmenterProvider {
+  const out = allocateEntity<HostTextSegmenterProvider>();
   out.segment = () => [{ start: 0, end: tag.length, text: tag }];
   return finishEntity(out);
 }

@@ -1,16 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ClipboardTextBackend, EntityConstruction, TauriApi } from '@flighthq/types/contract';
+import type { HostClipboardTextProvider, EntityConstruction, TauriApi } from '@flighthq/types/contract';
 
 // Tauri's clipboard-manager coverage is the text/clear capability vector. Other clipboard
 // capability slots are deliberately absent from the Tauri host rather than simulated by sentinels.
-export function createTauriClipboardBackend(tauri: TauriApi): ClipboardTextBackend {
-  const out = allocateEntity<ClipboardTextBackend>();
+export function createTauriClipboardBackend(tauri: TauriApi): HostClipboardTextProvider {
+  const out = allocateEntity<HostClipboardTextProvider>();
   initializeTauriClipboardBackend(out, tauri.clipboard);
   return finishEntity(out);
 }
 
 export function initializeTauriClipboardBackend(
-  out: EntityConstruction<ClipboardTextBackend>,
+  out: EntityConstruction<HostClipboardTextProvider>,
   clipboard: TauriApi['clipboard'],
 ): void {
   out.clear = async () => {

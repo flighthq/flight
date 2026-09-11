@@ -145,9 +145,9 @@ describe('requestMidiAccess', () => {
         })(),
       },
     };
-    await expect(requestMidiAccess(host)).resolves.toEqual({ access, reason: 'accepted' });
-    await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'permission-denied' });
-    await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'security-restricted' });
-    await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(requestMidiAccess(host.midi.access)).resolves.toEqual({ access, reason: 'accepted' });
+    await expect(requestMidiAccess(host.midi.access)).resolves.toEqual({ reason: 'permission-denied' });
+    await expect(requestMidiAccess(host.midi.access)).resolves.toEqual({ reason: 'security-restricted' });
+    await expect(requestMidiAccess(host.midi.access)).resolves.toEqual({ reason: 'operation-failed' });
   });
 });

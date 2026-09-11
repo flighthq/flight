@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
-  ConnectivityChangeBackend,
-  ConnectivityReachabilityBackend,
+  HostConnectivityChangeProvider,
+  HostConnectivityReachabilityProvider,
   ConnectivityStatus,
-  ConnectivityStatusBackend,
+  HostConnectivityStatusProvider,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -23,7 +23,7 @@ import {
   isConnectivitySaveDataEnabled,
 } from './connectivity';
 
-interface FakeConnectivityProvider extends ConnectivityStatusBackend, ConnectivityChangeBackend {
+interface FakeConnectivityProvider extends HostConnectivityStatusProvider, HostConnectivityChangeProvider {
   readonly activeSubscriptions: () => number;
   readonly destroyCalls: () => number;
   fire(): void;
@@ -117,7 +117,9 @@ describe('attachConnectivity', () => {
     connectSignal(connectivity.onMeteredChange, (value) => metered.push(value));
     connectSignal(connectivity.onOffline, () => offline++);
 
-    expect(attachConnectivity(hostFor(provider), connectivity)).toBe(true);
+    expect(
+      attachConnectivity(hostFor(provider).connectivity.status, hostFor(provider).connectivity.change, connectivity),
+    ).toBe(true);
     Object.assign(provider.status, { metered: true, online: false, type: 'cellular' as const });
     provider.fire();
 
@@ -133,7 +135,7 @@ describe('attachConnectivity', () => {
     const connectivity = createConnectivity();
     let offline = 0;
     connectSignal(connectivity.onOffline, () => offline++);
-    attachConnectivity(hostFor(provider), connectivity);
+    attachConnectivity(hostFor(provider).connectivity.status, hostFor(provider).connectivity.change, connectivity);
     provider.fire();
     expect(offline).toBe(0);
     provider.status.online = false;
@@ -143,7 +145,13 @@ describe('attachConnectivity', () => {
 
   it('returns false instead of retaining a silent no-op subscription', () => {
     const provider = fakeProvider({}, false);
-    expect(attachConnectivity(hostFor(provider), createConnectivity())).toBe(false);
+    expect(
+      attachConnectivity(
+        hostFor(provider).connectivity.status,
+        hostFor(provider).connectivity.change,
+        createConnectivity(),
+      ),
+    ).toBe(false);
     expect(provider.activeSubscriptions()).toBe(0);
   });
 
@@ -153,8 +161,8 @@ describe('attachConnectivity', () => {
     const connectivity = createConnectivity();
     let changes = 0;
     connectSignal(connectivity.onChange, () => changes++);
-    attachConnectivity(hostFor(a), connectivity);
-    attachConnectivity(hostFor(b), connectivity);
+    attachConnectivity(hostFor(a).connectivity.status, hostFor(a).connectivity.change, connectivity);
+    attachConnectivity(hostFor(b).connectivity.status, hostFor(b).connectivity.change, connectivity);
     expect(a.unsubscribeCalls()).toBe(1);
     expect(a.activeSubscriptions()).toBe(0);
     expect(b.activeSubscriptions()).toBe(1);
@@ -169,7 +177,7 @@ describe('attachConnectivity', () => {
     const connectivity = createConnectivity();
     const changes: Readonly<ConnectivityStatus>[] = [];
     connectSignal(connectivity.onChange, (value) => changes.push(value));
-    attachConnectivity(hostFor(provider), connectivity);
+    attachConnectivity(hostFor(provider).connectivity.status, hostFor(provider).connectivity.change, connectivity);
     provider.fire();
     provider.status.type = 'cellular';
     provider.fire();
@@ -197,8 +205,8 @@ describe('destroyConnectivity', () => {
   it('uses the supplied change provider and provider teardown is terminal/idempotent', () => {
     const provider = fakeProvider();
     const host = hostFor(provider);
-    destroyConnectivity(host);
-    destroyConnectivity(host);
+    destroyConnectivity(host.connectivity.change);
+    destroyConnectivity(host.connectivity.change);
     expect(provider.destroyCalls()).toBe(1);
     expect(provider.subscribe(() => {})).toBeNull();
   });
@@ -208,7 +216,7 @@ describe('detachConnectivity', () => {
   it('consumes the exact unsubscribe once', () => {
     const provider = fakeProvider();
     const connectivity = createConnectivity();
-    attachConnectivity(hostFor(provider), connectivity);
+    attachConnectivity(hostFor(provider).connectivity.status, hostFor(provider).connectivity.change, connectivity);
     detachConnectivity(connectivity);
     detachConnectivity(connectivity);
     expect(provider.unsubscribeCalls()).toBe(1);
@@ -218,7 +226,7 @@ describe('detachConnectivity', () => {
 describe('detectConnectivityReachability', () => {
   it('dispatches reachability only to the supplied reachability slot', async () => {
     let calls = 0;
-    const reachability = allocateEntity<ConnectivityReachabilityBackend>();
+    const reachability = allocateEntity<HostConnectivityReachabilityProvider>();
     reachability.detectReachability = async (_options, out) => {
       calls++;
       out.latency = 7;
@@ -227,7 +235,7 @@ describe('detectConnectivityReachability', () => {
     };
     const out = { latency: -1, reachable: false };
     const result = await detectConnectivityReachability(
-      { connectivity: { reachability } },
+      { connectivity: { reachability } }.connectivity.reachability,
       { url: 'https://example.invalid' },
       out,
     );
@@ -241,7 +249,7 @@ describe('disposeConnectivity', () => {
   it('unsubscribes once and clears listeners from every signal', () => {
     const provider = fakeProvider();
     const connectivity = createConnectivity();
-    attachConnectivity(hostFor(provider), connectivity);
+    attachConnectivity(hostFor(provider).connectivity.status, hostFor(provider).connectivity.change, connectivity);
     connectSignal(connectivity.onChange, () => {});
     connectSignal(connectivity.onConnectionTypeChange, () => {});
     connectSignal(connectivity.onMeteredChange, () => {});
@@ -262,8 +270,8 @@ describe('disposeConnectivity', () => {
 
 describe('getConnectivityOnline', () => {
   it('preserves unknown and measured online states', () => {
-    expect(getConnectivityOnline(hostFor(fakeProvider({ online: null })))).toBeNull();
-    expect(getConnectivityOnline(hostFor(fakeProvider({ online: true })))).toBe(true);
+    expect(getConnectivityOnline(hostFor(fakeProvider({ online: null })).connectivity.status)).toBeNull();
+    expect(getConnectivityOnline(hostFor(fakeProvider({ online: true })).connectivity.status)).toBe(true);
   });
 });
 
@@ -272,7 +280,7 @@ describe('getConnectivityStatus', () => {
     const provider = fakeProvider({ metered: true, online: false, saveData: true });
     const host = hostFor(provider);
     const out = status();
-    expect(getConnectivityStatus(host, out)).toBe(out);
+    expect(getConnectivityStatus(host.connectivity.status, out)).toBe(out);
     expect(out.type).toBe('wifi');
   });
 });
@@ -317,11 +325,11 @@ describe('initializeConnectivity', () => {
 
 describe('isConnectivityMetered', () => {
   it('reads the metered level from the supplied status witness', () => {
-    expect(isConnectivityMetered(hostFor(fakeProvider({ metered: true })))).toBe(true);
+    expect(isConnectivityMetered(hostFor(fakeProvider({ metered: true })).connectivity.status)).toBe(true);
   });
 });
 describe('isConnectivitySaveDataEnabled', () => {
   it('reads the save-data level from the supplied status witness', () => {
-    expect(isConnectivitySaveDataEnabled(hostFor(fakeProvider({ saveData: true })))).toBe(true);
+    expect(isConnectivitySaveDataEnabled(hostFor(fakeProvider({ saveData: true })).connectivity.status)).toBe(true);
   });
 });

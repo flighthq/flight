@@ -37,7 +37,7 @@ registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 // rather than a render state, and that set is pointed at this state's diagnostics.
 const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
-registerCanvasBitmapTextureResolver(webGraphicsHost, shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(webGraphicsHost.graphics.image, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);

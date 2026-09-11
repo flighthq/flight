@@ -3,21 +3,21 @@ import type {
   Accelerator,
   ElectronApi,
   Entity,
-  ShortcutQueryBackend,
-  ShortcutTriggerBackend,
+  HostShortcutQueryProvider,
+  HostShortcutTriggerProvider,
   ShortcutTriggerSubscription,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createElectronShortcutQueryBackend(electron: ElectronApi): ShortcutQueryBackend {
-  const provider = allocateEntity<ShortcutQueryBackend>();
+export function createElectronShortcutQueryBackend(electron: ElectronApi): HostShortcutQueryProvider {
+  const provider = allocateEntity<HostShortcutQueryProvider>();
   initializeElectronShortcutQueryBackend(provider, electron);
   return finishEntity(provider);
 }
 
 // Electron registration is synchronous, but the provider lifts it into the same awaited subscription
 // contract as Tauri. Exact opaque tokens keep native accelerator identity private and creator-pinned.
-export function createElectronShortcutTriggerBackend(electron: ElectronApi): ShortcutTriggerBackend {
+export function createElectronShortcutTriggerBackend(electron: ElectronApi): HostShortcutTriggerProvider {
   const globalShortcut = electron.globalShortcut;
   const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
 
@@ -29,7 +29,7 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
   }
 
   const provider = (() => {
-    const out = allocateEntity<ShortcutTriggerBackend>();
+    const out = allocateEntity<HostShortcutTriggerProvider>();
     out.destroy = async () => {
       let firstError: unknown;
       const accelerators = new Set(registrations.values());
@@ -61,7 +61,7 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
 }
 
 export function initializeElectronShortcutQueryBackend(
-  provider: EntityConstruction<ShortcutQueryBackend>,
+  provider: EntityConstruction<HostShortcutQueryProvider>,
   electron: ElectronApi,
 ): void {
   provider.isRegistered = async (accelerator: Accelerator) => {

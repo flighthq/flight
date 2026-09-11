@@ -154,6 +154,6 @@ describe('registerCapacitorBackends', () => {
 
   it('routes a capability call through to the Capacitor backend', async () => {
     const host = registerCapacitorBackends(fakeCapacitor(), 'ios');
-    expect(await readClipboardText(host)).toBe('CAP-TEXT');
+    expect(await readClipboardText(host.clipboard.text)).toBe('CAP-TEXT');
   });
 });

@@ -78,8 +78,8 @@ describe('attachProtocolHandler', () => {
     const handler = createProtocolHandler();
     const receive = vi.fn();
     connectSignal(handler.onOpenUrl, receive);
-    attachProtocolHandler(first.host, handler);
-    attachProtocolHandler(second.host, handler);
+    attachProtocolHandler(first.host.protocol.open, handler);
+    attachProtocolHandler(second.host.protocol.open, handler);
     second.emitOpen('flight://warm-open');
     expect(first.unsubscribe).toHaveBeenCalledOnce();
     expect(receive).toHaveBeenCalledExactlyOnceWith('flight://warm-open');
@@ -110,7 +110,7 @@ describe('detachProtocolHandler', () => {
   it('unsubscribes the current provider exactly once', () => {
     const fixture = createFixture();
     const handler = createProtocolHandler();
-    attachProtocolHandler(fixture.host, handler);
+    attachProtocolHandler(fixture.host.protocol.open, handler);
     detachProtocolHandler(handler);
     detachProtocolHandler(handler);
     expect(fixture.unsubscribe).toHaveBeenCalledOnce();
@@ -123,7 +123,7 @@ describe('disposeProtocolHandler', () => {
     const handler = createProtocolHandler();
     const receive = vi.fn();
     connectSignal(handler.onOpenUrl, receive);
-    attachProtocolHandler(fixture.host, handler);
+    attachProtocolHandler(fixture.host.protocol.open, handler);
     disposeProtocolHandler(handler);
     fixture.emitOpen('flight://ignored');
     expect(fixture.unsubscribe).toHaveBeenCalledOnce();
@@ -133,13 +133,13 @@ describe('disposeProtocolHandler', () => {
 
 describe('getProtocolLaunchUrl', () => {
   it('returns the cold-start provider fact', () => {
-    expect(getProtocolLaunchUrl(createFixture().host)).toBe('flight://cold-start');
+    expect(getProtocolLaunchUrl(createFixture().host.protocol.launch)).toBe('flight://cold-start');
   });
 });
 
 describe('getRegisteredProtocolSchemes', () => {
   it('returns the provider schemes', () => {
-    expect(getRegisteredProtocolSchemes(createFixture().host)).toEqual(['flight']);
+    expect(getRegisteredProtocolSchemes(createFixture().host.protocol.registration)).toEqual(['flight']);
   });
 });
 
@@ -151,15 +151,15 @@ describe('initializeProtocolHandler', () => {
 describe('isProtocolSchemeDefault', () => {
   it('validates before querying the provider', () => {
     const host = createFixture().host;
-    expect(isProtocolSchemeDefault(host, 'flight')).toBe(true);
-    expect(isProtocolSchemeDefault(host, 'https')).toBe(false);
+    expect(isProtocolSchemeDefault(host.protocol.default, 'flight')).toBe(true);
+    expect(isProtocolSchemeDefault(host.protocol.default, 'https')).toBe(false);
   });
 });
 describe('isProtocolSchemeRegistered', () => {
   it('validates before querying the provider', () => {
     const host = createFixture().host;
-    expect(isProtocolSchemeRegistered(host, 'flight')).toBe(true);
-    expect(isProtocolSchemeRegistered(host, 'https')).toBe(false);
+    expect(isProtocolSchemeRegistered(host.protocol.registrationQuery, 'flight')).toBe(true);
+    expect(isProtocolSchemeRegistered(host.protocol.registrationQuery, 'https')).toBe(false);
   });
 });
 describe('isValidProtocolScheme', () => {
@@ -187,46 +187,46 @@ describe('parseProtocolUrl', () => {
 describe('registerProtocolScheme', () => {
   it('delegates a valid scheme', () => {
     const { calls, host } = createFixture();
-    expect(registerProtocolScheme(host, 'flight')).toBe(true);
+    expect(registerProtocolScheme(host.protocol.registration, 'flight')).toBe(true);
     expect(calls).toEqual(['register:flight']);
   });
 });
 describe('registerProtocolSchemes', () => {
   it('prevalidates the full batch and aggregates provider outcomes', () => {
     const fixture = createFixture();
-    expect(registerProtocolSchemes(fixture.host, ['flight', 'https'])).toBe(false);
+    expect(registerProtocolSchemes(fixture.host.protocol.registration, ['flight', 'https'])).toBe(false);
     expect(fixture.calls).toEqual([]);
-    expect(registerProtocolSchemes(fixture.host, ['flight', 'fail'])).toBe(false);
+    expect(registerProtocolSchemes(fixture.host.protocol.registration, ['flight', 'fail'])).toBe(false);
     expect(fixture.calls).toEqual(['register:flight', 'register:fail']);
   });
 });
 describe('removeProtocolSchemeAsDefault', () => {
   it('delegates a valid scheme', () => {
     const { calls, host } = createFixture();
-    expect(removeProtocolSchemeAsDefault(host, 'flight')).toBe(true);
+    expect(removeProtocolSchemeAsDefault(host.protocol.default, 'flight')).toBe(true);
     expect(calls).toEqual(['removeDefault:flight']);
   });
 });
 describe('setProtocolSchemeAsDefault', () => {
   it('delegates a valid scheme', () => {
     const { calls, host } = createFixture();
-    expect(setProtocolSchemeAsDefault(host, 'flight')).toBe(true);
+    expect(setProtocolSchemeAsDefault(host.protocol.default, 'flight')).toBe(true);
     expect(calls).toEqual(['default:flight']);
   });
 });
 describe('unregisterProtocolScheme', () => {
   it('delegates a valid scheme', () => {
     const { calls, host } = createFixture();
-    expect(unregisterProtocolScheme(host, 'flight')).toBe(true);
+    expect(unregisterProtocolScheme(host.protocol.unregistration, 'flight')).toBe(true);
     expect(calls).toEqual(['unregister:flight']);
   });
 });
 describe('unregisterProtocolSchemes', () => {
   it('prevalidates the full batch and aggregates provider outcomes', () => {
     const fixture = createFixture();
-    expect(unregisterProtocolSchemes(fixture.host, ['flight', 'https'])).toBe(false);
+    expect(unregisterProtocolSchemes(fixture.host.protocol.unregistration, ['flight', 'https'])).toBe(false);
     expect(fixture.calls).toEqual([]);
-    expect(unregisterProtocolSchemes(fixture.host, ['flight', 'fail'])).toBe(false);
+    expect(unregisterProtocolSchemes(fixture.host.protocol.unregistration, ['flight', 'fail'])).toBe(false);
     expect(fixture.calls).toEqual(['unregister:flight', 'unregister:fail']);
   });
 });

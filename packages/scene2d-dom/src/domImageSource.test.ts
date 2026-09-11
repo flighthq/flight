@@ -1,7 +1,7 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
 import { createImageResource, createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend } from '@flighthq/types/contract';
+import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
@@ -14,7 +14,7 @@ function makeState() {
   return createDomRenderState(document.createElement('div'));
 }
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -27,7 +27,9 @@ function createTestImageBackend(): ImageBackend {
   };
 }
 
-const host: HasGraphicsImage = { graphics: { image: createTestImageBackend() } } as HasGraphicsImage;
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+  graphics: { image: createTestImageBackend() },
+} as { readonly graphics: { readonly image: HostImageProvider } };
 
 describe('explainDomImageSource', () => {
   it('reports element and data for the two drawable representations', () => {
@@ -41,7 +43,7 @@ describe('registerDomBitmapTextureResolver', () => {
     const state = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
     const texture = createTexture({ dimension: '2d', source: bitmap });
-    registerDomBitmapTextureResolver(host, state);
+    registerDomBitmapTextureResolver(host.graphics.image, state);
     const first = resolveDomTexture(state, texture);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
     expect(resolveDomTexture(state, texture)).toBe(first);

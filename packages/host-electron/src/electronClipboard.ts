@@ -1,19 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
-  ClipboardBookmarkBackend,
-  ClipboardFormatsBackend,
-  ClipboardImageBackend,
-  ClipboardTextBackend,
+  HostClipboardBookmarkProvider,
+  HostClipboardFormatsProvider,
+  HostClipboardImageProvider,
+  HostClipboardTextProvider,
   ElectronApi,
   ElectronClipboardData,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type ElectronClipboardBackend = ClipboardBookmarkBackend &
-  ClipboardFormatsBackend &
-  ClipboardImageBackend &
-  ClipboardTextBackend;
+type ElectronClipboardBackend = HostClipboardBookmarkProvider &
+  HostClipboardFormatsProvider &
+  HostClipboardImageProvider &
+  HostClipboardTextProvider;
 
 // Maps Flight's clipboard capabilities onto Electron's synchronous clipboard module, adapting to
 // the async Promise contracts. Images cross the seam as data URLs (Flight's convention), converted

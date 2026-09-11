@@ -1,17 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   GeolocationAccessOutcome,
-  GeolocationBackend,
+  HostGeolocationProvider,
   GeolocationErrorReason,
   GeolocationPosition as FlightGeolocationPosition,
   GeolocationPositionResult,
   GeolocationRequestOptions,
-  HasSystemGeolocation,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: number): void {
-  host.system.geolocation.clearWatch(id);
+export function clearGeolocationWatch(hostGeolocation: Readonly<HostGeolocationProvider>, id: number): void {
+  hostGeolocation.clearWatch(id);
 }
 
 export function createGeolocationPosition(): FlightGeolocationPosition {
@@ -20,24 +19,24 @@ export function createGeolocationPosition(): FlightGeolocationPosition {
   return finishEntity(out);
 }
 
-export function createWebGeolocationBackend(): GeolocationBackend {
-  const out = allocateEntity<GeolocationBackend>();
+export function createWebGeolocationBackend(): HostGeolocationProvider {
+  const out = allocateEntity<HostGeolocationProvider>();
   initializeWebGeolocationBackend(out);
   return finishEntity(out);
 }
 
 export function getCurrentGeolocationPosition(
-  host: Readonly<HasSystemGeolocation>,
+  hostGeolocation: Readonly<HostGeolocationProvider>,
   options?: Readonly<GeolocationRequestOptions>,
 ): Promise<FlightGeolocationPosition | null> {
-  return host.system.geolocation.getCurrentPosition(options ?? _emptyOptions);
+  return hostGeolocation.getCurrentPosition(options ?? _emptyOptions);
 }
 
 export function getCurrentGeolocationPositionResult(
-  host: Readonly<HasSystemGeolocation>,
+  hostGeolocation: Readonly<HostGeolocationProvider>,
   options?: Readonly<GeolocationRequestOptions>,
 ): Promise<GeolocationPositionResult> {
-  return host.system.geolocation.getCurrentPositionResult(options ?? _emptyOptions);
+  return hostGeolocation.getCurrentPositionResult(options ?? _emptyOptions);
 }
 
 export function initializeGeolocationPosition(out: EntityConstruction<FlightGeolocationPosition>): void {
@@ -52,7 +51,7 @@ export function initializeGeolocationPosition(out: EntityConstruction<FlightGeol
   out.timestamp = 0;
 }
 
-export function initializeWebGeolocationBackend(out: EntityConstruction<GeolocationBackend>): void {
+export function initializeWebGeolocationBackend(out: EntityConstruction<HostGeolocationProvider>): void {
   out.clearWatch = (id) => {
     const geo = getWebGeolocation();
     if (geo === null || typeof geo.clearWatch !== 'function') return;
@@ -134,17 +133,17 @@ export function initializeWebGeolocationBackend(out: EntityConstruction<Geolocat
   };
 }
 
-export function isGeolocationAvailable(host: Readonly<HasSystemGeolocation>): boolean {
-  return host.system.geolocation.isAvailable();
+export function isGeolocationAvailable(hostGeolocation: Readonly<HostGeolocationProvider>): boolean {
+  return hostGeolocation.isAvailable();
 }
 
 export function watchGeolocationPosition(
-  host: Readonly<HasSystemGeolocation>,
+  hostGeolocation: Readonly<HostGeolocationProvider>,
   handler: (position: Readonly<FlightGeolocationPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
   onError?: (reason: GeolocationErrorReason) => void,
 ): number {
-  return host.system.geolocation.watchPosition(handler, options ?? _emptyOptions, onError);
+  return hostGeolocation.watchPosition(handler, options ?? _emptyOptions, onError);
 }
 
 const _emptyOptions: GeolocationRequestOptions = {};

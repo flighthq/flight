@@ -2,16 +2,17 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasPowerIdle,
-  HasPowerKeepAwake,
-  HasPowerStatus,
-  HasPowerThermal,
+  HostPowerChangeProvider,
+  HostPowerIdleProvider,
+  HostPowerKeepAwakeProvider,
+  HostPowerSessionLockProvider,
+  HostPowerStatusProvider,
+  HostPowerSuspensionProvider,
+  HostPowerThermalProvider,
   Power,
-  PowerAttachHost,
   PowerBatteryHealth,
   PowerIdleState,
   PowerKeepAwakeAcquireResult,
-  PowerKeepAwakeBackend,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
   PowerStatus,
@@ -26,10 +27,10 @@ import type {
 // Acquires a keep-awake lock, resolving only once the provider has really taken it. `ok` means the
 // provider acquired its mechanism — not that the hardware can never sleep for other policy reasons.
 export function acquirePowerKeepAwake(
-  host: HasPowerKeepAwake,
+  hostPowerKeepAwake: Readonly<HostPowerKeepAwakeProvider>,
   mode: PowerKeepAwakeMode = 'PreventDisplaySleep',
 ): Promise<PowerKeepAwakeAcquireResult> {
-  return host.power.keepAwake.acquire(mode);
+  return hostPowerKeepAwake.acquire(mode);
 }
 
 // Starts delivering the host's power events into `power`'s signals. Re-attaching detaches first, so one
@@ -38,12 +39,21 @@ export function acquirePowerKeepAwake(
 // Each unsubscribe is ORIGIN-PINNED: it is kept beside the entity that opened it, so detaching one
 // entity ends exactly its own subscriptions. Teardown ATTEMPTS ALL of them even if one throws, because
 // abandoning the rest would leak every subscription after the first failure.
-export function attachPower(host: PowerAttachHost, power: Power, idleThresholdSeconds = 60): void {
+export function attachPower(
+  hostPowerStatus: Readonly<HostPowerStatusProvider> | undefined,
+  hostPowerChange: Readonly<HostPowerChangeProvider> | undefined,
+  hostPowerSessionLock: Readonly<HostPowerSessionLockProvider> | undefined,
+  hostPowerSuspension: Readonly<HostPowerSuspensionProvider> | undefined,
+  hostPowerThermal: Readonly<HostPowerThermalProvider> | undefined,
+  hostPowerIdle: Readonly<HostPowerIdleProvider> | undefined,
+  power: Power,
+  idleThresholdSeconds = 60,
+): void {
   detachPower(power);
   const teardowns: (() => void)[] = [];
 
-  const status = host.power.status;
-  const change = host.power.change;
+  const status = hostPowerStatus;
+  const change = hostPowerChange;
   if (change !== undefined) {
     let wasCharging = status !== undefined ? status.getStatus(makePowerStatus()).isCharging : false;
     teardowns.push(
@@ -61,19 +71,19 @@ export function attachPower(host: PowerAttachHost, power: Power, idleThresholdSe
     );
   }
 
-  const sessionLock = host.power.sessionLock;
+  const sessionLock = hostPowerSessionLock;
   if (sessionLock !== undefined) {
     teardowns.push(sessionLock.subscribeLock(() => emitSignalWhenPresent(power.onLockScreen)));
     teardowns.push(sessionLock.subscribeUnlock(() => emitSignalWhenPresent(power.onUnlockScreen)));
   }
 
-  const suspension = host.power.suspension;
+  const suspension = hostPowerSuspension;
   if (suspension !== undefined) {
     teardowns.push(suspension.subscribeSuspend(() => emitSignalWhenPresent(power.onSuspend)));
     teardowns.push(suspension.subscribeResume(() => emitSignalWhenPresent(power.onResume)));
   }
 
-  const thermal = host.power.thermal;
+  const thermal = hostPowerThermal;
   if (thermal !== undefined) {
     teardowns.push(
       thermal.subscribeThermalStateChange((state) => {
@@ -85,7 +95,7 @@ export function attachPower(host: PowerAttachHost, power: Power, idleThresholdSe
   // Idle is polled because no host pushes idle transitions. The interval exists only when the host
   // actually offers the idle slot: a host that would answer a constant 'Unknown' omits the slot, so
   // nothing polls a value that provably cannot change.
-  const idle = host.power.idle;
+  const idle = hostPowerIdle;
   if (idle !== undefined) {
     let lastIdleState: PowerIdleState = idle.getIdleState(idleThresholdSeconds);
     const idleIntervalId = setInterval(() => {
@@ -119,10 +129,9 @@ export function createPower(): Power {
 // Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
 // siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
 // failures; the ones that succeeded are forgotten and never destroyed twice.
-export function destroyPowerKeepAwake(...hosts: readonly HasPowerKeepAwake[]): void {
-  const pending = new Set<PowerKeepAwakeBackend>();
-  for (const host of hosts) {
-    const provider = host.power.keepAwake;
+export function destroyPowerKeepAwake(...hostPowerKeepAwake: readonly Readonly<HostPowerKeepAwakeProvider>[]): void {
+  const pending = new Set<HostPowerKeepAwakeProvider>();
+  for (const provider of hostPowerKeepAwake) {
     if (!_destroyedKeepAwake.has(provider)) pending.add(provider);
   }
   let failure: unknown = null;
@@ -193,20 +202,23 @@ export function getPowerIdlePollingIntervalMs(): number {
   return _idlePollingIntervalMs;
 }
 
-export function getPowerStatus(host: HasPowerStatus, out: PowerStatus): PowerStatus {
-  return host.power.status.getStatus(out);
+export function getPowerStatus(hostPowerStatus: Readonly<HostPowerStatusProvider>, out: PowerStatus): PowerStatus {
+  return hostPowerStatus.getStatus(out);
 }
 
-export function getPowerSystemIdleState(host: HasPowerIdle, thresholdSeconds: number): PowerIdleState {
-  return host.power.idle.getIdleState(thresholdSeconds);
+export function getPowerSystemIdleState(
+  hostPowerIdle: Readonly<HostPowerIdleProvider>,
+  thresholdSeconds: number,
+): PowerIdleState {
+  return hostPowerIdle.getIdleState(thresholdSeconds);
 }
 
-export function getPowerSystemIdleTime(host: HasPowerIdle): number {
-  return host.power.idle.getIdleTimeSeconds();
+export function getPowerSystemIdleTime(hostPowerIdle: Readonly<HostPowerIdleProvider>): number {
+  return hostPowerIdle.getIdleTimeSeconds();
 }
 
-export function getPowerThermalState(host: HasPowerThermal): PowerThermalState {
-  return host.power.thermal.getThermalState();
+export function getPowerThermalState(hostPowerThermal: Readonly<HostPowerThermalProvider>): PowerThermalState {
+  return hostPowerThermal.getThermalState();
 }
 
 // Allocates a Power event entity with its signals left null. Call enablePowerSignals to allocate the
@@ -223,8 +235,8 @@ export function initializePower(out: EntityConstruction<Power>): void {
   out.onUnlockScreen = null;
 }
 
-export function isPowerKeepAwakeActive(host: HasPowerKeepAwake): boolean {
-  return host.power.keepAwake.isActive();
+export function isPowerKeepAwakeActive(hostPowerKeepAwake: Readonly<HostPowerKeepAwakeProvider>): boolean {
+  return hostPowerKeepAwake.isActive();
 }
 
 // Allocates a PowerBatteryHealth value with the domain's complete unknown encoding. Not a create*: this
@@ -257,8 +269,10 @@ export function makePowerStatus(): PowerStatus {
 
 // Releases a keep-awake lock, resolving only once the provider has really let it go. State is never
 // published before the awaited release succeeds.
-export function releasePowerKeepAwake(host: HasPowerKeepAwake): Promise<PowerKeepAwakeReleaseResult> {
-  return host.power.keepAwake.release();
+export function releasePowerKeepAwake(
+  hostPowerKeepAwake: Readonly<HostPowerKeepAwakeProvider>,
+): Promise<PowerKeepAwakeReleaseResult> {
+  return hostPowerKeepAwake.release();
 }
 
 export function setPowerIdlePollingIntervalMs(intervalMs: number): void {
@@ -277,7 +291,7 @@ const _subscriptions = new WeakMap<Power, (() => void)[]>();
 
 // Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
 // retries exactly the failed obligations and never re-destroys a successful one.
-const _destroyedKeepAwake = new WeakSet<PowerKeepAwakeBackend>();
+const _destroyedKeepAwake = new WeakSet<HostPowerKeepAwakeProvider>();
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

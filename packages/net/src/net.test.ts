@@ -1,10 +1,12 @@
-import type { HasNetHttp, NetBackend, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
+import type { HostNetProvider, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as netContract from './net';
 import { explainNetResponse, sendNetRequest, setNetGuard } from './net';
 
-function fakeHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
+function fakeHost(backend?: Pick<HostNetProvider, 'sendNetRequest'>): {
+  readonly net: { readonly http: HostNetProvider };
+} {
   return {
     net: {
       http: {
@@ -67,7 +69,7 @@ describe('R3 boundary', () => {
 describe('sendNetRequest', () => {
   it('dispatches through the host backend and passes options', async () => {
     let received: { request?: Readonly<NetRequest>; options?: unknown } = {};
-    const backend: Pick<NetBackend, 'sendNetRequest'> = {
+    const backend: Pick<HostNetProvider, 'sendNetRequest'> = {
       sendNetRequest: async (request, options) => {
         received = { request, options };
         return stubResponse();
@@ -76,7 +78,7 @@ describe('sendNetRequest', () => {
     const host = fakeHost(backend);
     const request: NetRequest = { method: 'GET', url: 'https://example.test' };
     const options = {};
-    await sendNetRequest(host, request, options);
+    await sendNetRequest(host.net.http, request, options);
     expect(received.request).toBe(request);
     expect(received.options).toBe(options);
   });
@@ -84,7 +86,7 @@ describe('sendNetRequest', () => {
   it('passes the response through unchanged', async () => {
     const response = stubResponse();
     const host = fakeHost({ sendNetRequest: async () => response });
-    const result = await sendNetRequest(host, { method: 'GET', url: 'u' });
+    const result = await sendNetRequest(host.net.http, { method: 'GET', url: 'u' });
     expect(result).toBe(response);
   });
 });
@@ -94,9 +96,9 @@ describe('setNetGuard', () => {
     const notices: NetGuardNotice[] = [];
     setNetGuard((notice) => notices.push(notice));
     const host = fakeHost();
-    await sendNetRequest(host, { body: 'x', method: 'get', timeoutMs: -1, url: 'u' });
+    await sendNetRequest(host.net.http, { body: 'x', method: 'get', timeoutMs: -1, url: 'u' });
     setNetGuard(null);
-    await sendNetRequest(host, { body: 'x', method: 'HEAD', url: 'v' });
+    await sendNetRequest(host.net.http, { body: 'x', method: 'HEAD', url: 'v' });
     expect(notices.map((notice) => notice.reason)).toEqual(['body-on-get-or-head', 'negative-timeout']);
   });
 });

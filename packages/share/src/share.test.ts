@@ -2,11 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HasShareContent,
-  HasShareFiles,
+  HostShareContentProvider,
+  HostShareFilesProvider,
   ShareContent,
-  ShareContentBackend,
-  ShareFilesBackend,
   ShareResult,
 } from '@flighthq/types/contract';
 
@@ -28,11 +26,13 @@ import {
   shareUrl,
 } from './share';
 
-function contentHost(overrides: Partial<ShareContentBackend> = {}): HasShareContent {
+function contentHost(overrides: Partial<HostShareContentProvider> = {}): {
+  readonly share: { readonly content: HostShareContentProvider };
+} {
   return {
     share: {
       content: (() => {
-        const out = allocateEntity<ShareContentBackend>();
+        const out = allocateEntity<HostShareContentProvider>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
@@ -43,11 +43,13 @@ function contentHost(overrides: Partial<ShareContentBackend> = {}): HasShareCont
   };
 }
 
-function filesHost(overrides: Partial<ShareFilesBackend> = {}): HasShareFiles {
+function filesHost(overrides: Partial<HostShareFilesProvider> = {}): {
+  readonly share: { readonly files: HostShareFilesProvider };
+} {
   return {
     share: {
       files: (() => {
-        const out = allocateEntity<ShareFilesBackend>();
+        const out = allocateEntity<HostShareFilesProvider>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
@@ -69,7 +71,7 @@ describe('attachShareSignals', () => {
     connectSignal(signals.onShareResult, listener);
     attachShareSignals(signals);
 
-    expect(await shareContentWithResult(host, { title: 'flight' })).toEqual(result);
+    expect(await shareContentWithResult(host.share.content, { title: 'flight' })).toEqual(result);
     expect(listener).toHaveBeenCalledWith(result);
     detachShareSignals(signals);
   });
@@ -79,11 +81,11 @@ describe('canShareContent', () => {
   it('validates meaningful payloads through the selected content slot', () => {
     const can = vi.fn(() => true);
     const host = contentHost({ canShareContent: can });
-    expect(canShareContent(host, { text: 'hello' })).toBe(true);
+    expect(canShareContent(host.share.content, { text: 'hello' })).toBe(true);
     expect(can).toHaveBeenCalledWith({ text: 'hello' });
 
     // @ts-expect-error an empty object is not a meaningful Share content payload
-    expect(canShareContent(contentHost(), {})).toBe(false);
+    expect(canShareContent(contentHost().share.content, {})).toBe(false);
   });
 });
 
@@ -91,9 +93,9 @@ describe('canShareFiles', () => {
   it('validates through the files slot only for valid, non-empty lists', () => {
     const can = vi.fn(() => true);
     const host = filesHost({ canShareContent: can });
-    expect(canShareFiles(host, [file])).toBe(true);
-    expect(canShareFiles(host, [])).toBe(false);
-    expect(canShareFiles(host, [{ ...file, dataUrl: 'data:text/plain;base64' }])).toBe(false);
+    expect(canShareFiles(host.share.files, [file])).toBe(true);
+    expect(canShareFiles(host.share.files, [])).toBe(false);
+    expect(canShareFiles(host.share.files, [{ ...file, dataUrl: 'data:text/plain;base64' }])).toBe(false);
     expect(can).toHaveBeenCalledTimes(1);
   });
 });
@@ -105,7 +107,7 @@ describe('detachShareSignals', () => {
     connectSignal(signals.onShareResult, listener);
     attachShareSignals(signals);
     detachShareSignals(signals);
-    await shareContentWithResult(contentHost(), { title: 'quiet' });
+    await shareContentWithResult(contentHost().share.content, { title: 'quiet' });
     expect(listener).not.toHaveBeenCalled();
   });
 });
@@ -117,7 +119,7 @@ describe('disposeShareSignals', () => {
     connectSignal(signals.onShareResult, listener);
     attachShareSignals(signals);
     disposeShareSignals(signals);
-    await shareContentWithResult(contentHost(), { text: 'quiet' });
+    await shareContentWithResult(contentHost().share.content, { text: 'quiet' });
     expect(listener).not.toHaveBeenCalled();
   });
 });
@@ -182,8 +184,8 @@ describe('shareContent', () => {
     const backend = vi.fn(async () => true);
     const host = contentHost({ shareContent: backend });
     const empty = { text: '' } as ShareContent;
-    expect(canShareContent(host, empty)).toBe(false);
-    expect(await shareContent(host, empty)).toBe(false);
+    expect(canShareContent(host.share.content, empty)).toBe(false);
+    expect(await shareContent(host.share.content, empty)).toBe(false);
     expect(backend).not.toHaveBeenCalled();
   });
 });
@@ -192,17 +194,17 @@ describe('shareContentWithResult', () => {
   it('returns a detailed provider outcome', async () => {
     const result: ShareResult = { activityType: 'mail', completed: true, dismissed: false };
     const host = contentHost({ shareContentWithResult: async () => result });
-    expect(await shareContentWithResult(host, { title: 'flight' })).toEqual(result);
+    expect(await shareContentWithResult(host.share.content, { title: 'flight' })).toEqual(result);
   });
 });
 
 describe('shareFiles', () => {
   it('dispatches only a valid, non-empty portable file tuple', async () => {
-    const invoke = vi.fn(async (_content: Parameters<ShareFilesBackend['shareContent']>[0]) => true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareFilesProvider['shareContent']>[0]) => true);
     const host = filesHost({ shareContent: invoke });
-    expect(await shareFiles(host, [file])).toBe(true);
-    expect(await shareFiles(host, [])).toBe(false);
-    expect(await shareFiles(host, [{ ...file, dataUrl: 'not-a-data-url' }])).toBe(false);
+    expect(await shareFiles(host.share.files, [file])).toBe(true);
+    expect(await shareFiles(host.share.files, [])).toBe(false);
+    expect(await shareFiles(host.share.files, [{ ...file, dataUrl: 'not-a-data-url' }])).toBe(false);
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(invoke.mock.calls[0]?.[0].files).toEqual([file]);
   });
@@ -210,15 +212,15 @@ describe('shareFiles', () => {
 
 describe('shareText', () => {
   it('delegates text through the content slot', async () => {
-    const invoke = vi.fn(async (_content: Parameters<ShareContentBackend['shareContent']>[0]) => true);
-    expect(await shareText(contentHost({ shareContent: invoke }), 'hello')).toBe(true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareContentProvider['shareContent']>[0]) => true);
+    expect(await shareText(contentHost({ shareContent: invoke }).share.content, 'hello')).toBe(true);
     expect(invoke).toHaveBeenCalledWith({ text: 'hello' });
   });
 });
 describe('shareUrl', () => {
   it('delegates a URL through the content slot', async () => {
-    const invoke = vi.fn(async (_content: Parameters<ShareContentBackend['shareContent']>[0]) => true);
-    expect(await shareUrl(contentHost({ shareContent: invoke }), 'https://flight.dev')).toBe(true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareContentProvider['shareContent']>[0]) => true);
+    expect(await shareUrl(contentHost({ shareContent: invoke }).share.content, 'https://flight.dev')).toBe(true);
     expect(invoke).toHaveBeenCalledWith({ url: 'https://flight.dev' });
   });
 });

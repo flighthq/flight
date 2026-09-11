@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  GeolocationBackend,
+  HostGeolocationProvider,
   GeolocationPosition,
   GeolocationPositionResult,
   CapacitorApi,
@@ -9,8 +9,8 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): GeolocationBackend & Entity {
-  const out = allocateEntity<GeolocationBackend>();
+export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): HostGeolocationProvider & Entity {
+  const out = allocateEntity<HostGeolocationProvider>();
   initializeCapacitorGeolocationBackend(out, capacitor);
   return finishEntity(out);
 }
@@ -23,7 +23,7 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
 // a watch that was cleared before it even started). Capacitor has no permission-change event, so
 // subscribePermission is inert.
 export function initializeCapacitorGeolocationBackend(
-  out: EntityConstruction<GeolocationBackend>,
+  out: EntityConstruction<HostGeolocationProvider>,
   capacitor: CapacitorApi,
 ): void {
   const geolocation = capacitor.geolocation;

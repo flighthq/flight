@@ -1,23 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityRuntimeKey,
-  HasShellBeep,
-  HasShellExternal,
-  HasShellPathOpen,
-  HasShellPathReveal,
-  HasShellShortcutLink,
-  HasShellTrash,
-  ShellBeepBackend,
-  ShellExternalBackend,
+  HostShellBeepProvider,
+  HostShellExternalProvider,
+  HostShellPathOpenProvider,
+  HostShellPathRevealProvider,
+  HostShellShortcutLinkProvider,
+  HostShellTrashProvider,
   ShellExternalUrlPolicy,
-  ShellPathOpenBackend,
-  ShellPathRevealBackend,
   ShellProcess,
-  ShellProcessBackend,
-  ShellProcessHost,
+  HostShellProcessProvider,
   ShellProcessOptions,
-  ShellShortcutLinkBackend,
-  ShellTrashBackend,
 } from '@flighthq/types/contract';
 
 import {
@@ -60,7 +53,7 @@ describe('moveShellItemsToTrash', () => {
       })(),
     );
 
-    const outcomes = moveShellItemsToTrash(host, ['/first', '/second']);
+    const outcomes = moveShellItemsToTrash(host.shell.trash, ['/first', '/second']);
     expect(paths).toEqual(['/first', '/second']);
     resolvers[1]?.({ reason: 'operation-failed' });
     let settled = false;
@@ -85,7 +78,7 @@ describe('moveShellItemToTrash', () => {
             out.moveToTrash = moveToTrash;
             return finishEntity(out);
           })(),
-        ),
+        ).shell.trash,
         '/item',
       ),
     ).resolves.toEqual({
@@ -98,7 +91,7 @@ describe('moveShellItemToTrash', () => {
 describe('openShellExternalUrl', () => {
   it('requires policy as the third parameter at the type boundary', () => {
     expectTypeOf(openShellExternalUrl).parameters.toEqualTypeOf<
-      [HasShellExternal, string, Readonly<ShellExternalUrlPolicy>]
+      [Readonly<HostShellExternalProvider>, string, Readonly<ShellExternalUrlPolicy>]
     >();
   });
 
@@ -111,7 +104,9 @@ describe('openShellExternalUrl', () => {
         return finishEntity(out);
       })(),
     );
-    await expect(openShellExternalUrl(host, 'file:///etc/passwd', { allowedSchemes: ['https'] })).resolves.toEqual({
+    await expect(
+      openShellExternalUrl(host.shell.external, 'file:///etc/passwd', { allowedSchemes: ['https'] }),
+    ).resolves.toEqual({
       reason: 'blocked-scheme',
     });
     expect(open).not.toHaveBeenCalled();
@@ -139,8 +134,10 @@ describe('openShellExternalUrl', () => {
         return finishEntity(out);
       })(),
     );
-    await expect(openShellExternalUrl(first, 'https://one.test', HTTPS_ONLY)).resolves.toEqual({ reason: 'ok' });
-    await expect(openShellExternalUrl(second, 'https://two.test', HTTPS_ONLY)).resolves.toEqual({
+    await expect(openShellExternalUrl(first.shell.external, 'https://one.test', HTTPS_ONLY)).resolves.toEqual({
+      reason: 'ok',
+    });
+    await expect(openShellExternalUrl(second.shell.external, 'https://two.test', HTTPS_ONLY)).resolves.toEqual({
       reason: 'operation-failed',
     });
     expect(calls).toEqual(['first:https://one.test', 'second:https://two.test']);
@@ -149,11 +146,11 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = allocateEntity<ShellPathOpenBackend>();
+    const provider = allocateEntity<HostShellPathOpenProvider>();
     provider.open = async () => {
       return { message: '', reason: 'operation-failed' as const };
     };
-    await expect(openShellPath(pathOpenHost(finishEntity(provider)), '/missing')).resolves.toEqual({
+    await expect(openShellPath(pathOpenHost(finishEntity(provider)).shell.pathOpen, '/missing')).resolves.toEqual({
       message: '',
       reason: 'operation-failed',
     });
@@ -163,7 +160,7 @@ describe('openShellPath', () => {
 describe('readShellShortcutLink', () => {
   it('returns the read-specific outcome', async () => {
     const provider = shortcutLinkProvider();
-    await expect(readShellShortcutLink(shortcutLinkHost(provider), '/app.lnk')).resolves.toEqual({
+    await expect(readShellShortcutLink(shortcutLinkHost(provider).shell.shortcutLink, '/app.lnk')).resolves.toEqual({
       link: { target: '/app' },
       reason: 'ok',
     });
@@ -181,7 +178,7 @@ describe('revealShellPath', () => {
             out.reveal = reveal;
             return finishEntity(out);
           })(),
-        ),
+        ).shell.pathReveal,
         '/item',
       ),
     ).resolves.toEqual({
@@ -200,7 +197,7 @@ describe('shellBeep', () => {
           out.beep = beep;
           return finishEntity(out);
         })(),
-      ),
+      ).shell.beep,
     );
     expect(beep).toHaveBeenCalledOnce();
   });
@@ -209,9 +206,9 @@ describe('shellBeep', () => {
 describe('spawnShellProcess', () => {
   it('exposes the explicit host, command, argument-vector, and optional-options API', () => {
     expectTypeOf(spawnShellProcess).parameters.toEqualTypeOf<
-      [ShellProcessHost, string, readonly string[], Readonly<ShellProcessOptions>?]
+      [Readonly<HostShellProcessProvider>, string, readonly string[], Readonly<ShellProcessOptions>?]
     >();
-    expectTypeOf(spawnShellProcess).returns.toEqualTypeOf<ShellProcess | null>();
+    expectTypeOf(spawnShellProcess).returns.toEqualTypeOf<ShellProcess>();
   });
 
   it('forwards the command, argument vector, and options to the host backend unchanged', () => {
@@ -227,12 +224,8 @@ describe('spawnShellProcess', () => {
     const args = ['--flag', 'value'] as const;
     const options = { cwd: '/work', environment: { MODE: 'test' } } as const;
 
-    expect(spawnShellProcess(host, '/bin/tool', args, options)).toBe(process);
+    expect(spawnShellProcess(host.shell.process, '/bin/tool', args, options)).toBe(process);
     expect(spawn).toHaveBeenCalledWith('/bin/tool', args, options);
-  });
-
-  it('returns null when the host does not expose child-process support', () => {
-    expect(spawnShellProcess({ shell: {} }, '/bin/tool', [])).toBeNull();
   });
 });
 
@@ -240,7 +233,7 @@ describe('writeShellShortcutLink', () => {
   it('requires an explicit write operation and returns the write-specific outcome', async () => {
     const provider = shortcutLinkProvider();
     await expect(
-      writeShellShortcutLink(shortcutLinkHost(provider), '/app.lnk', { target: '/app' }, 'replace'),
+      writeShellShortcutLink(shortcutLinkHost(provider).shell.shortcutLink, '/app.lnk', { target: '/app' }, 'replace'),
     ).resolves.toEqual({ reason: 'ok' });
     expect(provider.write).toHaveBeenCalledWith('/app.lnk', { target: '/app' }, 'replace');
   });
@@ -248,23 +241,31 @@ describe('writeShellShortcutLink', () => {
 
 const HTTPS_ONLY: ShellExternalUrlPolicy = { allowedSchemes: ['https'] };
 
-function beepHost(beep: ShellBeepBackend): HasShellBeep {
+function beepHost(beep: HostShellBeepProvider): { readonly shell: { readonly beep: HostShellBeepProvider } } {
   return { shell: { beep } };
 }
 
-function externalHost(external: ShellExternalBackend): HasShellExternal {
+function externalHost(external: HostShellExternalProvider): {
+  readonly shell: { readonly external: HostShellExternalProvider };
+} {
   return { shell: { external } };
 }
 
-function pathOpenHost(pathOpen: ShellPathOpenBackend): HasShellPathOpen {
+function pathOpenHost(pathOpen: HostShellPathOpenProvider): {
+  readonly shell: { readonly pathOpen: HostShellPathOpenProvider };
+} {
   return { shell: { pathOpen } };
 }
 
-function pathRevealHost(pathReveal: ShellPathRevealBackend): HasShellPathReveal {
+function pathRevealHost(pathReveal: HostShellPathRevealProvider): {
+  readonly shell: { readonly pathReveal: HostShellPathRevealProvider };
+} {
   return { shell: { pathReveal } };
 }
 
-function processHost(process: ShellProcessBackend): ShellProcessHost {
+function processHost(process: HostShellProcessProvider): {
+  readonly shell: { readonly process: HostShellProcessProvider };
+} {
   return { shell: { process } };
 }
 
@@ -278,11 +279,13 @@ function shellProcess(): ShellProcess {
   return finishEntity(out);
 }
 
-function shortcutLinkHost(shortcutLink: ShellShortcutLinkBackend): HasShellShortcutLink {
+function shortcutLinkHost(shortcutLink: HostShellShortcutLinkProvider): {
+  readonly shell: { readonly shortcutLink: HostShellShortcutLinkProvider };
+} {
   return { shell: { shortcutLink } };
 }
 
-function shortcutLinkProvider(): ShellShortcutLinkBackend & { write: ReturnType<typeof vi.fn> } {
+function shortcutLinkProvider(): HostShellShortcutLinkProvider & { write: ReturnType<typeof vi.fn> } {
   const out = allocateEntity<any>();
   out.read = async () => {
     return { link: { target: '/app' }, reason: 'ok' };
@@ -291,6 +294,6 @@ function shortcutLinkProvider(): ShellShortcutLinkBackend & { write: ReturnType<
   return finishEntity(out);
 }
 
-function trashHost(trash: ShellTrashBackend): HasShellTrash {
+function trashHost(trash: HostShellTrashProvider): { readonly shell: { readonly trash: HostShellTrashProvider } } {
   return { shell: { trash } };
 }

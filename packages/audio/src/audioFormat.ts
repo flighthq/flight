@@ -1,8 +1,8 @@
-import type { HasMediaAudioCodec } from '@flighthq/types/contract';
+import type { HostAudioProvider } from '@flighthq/types/contract';
 
-export function canPlayAudioType(host: Readonly<HasMediaAudioCodec>, mimeType: string): boolean {
+export function canPlayAudioType(hostAudio: Readonly<HostAudioProvider>, mimeType: string): boolean {
   if (mimeType === '') return false;
-  return host.media.audioCodec.canPlayType(mimeType);
+  return hostAudio.canPlayType(mimeType);
 }
 
 export function detectAudioMimeType(data: ArrayBuffer | Uint8Array): string | null {

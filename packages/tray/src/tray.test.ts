@@ -1,21 +1,21 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
-  HasTrayBalloon,
-  HasTrayBalloonEvents,
-  HasTrayBounds,
-  HasTrayDoubleClickPolicy,
-  HasTrayDropEvents,
-  HasTrayImage,
-  HasTrayInteractionEvents,
-  HasTrayLifecycle,
-  HasTrayMenu,
-  HasTrayMenuSelectionEvents,
-  HasTrayPopupMenu,
-  HasTrayPressedImage,
-  HasTrayTemplateImage,
-  HasTrayTitle,
-  HasTrayTooltip,
+  HostTrayBalloonProvider,
+  HostTrayBalloonEventsProvider,
+  HostTrayBoundsProvider,
+  HostTrayDoubleClickPolicyProvider,
+  HostTrayDropEventsProvider,
+  HostTrayImageProvider,
+  HostTrayInteractionEventsProvider,
+  HostTrayLifecycleProvider,
+  HostTrayMenuProvider,
+  HostTrayMenuSelectionEventsProvider,
+  HostTrayPopupMenuProvider,
+  HostTrayPressedImageProvider,
+  HostTrayTemplateImageProvider,
+  HostTrayTitleProvider,
+  HostTrayTooltipProvider,
   RectangleLike,
   Signal,
   TrayBalloonEvent,
@@ -58,21 +58,25 @@ import {
   stopTrayIconAnimation,
 } from './tray';
 
-type TestHost = HasTrayLifecycle &
-  HasTrayImage &
-  HasTrayTitle &
-  HasTrayTooltip &
-  HasTrayMenu &
-  HasTrayTemplateImage &
-  HasTrayBounds &
-  HasTrayPopupMenu &
-  HasTrayDoubleClickPolicy &
-  HasTrayPressedImage &
-  HasTrayBalloon &
-  HasTrayInteractionEvents &
-  HasTrayMenuSelectionEvents &
-  HasTrayBalloonEvents &
-  HasTrayDropEvents;
+type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } } & {
+  readonly tray: { readonly image: HostTrayImageProvider };
+} & { readonly tray: { readonly title: HostTrayTitleProvider } } & {
+  readonly tray: { readonly tooltip: HostTrayTooltipProvider };
+} & { readonly tray: { readonly menu: HostTrayMenuProvider } } & {
+  readonly tray: { readonly templateImage: HostTrayTemplateImageProvider };
+} & { readonly tray: { readonly bounds: HostTrayBoundsProvider } } & {
+  readonly tray: { readonly popupMenu: HostTrayPopupMenuProvider };
+} & { readonly tray: { readonly doubleClickPolicy: HostTrayDoubleClickPolicyProvider } } & {
+  readonly tray: { readonly pressedImage: HostTrayPressedImageProvider };
+} & { readonly tray: { readonly balloon: HostTrayBalloonProvider } } & {
+  readonly tray: { readonly interactionEvents: HostTrayInteractionEventsProvider };
+} & {
+  readonly tray: {
+    readonly menuSelectionEvents: HostTrayMenuSelectionEventsProvider;
+  };
+} & { readonly tray: { readonly balloonEvents: HostTrayBalloonEventsProvider } } & {
+  readonly tray: { readonly dropEvents: HostTrayDropEventsProvider };
+};
 
 interface TestState {
   balloonEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayBalloonEvent>) => void>>;
@@ -283,7 +287,7 @@ describe('getTrayIcons', () => {
     const { host } = testHost();
     const first = await acquire(host);
     const second = await acquire(host);
-    expect(getTrayIcons(host)).toEqual([first, second]);
+    expect(getTrayIcons(host.tray.lifecycle)).toEqual([first, second]);
   });
 });
 

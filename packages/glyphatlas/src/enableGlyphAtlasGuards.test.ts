@@ -1,5 +1,5 @@
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
-import type { GlyphRasterizerBackend, LogEntry } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerProvider, LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableGlyphAtlasGuards, enableGlyphAtlasGuards } from './enableGlyphAtlasGuards';
@@ -23,7 +23,7 @@ function messages(): string {
   return entries.map((e) => String((e.data as { message?: unknown } | undefined)?.message ?? '')).join('\n');
 }
 
-function backendProducing(width: number, height: number): GlyphRasterizerBackend {
+function backendProducing(width: number, height: number): HostGlyphRasterizerProvider {
   return {
     rasterize: () => ({
       advance: width,

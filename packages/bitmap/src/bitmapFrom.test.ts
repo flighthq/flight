@@ -1,5 +1,5 @@
 import { createImageResource } from '@flighthq/image/contract';
-import type { BitmapReadbackBackend, HasGraphicsBitmapReadback } from '@flighthq/types/contract';
+import type { HostBitmapReadbackProvider } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
@@ -10,8 +10,12 @@ import {
   initializeBitmapFromCanvas,
 } from './bitmapFrom';
 
-function hostWith(backend: BitmapReadbackBackend): HasGraphicsBitmapReadback {
-  return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
+function hostWith(backend: HostBitmapReadbackProvider): {
+  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+} {
+  return { graphics: { bitmapReadback: backend } } as {
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+  };
 }
 
 describe('captureBitmapFromImageResource', () => {
@@ -23,7 +27,7 @@ describe('captureBitmapFromImageResource', () => {
     const readBitmap = vi.fn(() => ({ bitmap, reason: 'ok' as const }));
     const host = hostWith({ readBitmap });
 
-    expect(captureBitmapFromImageResource(host, createImageResource(canvas))).toBe(bitmap);
+    expect(captureBitmapFromImageResource(host.graphics.bitmapReadback, createImageResource(canvas))).toBe(bitmap);
     expect(readBitmap).toHaveBeenCalledOnce();
     expect(readBitmap).toHaveBeenCalledWith(canvas, 3, 2, 'bitmap');
   });
@@ -36,7 +40,7 @@ describe('captureBitmapFromImageResource', () => {
     canvas.width = 4;
     canvas.height = 4;
 
-    expect(captureBitmapFromImageResource(host, createImageResource(canvas))).toBeNull();
+    expect(captureBitmapFromImageResource(host.graphics.bitmapReadback, createImageResource(canvas))).toBeNull();
   });
 });
 
@@ -87,7 +91,9 @@ describe('createBitmapFromImageSource', () => {
       readBitmap: vi.fn(() => ({ bitmap: expected, reason: 'ok' as const })),
     });
 
-    expect(createBitmapFromImageSource(host, document.createElement('canvas'), 8, 4)).toBe(expected);
+    expect(createBitmapFromImageSource(host.graphics.bitmapReadback, document.createElement('canvas'), 8, 4)).toBe(
+      expected,
+    );
   });
 });
 describe('initializeBitmapFromCanvas', () => {

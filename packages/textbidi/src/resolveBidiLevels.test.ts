@@ -1,12 +1,12 @@
-import type { BidiClassBackend, BidiDirection } from '@flighthq/types/contract';
+import type { HostBidiClassProvider, BidiDirection } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { setBidiClassBackend } from './bidiClassBackend';
 import { resolveBidiLevels } from './resolveBidiLevels';
 
-const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
-const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
+const LEFT_TO_RIGHT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
+const RIGHT_TO_LEFT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
 
 afterEach(() => {
   setBidiClassBackend(null);
@@ -35,7 +35,7 @@ const PDI = '⁩';
 describe('resolveBidiLevels', () => {
   it('preserves the two-argument source-compatible signature while accepting an explicit backend', () => {
     expectTypeOf(resolveBidiLevels).toEqualTypeOf<
-      (text: string, baseDirection: BidiDirection, bidiClassBackend?: BidiClassBackend) => Uint8Array
+      (text: string, baseDirection: BidiDirection, bidiClassBackend?: HostBidiClassProvider) => Uint8Array
     >();
     expect(Array.from(resolveBidiLevels('abc', 'ltr'))).toEqual([0, 0, 0]);
   });

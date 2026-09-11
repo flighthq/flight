@@ -2,51 +2,51 @@ import type {
   AccessibilityLiveness,
   AccessibilityNode,
   AccessibilityOperationOutcome,
-  HasAccessibilityProvider,
+  HostAccessibilityProvider,
 } from '@flighthq/types/contract';
 
 // Speaks a transient message through the explicitly selected Host provider.
 export function announceAccessibility(
-  host: HasAccessibilityProvider,
+  hostAccessibility: Readonly<HostAccessibilityProvider>,
   message: string,
   liveness: AccessibilityLiveness = 'polite',
 ): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> {
-  return host.accessibility.provider.announce(message, liveness);
+  return hostAccessibility.announce(message, liveness);
 }
 
 // Empties the selected Host provider's mirrored tree while leaving the provider reusable.
 export function clearAccessibilityTree(
-  host: HasAccessibilityProvider,
+  hostAccessibility: Readonly<HostAccessibilityProvider>,
 ): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> {
-  return host.accessibility.provider.clear();
+  return hostAccessibility.clear();
 }
 
 // Terminates the selected Host provider and frees the non-GC resources it owns. Provider destruction
 // is idempotent; callers that share one provider across Hosts retain responsibility for its final release.
-export function destroyAccessibility(host: HasAccessibilityProvider): void {
-  host.accessibility.provider.destroy();
+export function destroyAccessibility(hostAccessibility: Readonly<HostAccessibilityProvider>): void {
+  hostAccessibility.destroy();
 }
 
 // Removes a node and its entire descendant subtree from the selected Host provider.
 export function removeAccessibilityNode(
-  host: HasAccessibilityProvider,
+  hostAccessibility: Readonly<HostAccessibilityProvider>,
   id: string,
 ): AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'> {
-  return host.accessibility.provider.removeNode(id);
+  return hostAccessibility.removeNode(id);
 }
 
 // Moves platform focus to a node published by the selected Host provider.
 export function setAccessibilityFocus(
-  host: HasAccessibilityProvider,
+  hostAccessibility: Readonly<HostAccessibilityProvider>,
   id: string,
 ): AccessibilityOperationOutcome<'destroyed' | 'focus-not-moved' | 'no-dom' | 'node-not-found'> {
-  return host.accessibility.provider.setFocus(id);
+  return hostAccessibility.setFocus(id);
 }
 
 // Registers or updates a node in the selected Host provider's mirrored tree.
 export function setAccessibilityNode(
-  host: HasAccessibilityProvider,
+  hostAccessibility: Readonly<HostAccessibilityProvider>,
   node: Readonly<AccessibilityNode>,
 ): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> {
-  return host.accessibility.provider.setNode(node);
+  return hostAccessibility.setNode(node);
 }

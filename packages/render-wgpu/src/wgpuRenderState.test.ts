@@ -22,7 +22,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
-  WgpuHostBackend,
+  HostWgpuProvider,
   WgpuPipeline,
   WgpuPresentationRenderState,
   WgpuPresentationSurface,
@@ -92,7 +92,7 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
   return createWgpuRenderStateRuntimeWithPipeline(deviceState, _testPipeline);
 }
 
-function entityHostBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
+function entityHostBackend(fields: Omit<HostWgpuProvider, keyof Entity>): HostWgpuProvider {
   return (() => {
     const out = allocateEntity<any>();
     Object.assign(out, fields);
@@ -1052,7 +1052,7 @@ describe('resolveWgpuApplyBlendMode', () => {
 describe('wgpu acquisition lifecycle', () => {
   const destroyingBackend = (
     acquisition: Readonly<WgpuHostAcquisition>,
-  ): { backend: WgpuHostBackend; released: Readonly<WgpuHostAcquisition>[] } => {
+  ): { backend: HostWgpuProvider; released: Readonly<WgpuHostAcquisition>[] } => {
     const released: Readonly<WgpuHostAcquisition>[] = [];
     return {
       backend: entityHostBackend({

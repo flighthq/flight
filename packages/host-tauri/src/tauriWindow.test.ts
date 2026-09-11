@@ -251,7 +251,7 @@ describe('createTauriWindowBackend', () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriWindowBackend(tauri);
 
-    expect(openWindow({ window: backend }, createApplicationWindow(), { center: true })).toBe(true);
+    expect(openWindow({ window: backend }.window, createApplicationWindow(), { center: true })).toBe(true);
 
     expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });

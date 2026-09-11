@@ -1,4 +1,4 @@
-import type { HasNetSocket, SocketBackend, SocketEventSink } from '@flighthq/types/contract';
+import type { HostSocketProvider, SocketEventSink } from '@flighthq/types/contract';
 
 import { explainSocketSendFailure } from './explainSocketSendFailure';
 import { createSocket, disposeSocket, sendSocketMessage } from './socket';
@@ -6,9 +6,9 @@ import { createSocket, disposeSocket, sendSocketMessage } from './socket';
 function installBackend(
   hasConnection: boolean,
   sendResult = true,
-): { host: HasNetSocket; sink: () => SocketEventSink } {
+): { host: { readonly net: { readonly socket: HostSocketProvider } }; sink: () => SocketEventSink } {
   let sink!: SocketEventSink;
-  const backend: SocketBackend = {
+  const backend: HostSocketProvider = {
     openSocket(_options, events) {
       sink = events;
       if (!hasConnection) return null;
@@ -21,14 +21,14 @@ function installBackend(
   return { host: hostOf(backend), sink: () => sink };
 }
 
-function hostOf(backend: SocketBackend): HasNetSocket {
-  return { net: { socket: backend } } as HasNetSocket;
+function hostOf(backend: HostSocketProvider): { readonly net: { readonly socket: HostSocketProvider } } {
+  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketProvider } };
 }
 
 describe('explainSocketSendFailure', () => {
   it('identifies an unsupported backend with no connection', () => {
     const { host } = installBackend(false);
-    const socket = createSocket(host, { url: 'tcp://host' });
+    const socket = createSocket(host.net.socket, { url: 'tcp://host' });
     expect(explainSocketSendFailure(socket)).toEqual({
       reason: 'no-connection',
       readyState: 'connecting',
@@ -38,7 +38,7 @@ describe('explainSocketSendFailure', () => {
 
   it('reports the current non-open phase when a connection exists', () => {
     const { host } = installBackend(true);
-    const socket = createSocket(host, { url: 'ws://host' });
+    const socket = createSocket(host.net.socket, { url: 'ws://host' });
     expect(explainSocketSendFailure(socket)).toEqual({
       reason: 'not-open',
       readyState: 'connecting',
@@ -48,7 +48,7 @@ describe('explainSocketSendFailure', () => {
 
   it('returns null once the socket can reach its backend, even when that backend returns false', () => {
     const { host, sink: getSink } = installBackend(true, false);
-    const socket = createSocket(host, { url: 'ws://host' });
+    const socket = createSocket(host.net.socket, { url: 'ws://host' });
     getSink().handleSocketOpen();
     expect(sendSocketMessage(socket, 'frame')).toBe(false);
     expect(explainSocketSendFailure(socket)).toBeNull();
@@ -56,7 +56,7 @@ describe('explainSocketSendFailure', () => {
 
   it('distinguishes terminal disposal from other closed or disconnected states', () => {
     const { host } = installBackend(true);
-    const socket = createSocket(host, { url: 'ws://host' });
+    const socket = createSocket(host.net.socket, { url: 'ws://host' });
     disposeSocket(socket);
     expect(explainSocketSendFailure(socket)).toEqual({
       reason: 'disposed',

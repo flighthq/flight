@@ -1,10 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
-  GeolocationBackend,
+  HostGeolocationProvider,
   GeolocationErrorReason,
   GeolocationPosition,
-  HasSystemGeolocation,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -20,7 +19,7 @@ import {
   watchGeolocationPosition,
 } from './geolocation';
 
-function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
+function fakeBackend(available: boolean = true): HostGeolocationProvider & { cleared: number[]; lastWatch: number } {
   const out = allocateEntity<any>();
   out.cleared = [];
   out.lastWatch = 0;
@@ -57,14 +56,16 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
   return finishEntity(out);
 }
 
-function hostWith(backend: GeolocationBackend): HasSystemGeolocation {
-  return { system: { geolocation: backend } } as HasSystemGeolocation;
+function hostWith(backend: HostGeolocationProvider): {
+  readonly system: { readonly geolocation: HostGeolocationProvider };
+} {
+  return { system: { geolocation: backend } } as { readonly system: { readonly geolocation: HostGeolocationProvider } };
 }
 
 describe('clearGeolocationWatch', () => {
   it('forwards the id to the host backend', () => {
     const backend = fakeBackend();
-    clearGeolocationWatch(hostWith(backend), 7);
+    clearGeolocationWatch(hostWith(backend).system.geolocation, 7);
     expect(backend.cleared).toEqual([7]);
   });
 });
@@ -159,7 +160,9 @@ describe('createWebGeolocationBackend', () => {
 
 describe('getCurrentGeolocationPosition', () => {
   it('returns the backend position', async () => {
-    const position = (await getCurrentGeolocationPosition(hostWith(fakeBackend()))) as GeolocationPosition;
+    const position = (await getCurrentGeolocationPosition(
+      hostWith(fakeBackend()).system.geolocation,
+    )) as GeolocationPosition;
     expect(position.latitude).toBe(1);
     expect(position.longitude).toBe(2);
   });
@@ -167,7 +170,7 @@ describe('getCurrentGeolocationPosition', () => {
 
 describe('getCurrentGeolocationPositionResult', () => {
   it('returns position and null reason on success', async () => {
-    const result = await getCurrentGeolocationPositionResult(hostWith(fakeBackend()));
+    const result = await getCurrentGeolocationPositionResult(hostWith(fakeBackend()).system.geolocation);
     expect(result.position).not.toBeNull();
     expect(result.position!.latitude).toBe(1);
     expect(result.reason).toBeNull();
@@ -187,15 +190,15 @@ describe('initializeWebGeolocationBackend', () => {
 });
 describe('isGeolocationAvailable', () => {
   it('routes the host backend availability', () => {
-    expect(isGeolocationAvailable(hostWith(fakeBackend(true)))).toBe(true);
-    expect(isGeolocationAvailable(hostWith(fakeBackend(false)))).toBe(false);
+    expect(isGeolocationAvailable(hostWith(fakeBackend(true)).system.geolocation)).toBe(true);
+    expect(isGeolocationAvailable(hostWith(fakeBackend(false)).system.geolocation)).toBe(false);
   });
 });
 
 describe('watchGeolocationPosition', () => {
   it('delivers positions and returns a watch id', () => {
     let seen = 0;
-    const id = watchGeolocationPosition(hostWith(fakeBackend()), (position) => {
+    const id = watchGeolocationPosition(hostWith(fakeBackend()).system.geolocation, (position) => {
       seen = position.latitude;
     });
     expect(id).toBe(1);
@@ -205,7 +208,7 @@ describe('watchGeolocationPosition', () => {
   it('delivers error reasons when onError is provided', () => {
     const errors: GeolocationErrorReason[] = [];
     watchGeolocationPosition(
-      hostWith(fakeBackend()),
+      hostWith(fakeBackend()).system.geolocation,
       () => {},
       {},
       (reason) => errors.push(reason),

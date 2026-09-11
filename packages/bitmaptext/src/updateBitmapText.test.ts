@@ -9,7 +9,7 @@ import type {
   Bitmap,
   GlyphAtlas,
   GlyphEntry,
-  GlyphRasterizerBackend,
+  HostGlyphRasterizerProvider,
   GlyphSource,
   ImageResource,
 } from '@flighthq/types/contract';
@@ -78,7 +78,7 @@ function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageRes
 // repack every rect is still a well-formed rect over real pixels, so only reading the pixels can tell a
 // correct region from one that now covers the wrong glyph. Codepoints stay under 0x100 for the channel
 // to hold them exactly.
-function createCodepointColorRasterizerBackend(size: number): GlyphRasterizerBackend {
+function createCodepointColorRasterizerBackend(size: number): HostGlyphRasterizerProvider {
   return {
     rasterize(codepoint) {
       const pixels = new Uint8ClampedArray(size * size * 4);

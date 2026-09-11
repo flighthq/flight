@@ -1,5 +1,5 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HasGraphicsImage, ImageResourceReference, Texture } from '@flighthq/types/contract';
+import type { HostImageProvider, ImageResourceReference, Texture } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -11,9 +11,9 @@ import {
   initializeScene3DResourceSignals,
 } from './sceneResourceSignals';
 
-const host: HasGraphicsImage = {
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as HasGraphicsImage;
+} as { readonly graphics: { readonly image: HostImageProvider } };
 const ref: ImageResourceReference = {
   [EntityRuntimeKey]: undefined,
   alphaType: 'straight',
@@ -37,7 +37,7 @@ describe('createScene3DResourceSignals', () => {
 
 describe('enableScene3DResourceSignals', () => {
   it('stores the group on the resolver and is idempotent', () => {
-    const resolver = createScene3DResourceResolver(host);
+    const resolver = createScene3DResourceResolver(host.graphics.image);
     const first = enableScene3DResourceSignals(resolver);
     const second = enableScene3DResourceSignals(resolver);
     expect(first).toBe(second);
@@ -48,7 +48,7 @@ describe('enableScene3DResourceSignals', () => {
 
 describe('getScene3DResourceSignals', () => {
   it('returns null until enabled, then the enabled group', () => {
-    const resolver = createScene3DResourceResolver(host);
+    const resolver = createScene3DResourceResolver(host.graphics.image);
     expect(getScene3DResourceSignals(resolver)).toBeNull();
     const signals = enableScene3DResourceSignals(resolver);
     expect(getScene3DResourceSignals(resolver)).toBe(signals);

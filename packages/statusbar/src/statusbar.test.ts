@@ -1,7 +1,11 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
-  HasUiStatusBarChange,
-  HasUiStatusBarStyleStack,
+  HostStatusBarChangeProvider,
+  HostStatusBarColorProvider,
+  HostStatusBarInfoProvider,
+  HostStatusBarOverlaysProvider,
+  HostStatusBarStyleProvider,
+  HostStatusBarVisibilityProvider,
   StatusBarInfo,
   StatusBarStyle,
 } from '@flighthq/types/contract';
@@ -18,9 +22,9 @@ describe('attachStatusBar', () => {
     const seen: StatusBarInfo[] = [];
     connectSignal(bar.onChange, (info) => seen.push(info));
 
-    statusbar.attachStatusBar(first.host, bar);
+    statusbar.attachStatusBar(...statusBarAttachProviders(first.host), bar);
     first.emit();
-    statusbar.attachStatusBar(second.host, bar);
+    statusbar.attachStatusBar(...statusBarAttachProviders(second.host), bar);
     first.emit();
     second.emit();
 
@@ -33,9 +37,9 @@ describe('clearStatusBarStyleStack', () => {
   it('restores only the passed host baseline', () => {
     const first = fakeHost('light');
     const second = fakeHost('dark');
-    statusbar.pushStatusBarStyleEntry(first.host, { style: 'dark' });
-    statusbar.pushStatusBarStyleEntry(second.host, { style: 'light' });
-    statusbar.clearStatusBarStyleStack(first.host);
+    statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(first.host), { style: 'dark' });
+    statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(second.host), { style: 'light' });
+    statusbar.clearStatusBarStyleStack(first.host.ui.statusBarInfo);
     expect(first.setStyle).toHaveBeenLastCalledWith('light');
     expect(second.setStyle).toHaveBeenCalledTimes(1);
   });
@@ -61,7 +65,7 @@ describe('detachStatusBar', () => {
   it('releases the exact attached provider once', () => {
     const provider = fakeHost('light');
     const bar = statusbar.createStatusBar();
-    statusbar.attachStatusBar(provider.host, bar);
+    statusbar.attachStatusBar(...statusBarAttachProviders(provider.host), bar);
     statusbar.detachStatusBar(bar);
     statusbar.detachStatusBar(bar);
     expect(provider.unsubscribe).toHaveBeenCalledOnce();
@@ -72,20 +76,21 @@ describe('disposeStatusBar', () => {
   it('detaches its subscription', () => {
     const provider = fakeHost('light');
     const bar = statusbar.createStatusBar();
-    statusbar.attachStatusBar(provider.host, bar);
+    statusbar.attachStatusBar(...statusBarAttachProviders(provider.host), bar);
     statusbar.disposeStatusBar(bar);
     expect(provider.unsubscribe).toHaveBeenCalledOnce();
   });
 });
 
 describe('getStatusBarHeight', () => {
-  it('reads from the passed host', () => expect(statusbar.getStatusBarHeight(fakeHost('light').host)).toBe(20));
+  it('reads from the passed host', () =>
+    expect(statusbar.getStatusBarHeight(fakeHost('light').host.ui.statusBarInfo)).toBe(20));
 });
 
 describe('getStatusBarInfo', () => {
   it('fills and returns the caller out object', () => {
     const out = statusbar.createStatusBarInfo();
-    expect(statusbar.getStatusBarInfo(fakeHost('dark').host, out)).toBe(out);
+    expect(statusbar.getStatusBarInfo(fakeHost('dark').host.ui.statusBarInfo, out)).toBe(out);
     expect(out.style).toBe('dark');
   });
 });
@@ -93,10 +98,10 @@ describe('getStatusBarInfo', () => {
 describe('hasStatusBarStyleEntry', () => {
   it('tracks handles within one explicit host', () => {
     const provider = fakeHost('light');
-    const handle = statusbar.pushStatusBarStyleEntry(provider.host, { style: 'dark' });
-    expect(statusbar.hasStatusBarStyleEntry(provider.host, handle)).toBe(true);
-    statusbar.popStatusBarStyleEntry(provider.host, handle);
-    expect(statusbar.hasStatusBarStyleEntry(provider.host, handle)).toBe(false);
+    const handle = statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(provider.host), { style: 'dark' });
+    expect(statusbar.hasStatusBarStyleEntry(provider.host.ui.statusBarInfo, handle)).toBe(true);
+    statusbar.popStatusBarStyleEntry(provider.host.ui.statusBarInfo, handle);
+    expect(statusbar.hasStatusBarStyleEntry(provider.host.ui.statusBarInfo, handle)).toBe(false);
   });
 });
 
@@ -119,8 +124,8 @@ describe('packedRgbaToHexColor', () => {
 describe('popStatusBarStyleEntry', () => {
   it('restores the captured baseline', () => {
     const provider = fakeHost('light');
-    const handle = statusbar.pushStatusBarStyleEntry(provider.host, { style: 'dark' });
-    statusbar.popStatusBarStyleEntry(provider.host, handle);
+    const handle = statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(provider.host), { style: 'dark' });
+    statusbar.popStatusBarStyleEntry(provider.host.ui.statusBarInfo, handle);
     expect(provider.setStyle).toHaveBeenLastCalledWith('light');
   });
 });
@@ -128,8 +133,8 @@ describe('popStatusBarStyleEntry', () => {
 describe('pushStatusBarStyleEntry', () => {
   it('merges unset fields through the stack', () => {
     const provider = fakeHost('light');
-    statusbar.pushStatusBarStyleEntry(provider.host, { style: 'dark' });
-    statusbar.pushStatusBarStyleEntry(provider.host, { visible: false });
+    statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(provider.host), { style: 'dark' });
+    statusbar.pushStatusBarStyleEntry(...statusBarStyleProviders(provider.host), { visible: false });
     expect(provider.setStyle).toHaveBeenCalledTimes(1);
     expect(provider.setVisible).toHaveBeenLastCalledWith(false, 'none');
   });
@@ -138,7 +143,7 @@ describe('pushStatusBarStyleEntry', () => {
 describe('setStatusBarColor', () => {
   it('uses only the color slot', () => {
     const provider = fakeHost('light');
-    statusbar.setStatusBarColor(provider.host, 0x112233ff, true);
+    statusbar.setStatusBarColor(provider.host.ui.statusBarColor, 0x112233ff, true);
     expect(provider.setBackgroundColor).toHaveBeenCalledWith(0x112233ff, true);
   });
 });
@@ -146,10 +151,35 @@ describe('setStatusBarColor', () => {
 describe('setStatusBarOverlaysContent', () => {
   it('uses only the overlays slot', () => {
     const provider = fakeHost('light');
-    statusbar.setStatusBarOverlaysContent(provider.host, true);
+    statusbar.setStatusBarOverlaysContent(provider.host.ui.statusBarOverlays, true);
     expect(provider.setOverlaysContent).toHaveBeenCalledWith(true);
   });
 });
+
+interface FakeStatusBarHost {
+  readonly ui: {
+    readonly statusBarChange: HostStatusBarChangeProvider;
+    readonly statusBarColor: HostStatusBarColorProvider;
+    readonly statusBarInfo: HostStatusBarInfoProvider;
+    readonly statusBarOverlays: HostStatusBarOverlaysProvider;
+    readonly statusBarStyle: HostStatusBarStyleProvider;
+    readonly statusBarVisibility: HostStatusBarVisibilityProvider;
+  };
+}
+
+function statusBarAttachProviders(host: FakeStatusBarHost) {
+  return [host.ui.statusBarChange, host.ui.statusBarInfo] as const;
+}
+
+function statusBarStyleProviders(host: FakeStatusBarHost) {
+  return [
+    host.ui.statusBarColor,
+    host.ui.statusBarInfo,
+    host.ui.statusBarOverlays,
+    host.ui.statusBarStyle,
+    host.ui.statusBarVisibility,
+  ] as const;
+}
 
 function fakeHost(initialStyle: StatusBarStyle) {
   let listener: (() => void) | null = null;
@@ -160,7 +190,7 @@ function fakeHost(initialStyle: StatusBarStyle) {
   const setOverlaysContent = vi.fn();
   const setStyle = vi.fn();
   const setVisible = vi.fn();
-  const host: HasUiStatusBarChange & HasUiStatusBarStyleStack = {
+  const host: FakeStatusBarHost = {
     ui: {
       statusBarChange: {
         subscribe(next) {
@@ -199,7 +229,7 @@ function fakeHost(initialStyle: StatusBarStyle) {
 describe('setStatusBarStyle', () => {
   it('uses only the style slot', () => {
     const provider = fakeHost('light');
-    statusbar.setStatusBarStyle(provider.host, 'dark');
+    statusbar.setStatusBarStyle(provider.host.ui.statusBarStyle, 'dark');
     expect(provider.setStyle).toHaveBeenCalledWith('dark');
   });
 });
@@ -207,7 +237,7 @@ describe('setStatusBarStyle', () => {
 describe('setStatusBarVisible', () => {
   it('uses only the visibility slot', () => {
     const provider = fakeHost('light');
-    statusbar.setStatusBarVisible(provider.host, false, 'fade');
+    statusbar.setStatusBarVisible(provider.host.ui.statusBarVisibility, false, 'fade');
     expect(provider.setVisible).toHaveBeenCalledWith(false, 'fade');
   });
 });

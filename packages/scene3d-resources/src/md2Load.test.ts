@@ -1,6 +1,6 @@
 import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
-import type { HasNetHttp, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { HostNetProvider, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,12 +21,12 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
-function fakeHost(): HasNetHttp {
-  const host: HasNetHttp = {
+function fakeHost(): { readonly net: { readonly http: HostNetProvider } } {
+  const host: { readonly net: { readonly http: HostNetProvider } } = {
     net: {
       http: {
         [EntityRuntimeKey]: undefined,
-        sendNetRequest: (request, options) => netContract.sendNetRequest(host, request, options),
+        sendNetRequest: (request, options) => netContract.sendNetRequest(host.net.http, request, options),
       },
     },
   };
@@ -52,7 +52,7 @@ describe('loadScene3DDocumentFromMd2Url', () => {
     vi.mocked(scene3dFormatsContract.parseMd2).mockReturnValue(document);
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(okResponse(new Uint8Array([7]).buffer));
 
-    const loaded = await loadScene3DDocumentFromMd2Url(fakeHost(), 'model.md2');
+    const loaded = await loadScene3DDocumentFromMd2Url(fakeHost().net.http, 'model.md2');
 
     expect(Array.from(vi.mocked(scene3dFormatsContract.parseMd2).mock.calls[0][0])).toEqual([7]);
     expect(loaded).toBe(document);

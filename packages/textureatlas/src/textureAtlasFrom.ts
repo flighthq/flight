@@ -8,7 +8,7 @@ import {
   loadImageResourceFromUrl,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageResource, TextureAtlas } from '@flighthq/types/contract';
+import type { HostImageProvider, ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 
@@ -35,36 +35,36 @@ export function createTextureAtlasFromImageResource(resource: ImageResource): Te
 }
 
 export async function loadTextureAtlasFromBase64(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromBase64(host, base64, mimeType, signal));
+  return createTextureAtlasFromImageResource(await loadImageResourceFromBase64(hostImage, base64, mimeType, signal));
 }
 
 export async function loadTextureAtlasFromBlob(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   blob: Blob,
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromBlob(host, blob, signal));
+  return createTextureAtlasFromImageResource(await loadImageResourceFromBlob(hostImage, blob, signal));
 }
 
 export async function loadTextureAtlasFromBytes(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromBytes(host, bytes, mimeType, signal));
+  return createTextureAtlasFromImageResource(await loadImageResourceFromBytes(hostImage, bytes, mimeType, signal));
 }
 
 export async function loadTextureAtlasFromUrl(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(host, url, crossOrigin, signal));
+  return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(hostImage, url, crossOrigin, signal));
 }

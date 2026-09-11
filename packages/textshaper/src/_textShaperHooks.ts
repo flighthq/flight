@@ -1,7 +1,7 @@
-import type { TextShaperBackend } from '@flighthq/types/contract';
+import type { HostTextShaperProvider } from '@flighthq/types/contract';
 
-export let _textShaperBackendHook: ((backend: TextShaperBackend | null) => void) | null = null;
+export let _textShaperBackendHook: ((backend: HostTextShaperProvider | null) => void) | null = null;
 
-export function _setTextShaperBackendHook(hook: ((backend: TextShaperBackend | null) => void) | null): void {
+export function _setTextShaperBackendHook(hook: ((backend: HostTextShaperProvider | null) => void) | null): void {
   _textShaperBackendHook = hook;
 }

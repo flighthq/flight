@@ -1,5 +1,5 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import type { FileSystemHostBackend, HasStorageFileSystem } from '@flighthq/types/contract';
+import type { HostFileSystemProvider } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as filesystem from './filesystem';
@@ -28,7 +28,7 @@ describe('copyFile', () => {
 
 describe('createFileSymlink', () => {
   it('owns the documented absence result outside host providers', async () => {
-    await expect(filesystem.createFileSymlink(hostWith(), 'a', 'b')).resolves.toBe(false);
+    await expect(filesystem.createFileSymlink('a', 'b')).resolves.toBe(false);
   });
 });
 
@@ -71,18 +71,18 @@ describe('getFileExtensionName', () => {
 
 describe('getFilePermissions', () => {
   it('owns the documented absence result', async () => {
-    await expect(filesystem.getFilePermissions(hostWith(), 'a')).resolves.toBe(null);
+    await expect(filesystem.getFilePermissions('a')).resolves.toBe(null);
   });
 });
 
 describe('getFileRealPath', () => {
   it('owns the documented absence result', async () => {
-    await expect(filesystem.getFileRealPath(hostWith(), 'a')).resolves.toBe(null);
+    await expect(filesystem.getFileRealPath('a')).resolves.toBe(null);
   });
 });
 
 describe('getFileSystemPath', () => {
-  it('owns the documented absence result', () => expect(filesystem.getFileSystemPath(hostWith(), 'home')).toBe(''));
+  it('owns the documented absence result', () => expect(filesystem.getFileSystemPath('home')).toBe(''));
 });
 
 describe('getFileSystemUsage', () => {
@@ -240,7 +240,7 @@ describe('readDirectoryRecursive', () => {
 
 describe('readFileSymlink', () => {
   it('owns the documented absence result', async () => {
-    await expect(filesystem.readFileSymlink(hostWith(), 'a')).resolves.toBe(null);
+    await expect(filesystem.readFileSymlink('a')).resolves.toBe(null);
   });
 });
 
@@ -278,7 +278,7 @@ describe('renameFile', () => {
 describe('setFilePermissions', () => {
   it('owns the documented absence result', async () => {
     await expect(
-      filesystem.setFilePermissions(hostWith(), 'a', { executable: false, readable: true, writable: true }),
+      filesystem.setFilePermissions('a', { executable: false, readable: true, writable: true }),
     ).resolves.toBe(false);
   });
 });
@@ -291,7 +291,7 @@ describe('statFile', () => {
 
 describe('watchPath', () => {
   it('owns an inert unsubscribe when no real provider exists', () => {
-    expect(filesystem.watchPath(hostWith(), 'a', vi.fn())).toBeTypeOf('function');
+    expect(filesystem.watchPath('a', vi.fn())).toBeTypeOf('function');
   });
 });
 
@@ -373,6 +373,6 @@ describe('writeTextFile', () => {
   });
 });
 
-function hostWith(fileSystem: FileSystemHostBackend = {}): HasStorageFileSystem {
-  return { storage: { fileSystem } };
+function hostWith(fileSystem: HostFileSystemProvider = {}): HostFileSystemProvider {
+  return fileSystem;
 }

@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HasTextSegmenter, TextSegmenterBackend } from '@flighthq/types/contract';
+import type { HostTextSegmenterProvider } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -103,17 +103,19 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit = allocateEntity<TextSegmenterBackend>();
+    const explicit = allocateEntity<HostTextSegmenterProvider>();
     explicit.segment = (text: string) => [{ start: 0, end: text.length, text, isWordLike: true }];
-    const host: HasTextSegmenter = { text: { segmenter: finishEntity(explicit) } };
+    const host: { readonly text: { readonly segmenter: HostTextSegmenterProvider } } = {
+      text: { segmenter: finishEntity(explicit) },
+    };
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<TextSegmenterBackend>();
+        const out = allocateEntity<HostTextSegmenterProvider>();
         out.segment = () => [];
         return finishEntity(out);
       })(),
     );
-    expect(getWordRangeAt('word', 1, undefined, host)).toEqual({ start: 0, end: 4 });
+    expect(getWordRangeAt('word', 1, undefined, host.text.segmenter)).toEqual({ start: 0, end: 4 });
   });
 
   it('returns the word range under an index', () => {
@@ -136,7 +138,7 @@ describe('getWordRangeAt', () => {
     let seenLocale: string | undefined = 'unset';
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<TextSegmenterBackend>();
+        const out = allocateEntity<HostTextSegmenterProvider>();
         out.segment = (text: string, _granularity: string, locale: string) => {
           seenLocale = locale;
           return [{ start: 0, end: text.length, text, isWordLike: true }];

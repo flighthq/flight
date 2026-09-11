@@ -52,7 +52,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
-registerCanvasBitmapTextureResolver(webGraphicsHost, shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(webGraphicsHost.graphics.image, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));

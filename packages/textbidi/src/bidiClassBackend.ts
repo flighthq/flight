@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   BidiClass,
-  BidiClassBackend,
+  HostBidiClassProvider,
   BidiClassBackendExplanation,
   BidiCodePointRange,
   EntityConstruction,
@@ -17,8 +17,8 @@ import { reportTextBidiCompactTableMiss } from './textBidiGuards';
 // Indic, Thaana, N'Ko, Syriac, and the rest of Unicode) are NOT covered here — a codepoint with no
 // range resolves to the safe common default 'L'. Full Unicode coverage (every assigned bidi class +
 // bracket-pairing data) is the designated flight-rs table backend, passed explicitly to the resolver.
-export function createCompactBidiClassBackend(): BidiClassBackend {
-  const out = allocateEntity<BidiClassBackend>();
+export function createCompactBidiClassBackend(): HostBidiClassProvider {
+  const out = allocateEntity<HostBidiClassProvider>();
   initializeCompactBidiClassBackend(out);
   const backend = finishEntity(out);
   _compactBackends.add(backend);
@@ -26,7 +26,7 @@ export function createCompactBidiClassBackend(): BidiClassBackend {
 }
 
 /** Describes the selected provider and the coverage boundary Flight can state for it. */
-export function explainBidiClassBackend(bidiClassBackend?: BidiClassBackend): BidiClassBackendExplanation {
+export function explainBidiClassBackend(bidiClassBackend?: HostBidiClassProvider): BidiClassBackendExplanation {
   const backend = bidiClassBackend ?? getBidiClassBackend();
   const compact = _compactBackends.has(backend);
   return {
@@ -41,12 +41,12 @@ export function explainBidiClassBackend(bidiClassBackend?: BidiClassBackend): Bi
 // Returns the legacy installed bidi-class backend, lazily creating the compact default the first time
 // so omitted-backend calls always have an answer. New callers pass their backend directly to
 // resolveBidiLevels or getBidiRuns.
-export function getBidiClassBackend(): BidiClassBackend {
+export function getBidiClassBackend(): HostBidiClassProvider {
   if (_backend === null) _backend = createCompactBidiClassBackend();
   return _backend;
 }
 
-export function initializeCompactBidiClassBackend(out: EntityConstruction<BidiClassBackend>): void {
+export function initializeCompactBidiClassBackend(out: EntityConstruction<HostBidiClassProvider>): void {
   out.getBidiClass = getCompactBidiClass;
 }
 
@@ -57,11 +57,11 @@ export function initializeCompactBidiClassBackend(out: EntityConstruction<BidiCl
  * @deprecated Pass a BidiClassBackend directly to resolveBidiLevels or getBidiRuns. Retained for
  * source compatibility until the legacy path is removed.
  */
-export function setBidiClassBackend(backend: BidiClassBackend | null): void {
+export function setBidiClassBackend(backend: HostBidiClassProvider | null): void {
   _backend = backend;
 }
 
-let _backend: BidiClassBackend | null = null;
+let _backend: HostBidiClassProvider | null = null;
 
 // Looks up `codepoint` in the sorted, non-overlapping range table by binary search. Each entry is
 // three flat numbers [start, end, classOrdinal]; a hit returns the range's class, a miss the common
@@ -295,4 +295,4 @@ const _ranges: readonly number[] = [
 
 const _rangeCount = _ranges.length / 3;
 
-const _compactBackends = new WeakSet<BidiClassBackend>();
+const _compactBackends = new WeakSet<HostBidiClassProvider>();

@@ -1,4 +1,4 @@
-import type { GeolocationAccessOutcome, GeolocationBackend, Host } from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationProvider, Host } from '@flighthq/types/contract';
 
 import { requestPermission } from './permission';
 
@@ -8,7 +8,7 @@ function hostWithGeolocation(outcome: GeolocationAccessOutcome, calls?: { count:
       if (calls !== undefined) calls.count += 1;
       return Promise.resolve(outcome);
     },
-  } as unknown as GeolocationBackend;
+  } as unknown as HostGeolocationProvider;
   return { system: { geolocation: backend } } as unknown as Host;
 }
 

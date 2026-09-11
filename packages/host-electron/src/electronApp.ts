@@ -1,30 +1,30 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  AppActivateBackend,
-  AppActivationPolicyBackend,
-  AppAllWindowsClosedBackend,
-  AppBadgeBackend,
-  AppDockBackend,
-  AppFocusBackend,
-  AppLocaleBackend,
+  HostAppActivateProvider,
+  HostAppActivationPolicyProvider,
+  HostAppAllWindowsClosedProvider,
+  HostAppBadgeProvider,
+  HostAppDockProvider,
+  HostAppFocusProvider,
+  HostAppLocaleProvider,
   AppLoginItem,
-  AppLoginItemBackend,
-  AppNameBackend,
-  AppNameWriteBackend,
-  AppOpenFileBackend,
-  AppPathBackend,
+  HostAppLoginItemProvider,
+  HostAppNameProvider,
+  HostAppNameWriteProvider,
+  HostAppOpenFileProvider,
+  HostAppPathProvider,
   AppPathKind,
-  AppQuitBackend,
-  AppQuitRequestBackend,
-  AppReadyBackend,
-  AppRecentDocumentsBackend,
-  AppRelaunchBackend,
-  AppSecondInstanceBackend,
-  AppShowBackend,
-  AppSingleInstanceBackend,
-  AppUserModelIdBackend,
-  AppVersionBackend,
-  AppVisibilityQueryBackend,
+  HostAppQuitProvider,
+  HostAppQuitRequestProvider,
+  HostAppReadyProvider,
+  HostAppRecentDocumentsProvider,
+  HostAppRelaunchProvider,
+  HostAppSecondInstanceProvider,
+  HostAppShowProvider,
+  HostAppSingleInstanceProvider,
+  HostAppUserModelIdProvider,
+  HostAppVersionProvider,
+  HostAppVisibilityQueryProvider,
   DesktopOsProfile,
   ElectronApi,
   ElectronAppCapabilitiesFor,
@@ -33,7 +33,7 @@ import type {
   ElectronMacosAppCapabilities,
   ElectronWindowsAppCapabilities,
   EntityConstruction,
-  AppHideBackend,
+  HostAppHideProvider,
   HostAppCapabilities,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
@@ -66,67 +66,67 @@ export function createElectronAppCapabilities(
   const common = (() => {
     const out = allocateEntity<ElectronCommonAppCapabilities>();
     const allWindowsClosed = (() => {
-      const b = allocateEntity<AppAllWindowsClosedBackend>();
+      const b = allocateEntity<HostAppAllWindowsClosedProvider>();
       initializeAppAllWindowsClosedBackend(b, subscribe);
       return finishEntity(b);
     })();
     const focus = (() => {
-      const b = allocateEntity<AppFocusBackend>();
+      const b = allocateEntity<HostAppFocusProvider>();
       initializeAppFocusBackend(b, app);
       return finishEntity(b);
     })();
     const locale = (() => {
-      const b = allocateEntity<AppLocaleBackend>();
+      const b = allocateEntity<HostAppLocaleProvider>();
       initializeAppLocaleBackend(b, app);
       return finishEntity(b);
     })();
     const name = (() => {
-      const b = allocateEntity<AppNameBackend>();
+      const b = allocateEntity<HostAppNameProvider>();
       initializeAppNameBackend(b, app);
       return finishEntity(b);
     })();
     const nameWrite = (() => {
-      const b = allocateEntity<AppNameWriteBackend>();
+      const b = allocateEntity<HostAppNameWriteProvider>();
       initializeAppNameWriteBackend(b, app);
       return finishEntity(b);
     })();
     const path = (() => {
-      const b = allocateEntity<AppPathBackend>();
+      const b = allocateEntity<HostAppPathProvider>();
       initializeAppPathBackend(b, app);
       return finishEntity(b);
     })();
     const quit = (() => {
-      const b = allocateEntity<AppQuitBackend>();
+      const b = allocateEntity<HostAppQuitProvider>();
       initializeAppQuitBackend(b, app);
       return finishEntity(b);
     })();
     const quitRequest = (() => {
-      const b = allocateEntity<AppQuitRequestBackend>();
+      const b = allocateEntity<HostAppQuitRequestProvider>();
       initializeAppQuitRequestBackend(b, subscribe);
       return finishEntity(b);
     })();
     const ready = (() => {
-      const b = allocateEntity<AppReadyBackend>();
+      const b = allocateEntity<HostAppReadyProvider>();
       initializeAppReadyBackend(b, subscribe);
       return finishEntity(b);
     })();
     const relaunch = (() => {
-      const b = allocateEntity<AppRelaunchBackend>();
+      const b = allocateEntity<HostAppRelaunchProvider>();
       initializeAppRelaunchBackend(b, app);
       return finishEntity(b);
     })();
     const secondInstance = (() => {
-      const b = allocateEntity<AppSecondInstanceBackend>();
+      const b = allocateEntity<HostAppSecondInstanceProvider>();
       initializeAppSecondInstanceBackend(b, subscribe);
       return finishEntity(b);
     })();
     const singleInstance = (() => {
-      const b = allocateEntity<AppSingleInstanceBackend>();
+      const b = allocateEntity<HostAppSingleInstanceProvider>();
       initializeAppSingleInstanceBackend(b, app);
       return finishEntity(b);
     })();
     const version = (() => {
-      const b = allocateEntity<AppVersionBackend>();
+      const b = allocateEntity<HostAppVersionProvider>();
       initializeAppVersionBackend(b, app);
       return finishEntity(b);
     })();
@@ -154,44 +154,44 @@ export function createElectronAppCapabilities(
     if (dock === undefined) throw new Error('Electron macOS app capabilities require app.dock');
     const macos = allocateEntity<ElectronMacosAppCapabilities>();
     const activate = (() => {
-      const b = allocateEntity<AppActivateBackend>();
+      const b = allocateEntity<HostAppActivateProvider>();
       initializeAppActivateBackend(b, subscribe);
       return finishEntity(b);
     })();
     const activationPolicy = (() => {
-      const b = allocateEntity<AppActivationPolicyBackend>();
+      const b = allocateEntity<HostAppActivationPolicyProvider>();
       initializeAppActivationPolicyBackend(b, app);
       return finishEntity(b);
     })();
     const badge = (() => {
-      const b = allocateEntity<AppBadgeBackend>();
+      const b = allocateEntity<HostAppBadgeProvider>();
       initializeAppBadgeBackend(b, app);
       return finishEntity(b);
     })();
     const dockBackend = (() => {
-      const b = allocateEntity<AppDockBackend>();
+      const b = allocateEntity<HostAppDockProvider>();
       initializeAppDockBackend(b, dock, electron);
       return finishEntity(b);
     })();
     const hide = (() => {
-      const b = allocateEntity<AppHideBackend>();
+      const b = allocateEntity<HostAppHideProvider>();
       initializeAppHideBackend(b, app);
       return finishEntity(b);
     })();
     const hiddenQuery = (() => {
-      const b = allocateEntity<AppVisibilityQueryBackend>();
+      const b = allocateEntity<HostAppVisibilityQueryProvider>();
       initializeAppVisibilityQueryBackend(b, app);
       return finishEntity(b);
     })();
     const loginItem = createElectronLoginItemBackend(electron);
     const openFile = (() => {
-      const b = allocateEntity<AppOpenFileBackend>();
+      const b = allocateEntity<HostAppOpenFileProvider>();
       initializeAppOpenFileBackend(b, subscribe);
       return finishEntity(b);
     })();
     const recentDocuments = createElectronRecentDocumentsBackend(electron);
     const show = (() => {
-      const b = allocateEntity<AppShowBackend>();
+      const b = allocateEntity<HostAppShowProvider>();
       initializeAppShowBackend(b, app);
       return finishEntity(b);
     })();
@@ -217,7 +217,7 @@ export function createElectronAppCapabilities(
     const loginItem = createElectronLoginItemBackend(electron);
     const recentDocuments = createElectronRecentDocumentsBackend(electron);
     const userModelId = (() => {
-      const b = allocateEntity<AppUserModelIdBackend>();
+      const b = allocateEntity<HostAppUserModelIdProvider>();
       initializeAppUserModelIdBackend(b, app);
       return finishEntity(b);
     })();
@@ -227,7 +227,7 @@ export function createElectronAppCapabilities(
 
   const linux = allocateEntity<ElectronLinuxAppCapabilities>();
   const badge = (() => {
-    const b = allocateEntity<AppBadgeBackend>();
+    const b = allocateEntity<HostAppBadgeProvider>();
     initializeAppBadgeBackend(b, app);
     return finishEntity(b);
   })();
@@ -236,32 +236,35 @@ export function createElectronAppCapabilities(
 }
 
 export function initializeAppActivateBackend(
-  out: EntityConstruction<AppActivateBackend>,
+  out: EntityConstruction<HostAppActivateProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('activate', listener);
 }
 
 export function initializeAppActivationPolicyBackend(
-  out: EntityConstruction<AppActivationPolicyBackend>,
+  out: EntityConstruction<HostAppActivationPolicyProvider>,
   app: ElectronApi['app'],
 ): void {
   out.setActivationPolicy = (policy: 'accessory' | 'prohibited' | 'regular') => app.setActivationPolicy(policy);
 }
 
 export function initializeAppAllWindowsClosedBackend(
-  out: EntityConstruction<AppAllWindowsClosedBackend>,
+  out: EntityConstruction<HostAppAllWindowsClosedProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('window-all-closed', listener);
 }
 
-export function initializeAppBadgeBackend(out: EntityConstruction<AppBadgeBackend>, app: ElectronApi['app']): void {
+export function initializeAppBadgeBackend(
+  out: EntityConstruction<HostAppBadgeProvider>,
+  app: ElectronApi['app'],
+): void {
   out.setBadgeCount = async (count: number) => app.setBadgeCount(count);
 }
 
 export function initializeAppDockBackend(
-  out: EntityConstruction<AppDockBackend>,
+  out: EntityConstruction<HostAppDockProvider>,
   dock: NonNullable<ElectronApi['app']['dock']>,
   electron: ElectronApi,
 ): void {
@@ -274,22 +277,28 @@ export function initializeAppDockBackend(
     dock.setMenu(electron.Menu.buildFromTemplate(toElectronTemplate(items)));
 }
 
-export function initializeAppFocusBackend(out: EntityConstruction<AppFocusBackend>, app: ElectronApi['app']): void {
+export function initializeAppFocusBackend(
+  out: EntityConstruction<HostAppFocusProvider>,
+  app: ElectronApi['app'],
+): void {
   out.focus = () => app.focus();
 }
 
-export function initializeAppHideBackend(out: EntityConstruction<AppHideBackend>, app: ElectronApi['app']): void {
+export function initializeAppHideBackend(out: EntityConstruction<HostAppHideProvider>, app: ElectronApi['app']): void {
   out.hideApp = () => app.hide();
 }
 
-export function initializeAppLocaleBackend(out: EntityConstruction<AppLocaleBackend>, app: ElectronApi['app']): void {
+export function initializeAppLocaleBackend(
+  out: EntityConstruction<HostAppLocaleProvider>,
+  app: ElectronApi['app'],
+): void {
   out.getLocale = () => app.getLocale();
   out.getPreferredSystemLanguages = () => app.getPreferredSystemLanguages();
   out.getSystemLocale = () => app.getSystemLocale();
 }
 
 export function initializeAppLoginItemBackend(
-  out: EntityConstruction<AppLoginItemBackend>,
+  out: EntityConstruction<HostAppLoginItemProvider>,
   electron: ElectronApi,
 ): void {
   out.getLoginItem = () => {
@@ -311,19 +320,19 @@ export function initializeAppLoginItemBackend(
   };
 }
 
-export function initializeAppNameBackend(out: EntityConstruction<AppNameBackend>, app: ElectronApi['app']): void {
+export function initializeAppNameBackend(out: EntityConstruction<HostAppNameProvider>, app: ElectronApi['app']): void {
   out.getName = () => app.getName();
 }
 
 export function initializeAppNameWriteBackend(
-  out: EntityConstruction<AppNameWriteBackend>,
+  out: EntityConstruction<HostAppNameWriteProvider>,
   app: ElectronApi['app'],
 ): void {
   out.setName = (name: string) => app.setName(name);
 }
 
 export function initializeAppOpenFileBackend(
-  out: EntityConstruction<AppOpenFileBackend>,
+  out: EntityConstruction<HostAppOpenFileProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (path: string) => void) => {
@@ -331,18 +340,18 @@ export function initializeAppOpenFileBackend(
   };
 }
 
-export function initializeAppPathBackend(out: EntityConstruction<AppPathBackend>, app: ElectronApi['app']): void {
+export function initializeAppPathBackend(out: EntityConstruction<HostAppPathProvider>, app: ElectronApi['app']): void {
   out.getAppDirectoryPath = (kind: AppPathKind) => app.getPath(toElectronPathName(kind));
   out.getAppPath = () => app.getAppPath();
   out.getExecutablePath = () => app.getPath('exe');
 }
 
-export function initializeAppQuitBackend(out: EntityConstruction<AppQuitBackend>, app: ElectronApi['app']): void {
+export function initializeAppQuitBackend(out: EntityConstruction<HostAppQuitProvider>, app: ElectronApi['app']): void {
   out.quit = () => app.quit();
 }
 
 export function initializeAppQuitRequestBackend(
-  out: EntityConstruction<AppQuitRequestBackend>,
+  out: EntityConstruction<HostAppQuitRequestProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (cancelHost: () => void) => void) => {
@@ -354,14 +363,14 @@ export function initializeAppQuitRequestBackend(
 }
 
 export function initializeAppReadyBackend(
-  out: EntityConstruction<AppReadyBackend>,
+  out: EntityConstruction<HostAppReadyProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('ready', listener);
 }
 
 export function initializeAppRecentDocumentsBackend(
-  out: EntityConstruction<AppRecentDocumentsBackend>,
+  out: EntityConstruction<HostAppRecentDocumentsProvider>,
   electron: ElectronApi,
 ): void {
   out.addRecentDocument = (path: string) => electron.app.addRecentDocument(path);
@@ -369,14 +378,14 @@ export function initializeAppRecentDocumentsBackend(
 }
 
 export function initializeAppRelaunchBackend(
-  out: EntityConstruction<AppRelaunchBackend>,
+  out: EntityConstruction<HostAppRelaunchProvider>,
   app: ElectronApi['app'],
 ): void {
   out.relaunch = () => app.relaunch();
 }
 
 export function initializeAppSecondInstanceBackend(
-  out: EntityConstruction<AppSecondInstanceBackend>,
+  out: EntityConstruction<HostAppSecondInstanceProvider>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (argv: readonly string[]) => void) => {
@@ -384,12 +393,12 @@ export function initializeAppSecondInstanceBackend(
   };
 }
 
-export function initializeAppShowBackend(out: EntityConstruction<AppShowBackend>, app: ElectronApi['app']): void {
+export function initializeAppShowBackend(out: EntityConstruction<HostAppShowProvider>, app: ElectronApi['app']): void {
   out.showApp = () => app.show();
 }
 
 export function initializeAppSingleInstanceBackend(
-  out: EntityConstruction<AppSingleInstanceBackend>,
+  out: EntityConstruction<HostAppSingleInstanceProvider>,
   app: ElectronApi['app'],
 ): void {
   out.hasSingleInstanceLock = () => app.hasSingleInstanceLock();
@@ -398,18 +407,21 @@ export function initializeAppSingleInstanceBackend(
 }
 
 export function initializeAppUserModelIdBackend(
-  out: EntityConstruction<AppUserModelIdBackend>,
+  out: EntityConstruction<HostAppUserModelIdProvider>,
   app: ElectronApi['app'],
 ): void {
   out.setUserModelId = (id: string) => app.setAppUserModelId(id);
 }
 
-export function initializeAppVersionBackend(out: EntityConstruction<AppVersionBackend>, app: ElectronApi['app']): void {
+export function initializeAppVersionBackend(
+  out: EntityConstruction<HostAppVersionProvider>,
+  app: ElectronApi['app'],
+): void {
   out.getVersion = () => app.getVersion();
 }
 
 export function initializeAppVisibilityQueryBackend(
-  out: EntityConstruction<AppVisibilityQueryBackend>,
+  out: EntityConstruction<HostAppVisibilityQueryProvider>,
   app: ElectronApi['app'],
 ): void {
   out.isAppHidden = () => app.isHidden();
@@ -417,19 +429,19 @@ export function initializeAppVisibilityQueryBackend(
 
 export function initializeElectronCommonAppCapabilities(
   out: EntityConstruction<ElectronCommonAppCapabilities>,
-  allWindowsClosed: AppAllWindowsClosedBackend,
-  focus: AppFocusBackend,
-  locale: AppLocaleBackend,
-  name: AppNameBackend,
-  nameWrite: AppNameWriteBackend,
-  path: AppPathBackend,
-  quit: AppQuitBackend,
-  quitRequest: AppQuitRequestBackend,
-  ready: AppReadyBackend,
-  relaunch: AppRelaunchBackend,
-  secondInstance: AppSecondInstanceBackend,
-  singleInstance: AppSingleInstanceBackend,
-  version: AppVersionBackend,
+  allWindowsClosed: HostAppAllWindowsClosedProvider,
+  focus: HostAppFocusProvider,
+  locale: HostAppLocaleProvider,
+  name: HostAppNameProvider,
+  nameWrite: HostAppNameWriteProvider,
+  path: HostAppPathProvider,
+  quit: HostAppQuitProvider,
+  quitRequest: HostAppQuitRequestProvider,
+  ready: HostAppReadyProvider,
+  relaunch: HostAppRelaunchProvider,
+  secondInstance: HostAppSecondInstanceProvider,
+  singleInstance: HostAppSingleInstanceProvider,
+  version: HostAppVersionProvider,
 ): void {
   out.allWindowsClosed = allWindowsClosed;
   out.focus = focus;
@@ -449,7 +461,7 @@ export function initializeElectronCommonAppCapabilities(
 export function initializeElectronLinuxAppCapabilities(
   out: EntityConstruction<ElectronLinuxAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  badge: AppBadgeBackend,
+  badge: HostAppBadgeProvider,
 ): void {
   out.allWindowsClosed = common.allWindowsClosed;
   out.badge = badge;
@@ -470,16 +482,16 @@ export function initializeElectronLinuxAppCapabilities(
 export function initializeElectronMacosAppCapabilities(
   out: EntityConstruction<ElectronMacosAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  activate: AppActivateBackend,
-  activationPolicy: AppActivationPolicyBackend,
-  badge: AppBadgeBackend,
-  dock: AppDockBackend,
-  hide: AppHideBackend,
-  hiddenQuery: AppVisibilityQueryBackend,
-  loginItem: AppLoginItemBackend,
-  openFile: AppOpenFileBackend,
-  recentDocuments: AppRecentDocumentsBackend,
-  show: AppShowBackend,
+  activate: HostAppActivateProvider,
+  activationPolicy: HostAppActivationPolicyProvider,
+  badge: HostAppBadgeProvider,
+  dock: HostAppDockProvider,
+  hide: HostAppHideProvider,
+  hiddenQuery: HostAppVisibilityQueryProvider,
+  loginItem: HostAppLoginItemProvider,
+  openFile: HostAppOpenFileProvider,
+  recentDocuments: HostAppRecentDocumentsProvider,
+  show: HostAppShowProvider,
 ): void {
   out.activate = activate;
   out.activationPolicy = activationPolicy;
@@ -509,9 +521,9 @@ export function initializeElectronMacosAppCapabilities(
 export function initializeElectronWindowsAppCapabilities(
   out: EntityConstruction<ElectronWindowsAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  loginItem: AppLoginItemBackend,
-  recentDocuments: AppRecentDocumentsBackend,
-  userModelId: AppUserModelIdBackend,
+  loginItem: HostAppLoginItemProvider,
+  recentDocuments: HostAppRecentDocumentsProvider,
+  userModelId: HostAppUserModelIdProvider,
 ): void {
   out.allWindowsClosed = common.allWindowsClosed;
   out.focus = common.focus;
@@ -532,13 +544,13 @@ export function initializeElectronWindowsAppCapabilities(
 }
 
 function createElectronLoginItemBackend(electron: ElectronApi) {
-  const out = allocateEntity<AppLoginItemBackend>();
+  const out = allocateEntity<HostAppLoginItemProvider>();
   initializeAppLoginItemBackend(out, electron);
   return finishEntity(out);
 }
 
 function createElectronRecentDocumentsBackend(electron: ElectronApi) {
-  const out = allocateEntity<AppRecentDocumentsBackend>();
+  const out = allocateEntity<HostAppRecentDocumentsProvider>();
   initializeAppRecentDocumentsBackend(out, electron);
   return finishEntity(out);
 }

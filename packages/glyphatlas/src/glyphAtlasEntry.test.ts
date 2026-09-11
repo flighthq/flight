@@ -1,5 +1,5 @@
 import { getBitmapPixel } from '@flighthq/bitmap/contract';
-import type { GlyphEntry, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { GlyphEntry, GlyphRasterizedBitmap, HostGlyphRasterizerProvider } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
@@ -217,7 +217,7 @@ describe('getGlyphAtlasEntry', () => {
   });
 
   it('returns null when the rasterizer produces nothing', () => {
-    const backend: GlyphRasterizerBackend = { rasterize: () => null };
+    const backend: HostGlyphRasterizerProvider = { rasterize: () => null };
     const atlas = createGlyphAtlas({
       fontFamily: 'mock',
       fontSize: 16,
@@ -230,7 +230,7 @@ describe('getGlyphAtlasEntry', () => {
   });
 
   it('preserves the advance of a present glyph with no ink', () => {
-    const backend: GlyphRasterizerBackend = {
+    const backend: HostGlyphRasterizerProvider = {
       rasterize: () => ({
         advance: 5,
         bearingX: 0,
@@ -254,9 +254,9 @@ describe('getGlyphAtlasEntry', () => {
 
 function createMockRasterizerBackend(
   sizeFor: (codepoint: number) => { width: number; height: number } = () => ({ height: 8, width: 8 }),
-): { backend: GlyphRasterizerBackend; calls: number[] } {
+): { backend: HostGlyphRasterizerProvider; calls: number[] } {
   const calls: number[] = [];
-  const backend: GlyphRasterizerBackend = {
+  const backend: HostGlyphRasterizerProvider = {
     rasterize(codepoint): GlyphRasterizedBitmap {
       calls.push(codepoint);
       const { width, height } = sizeFor(codepoint);
@@ -483,7 +483,7 @@ describe('setGlyphAtlasEntryGuard', () => {
   it('stops reporting once cleared with null', () => {
     let calls = 0;
     setGlyphAtlasEntryGuard(() => (calls += 1));
-    const nullBackend: GlyphRasterizerBackend = { rasterize: () => null };
+    const nullBackend: HostGlyphRasterizerProvider = { rasterize: () => null };
     const atlas = createGlyphAtlas({
       fontFamily: 'm',
       fontSize: 16,

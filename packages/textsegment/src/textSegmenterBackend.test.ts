@@ -1,11 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HasTextSegmenter,
-  TextSegment,
-  TextSegmentGranularity,
-  TextSegmenterBackend,
-} from '@flighthq/types/contract';
+import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -17,7 +12,7 @@ import {
   webTextSegmenterBackend,
 } from './textSegmenterBackend';
 
-interface RecordingBackend extends TextSegmenterBackend {
+interface RecordingBackend extends HostTextSegmenterProvider {
   calls: Array<{ text: string; granularity: TextSegmentGranularity; locale: string | undefined }>;
 }
 
@@ -71,7 +66,7 @@ describe('explainTextSegmenterBackend', () => {
   });
 
   it('identifies a custom provider independently of Intl availability', () => {
-    expect(explainTextSegmenterBackend(segmenterHost(recordingBackend()))).toEqual({
+    expect(explainTextSegmenterBackend(segmenterHost(recordingBackend()).text.segmenter)).toEqual({
       available: true,
       backend: 'custom',
       intlSegmenterAvailable: true,
@@ -92,9 +87,11 @@ describe('getTextSegmenterBackend', () => {
   it('returns an explicit host provider ahead of the legacy backend', () => {
     const legacy = recordingBackend();
     const explicit = recordingBackend();
-    const host: HasTextSegmenter = { text: { segmenter: explicit } };
+    const host: { readonly text: { readonly segmenter: HostTextSegmenterProvider } } = {
+      text: { segmenter: explicit },
+    };
     setTextSegmenterBackend(legacy);
-    expect(getTextSegmenterBackend(host)).toBe(explicit);
+    expect(getTextSegmenterBackend(host.text.segmenter)).toBe(explicit);
   });
 
   it('falls back to the stable bundled web backend when none is registered', () => {
@@ -141,6 +138,8 @@ describe('webTextSegmenterBackend', () => {
   });
 });
 
-function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
+function segmenterHost(segmenter: HostTextSegmenterProvider): {
+  readonly text: { readonly segmenter: HostTextSegmenterProvider };
+} {
   return { text: { segmenter } };
 }

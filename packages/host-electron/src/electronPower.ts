@@ -3,19 +3,19 @@ import type {
   ElectronApi,
   ElectronPowerCapabilities,
   PowerBatteryHealth,
-  PowerBatteryHealthBackend,
-  PowerChangeBackend,
-  PowerIdleBackend,
+  HostPowerBatteryHealthProvider,
+  HostPowerChangeProvider,
+  HostPowerIdleProvider,
   PowerIdleState,
   PowerKeepAwakeAcquireResult,
-  PowerKeepAwakeBackend,
+  HostPowerKeepAwakeProvider,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
-  PowerSessionLockBackend,
+  HostPowerSessionLockProvider,
   PowerStatus,
-  PowerStatusBackend,
-  PowerSuspensionBackend,
-  PowerThermalBackend,
+  HostPowerStatusProvider,
+  HostPowerSuspensionProvider,
+  HostPowerThermalProvider,
   PowerThermalState,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -31,37 +31,37 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
   const powerSaveBlocker = electron.powerSaveBlocker;
 
   const batteryHealth = (() => {
-    const b = allocateEntity<PowerBatteryHealthBackend>();
+    const b = allocateEntity<HostPowerBatteryHealthProvider>();
     initializePowerBatteryHealthBackend(b);
     return finishEntity(b);
   })();
   const change = (() => {
-    const b = allocateEntity<PowerChangeBackend>();
+    const b = allocateEntity<HostPowerChangeProvider>();
     initializePowerChangeBackend(b, powerMonitor);
     return finishEntity(b);
   })();
   const idle = (() => {
-    const b = allocateEntity<PowerIdleBackend>();
+    const b = allocateEntity<HostPowerIdleProvider>();
     initializePowerIdleBackend(b, powerMonitor);
     return finishEntity(b);
   })();
   const keepAwake = (() => {
-    const b = allocateEntity<PowerKeepAwakeBackend>();
+    const b = allocateEntity<HostPowerKeepAwakeProvider>();
     initializePowerKeepAwakeBackend(b, powerSaveBlocker);
     return finishEntity(b);
   })();
   const sessionLock = (() => {
-    const b = allocateEntity<PowerSessionLockBackend>();
+    const b = allocateEntity<HostPowerSessionLockProvider>();
     initializePowerSessionLockBackend(b, powerMonitor);
     return finishEntity(b);
   })();
   const status = (() => {
-    const b = allocateEntity<PowerStatusBackend>();
+    const b = allocateEntity<HostPowerStatusProvider>();
     initializePowerStatusBackend(b, powerMonitor);
     return finishEntity(b);
   })();
   const suspension = (() => {
-    const b = allocateEntity<PowerSuspensionBackend>();
+    const b = allocateEntity<HostPowerSuspensionProvider>();
     initializePowerSuspensionBackend(b, powerMonitor);
     return finishEntity(b);
   })();
@@ -85,7 +85,7 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
   if (typeof powerMonitor.getCurrentThermalState !== 'function') return finishEntity(backends);
 
   backends.thermal = (() => {
-    const b = allocateEntity<PowerThermalBackend>();
+    const b = allocateEntity<HostPowerThermalProvider>();
     initializePowerThermalBackend(b, powerMonitor);
     return finishEntity(b);
   })();
@@ -94,13 +94,13 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
 
 export function initializeElectronPowerCapabilities(
   out: EntityConstruction<ElectronPowerCapabilities>,
-  batteryHealth: PowerBatteryHealthBackend,
-  change: PowerChangeBackend,
-  idle: PowerIdleBackend,
-  keepAwake: PowerKeepAwakeBackend,
-  sessionLock: PowerSessionLockBackend,
-  status: PowerStatusBackend,
-  suspension: PowerSuspensionBackend,
+  batteryHealth: HostPowerBatteryHealthProvider,
+  change: HostPowerChangeProvider,
+  idle: HostPowerIdleProvider,
+  keepAwake: HostPowerKeepAwakeProvider,
+  sessionLock: HostPowerSessionLockProvider,
+  status: HostPowerStatusProvider,
+  suspension: HostPowerSuspensionProvider,
 ): void {
   out.batteryHealth = batteryHealth;
   out.change = change;
@@ -111,14 +111,14 @@ export function initializeElectronPowerCapabilities(
   out.suspension = suspension;
 }
 
-export function initializePowerBatteryHealthBackend(out: EntityConstruction<PowerBatteryHealthBackend>): void {
+export function initializePowerBatteryHealthBackend(out: EntityConstruction<HostPowerBatteryHealthProvider>): void {
   out.getBatteryHealth = (out: PowerBatteryHealth): PowerBatteryHealth => {
     return out;
   };
 }
 
 export function initializePowerChangeBackend(
-  out: EntityConstruction<PowerChangeBackend>,
+  out: EntityConstruction<HostPowerChangeProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribe = (listener: () => void): (() => void) => {
@@ -132,7 +132,7 @@ export function initializePowerChangeBackend(
 }
 
 export function initializePowerIdleBackend(
-  out: EntityConstruction<PowerIdleBackend>,
+  out: EntityConstruction<HostPowerIdleProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getIdleState = (thresholdSeconds: number): PowerIdleState => {
@@ -144,7 +144,7 @@ export function initializePowerIdleBackend(
 }
 
 export function initializePowerKeepAwakeBackend(
-  out: EntityConstruction<PowerKeepAwakeBackend>,
+  out: EntityConstruction<HostPowerKeepAwakeProvider>,
   powerSaveBlocker: ElectronApi['powerSaveBlocker'],
 ): void {
   let blockerId = -1;
@@ -182,7 +182,7 @@ export function initializePowerKeepAwakeBackend(
 }
 
 export function initializePowerSessionLockBackend(
-  out: EntityConstruction<PowerSessionLockBackend>,
+  out: EntityConstruction<HostPowerSessionLockProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribeLock = (listener: () => void): (() => void) => {
@@ -196,7 +196,7 @@ export function initializePowerSessionLockBackend(
 }
 
 export function initializePowerStatusBackend(
-  out: EntityConstruction<PowerStatusBackend>,
+  out: EntityConstruction<HostPowerStatusProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getStatus = (out: PowerStatus): PowerStatus => {
@@ -214,7 +214,7 @@ export function initializePowerStatusBackend(
 }
 
 export function initializePowerSuspensionBackend(
-  out: EntityConstruction<PowerSuspensionBackend>,
+  out: EntityConstruction<HostPowerSuspensionProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribeResume = (listener: () => void): (() => void) => {
@@ -228,7 +228,7 @@ export function initializePowerSuspensionBackend(
 }
 
 export function initializePowerThermalBackend(
-  out: EntityConstruction<PowerThermalBackend>,
+  out: EntityConstruction<HostPowerThermalProvider>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getThermalState = (): PowerThermalState => {

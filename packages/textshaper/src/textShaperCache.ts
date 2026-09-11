@@ -2,11 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
   EntityRuntime,
-  HasTextShaper,
+  HostTextShaperProvider,
   ShapeRunOptions,
   ShapedRun,
   TextFormat,
-  TextShaperBackend,
   TextShaperCache,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -53,16 +52,16 @@ export function shapeTextRunCached(
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<ShapeRunOptions>,
-  host?: HasTextShaper,
+  hostTextShaper?: Readonly<HostTextShaperProvider>,
 ): ShapedRun | null {
   const runtime = _getTextShaperCacheRuntime(cache);
   if (runtime === null) return null;
-  const backend = getTextShaperBackend(host);
+  const backend = getTextShaperBackend(hostTextShaper);
   if (backend === null) return null;
   const key = `${_getBackendCacheId(backend)}\x00${_makeCacheKey(text, format, options)}`;
   const existing = runtime.entries.get(key);
   if (existing !== undefined) return existing;
-  const result = shapeTextRun(text, format, options, host);
+  const result = shapeTextRun(text, format, options, hostTextShaper);
   if (result !== null) runtime.entries.set(key, result);
   return result;
 }
@@ -77,10 +76,10 @@ function _getTextShaperCacheRuntime(cache: TextShaperCache): TextShaperCacheRunt
 
 // Backend identity is allocation state, not capability state: it only scopes cached values and
 // never selects a provider. Weak keys avoid retaining host-provided backends after their lifetime.
-const _backendCacheIds = new WeakMap<TextShaperBackend, number>();
+const _backendCacheIds = new WeakMap<HostTextShaperProvider, number>();
 let _nextBackendCacheId = 1;
 
-function _getBackendCacheId(backend: TextShaperBackend): number {
+function _getBackendCacheId(backend: HostTextShaperProvider): number {
   const existing = _backendCacheIds.get(backend);
   if (existing !== undefined) return existing;
   const id = _nextBackendCacheId++;

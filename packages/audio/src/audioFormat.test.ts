@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioBackend, Entity, HasMediaAudioCodec } from '@flighthq/types/contract';
+import type { HostAudioProvider, Entity } from '@flighthq/types/contract';
 
 import {
   canPlayAudioType,
@@ -9,7 +9,7 @@ import {
   inferAudioMimeType,
 } from './audioFormat';
 
-function hostWith(canPlay: (type: string) => boolean): HasMediaAudioCodec {
+function hostWith(canPlay: (type: string) => boolean): { readonly media: { readonly audioCodec: HostAudioProvider } } {
   return {
     media: {
       audioCodec: (() => {
@@ -18,22 +18,22 @@ function hostWith(canPlay: (type: string) => boolean): HasMediaAudioCodec {
         return finishEntity(out);
       })(),
     },
-  } as HasMediaAudioCodec;
+  } as { readonly media: { readonly audioCodec: HostAudioProvider } };
 }
 
 describe('canPlayAudioType', () => {
   const host = hostWith((type) => type === 'audio/mpeg');
 
   it('returns false for the empty string without probing', () => {
-    expect(canPlayAudioType(host, '')).toBe(false);
+    expect(canPlayAudioType(host.media.audioCodec, '')).toBe(false);
   });
 
   it('returns true for a type the backend reports as playable', () => {
-    expect(canPlayAudioType(host, 'audio/mpeg')).toBe(true);
+    expect(canPlayAudioType(host.media.audioCodec, 'audio/mpeg')).toBe(true);
   });
 
   it('returns false for a type the backend cannot play', () => {
-    expect(canPlayAudioType(host, 'audio/x-unknown')).toBe(false);
+    expect(canPlayAudioType(host.media.audioCodec, 'audio/x-unknown')).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { HasNetHttp, LogEntry, NetBackend, NetResponse } from '@flighthq/types/contract';
+import type { HostNetProvider, LogEntry, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards';
@@ -13,7 +13,9 @@ function captureLog(run: () => Promise<void>): Promise<readonly LogEntry[]> {
     .finally(() => removeLogSink(sink.sink));
 }
 
-function hostOf(sendNetRequestBackend: NetBackend['sendNetRequest']): HasNetHttp {
+function hostOf(sendNetRequestBackend: HostNetProvider['sendNetRequest']): {
+  readonly net: { readonly http: HostNetProvider };
+} {
   return {
     net: {
       http: { [EntityRuntimeKey]: undefined, sendNetRequest: sendNetRequestBackend },
@@ -44,7 +46,7 @@ describe('disableNetGuards', () => {
     disableNetGuards();
     const host = hostOf(async () => stubResponse());
     const entries = await captureLog(async () => {
-      await sendNetRequest(host, { body: 'ignored', method: 'GET', timeoutMs: -1, url: 'u' });
+      await sendNetRequest(host.net.http, { body: 'ignored', method: 'GET', timeoutMs: -1, url: 'u' });
     });
     expect(entries).toEqual([]);
   });
@@ -55,8 +57,8 @@ describe('enableNetGuards', () => {
     enableNetGuards();
     const host = hostOf(async () => stubResponse());
     const entries = await captureLog(async () => {
-      await sendNetRequest(host, { body: 'ignored', method: 'GET', timeoutMs: -1, url: 'u' });
-      await sendNetRequest(host, { body: 'ignored again', method: 'HEAD', timeoutMs: -2, url: 'v' });
+      await sendNetRequest(host.net.http, { body: 'ignored', method: 'GET', timeoutMs: -1, url: 'u' });
+      await sendNetRequest(host.net.http, { body: 'ignored again', method: 'HEAD', timeoutMs: -2, url: 'v' });
     });
     expect(entries).toHaveLength(2);
     expect(entries.map((entry) => (entry.data as Record<string, unknown>).reason)).toEqual([
@@ -74,7 +76,7 @@ describe('enableNetGuards', () => {
       emit() {},
     };
     const entries = await captureLog(async () => {
-      await sendNetRequest(host, { method: 'GET', url: 'u' }, { progress });
+      await sendNetRequest(host.net.http, { method: 'GET', url: 'u' }, { progress });
     });
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ channel: 'net' });
@@ -93,7 +95,7 @@ describe('enableNetGuards', () => {
       return stubResponse();
     });
     const entries = await captureLog(async () => {
-      await sendNetRequest(host, { method: 'GET', url: 'u' }, { progress });
+      await sendNetRequest(host.net.http, { method: 'GET', url: 'u' }, { progress });
     });
     expect(entries).toEqual([]);
   });

@@ -1,6 +1,6 @@
 import { createImageResourceFromCanvas, createImageResourceFromImageElement } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend, ImageResource } from '@flighthq/types/contract';
+import type { HostImageProvider, ImageResource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -14,7 +14,7 @@ import {
   loadTextureAtlasFromUrl,
 } from './textureAtlasFrom';
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
@@ -28,7 +28,9 @@ function createTestImageBackend(): ImageBackend {
   };
 }
 
-const host: HasGraphicsImage = { graphics: { image: createTestImageBackend() } } as HasGraphicsImage;
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+  graphics: { image: createTestImageBackend() },
+} as { readonly graphics: { readonly image: HostImageProvider } };
 
 beforeEach(() => {
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
@@ -117,7 +119,7 @@ describe('createTextureAtlasFromImageResource', () => {
 
 describe('loadTextureAtlasFromBase64', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
-    const atlas = await loadTextureAtlasFromBase64(host, 'abc123', 'image/png');
+    const atlas = await loadTextureAtlasFromBase64(host.graphics.image, 'abc123', 'image/png');
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -125,7 +127,7 @@ describe('loadTextureAtlasFromBase64', () => {
 describe('loadTextureAtlasFromBlob', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const blob = new Blob([], { type: 'image/png' });
-    const atlas = await loadTextureAtlasFromBlob(host, blob);
+    const atlas = await loadTextureAtlasFromBlob(host.graphics.image, blob);
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -133,7 +135,7 @@ describe('loadTextureAtlasFromBlob', () => {
 describe('loadTextureAtlasFromBytes', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const atlas = await loadTextureAtlasFromBytes(host, bytes);
+    const atlas = await loadTextureAtlasFromBytes(host.graphics.image, bytes);
 
     expect(getTextureSource(atlas.texture!)).not.toBeNull();
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
@@ -141,20 +143,22 @@ describe('loadTextureAtlasFromBytes', () => {
 
   it('starts with an empty regions array', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const atlas = await loadTextureAtlasFromBytes(host, bytes);
+    const atlas = await loadTextureAtlasFromBytes(host.graphics.image, bytes);
 
     expect(atlas.regions).toHaveLength(0);
   });
 
   it('throws when mime type cannot be detected', async () => {
     const bytes = new Uint8Array(16);
-    await expect(loadTextureAtlasFromBytes(host, bytes)).rejects.toThrow('Unable to determine image type');
+    await expect(loadTextureAtlasFromBytes(host.graphics.image, bytes)).rejects.toThrow(
+      'Unable to determine image type',
+    );
   });
 });
 
 describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
-    const atlas = await loadTextureAtlasFromUrl(host, 'data:image/png;base64,abc');
+    const atlas = await loadTextureAtlasFromUrl(host.graphics.image, 'data:image/png;base64,abc');
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

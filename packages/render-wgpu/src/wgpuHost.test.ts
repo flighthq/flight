@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
+import type { Entity, WgpuHostAcquisition, HostWgpuProvider } from '@flighthq/types/contract';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -18,7 +18,7 @@ import {
 } from './wgpuRenderState';
 import { installWgpuMock } from './wgpuTestHelper';
 
-function fakeBackend(): WgpuHostBackend {
+function fakeBackend(): HostWgpuProvider {
   return entityBackend({
     acquire: vi.fn(),
     isSupported: vi.fn(() => true),
@@ -26,9 +26,9 @@ function fakeBackend(): WgpuHostBackend {
   });
 }
 
-function entityBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
+function entityBackend(fields: Omit<HostWgpuProvider, keyof Entity>): HostWgpuProvider {
   return (() => {
-    const out = allocateEntity<WgpuHostBackend>();
+    const out = allocateEntity<HostWgpuProvider>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();

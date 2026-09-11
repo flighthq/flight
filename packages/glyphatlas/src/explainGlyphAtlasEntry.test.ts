@@ -1,11 +1,11 @@
-import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerProvider } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { explainGlyphAtlasEntry } from './explainGlyphAtlasEntry';
 import { createGlyphAtlas } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 
-function backendProducing(width: number, height: number): GlyphRasterizerBackend {
+function backendProducing(width: number, height: number): HostGlyphRasterizerProvider {
   return {
     rasterize: () => ({
       advance: width,
@@ -18,7 +18,7 @@ function backendProducing(width: number, height: number): GlyphRasterizerBackend
   };
 }
 
-function red4pxBackend(): GlyphRasterizerBackend {
+function red4pxBackend(): HostGlyphRasterizerProvider {
   const pixels = new Uint8ClampedArray(4 * 4 * 4);
   for (let offset = 0; offset < pixels.length; offset += 4) pixels.set([255, 0, 0, 255], offset);
   return {

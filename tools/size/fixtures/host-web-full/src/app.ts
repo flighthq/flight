@@ -4,7 +4,7 @@ import { webHost } from '@flighthq/host-web';
 import { renderHostWebFullCard } from './render.canvas';
 
 const applicationWindow = createApplicationWindow();
-const opened = openWindow(webHost, applicationWindow, {
+const opened = openWindow(webHost.window, applicationWindow, {
   height: window.innerHeight,
   title: 'Flight Web Host',
   width: window.innerWidth,
@@ -15,7 +15,10 @@ const setTitle = webHost.window.setTitle;
 if (readBounds === undefined || setTitle === undefined) {
   throw new Error('The aggregate web host must provide window title and bounds operations.');
 }
-const windowOperations = { window: { getBounds: readBounds, setTitle } };
+const windowOperations = webHost.window as typeof webHost.window & {
+  getBounds: typeof readBounds;
+  setTitle: typeof setTitle;
+};
 setWindowTitle(windowOperations, applicationWindow, 'Flight Web Host');
 
 const bounds = getWindowBounds(windowOperations, applicationWindow, { height: 0, width: 0, x: 0, y: 0 });

@@ -147,7 +147,10 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
-  registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasBitmapTextureResolver(
+    webGraphicsHost.graphics.image,
+    getCanvasRenderStateTextureResolvers(resolverState),
+  );
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
   return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));

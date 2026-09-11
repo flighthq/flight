@@ -194,7 +194,7 @@ function createFixture() {
 describe('addAppRecentDocument', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    addAppRecentDocument(host, '/tmp/a');
+    addAppRecentDocument(host.app.recentDocuments, '/tmp/a');
     expect(calls).toContain('recent:/tmp/a');
   });
 });
@@ -204,8 +204,24 @@ describe('attachApp', () => {
     const first = createFixture();
     const second = createFixture();
     const app = createApp();
-    attachApp(first.host, app);
-    attachApp(second.host, app);
+    attachApp(
+      first.host.app.activate,
+      first.host.app.allWindowsClosed,
+      first.host.app.openFile,
+      first.host.app.quitRequest,
+      first.host.app.ready,
+      first.host.app.secondInstance,
+      app,
+    );
+    attachApp(
+      second.host.app.activate,
+      second.host.app.allWindowsClosed,
+      second.host.app.openFile,
+      second.host.app.quitRequest,
+      second.host.app.ready,
+      second.host.app.secondInstance,
+      app,
+    );
     expect(Object.values(first.unsubscribes).every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
 });
@@ -216,7 +232,7 @@ describe('attachAppActivate', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onActivate, receive);
-    attachAppActivate(host, app);
+    attachAppActivate(host.app.activate, app);
     listeners.activate?.();
     expect(receive).toHaveBeenCalledOnce();
   });
@@ -228,7 +244,7 @@ describe('attachAppAllWindowsClosed', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onAllWindowsClosed, receive);
-    attachAppAllWindowsClosed(host, app);
+    attachAppAllWindowsClosed(host.app.allWindowsClosed, app);
     listeners.allWindowsClosed?.();
     expect(receive).toHaveBeenCalledOnce();
   });
@@ -240,7 +256,7 @@ describe('attachAppOpenFile', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onOpenFile, receive);
-    attachAppOpenFile(host, app);
+    attachAppOpenFile(host.app.openFile, app);
     listeners.openFile?.('/tmp/a.txt');
     expect(receive).toHaveBeenCalledExactlyOnceWith('/tmp/a.txt');
   });
@@ -252,7 +268,7 @@ describe('attachAppQuitRequest', () => {
     const app = createApp();
     const cancelHost = vi.fn();
     connectSignal(app.onQuitRequest, () => cancelSignal(app.onQuitRequest));
-    attachAppQuitRequest(host, app);
+    attachAppQuitRequest(host.app.quitRequest, app);
     listeners.quitRequest?.(cancelHost);
     expect(cancelHost).toHaveBeenCalledOnce();
   });
@@ -264,7 +280,7 @@ describe('attachAppReady', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onReady, receive);
-    attachAppReady(host, app);
+    attachAppReady(host.app.ready, app);
     listeners.ready?.();
     expect(receive).toHaveBeenCalledOnce();
   });
@@ -276,20 +292,20 @@ describe('attachAppSecondInstance', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onSecondInstance, receive);
-    attachAppSecondInstance(host, app);
+    attachAppSecondInstance(host.app.secondInstance, app);
     listeners.secondInstance?.(['--open']);
     expect(receive).toHaveBeenCalledExactlyOnceWith(['--open']);
   });
 });
 
 describe('bounceAppDock', () => {
-  it('returns the provider id', () => expect(bounceAppDock(createFixture().host)).toBe(17));
+  it('returns the provider id', () => expect(bounceAppDock(createFixture().host.app.dock)).toBe(17));
 });
 
 describe('cancelAppAttention', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    cancelAppAttention(host, 3);
+    cancelAppAttention(host.app.dock, 3);
     expect(calls).toContain('cancelAttention:3');
   });
 });
@@ -297,14 +313,14 @@ describe('cancelAppAttention', () => {
 describe('cancelAppDockBounce', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    cancelAppDockBounce(host, 4);
+    cancelAppDockBounce(host.app.dock, 4);
     expect(calls).toContain('cancelBounce:4');
   });
 });
 describe('clearAppRecentDocuments', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    clearAppRecentDocuments(host);
+    clearAppRecentDocuments(host.app.recentDocuments);
     expect(calls).toContain('clearRecent');
   });
 });
@@ -326,7 +342,15 @@ describe('detachApp', () => {
   it('unsubscribes every attached provider', () => {
     const { host, unsubscribes } = createFixture();
     const app = createApp();
-    attachApp(host, app);
+    attachApp(
+      host.app.activate,
+      host.app.allWindowsClosed,
+      host.app.openFile,
+      host.app.quitRequest,
+      host.app.ready,
+      host.app.secondInstance,
+      app,
+    );
     detachApp(app);
     expect(Object.values(unsubscribes).every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
@@ -337,7 +361,15 @@ describe('disposeApp', () => {
     const app = createApp();
     const receive = vi.fn();
     connectSignal(app.onReady, receive);
-    attachApp(host, app);
+    attachApp(
+      host.app.activate,
+      host.app.allWindowsClosed,
+      host.app.openFile,
+      host.app.quitRequest,
+      host.app.ready,
+      host.app.secondInstance,
+      app,
+    );
     disposeApp(app);
     listeners.ready?.();
     expect(unsubscribes.ready).toHaveBeenCalledOnce();
@@ -347,45 +379,48 @@ describe('disposeApp', () => {
 describe('focusApp', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    focusApp(host);
+    focusApp(host.app.focus);
     expect(calls).toContain('focus');
   });
 });
 describe('getAppDirectoryPath', () => {
   it('returns the selected directory', () =>
-    expect(getAppDirectoryPath(createFixture().host, 'logs')).toBe('/app/logs'));
+    expect(getAppDirectoryPath(createFixture().host.app.path, 'logs')).toBe('/app/logs'));
 });
 describe('getAppExecutablePath', () => {
-  it('returns the executable path', () => expect(getAppExecutablePath(createFixture().host)).toBe('/app/flight'));
+  it('returns the executable path', () =>
+    expect(getAppExecutablePath(createFixture().host.app.path)).toBe('/app/flight'));
 });
 describe('getAppLocale', () => {
-  it('returns locale', () => expect(getAppLocale(createFixture().host)).toBe('en-GB'));
+  it('returns locale', () => expect(getAppLocale(createFixture().host.app.locale)).toBe('en-GB'));
 });
 describe('getAppLoginItem', () => {
-  it('returns settings', () => expect(getAppLoginItem(createFixture().host).openAtLogin).toBe(true));
+  it('returns settings', () => expect(getAppLoginItem(createFixture().host.app.loginItem).openAtLogin).toBe(true));
 });
 describe('getAppName', () => {
-  it('returns name', () => expect(getAppName(createFixture().host)).toBe('Flight'));
+  it('returns name', () => expect(getAppName(createFixture().host.app.name)).toBe('Flight'));
 });
 describe('getAppPath', () => {
-  it('returns app path', () => expect(getAppPath(createFixture().host)).toBe('/app'));
+  it('returns app path', () => expect(getAppPath(createFixture().host.app.path)).toBe('/app'));
 });
 describe('getAppPreferredSystemLanguages', () => {
-  it('returns languages', () => expect(getAppPreferredSystemLanguages(createFixture().host)).toEqual(['en-GB', 'fr']));
+  it('returns languages', () =>
+    expect(getAppPreferredSystemLanguages(createFixture().host.app.locale)).toEqual(['en-GB', 'fr']));
 });
 describe('getAppSystemLocale', () => {
-  it('returns system locale', () => expect(getAppSystemLocale(createFixture().host)).toBe('en-US'));
+  it('returns system locale', () => expect(getAppSystemLocale(createFixture().host.app.locale)).toBe('en-US'));
 });
 describe('getAppVersion', () => {
-  it('returns version', () => expect(getAppVersion(createFixture().host)).toBe('1.2.3'));
+  it('returns version', () => expect(getAppVersion(createFixture().host.app.version)).toBe('1.2.3'));
 });
 describe('hasAppSingleInstanceLock', () => {
-  it('returns the provider fact', () => expect(hasAppSingleInstanceLock(createFixture().host)).toBe(true));
+  it('returns the provider fact', () =>
+    expect(hasAppSingleInstanceLock(createFixture().host.app.singleInstance)).toBe(true));
 });
 describe('hideApp', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    hideApp(host);
+    hideApp(host.app.hide);
     expect(calls).toContain('hide');
   });
 });
@@ -395,86 +430,87 @@ describe('initializeApp', () => {
   });
 });
 describe('isAppHidden', () => {
-  it('returns the provider fact', () => expect(isAppHidden(createFixture().host)).toBe(true));
+  it('returns the provider fact', () => expect(isAppHidden(createFixture().host.app.hiddenQuery)).toBe(true));
 });
 describe('quitApp', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    quitApp(host);
+    quitApp(host.app.quit);
     expect(calls).toContain('quit');
   });
 });
 describe('relaunchApp', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    relaunchApp(host);
+    relaunchApp(host.app.relaunch);
     expect(calls).toContain('relaunch');
   });
 });
 describe('releaseAppSingleInstanceLock', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    releaseAppSingleInstanceLock(host);
+    releaseAppSingleInstanceLock(host.app.singleInstance);
     expect(calls).toContain('releaseLock');
   });
 });
 describe('requestAppAttention', () => {
-  it('returns the provider id', () => expect(requestAppAttention(createFixture().host, true)).toBe(19));
+  it('returns the provider id', () => expect(requestAppAttention(createFixture().host.app.dock, true)).toBe(19));
 });
 describe('requestAppSingleInstanceLock', () => {
-  it('returns the provider outcome', () => expect(requestAppSingleInstanceLock(createFixture().host)).toBe(true));
+  it('returns the provider outcome', () =>
+    expect(requestAppSingleInstanceLock(createFixture().host.app.singleInstance)).toBe(true));
 });
 describe('setAppActivationPolicy', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppActivationPolicy(host, 'accessory');
+    setAppActivationPolicy(host.app.activationPolicy, 'accessory');
     expect(calls).toContain('policy:accessory');
   });
 });
 describe('setAppBadgeCount', () => {
   it('returns the awaited provider outcome', async () => {
-    await expect(setAppBadgeCount(createFixture().host, 7)).resolves.toBe(true);
+    await expect(setAppBadgeCount(createFixture().host.app.badge, 7)).resolves.toBe(true);
   });
 });
 describe('setAppDockBadge', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppDockBadge(host, 'x');
+    setAppDockBadge(host.app.dock, 'x');
     expect(calls).toContain('dockBadge:x');
   });
 });
 describe('setAppDockMenu', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppDockMenu(host, []);
+    setAppDockMenu(host.app.dock, []);
     expect(calls).toContain('dockMenu:0');
   });
 });
 describe('setAppLoginItem', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppLoginItem(host, { openAtLogin: true });
+    setAppLoginItem(host.app.loginItem, { openAtLogin: true });
     expect(calls).toContain('loginItem');
   });
 });
 describe('setAppName', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppName(host, 'Renamed');
+    setAppName(host.app.nameWrite, 'Renamed');
     expect(calls).toContain('name:Renamed');
   });
 });
 describe('setAppUserModelId', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    setAppUserModelId(host, 'flight.app');
+    setAppUserModelId(host.app.userModelId, 'flight.app');
     expect(calls).toContain('userModel:flight.app');
   });
 });
 describe('showApp', () => {
   it('delegates', () => {
     const { host, calls } = createFixture();
-    showApp(host);
+    showApp(host.app.show);
     expect(calls).toContain('show');
   });
 });

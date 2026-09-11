@@ -6,9 +6,9 @@ import type {
   ConnectivityReachabilityOptions,
   ConnectivityStatus,
   EntityConstruction,
-  HasConnectivityChange,
-  HasConnectivityReachability,
-  HasConnectivityStatus,
+  HostConnectivityChangeProvider,
+  HostConnectivityReachabilityProvider,
+  HostConnectivityStatusProvider,
 } from '@flighthq/types/contract';
 
 // Starts raw host-change delivery and turns it into the five core-owned diff signals. Status and
@@ -16,16 +16,17 @@ import type {
 // Re-attaching always consumes the prior provider's exact unsubscribe before touching the new one.
 // Returns false when the change provider cannot establish a real subscription.
 export function attachConnectivity(
-  host: HasConnectivityStatus & HasConnectivityChange,
+  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+  hostConnectivityChange: Readonly<HostConnectivityChangeProvider>,
   connectivity: Connectivity,
 ): boolean {
   detachConnectivity(connectivity);
-  const statusBackend = host.connectivity.status;
+  const statusBackend = hostConnectivityStatus;
   const initial = statusBackend.getStatus(connectivityStatusOut());
   let wasOnline = initial.online;
   let wasType = initial.type;
   let wasMetered = initial.metered;
-  const unsubscribe = host.connectivity.change.subscribe(() => {
+  const unsubscribe = hostConnectivityChange.subscribe(() => {
     const status = statusBackend.getStatus(connectivityStatusOut());
     emitSignal(connectivity.onChange, status);
     if (status.online !== wasOnline) {
@@ -55,8 +56,8 @@ export function createConnectivity(): Connectivity {
 
 // Terminal provider teardown. This is deliberately separate from per-entity detach: a caller that
 // releases one subscription must not destroy a shared host provider.
-export function destroyConnectivity(host: HasConnectivityChange): void {
-  host.connectivity.change.destroy();
+export function destroyConnectivity(hostConnectivityChange: Readonly<HostConnectivityChangeProvider>): void {
+  hostConnectivityChange.destroy();
 }
 
 export function detachConnectivity(connectivity: Connectivity): void {
@@ -67,11 +68,11 @@ export function detachConnectivity(connectivity: Connectivity): void {
 }
 
 export function detectConnectivityReachability(
-  host: HasConnectivityReachability,
+  hostConnectivityReachability: Readonly<HostConnectivityReachabilityProvider>,
   options: Readonly<ConnectivityReachabilityOptions>,
   out: ConnectivityReachability,
 ): Promise<ConnectivityReachability> {
-  return host.connectivity.reachability.detectReachability(options, out);
+  return hostConnectivityReachability.detectReachability(options, out);
 }
 
 // Disposes only the caller-owned event entity. Provider teardown is terminal and explicit through
@@ -85,12 +86,17 @@ export function disposeConnectivity(connectivity: Connectivity): void {
   clearSignal(connectivity.onOnline);
 }
 
-export function getConnectivityOnline(host: HasConnectivityStatus): boolean | null {
-  return host.connectivity.status.getStatus(connectivityStatusOut()).online;
+export function getConnectivityOnline(
+  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+): boolean | null {
+  return hostConnectivityStatus.getStatus(connectivityStatusOut()).online;
 }
 
-export function getConnectivityStatus(host: HasConnectivityStatus, out: ConnectivityStatus): ConnectivityStatus {
-  return host.connectivity.status.getStatus(out);
+export function getConnectivityStatus(
+  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+  out: ConnectivityStatus,
+): ConnectivityStatus {
+  return hostConnectivityStatus.getStatus(out);
 }
 
 export function hasConnectivityStatusChanged(
@@ -117,12 +123,14 @@ export function initializeConnectivity(out: EntityConstruction<Connectivity>): v
   out.onOnline = createSignal();
 }
 
-export function isConnectivityMetered(host: HasConnectivityStatus): boolean {
-  return host.connectivity.status.getStatus(connectivityStatusOut()).metered;
+export function isConnectivityMetered(hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>): boolean {
+  return hostConnectivityStatus.getStatus(connectivityStatusOut()).metered;
 }
 
-export function isConnectivitySaveDataEnabled(host: HasConnectivityStatus): boolean {
-  return host.connectivity.status.getStatus(connectivityStatusOut()).saveData;
+export function isConnectivitySaveDataEnabled(
+  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+): boolean {
+  return hostConnectivityStatus.getStatus(connectivityStatusOut()).saveData;
 }
 
 // ConnectivityStatus is a backend-produced query/out snapshot, not a user-created identity. Keep its
