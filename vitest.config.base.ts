@@ -2,6 +2,7 @@ import path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
+import { TestRunCompletenessReporter } from './scripts/testRunCompleteness.js';
 import { TestRunCoverageReporter } from './scripts/testRunCoverage.js';
 
 const rootDir = __dirname;
@@ -19,7 +20,7 @@ export default defineConfig({
     // builders to use exits 0 on a filter matching nothing. `passWithNoTests` does NOT cover this case:
     // it governs zero matched FILES, which vitest already fails natively. Measured both ways before
     // moving; the two conditions have two different mechanisms and only this one was missing.
-    reporters: ['default', new TestRunCoverageReporter()],
+    reporters: ['default', new TestRunCoverageReporter(), new TestRunCompletenessReporter()],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
