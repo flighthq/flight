@@ -1,7 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types/contract';
 
-import { tauriHostNotification } from './tauriNotification';
+import {
+  tauriHostNotification,
+  tauriHostNotificationDelivery,
+  tauriHostNotificationLifecycle,
+  tauriHostNotificationPermission,
+} from './tauriNotification';
 
 function fakeTauri(granted = true, permission: TauriNotificationPermission = 'granted') {
   const sent: TauriNotificationOptions[] = [];
@@ -65,5 +70,23 @@ describe('tauriHostNotification', () => {
       fields: ['silent'],
       reason: 'invalid-request',
     });
+  });
+});
+
+describe('tauriHostNotificationDelivery', () => {
+  it('constructs the delivery provider independently', () => {
+    expect(tauriHostNotificationDelivery(fakeTauri().tauri).notify).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostNotificationLifecycle', () => {
+  it('constructs the lifecycle provider independently', () => {
+    expect(tauriHostNotificationLifecycle(fakeTauri().tauri).destroy).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostNotificationPermission', () => {
+  it('constructs the permission provider independently', () => {
+    expect(tauriHostNotificationPermission(fakeTauri().tauri).getPermission).toBeTypeOf('function');
   });
 });

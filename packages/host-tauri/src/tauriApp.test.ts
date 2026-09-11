@@ -2,7 +2,16 @@ import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { tauriHostApp } from './tauriApp';
+import {
+  tauriHostApp,
+  tauriHostAppHide,
+  tauriHostAppLocale,
+  tauriHostAppName,
+  tauriHostAppQuit,
+  tauriHostAppRelaunch,
+  tauriHostAppShow,
+  tauriHostAppVersion,
+} from './tauriApp';
 
 const flush = async () => {
   await Promise.resolve();
@@ -63,4 +72,39 @@ describe('tauriHostApp', () => {
     await flush();
     expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
   });
+});
+
+describe('tauriHostAppHide', () => {
+  it('constructs the hide provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppHide(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppLocale', () => {
+  it('constructs the locale provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppLocale(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppName', () => {
+  it('constructs the name provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppName(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppQuit', () => {
+  it('constructs the quit provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppQuit(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppRelaunch', () => {
+  it('constructs the relaunch provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppRelaunch(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppShow', () => {
+  it('constructs the show provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppShow(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostAppVersion', () => {
+  it('constructs the version provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppVersion(fakeTauri().tauri)).toBe(true));
 });

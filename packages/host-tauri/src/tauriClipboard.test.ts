@@ -1,7 +1,7 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { tauriHostClipboardText } from './tauriClipboard';
+import { tauriHostClipboard, tauriHostClipboardText } from './tauriClipboard';
 
 function fakeTauri() {
   const store = { text: '' };
@@ -24,6 +24,14 @@ function fakeTauri() {
   } as unknown as TauriApi;
   return { tauri, store, calls };
 }
+
+describe('tauriHostClipboard', () => {
+  it('constructs exactly the text group', () => {
+    const group = tauriHostClipboard(fakeTauri().tauri);
+    expect(Object.keys(group)).toEqual(['text']);
+    expect(EntityRuntimeKey in group.text).toBe(true);
+  });
+});
 
 describe('tauriHostClipboardText', () => {
   it('round-trips text through the Tauri clipboard', async () => {

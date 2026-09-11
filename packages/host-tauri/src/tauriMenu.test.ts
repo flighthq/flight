@@ -6,7 +6,7 @@ import type {
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { tauriHostMenu } from './tauriMenu';
+import { tauriHostMenu, tauriHostMenuApplication, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu';
 
 function fakeTauri() {
   const state = {
@@ -187,6 +187,21 @@ describe('tauriHostMenu', () => {
     } as unknown as TauriApi;
     expect(await _slots(tauri).popupContextMenu([{ id: 'a', label: 'A' }], 0, 0)).toBeNull();
   });
+});
+
+describe('tauriHostMenuApplication', () => {
+  it('constructs the application provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostMenuApplication(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostMenuPopup', () => {
+  it('constructs the popup provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostMenuPopup(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostMenuSelect', () => {
+  it('constructs the selection provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostMenuSelect(fakeTauri().tauri)).toBe(true));
 });
 
 async function flush(): Promise<void> {
