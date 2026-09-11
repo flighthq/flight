@@ -55,6 +55,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Tauri v2 host adapter with injected API modules and exact explicit capability subsets",
+  "description": "Dependency-injected Tauri Host providers over a minimal TauriApi",
   "sideEffects": false
 }
