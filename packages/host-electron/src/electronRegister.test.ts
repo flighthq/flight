@@ -1,7 +1,7 @@
 import { getAppName } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
+import type { ElectronApi, Entity } from '@flighthq/types/contract';
 
 import * as contractApi from './contract';
 import { electronHost } from './electronRegister';
@@ -128,6 +128,16 @@ const LEAVES = [
   'electronHostUpdaterCommand',
 ] as const;
 
+const AUXILIARY_EXPORTS = [
+  'getApplicationWindowForElectronId',
+  'getElectronBrowserWindow',
+  'getElectronWindowId',
+] as const;
+
+type ElectronLeafResult = ReturnType<(typeof publicApi)[(typeof LEAVES)[number]]>;
+type ElectronLeafProvidersAreEntities = Exclude<ElectronLeafResult, undefined> extends Entity ? true : false;
+type ElectronFullHostIsEntity = ReturnType<typeof publicApi.electronHost> extends Entity ? true : false;
+
 // A fake Electron API broad enough that every host constructor can close over its injected dependency
 // without calling missing native operations during construction.
 function fakeElectron(): ElectronApi {
@@ -172,8 +182,10 @@ function fakeElectron(): ElectronApi {
 describe('electronHost', () => {
   it('exports exactly the canonical full, 26 group, and supported leaf constructors from both lanes', () => {
     const expected = [...new Set(['electronHost', ...GROUPS.map((entry) => entry[1]), ...LEAVES])].sort();
+    const expectedSurface = [...expected, ...AUXILIARY_EXPORTS].sort();
     expect(expected).toHaveLength(116);
     for (const api of [publicApi, contractApi]) {
+      expect(Object.keys(api).sort()).toEqual(expectedSurface);
       const names = Object.keys(api)
         .filter((name) => /^electronHost(?:$|[A-Z])/u.test(name))
         .sort();
@@ -186,6 +198,11 @@ describe('electronHost', () => {
       for (const name of names) expect(Reflect.get(api, name), name).toBeTypeOf('function');
     }
     for (const name of expected) expect(Reflect.get(publicApi, name)).toBe(Reflect.get(contractApi, name));
+  });
+
+  it('types the full host and every supported leaf result as an Entity', () => {
+    expectTypeOf<ElectronFullHostIsEntity>().toEqualTypeOf<true>();
+    expectTypeOf<ElectronLeafProvidersAreEntities>().toEqualTypeOf<true>();
   });
 
   it('constructs all 26 Host groups through explicit canonical boundaries', () => {

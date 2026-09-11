@@ -240,18 +240,18 @@ export type WebServiceWorkerNotificationCapabilities = Entity &
 
 export type ElectronNotificationCapabilities = Entity &
   Readonly<{
-    click: HostNotificationClickProvider;
-    close: HostNotificationCloseProvider;
-    delivery: HostNotificationDeliveryProvider;
-    dismiss: HostNotificationDismissProvider;
-    lifecycle: HostNotificationLifecycleProvider;
-    received: HostNotificationReceivedProvider;
+    click: HostNotificationClickProvider & Entity;
+    close: HostNotificationCloseProvider & Entity;
+    delivery: HostNotificationDeliveryProvider & Entity;
+    dismiss: HostNotificationDismissProvider & Entity;
+    lifecycle: HostNotificationLifecycleProvider & Entity;
+    received: HostNotificationReceivedProvider & Entity;
   }>;
 
 export type ElectronMacosNotificationCapabilities = ElectronNotificationCapabilities &
   Readonly<{
-    action: HostNotificationActionProvider;
-    reply: HostNotificationReplyProvider;
+    action: HostNotificationActionProvider & Entity;
+    reply: HostNotificationReplyProvider & Entity;
   }>;
 
 export type TauriNotificationCapabilities = Entity &

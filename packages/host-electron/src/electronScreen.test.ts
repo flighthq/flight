@@ -5,7 +5,6 @@ import {
   electronHostScreen,
   electronHostScreenChange,
   electronHostScreenQuery,
-  initializeEmptyScreenInfo,
   populateElectronHostScreenChange,
   populateElectronHostScreenQuery,
 } from './electronScreen';
@@ -117,12 +116,6 @@ describe('electronHostScreenQuery', () => {
     expect(EntityRuntimeKey in electronHostScreenQuery(fakeElectron().electron)).toBe(true);
   });
 });
-describe('initializeEmptyScreenInfo', () => {
-  it('is the construction initializer of createEmptyScreenInfo', () => {
-    expect(typeof initializeEmptyScreenInfo).toBe('function');
-  });
-});
-
 describe('populateElectronHostScreenChange', () => {
   it('is the construction initializer of electronHostScreenChange', () => {
     expect(typeof populateElectronHostScreenChange).toBe('function');

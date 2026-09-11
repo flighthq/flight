@@ -48,8 +48,8 @@ function fakeElectron(supported = true) {
 
 function notificationLeaf(factory: () => object): () => void {
   return () => {
-    it('constructs the requested notification provider', () => {
-      expect(factory()).toBeDefined();
+    it('constructs the requested Entity-backed notification provider', () => {
+      expect(EntityRuntimeKey in factory()).toBe(true);
     });
   };
 }
@@ -63,6 +63,7 @@ describe('electronHostNotification', () => {
     const capabilities = electronHostNotification(fakeElectron().electron, { platform });
     expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual(expected);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
     expect('permission' in capabilities).toBe(false);
   });
 

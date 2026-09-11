@@ -21,7 +21,7 @@ describe('Shortcut explicit dependency structure', () => {
     expect(webHost).toContain('shortcut: webHostShortcut,');
     expect(source('packages/host-capacitor/src/capacitorHost.ts')).toContain('shortcut: capacitorHostShortcut(),');
     const electronHost = source('packages/host-electron/src/electronRegister.ts');
-    expect(electronHost).toMatch(/shortcut\s*[:=]\s*\{\s*query,\s*trigger\s*\}/u);
+    expect(electronHost).toContain('shortcut: electronHostShortcut(electron),');
     expect(electronHost).not.toContain('setShortcutBackend');
     const tauriHost = source('packages/host-tauri/src/tauriHost.ts');
     expect(tauriHost).toContain('shortcut: tauriHostShortcut(tauri)');

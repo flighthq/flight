@@ -7,6 +7,7 @@ import type {
   ElectronNotification,
   ElectronNotificationCapabilities,
   DesktopOsProfile,
+  Entity,
   EntityConstruction,
   EntityRuntimeKey,
   Notification,
@@ -75,8 +76,8 @@ export function electronHostNotification(
 
   const capabilities: Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey> = {
     click: electronHostNotificationEventProvider(clickListeners, () => destroyed),
-    close: { closeAllNotifications: closeAll },
-    delivery: {
+    close: finishNotificationProvider({ closeAllNotifications: closeAll }),
+    delivery: finishNotificationProvider({
       async notify(request) {
         if (destroyed || !electron.Notification.isSupported()) return { reason: 'operation-failed' };
         const invalid = getElectronInvalidNotificationRequestFields(request, options.platform === 'macos');
@@ -156,9 +157,9 @@ export function electronHostNotification(
           }
         });
       },
-    },
+    }),
     dismiss: electronHostNotificationEventProvider(dismissListeners, () => destroyed),
-    lifecycle: {
+    lifecycle: finishNotificationProvider({
       async destroy() {
         if (destroyCompleted) return { reason: 'already-destroyed' };
         destroyed = true;
@@ -171,7 +172,7 @@ export function electronHostNotification(
         if (outcome.reason === 'ok') destroyCompleted = true;
         return outcome;
       },
-    },
+    }),
     received: electronHostNotificationEventProvider(receivedListeners, () => destroyed),
   };
 
@@ -275,7 +276,7 @@ export function populateElectronHostNotificationMacos(
 }
 
 function electronHostNotificationEventProvider<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {
-  return {
+  return finishNotificationProvider({
     async attach(listener: TListener): Promise<NotificationEventBackendAttachOutcome> {
       if (isDestroyed()) return { reason: 'operation-failed', releaseFailed: false };
       listeners.add(listener);
@@ -291,7 +292,13 @@ function electronHostNotificationEventProvider<TListener>(listeners: Set<TListen
         reason: 'ok',
       };
     },
-  };
+  });
+}
+
+function finishNotificationProvider<Provider extends object>(provider: Provider): Provider & Entity {
+  const out = allocateEntity<Provider & Entity>();
+  Object.assign(out, provider);
+  return finishEntity(out);
 }
 
 function getElectronInvalidNotificationRequestFields(
