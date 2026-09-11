@@ -1,43 +1,68 @@
 import type {
-  Host,
+  HostGeolocationProvider,
+  HostMidiPermissionProvider,
+  HostNotificationPermissionProvider,
+  HostStoragePersistenceQueryProvider,
+  HostStoragePersistenceRequestProvider,
   PermissionName,
   PermissionQueryOutcome,
   PermissionRequestOutcome,
   PermissionState,
-  HostStoragePersistenceQueryProvider,
-  HostStoragePersistenceRequestProvider,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 
 import { PERMISSION_NATIVE_HOLDINGS } from './permissionNativeHoldings';
 
-// Queries are read-only: this function never escalates to a request that may prompt. Notification is
-// projected exclusively from Host.notification.permission, MIDI from Host.midi.permission, and the
-// remaining names from explicit interim Web holdings recorded in permissionNativeHoldings.ts.
-export function getPermissionState(host: Host, name: PermissionName): Promise<PermissionQueryOutcome> {
-  return queryPermissionState(capturePermissionQueryOrigins(host, [name]), name);
+// Queries are read-only: this function never escalates to a request that may prompt. Notification,
+// MIDI, and persistence are projected exclusively from the direct providers passed by the caller;
+// the remaining names use explicit interim Web holdings recorded in permissionNativeHoldings.ts.
+export function getPermissionState(
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider> | undefined,
+  hostMidiPermission: Readonly<HostMidiPermissionProvider> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryProvider> | undefined,
+  name: PermissionName,
+): Promise<PermissionQueryOutcome> {
+  return queryPermissionState(
+    capturePermissionQueryOrigins(hostNotificationPermission, hostMidiPermission, hostStoragePersistenceQuery, [name]),
+    name,
+  );
 }
 
 // Captures every owner before starting work, then preserves input order and repeated names. A provider
 // transition during one result cannot redirect any later entry in the same batch.
-export function getPermissionStates(host: Host, names: readonly PermissionName[]): Promise<PermissionQueryOutcome[]> {
+export function getPermissionStates(
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider> | undefined,
+  hostMidiPermission: Readonly<HostMidiPermissionProvider> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryProvider> | undefined,
+  names: readonly PermissionName[],
+): Promise<PermissionQueryOutcome[]> {
   if (names.length === 0) return Promise.resolve([]);
-  const origins = capturePermissionQueryOrigins(host, names);
+  const origins = capturePermissionQueryOrigins(
+    hostNotificationPermission,
+    hostMidiPermission,
+    hostStoragePersistenceQuery,
+    names,
+  );
   return Promise.all(names.map((name) => queryPermissionState(origins, name)));
 }
 
 // Requests may prompt. Their outcome is method-tight: a missing route never degrades to a query, and a
 // cleanup failure after a successful temporary acquisition is Flight's operational failure, never user
 // denial.
-export function requestPermission(host: Host, name: PermissionName): Promise<PermissionRequestOutcome> {
-  if (name === 'notifications') return requestNotificationPermission(captureNotificationPermission(host));
+export function requestPermission(
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider> | undefined,
+  hostStoragePersistenceRequest: Readonly<HostStoragePersistenceRequestProvider> | undefined,
+  hostGeolocation: Readonly<HostGeolocationProvider> | undefined,
+  name: PermissionName,
+): Promise<PermissionRequestOutcome> {
+  if (name === 'notifications') return requestNotificationPermission(hostNotificationPermission ?? null);
   if (name === 'persistent-storage') {
-    return requestStoragePersistencePermission(captureStoragePersistenceRequest(host));
+    return requestStoragePersistencePermission(hostStoragePersistenceRequest ?? null);
   }
   // Geolocation is delegated, not held: the capability owns the prompt mechanism and this projects its
   // outcome. Routed above the interim guard because that guard is derived from the holdings ledger,
   // and geolocation's row is gone.
-  if (name === 'geolocation') return requestGeolocationAccessPermission(host);
+  if (name === 'geolocation') return requestGeolocationAccessPermission(hostGeolocation);
   if (name === 'midi') return Promise.resolve({ reason: 'no-request-route' });
   if (!isInterimPermissionName(name)) return Promise.resolve({ reason: 'unsupported' });
 
@@ -57,35 +82,23 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
   }
 }
 
-interface NotificationPermissionProjectionBackend {
-  getPermission(): Promise<NotificationPermissionQueryProjectionOutcome>;
-  requestPermission(): Promise<NotificationPermissionRequestProjectionOutcome>;
-}
-
-type NotificationPermissionQueryProjectionOutcome =
-  | { readonly permission: 'default' | 'denied' | 'granted'; readonly reason: 'ok' }
-  | { readonly reason: 'operation-failed' };
-
-type NotificationPermissionRequestProjectionOutcome = {
-  readonly reason: 'denied' | 'dismissed' | 'granted' | 'operation-failed';
-};
-
 interface PermissionQueryOrigins {
-  readonly midi: MidiPermissionProjectionBackend | null;
-  readonly notification: NotificationPermissionProjectionBackend | null;
-  readonly persistence: HostStoragePersistenceQueryProvider | null;
+  readonly midi: Readonly<HostMidiPermissionProvider> | null;
+  readonly notification: Readonly<HostNotificationPermissionProvider> | null;
+  readonly persistence: Readonly<HostStoragePersistenceQueryProvider> | null;
   readonly web: WebPermissionQueryOrigin | null;
-}
-
-interface MidiPermissionProjectionBackend {
-  getPermission(): Promise<PermissionQueryOutcome>;
 }
 
 type WebPermissionQueryOrigin =
   | { readonly permissions: Permissions; readonly reason: 'ok' }
   | { readonly reason: 'operation-failed' | 'runtime-unavailable' };
 
-function capturePermissionQueryOrigins(host: Host, names: readonly PermissionName[]): PermissionQueryOrigins {
+function capturePermissionQueryOrigins(
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider> | undefined,
+  hostMidiPermission: Readonly<HostMidiPermissionProvider> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryProvider> | undefined,
+  names: readonly PermissionName[],
+): PermissionQueryOrigins {
   const needsNotification = names.includes('notifications');
   const needsMidi = names.includes('midi');
   const needsPersistence = names.includes('persistent-storage');
@@ -94,30 +107,11 @@ function capturePermissionQueryOrigins(host: Host, names: readonly PermissionNam
       name !== 'midi' && name !== 'notifications' && name !== 'persistent-storage' && isInterimPermissionName(name),
   );
   return {
-    midi: needsMidi ? captureMidiPermission(host) : null,
-    notification: needsNotification ? captureNotificationPermission(host) : null,
-    persistence: needsPersistence ? captureStoragePersistenceQuery(host) : null,
+    midi: needsMidi ? (hostMidiPermission ?? null) : null,
+    notification: needsNotification ? (hostNotificationPermission ?? null) : null,
+    persistence: needsPersistence ? (hostStoragePersistenceQuery ?? null) : null,
     web: needsWeb ? captureWebPermissionQueryOrigin() : null,
   };
-}
-
-function captureMidiPermission(host: Host): MidiPermissionProjectionBackend | null {
-  return host.midi.permission ?? null;
-}
-
-function captureNotificationPermission(host: Host): NotificationPermissionProjectionBackend | null {
-  const notification = host.notification as Host['notification'] & {
-    readonly permission?: NotificationPermissionProjectionBackend;
-  };
-  return notification.permission ?? null;
-}
-
-function captureStoragePersistenceQuery(host: Host): HostStoragePersistenceQueryProvider | null {
-  return host.storage.persistenceQuery ?? null;
-}
-
-function captureStoragePersistenceRequest(host: Host): HostStoragePersistenceRequestProvider | null {
-  return host.storage.persistenceRequest ?? null;
 }
 
 function captureWebPermissionQueryOrigin(): WebPermissionQueryOrigin {
@@ -149,7 +143,9 @@ async function queryPermissionState(
   }
 }
 
-async function queryMidiPermission(provider: MidiPermissionProjectionBackend | null): Promise<PermissionQueryOutcome> {
+async function queryMidiPermission(
+  provider: Readonly<HostMidiPermissionProvider> | null,
+): Promise<PermissionQueryOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
     return await provider.getPermission();
@@ -159,7 +155,7 @@ async function queryMidiPermission(provider: MidiPermissionProjectionBackend | n
 }
 
 async function queryStoragePersistencePermission(
-  provider: HostStoragePersistenceQueryProvider | null,
+  provider: Readonly<HostStoragePersistenceQueryProvider> | null,
 ): Promise<PermissionQueryOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -170,7 +166,7 @@ async function queryStoragePersistencePermission(
 }
 
 async function queryNotificationPermission(
-  provider: NotificationPermissionProjectionBackend | null,
+  provider: Readonly<HostNotificationPermissionProvider> | null,
 ): Promise<PermissionQueryOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -186,7 +182,7 @@ async function queryNotificationPermission(
 }
 
 async function requestNotificationPermission(
-  provider: NotificationPermissionProjectionBackend | null,
+  provider: Readonly<HostNotificationPermissionProvider> | null,
 ): Promise<PermissionRequestOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -207,7 +203,7 @@ async function requestNotificationPermission(
 }
 
 async function requestStoragePersistencePermission(
-  provider: HostStoragePersistenceRequestProvider | null,
+  provider: Readonly<HostStoragePersistenceRequestProvider> | null,
 ): Promise<PermissionRequestOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -243,14 +239,15 @@ function projectStoragePersistenceRequest(result: Readonly<StoragePersistenceRes
 // through as a REASON WITH NO STATE: it reports an acquisition deadline, not a decision, and
 // inventing a state from it would assert something the capability never observed. A caller that needs
 // the state queries for it.
-async function requestGeolocationAccessPermission(host: Host): Promise<PermissionRequestOutcome> {
-  const backend = host.system?.geolocation;
-  if (backend === undefined || typeof backend.promptForAccess !== 'function') {
+async function requestGeolocationAccessPermission(
+  hostGeolocation: Readonly<HostGeolocationProvider> | undefined,
+): Promise<PermissionRequestOutcome> {
+  if (hostGeolocation === undefined || typeof hostGeolocation.promptForAccess !== 'function') {
     return { reason: 'runtime-unavailable' };
   }
   let outcome;
   try {
-    outcome = await backend.promptForAccess();
+    outcome = await hostGeolocation.promptForAccess();
   } catch {
     return { reason: 'operation-failed' };
   }

@@ -1,5 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { Host, StoragePersistenceResult } from '@flighthq/types/contract';
+import type {
+  HostMidiPermissionProvider,
+  HostNotificationPermissionProvider,
+  HostStoragePersistenceQueryProvider,
+  StoragePersistenceResult,
+} from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getPermissionStates } from './permission';
@@ -7,42 +12,27 @@ import { getPermissionStates } from './permission';
 describe('getPermissionStates', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('captures every resolved owner once before work and never splits repeated names across providers', async () => {
+  it('pins repeated names to the direct provider passed by the caller', async () => {
     const events: string[] = [];
     const second = permissionProvider('denied', events, 'second');
     const first = permissionProvider('granted', events, 'first', () => {
       active = second;
     });
     let active = first;
-    let notificationOwnerReads = 0;
-    const notification: object = {};
-    Object.defineProperty(notification, 'permission', {
-      get() {
-        notificationOwnerReads += 1;
-        events.push('capture:notification');
-        return active;
-      },
-    });
-    const host = hostWithNotificationGroup(notification);
 
-    await expect(getPermissionStates(host, ['notifications', 'notifications'])).resolves.toEqual([
-      { reason: 'ok', state: 'granted' },
-      { reason: 'ok', state: 'granted' },
-    ]);
-    expect(notificationOwnerReads).toBe(1);
-    expect(events).toEqual(['capture:notification', 'work:first', 'work:first']);
+    await expect(getPermissionStates(first, undefined, undefined, ['notifications', 'notifications'])).resolves.toEqual(
+      [
+        { reason: 'ok', state: 'granted' },
+        { reason: 'ok', state: 'granted' },
+      ],
+    );
+    expect(active).toBe(second);
+    expect(events).toEqual(['work:first', 'work:first']);
   });
 
-  it('captures the Notification and interim Web-query owners before starting either operation', async () => {
+  it('captures the interim Web-query owner before starting provider work', async () => {
     const events: string[] = [];
     const provider = permissionProvider('granted', events, 'notification');
-    const notification: object = {};
-    Object.defineProperty(notification, 'permission', {
-      get() {
-        events.push('capture:notification');
-        return provider;
-      },
-    });
     const permissions = {
       query: async () => {
         events.push('work:web-query');
@@ -58,16 +48,14 @@ describe('getPermissionStates', () => {
     });
     vi.stubGlobal('navigator', navigatorValue);
 
-    await expect(
-      getPermissionStates(hostWithNotificationGroup(notification), ['notifications', 'camera']),
-    ).resolves.toEqual([
+    await expect(getPermissionStates(provider, undefined, undefined, ['notifications', 'camera'])).resolves.toEqual([
       { reason: 'ok', state: 'granted' },
       { reason: 'ok', state: 'denied' },
     ]);
-    expect(events.slice(0, 2)).toEqual(['capture:notification', 'capture:web-query']);
+    expect(events.slice(0, 2)).toEqual(['capture:web-query', 'work:notification']);
   });
 
-  it('captures the MIDI permission owner exactly once and keeps repeats pinned to it', async () => {
+  it('keeps repeated MIDI queries pinned to the direct provider', async () => {
     const events: string[] = [];
     const second = {
       async getPermission() {
@@ -85,20 +73,7 @@ describe('getPermissionStates', () => {
     let active: {
       getPermission(): Promise<{ reason: 'ok'; state: 'denied' | 'granted' }>;
     } = first;
-    let midiOwnerReads = 0;
-    const midi: object = {};
-    Object.defineProperty(midi, 'permission', {
-      get() {
-        midiOwnerReads += 1;
-        events.push('capture:midi');
-        return active;
-      },
-    });
-    Object.defineProperty(midi, 'access', {
-      get() {
-        throw new Error('batch permission query acquired MIDI access');
-      },
-    });
+    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostMidiPermissionProvider;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -111,12 +86,12 @@ describe('getPermissionStates', () => {
       ),
     );
 
-    await expect(getPermissionStates(hostWithGroups({}, midi), ['midi', 'midi'])).resolves.toEqual([
+    await expect(getPermissionStates(undefined, provider, undefined, ['midi', 'midi'])).resolves.toEqual([
       { reason: 'ok', state: 'granted' },
       { reason: 'ok', state: 'granted' },
     ]);
-    expect(midiOwnerReads).toBe(1);
-    expect(events).toEqual(['capture:midi', 'work:first', 'work:first']);
+    expect(active).toBe(second);
+    expect(events).toEqual(['work:first', 'work:first']);
   });
 
   it('keeps input order and repeated entries when work resolves out of order', async () => {
@@ -126,7 +101,7 @@ describe('getPermissionStates', () => {
         query: () => new Promise((resolve) => resolvers.push(resolve)),
       },
     });
-    const result = getPermissionStates(hostWithNotificationGroup({}), ['camera', 'microphone', 'camera']);
+    const result = getPermissionStates(undefined, undefined, undefined, ['camera', 'microphone', 'camera']);
     await vi.waitFor(() => expect(resolvers).toHaveLength(3));
     resolvers[2]({ state: 'prompt' });
     resolvers[0]({ state: 'granted' });
@@ -140,16 +115,14 @@ describe('getPermissionStates', () => {
   });
 
   it('does not resolve an owner for an empty batch', async () => {
-    const host = hostWithNotificationGroup(
-      new Proxy(
-        {},
-        {
-          get() {
-            throw new Error('empty batch resolved an owner');
-          },
+    const provider = new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('empty batch resolved an owner');
         },
-      ),
-    );
+      },
+    ) as HostNotificationPermissionProvider;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -162,7 +135,7 @@ describe('getPermissionStates', () => {
       ),
     );
 
-    await expect(getPermissionStates(host, [])).resolves.toEqual([]);
+    await expect(getPermissionStates(provider, undefined, undefined, [])).resolves.toEqual([]);
   });
 
   it('captures the persistence-query owner once and preserves repeated entries and order', async () => {
@@ -181,15 +154,7 @@ describe('getPermissionStates', () => {
       },
     };
     let active = first;
-    let ownerReads = 0;
-    const storage: object = {};
-    Object.defineProperty(storage, 'persistenceQuery', {
-      get() {
-        ownerReads++;
-        events.push('capture:persistence-query');
-        return active;
-      },
-    });
+    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostStoragePersistenceQueryProvider;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -203,59 +168,22 @@ describe('getPermissionStates', () => {
     );
 
     await expect(
-      getPermissionStates(hostWithStorageGroup(storage), ['persistent-storage', 'persistent-storage']),
+      getPermissionStates(undefined, undefined, provider, ['persistent-storage', 'persistent-storage']),
     ).resolves.toEqual([
       { reason: 'best-effort', state: null },
       { reason: 'best-effort', state: null },
     ]);
-    expect(ownerReads).toBe(1);
-    expect(events).toEqual(['capture:persistence-query', 'work:first', 'work:first']);
+    expect(active).toBe(second);
+    expect(events).toEqual(['work:first', 'work:first']);
   });
 });
-
-function hostWithNotificationGroup(notification: object): Host {
-  return hostWithGroups(notification, {});
-}
-
-function hostWithGroups(notification: object, midi: object): Host {
-  return {
-    [EntityRuntimeKey]: undefined,
-    accessibility: {},
-    app: {},
-    clipboard: {},
-    connectivity: {},
-    dialog: {},
-    graphics: {},
-    input: {},
-    media: {},
-    menu: {},
-    midi,
-    net: {},
-    notification,
-    share: {},
-    storage: {},
-    system: {},
-    text: {},
-    tray: {},
-    ui: {},
-    window: {},
-  } as unknown as Host;
-}
-
-function hostWithStorageGroup(storage: object): Host {
-  return {
-    [EntityRuntimeKey]: undefined,
-    notification: {},
-    storage,
-  } as unknown as Host;
-}
 
 function permissionProvider(
   permission: 'denied' | 'granted',
   events: string[],
   label: string,
   beforeReturn?: () => void,
-): object {
+): HostNotificationPermissionProvider {
   return {
     [EntityRuntimeKey]: undefined,
     async getPermission() {
@@ -266,5 +194,5 @@ function permissionProvider(
     async requestPermission() {
       return { reason: permission };
     },
-  };
+  } as HostNotificationPermissionProvider;
 }
