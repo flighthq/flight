@@ -53,8 +53,8 @@ export function measureText(
  * Installs the backend used by calls that omit an explicit host; pass null to clear it. Last write
  * wins and re-registration never throws.
  *
- * @deprecated Pass a HasTextShaper to the text-shaping operation. Retained for source compatibility
- * until the legacy global path is removed.
+ * @deprecated Pass a HostTextShaperProvider to the text-shaping operation. Retained for source
+ * compatibility until the legacy global path is removed.
  */
 export function setTextShaperBackend(backend: HostTextShaperProvider | null): void {
   _backend = backend;

@@ -3,8 +3,21 @@ import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
+  HostTrayBalloonEventsProvider,
+  HostTrayBalloonProvider,
+  HostTrayBoundsProvider,
+  HostTrayDoubleClickPolicyProvider,
+  HostTrayDropEventsProvider,
+  HostTrayImageProvider,
+  HostTrayInteractionEventsProvider,
   HostTrayLifecycleProvider,
-  HostTrayCapabilities,
+  HostTrayMenuProvider,
+  HostTrayMenuSelectionEventsProvider,
+  HostTrayPopupMenuProvider,
+  HostTrayPressedImageProvider,
+  HostTrayTemplateImageProvider,
+  HostTrayTitleProvider,
+  HostTrayTooltipProvider,
   MenuItemTemplate,
   Signal,
   TrayAnimationStartResult,
@@ -22,7 +35,6 @@ import type {
   TrayEventAttachResult,
   TrayEventRelease,
   TrayIcon,
-  TrayIconForHost,
   TrayIconOptions,
   TrayIconSource,
   TrayImageUpdateResult,
@@ -37,20 +49,6 @@ import type {
   TrayTitleUpdateResult,
   TrayTooltipReadResult,
   TrayTooltipUpdateResult,
-  TrayWithBalloon,
-  TrayWithBalloonEvents,
-  TrayWithBounds,
-  TrayWithDoubleClickPolicy,
-  TrayWithDropEvents,
-  TrayWithImage,
-  TrayWithInteractionEvents,
-  TrayWithMenu,
-  TrayWithMenuSelectionEvents,
-  TrayWithPopupMenu,
-  TrayWithPressedImage,
-  TrayWithTemplateImage,
-  TrayWithTitle,
-  TrayWithTooltip,
   Vector2Like,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -59,9 +57,8 @@ interface TrayRuntime extends ReturnType<typeof createEntityRuntime> {
   animationGeneration: number;
   animationTimer: ReturnType<typeof setInterval> | null;
   animationWriteTail: Promise<void>;
-  capabilities: Readonly<HostTrayCapabilities>;
   destroyPromise: Promise<TrayDestroyResult> | null;
-  lifecycle: { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } }['tray']['lifecycle'];
+  lifecycle: Readonly<HostTrayLifecycleProvider>;
   releases: Set<TrayReleaseRuntime>;
   state: 'active' | 'destroying' | 'partially-destroyed' | 'destroyed';
 }
@@ -70,20 +67,21 @@ interface TrayReleaseRuntime extends TrayEventRelease {
   released: boolean;
 }
 
-export async function createTrayIcon<
-  HostType extends { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } },
->(host: HostType, options: Readonly<TrayIconOptions> = {}): Promise<TrayCreateResult<TrayIconForHost<HostType>>> {
-  const tray = finishEntity(allocateEntity<TrayIcon>()) as TrayIconForHost<HostType>;
+export async function createTrayIcon(
+  hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>,
+  options: Readonly<TrayIconOptions> = {},
+): Promise<TrayCreateResult> {
+  const tray = finishEntity(allocateEntity<TrayIcon>());
   let result: TrayCreateProviderResult;
   try {
-    result = await host.tray.lifecycle.create(tray, options);
+    result = await hostTrayLifecycle.create(tray, options);
   } catch (error) {
     const out = allocateEntity<Entity & { error?: unknown; outcome: 'tray-create-failed' }>();
     initializeTrayCreateFailedResult(out, error, 'tray-create-failed');
     return finishEntity(out);
   }
   if (result.outcome !== 'created') {
-    const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
+    const out = allocateEntity<TrayCreateResult>();
     initializeTrayCreateProviderFailureResult(out, 'error' in result ? result.error : undefined, result.outcome);
     return finishEntity(out);
   }
@@ -92,13 +90,12 @@ export async function createTrayIcon<
   runtime.animationGeneration = 0;
   runtime.animationTimer = null;
   runtime.animationWriteTail = Promise.resolve();
-  runtime.capabilities = { ...host.tray };
   runtime.destroyPromise = null;
-  runtime.lifecycle = host.tray.lifecycle;
+  runtime.lifecycle = hostTrayLifecycle;
   runtime.releases = new Set();
   runtime.state = 'active';
   tray[EntityRuntimeKey] = runtime;
-  const out = allocateEntity<Entity & { outcome: 'created'; tray: TrayIconForHost<HostType> }>();
+  const out = allocateEntity<Entity & { outcome: 'created'; tray: TrayIcon }>();
   initializeTrayCreateSuccessResult(out, 'created', tray);
   return finishEntity(out);
 }
@@ -114,14 +111,18 @@ export function destroyTrayIcon(tray: TrayIcon): Promise<TrayDestroyResult> {
 }
 
 export function displayTrayBalloon(
-  tray: TrayWithBalloon,
+  hostTrayBalloon: Readonly<HostTrayBalloonProvider>,
+  tray: TrayIcon,
   options: Readonly<TrayBalloonOptions>,
 ): Promise<TrayBalloonDisplayResult> {
-  return invokeUpdate(tray, 'balloon', 'balloon-display-failed', (backend) => backend.display(tray, options));
+  return invokeUpdate(hostTrayBalloon, tray, 'balloon-display-failed', (provider) => provider.display(tray, options));
 }
 
-export function getTrayIconBounds(tray: TrayWithBounds): Promise<TrayBoundsResult> {
-  return invokeRead(tray, 'bounds', 'bounds-read-failed', (backend) => backend.get(tray));
+export function getTrayIconBounds(
+  hostTrayBounds: Readonly<HostTrayBoundsProvider>,
+  tray: TrayIcon,
+): Promise<TrayBoundsResult> {
+  return invokeRead(hostTrayBounds, tray, 'bounds-read-failed', (provider) => provider.get(tray));
 }
 
 async function destroyTrayRuntime(tray: TrayIcon, runtime: TrayRuntime): Promise<TrayDestroyResult> {
@@ -146,12 +147,18 @@ export function getTrayIcons(hostTrayLifecycle: Readonly<HostTrayLifecycleProvid
   return hostTrayLifecycle.list();
 }
 
-export function getTrayIconTitle(tray: TrayWithTitle): Promise<TrayTitleReadResult> {
-  return invokeRead(tray, 'title', 'title-read-failed', (backend) => backend.get(tray));
+export function getTrayIconTitle(
+  hostTrayTitle: Readonly<HostTrayTitleProvider>,
+  tray: TrayIcon,
+): Promise<TrayTitleReadResult> {
+  return invokeRead(hostTrayTitle, tray, 'title-read-failed', (provider) => provider.get(tray));
 }
 
-export function getTrayIconTooltip(tray: TrayWithTooltip): Promise<TrayTooltipReadResult> {
-  return invokeRead(tray, 'tooltip', 'tooltip-read-failed', (backend) => backend.get(tray));
+export function getTrayIconTooltip(
+  hostTrayTooltip: Readonly<HostTrayTooltipProvider>,
+  tray: TrayIcon,
+): Promise<TrayTooltipReadResult> {
+  return invokeRead(hostTrayTooltip, tray, 'tooltip-read-failed', (provider) => provider.get(tray));
 }
 
 export function initializeTrayCreateFailedResult(
@@ -191,42 +198,50 @@ export function isTrayIconAnimating(tray: Readonly<TrayIcon>): boolean {
 }
 
 export function onTrayBalloonEvent(
-  tray: TrayWithBalloonEvents,
+  hostTrayBalloonEvents: Readonly<HostTrayBalloonEventsProvider>,
+  tray: TrayIcon,
   listener: (event: Readonly<TrayBalloonEvent>) => void,
 ): TrayEventAttachResult {
-  return attachTrayEvent(tray, 'balloonEvents', listener);
+  return attachTrayEvent(hostTrayBalloonEvents, tray, listener);
 }
 
 export function onTrayDrop(
-  tray: TrayWithDropEvents,
+  hostTrayDropEvents: Readonly<HostTrayDropEventsProvider>,
+  tray: TrayIcon,
   listener: (event: Readonly<TrayDropEvent>) => void,
 ): TrayEventAttachResult {
-  return attachTrayEvent(tray, 'dropEvents', listener);
+  return attachTrayEvent(hostTrayDropEvents, tray, listener);
 }
 
 export function onTrayInteraction(
-  tray: TrayWithInteractionEvents,
+  hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsProvider>,
+  tray: TrayIcon,
   listener: (event: Readonly<TrayInteractionEvent>) => void,
 ): TrayEventAttachResult {
-  return attachTrayEvent(tray, 'interactionEvents', listener);
+  return attachTrayEvent(hostTrayInteractionEvents, tray, listener);
 }
 
 export function onTrayMenuSelection(
-  tray: TrayWithMenuSelectionEvents,
+  hostTrayMenuSelectionEvents: Readonly<HostTrayMenuSelectionEventsProvider>,
+  tray: TrayIcon,
   listener: (event: Readonly<TrayMenuSelectionEvent>) => void,
 ): TrayEventAttachResult {
-  return attachTrayEvent(tray, 'menuSelectionEvents', listener);
+  return attachTrayEvent(hostTrayMenuSelectionEvents, tray, listener);
 }
 
 export function popupTrayContextMenu(
-  tray: TrayWithPopupMenu,
+  hostTrayPopupMenu: Readonly<HostTrayPopupMenuProvider>,
+  tray: TrayIcon,
   position?: Readonly<Vector2Like>,
 ): Promise<TrayPopupMenuResult> {
-  return invokeUpdate(tray, 'popupMenu', 'popup-failed', (backend) => backend.popup(tray, position));
+  return invokeUpdate(hostTrayPopupMenu, tray, 'popup-failed', (provider) => provider.popup(tray, position));
 }
 
-export function removeTrayBalloon(tray: TrayWithBalloon): Promise<TrayBalloonRemoveResult> {
-  return invokeUpdate(tray, 'balloon', 'balloon-remove-failed', (backend) => backend.remove(tray));
+export function removeTrayBalloon(
+  hostTrayBalloon: Readonly<HostTrayBalloonProvider>,
+  tray: TrayIcon,
+): Promise<TrayBalloonRemoveResult> {
+  return invokeUpdate(hostTrayBalloon, tray, 'balloon-remove-failed', (provider) => provider.remove(tray));
 }
 
 export function setTrayAnimationGuard(
@@ -235,49 +250,61 @@ export function setTrayAnimationGuard(
   _animationGuard = guard;
 }
 
-export function setTrayIcon(tray: TrayWithImage, icon: TrayIconSource): Promise<TrayImageUpdateResult> {
-  return invokeUpdate(tray, 'image', 'image-update-failed', (backend) => backend.set(tray, icon));
+export function setTrayIcon(
+  hostTrayImage: Readonly<HostTrayImageProvider>,
+  tray: TrayIcon,
+  icon: TrayIconSource,
+): Promise<TrayImageUpdateResult> {
+  return invokeUpdate(hostTrayImage, tray, 'image-update-failed', (provider) => provider.set(tray, icon));
 }
 
 export function setTrayIconContextMenu(
-  tray: TrayWithMenu,
+  hostTrayMenu: Readonly<HostTrayMenuProvider>,
+  tray: TrayIcon,
   items: readonly MenuItemTemplate[],
 ): Promise<TrayMenuUpdateResult> {
-  return invokeUpdate(tray, 'menu', 'menu-install-failed', (backend) => backend.set(tray, items));
+  return invokeUpdate(hostTrayMenu, tray, 'menu-install-failed', (provider) => provider.set(tray, items));
 }
 
 export function setTrayIconTemplate(
-  tray: TrayWithTemplateImage,
+  hostTrayTemplateImage: Readonly<HostTrayTemplateImageProvider>,
+  tray: TrayIcon,
   isTemplate: boolean,
 ): Promise<TrayTemplateImageUpdateResult> {
-  return invokeUpdate(tray, 'templateImage', 'template-image-update-failed', (backend) =>
-    backend.set(tray, isTemplate),
+  return invokeUpdate(hostTrayTemplateImage, tray, 'template-image-update-failed', (provider) =>
+    provider.set(tray, isTemplate),
   );
 }
 
-export function setTrayIconTitle(tray: TrayWithTitle, title: string): Promise<TrayTitleUpdateResult> {
-  return invokeUpdate(tray, 'title', 'title-update-failed', (backend) => backend.set(tray, title));
+export function setTrayIconTitle(
+  hostTrayTitle: Readonly<HostTrayTitleProvider>,
+  tray: TrayIcon,
+  title: string,
+): Promise<TrayTitleUpdateResult> {
+  return invokeUpdate(hostTrayTitle, tray, 'title-update-failed', (provider) => provider.set(tray, title));
 }
 
-export function setTrayIconTooltip(tray: TrayWithTooltip, tooltip: string): Promise<TrayTooltipUpdateResult> {
-  return invokeUpdate(tray, 'tooltip', 'tooltip-update-failed', (backend) => backend.set(tray, tooltip));
+export function setTrayIconTooltip(
+  hostTrayTooltip: Readonly<HostTrayTooltipProvider>,
+  tray: TrayIcon,
+  tooltip: string,
+): Promise<TrayTooltipUpdateResult> {
+  return invokeUpdate(hostTrayTooltip, tray, 'tooltip-update-failed', (provider) => provider.set(tray, tooltip));
 }
 
-type EventSlot = 'balloonEvents' | 'dropEvents' | 'interactionEvents' | 'menuSelectionEvents';
-interface EventBackend<Event extends object> {
+interface EventProvider<Event extends object> {
   getSignal(tray: TrayIcon): Signal<(event: Readonly<Event>) => void> | null;
 }
 
-function attachTrayEvent<Event extends object, Slot extends EventSlot>(
+function attachTrayEvent<Event extends object>(
+  provider: Readonly<EventProvider<Event>>,
   tray: TrayIcon,
-  slot: Slot,
   listener: (event: Readonly<Event>) => void,
 ): TrayEventAttachResult {
   const runtime = getActiveTrayRuntime(tray);
   if (runtime === null) return { outcome: 'tray-destroyed' };
   try {
-    const backend = runtime.capabilities[slot] as EventBackend<Event> | undefined;
-    const signal = backend?.getSignal(tray) ?? null;
+    const signal = provider.getSignal(tray);
     if (signal === null) return { outcome: 'tray-destroyed' };
     connectSignal(signal, listener);
     const release: TrayReleaseRuntime = {
@@ -302,23 +329,28 @@ function attachTrayEvent<Event extends object, Slot extends EventSlot>(
 }
 
 export function setTrayIgnoreDoubleClickEvents(
-  tray: TrayWithDoubleClickPolicy,
+  hostTrayDoubleClickPolicy: Readonly<HostTrayDoubleClickPolicyProvider>,
+  tray: TrayIcon,
   ignore: boolean,
 ): Promise<TrayDoubleClickPolicyUpdateResult> {
-  return invokeUpdate(tray, 'doubleClickPolicy', 'double-click-policy-update-failed', (backend) =>
-    backend.setIgnore(tray, ignore),
+  return invokeUpdate(hostTrayDoubleClickPolicy, tray, 'double-click-policy-update-failed', (provider) =>
+    provider.setIgnore(tray, ignore),
   );
 }
 
 export function setTrayPressedIcon(
-  tray: TrayWithPressedImage,
+  hostTrayPressedImage: Readonly<HostTrayPressedImageProvider>,
+  tray: TrayIcon,
   icon: TrayIconSource,
 ): Promise<TrayPressedImageUpdateResult> {
-  return invokeUpdate(tray, 'pressedImage', 'pressed-image-update-failed', (backend) => backend.set(tray, icon));
+  return invokeUpdate(hostTrayPressedImage, tray, 'pressed-image-update-failed', (provider) =>
+    provider.set(tray, icon),
+  );
 }
 
 export async function startTrayIconAnimation(
-  tray: TrayWithImage,
+  hostTrayImage: Readonly<HostTrayImageProvider>,
+  tray: TrayIcon,
   frames: readonly TrayIconSource[],
   intervalMs: number,
 ): Promise<TrayAnimationStartResult> {
@@ -328,13 +360,13 @@ export async function startTrayIconAnimation(
   _animationGuard?.(tray, frames.length, intervalMs);
   stopTrayAnimationRuntime(runtime);
   const generation = runtime.animationGeneration;
-  const first = await queueAnimationWrite(tray, runtime, generation, frames[0]!);
+  const first = await queueAnimationWrite(hostTrayImage, tray, runtime, generation, frames[0]!);
   if (first.outcome !== 'updated') return first;
   if (runtime.state !== 'active' || runtime.animationGeneration !== generation) return { outcome: 'tray-destroyed' };
   let index = 0;
   runtime.animationTimer = setInterval(() => {
     index = (index + 1) % frames.length;
-    void queueAnimationWrite(tray, runtime, generation, frames[index]!);
+    void queueAnimationWrite(hostTrayImage, tray, runtime, generation, frames[index]!);
   }, intervalMs);
   const release: TrayReleaseRuntime = {
     released: false,
@@ -349,7 +381,8 @@ export async function startTrayIconAnimation(
 }
 
 async function queueAnimationWrite(
-  tray: TrayWithImage,
+  hostTrayImage: Readonly<HostTrayImageProvider>,
+  tray: TrayIcon,
   runtime: TrayRuntime,
   generation: number,
   frame: TrayIconSource,
@@ -357,7 +390,7 @@ async function queueAnimationWrite(
   let result: TrayImageUpdateResult = { outcome: 'tray-destroyed' };
   runtime.animationWriteTail = runtime.animationWriteTail.then(async () => {
     if (runtime.state !== 'active' || runtime.animationGeneration !== generation) return;
-    result = await setTrayIcon(tray, frame);
+    result = await setTrayIcon(hostTrayImage, tray, frame);
   });
   await runtime.animationWriteTail;
   return result;
@@ -387,34 +420,26 @@ function getActiveTrayRuntime(tray: Readonly<TrayIcon>): TrayRuntime | null {
   return runtime?.state === 'active' ? runtime : null;
 }
 
-async function invokeUpdate<
-  Slot extends keyof HostTrayCapabilities,
-  Backend extends NonNullable<HostTrayCapabilities[Slot]>,
-  Result extends { readonly outcome: string },
->(
+async function invokeUpdate<Provider, Result extends { readonly outcome: string }>(
+  provider: Readonly<Provider>,
   tray: TrayIcon,
-  slot: Slot,
   failure: Result['outcome'],
-  operation: (backend: Backend) => Promise<Result>,
+  operation: (provider: Readonly<Provider>) => Promise<Result>,
 ): Promise<Result> {
   const runtime = getActiveTrayRuntime(tray);
   if (runtime === null) return { outcome: 'tray-destroyed' } as Result;
   try {
-    return await operation(runtime.capabilities[slot] as Backend);
+    return await operation(provider);
   } catch (error) {
     return { error, outcome: failure } as unknown as Result;
   }
 }
 
-function invokeRead<
-  Slot extends keyof HostTrayCapabilities,
-  Backend extends NonNullable<HostTrayCapabilities[Slot]>,
-  Result extends { readonly outcome: string },
->(
+function invokeRead<Provider, Result extends { readonly outcome: string }>(
+  provider: Readonly<Provider>,
   tray: TrayIcon,
-  slot: Slot,
   failure: Result['outcome'],
-  operation: (backend: Backend) => Promise<Result>,
+  operation: (provider: Readonly<Provider>) => Promise<Result>,
 ): Promise<Result> {
-  return invokeUpdate(tray, slot, failure, operation);
+  return invokeUpdate(provider, tray, failure, operation);
 }

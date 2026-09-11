@@ -4,6 +4,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
   HostPowerCapabilities,
+  HostPowerBatteryHealthProvider,
   HostPowerKeepAwakeProvider,
   HostPowerChangeProvider,
   PowerIdleState,
@@ -12,6 +13,7 @@ import type {
   PowerStatus,
   HostPowerStatusProvider,
   HostPowerThermalProvider,
+  PowerBatteryHealth,
   PowerThermalState,
 } from '@flighthq/types/contract';
 
@@ -374,17 +376,15 @@ describe('enablePowerSignals', () => {
 describe('getPowerBatteryHealth', () => {
   it('fills and returns the caller-owned out parameter', () => {
     const out = makePowerBatteryHealth();
-    const host = {
-      power: {
-        batteryHealth: {
-          getBatteryHealth(target: typeof out): typeof out {
-            target.cycleCount = 12;
-            return target;
-          },
-        },
-      },
-    };
-    expect(getPowerBatteryHealth(host, out)).toBe(out);
+    const provider = (() => {
+      const target = allocateEntity<HostPowerBatteryHealthProvider>();
+      target.getBatteryHealth = (health: PowerBatteryHealth): PowerBatteryHealth => {
+        health.cycleCount = 12;
+        return health;
+      };
+      return finishEntity(target);
+    })();
+    expect(getPowerBatteryHealth(provider, out)).toBe(out);
     expect(out.cycleCount).toBe(12);
   });
 });

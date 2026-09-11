@@ -14,7 +14,7 @@ import type {
   TauriTrayIcon,
   TauriTrayIconEvent,
   TauriTrayIconOptions,
-  TrayIconForHost,
+  TrayIcon,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -101,10 +101,10 @@ async function flushMicrotasks(): Promise<void> {
   for (let index = 0; index < 12; index++) await Promise.resolve();
 }
 
-async function acquire<
-  Host extends { tray: { lifecycle: ReturnType<typeof createTauriTrayCapabilities>['lifecycle'] } },
->(host: Host): Promise<TrayIconForHost<Host>> {
-  const result = await createTrayIcon(host, { icon: 'icon.png' });
+async function acquire(
+  hostTrayLifecycle: ReturnType<typeof createTauriTrayCapabilities>['lifecycle'],
+): Promise<TrayIcon> {
+  const result = await createTrayIcon(hostTrayLifecycle, { icon: 'icon.png' });
   if (result.outcome !== 'created') throw new Error(result.outcome);
   return result.tray;
 }
@@ -140,7 +140,7 @@ describe('createTauriTrayCapabilities', () => {
         resolve = accept;
       });
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
-    const pending = createTrayIcon(host, { icon: 'icon.png' });
+    const pending = createTrayIcon(host.tray.lifecycle, { icon: 'icon.png' });
     expect(host.tray.lifecycle.list()).toEqual([]);
     resolve({
       async close() {},
@@ -163,7 +163,7 @@ describe('createTauriTrayCapabilities', () => {
       });
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
     const controller = new AbortController();
-    const pending = createTrayIcon(host, { icon: 'icon.png', signal: controller.signal });
+    const pending = createTrayIcon(host.tray.lifecycle, { icon: 'icon.png', signal: controller.signal });
     controller.abort();
     const close = vi.fn(async () => {});
     resolve({
@@ -185,16 +185,16 @@ describe('createTauriTrayCapabilities', () => {
       throw new Error('rejected');
     };
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
-    expect((await createTrayIcon(host, { icon: 'icon.png' })).outcome).toBe('tray-create-failed');
+    expect((await createTrayIcon(host.tray.lifecycle, { icon: 'icon.png' })).outcome).toBe('tray-create-failed');
     expect(host.tray.lifecycle.list()).toEqual([]);
   });
 
   it('delivers interaction payload through the profile-owned signal', async () => {
     const { action, tauri } = fakeTauri();
     const host = { tray: createTauriTrayCapabilities(tauri, 'macos') };
-    const tray = await acquire(host);
+    const tray = await acquire(host.tray.lifecycle);
     const listener = vi.fn();
-    onTrayInteraction(tray, listener);
+    onTrayInteraction(host.tray.interactionEvents, tray, listener);
     action()!({ button: 'Right', position: { x: 5, y: 6 }, type: 'Click' });
     expect(listener).toHaveBeenCalledWith(expect.objectContaining({ position: { x: 5, y: 6 }, type: 'rightClick' }));
   });
@@ -202,11 +202,11 @@ describe('createTauriTrayCapabilities', () => {
   it('routes menu selection per Tray and replaces the previous menu transactionally', async () => {
     const { icons, menuActions, menus, tauri } = fakeTauri();
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
-    const tray = await acquire(host);
+    const tray = await acquire(host.tray.lifecycle);
     const selected: string[] = [];
-    onTrayMenuSelection(tray, ({ id }) => selected.push(id));
-    expect((await setTrayIconContextMenu(tray, [{ id: 'old', label: 'Old' }])).outcome).toBe('updated');
-    expect((await setTrayIconContextMenu(tray, [{ id: 'new', label: 'New' }])).outcome).toBe('updated');
+    onTrayMenuSelection(host.tray.menuSelectionEvents, tray, ({ id }) => selected.push(id));
+    expect((await setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'old', label: 'Old' }])).outcome).toBe('updated');
+    expect((await setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'new', label: 'New' }])).outcome).toBe('updated');
     menuActions[1].action?.('new');
     expect(selected).toEqual(['new']);
     expect(icons[0].installed).toEqual([menus[0], menus[1]]);
@@ -219,9 +219,9 @@ describe('createTauriTrayCapabilities', () => {
     const resolvers: Array<(menu: TauriMenu) => void> = [];
     tauri.menu.Menu.new = () => new Promise((resolve) => resolvers.push(resolve));
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
-    const tray = await acquire(host);
-    const old = setTrayIconContextMenu(tray, [{ id: 'old' }]);
-    const newest = setTrayIconContextMenu(tray, [{ id: 'new' }]);
+    const tray = await acquire(host.tray.lifecycle);
+    const old = setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'old' }]);
+    const newest = setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'new' }]);
     await flushMicrotasks();
     const oldClose = vi.fn(async () => {});
     const newClose = vi.fn(async () => {});
@@ -236,17 +236,17 @@ describe('createTauriTrayCapabilities', () => {
   it('uses typed async updates and macOS template treatment', async () => {
     const { icons, tauri } = fakeTauri();
     const host = { tray: createTauriTrayCapabilities(tauri, 'macos') };
-    const tray = await acquire(host);
-    expect((await setTrayIcon(tray, 'next.png')).outcome).toBe('updated');
-    expect((await setTrayIconTemplate(tray, true)).outcome).toBe('updated');
+    const tray = await acquire(host.tray.lifecycle);
+    expect((await setTrayIcon(host.tray.image, tray, 'next.png')).outcome).toBe('updated');
+    expect((await setTrayIconTemplate(host.tray.templateImage, tray, true)).outcome).toBe('updated');
     expect(icons[0].template).toBe(true);
   });
 
   it('attempts menu and native teardown and retries only failed native steps', async () => {
     const { icons, menus, tauri } = fakeTauri();
     const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
-    const tray = await acquire(host);
-    await setTrayIconContextMenu(tray, [{ id: 'quit' }]);
+    const tray = await acquire(host.tray.lifecycle);
+    await setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'quit' }]);
     icons[0].closeFailures = 1;
     expect((await destroyTrayIcon(tray)).outcome).toBe('tray-destroy-failed');
     expect(menus[0].closed).toBe(1);

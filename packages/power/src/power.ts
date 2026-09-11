@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
+  HostPowerBatteryHealthProvider,
   HostPowerChangeProvider,
   HostPowerIdleProvider,
   HostPowerKeepAwakeProvider,
@@ -190,12 +191,10 @@ export function enablePowerSignals(power: Power): void {
 }
 
 export function getPowerBatteryHealth(
-  host: {
-    readonly power: { readonly batteryHealth: { getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth } };
-  },
+  hostPowerBatteryHealth: Readonly<HostPowerBatteryHealthProvider>,
   out: PowerBatteryHealth,
 ): PowerBatteryHealth {
-  return host.power.batteryHealth.getBatteryHealth(out);
+  return hostPowerBatteryHealth.getBatteryHealth(out);
 }
 
 export function getPowerIdlePollingIntervalMs(): number {

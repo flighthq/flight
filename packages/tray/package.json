@@ -46,6 +46,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Capability-refined tray icon Entities over explicitly injected host facets",
+  "description": "Tray icon Entities over explicitly injected operation providers",
   "sideEffects": false
 }
