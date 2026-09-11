@@ -2,8 +2,8 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
-import { readFileSync, readdirSync } from 'fs';
-import { extname, resolve } from 'path';
+import { spawnSync } from 'child_process';
+import { resolve } from 'path';
 
 import * as contractApi from './contract';
 import * as publicApi from './index';
@@ -189,26 +189,24 @@ describe('tauriHost', () => {
 
   it('contains no legacy Tauri constructor identifiers outside historical agent records', () => {
     const root = resolve(__dirname, '../../..');
-    const matches: string[] = [];
-    for (const file of sourceFiles(root)) {
-      const source = readFileSync(file, 'utf8');
-      if (/\b(?:create|initialize|register|make)Tauri[A-Z][A-Za-z0-9]*\b/u.test(source)) {
-        matches.push(file.slice(root.length + 1));
-      }
-    }
-    expect(matches).toEqual([]);
+    const result = spawnSync(
+      'git',
+      [
+        'grep',
+        '-n',
+        '-E',
+        '\\<(create|initialize|register|make)Tauri[A-Z][A-Za-z0-9]*\\>',
+        '--',
+        ':!agents/**',
+        '*.json',
+        '*.md',
+        '*.ts',
+        '*.tsx',
+      ],
+      { cwd: root, encoding: 'utf8' },
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr || result.stdout).toBe(1);
+    expect(result.stdout).toBe('');
   });
 });
-
-function sourceFiles(directory: string): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (['.git', 'agents', 'dist', 'node_modules'].includes(entry.name)) continue;
-      files.push(...sourceFiles(resolve(directory, entry.name)));
-    } else if (['.json', '.md', '.ts', '.tsx'].includes(extname(entry.name))) {
-      files.push(resolve(directory, entry.name));
-    }
-  }
-  return files;
-}
