@@ -3,7 +3,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
-import { createTauriWindowBackend, initializeTauriWindowBackend } from './tauriWindow';
+import { tauriHostWindow } from './tauriWindow';
 
 interface FakeWindowState {
   calls: { method: string; args: unknown[] }[];
@@ -97,10 +97,10 @@ function methods(state: FakeWindowState): string[] {
   return state.calls.map((c) => c.method);
 }
 
-describe('createTauriWindowBackend', () => {
+describe('tauriHostWindow', () => {
   it('adapter-roster axis: publishes exactly 24 P1 operations and omits the four false members', () => {
     const { tauri } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
 
     expect(EntityRuntimeKey in backend).toBe(true);
     expect(
@@ -137,7 +137,7 @@ describe('createTauriWindowBackend', () => {
 
   it('opens the current window and applies options', () => {
     const { tauri, state } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     expect(backend.open!(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true })).toBe(true);
     expect(methods(state)).toContain('setTitle');
@@ -148,7 +148,7 @@ describe('createTauriWindowBackend', () => {
 
   it('mirrors native move/resize/focus events onto the entity and its signals', () => {
     const { tauri, state } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     let moves = 0;
     connectSignal(win.onMove, () => moves++);
@@ -166,7 +166,7 @@ describe('createTauriWindowBackend', () => {
 
   it('routes control methods to the current window and no-ops before open', () => {
     const { tauri, state } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     // Not opened yet: nothing routes through.
     backend.setTitle!(win, 'ignored');
@@ -182,7 +182,7 @@ describe('createTauriWindowBackend', () => {
 
   it('reports mirrored bounds from the entity', () => {
     const { tauri } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     win.x = 5;
     win.y = 6;
@@ -196,7 +196,7 @@ describe('createTauriWindowBackend', () => {
 
   it('attaches the same existing window idempotently without duplicating event ingress', () => {
     const { tauri, state, window } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
 
     expect(backend.attach?.(win, window, 'host')).toBe(true);
@@ -207,7 +207,7 @@ describe('createTauriWindowBackend', () => {
 
   it('detaches host-owned windows without closing them and releases all event ingress', async () => {
     const { tauri, state, window } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     expect(backend.attach?.(win, window, 'host')).toBe(true);
 
@@ -221,7 +221,7 @@ describe('createTauriWindowBackend', () => {
 
   it('closes a Flight-owned attached window once', () => {
     const { tauri, state, window } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     expect(backend.attach?.(win, window, 'flight')).toBe(true);
 
@@ -233,7 +233,7 @@ describe('createTauriWindowBackend', () => {
 
   it('routes native close requests through the terminal-close choke point exactly once', async () => {
     const { tauri, state, window } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
@@ -249,7 +249,7 @@ describe('createTauriWindowBackend', () => {
 
   it('center-owner axis: lets application perform exactly one post-open center command', () => {
     const { tauri, state } = fakeTauri();
-    const backend = createTauriWindowBackend(tauri);
+    const backend = tauriHostWindow(tauri);
 
     expect(openWindow({ window: backend }.window, createApplicationWindow(), { center: true })).toBe(true);
 
@@ -260,7 +260,7 @@ describe('createTauriWindowBackend', () => {
 // ★ THE REJECTION AXIS. `close(win)` releases a Flight-owned window through `handle.close()`, a promise
 // the synchronous close path cannot await, so the `.catch` at the call site is the only thing keeping a
 // rejected close from escaping as an unhandled rejection. Nothing exercised it before.
-describe('createTauriWindowBackend close when the platform close rejects', () => {
+describe('tauriHostWindow close when the platform close rejects', () => {
   it('still detaches the window and raises no unhandled rejection', async () => {
     const { tauri, window } = fakeTauri();
     window.close = () => Promise.reject(new Error('close refused by the platform'));
@@ -269,7 +269,7 @@ describe('createTauriWindowBackend close when the platform close rejects', () =>
     const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
     process.on('unhandledRejection', onUnhandled);
     try {
-      const backend = createTauriWindowBackend(tauri);
+      const backend = tauriHostWindow(tauri);
       const win = createApplicationWindow();
       // ATTACHED AS 'flight', deliberately: `open` adopts the pre-existing window as 'host', and the
       // close path only calls the platform close for a window Flight itself owns. Driving this through
@@ -286,10 +286,5 @@ describe('createTauriWindowBackend close when the platform close rejects', () =>
     } finally {
       process.off('unhandledRejection', onUnhandled);
     }
-  });
-});
-describe('initializeTauriWindowBackend', () => {
-  it('is the construction initializer of createTauriWindowBackend', () => {
-    expect(typeof initializeTauriWindowBackend).toBe('function');
   });
 });

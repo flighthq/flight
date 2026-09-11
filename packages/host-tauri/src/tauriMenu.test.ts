@@ -6,7 +6,7 @@ import type {
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriMenuBackends, initializeTauriMenuBackends } from './tauriMenu';
+import { tauriHostMenu } from './tauriMenu';
 
 function fakeTauri() {
   const state = {
@@ -67,9 +67,9 @@ const template: MenuItemTemplate[] = [
   { label: 'More', submenu: [{ id: 'nested', label: 'Nested' }] },
 ];
 
-describe('createTauriMenuBackends', () => {
+describe('tauriHostMenu', () => {
   it('returns an Entity-composed capability bundle and providers', () => {
-    const capabilities = createTauriMenuBackends(fakeTauri().tauri);
+    const capabilities = tauriHostMenu(fakeTauri().tauri);
     expect(EntityRuntimeKey in capabilities).toBe(true);
     for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
@@ -201,7 +201,7 @@ function _slots(api: TauriApi): {
   setApplicationMenu: HostMenuApplicationProvider['setApplicationMenu'];
   subscribeSelect: HostMenuSelectProvider['subscribe'];
 } {
-  const { application, popup, select } = createTauriMenuBackends(api);
+  const { application, popup, select } = tauriHostMenu(api);
   return {
     destroy: application.destroy?.bind(application),
     popupContextMenu: popup.popup,
@@ -209,8 +209,3 @@ function _slots(api: TauriApi): {
     subscribeSelect: select.subscribe,
   };
 }
-describe('initializeTauriMenuBackends', () => {
-  it('is the construction initializer of createTauriMenuBackends', () => {
-    expect(typeof initializeTauriMenuBackends).toBe('function');
-  });
-});

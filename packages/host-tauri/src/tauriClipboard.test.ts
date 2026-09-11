@@ -1,7 +1,7 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriClipboardBackend, initializeTauriClipboardBackend } from './tauriClipboard';
+import { tauriHostClipboardText } from './tauriClipboard';
 
 function fakeTauri() {
   const store = { text: '' };
@@ -25,10 +25,10 @@ function fakeTauri() {
   return { tauri, store, calls };
 }
 
-describe('createTauriClipboardBackend', () => {
+describe('tauriHostClipboardText', () => {
   it('round-trips text through the Tauri clipboard', async () => {
     const { tauri, calls } = fakeTauri();
-    const backend = createTauriClipboardBackend(tauri);
+    const backend = tauriHostClipboardText(tauri);
     expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
@@ -39,7 +39,7 @@ describe('createTauriClipboardBackend', () => {
 
   it('clears via the Tauri clipboard', async () => {
     const { tauri, calls } = fakeTauri();
-    const backend = createTauriClipboardBackend(tauri);
+    const backend = tauriHostClipboardText(tauri);
     await backend.writeText('x');
     expect(await backend.clear()).toBe(true);
     expect(calls).toContain('clear');
@@ -54,13 +54,8 @@ describe('createTauriClipboardBackend', () => {
         },
       },
     } as unknown as TauriApi;
-    const backend = createTauriClipboardBackend(tauri);
+    const backend = tauriHostClipboardText(tauri);
     expect(await backend.readText()).toBe('');
     expect(await backend.hasText()).toBe(false);
-  });
-});
-describe('initializeTauriClipboardBackend', () => {
-  it('is the construction initializer of createTauriClipboardBackend', () => {
-    expect(typeof initializeTauriClipboardBackend).toBe('function');
   });
 });

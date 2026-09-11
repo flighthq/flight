@@ -13,11 +13,11 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createTauriWindowBackend(
+export function tauriHostWindow(
   tauri: TauriApi,
 ): HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>> & Entity {
   const out = allocateEntity<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>();
-  initializeTauriWindowBackend(out, tauri);
+  configureWindow(out, tauri);
   return finishEntity(out);
 }
 
@@ -29,7 +29,7 @@ export function createTauriWindowBackend(
 // changes. `getBounds` cannot read Tauri's async position/size synchronously, so it reports the entity's
 // mirrored fields. Scope: this is the single current window (the browser-page-window analogue); creating
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
-export function initializeTauriWindowBackend(
+function configureWindow(
   out: EntityConstruction<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>,
   tauri: TauriApi,
 ): void {

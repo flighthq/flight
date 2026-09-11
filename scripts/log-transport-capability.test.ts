@@ -74,7 +74,7 @@ describe('LogTransport zero-provider capability shape', () => {
     const providers = [
       source('packages/host-web/src/webHost.ts'),
       source('packages/host-electron/src/electronRegister.ts'),
-      source('packages/host-tauri/src/tauriRegister.ts'),
+      source('packages/host-tauri/src/tauriHost.ts'),
       source('packages/host-capacitor/src/capacitorHost.ts'),
     ].join('\n');
 

@@ -1,12 +1,7 @@
 import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import {
-  createTauriShortcutQueryBackend,
-  createTauriShortcutTriggerBackend,
-  initializeTauriShortcutQueryBackend,
-  initializeTauriShortcutTriggerBackend,
-} from './tauriShortcut';
+import { tauriHostShortcutQuery, tauriHostShortcutTrigger } from './tauriShortcut';
 
 interface Deferred {
   readonly promise: Promise<void>;
@@ -42,21 +37,21 @@ function fakeTauri() {
   return { handlers, tauri, unregisterCalls, unregisterFailures };
 }
 
-describe('createTauriShortcutQueryBackend', () => {
+describe('tauriHostShortcutQuery', () => {
   it('returns an Entity and awaits the plugin query', async () => {
     const fake = fakeTauri();
     fake.handlers.set('Control+K', () => {});
-    const provider = createTauriShortcutQueryBackend(fake.tauri);
+    const provider = tauriHostShortcutQuery(fake.tauri);
     expect(EntityRuntimeKey in provider).toBe(true);
     await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
     await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
   });
 });
 
-describe('createTauriShortcutTriggerBackend', () => {
+describe('tauriHostShortcutTrigger', () => {
   it('returns an Entity, awaits acquisition, filters release events, and tears down by exact token', async () => {
     const fake = fakeTauri();
-    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    const provider = tauriHostShortcutTrigger(fake.tauri);
     const trigger = vi.fn();
     expect(EntityRuntimeKey in provider).toBe(true);
     const outcome = await provider.subscribe('Control+K', trigger);
@@ -75,7 +70,7 @@ describe('createTauriShortcutTriggerBackend', () => {
     fake.tauri.globalShortcut.register = async () => {
       throw new Error('registration failed');
     };
-    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    const provider = tauriHostShortcutTrigger(fake.tauri);
     await expect(provider.subscribe('Control+K', () => {})).rejects.toThrow('registration failed');
     await expect(provider.destroy()).resolves.toBeUndefined();
   });
@@ -87,7 +82,7 @@ describe('createTauriShortcutTriggerBackend', () => {
       if (accelerator === 'Control+A') await registration.promise;
       fake.handlers.set(accelerator, handler);
     };
-    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    const provider = tauriHostShortcutTrigger(fake.tauri);
     const pending = provider.subscribe('Control+A', () => {});
     await provider.subscribe('Control+B', () => {});
     fake.unregisterFailures.add('Control+A');
@@ -104,16 +99,5 @@ describe('createTauriShortcutTriggerBackend', () => {
     expect(fake.unregisterCalls).toHaveLength(3);
     expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+A')).toHaveLength(2);
     expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+B')).toHaveLength(1);
-  });
-});
-describe('initializeTauriShortcutQueryBackend', () => {
-  it('is the construction initializer of createTauriShortcutQueryBackend', () => {
-    expect(typeof initializeTauriShortcutQueryBackend).toBe('function');
-  });
-});
-
-describe('initializeTauriShortcutTriggerBackend', () => {
-  it('is the construction initializer of createTauriShortcutTriggerBackend', () => {
-    expect(typeof initializeTauriShortcutTriggerBackend).toBe('function');
   });
 });

@@ -3,21 +3,37 @@ import { createNotificationResource } from '@flighthq/notification/contract';
 import type {
   NotificationRequest,
   NotificationRequestField,
+  HostNotificationDeliveryProvider,
+  HostNotificationLifecycleProvider,
+  HostNotificationPermissionProvider,
   TauriApi,
   TauriNotificationCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotificationCapabilities {
+export function tauriHostNotification(tauri: TauriApi): TauriNotificationCapabilities {
+  return tauriNotificationProviders(tauri);
+}
+
+export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryProvider {
+  return tauriNotificationProviders(tauri).delivery;
+}
+
+export function tauriHostNotificationLifecycle(tauri: TauriApi): HostNotificationLifecycleProvider {
+  return tauriNotificationProviders(tauri).lifecycle;
+}
+
+export function tauriHostNotificationPermission(tauri: TauriApi): HostNotificationPermissionProvider {
+  return tauriNotificationProviders(tauri).permission;
+}
+
+function tauriNotificationProviders(tauri: TauriApi): TauriNotificationCapabilities {
   const out = allocateEntity<TauriNotificationCapabilities>();
-  initializeTauriNotificationCapabilities(out, tauri);
+  configureNotification(out, tauri);
   return finishEntity(out);
 }
 
-export function initializeTauriNotificationCapabilities(
-  out: EntityConstruction<TauriNotificationCapabilities>,
-  tauri: TauriApi,
-): void {
+function configureNotification(out: EntityConstruction<TauriNotificationCapabilities>, tauri: TauriApi): void {
   const notification = tauri.notification;
   let destroyed = false;
   let nextId = 1;

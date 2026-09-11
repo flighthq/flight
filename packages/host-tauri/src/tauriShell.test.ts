@@ -1,12 +1,7 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import {
-  initializeTauriShellExternalBackend,
-  initializeTauriShellPathOpenBackend,
-  initializeTauriShellPathRevealBackend,
-  makeTauriShellCapabilities,
-} from './tauriShell';
+import { tauriHostShell } from './tauriShell';
 
 function fakeTauri(rejection: unknown = NO_REJECTION) {
   const calls: { openUrl: string[]; openPath: string[]; reveal: string[] } = {
@@ -36,35 +31,17 @@ function fakeTauri(rejection: unknown = NO_REJECTION) {
   return { tauri, calls };
 }
 
-describe('initializeTauriShellExternalBackend', () => {
-  it('is the construction initializer of createTauriShellExternalBackend', () => {
-    expect(typeof initializeTauriShellExternalBackend).toBe('function');
-  });
-});
-
 const NO_REJECTION = Symbol('no rejection');
-describe('initializeTauriShellPathOpenBackend', () => {
-  it('is the construction initializer of createTauriShellPathOpenBackend', () => {
-    expect(typeof initializeTauriShellPathOpenBackend).toBe('function');
-  });
-});
-
-describe('initializeTauriShellPathRevealBackend', () => {
-  it('is the construction initializer of createTauriShellPathRevealBackend', () => {
-    expect(typeof initializeTauriShellPathRevealBackend).toBe('function');
-  });
-});
-
-describe('makeTauriShellCapabilities', () => {
+describe('tauriHostShell', () => {
   it('constructs exactly three Entity providers', () => {
-    const capabilities = makeTauriShellCapabilities(fakeTauri().tauri);
+    const capabilities = tauriHostShell(fakeTauri().tauri);
     expect(Object.keys(capabilities).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
     for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('opens URLs and paths and reveals through the opener plugin', async () => {
     const { tauri, calls } = fakeTauri();
-    const capabilities = makeTauriShellCapabilities(tauri);
+    const capabilities = tauriHostShell(tauri);
     await expect(capabilities.external?.open('https://x.test')).resolves.toEqual({ reason: 'ok' });
     await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({ reason: 'ok' });
     await expect(capabilities.pathReveal?.reveal('/tmp/a')).resolves.toEqual({ reason: 'ok' });
@@ -74,7 +51,7 @@ describe('makeTauriShellCapabilities', () => {
   });
 
   it('preserves the path rejection message', async () => {
-    const capabilities = makeTauriShellCapabilities(fakeTauri(new Error('boom')).tauri);
+    const capabilities = tauriHostShell(fakeTauri(new Error('boom')).tauri);
     await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({
       message: 'boom',
       reason: 'operation-failed',
@@ -82,12 +59,12 @@ describe('makeTauriShellCapabilities', () => {
   });
 
   it('does not turn an empty rejected path open into success', async () => {
-    const capabilities = makeTauriShellCapabilities(fakeTauri('').tauri);
+    const capabilities = tauriHostShell(fakeTauri('').tauri);
     await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({ message: '', reason: 'operation-failed' });
   });
 
   it('maps external and reveal rejection without inventing unsupported slots', async () => {
-    const capabilities = makeTauriShellCapabilities(fakeTauri(new Error('boom')).tauri);
+    const capabilities = tauriHostShell(fakeTauri(new Error('boom')).tauri);
     await expect(capabilities.external?.open('https://x.test')).resolves.toEqual({ reason: 'operation-failed' });
     await expect(capabilities.pathReveal?.reveal('/tmp/a')).resolves.toEqual({ reason: 'operation-failed' });
     expect(capabilities.beep).toBeUndefined();

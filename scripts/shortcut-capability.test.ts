@@ -20,11 +20,12 @@ describe('Shortcut explicit dependency structure', () => {
     expect(webDefaultGroups).toContain('export const webHostShortcut = {} satisfies HostShortcutCapabilities;');
     expect(webHost).toContain('shortcut: webHostShortcut,');
     expect(source('packages/host-capacitor/src/capacitorHost.ts')).toContain('shortcut: capacitorHostShortcut(),');
-    for (const path of ['packages/host-electron/src/electronRegister.ts', 'packages/host-tauri/src/tauriRegister.ts']) {
-      const host = source(path);
-      expect(host).toMatch(/shortcut\s*[:=]\s*\{\s*query,\s*trigger\s*\}/u);
-      expect(host).not.toContain('setShortcutBackend');
-    }
+    const electronHost = source('packages/host-electron/src/electronRegister.ts');
+    expect(electronHost).toMatch(/shortcut\s*[:=]\s*\{\s*query,\s*trigger\s*\}/u);
+    expect(electronHost).not.toContain('setShortcutBackend');
+    const tauriHost = source('packages/host-tauri/src/tauriHost.ts');
+    expect(tauriHost).toContain('shortcut: tauriHostShortcut(tauri)');
+    expect(tauriHost).not.toContain('setShortcutBackend');
   });
 
   it('removes ambient, sentinel, explanation, enumeration, global signal, and toggle surfaces', () => {

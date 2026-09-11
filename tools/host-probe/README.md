@@ -74,7 +74,7 @@ Web, Electron, Tauri, and Android use Linux runners; iOS uses a macOS runner. Th
 A host runner owns the native shell, installs the corresponding `@flighthq/host-*` backend before app startup, and then loads the project's normal web entry. The renderer stays the project; native wiring does not belong in each example or scene.
 
 - Electron keeps registration in the main process and exposes renderer calls through a narrow preload bridge. The existing examples runner follows this pattern: `npm run examples:electron`.
-- Tauri imports its JS modules/plugins in the renderer bootstrap, calls `registerTauriBackends`, and has matching Rust plugins and ACL permissions. This tool's `src/hosts/tauri.ts` and `src-tauri/` are the minimal reusable shell.
+- Tauri imports its JS modules/plugins in the renderer bootstrap, constructs `tauriHost`, and has matching Rust plugins and ACL permissions. This tool's `src/hosts/tauri.ts` and `src-tauri/` are the minimal reusable shell.
 - Capacitor imports official plugin objects in the renderer bootstrap, constructs `capacitorHost`, and uses one generated Android/iOS project around the shared frontend. This tool's `src/hosts/capacitor.ts`, `capacitor.config.ts`, and preparation script are the template.
 
 For a project such as `examples/`, keep its web runner as the frontend and copy or parameterize these shells around it. Do not copy host registration into every example; one bootstrap per host is the seam.
