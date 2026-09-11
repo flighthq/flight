@@ -12,7 +12,7 @@ interface Call {
   args: unknown[];
 }
 
-function makeGl(): { gl: WebGL2RenderingContext; calls: Call[] } {
+function makeGl(maxTextureSize = 4096): { gl: WebGL2RenderingContext; calls: Call[] } {
   const calls: Call[] = [];
   const record =
     (name: string, result?: unknown) =>
@@ -21,6 +21,7 @@ function makeGl(): { gl: WebGL2RenderingContext; calls: Call[] } {
       return result;
     };
   const gl = {
+    MAX_TEXTURE_SIZE: 0x0d33,
     TEXTURE_2D: 0x0de1,
     RGBA: 0x1908,
     RGBA32F: 0x8814,
@@ -35,6 +36,11 @@ function makeGl(): { gl: WebGL2RenderingContext; calls: Call[] } {
     createTexture: record('createTexture', { id: 'tex' }),
     deleteTexture: record('deleteTexture'),
     bindTexture: record('bindTexture'),
+    getParameter: (pname: number) => {
+      calls.push({ name: 'getParameter', args: [pname] });
+      if (pname === 0x0d33) return maxTextureSize;
+      return 0;
+    },
     texImage2D: record('texImage2D'),
     texSubImage2D: record('texSubImage2D'),
     pixelStorei: record('pixelStorei'),
@@ -151,5 +157,43 @@ describe('uploadGlSkinPaletteTexture', () => {
     const palette: GlSkinPaletteTexture = createGlSkinPaletteTexture(gl);
     uploadGlSkinPaletteTexture(gl, palette, makePalette(6), 6);
     expect(palette.jointCapacity).toBe(6);
+  });
+
+  it('wraps into multiple rows when totalTexels exceeds MAX_TEXTURE_SIZE', () => {
+    const { gl, calls } = makeGl(16);
+    const palette = createGlSkinPaletteTexture(gl);
+    // 5 joints × 4 texels = 20 texels, max width 16 → 16 × 2 texture
+    uploadGlSkinPaletteTexture(gl, palette, makePalette(5), 5);
+
+    const alloc = calls.find((c) => c.name === 'texImage2D');
+    expect(alloc).toBeDefined();
+    expect(alloc?.args[3]).toBe(16); // width = MAX_TEXTURE_SIZE
+    expect(alloc?.args[4]).toBe(2); // height = ceil(20 / 16)
+    expect(alloc?.args[8]).toBeNull(); // allocated with null, then filled row by row
+    expect(palette.jointCapacity).toBe(5);
+
+    const subs = calls.filter((c) => c.name === 'texSubImage2D');
+    expect(subs.length).toBe(2);
+    expect(subs[0].args[3]).toBe(0); // row 0 yoffset
+    expect(subs[0].args[4]).toBe(16); // row 0 width = full row
+    expect(subs[1].args[3]).toBe(1); // row 1 yoffset
+    expect(subs[1].args[4]).toBe(4); // row 1 width = 20 - 16 remaining texels
+  });
+
+  it('uploads multi-row sub-image when data fits existing multi-row capacity', () => {
+    const { gl, calls } = makeGl(16);
+    const palette = createGlSkinPaletteTexture(gl);
+    // Allocate for 6 joints (24 texels → 16 × 2)
+    uploadGlSkinPaletteTexture(gl, palette, makePalette(6), 6);
+    calls.length = 0;
+
+    // Upload 5 joints (20 texels) into the existing 16 × 2 texture
+    uploadGlSkinPaletteTexture(gl, palette, makePalette(5), 5);
+
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(false);
+    const subs = calls.filter((c) => c.name === 'texSubImage2D');
+    expect(subs.length).toBe(2);
+    expect(subs[0].args[4]).toBe(16); // row 0 full width
+    expect(subs[1].args[4]).toBe(4); // row 1 partial (20 - 16)
   });
 });

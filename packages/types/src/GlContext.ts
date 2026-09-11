@@ -69,6 +69,7 @@ type GlContextMember =
   | 'MAX'
   | 'MAX_SAMPLES'
   | 'MAX_TEXTURE_IMAGE_UNITS'
+  | 'MAX_TEXTURE_SIZE'
   | 'MIN'
   | 'MIRRORED_REPEAT'
   | 'NEAREST'
