@@ -18,7 +18,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -41,7 +41,7 @@ const state = createCanvasRenderState(
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { backgroundColor: 0x1d1f23ff },
 );

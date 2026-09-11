@@ -10,7 +10,7 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
 import { beginGlRenderPass, endGlRenderPass, renderGlBackground } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
-import { scene2dGlPipeline } from '@flighthq/scene2d-gl';
+import { scene2DGlPipeline } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
@@ -48,7 +48,7 @@ const view = createGlApplicationRenderView(applicationWindow, canvas, {
   context: {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   },
-  pipeline: scene2dGlPipeline,
+  pipeline: scene2DGlPipeline,
   render: {
     backgroundColor: 0x101522ff,
   },

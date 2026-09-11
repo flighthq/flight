@@ -30,7 +30,7 @@ import {
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -108,7 +108,7 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
     createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));

@@ -48,7 +48,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
         expect(source).toContain('renderWgpuScene2D(');
         expect(source).toContain('submitWgpuRenderPass(');
         expect(source).not.toMatch(
-          /\b(?:enableHostWeb|scene2dWgpuPipeline|registerStandardWgpuTextureResolvers|webHost)\b/,
+          /\b(?:enableHostWeb|scene2DWgpuPipeline|registerStandardWgpuTextureResolvers|webHost)\b/,
         );
         expect(source).not.toContain('@flighthq/sdk');
       });

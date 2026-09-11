@@ -1,6 +1,6 @@
 export * from './enableWgpuColorAdjustmentGuards';
 export * from './enableWgpuStrokePathTessellation';
-export * from './scene2dWgpuPipeline';
+export * from './scene2DWgpuPipeline';
 export * from './wgpuSprite';
 export * from './wgpuBitmapText';
 export * from './wgpuCache';

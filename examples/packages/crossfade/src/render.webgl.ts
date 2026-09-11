@@ -5,7 +5,7 @@ import {
 } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   connectCanvasTextureResolverMisses,
@@ -40,7 +40,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     backgroundColor: 0x151b2bff,
     pixelRatio,

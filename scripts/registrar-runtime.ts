@@ -17,7 +17,7 @@ import {
   createCanvasRenderSurface,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
@@ -1164,7 +1164,7 @@ function packageSourceFiles(packageName: string): string[] {
     .map((entry) => join(sourceDir, entry.name));
 }
 
-function createCanvasProbeState(pipeline = scene2dCanvasPipeline) {
+function createCanvasProbeState(pipeline = scene2DCanvasPipeline) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
   return createCanvasRenderState(

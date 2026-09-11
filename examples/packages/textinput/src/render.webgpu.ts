@@ -10,7 +10,7 @@ import {
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2dWgpuPipeline,
+  scene2DWgpuPipeline,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
   defaultWgpuRichTextRenderer,
@@ -38,7 +38,7 @@ export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0xd0d0d0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',

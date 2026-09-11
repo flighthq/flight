@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   addNodeChild,
   advanceVideoTexture,
@@ -43,7 +43,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x000000ff,

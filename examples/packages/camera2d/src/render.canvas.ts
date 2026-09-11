@@ -6,7 +6,7 @@ import {
   createCanvasElement,
   createCanvasRenderSurface,
   createCanvasTextureResolvers,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   createCanvasRenderState,
   enableFlightDiagnostics,
   defaultCanvasShapeCommands,
@@ -33,7 +33,7 @@ export const state = createCanvasRenderState(
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   {
     pixelRatio,

@@ -52,7 +52,7 @@ function buildScene2dWgpuRenderers(): KeyedTable<Renderer> {
 
 const _registries = createEmptyWgpuRegistries();
 
-export const scene2dWgpuPipeline: WgpuPipeline = createWgpuPipeline({
+export const scene2DWgpuPipeline: WgpuPipeline = createWgpuPipeline({
   ..._registries,
   materialRenderers: withRegistryTableEntry(
     _registries.materialRenderers,

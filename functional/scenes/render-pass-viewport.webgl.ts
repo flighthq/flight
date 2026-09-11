@@ -22,7 +22,7 @@ import {
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
-import { scene2dGlPipeline, defaultGlShapeRenderer, enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { scene2DGlPipeline, defaultGlShapeRenderer, enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
@@ -64,7 +64,7 @@ const state = createGlRenderState(
       contextAttributes: { alpha: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio: scale,
   },

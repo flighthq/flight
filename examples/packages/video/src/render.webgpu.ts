@@ -3,7 +3,7 @@ import {
   SpriteKind,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2dWgpuPipeline,
+  scene2DWgpuPipeline,
   enableFlightDiagnostics,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
@@ -19,7 +19,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',

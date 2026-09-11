@@ -14,7 +14,7 @@ import { createCanvasRenderState as createExplicitCanvasRenderState } from './ca
 import { acquireCanvasRenderSurface, createCanvasRenderSurface } from './canvasRenderSurface';
 import { createCanvasRenderTarget as createExplicitCanvasRenderTarget } from './canvasRenderTarget';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
-import { scene2dCanvasPipeline } from './scene2dCanvasPipeline';
+import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
 
 export * from './canvasRenderState';
 export * from './canvasRenderTarget';
@@ -53,7 +53,7 @@ export function createCanvasRenderState(
 ): CanvasRenderState {
   return createExplicitCanvasRenderState(
     createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(),
     options,
   );

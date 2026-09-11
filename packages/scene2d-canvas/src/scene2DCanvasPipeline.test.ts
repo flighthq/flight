@@ -20,21 +20,21 @@ import {
 import { applyCanvasBlendMode } from './canvasMaterials';
 import { getCanvasPipelineRegistries } from './canvasPipeline';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { scene2dCanvasPipeline } from './scene2dCanvasPipeline';
+import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
 
-describe('scene2dCanvasPipeline', () => {
+describe('scene2DCanvasPipeline', () => {
   let registries: Readonly<CanvasRenderRegistries>;
 
   beforeAll(() => {
-    registries = getCanvasPipelineRegistries(scene2dCanvasPipeline);
+    registries = getCanvasPipelineRegistries(scene2DCanvasPipeline);
   });
 
   it('is an Entity with EntityRuntimeKey', () => {
-    expect(EntityRuntimeKey in scene2dCanvasPipeline).toBe(true);
+    expect(EntityRuntimeKey in scene2DCanvasPipeline).toBe(true);
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {
-    expect(scene2dCanvasPipeline).toBe(scene2dCanvasPipeline);
+    expect(scene2DCanvasPipeline).toBe(scene2DCanvasPipeline);
   });
 
   it('carries all thirteen standard 2D Canvas renderers', () => {

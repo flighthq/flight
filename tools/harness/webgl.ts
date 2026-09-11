@@ -6,7 +6,7 @@ import {
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   createCanvasRenderState,
@@ -47,7 +47,7 @@ import {
   registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -73,7 +73,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
         contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
       }),
     ),
-    scene2dGlPipeline,
+    scene2DGlPipeline,
     {
       pixelRatio,
       backgroundColor: options.background,
@@ -144,7 +144,7 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
     createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));

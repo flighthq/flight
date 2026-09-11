@@ -34,7 +34,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -61,7 +61,7 @@ export const state = createCanvasRenderState(
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio, backgroundColor: 0x808080ff },
 );

@@ -9,7 +9,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
-import { registerWgpuStandardMaterial, renderWgpuScene2D, scene2dWgpuPipeline } from '@flighthq/scene2d-wgpu';
+import { registerWgpuStandardMaterial, renderWgpuScene2D, scene2DWgpuPipeline } from '@flighthq/scene2d-wgpu';
 import { RegistryEntryState } from '@flighthq/types';
 
 enableHostWebWgpuRenderSurface();
@@ -17,12 +17,12 @@ const canvas = createWgpuCanvasElement(400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
   backgroundColor: 0x1a1a2eff,
   pixelRatio: 1,
 });
 
-const registries = scene2dWgpuPipeline.registries;
+const registries = scene2DWgpuPipeline.registries;
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }

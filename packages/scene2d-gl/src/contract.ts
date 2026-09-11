@@ -48,7 +48,7 @@ export {
   registerCanvasShapeCommands as registerGlShapeCommands,
 } from '@flighthq/scene2d-canvas/contract';
 export * from './glShapeRasterizer';
-export * from './scene2dGlPipeline';
+export * from './scene2DGlPipeline';
 export { initializeGlRichTextData } from './glRichText';
 export { initializeGlShapeData } from './glShapeData';
 export { initializeGlScale9ShapeData } from './glScale9Shape';

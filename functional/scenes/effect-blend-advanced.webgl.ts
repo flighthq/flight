@@ -1,7 +1,7 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   AdvancedBlendMode,
   ShapeKind,
@@ -69,7 +69,7 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x000000ff,

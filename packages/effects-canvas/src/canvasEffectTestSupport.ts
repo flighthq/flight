@@ -4,7 +4,7 @@ import {
   createCanvasRenderSurface,
   createCanvasRenderTarget as createExplicitCanvasRenderTarget,
   createCanvasTextureResolvers,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasRenderOptions,
@@ -43,7 +43,7 @@ export function createCanvasRenderState(
 ): CanvasRenderState {
   return createExplicitCanvasRenderState(
     createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(canvasTestSurfaceCreator),
     options,
   );

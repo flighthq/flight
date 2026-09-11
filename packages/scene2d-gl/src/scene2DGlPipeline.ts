@@ -39,7 +39,7 @@ import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { defaultGlTextLabelRenderer } from './glTextLabel';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
-function buildScene2dGlRenderers(): KeyedTable<Renderer> {
+function buildScene2DGlRenderers(): KeyedTable<Renderer> {
   const registries = createEmptyGlRegistries();
   let table = registries.renderers;
   table = withRegistryTableEntry(table, BitmapTextKind, defaultGlBitmapTextRenderer);
@@ -58,7 +58,7 @@ function buildScene2dGlRenderers(): KeyedTable<Renderer> {
   return table;
 }
 
-export const scene2dGlPipeline: GlPipeline = createGlPipeline({
+export const scene2DGlPipeline: GlPipeline = createGlPipeline({
   ...createEmptyGlRegistries(),
   blendRealizations: standardGlBlendRealizations,
   materialRenderers: withRegistryTableEntry(
@@ -66,7 +66,7 @@ export const scene2dGlPipeline: GlPipeline = createGlPipeline({
     StandardMaterialKind,
     standardGlMaterialRenderer,
   ),
-  renderers: buildScene2dGlRenderers(),
+  renderers: buildScene2DGlRenderers(),
   strokeTessellator: {
     ...createEmptyGlRegistries().strokeTessellator,
     entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },

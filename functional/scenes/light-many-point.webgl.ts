@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, prepareGlScene3DForwardLights } from '@flighthq/scene3d-gl';
 import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -72,7 +72,7 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x080a10ff,
