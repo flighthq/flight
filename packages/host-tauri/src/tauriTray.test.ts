@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTauriTrayCapabilities, initializeTauriTrayCapabilities } from './tauriTray';
+import { tauriHostTray } from './tauriTray';
 
 interface FakeIcon extends TauriTrayIcon {
   closeFailures: number;
@@ -101,21 +101,19 @@ async function flushMicrotasks(): Promise<void> {
   for (let index = 0; index < 12; index++) await Promise.resolve();
 }
 
-async function acquire(
-  hostTrayLifecycle: ReturnType<typeof createTauriTrayCapabilities>['lifecycle'],
-): Promise<TrayIcon> {
+async function acquire(hostTrayLifecycle: ReturnType<typeof tauriHostTray>['lifecycle']): Promise<TrayIcon> {
   const result = await createTrayIcon(hostTrayLifecycle, { icon: 'icon.png' });
   if (result.outcome !== 'created') throw new Error(result.outcome);
   return result.tray;
 }
 
-describe('createTauriTrayCapabilities', () => {
+describe('tauriHostTray', () => {
   it('exposes only the slots supported by the injected OS profile', () => {
     const { tauri } = fakeTauri();
-    expect(Object.keys(createTauriTrayCapabilities(tauri, 'linux')).sort()).toEqual(
+    expect(Object.keys(tauriHostTray(tauri, 'linux')).sort()).toEqual(
       ['image', 'lifecycle', 'menu', 'menuSelectionEvents', 'title'].sort(),
     );
-    expect(Object.keys(createTauriTrayCapabilities(tauri, 'macos')).sort()).toEqual(
+    expect(Object.keys(tauriHostTray(tauri, 'macos')).sort()).toEqual(
       [
         'image',
         'interactionEvents',
@@ -127,7 +125,7 @@ describe('createTauriTrayCapabilities', () => {
         'tooltip',
       ].sort(),
     );
-    expect(Object.keys(createTauriTrayCapabilities(tauri, 'windows')).sort()).toEqual(
+    expect(Object.keys(tauriHostTray(tauri, 'windows')).sort()).toEqual(
       ['image', 'interactionEvents', 'lifecycle', 'menu', 'menuSelectionEvents', 'tooltip'].sort(),
     );
   });
@@ -139,7 +137,7 @@ describe('createTauriTrayCapabilities', () => {
       new Promise((accept) => {
         resolve = accept;
       });
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     const pending = createTrayIcon(host.tray.lifecycle, { icon: 'icon.png' });
     expect(host.tray.lifecycle.list()).toEqual([]);
     resolve({
@@ -161,7 +159,7 @@ describe('createTauriTrayCapabilities', () => {
       new Promise((accept) => {
         resolve = accept;
       });
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     const controller = new AbortController();
     const pending = createTrayIcon(host.tray.lifecycle, { icon: 'icon.png', signal: controller.signal });
     controller.abort();
@@ -184,14 +182,14 @@ describe('createTauriTrayCapabilities', () => {
     tauri.tray.TrayIcon.new = async () => {
       throw new Error('rejected');
     };
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     expect((await createTrayIcon(host.tray.lifecycle, { icon: 'icon.png' })).outcome).toBe('tray-create-failed');
     expect(host.tray.lifecycle.list()).toEqual([]);
   });
 
   it('delivers interaction payload through the profile-owned signal', async () => {
     const { action, tauri } = fakeTauri();
-    const host = { tray: createTauriTrayCapabilities(tauri, 'macos') };
+    const host = { tray: tauriHostTray(tauri, 'macos') };
     const tray = await acquire(host.tray.lifecycle);
     const listener = vi.fn();
     onTrayInteraction(host.tray.interactionEvents, tray, listener);
@@ -201,7 +199,7 @@ describe('createTauriTrayCapabilities', () => {
 
   it('routes menu selection per Tray and replaces the previous menu transactionally', async () => {
     const { icons, menuActions, menus, tauri } = fakeTauri();
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     const tray = await acquire(host.tray.lifecycle);
     const selected: string[] = [];
     onTrayMenuSelection(host.tray.menuSelectionEvents, tray, ({ id }) => selected.push(id));
@@ -218,7 +216,7 @@ describe('createTauriTrayCapabilities', () => {
     const { icons, tauri } = fakeTauri();
     const resolvers: Array<(menu: TauriMenu) => void> = [];
     tauri.menu.Menu.new = () => new Promise((resolve) => resolvers.push(resolve));
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     const tray = await acquire(host.tray.lifecycle);
     const old = setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'old' }]);
     const newest = setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'new' }]);
@@ -235,7 +233,7 @@ describe('createTauriTrayCapabilities', () => {
 
   it('uses typed async updates and macOS template treatment', async () => {
     const { icons, tauri } = fakeTauri();
-    const host = { tray: createTauriTrayCapabilities(tauri, 'macos') };
+    const host = { tray: tauriHostTray(tauri, 'macos') };
     const tray = await acquire(host.tray.lifecycle);
     expect((await setTrayIcon(host.tray.image, tray, 'next.png')).outcome).toBe('updated');
     expect((await setTrayIconTemplate(host.tray.templateImage, tray, true)).outcome).toBe('updated');
@@ -244,7 +242,7 @@ describe('createTauriTrayCapabilities', () => {
 
   it('attempts menu and native teardown and retries only failed native steps', async () => {
     const { icons, menus, tauri } = fakeTauri();
-    const host = { tray: createTauriTrayCapabilities(tauri, 'linux') };
+    const host = { tray: tauriHostTray(tauri, 'linux') };
     const tray = await acquire(host.tray.lifecycle);
     await setTrayIconContextMenu(host.tray.menu, tray, [{ id: 'quit' }]);
     icons[0].closeFailures = 1;
@@ -253,10 +251,5 @@ describe('createTauriTrayCapabilities', () => {
     expect((await destroyTrayIcon(tray)).outcome).toBe('destroyed');
     expect(menus[0].closed).toBe(1);
     expect(icons[0].closed).toBe(1);
-  });
-});
-describe('initializeTauriTrayCapabilities', () => {
-  it('is the construction initializer of createTauriTrayCapabilities', () => {
-    expect(typeof initializeTauriTrayCapabilities).toBe('function');
   });
 });

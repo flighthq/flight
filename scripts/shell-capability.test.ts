@@ -17,7 +17,7 @@ describe('Shell explicit Host capability shape', () => {
       source('packages/shell/src/shell.ts'),
       source('packages/host-web/src/webShell.ts'),
       source('packages/host-electron/src/electronRegister.ts'),
-      source('packages/host-tauri/src/tauriRegister.ts'),
+      source('packages/host-tauri/src/tauriHost.ts'),
     ].join('\n');
     for (const forbidden of [
       'ShellBackend',

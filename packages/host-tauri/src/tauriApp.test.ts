@@ -2,7 +2,7 @@ import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createTauriAppCapabilities, initializeTauriAppCapabilities } from './tauriApp';
+import { tauriHostApp } from './tauriApp';
 
 const flush = async () => {
   await Promise.resolve();
@@ -35,16 +35,16 @@ function fakeTauri() {
   return { calls, tauri };
 }
 
-describe('createTauriAppCapabilities', () => {
+describe('tauriHostApp', () => {
   it('publishes exactly the seven genuine Entity-backed slots', () => {
-    const app = createTauriAppCapabilities(fakeTauri().tauri);
+    const app = tauriHostApp(fakeTauri().tauri);
     expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('serves identity and locale from construction-time prefetches', async () => {
-    const app = createTauriAppCapabilities(fakeTauri().tauri);
+    const app = tauriHostApp(fakeTauri().tauri);
     expect(app.name.getName()).toBe('');
     await flush();
     expect(app.name.getName()).toBe('FlightApp');
@@ -55,17 +55,12 @@ describe('createTauriAppCapabilities', () => {
 
   it('delegates application controls', async () => {
     const { calls, tauri } = fakeTauri();
-    const app = createTauriAppCapabilities(tauri);
+    const app = tauriHostApp(tauri);
     app.quit.quit();
     app.relaunch.relaunch();
     app.hide.hideApp();
     app.show.showApp();
     await flush();
     expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
-  });
-});
-describe('initializeTauriAppCapabilities', () => {
-  it('is the construction initializer of createTauriAppCapabilities', () => {
-    expect(typeof initializeTauriAppCapabilities).toBe('function');
   });
 });

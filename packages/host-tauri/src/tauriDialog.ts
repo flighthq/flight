@@ -10,40 +10,50 @@ import type {
   HostFileSaveDialogProvider,
   FileSaveDialogResult,
   HostMessageDialogProvider,
+  HostDialogCapabilities,
   MessageDialogKind,
   TauriApi,
   TauriDialogFilter,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): HostDirectoryOpenDialogProvider & Entity {
-  const out = allocateEntity<HostDirectoryOpenDialogProvider>();
-  initializeTauriDirectoryOpenDialogBackend(out, tauri);
-  return finishEntity(out);
-}
-
-export function createTauriFileOpenDialogBackend(tauri: TauriApi): HostFileOpenDialogProvider & Entity {
-  const out = allocateEntity<HostFileOpenDialogProvider>();
-  initializeTauriFileOpenDialogBackend(out, tauri);
-  return finishEntity(out);
-}
-
-export function createTauriFileSaveDialogBackend(tauri: TauriApi): HostFileSaveDialogProvider & Entity {
-  const out = allocateEntity<HostFileSaveDialogProvider>();
-  initializeTauriFileSaveDialogBackend(out, tauri);
-  return finishEntity(out);
-}
-
-export function createTauriMessageDialogBackend(tauri: TauriApi): HostMessageDialogProvider & Entity {
-  const out = allocateEntity<HostMessageDialogProvider>();
-  initializeTauriMessageDialogBackend(out, tauri);
-  return finishEntity(out);
-}
-
-export function initializeTauriDirectoryOpenDialogBackend(
-  out: EntityConstruction<HostDirectoryOpenDialogProvider>,
+export function tauriHostDialog(
   tauri: TauriApi,
-): void {
+): HostDialogCapabilities &
+  Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>> {
+  return {
+    directoryOpen: tauriHostDirectoryOpenDialog(tauri),
+    fileOpen: tauriHostFileOpenDialog(tauri),
+    fileSave: tauriHostFileSaveDialog(tauri),
+    message: tauriHostMessageDialog(tauri),
+  };
+}
+
+export function tauriHostDirectoryOpenDialog(tauri: TauriApi): HostDirectoryOpenDialogProvider & Entity {
+  const out = allocateEntity<HostDirectoryOpenDialogProvider>();
+  configureDirectoryOpenDialog(out, tauri);
+  return finishEntity(out);
+}
+
+export function tauriHostFileOpenDialog(tauri: TauriApi): HostFileOpenDialogProvider & Entity {
+  const out = allocateEntity<HostFileOpenDialogProvider>();
+  configureFileOpenDialog(out, tauri);
+  return finishEntity(out);
+}
+
+export function tauriHostFileSaveDialog(tauri: TauriApi): HostFileSaveDialogProvider & Entity {
+  const out = allocateEntity<HostFileSaveDialogProvider>();
+  configureFileSaveDialog(out, tauri);
+  return finishEntity(out);
+}
+
+export function tauriHostMessageDialog(tauri: TauriApi): HostMessageDialogProvider & Entity {
+  const out = allocateEntity<HostMessageDialogProvider>();
+  configureMessageDialog(out, tauri);
+  return finishEntity(out);
+}
+
+function configureDirectoryOpenDialog(out: EntityConstruction<HostDirectoryOpenDialogProvider>, tauri: TauriApi): void {
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
     if (options?.signal?.aborted) return { outcome: 'cancelled' };
     const open = tauri.dialog?.open;
@@ -64,10 +74,7 @@ export function initializeTauriDirectoryOpenDialogBackend(
   };
 }
 
-export function initializeTauriFileOpenDialogBackend(
-  out: EntityConstruction<HostFileOpenDialogProvider>,
-  tauri: TauriApi,
-): void {
+function configureFileOpenDialog(out: EntityConstruction<HostFileOpenDialogProvider>, tauri: TauriApi): void {
   out.open = async (options): Promise<FileOpenDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const open = tauri.dialog?.open;
@@ -92,10 +99,7 @@ export function initializeTauriFileOpenDialogBackend(
   };
 }
 
-export function initializeTauriFileSaveDialogBackend(
-  out: EntityConstruction<HostFileSaveDialogProvider>,
-  tauri: TauriApi,
-): void {
+function configureFileSaveDialog(out: EntityConstruction<HostFileSaveDialogProvider>, tauri: TauriApi): void {
   out.save = async (options): Promise<FileSaveDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const save = tauri.dialog?.save;
@@ -116,10 +120,7 @@ export function initializeTauriFileSaveDialogBackend(
 
 // Tauri provides message and confirmation surfaces but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
-export function initializeTauriMessageDialogBackend(
-  out: EntityConstruction<HostMessageDialogProvider>,
-  tauri: TauriApi,
-): void {
+function configureMessageDialog(out: EntityConstruction<HostMessageDialogProvider>, tauri: TauriApi): void {
   const dialog = tauri.dialog;
   out.message = async (options) => {
     if (options.signal?.aborted) {

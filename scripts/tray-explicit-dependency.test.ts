@@ -8,7 +8,7 @@ const hostSource = readFileSync(resolve(root, 'packages/types/src/Host.ts'), 'ut
 const trayTypeSource = readFileSync(resolve(root, 'packages/types/src/Tray.ts'), 'utf8');
 const trayCoreSource = readFileSync(resolve(root, 'packages/tray/src/tray.ts'), 'utf8');
 const electronRegisterSource = readFileSync(resolve(root, 'packages/host-electron/src/electronRegister.ts'), 'utf8');
-const tauriRegisterSource = readFileSync(resolve(root, 'packages/host-tauri/src/tauriRegister.ts'), 'utf8');
+const tauriHostSource = readFileSync(resolve(root, 'packages/host-tauri/src/tauriHost.ts'), 'utf8');
 
 describe('Tray explicit dependency structure', () => {
   it('publishes the required top-level shape-separated Host group', () => {
@@ -64,8 +64,8 @@ describe('Tray explicit dependency structure', () => {
 
   it('requires an injected OS profile and never reaches ambient process.platform', () => {
     expect(electronRegisterSource).toMatch(/platform: Profile/);
-    expect(tauriRegisterSource).toMatch(/profile: Profile/);
+    expect(tauriHostSource).toMatch(/profile: Profile/);
     expect(electronRegisterSource).not.toContain('process.platform');
-    expect(tauriRegisterSource).not.toContain('process.platform');
+    expect(tauriHostSource).not.toContain('process.platform');
   });
 });

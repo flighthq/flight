@@ -40,7 +40,7 @@ interface TrayRecord {
   tooltip: string;
 }
 
-export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
+export function tauriHostTray<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
 ): TauriTrayCapabilitiesFor<Profile> {
@@ -226,7 +226,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   if (profile === 'linux') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
     const out = allocateEntity<Entity>();
-    initializeTauriTrayCapabilities(
+    configureTray(
       out,
       common.image,
       null,
@@ -266,7 +266,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   if (profile === 'windows') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
     const out = allocateEntity<Entity>();
-    initializeTauriTrayCapabilities(
+    configureTray(
       out,
       common.image,
       interactionEvents,
@@ -288,7 +288,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   const templateImage = finishEntity(templateImageEntity);
   // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
   const out = allocateEntity<Entity>();
-  initializeTauriTrayCapabilities(
+  configureTray(
     out,
     common.image,
     interactionEvents,
@@ -302,7 +302,54 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
 }
 
-export function initializeTauriTrayCapabilities(
+export function tauriHostTrayImage<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): HostTrayImageProvider {
+  return tauriHostTray(tauri, profile).image;
+}
+
+export function tauriHostTrayInteractionEvents(
+  tauri: TauriApi,
+  profile: 'macos' | 'windows',
+): HostTrayInteractionEventsProvider {
+  return tauriHostTray(tauri, profile).interactionEvents;
+}
+
+export function tauriHostTrayLifecycle<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): HostTrayLifecycleProvider {
+  return tauriHostTray(tauri, profile).lifecycle;
+}
+
+export function tauriHostTrayMenu<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): HostTrayMenuProvider {
+  return tauriHostTray(tauri, profile).menu;
+}
+
+export function tauriHostTrayMenuSelectionEvents<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): HostTrayMenuSelectionEventsProvider {
+  return tauriHostTray(tauri, profile).menuSelectionEvents;
+}
+
+export function tauriHostTrayTemplateImage(tauri: TauriApi): HostTrayTemplateImageProvider {
+  return tauriHostTray(tauri, 'macos').templateImage;
+}
+
+export function tauriHostTrayTitle(tauri: TauriApi, profile: 'linux' | 'macos'): HostTrayTitleProvider {
+  return tauriHostTray(tauri, profile).title;
+}
+
+export function tauriHostTrayTooltip(tauri: TauriApi, profile: 'macos' | 'windows'): HostTrayTooltipProvider {
+  return tauriHostTray(tauri, profile).tooltip;
+}
+
+function configureTray(
   out: EntityConstruction<Entity>,
   image: HostTrayImageProvider,
   interactionEvents: HostTrayInteractionEventsProvider | null,

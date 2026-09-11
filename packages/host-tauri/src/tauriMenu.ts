@@ -20,13 +20,29 @@ import type {
 //
 // Built together because `application` and `select` share the listener closure; kept as separate slots
 // because their shapes are incompatible.
-export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities {
+export function tauriHostMenu(tauri: TauriApi): TauriMenuCapabilities {
+  return tauriMenuProviders(tauri);
+}
+
+export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationProvider {
+  return tauriMenuProviders(tauri).application;
+}
+
+export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
+  return tauriMenuProviders(tauri).popup;
+}
+
+export function tauriHostMenuSelect(tauri: TauriApi): HostMenuSelectProvider {
+  return tauriMenuProviders(tauri).select;
+}
+
+function tauriMenuProviders(tauri: TauriApi): TauriMenuCapabilities {
   const out = allocateEntity<TauriMenuCapabilities>();
-  initializeTauriMenuBackends(out, tauri);
+  configureMenu(out, tauri);
   return finishEntity(out);
 }
 
-export function initializeTauriMenuBackends(out: EntityConstruction<TauriMenuCapabilities>, tauri: TauriApi): void {
+function configureMenu(out: EntityConstruction<TauriMenuCapabilities>, tauri: TauriApi): void {
   const menuModule = tauri.menu;
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;

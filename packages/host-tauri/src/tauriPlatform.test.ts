@@ -1,6 +1,6 @@
 import type { PlatformInfo, TauriApi } from '@flighthq/types/contract';
 
-import { createTauriPlatformBackend, initializeTauriPlatformBackend } from './tauriPlatform';
+import { tauriHostPlatform } from './tauriPlatform';
 
 function fakeTauri(platform: string): TauriApi {
   return {
@@ -13,9 +13,9 @@ function fakeTauri(platform: string): TauriApi {
   } as unknown as TauriApi;
 }
 
-describe('createTauriPlatformBackend', () => {
+describe('tauriHostPlatform', () => {
   it('fills platform info from the os plugin', async () => {
-    const backend = createTauriPlatformBackend(fakeTauri('macos'));
+    const backend = tauriHostPlatform(fakeTauri('macos'));
     await Promise.resolve();
     const out = {} as PlatformInfo;
     const result = backend.getInfo(out);
@@ -40,7 +40,7 @@ describe('createTauriPlatformBackend', () => {
     };
     for (const [tauriName, expected] of Object.entries(cases)) {
       const out = {} as PlatformInfo;
-      createTauriPlatformBackend(fakeTauri(tauriName)).getInfo(out);
+      tauriHostPlatform(fakeTauri(tauriName)).getInfo(out);
       expect(out.name).toBe(expected);
     }
   });
@@ -50,12 +50,7 @@ describe('createTauriPlatformBackend', () => {
       os: { arch: () => '', locale: async () => null, platform: () => 'linux', version: () => '' },
     } as unknown as TauriApi;
     const out = {} as PlatformInfo;
-    createTauriPlatformBackend(tauri).getInfo(out);
+    tauriHostPlatform(tauri).getInfo(out);
     expect(out.locale).toBe('');
-  });
-});
-describe('initializeTauriPlatformBackend', () => {
-  it('is the construction initializer of createTauriPlatformBackend', () => {
-    expect(typeof initializeTauriPlatformBackend).toBe('function');
   });
 });

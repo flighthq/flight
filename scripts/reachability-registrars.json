@@ -634,10 +634,6 @@
       "registrar": "registerElectronBackends"
     },
     {
-      "packageName": "host-tauri",
-      "registrar": "registerTauriBackends"
-    },
-    {
       "packageName": "image-codec",
       "registrar": "registerImageBitmapComposer"
     },

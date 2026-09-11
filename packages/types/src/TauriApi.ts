@@ -16,7 +16,7 @@
 //     app, clipboard, dialog, notification, opener, os, globalShortcut, process,
 //     menu: menu as TauriApi['menu'], tray: tray as TauriApi['tray'], window: window as TauriApi['window'],
 //   };
-//   registerTauriBackends(tauriApi, 'macos');
+//   tauriHost(tauriApi, 'macos');
 //
 // Typing it here (rather than importing `@tauri-apps/*`) keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Tauri surface the seams require, which is the real
