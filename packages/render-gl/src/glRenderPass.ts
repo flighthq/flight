@@ -1,3 +1,4 @@
+import { srgbChannelToLinear } from '@flighthq/color/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   GlContext,
@@ -251,13 +252,18 @@ function resolveGlClearColor(
     out[1] = ((packed >>> 16) & 0xff) / 255;
     out[2] = ((packed >>> 8) & 0xff) / 255;
     out[3] = (packed & 0xff) / 255;
-    return;
+  } else {
+    const bg = state.backgroundColorRgba;
+    out[0] = bg[0] ?? 0;
+    out[1] = bg[1] ?? 0;
+    out[2] = bg[2] ?? 0;
+    out[3] = bg.length >= 4 ? bg[3] : 0;
   }
-  const bg = state.backgroundColorRgba;
-  out[0] = bg[0] ?? 0;
-  out[1] = bg[1] ?? 0;
-  out[2] = bg[2] ?? 0;
-  out[3] = bg.length >= 4 ? bg[3] : 0;
+  if (target.colorSpace === 'linear') {
+    out[0] = srgbChannelToLinear(out[0]);
+    out[1] = srgbChannelToLinear(out[1]);
+    out[2] = srgbChannelToLinear(out[2]);
+  }
 }
 
 function captureGlPassState(state: GlRenderState): SavedGlPassState {
