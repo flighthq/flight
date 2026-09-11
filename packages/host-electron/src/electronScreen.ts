@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type {
   ElectronApi,
   ElectronDisplay,
@@ -14,9 +13,7 @@ import type {
   HostScreenQueryProvider,
 } from '@flighthq/types/contract';
 
-export function electronHostScreen(
-  electron: ElectronApi,
-): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
+export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
   return { change: electronHostScreenChange(electron), query: electronHostScreenQuery(electron) };
 }
 
@@ -32,7 +29,7 @@ export function electronHostScreenQuery(electron: ElectronApi): HostScreenQueryP
   return finishEntity(out);
 }
 
-export function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
+function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
   out.colorDepth = -1;
   out.colorSpace = 'srgb' as ScreenColorSpace;
   out.depthPerComponent = -1;

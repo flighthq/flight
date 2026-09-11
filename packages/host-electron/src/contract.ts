@@ -65,7 +65,6 @@ export {
   electronHostMenuPopup,
   electronHostMenuSelect,
 } from './electronMenu';
-export { toElectronTemplate } from './electronMenuTemplate';
 export {
   electronHostNotification,
   electronHostNotificationAction,
@@ -98,12 +97,7 @@ export {
   electronHostProtocolUnregistration,
 } from './electronProtocol';
 export { electronHost } from './electronRegister';
-export {
-  electronHostScreen,
-  electronHostScreenChange,
-  electronHostScreenQuery,
-  initializeEmptyScreenInfo,
-} from './electronScreen';
+export { electronHostScreen, electronHostScreenChange, electronHostScreenQuery } from './electronScreen';
 export {
   electronHostShell,
   electronHostShellBeep,
@@ -139,5 +133,4 @@ export {
   getApplicationWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
-  resetElectronHostWindowForTest,
 } from './electronWindow';

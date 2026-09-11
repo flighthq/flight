@@ -1,7 +1,7 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { electronHostClipboard, populateElectronHostClipboardProvider } from './electronClipboard';
+import { electronHostClipboard } from './electronClipboard';
 
 function clipboardProvider(electron: ElectronApi) {
   const clipboard = electronHostClipboard(electron);
@@ -106,8 +106,3 @@ describe('electronHostClipboardFormats', clipboardLeaf('formats'));
 describe('electronHostClipboardImage', clipboardLeaf('image'));
 
 describe('electronHostClipboardText', clipboardLeaf('text'));
-describe('populateElectronHostClipboardProvider', () => {
-  it('is the construction initializer used by electronHostClipboard leaves', () => {
-    expect(typeof populateElectronHostClipboardProvider).toBe('function');
-  });
-});
