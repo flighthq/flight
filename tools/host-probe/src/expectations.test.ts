@@ -43,7 +43,10 @@ describe('createHostProbeProviderResults', () => {
 
   it('fails an unexpected provider change', () => {
     const results = createHostProbeProviderResults('capacitor', new Set(['tray']));
-    expect(results.find((result) => result.id === 'provider.tray')?.status).toBe('fail');
+    expect(results.find((result) => result.id === 'provider.tray')).toMatchObject({
+      detail: 'capacitor unexpectedly exposes a tray provider',
+      status: 'fail',
+    });
   });
 });
 

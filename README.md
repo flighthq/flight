@@ -202,7 +202,7 @@ Major areas:
 | Resources and formats | Loaders and structured importers for images, fonts, atlases, tilemaps, particles, SVG, SWF, glTF, OBJ/MTL, 3DS, MD2/MD5, AWD2, and more |
 | Application and media | `application`, `audio`, `video`, `media`, `mediasession`, `intl`, `log`, `debug` |
 | Platform integration | Web-first APIs for storage, networking, filesystem, clipboard, dialogs, notifications, sensors, windows, lifecycle, and other OS/device capabilities |
-| Native hosts | Replaceable adapters for Electron, Tauri, and Capacitor |
+| Native hosts | Explicit `Host` values for Electron, Tauri, and Capacitor |
 | Tooling | Capture and baseline tooling, cross-renderer smoke/parity checks, conformance fixtures, API/export/package/order/portability gates, and bundle-size budgets |
 
 All packages are published under `@flighthq/`. Applications and examples usually import from `@flighthq/sdk`:
@@ -217,7 +217,7 @@ Library code should prefer the smallest package root that provides the needed AP
 import { createTween, updateTweens } from '@flighthq/tween';
 ```
 
-Platform implementations are registered explicitly. Browser applications opt into the narrow `enableHostWeb*` functions they use (or the combined `enableHostWeb()` setup); Electron, Tauri, and Capacitor hosts register their matching adapters. The application-facing API remains stable across those hosts.
+Platform `Host` values are explicit. Browser applications pass the ready-made `webHost` or the narrow `webHost*` values they need; Tauri and Capacitor applications construct `tauriHost` or `capacitorHost` from their injected native APIs. The application-facing API remains stable across those hosts.
 
 ## Engineering Confidence
 

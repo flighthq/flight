@@ -1,6 +1,6 @@
 # Flight host probe
 
-`tools/host-probe` is the private executable contract test for Flight's host adapters. It installs a real host, compares every capability backend before and after registration, performs a small set of safe runtime operations, draws and reads back a deterministic canvas, and publishes one versioned report on `window.__flightHostProbeReport`.
+`tools/host-probe` is the private executable contract test for Flight's host adapters. It constructs a real `Host`, verifies every returned capability provider against that host's exact claimed subset, performs a small set of safe runtime operations, draws and reads back a deterministic canvas, and publishes one versioned report on `window.__flightHostProbeReport`.
 
 It is deliberately separate from `tools/harness`, which owns incidental renderer wiring for functional scenes. The probe tests platform integration; it is not a rendering gallery and is never published.
 
@@ -22,7 +22,7 @@ interface HostProbeReport {
 }
 ```
 
-Provider results are exhaustive over the probe's capability census. A provider promised by the host must change identity during registration. A capability outside that host's claimed subset must stay unchanged and is reported as `unsupported`; an unexpected replacement fails the run. Permission prompts and physical effects are `manual`, never silently passed.
+Provider results are exhaustive over the probe's capability census. A provider promised by the host must be distinct from the unsupported baseline. A capability outside that host's claimed subset must remain at the baseline and is reported as `unsupported`; an unexpected provider fails the run. Permission prompts and physical effects are `manual`, never silently passed.
 
 ## Commands
 
@@ -71,19 +71,19 @@ Web, Electron, Tauri, and Android use Linux runners; iOS uses a macOS runner. Th
 
 ## Applying the pattern to a project
 
-A host runner owns the native shell, installs the corresponding `@flighthq/host-*` backend before app startup, and then loads the project's normal web entry. The renderer stays the project; native wiring does not belong in each example or scene.
+A host runner owns the native shell and its corresponding `@flighthq/host-*` wiring before app startup, then loads the project's normal web entry. The renderer stays the project; native wiring does not belong in each example or scene.
 
 - Electron keeps registration in the main process and exposes renderer calls through a narrow preload bridge. The existing examples runner follows this pattern: `npm run examples:electron`.
 - Tauri imports its JS modules/plugins in the renderer bootstrap, constructs `tauriHost`, and has matching Rust plugins and ACL permissions. This tool's `src/hosts/tauri.ts` and `src-tauri/` are the minimal reusable shell.
 - Capacitor imports official plugin objects in the renderer bootstrap, constructs `capacitorHost`, and uses one generated Android/iOS project around the shared frontend. This tool's `src/hosts/capacitor.ts`, `capacitor.config.ts`, and preparation script are the template.
 
-For a project such as `examples/`, keep its web runner as the frontend and copy or parameterize these shells around it. Do not copy host registration into every example; one bootstrap per host is the seam.
+For a project such as `examples/`, keep its web runner as the frontend and copy or parameterize these shells around it. Do not copy `Host` construction into every example; one bootstrap per host is the seam.
 
-The host probe stays separate even when a project gains those runners. It is the small executable contract test that catches adapter registration or packaging failures without conflating them with a large project's rendering behavior.
+The host probe stays separate even when a project gains those runners. It is the small executable contract test that catches `Host` construction or packaging failures without conflating them with a large project's rendering behavior.
 
 ## Capability presence is a slot, not a group
 
-`captureHostProbeBackends` reports whether a host provides a capability. For a two-level Host group, mapping `host.ipc ?? null` is wrong: an empty `{}` group is truthy and would report support. IPC, Menu, and Power therefore inspect the first populated slot and return `null` when the group is empty. Rows that already name a slot, such as `clipboard.text`, `input.haptics`, and `share.content`, are unaffected.
+The capability snapshot reports whether a host provides a capability. For a two-level Host group, mapping `host.ipc ?? null` is wrong: an empty `{}` group is truthy and would report support. IPC, Menu, and Power therefore inspect the first populated slot and return `null` when the group is empty. Rows that already name a slot, such as `clipboard.text`, `input.haptics`, and `share.content`, are unaffected.
 
 Dialog and Notification still map their whole groups because every current host populates them. If either ever permits an empty group, it must use the same populated-slot rule.
 

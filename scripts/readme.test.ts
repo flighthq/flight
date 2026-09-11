@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 const root = join(import.meta.dirname, '..');
 const readme = readFileSync(join(root, 'README.md'), 'utf8');
+const hostProbeReadme = readFileSync(join(root, 'tools/host-probe/README.md'), 'utf8');
+const hostTauriManifest = JSON.parse(readFileSync(join(root, 'packages/host-tauri/package.json'), 'utf8')) as {
+  description?: string;
+};
 
 describe('root README contracts', () => {
   it('uses a package-count statement that remains true for the current graph', () => {
@@ -27,8 +31,20 @@ describe('root README contracts', () => {
     expect(startIndex).toBeGreaterThan(-1);
   });
 
-  it('does not promise implicit platform backends', () => {
-    expect(readme).toContain('Platform implementations are registered explicitly.');
+  it('documents native integrations as explicit Host values', () => {
+    expect(readme).toContain('Platform `Host` values are explicit.');
+    expect(readme).toContain('construct `tauriHost` or `capacitorHost`');
     expect(readme).not.toContain('Web implementations are available by default');
+    expect(readme).not.toContain('Platform implementations are registered explicitly.');
+
+    expect(hostProbeReadme).toContain('constructs `tauriHost`');
+    expect(hostProbeReadme).toContain('constructs `capacitorHost`');
+    for (const platform of ['Tauri', 'Capacitor']) {
+      const removedRegistrar = `register${platform}Backends`;
+      expect(readme).not.toContain(removedRegistrar);
+      expect(hostProbeReadme).not.toContain(removedRegistrar);
+    }
+    expect(hostProbeReadme).not.toMatch(/\b(?:before and after registration|during registration)\b/u);
+    expect(hostTauriManifest.description).toBe('Dependency-injected Tauri Host providers over a minimal TauriApi');
   });
 });

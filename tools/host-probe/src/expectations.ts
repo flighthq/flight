@@ -152,7 +152,7 @@ export function createHostProbeProviderResults(
     const expected = required.has(capability);
     if (expected && changed) {
       return {
-        detail: `${host} installed a distinct ${capability} provider`,
+        detail: `${host} exposes a distinct ${capability} provider`,
         id: `provider.${capability}`,
         kind: 'provider',
         status: 'pass',
@@ -160,7 +160,7 @@ export function createHostProbeProviderResults(
     }
     if (expected) {
       return {
-        detail: `${host} did not replace the ${capability} provider`,
+        detail: `${host} does not expose a distinct ${capability} provider`,
         id: `provider.${capability}`,
         kind: 'provider',
         status: 'fail',
@@ -168,7 +168,7 @@ export function createHostProbeProviderResults(
     }
     if (optional.has(capability) && changed) {
       return {
-        detail: `${host} installed an optional ${capability} provider`,
+        detail: `${host} exposes an optional ${capability} provider`,
         id: `provider.${capability}`,
         kind: 'provider',
         status: 'pass',
@@ -176,7 +176,7 @@ export function createHostProbeProviderResults(
     }
     if (changed) {
       return {
-        detail: `${host} unexpectedly replaced the unsupported ${capability} provider`,
+        detail: `${host} unexpectedly exposes a ${capability} provider`,
         id: `provider.${capability}`,
         kind: 'provider',
         status: 'fail',
