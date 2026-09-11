@@ -8,50 +8,55 @@ import type {
   HostNotificationPermissionProvider,
   TauriApi,
   TauriNotificationCapabilities,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function tauriHostNotification(tauri: TauriApi): TauriNotificationCapabilities {
-  return tauriNotificationProviders(tauri);
-}
-
-export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryProvider {
-  return tauriNotificationProviders(tauri).delivery;
-}
-
-export function tauriHostNotificationLifecycle(tauri: TauriApi): HostNotificationLifecycleProvider {
-  return tauriNotificationProviders(tauri).lifecycle;
-}
-
-export function tauriHostNotificationPermission(tauri: TauriApi): HostNotificationPermissionProvider {
-  return tauriNotificationProviders(tauri).permission;
-}
-
-function tauriNotificationProviders(tauri: TauriApi): TauriNotificationCapabilities {
+  const state = createNotificationState(tauri);
   const out = allocateEntity<TauriNotificationCapabilities>();
-  configureNotification(out, tauri);
+  out.delivery = createNotificationDelivery(state);
+  out.lifecycle = createNotificationLifecycle(state);
+  out.permission = createNotificationPermission(state);
   return finishEntity(out);
 }
 
-function configureNotification(out: EntityConstruction<TauriNotificationCapabilities>, tauri: TauriApi): void {
-  const notification = tauri.notification;
-  let destroyed = false;
-  let nextId = 1;
-  out.delivery = {
+export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryProvider {
+  return createNotificationDelivery(createNotificationState(tauri));
+}
+
+export function tauriHostNotificationLifecycle(tauri: TauriApi): HostNotificationLifecycleProvider {
+  return createNotificationLifecycle(createNotificationState(tauri));
+}
+
+export function tauriHostNotificationPermission(tauri: TauriApi): HostNotificationPermissionProvider {
+  return createNotificationPermission(createNotificationState(tauri));
+}
+
+interface NotificationState {
+  destroyed: boolean;
+  nextId: number;
+  notification: TauriApi['notification'];
+}
+
+function createNotificationState(tauri: TauriApi): NotificationState {
+  return { destroyed: false, nextId: 1, notification: tauri.notification };
+}
+
+function createNotificationDelivery(state: NotificationState): HostNotificationDeliveryProvider {
+  return {
     async notify(request) {
-      if (destroyed) return { reason: 'operation-failed' };
+      if (state.destroyed) return { reason: 'operation-failed' };
       const invalid = getTauriInvalidNotificationRequestFields(request);
       if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
       let granted: boolean;
       try {
-        granted = await notification.isPermissionGranted();
+        granted = await state.notification.isPermissionGranted();
       } catch {
         return { reason: 'operation-failed' };
       }
       if (!granted) return { reason: 'permission-denied' };
-      const id = request.id ?? `tauri-notification-${nextId++}`;
+      const id = request.id ?? `tauri-notification-${state.nextId++}`;
       try {
-        notification.sendNotification({
+        state.notification.sendNotification({
           body: request.body,
           icon: request.icon,
           title: request.title,
@@ -65,18 +70,24 @@ function configureNotification(out: EntityConstruction<TauriNotificationCapabili
       };
     },
   };
-  out.lifecycle = {
+}
+
+function createNotificationLifecycle(state: NotificationState): HostNotificationLifecycleProvider {
+  return {
     async destroy() {
-      if (destroyed) return { reason: 'already-destroyed' };
-      destroyed = true;
+      if (state.destroyed) return { reason: 'already-destroyed' };
+      state.destroyed = true;
       return { reason: 'ok' };
     },
   };
-  out.permission = {
+}
+
+function createNotificationPermission(state: NotificationState): HostNotificationPermissionProvider {
+  return {
     async getPermission() {
       try {
         return {
-          permission: (await notification.isPermissionGranted()) ? 'granted' : 'default',
+          permission: (await state.notification.isPermissionGranted()) ? 'granted' : 'default',
           reason: 'ok',
         };
       } catch {
@@ -85,7 +96,7 @@ function configureNotification(out: EntityConstruction<TauriNotificationCapabili
     },
     async requestPermission() {
       try {
-        const permission = await notification.requestPermission();
+        const permission = await state.notification.requestPermission();
         return {
           reason: permission === 'default' ? 'dismissed' : permission,
         };

@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostMenuApplicationProvider,
   MenuItemTemplate,
   HostMenuPopupProvider,
@@ -18,47 +17,52 @@ import type {
 // seam. popup resolves null only if the async build/popup throws; otherwise it resolves on the first item
 // click (Tauri exposes no menu-dismiss event).
 //
-// Built together because `application` and `select` share the listener closure; kept as separate slots
-// because their shapes are incompatible.
 export function tauriHostMenu(tauri: TauriApi): TauriMenuCapabilities {
-  return tauriMenuProviders(tauri);
-}
-
-export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationProvider {
-  return tauriMenuProviders(tauri).application;
-}
-
-export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
-  return tauriMenuProviders(tauri).popup;
-}
-
-export function tauriHostMenuSelect(tauri: TauriApi): HostMenuSelectProvider {
-  return tauriMenuProviders(tauri).select;
-}
-
-function tauriMenuProviders(tauri: TauriApi): TauriMenuCapabilities {
+  const state = createMenuState();
   const out = allocateEntity<TauriMenuCapabilities>();
-  configureMenu(out, tauri);
+  out.application = createMenuApplication(tauri, state);
+  out.popup = createMenuPopup(tauri);
+  out.select = createMenuSelect(state);
   return finishEntity(out);
 }
 
-function configureMenu(out: EntityConstruction<TauriMenuCapabilities>, tauri: TauriApi): void {
+export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationProvider {
+  return createMenuApplication(tauri, createMenuState());
+}
+
+export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
+  return createMenuPopup(tauri);
+}
+
+export function tauriHostMenuSelect(tauri: TauriApi): HostMenuSelectProvider {
+  void tauri;
+  return createMenuSelect(createMenuState());
+}
+
+interface MenuState {
+  destroyed: boolean;
+  selectListener: ((id: string) => void) | null;
+}
+
+function createMenuState(): MenuState {
+  return { destroyed: false, selectListener: null };
+}
+
+function createMenuApplication(tauri: TauriApi, state: MenuState): HostMenuApplicationProvider {
   const menuModule = tauri.menu;
-  let selectListener: ((id: string) => void) | null = null;
-  let destroyed = false;
   // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
   // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
   // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
   // until a replacement installs its own.
-  const applicationBackend = allocateEntity<HostMenuApplicationProvider>();
-  applicationBackend.destroy = (): void => {
-    if (destroyed) return;
-    destroyed = true;
+  const applicationProvider = allocateEntity<HostMenuApplicationProvider>();
+  applicationProvider.destroy = (): void => {
+    if (state.destroyed) return;
+    state.destroyed = true;
   };
-  applicationBackend.setApplicationMenu = (items): boolean => {
+  applicationProvider.setApplicationMenu = (items): boolean => {
     void (async () => {
-      const built = await buildItems(menuModule, items, (id) => selectListener?.(id));
+      const built = await buildItems(menuModule, items, (id) => state.selectListener?.(id));
       const menu = await menuModule.Menu.new({ items: built });
       await menu.setAsAppMenu();
     })().catch(() => {
@@ -66,9 +70,13 @@ function configureMenu(out: EntityConstruction<TauriMenuCapabilities>, tauri: Ta
     });
     return true;
   };
-  out.application = finishEntity(applicationBackend);
-  const popupBackend = allocateEntity<HostMenuPopupProvider>();
-  popupBackend.popup = (items, x, y): Promise<string | null> => {
+  return finishEntity(applicationProvider);
+}
+
+function createMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
+  const menuModule = tauri.menu;
+  const popupProvider = allocateEntity<HostMenuPopupProvider>();
+  popupProvider.popup = (items, x, y): Promise<string | null> => {
     return new Promise<string | null>((resolve) => {
       void (async () => {
         const built = await buildItems(menuModule, items, (id) => resolve(id));
@@ -77,15 +85,18 @@ function configureMenu(out: EntityConstruction<TauriMenuCapabilities>, tauri: Ta
       })().catch(() => resolve(null));
     });
   };
-  out.popup = finishEntity(popupBackend);
-  const selectBackend = allocateEntity<HostMenuSelectProvider>();
-  selectBackend.subscribe = (listener): (() => void) => {
-    selectListener = listener;
+  return finishEntity(popupProvider);
+}
+
+function createMenuSelect(state: MenuState): HostMenuSelectProvider {
+  const selectProvider = allocateEntity<HostMenuSelectProvider>();
+  selectProvider.subscribe = (listener): (() => void) => {
+    state.selectListener = listener;
     return () => {
-      if (selectListener === listener) selectListener = null;
+      if (state.selectListener === listener) state.selectListener = null;
     };
   };
-  out.select = finishEntity(selectBackend);
+  return finishEntity(selectProvider);
 }
 
 // Recursively builds Tauri menu item handles from Flight templates. Separators become a predefined
