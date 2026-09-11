@@ -18,7 +18,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): HostDevic
   return finishEntity(out);
 }
 
-// Maps Flight's DeviceBackend onto Capacitor's `@capacitor/device`. DeviceBackend reads are synchronous
+// Maps Flight's HostDeviceProvider onto Capacitor's `@capacitor/device`. Provider reads are synchronous
 // out-fills, whereas Capacitor's getInfo/getId are async, so the adapter prefetches both once at
 // construction and fills the caller's `out` from the cached values (sentinels — '' / -1 / false — until
 // the first probe resolves). Capacitor reports device identity (model, manufacturer, OS, virtual,

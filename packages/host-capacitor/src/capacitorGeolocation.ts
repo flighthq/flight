@@ -15,7 +15,7 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Host
   return finishEntity(out);
 }
 
-// Maps Flight's GeolocationBackend onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
+// Maps Flight's HostGeolocationProvider onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
 // permission calls are async and map directly. `watchPosition` is the one sync/async seam: the backend
 // returns a numeric watch id synchronously, whereas Capacitor resolves a string callback id, so the
 // adapter mints a local numeric id, kicks off the async watch (fire-and-forget), and records the string

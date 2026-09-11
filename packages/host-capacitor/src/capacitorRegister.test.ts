@@ -101,7 +101,7 @@ describe('capacitorHost', () => {
     expect(host.updater).toEqual({});
   });
 
-  // Every WindowBackend member is optional, so a backend carrying no operation is the honest claim for
+  // Every HostWindowProvider member is optional, so a provider carrying no operation is the honest claim for
   // a webview app with no native window operations of its own. Counted by own keys rather than compared
   // to {}, because the backend is an Entity and carries a runtime slot that is not an operation.
   it('claims no native window operations', () => {
