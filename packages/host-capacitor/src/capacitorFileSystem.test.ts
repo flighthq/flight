@@ -55,17 +55,17 @@ describe('capacitorHostFileSystem', () => {
 
   it('round-trips a text file', async () => {
     const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
-    expect(await backend.writeTextFile('/a.txt', 'hello')).toBe(true);
-    expect(await backend.readTextFile('/a.txt')).toBe('hello');
-    expect(await backend.appendTextFile('/a.txt', '!')).toBe(true);
-    expect(await backend.readTextFile('/a.txt')).toBe('hello!');
+    expect(await backend.writeTextFile?.('/a.txt', 'hello')).toBe(true);
+    expect(await backend.readTextFile?.('/a.txt')).toBe('hello');
+    expect(await backend.appendTextFile?.('/a.txt', '!')).toBe(true);
+    expect(await backend.readTextFile?.('/a.txt')).toBe('hello!');
   });
 
   it('round-trips a binary file through Base64', async () => {
     const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     const bytes = new Uint8Array([0, 1, 2, 254, 255]);
-    expect(await backend.writeBinaryFile('/b.bin', bytes)).toBe(true);
-    const read = await backend.readBinaryFile('/b.bin');
+    expect(await backend.writeBinaryFile?.('/b.bin', bytes)).toBe(true);
+    const read = await backend.readBinaryFile?.('/b.bin');
     expect(read).not.toBeNull();
     expect([...read!]).toEqual([0, 1, 2, 254, 255]);
   });
@@ -80,8 +80,10 @@ describe('capacitorHostFileSystem', () => {
     });
     capacitor.filesystem.readFile = async () => ({ data: blob });
     const backend = capacitorHostFileSystem(capacitor);
-    expect(await backend.readTextFile('/blob.txt')).toBe('Flight');
-    expect([...(await backend.readBinaryFile('/blob.bin'))!]).toEqual([70, 108, 105, 103, 104, 116]);
+    expect(await backend.readTextFile?.('/blob.txt')).toBe('Flight');
+    const binary = await backend.readBinaryFile?.('/blob.bin');
+    expect(binary).not.toBeNull();
+    expect([...binary!]).toEqual([70, 108, 105, 103, 104, 116]);
   });
 
   it('rejects pre-aborted reads before calling the plugin', async () => {
@@ -91,7 +93,7 @@ describe('capacitorHostFileSystem', () => {
     const reason = new Error('cancel Capacitor read');
     controller.abort(reason);
     const backend = capacitorHostFileSystem(capacitor);
-    await expect(backend.readTextFile('/a.txt', controller.signal)).rejects.toBe(reason);
+    await expect(backend.readTextFile?.('/a.txt', controller.signal)).rejects.toBe(reason);
     expect(readFile).not.toHaveBeenCalled();
   });
 
@@ -105,20 +107,20 @@ describe('capacitorHostFileSystem', () => {
       return result;
     };
     const backend = capacitorHostFileSystem(capacitor);
-    await expect(backend.writeTextFile('/complete.txt', 'saved', controller.signal)).resolves.toBe(true);
+    await expect(backend.writeTextFile?.('/complete.txt', 'saved', controller.signal)).resolves.toBe(true);
     expect(files.get('/complete.txt')?.data).toBe('saved');
   });
 
   it('maps exists/stat/remove and reports null for a missing file', async () => {
     const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
-    await backend.writeTextFile('/c.txt', 'x');
-    expect(await backend.fileExists('/c.txt')).toBe(true);
-    expect(await backend.directoryExists('/c.txt')).toBe(false);
-    const stat = await backend.statFile('/c.txt');
+    await backend.writeTextFile?.('/c.txt', 'x');
+    expect(await backend.fileExists?.('/c.txt')).toBe(true);
+    expect(await backend.directoryExists?.('/c.txt')).toBe(false);
+    const stat = await backend.statFile?.('/c.txt');
     expect(stat).toMatchObject({ size: 1, isDirectory: false, createdTime: 50 });
-    expect(await backend.removeFile('/c.txt')).toBe(true);
-    expect(await backend.readTextFile('/c.txt')).toBeNull();
-    expect(await backend.statFile('/missing')).toBeNull();
+    expect(await backend.removeFile?.('/c.txt')).toBe(true);
+    expect(await backend.readTextFile?.('/c.txt')).toBeNull();
+    expect(await backend.statFile?.('/missing')).toBeNull();
   });
 
   it('omits operations the Capacitor plugin cannot perform', () => {

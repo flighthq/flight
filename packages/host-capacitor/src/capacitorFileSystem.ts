@@ -4,12 +4,12 @@ import type {
   Entity,
   FileEntry,
   FileStat,
-  FileSystemBasicBackend,
   EntityConstruction,
+  HostFileSystemProvider,
 } from '@flighthq/types/contract';
 
-export function capacitorHostFileSystem(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
-  const out = allocateEntity<FileSystemBasicBackend & Entity>();
+export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemProvider & Entity {
+  const out = allocateEntity<HostFileSystemProvider & Entity>();
   populateCapacitorFileSystem(out, capacitor);
   return finishEntity(out);
 }
@@ -23,7 +23,7 @@ export function capacitorHostFileSystem(capacitor: CapacitorApi): FileSystemBasi
 //
 // Operations the plugin cannot perform are absent from the returned provider.
 function populateCapacitorFileSystem(
-  out: EntityConstruction<FileSystemBasicBackend & Entity>,
+  out: EntityConstruction<HostFileSystemProvider & Entity>,
   capacitor: CapacitorApi,
 ): void {
   const filesystem = capacitor.filesystem;
