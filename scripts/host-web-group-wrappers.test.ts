@@ -139,16 +139,21 @@ describe('host-Web group wrapper boundaries', () => {
     }
   });
 
-  it.each(WRAPPERS)('$file is isolated to createHost and its own group backends', (spec) => {
+  it.each(WRAPPERS)('$file is isolated to createHost and its own group providers', (spec) => {
     const path = resolve(root, 'packages/host-web/src', spec.file);
     expect(existsSync(path), `${spec.file} source`).toBe(true);
     if (!existsSync(path)) return;
     const source = readFileSync(path, 'utf8');
+    const groupName =
+      spec.group === 'accessibility'
+        ? 'webHostAccessibilityGroup'
+        : `webHost${spec.group[0]!.toUpperCase()}${spec.group.slice(1)}`;
 
     expect(collectImportSpecifiers(source).sort()).toEqual([...spec.imports].sort());
-    expect(source).toContain(`export const ${spec.name}:`);
-    expect(source).toMatch(/=\s*createHost\(\{/);
-    expect(source).toMatch(new RegExp(`\\b${spec.group}: \\{`));
+    expect(source).toContain(`export const ${groupName} = {`);
+    expect(source).toContain(
+      `export const ${spec.name} = /* @__PURE__ */ createHost({ ${spec.group}: ${groupName} });`,
+    );
   });
 });
 
