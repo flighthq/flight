@@ -1,5 +1,9 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { Host } from '@flighthq/types/contract';
+import type {
+  HostMidiPermissionProvider,
+  HostNotificationPermissionProvider,
+  HostStoragePersistenceQueryProvider,
+} from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getPermissionState } from './permission';
@@ -14,28 +18,34 @@ describe('getPermissionState', () => {
   ] as const)('projects Notification %s to the common %s state', async (permission, state) => {
     const getPermission = vi.fn(async () => ({ permission, reason: 'ok' as const }));
     const requestPermission = vi.fn();
-    const host = notificationHost({ getPermission, requestPermission });
+    const provider = notificationProvider({ getPermission, requestPermission });
     forbidNativeNotificationOwner();
 
-    await expect(getPermissionState(host, 'notifications')).resolves.toEqual({ reason: 'ok', state });
+    await expect(getPermissionState(provider, undefined, undefined, 'notifications')).resolves.toEqual({
+      reason: 'ok',
+      state,
+    });
     expect(getPermission).toHaveBeenCalledOnce();
     expect(requestPermission).not.toHaveBeenCalled();
   });
 
   it('preserves an owner query failure instead of returning a plausible state', async () => {
-    const host = notificationHost({
+    const provider = notificationProvider({
       getPermission: vi.fn(async () => ({ reason: 'operation-failed' as const })),
       requestPermission: vi.fn(),
     });
 
-    await expect(getPermissionState(host, 'notifications')).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(getPermissionState(provider, undefined, undefined, 'notifications')).resolves.toEqual({
+      reason: 'operation-failed',
+    });
   });
 
   it('reports an absent Notification owner structurally instead of falling back to a native global', async () => {
-    const host = notificationHost(null);
     forbidNativeNotificationOwner();
 
-    await expect(getPermissionState(host, 'notifications')).resolves.toEqual({ reason: 'unsupported' });
+    await expect(getPermissionState(undefined, undefined, undefined, 'notifications')).resolves.toEqual({
+      reason: 'unsupported',
+    });
   });
 
   it.each([
@@ -62,29 +72,24 @@ describe('getPermissionState', () => {
     ],
   ] as const)('projects the Storage owner snapshot %# without inferring field consistency', async (owner, expected) => {
     const getPersistence = vi.fn(async () => owner);
-    const host = persistenceHost({ getPersistence });
+    const provider = persistenceProvider({ getPersistence });
     forbidNativeStorageOwner();
 
-    await expect(getPermissionState(host, 'persistent-storage')).resolves.toEqual(expected);
+    await expect(getPermissionState(undefined, undefined, provider, 'persistent-storage')).resolves.toEqual(expected);
     expect(getPersistence).toHaveBeenCalledOnce();
   });
 
   it('reports an absent persistence-query owner structurally', async () => {
-    const host = persistenceHost(null);
     forbidNativeStorageOwner();
 
-    await expect(getPermissionState(host, 'persistent-storage')).resolves.toEqual({ reason: 'unsupported' });
+    await expect(getPermissionState(undefined, undefined, undefined, 'persistent-storage')).resolves.toEqual({
+      reason: 'unsupported',
+    });
   });
 
   it('projects MIDI from only Host.midi.permission without touching Web globals or access', async () => {
     const getPermission = vi.fn(async () => ({ reason: 'ok' as const, state: 'prompt' as const }));
-    const midi: object = {};
-    Object.defineProperty(midi, 'access', {
-      get() {
-        throw new Error('a MIDI permission query acquired access');
-      },
-    });
-    Object.defineProperty(midi, 'permission', { value: { getPermission } });
+    const provider = { [EntityRuntimeKey]: undefined, getPermission } as HostMidiPermissionProvider;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -97,14 +102,14 @@ describe('getPermissionState', () => {
       ),
     );
 
-    await expect(getPermissionState(hostWithMidiGroup(midi), 'midi')).resolves.toEqual({
+    await expect(getPermissionState(undefined, provider, undefined, 'midi')).resolves.toEqual({
       reason: 'ok',
       state: 'prompt',
     });
     expect(getPermission).toHaveBeenCalledOnce();
   });
 
-  it('requires an explicit Host at the caller boundary', () => {
+  it('requires explicit providers at the caller boundary', () => {
     expect(ambientPermissionQueryMustNotCompile).toBeTypeOf('function');
   });
 });
@@ -121,7 +126,7 @@ function forbidNativeNotificationOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to Host.notification.permission');
+          throw new Error('Permissions must delegate to HostNotificationPermissionProvider');
         },
       },
     ),
@@ -135,46 +140,17 @@ function forbidNativeStorageOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate persistent-storage to Host.storage.persistenceQuery');
+          throw new Error('Permissions must delegate to HostStoragePersistenceQueryProvider');
         },
       },
     ),
   );
 }
 
-function persistenceHost(persistenceQuery: object | null): Host {
-  return {
-    [EntityRuntimeKey]: undefined,
-    notification: {},
-    storage: persistenceQuery === null ? {} : { persistenceQuery },
-  } as unknown as Host;
+function persistenceProvider(provider: object): HostStoragePersistenceQueryProvider {
+  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceQueryProvider;
 }
 
-function notificationHost(permission: object | null): Host {
-  return {
-    [EntityRuntimeKey]: undefined,
-    accessibility: {},
-    app: {},
-    clipboard: {},
-    connectivity: {},
-    dialog: {},
-    graphics: {},
-    input: {},
-    media: {},
-    menu: {},
-    midi: {},
-    net: {},
-    notification: permission === null ? {} : { permission },
-    share: {},
-    storage: {},
-    system: {},
-    text: {},
-    tray: {},
-    ui: {},
-    window: {},
-  } as unknown as Host;
-}
-
-function hostWithMidiGroup(midi: object): Host {
-  return { ...notificationHost(null), midi } as Host;
+function notificationProvider(provider: object): HostNotificationPermissionProvider {
+  return provider as HostNotificationPermissionProvider;
 }
