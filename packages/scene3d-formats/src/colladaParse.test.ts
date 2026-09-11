@@ -248,8 +248,13 @@ describe('parseCollada', () => {
     ].join('');
     const result = parseCollada(xml);
     expect(result.document.meshes).toHaveLength(1);
-    const indices = Array.from(result.document.meshes[0].geometry.indices ?? []);
+    const geo = result.document.meshes[0].geometry;
+    const indices = Array.from(geo.indices ?? []);
     expect(indices).toEqual([0, 1, 2, 1, 2, 3]);
+    expect(geo.subsets).toEqual([
+      { indexCount: 3, indexOffset: 0 },
+      { indexCount: 3, indexOffset: 3 },
+    ]);
   });
 
   it('does not report missing-reference for instance_material elements', () => {

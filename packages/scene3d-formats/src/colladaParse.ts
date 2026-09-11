@@ -27,6 +27,7 @@ import type {
   Light,
   Matrix4Like,
   MeshMorph,
+  MeshSubset,
   MorphTarget,
   Scene3DAnimationPath,
   Scene3DDocument,
@@ -704,6 +705,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     const vertexData: number[][] = [];
     const allIndices: number[] = [];
     const primitiveSymbols: string[] = [];
+    const subsets: MeshSubset[] = [];
     let hasLines = false;
     for (const primitive of primitives) {
       const inputs = primitive.children.filter((e) => e.name === 'input');
@@ -763,6 +765,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
       } else {
         for (let i = 0; i + stride - 1 < raw.length; i += stride) tuples.push(raw.slice(i, i + stride));
       }
+      const subsetIndexOffset = allIndices.length;
       for (const tuple of tuples) {
         const key = tuple.join(',');
         let vertexIndex = vertexMap.get(key);
@@ -793,6 +796,8 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
         }
         allIndices.push(vertexIndex);
       }
+      const subsetIndexCount = allIndices.length - subsetIndexOffset;
+      if (subsetIndexCount > 0) subsets.push({ indexCount: subsetIndexCount, indexOffset: subsetIndexOffset });
       if (primitive.name === 'lines') hasLines = true;
       const primitiveSymbol = primitive.attributes.material;
       if (primitiveSymbol) primitiveSymbols.push(primitiveSymbol);
@@ -816,6 +821,7 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
       geometry: createMeshGeometry({
         indices: Uint32Array.from(allIndices),
         layout: CANONICAL_LAYOUT,
+        subsets,
         topology,
         vertices,
       }),
