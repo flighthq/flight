@@ -159,6 +159,15 @@ describe('uploadGlSkinPaletteTexture', () => {
     expect(palette.jointCapacity).toBe(6);
   });
 
+  it('throws when MAX_TEXTURE_SIZE is not positive', () => {
+    const { gl } = makeGl(0);
+    const palette = createGlSkinPaletteTexture(gl);
+
+    expect(() => uploadGlSkinPaletteTexture(gl, palette, makePalette(1), 1)).toThrow(
+      'WebGL MAX_TEXTURE_SIZE must be greater than zero',
+    );
+  });
+
   it('wraps into multiple rows when totalTexels exceeds MAX_TEXTURE_SIZE', () => {
     const { gl, calls } = makeGl(16);
     const palette = createGlSkinPaletteTexture(gl);
