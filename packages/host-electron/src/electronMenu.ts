@@ -10,6 +10,27 @@ import type {
 
 import { toElectronTemplate } from './electronMenuTemplate';
 
+interface ElectronMenuState {
+  destroyed: boolean;
+  selectListener: ((id: string) => void) | null;
+}
+
+function menuState(): ElectronMenuState {
+  return { destroyed: false, selectListener: null };
+}
+
+function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostMenuApplicationProvider {
+  const out = allocateEntity<HostMenuApplicationProvider>();
+  populateElectronHostMenuApplication(out, electron, state);
+  return finishEntity(out);
+}
+
+function menuSelect(state: ElectronMenuState): HostMenuSelectProvider {
+  const out = allocateEntity<HostMenuSelectProvider>();
+  populateElectronHostMenuSelect(out, state);
+  return finishEntity(out);
+}
+
 // Maps Flight's menu slots onto Electron's Menu module. Flight menu items are plain templates with a
 // stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels those
 // clicks back through an explicit onSelect. Application-menu clicks go to the listener registered on the
@@ -20,29 +41,31 @@ import { toElectronTemplate } from './electronMenuTemplate';
 // separate SLOTS because their shapes are incompatible — a command returning boolean and an event
 // subscription returning an unsubscribe — but a caller taking only one of them still gets a coherent
 // pair, because both read the same closure.
-export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuCapabilities {
-  const menuState = { selectListener: null as ((id: string) => void) | null, destroyed: false };
-  const application = (() => {
-    const b = allocateEntity<HostMenuApplicationProvider>();
-    initializeMenuApplicationBackend(b, electron, menuState);
-    return finishEntity(b);
-  })();
-  const popup = (() => {
-    const b = allocateEntity<HostMenuPopupProvider>();
-    initializeMenuPopupBackend(b, electron);
-    return finishEntity(b);
-  })();
-  const select = (() => {
-    const b = allocateEntity<HostMenuSelectProvider>();
-    initializeMenuSelectBackend(b, menuState);
-    return finishEntity(b);
-  })();
+export function electronHostMenu(electron: ElectronApi): ElectronMenuCapabilities {
+  const state = menuState();
+  const application = menuApplication(electron, state);
+  const popup = electronHostMenuPopup(electron);
+  const select = menuSelect(state);
   const out = allocateEntity<ElectronMenuCapabilities>();
-  initializeElectronMenuCapabilities(out, application, popup, select);
+  populateElectronHostMenu(out, application, popup, select);
   return finishEntity(out);
 }
 
-export function initializeElectronMenuCapabilities(
+export function electronHostMenuApplication(electron: ElectronApi): HostMenuApplicationProvider {
+  return menuApplication(electron, menuState());
+}
+
+export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupProvider {
+  const out = allocateEntity<HostMenuPopupProvider>();
+  populateElectronHostMenuPopup(out, electron);
+  return finishEntity(out);
+}
+
+export function electronHostMenuSelect(): HostMenuSelectProvider {
+  return menuSelect(menuState());
+}
+
+export function populateElectronHostMenu(
   out: EntityConstruction<ElectronMenuCapabilities>,
   application: HostMenuApplicationProvider,
   popup: HostMenuPopupProvider,
@@ -53,7 +76,7 @@ export function initializeElectronMenuCapabilities(
   out.select = select;
 }
 
-export function initializeMenuApplicationBackend(
+export function populateElectronHostMenuApplication(
   out: EntityConstruction<HostMenuApplicationProvider>,
   electron: ElectronApi,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
@@ -73,7 +96,7 @@ export function initializeMenuApplicationBackend(
   };
 }
 
-export function initializeMenuPopupBackend(
+export function populateElectronHostMenuPopup(
   out: EntityConstruction<HostMenuPopupProvider>,
   electron: ElectronApi,
 ): void {
@@ -92,7 +115,7 @@ export function initializeMenuPopupBackend(
   };
 }
 
-export function initializeMenuSelectBackend(
+export function populateElectronHostMenuSelect(
   out: EntityConstruction<HostMenuSelectProvider>,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {

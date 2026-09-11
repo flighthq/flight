@@ -2,9 +2,10 @@ import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  createElectronShortcutQueryBackend,
-  createElectronShortcutTriggerBackend,
-  initializeElectronShortcutQueryBackend,
+  electronHostShortcut,
+  electronHostShortcutQuery,
+  electronHostShortcutTrigger,
+  populateElectronHostShortcutQuery,
 } from './electronShortcut';
 
 function fakeElectron() {
@@ -30,21 +31,29 @@ function fakeElectron() {
   return { callbacks, electron, unregisterCalls, unregisterFailures };
 }
 
-describe('createElectronShortcutQueryBackend', () => {
+describe('electronHostShortcut', () => {
+  it('constructs the exact Entity-backed shortcut group', () => {
+    const shortcut = electronHostShortcut(fakeElectron().electron);
+    expect(Object.keys(shortcut).sort()).toEqual(['query', 'trigger']);
+    for (const provider of Object.values(shortcut)) expect(EntityRuntimeKey in provider).toBe(true);
+  });
+});
+
+describe('electronHostShortcutQuery', () => {
   it('returns an Entity and lifts the native query into the awaited contract', async () => {
     const fake = fakeElectron();
     fake.callbacks.set('Control+K', () => {});
-    const provider = createElectronShortcutQueryBackend(fake.electron);
+    const provider = electronHostShortcutQuery(fake.electron);
     expect(EntityRuntimeKey in provider).toBe(true);
     await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
     await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
   });
 });
 
-describe('createElectronShortcutTriggerBackend', () => {
+describe('electronHostShortcutTrigger', () => {
   it('returns an Entity, subscribes by exact token, and delivers native triggers', async () => {
     const fake = fakeElectron();
-    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    const provider = electronHostShortcutTrigger(fake.electron);
     const trigger = vi.fn();
     expect(EntityRuntimeKey in provider).toBe(true);
     const outcome = await provider.subscribe('Control+K', trigger);
@@ -61,13 +70,13 @@ describe('createElectronShortcutTriggerBackend', () => {
   it('reports native collision/refusal without minting a token', async () => {
     const fake = fakeElectron();
     fake.callbacks.set('Control+K', () => {});
-    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    const provider = electronHostShortcutTrigger(fake.electron);
     await expect(provider.subscribe('Control+K', () => {})).resolves.toEqual({ reason: 'refused' });
   });
 
   it('destroy attempts every distinct obligation and retries only failed releases', async () => {
     const fake = fakeElectron();
-    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    const provider = electronHostShortcutTrigger(fake.electron);
     await provider.subscribe('Control+A', () => {});
     await provider.subscribe('Control+B', () => {});
     fake.unregisterFailures.add('Control+A');
@@ -81,8 +90,8 @@ describe('createElectronShortcutTriggerBackend', () => {
     expect(fake.unregisterCalls).toEqual(['Control+A', 'Control+B', 'Control+A']);
   });
 });
-describe('initializeElectronShortcutQueryBackend', () => {
-  it('is the construction initializer of createElectronShortcutQueryBackend', () => {
-    expect(typeof initializeElectronShortcutQueryBackend).toBe('function');
+describe('populateElectronHostShortcutQuery', () => {
+  it('is the construction initializer of electronHostShortcutQuery', () => {
+    expect(typeof populateElectronHostShortcutQuery).toBe('function');
   });
 });

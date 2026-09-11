@@ -3,6 +3,7 @@ import type {
   ElectronApi,
   ElectronIpcRenderer,
   ElectronIpcTarget,
+  HostIpcCapabilities,
   HostIpcHandleProvider,
   HostIpcInvokeProvider,
   HostIpcMessageProvider,
@@ -14,39 +15,49 @@ import type {
 // Electron's process sides expose different capability vectors. These constructors keep the slots
 // independent so a renderer host carries send/invoke while a main host carries message/handle/targetedSend.
 
-export function createElectronIpcHandleBackend(electron: ElectronApi): HostIpcHandleProvider {
+export function electronHostIpc(
+  electron: ElectronApi,
+): Required<Pick<HostIpcCapabilities, 'handle' | 'message' | 'targetedSend'>> {
+  return {
+    handle: electronHostIpcHandle(electron),
+    message: electronHostIpcMessage(electron),
+    targetedSend: electronHostIpcTargetedSend<ElectronIpcTarget>(),
+  };
+}
+
+export function electronHostIpcHandle(electron: ElectronApi): HostIpcHandleProvider {
   const out = allocateEntity<HostIpcHandleProvider>();
-  initializeElectronIpcHandleBackend(out, electron);
+  populateElectronHostIpcHandle(out, electron);
   return finishEntity(out);
 }
 
-export function createElectronIpcInvokeBackend(ipcRenderer: ElectronIpcRenderer): HostIpcInvokeProvider {
+export function electronHostIpcInvoke(ipcRenderer: ElectronIpcRenderer): HostIpcInvokeProvider {
   const out = allocateEntity<HostIpcInvokeProvider>();
-  initializeElectronIpcInvokeBackend(out, ipcRenderer);
+  populateElectronHostIpcInvoke(out, ipcRenderer);
   return finishEntity(out);
 }
 
-export function createElectronIpcMessageBackend(electron: ElectronApi): HostIpcMessageProvider {
+export function electronHostIpcMessage(electron: ElectronApi): HostIpcMessageProvider {
   const out = allocateEntity<HostIpcMessageProvider>();
-  initializeElectronIpcMessageBackend(out, electron);
+  populateElectronHostIpcMessage(out, electron);
   return finishEntity(out);
 }
 
-export function createElectronIpcSendBackend(ipcRenderer: ElectronIpcRenderer): HostIpcSendProvider {
+export function electronHostIpcSend(ipcRenderer: ElectronIpcRenderer): HostIpcSendProvider {
   const out = allocateEntity<HostIpcSendProvider>();
-  initializeElectronIpcSendBackend(out, ipcRenderer);
+  populateElectronHostIpcSend(out, ipcRenderer);
   return finishEntity(out);
 }
 
-export function createElectronIpcTargetedSendBackend<
+export function electronHostIpcTargetedSend<
   Target extends ElectronIpcTarget = ElectronIpcTarget,
 >(): HostIpcTargetedSendProvider<Target> {
   const out = allocateEntity<HostIpcTargetedSendProvider<Target>>();
-  initializeElectronIpcTargetedSendBackend(out);
+  populateElectronHostIpcTargetedSend(out);
   return finishEntity(out);
 }
 
-export function initializeElectronIpcHandleBackend(
+export function populateElectronHostIpcHandle(
   out: EntityConstruction<HostIpcHandleProvider>,
   electron: ElectronApi,
 ): void {
@@ -62,7 +73,7 @@ export function initializeElectronIpcHandleBackend(
   };
 }
 
-export function initializeElectronIpcInvokeBackend(
+export function populateElectronHostIpcInvoke(
   out: EntityConstruction<HostIpcInvokeProvider>,
   ipcRenderer: ElectronIpcRenderer,
 ): void {
@@ -71,7 +82,7 @@ export function initializeElectronIpcInvokeBackend(
   };
 }
 
-export function initializeElectronIpcMessageBackend(
+export function populateElectronHostIpcMessage(
   out: EntityConstruction<HostIpcMessageProvider>,
   electron: ElectronApi,
 ): void {
@@ -83,7 +94,7 @@ export function initializeElectronIpcMessageBackend(
   };
 }
 
-export function initializeElectronIpcSendBackend(
+export function populateElectronHostIpcSend(
   out: EntityConstruction<HostIpcSendProvider>,
   ipcRenderer: ElectronIpcRenderer,
 ): void {
@@ -92,7 +103,7 @@ export function initializeElectronIpcSendBackend(
   };
 }
 
-export function initializeElectronIpcTargetedSendBackend<Target extends ElectronIpcTarget = ElectronIpcTarget>(
+export function populateElectronHostIpcTargetedSend<Target extends ElectronIpcTarget = ElectronIpcTarget>(
   out: EntityConstruction<HostIpcTargetedSendProvider<Target>>,
 ): void {
   out.send = (target, channel, args) => {

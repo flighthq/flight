@@ -1,84 +1,75 @@
 import type { HostWindowProvider } from './ApplicationWindow';
-import type {
-  HostClipboardBookmarkProvider,
-  HostClipboardFormatsProvider,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
-} from './Clipboard';
 import type { ElectronIpcTarget } from './ElectronApi';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
 import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
 import type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor';
 import type {
-  HostDirectoryOpenDialogProvider,
-  HostFileOpenDialogProvider,
-  HostFileSaveDialogProvider,
-} from './FileDialogBackend';
-import type { Host } from './Host';
-import type { HostIpcHandleProvider, HostIpcMessageProvider, HostIpcTargetedSendProvider } from './Ipc';
-import type { HostMenuApplicationProvider, HostMenuPopupProvider, HostMenuSelectProvider } from './Menu';
-import type { HostMessageDialogProvider } from './MessageDialogBackend';
-import type {
-  HostNotificationActionProvider,
-  HostNotificationClickProvider,
-  HostNotificationCloseProvider,
-  HostNotificationDeliveryProvider,
-  HostNotificationDismissProvider,
-  HostNotificationLifecycleProvider,
-  HostNotificationReceivedProvider,
-  HostNotificationReplyProvider,
-} from './Notification';
-import type { HostScreenChangeProvider, HostScreenQueryProvider } from './Screen';
-import type {
-  HostShellBeepProvider,
-  HostShellExternalProvider,
-  HostShellPathOpenProvider,
-  HostShellPathRevealProvider,
-  HostShellTrashProvider,
-} from './Shell';
-import type { HostShortcutQueryProvider, HostShortcutTriggerProvider } from './Shortcut';
-import type { HostStorageProvider } from './Storage';
+  Host,
+  HostClipboardCapabilities,
+  HostDialogCapabilities,
+  HostIpcCapabilities,
+  HostScreenCapabilities,
+  HostShellCapabilities,
+  HostShortcutCapabilities,
+  HostStorageCapabilities,
+  HostSystemCapabilities,
+  HostUpdaterCapabilities,
+} from './Host';
+import type { ElectronMenuCapabilities } from './Menu';
+import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification';
+import type { ElectronPowerCapabilities } from './Power';
 import type { DesktopOsProfile } from './Tray';
-import type { HostUpdaterCommandProvider } from './Updater';
 
-export type ElectronHost<Profile extends DesktopOsProfile> = Host & {
+type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
+  ? ElectronMacosNotificationCapabilities
+  : ElectronNotificationCapabilities;
+
+type ElectronShellCapabilitiesFor<Profile extends DesktopOsProfile> = Required<
+  Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>
+> &
+  (Profile extends 'windows' ? Required<Pick<HostShellCapabilities, 'shortcutLink'>> : object);
+
+// The canonical Electron host makes the exact populated group shapes visible to callers while
+// retaining every required Host group. Conditional groups preserve macOS/Windows/Linux coverage.
+export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
+  Host,
+  | 'app'
+  | 'clipboard'
+  | 'dialog'
+  | 'ipc'
+  | 'menu'
+  | 'notification'
+  | 'power'
+  | 'protocol'
+  | 'screen'
+  | 'shell'
+  | 'shortcut'
+  | 'storage'
+  | 'system'
+  | 'tray'
+  | 'updater'
+  | 'window'
+> & {
   readonly app: ElectronAppCapabilitiesFor<Profile>;
+  readonly clipboard: Required<Pick<HostClipboardCapabilities, 'bookmark' | 'formats' | 'image' | 'text'>>;
+  readonly dialog: Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>>;
+  readonly ipc: Required<Pick<HostIpcCapabilities, 'handle' | 'message' | 'targetedSend'>> & {
+    readonly targetedSend: NonNullable<HostIpcCapabilities['targetedSend']> & {
+      send(target: ElectronIpcTarget, channel: string, args: readonly unknown[]): void;
+    };
+  };
+  readonly menu: ElectronMenuCapabilities;
+  readonly notification: ElectronNotificationCapabilitiesFor<Profile>;
+  readonly power: ElectronPowerCapabilities;
   readonly protocol: ElectronProtocolCapabilities;
+  readonly screen: Required<Pick<HostScreenCapabilities, 'change' | 'query'>>;
+  readonly shell: ElectronShellCapabilitiesFor<Profile>;
+  readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
+  readonly storage: Required<Pick<HostStorageCapabilities, 'local'>>;
+  readonly system: Required<Pick<HostSystemCapabilities, 'platform'>>;
   readonly tray: ElectronTrayCapabilitiesFor<Profile>;
-} & { readonly clipboard: { readonly bookmark: HostClipboardBookmarkProvider } } & {
-  readonly clipboard: { readonly formats: HostClipboardFormatsProvider };
-} & { readonly clipboard: { readonly image: HostClipboardImageProvider } } & {
-  readonly clipboard: { readonly text: HostClipboardTextProvider };
-} & { readonly dialog: { readonly directoryOpen: HostDirectoryOpenDialogProvider } } & {
-  readonly dialog: { readonly fileOpen: HostFileOpenDialogProvider };
-} & { readonly dialog: { readonly fileSave: HostFileSaveDialogProvider } } & {
-  readonly dialog: { readonly message: HostMessageDialogProvider };
-} & { readonly ipc: { readonly handle: HostIpcHandleProvider } } & {
-  readonly ipc: { readonly message: HostIpcMessageProvider };
-} & { readonly ipc: { readonly targetedSend: HostIpcTargetedSendProvider<ElectronIpcTarget> } } & {
-  readonly menu: { readonly application: HostMenuApplicationProvider };
-} & { readonly menu: { readonly popup: HostMenuPopupProvider } } & {
-  readonly menu: { readonly select: HostMenuSelectProvider };
-} & { readonly notification: { readonly click: HostNotificationClickProvider } } & {
-  readonly notification: { readonly close: HostNotificationCloseProvider };
-} & { readonly notification: { readonly delivery: HostNotificationDeliveryProvider } } & {
-  readonly notification: { readonly dismiss: HostNotificationDismissProvider };
-} & { readonly notification: { readonly lifecycle: HostNotificationLifecycleProvider } } & {
-  readonly notification: { readonly received: HostNotificationReceivedProvider };
-} & { readonly screen: { readonly change: HostScreenChangeProvider } } & {
-  readonly screen: { readonly query: HostScreenQueryProvider };
-} & { readonly shell: { readonly beep: HostShellBeepProvider } } & {
-  readonly shell: { readonly external: HostShellExternalProvider };
-} & { readonly shell: { readonly pathOpen: HostShellPathOpenProvider } } & {
-  readonly shell: { readonly pathReveal: HostShellPathRevealProvider };
-} & { readonly shell: { readonly trash: HostShellTrashProvider } } & {
-  readonly shortcut: { readonly query: HostShortcutQueryProvider };
-} & { readonly shortcut: { readonly trigger: HostShortcutTriggerProvider } } & {
-  readonly storage: { readonly local: HostStorageProvider };
-} & { readonly updater: { readonly command: HostUpdaterCommandProvider } } & {
-  readonly window: HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close'>>;
-} & { readonly window: HostWindowProvider & Required<Pick<HostWindowProvider, 'close' | 'open'>> };
+  readonly updater: Required<Pick<HostUpdaterCapabilities, 'command'>>;
+  readonly window: HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>;
+};
 
-export type ElectronMacosHost = ElectronHost<'macos'> & {
-  readonly notification: { readonly action: HostNotificationActionProvider };
-} & { readonly notification: { readonly reply: HostNotificationReplyProvider } };
+export type ElectronMacosHost = ElectronHost<'macos'>;

@@ -11,11 +11,11 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createElectronWindowBackend(
+export function electronHostWindow(
   electron: ElectronApi,
 ): HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>> {
   const out = allocateEntity<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>();
-  initializeElectronWindowBackend(out, electron);
+  populateElectronHostWindow(out, electron);
   return finishEntity(out);
 }
 
@@ -45,7 +45,7 @@ export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
 // user-driven state changes (minimize, move, focus, …) flow through the same signals the command
 // functions emit. Other methods look up the BrowserWindow and no-op when it is absent (already closed
 // or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the seam.
-export function initializeElectronWindowBackend(
+export function populateElectronHostWindow(
   out: EntityConstruction<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>,
   electron: ElectronApi,
 ): void {
@@ -335,7 +335,7 @@ export function initializeElectronWindowBackend(
   };
 }
 
-export function resetElectronWindowBackendForTest(): void {
+export function resetElectronHostWindowForTest(): void {
   _windows = new WeakMap();
   _windowRecords = new WeakMap();
   _windowsById.clear();

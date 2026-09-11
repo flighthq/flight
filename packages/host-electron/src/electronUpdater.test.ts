@@ -1,7 +1,7 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronUpdaterBackend, initializeElectronUpdaterBackend } from './electronUpdater';
+import { electronHostUpdater, electronHostUpdaterCommand, populateElectronHostUpdaterCommand } from './electronUpdater';
 
 type NativeListener = (...args: unknown[]) => void;
 
@@ -58,10 +58,18 @@ function emit(listeners: Map<string, Set<NativeListener>>, event: string, ...arg
   for (const listener of [...(listeners.get(event) ?? [])]) listener(...args);
 }
 
-describe('createElectronUpdaterBackend', () => {
+describe('electronHostUpdater', () => {
+  it('constructs the Entity-backed updater command slot', () => {
+    const updater = electronHostUpdater(fakeElectron().electron);
+    expect(Object.keys(updater)).toEqual(['command']);
+    expect(EntityRuntimeKey in updater.command).toBe(true);
+  });
+});
+
+describe('electronHostUpdaterCommand', () => {
   it('returns an Entity and applies its immutable feed policy at construction', () => {
     const { electron, calls } = fakeElectron();
-    const backend = createElectronUpdaterBackend(electron, 'https://updates.test/feed');
+    const backend = electronHostUpdaterCommand(electron, 'https://updates.test/feed');
 
     expect(EntityRuntimeKey in backend).toBe(true);
     expect(calls.feedUrls).toEqual(['https://updates.test/feed']);
@@ -72,7 +80,7 @@ describe('createElectronUpdaterBackend', () => {
 
   it('runs one awaited Squirrel check through the private native event transaction', async () => {
     const { electron, listeners, calls } = fakeElectron();
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
 
     const pending = backend.check();
     expect(calls.checks).toBe(1);
@@ -100,7 +108,7 @@ describe('createElectronUpdaterBackend', () => {
 
   it('copies and freezes downloaded metadata and uses null for every unknown field', async () => {
     const { electron, listeners } = fakeElectron();
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
     const nativeArgs: unknown[] = [{}, '', undefined, ''];
 
     const pending = backend.check();
@@ -125,19 +133,19 @@ describe('createElectronUpdaterBackend', () => {
 
   it('settles not-available and native error with method-tight portable outcomes', async () => {
     const first = fakeElectron();
-    const notAvailable = createElectronUpdaterBackend(first.electron).check();
+    const notAvailable = electronHostUpdaterCommand(first.electron).check();
     emit(first.listeners, 'update-not-available');
     await expect(notAvailable).resolves.toEqual({ reason: 'not-available' });
 
     const second = fakeElectron();
-    const failed = createElectronUpdaterBackend(second.electron).check();
+    const failed = electronHostUpdaterCommand(second.electron).check();
     emit(second.listeners, 'error', new Error('native detail'));
     await expect(failed).resolves.toEqual({ reason: 'operation-failed' });
   });
 
   it('classifies a concurrent check without dispatching a second native operation', async () => {
     const { electron, listeners, calls } = fakeElectron();
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
 
     const first = backend.check();
     await expect(backend.check()).resolves.toEqual({ reason: 'check-in-progress' });
@@ -148,7 +156,7 @@ describe('createElectronUpdaterBackend', () => {
 
   it('rolls back every listener acquired before a partial attach failure', async () => {
     const { electron, listeners, calls } = fakeElectron({ failAttachFor: 'update-not-available' });
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
 
     await expect(backend.check()).resolves.toEqual({ reason: 'operation-failed' });
     expect(calls.checks).toBe(0);
@@ -160,7 +168,7 @@ describe('createElectronUpdaterBackend', () => {
     const { electron, listeners, calls } = fakeElectron({
       removeFailures: { 'update-available': 1 },
     });
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
 
     const pending = backend.check();
     emit(listeners, 'update-not-available');
@@ -186,7 +194,7 @@ describe('createElectronUpdaterBackend', () => {
 
   it('settles an in-flight transaction and deduplicates repeated provider destroy aliases', async () => {
     const { electron, calls } = fakeElectron();
-    const backend = createElectronUpdaterBackend(electron);
+    const backend = electronHostUpdaterCommand(electron);
     const pending = backend.check();
 
     backend.destroy();
@@ -203,8 +211,8 @@ describe('createElectronUpdaterBackend', () => {
     expect(calls.feedUrls).toEqual([]);
   });
 });
-describe('initializeElectronUpdaterBackend', () => {
-  it('is the construction initializer of createElectronUpdaterBackend', () => {
-    expect(typeof initializeElectronUpdaterBackend).toBe('function');
+describe('populateElectronHostUpdaterCommand', () => {
+  it('is the construction initializer of electronHostUpdaterCommand', () => {
+    expect(typeof populateElectronHostUpdaterCommand).toBe('function');
   });
 });

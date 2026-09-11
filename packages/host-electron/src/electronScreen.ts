@@ -14,17 +14,22 @@ import type {
   HostScreenQueryProvider,
 } from '@flighthq/types/contract';
 
-export function createElectronScreenCapabilities(
+export function electronHostScreen(
   electron: ElectronApi,
 ): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
-  const screen = electron.screen;
-  const query = allocateEntity<HostScreenQueryProvider>();
-  initializeScreenQueryBackend(query, screen);
-  finishEntity(query);
-  const change = allocateEntity<HostScreenChangeProvider>();
-  initializeScreenChangeBackend(change, screen);
-  finishEntity(change);
-  return { change, query };
+  return { change: electronHostScreenChange(electron), query: electronHostScreenQuery(electron) };
+}
+
+export function electronHostScreenChange(electron: ElectronApi): HostScreenChangeProvider {
+  const out = allocateEntity<HostScreenChangeProvider>();
+  populateElectronHostScreenChange(out, electron.screen);
+  return finishEntity(out);
+}
+
+export function electronHostScreenQuery(electron: ElectronApi): HostScreenQueryProvider {
+  const out = allocateEntity<HostScreenQueryProvider>();
+  populateElectronHostScreenQuery(out, electron.screen);
+  return finishEntity(out);
 }
 
 export function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
@@ -55,7 +60,7 @@ export function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): 
   out.y = 0;
 }
 
-export function initializeScreenChangeBackend(
+export function populateElectronHostScreenChange(
   out: EntityConstruction<HostScreenChangeProvider>,
   screen: ElectronApi['screen'],
 ): void {
@@ -90,7 +95,7 @@ export function initializeScreenChangeBackend(
   };
 }
 
-export function initializeScreenQueryBackend(
+export function populateElectronHostScreenQuery(
   out: EntityConstruction<HostScreenQueryProvider>,
   screen: ElectronApi['screen'],
 ): void {

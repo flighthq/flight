@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
+  HostClipboardCapabilities,
   HostClipboardBookmarkProvider,
   HostClipboardFormatsProvider,
   HostClipboardImageProvider,
@@ -10,23 +11,50 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type ElectronClipboardBackend = HostClipboardBookmarkProvider &
+type ElectronClipboardProvider = HostClipboardBookmarkProvider &
   HostClipboardFormatsProvider &
   HostClipboardImageProvider &
   HostClipboardTextProvider;
 
+export function electronHostClipboard(
+  electron: ElectronApi,
+): Required<Pick<HostClipboardCapabilities, 'bookmark' | 'formats' | 'image' | 'text'>> {
+  return {
+    bookmark: electronHostClipboardBookmark(electron),
+    formats: electronHostClipboardFormats(electron),
+    image: electronHostClipboardImage(electron),
+    text: electronHostClipboardText(electron),
+  };
+}
+
+export function electronHostClipboardBookmark(electron: ElectronApi): HostClipboardBookmarkProvider {
+  return electronHostClipboardProvider(electron);
+}
+
+export function electronHostClipboardFormats(electron: ElectronApi): HostClipboardFormatsProvider {
+  return electronHostClipboardProvider(electron);
+}
+
+export function electronHostClipboardImage(electron: ElectronApi): HostClipboardImageProvider {
+  return electronHostClipboardProvider(electron);
+}
+
+export function electronHostClipboardText(electron: ElectronApi): HostClipboardTextProvider {
+  return electronHostClipboardProvider(electron);
+}
+
 // Maps Flight's clipboard capabilities onto Electron's synchronous clipboard module, adapting to
 // the async Promise contracts. Images cross the seam as data URLs (Flight's convention), converted
 // via nativeImage. Reads resolve to sentinels ('' / null / false) on failure rather than throwing.
-export function createElectronClipboardBackend(electron: ElectronApi): ElectronClipboardBackend {
+function electronHostClipboardProvider(electron: ElectronApi): ElectronClipboardProvider {
   const cb = electron.clipboard;
-  const out = allocateEntity<ElectronClipboardBackend>();
-  initializeElectronClipboardBackend(out, cb, electron);
+  const out = allocateEntity<ElectronClipboardProvider>();
+  populateElectronHostClipboardProvider(out, cb, electron);
   return finishEntity(out);
 }
 
-export function initializeElectronClipboardBackend(
-  out: EntityConstruction<ElectronClipboardBackend>,
+export function populateElectronHostClipboardProvider(
+  out: EntityConstruction<ElectronClipboardProvider>,
   cb: ElectronApi['clipboard'],
   electron: ElectronApi,
 ): void {

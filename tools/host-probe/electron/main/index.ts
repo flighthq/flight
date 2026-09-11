@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
 import { closeWindow, createApplicationWindow, openWindow } from '@flighthq/application/contract';
-import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
+import { electronHost, getElectronBrowserWindow } from '@flighthq/host-electron';
 import { getScreens } from '@flighthq/screen/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 import electron from 'electron';
@@ -47,7 +47,7 @@ function installElectronProbe(): HostProbeInstallResult {
     Tray: electron.Tray as ElectronApi['Tray'],
   };
   const platform = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux';
-  const host = registerElectronBackends(api, {
+  const host = electronHost(api, {
     platform,
     storageFileName: 'flight-host-probe-storage.json',
   });

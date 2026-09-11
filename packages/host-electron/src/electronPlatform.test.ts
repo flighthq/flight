@@ -1,7 +1,7 @@
 import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronPlatformBackend, initializeElectronPlatformBackend } from './electronPlatform';
+import { electronHostPlatform, electronHostSystem, populateElectronHostPlatform } from './electronPlatform';
 
 function fakeElectron(): ElectronApi {
   return {
@@ -11,13 +11,13 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
-describe('createElectronPlatformBackend', () => {
+describe('electronHostPlatform', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronPlatformBackend(fakeElectron())).toBe(true);
+    expect(EntityRuntimeKey in electronHostPlatform(fakeElectron())).toBe(true);
   });
 
   it('fills platform info from process and electron locale', () => {
-    const backend = createElectronPlatformBackend(fakeElectron());
+    const backend = electronHostPlatform(fakeElectron());
     const out = {} as PlatformInfo;
     const result = backend.getInfo(out);
     expect(result).toBe(out);
@@ -30,8 +30,17 @@ describe('createElectronPlatformBackend', () => {
     expect(typeof out.version).toBe('string');
   });
 });
-describe('initializeElectronPlatformBackend', () => {
-  it('is the construction initializer of createElectronPlatformBackend', () => {
-    expect(typeof initializeElectronPlatformBackend).toBe('function');
+
+describe('electronHostSystem', () => {
+  it('constructs the Entity-backed platform slot', () => {
+    const system = electronHostSystem(fakeElectron());
+    expect(Object.keys(system)).toEqual(['platform']);
+    expect(EntityRuntimeKey in system.platform).toBe(true);
+  });
+});
+
+describe('populateElectronHostPlatform', () => {
+  it('is the construction initializer of electronHostPlatform', () => {
+    expect(typeof populateElectronHostPlatform).toBe('function');
   });
 });

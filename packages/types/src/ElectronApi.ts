@@ -8,7 +8,7 @@
 //     fs,
 //     Tray: electron.Tray as ElectronApi['Tray'],
 //   };
-//   registerElectronBackends(electronApi, { platform: 'windows' });
+//   electronHost(electronApi, { platform: 'windows' });
 //
 // Typing it here (rather than importing 'electron') keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Electron surface the seams require, which is the
@@ -38,7 +38,7 @@ export interface ElectronApi {
 
 // The minimal node:fs slice the storage backend needs. Injected on ElectronApi rather than imported
 // so this package stays node:fs-dependency-free (matching the electron-free design principle); in a
-// real Electron app the host passes the real node:fs module to registerElectronBackends.
+// real Electron app the host passes the real node:fs module to electronHost.
 export interface ElectronFs {
   existsSync(path: string): boolean;
   readFileSync(path: string, encoding: 'utf-8'): string;

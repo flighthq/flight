@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
+  DesktopOsProfile,
   EntityConstruction,
   HostShellCapabilities,
-  PlatformName,
   HostShellBeepProvider,
   HostShellExternalProvider,
   HostShellPathOpenProvider,
@@ -14,7 +14,61 @@ import type {
   HostShellTrashProvider,
 } from '@flighthq/types/contract';
 
-export function initializeShellBeepBackend(
+// Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
+// support is a construction-time Windows fact, not something capability resolution reads ambiently.
+export function electronHostShell(
+  electron: ElectronApi,
+  platform: DesktopOsProfile,
+): HostShellCapabilities &
+  Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
+  const shared = {
+    beep: electronHostShellBeep(electron),
+    external: electronHostShellExternal(electron),
+    pathOpen: electronHostShellPathOpen(electron),
+    pathReveal: electronHostShellPathReveal(electron),
+    trash: electronHostShellTrash(electron),
+  };
+  if (platform !== 'windows') return shared;
+  return { ...shared, shortcutLink: electronHostShellShortcutLink(electron) };
+}
+
+export function electronHostShellBeep(electron: ElectronApi): HostShellBeepProvider {
+  const out = allocateEntity<HostShellBeepProvider>();
+  populateElectronHostShellBeep(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function electronHostShellExternal(electron: ElectronApi): HostShellExternalProvider {
+  const out = allocateEntity<HostShellExternalProvider>();
+  populateElectronHostShellExternal(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function electronHostShellPathOpen(electron: ElectronApi): HostShellPathOpenProvider {
+  const out = allocateEntity<HostShellPathOpenProvider>();
+  populateElectronHostShellPathOpen(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function electronHostShellPathReveal(electron: ElectronApi): HostShellPathRevealProvider {
+  const out = allocateEntity<HostShellPathRevealProvider>();
+  populateElectronHostShellPathReveal(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function electronHostShellShortcutLink(electron: ElectronApi): HostShellShortcutLinkProvider {
+  const out = allocateEntity<HostShellShortcutLinkProvider>();
+  populateElectronHostShellShortcutLink(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function electronHostShellTrash(electron: ElectronApi): HostShellTrashProvider {
+  const out = allocateEntity<HostShellTrashProvider>();
+  populateElectronHostShellTrash(out, electron.shell);
+  return finishEntity(out);
+}
+
+export function populateElectronHostShellBeep(
   out: EntityConstruction<HostShellBeepProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -23,7 +77,7 @@ export function initializeShellBeepBackend(
   };
 }
 
-export function initializeShellExternalBackend(
+export function populateElectronHostShellExternal(
   out: EntityConstruction<HostShellExternalProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -37,7 +91,7 @@ export function initializeShellExternalBackend(
   };
 }
 
-export function initializeShellPathOpenBackend(
+export function populateElectronHostShellPathOpen(
   out: EntityConstruction<HostShellPathOpenProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -51,7 +105,7 @@ export function initializeShellPathOpenBackend(
   };
 }
 
-export function initializeShellPathRevealBackend(
+export function populateElectronHostShellPathReveal(
   out: EntityConstruction<HostShellPathRevealProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -65,7 +119,7 @@ export function initializeShellPathRevealBackend(
   };
 }
 
-export function initializeShellShortcutLinkBackend(
+export function populateElectronHostShellShortcutLink(
   out: EntityConstruction<HostShellShortcutLinkProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -104,7 +158,7 @@ export function initializeShellShortcutLinkBackend(
   };
 }
 
-export function initializeShellTrashBackend(
+export function populateElectronHostShellTrash(
   out: EntityConstruction<HostShellTrashProvider>,
   shell: ElectronApi['shell'],
 ): void {
@@ -116,47 +170,6 @@ export function initializeShellTrashBackend(
       return { reason: 'operation-failed' };
     }
   };
-}
-
-// Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
-// support is a construction-time Windows fact, not something capability resolution reads ambiently.
-export function makeElectronShellCapabilities(
-  electron: ElectronApi,
-  platform: PlatformName,
-): HostShellCapabilities &
-  Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
-  const shell = electron.shell;
-  const beep = allocateEntity<HostShellBeepProvider>();
-  initializeShellBeepBackend(beep, shell);
-  const external = (() => {
-    const out = allocateEntity<HostShellExternalProvider>();
-    initializeShellExternalBackend(out, shell);
-    return finishEntity(out);
-  })();
-  const pathOpen = (() => {
-    const out = allocateEntity<HostShellPathOpenProvider>();
-    initializeShellPathOpenBackend(out, shell);
-    return finishEntity(out);
-  })();
-  const pathReveal = (() => {
-    const out = allocateEntity<HostShellPathRevealProvider>();
-    initializeShellPathRevealBackend(out, shell);
-    return finishEntity(out);
-  })();
-  const trash = (() => {
-    const out = allocateEntity<HostShellTrashProvider>();
-    initializeShellTrashBackend(out, shell);
-    return finishEntity(out);
-  })();
-  const shared = { beep, external, pathOpen, pathReveal, trash };
-  if (platform !== 'windows') return shared;
-  return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
-}
-
-function createElectronShellShortcutLinkBackend(electron: ElectronApi): HostShellShortcutLinkProvider {
-  const out = allocateEntity<HostShellShortcutLinkProvider>();
-  initializeShellShortcutLinkBackend(out, electron.shell);
-  return finishEntity(out);
 }
 
 function errorMessage(error: unknown): string {

@@ -3,13 +3,18 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createElectronProtocolCapabilities,
-  initializeElectronProtocolCapabilities,
-  initializeProtocolDefaultBackend,
-  initializeProtocolOpenBackend,
-  initializeProtocolRegistrationBackend,
-  initializeProtocolRegistrationQueryBackend,
-  initializeProtocolUnregistrationBackend,
+  electronHostProtocol,
+  electronHostProtocolDefault,
+  electronHostProtocolOpen,
+  electronHostProtocolRegistration,
+  electronHostProtocolRegistrationQuery,
+  electronHostProtocolUnregistration,
+  populateElectronHostProtocol,
+  populateElectronHostProtocolDefault,
+  populateElectronHostProtocolOpen,
+  populateElectronHostProtocolRegistration,
+  populateElectronHostProtocolRegistrationQuery,
+  populateElectronHostProtocolUnregistration,
 } from './electronProtocol';
 
 function fakeElectron() {
@@ -36,9 +41,17 @@ function fakeElectron() {
   return { electron, listeners };
 }
 
-describe('createElectronProtocolCapabilities', () => {
+function protocolLeaf(factory: () => object): () => void {
+  return () => {
+    it('constructs an Entity-backed protocol provider', () => {
+      expect(EntityRuntimeKey in factory()).toBe(true);
+    });
+  };
+}
+
+describe('electronHostProtocol', () => {
   it('publishes five exact Entity-backed protocol slots', () => {
-    const protocol = createElectronProtocolCapabilities(fakeElectron().electron);
+    const protocol = electronHostProtocol(fakeElectron().electron);
     expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol).sort()).toEqual([
       'default',
@@ -51,7 +64,7 @@ describe('createElectronProtocolCapabilities', () => {
   });
 
   it('registers, queries, enumerates, defaults, and unregisters a scheme', () => {
-    const protocol = createElectronProtocolCapabilities(fakeElectron().electron);
+    const protocol = electronHostProtocol(fakeElectron().electron);
     expect(protocol.registrationQuery.isRegistered('flight')).toBe(false);
     expect(protocol.registration.register('flight')).toBe(true);
     expect(protocol.registration.getRegisteredSchemes()).toEqual(['flight']);
@@ -62,7 +75,7 @@ describe('createElectronProtocolCapabilities', () => {
 
   it('adapts the open-url event and unsubscribes', () => {
     const fake = fakeElectron();
-    const protocol = createElectronProtocolCapabilities(fake.electron);
+    const protocol = electronHostProtocol(fake.electron);
     let url = '';
     const off = protocol.open.subscribe((next) => (url = next));
     for (const listener of fake.listeners.get('open-url') ?? []) listener({}, 'flight://open');
@@ -71,38 +84,49 @@ describe('createElectronProtocolCapabilities', () => {
     expect(fake.listeners.get('open-url')).toHaveLength(0);
   });
 });
-describe('initializeElectronProtocolCapabilities', () => {
-  it('is the construction initializer of createElectronProtocolCapabilities', () => {
-    expect(typeof initializeElectronProtocolCapabilities).toBe('function');
+const protocolDefault = protocolLeaf(() => electronHostProtocolDefault(fakeElectron().electron));
+const protocolOpen = protocolLeaf(() => electronHostProtocolOpen(fakeElectron().electron));
+const protocolRegistration = protocolLeaf(() => electronHostProtocolRegistration(fakeElectron().electron));
+const protocolRegistrationQuery = protocolLeaf(() => electronHostProtocolRegistrationQuery(fakeElectron().electron));
+const protocolUnregistration = protocolLeaf(() => electronHostProtocolUnregistration(fakeElectron().electron));
+
+describe('electronHostProtocolDefault', protocolDefault);
+describe('electronHostProtocolOpen', protocolOpen);
+describe('electronHostProtocolRegistration', protocolRegistration);
+describe('electronHostProtocolRegistrationQuery', protocolRegistrationQuery);
+describe('electronHostProtocolUnregistration', protocolUnregistration);
+describe('populateElectronHostProtocol', () => {
+  it('is the construction initializer of electronHostProtocol', () => {
+    expect(typeof populateElectronHostProtocol).toBe('function');
   });
 });
 
-describe('initializeProtocolDefaultBackend', () => {
-  it('is the construction initializer of createProtocolDefaultBackend', () => {
-    expect(typeof initializeProtocolDefaultBackend).toBe('function');
+describe('populateElectronHostProtocolDefault', () => {
+  it('is the construction initializer of electronHostProtocolDefault', () => {
+    expect(typeof populateElectronHostProtocolDefault).toBe('function');
   });
 });
 
-describe('initializeProtocolOpenBackend', () => {
-  it('is the construction initializer of createProtocolOpenBackend', () => {
-    expect(typeof initializeProtocolOpenBackend).toBe('function');
+describe('populateElectronHostProtocolOpen', () => {
+  it('is the construction initializer of electronHostProtocolOpen', () => {
+    expect(typeof populateElectronHostProtocolOpen).toBe('function');
   });
 });
 
-describe('initializeProtocolRegistrationBackend', () => {
-  it('is the construction initializer of createProtocolRegistrationBackend', () => {
-    expect(typeof initializeProtocolRegistrationBackend).toBe('function');
+describe('populateElectronHostProtocolRegistration', () => {
+  it('is the construction initializer of electronHostProtocolRegistration', () => {
+    expect(typeof populateElectronHostProtocolRegistration).toBe('function');
   });
 });
 
-describe('initializeProtocolRegistrationQueryBackend', () => {
-  it('is the construction initializer of createProtocolRegistrationQueryBackend', () => {
-    expect(typeof initializeProtocolRegistrationQueryBackend).toBe('function');
+describe('populateElectronHostProtocolRegistrationQuery', () => {
+  it('is the construction initializer of electronHostProtocolRegistrationQuery', () => {
+    expect(typeof populateElectronHostProtocolRegistrationQuery).toBe('function');
   });
 });
 
-describe('initializeProtocolUnregistrationBackend', () => {
-  it('is the construction initializer of createProtocolUnregistrationBackend', () => {
-    expect(typeof initializeProtocolUnregistrationBackend).toBe('function');
+describe('populateElectronHostProtocolUnregistration', () => {
+  it('is the construction initializer of electronHostProtocolUnregistration', () => {
+    expect(typeof populateElectronHostProtocolUnregistration).toBe('function');
   });
 });

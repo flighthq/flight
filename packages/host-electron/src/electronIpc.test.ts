@@ -2,16 +2,17 @@ import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget, Entity } from
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  createElectronIpcHandleBackend,
-  createElectronIpcInvokeBackend,
-  createElectronIpcMessageBackend,
-  createElectronIpcSendBackend,
-  createElectronIpcTargetedSendBackend,
-  initializeElectronIpcHandleBackend,
-  initializeElectronIpcInvokeBackend,
-  initializeElectronIpcMessageBackend,
-  initializeElectronIpcSendBackend,
-  initializeElectronIpcTargetedSendBackend,
+  electronHostIpc,
+  electronHostIpcHandle,
+  electronHostIpcInvoke,
+  electronHostIpcMessage,
+  electronHostIpcSend,
+  electronHostIpcTargetedSend,
+  populateElectronHostIpcHandle,
+  populateElectronHostIpcInvoke,
+  populateElectronHostIpcMessage,
+  populateElectronHostIpcSend,
+  populateElectronHostIpcTargetedSend,
 } from './electronIpc';
 
 function fakeElectron(): {
@@ -63,10 +64,18 @@ function fakeRenderer(): {
   };
 }
 
-describe('createElectronIpcHandleBackend', () => {
+describe('electronHostIpc', () => {
+  it('constructs the exact Entity-backed main-process IPC group', () => {
+    const ipc = electronHostIpc(fakeElectron().electron);
+    expect(Object.keys(ipc).sort()).toEqual(['handle', 'message', 'targetedSend']);
+    for (const provider of Object.values(ipc)) expect(EntityRuntimeKey in provider).toBe(true);
+  });
+});
+
+describe('electronHostIpcHandle', () => {
   it('registers a main-process handler, drops the event, and releases it idempotently', async () => {
     const { electron, handlers } = fakeElectron();
-    const backend = createElectronIpcHandleBackend(electron);
+    const backend = electronHostIpcHandle(electron);
     const stop = backend.handle('double', (value) => (value as number) * 2);
 
     expect(await handlers.get('double')?.({ sender: 1 }, 4)).toBe(8);
@@ -77,35 +86,35 @@ describe('createElectronIpcHandleBackend', () => {
   });
 
   it('returns an Entity', () => {
-    const backend: Entity = createElectronIpcHandleBackend(fakeElectron().electron);
+    const backend: Entity = electronHostIpcHandle(fakeElectron().electron);
     expect(EntityRuntimeKey in backend).toBe(true);
   });
 });
 
-describe('createElectronIpcInvokeBackend', () => {
+describe('electronHostIpcInvoke', () => {
   it('invokes from the renderer with spread arguments and returns the response', async () => {
     const { invocations, renderer } = fakeRenderer();
-    const backend = createElectronIpcInvokeBackend(renderer);
+    const backend = electronHostIpcInvoke(renderer);
 
     await expect(backend.invoke('compute', [1, 2])).resolves.toEqual({ args: [1, 2], channel: 'compute' });
     expect(invocations).toEqual([{ args: [1, 2], channel: 'compute' }]);
   });
 
   it('returns an Entity', () => {
-    const backend: Entity = createElectronIpcInvokeBackend(fakeRenderer().renderer);
+    const backend: Entity = electronHostIpcInvoke(fakeRenderer().renderer);
     expect(EntityRuntimeKey in backend).toBe(true);
   });
 });
 
-describe('createElectronIpcMessageBackend', () => {
+describe('electronHostIpcMessage', () => {
   it('returns an Entity in both runtime and type', () => {
-    const backend: Entity = createElectronIpcMessageBackend(fakeElectron().electron);
+    const backend: Entity = electronHostIpcMessage(fakeElectron().electron);
     expect(EntityRuntimeKey in backend).toBe(true);
   });
 
   it('delivers a renderer message with its arguments, dropping the event object', () => {
     const { electron, channels } = fakeElectron();
-    const backend = createElectronIpcMessageBackend(electron);
+    const backend = electronHostIpcMessage(electron);
     const seen: readonly unknown[][] = [];
     backend.subscribe('ping', (args) => (seen as unknown[][]).push([...args]));
     for (const listener of channels.get('ping') ?? []) listener({ sender: 1 }, 'a', 2);
@@ -116,7 +125,7 @@ describe('createElectronIpcMessageBackend', () => {
   // provider-level destroy: ipcMain is the caller's to tear down, not this backend's.
   it('removes exactly its own ipcMain listener on unsubscribe', () => {
     const { electron, channels } = fakeElectron();
-    const backend = createElectronIpcMessageBackend(electron);
+    const backend = electronHostIpcMessage(electron);
     const stopFirst = backend.subscribe('ping', () => {});
     backend.subscribe('ping', () => {});
     expect(channels.get('ping')?.size).toBe(2);
@@ -125,7 +134,7 @@ describe('createElectronIpcMessageBackend', () => {
   });
 
   it('remains independent from the other IPC capabilities', () => {
-    const backend = createElectronIpcMessageBackend(fakeElectron().electron);
+    const backend = electronHostIpcMessage(fakeElectron().electron);
     expect(Object.keys(backend).filter((key) => key !== 'constructor')).toEqual(['subscribe']);
     expect('send' in backend).toBe(false);
     expect('invoke' in backend).toBe(false);
@@ -135,10 +144,10 @@ describe('createElectronIpcMessageBackend', () => {
   });
 });
 
-describe('createElectronIpcSendBackend', () => {
+describe('electronHostIpcSend', () => {
   it('sends from the renderer with spread arguments', () => {
     const { renderer, sent } = fakeRenderer();
-    const backend = createElectronIpcSendBackend(renderer);
+    const backend = electronHostIpcSend(renderer);
 
     backend.send('log', ['hello', 7]);
 
@@ -146,12 +155,12 @@ describe('createElectronIpcSendBackend', () => {
   });
 
   it('returns an Entity', () => {
-    const backend: Entity = createElectronIpcSendBackend(fakeRenderer().renderer);
+    const backend: Entity = electronHostIpcSend(fakeRenderer().renderer);
     expect(EntityRuntimeKey in backend).toBe(true);
   });
 });
 
-describe('createElectronIpcTargetedSendBackend', () => {
+describe('electronHostIpcTargetedSend', () => {
   it('keeps the target generic and delegates to its Electron send seam', () => {
     const sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }> = [];
     const target: ElectronIpcTarget & { readonly label: string } = {
@@ -160,7 +169,7 @@ describe('createElectronIpcTargetedSendBackend', () => {
         sent.push({ args, channel });
       },
     };
-    const backend = createElectronIpcTargetedSendBackend<typeof target>();
+    const backend = electronHostIpcTargetedSend<typeof target>();
 
     backend.send(target, 'refresh', [1, 2]);
 
@@ -168,36 +177,36 @@ describe('createElectronIpcTargetedSendBackend', () => {
   });
 
   it('returns an Entity', () => {
-    const backend: Entity = createElectronIpcTargetedSendBackend<ElectronIpcTarget>();
+    const backend: Entity = electronHostIpcTargetedSend<ElectronIpcTarget>();
     expect(EntityRuntimeKey in backend).toBe(true);
   });
 });
-describe('initializeElectronIpcHandleBackend', () => {
-  it('is the construction initializer of createElectronIpcHandleBackend', () => {
-    expect(typeof initializeElectronIpcHandleBackend).toBe('function');
+describe('populateElectronHostIpcHandle', () => {
+  it('is the construction initializer of electronHostIpcHandle', () => {
+    expect(typeof populateElectronHostIpcHandle).toBe('function');
   });
 });
 
-describe('initializeElectronIpcInvokeBackend', () => {
-  it('is the construction initializer of createElectronIpcInvokeBackend', () => {
-    expect(typeof initializeElectronIpcInvokeBackend).toBe('function');
+describe('populateElectronHostIpcInvoke', () => {
+  it('is the construction initializer of electronHostIpcInvoke', () => {
+    expect(typeof populateElectronHostIpcInvoke).toBe('function');
   });
 });
 
-describe('initializeElectronIpcMessageBackend', () => {
-  it('is the construction initializer of createElectronIpcMessageBackend', () => {
-    expect(typeof initializeElectronIpcMessageBackend).toBe('function');
+describe('populateElectronHostIpcMessage', () => {
+  it('is the construction initializer of electronHostIpcMessage', () => {
+    expect(typeof populateElectronHostIpcMessage).toBe('function');
   });
 });
 
-describe('initializeElectronIpcSendBackend', () => {
-  it('is the construction initializer of createElectronIpcSendBackend', () => {
-    expect(typeof initializeElectronIpcSendBackend).toBe('function');
+describe('populateElectronHostIpcSend', () => {
+  it('is the construction initializer of electronHostIpcSend', () => {
+    expect(typeof populateElectronHostIpcSend).toBe('function');
   });
 });
 
-describe('initializeElectronIpcTargetedSendBackend', () => {
-  it('is the construction initializer of createElectronIpcTargetedSendBackend', () => {
-    expect(typeof initializeElectronIpcTargetedSendBackend).toBe('function');
+describe('populateElectronHostIpcTargetedSend', () => {
+  it('is the construction initializer of electronHostIpcTargetedSend', () => {
+    expect(typeof populateElectronHostIpcTargetedSend).toBe('function');
   });
 });

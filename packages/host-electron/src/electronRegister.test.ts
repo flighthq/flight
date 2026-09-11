@@ -3,11 +3,133 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
-import { initializeElectronHost, registerElectronBackends } from './electronRegister';
+import * as contractApi from './contract';
+import { electronHost } from './electronRegister';
+import * as publicApi from './index';
 
-// A fake Electron module broad enough that every createElectron*Backend constructs without touching
-// missing members. Backends close over `electron` and only call into it when their methods run, so a
-// thin fake suffices to prove registration routes the capability seams to the Electron backends.
+const GROUPS = [
+  ['accessibility', 'electronHostAccessibilityGroup'],
+  ['app', 'electronHostApp'],
+  ['clipboard', 'electronHostClipboard'],
+  ['connectivity', 'electronHostConnectivity'],
+  ['dialog', 'electronHostDialog'],
+  ['graphics', 'electronHostGraphics'],
+  ['input', 'electronHostInput'],
+  ['ipc', 'electronHostIpc'],
+  ['media', 'electronHostMedia'],
+  ['menu', 'electronHostMenu'],
+  ['midi', 'electronHostMidi'],
+  ['net', 'electronHostNetGroup'],
+  ['notification', 'electronHostNotification'],
+  ['power', 'electronHostPower'],
+  ['protocol', 'electronHostProtocol'],
+  ['screen', 'electronHostScreen'],
+  ['share', 'electronHostShare'],
+  ['shell', 'electronHostShell'],
+  ['shortcut', 'electronHostShortcut'],
+  ['storage', 'electronHostStorageGroup'],
+  ['system', 'electronHostSystem'],
+  ['text', 'electronHostText'],
+  ['tray', 'electronHostTray'],
+  ['ui', 'electronHostUi'],
+  ['updater', 'electronHostUpdater'],
+  ['window', 'electronHostWindow'],
+] as const;
+
+const LEAVES = [
+  'electronHostAppActivate',
+  'electronHostAppActivationPolicy',
+  'electronHostAppAllWindowsClosed',
+  'electronHostAppBadge',
+  'electronHostAppDock',
+  'electronHostAppFocus',
+  'electronHostAppHiddenQuery',
+  'electronHostAppHide',
+  'electronHostAppLocale',
+  'electronHostAppLoginItem',
+  'electronHostAppName',
+  'electronHostAppNameWrite',
+  'electronHostAppOpenFile',
+  'electronHostAppPath',
+  'electronHostAppQuit',
+  'electronHostAppQuitRequest',
+  'electronHostAppReady',
+  'electronHostAppRecentDocuments',
+  'electronHostAppRelaunch',
+  'electronHostAppSecondInstance',
+  'electronHostAppShow',
+  'electronHostAppSingleInstance',
+  'electronHostAppUserModelId',
+  'electronHostAppVersion',
+  'electronHostClipboardBookmark',
+  'electronHostClipboardFormats',
+  'electronHostClipboardImage',
+  'electronHostClipboardText',
+  'electronHostDirectoryOpenDialog',
+  'electronHostFileOpenDialog',
+  'electronHostFileSaveDialog',
+  'electronHostIpcHandle',
+  'electronHostIpcInvoke',
+  'electronHostIpcMessage',
+  'electronHostIpcSend',
+  'electronHostIpcTargetedSend',
+  'electronHostMenuApplication',
+  'electronHostMenuPopup',
+  'electronHostMenuSelect',
+  'electronHostMessageDialog',
+  'electronHostNotificationAction',
+  'electronHostNotificationClick',
+  'electronHostNotificationClose',
+  'electronHostNotificationDelivery',
+  'electronHostNotificationDismiss',
+  'electronHostNotificationLifecycle',
+  'electronHostNotificationReceived',
+  'electronHostNotificationReply',
+  'electronHostPlatform',
+  'electronHostPowerBatteryHealth',
+  'electronHostPowerChange',
+  'electronHostPowerIdle',
+  'electronHostPowerKeepAwake',
+  'electronHostPowerSessionLock',
+  'electronHostPowerStatus',
+  'electronHostPowerSuspension',
+  'electronHostPowerThermal',
+  'electronHostProtocolDefault',
+  'electronHostProtocolOpen',
+  'electronHostProtocolRegistration',
+  'electronHostProtocolRegistrationQuery',
+  'electronHostProtocolUnregistration',
+  'electronHostScreenChange',
+  'electronHostScreenQuery',
+  'electronHostShellBeep',
+  'electronHostShellExternal',
+  'electronHostShellPathOpen',
+  'electronHostShellPathReveal',
+  'electronHostShellShortcutLink',
+  'electronHostShellTrash',
+  'electronHostShortcutQuery',
+  'electronHostShortcutTrigger',
+  'electronHostStorage',
+  'electronHostTrayBalloon',
+  'electronHostTrayBalloonEvents',
+  'electronHostTrayBounds',
+  'electronHostTrayDoubleClickPolicy',
+  'electronHostTrayDropEvents',
+  'electronHostTrayImage',
+  'electronHostTrayInteractionEvents',
+  'electronHostTrayLifecycle',
+  'electronHostTrayMenu',
+  'electronHostTrayMenuSelectionEvents',
+  'electronHostTrayPopupMenu',
+  'electronHostTrayPressedImage',
+  'electronHostTrayTemplateImage',
+  'electronHostTrayTitle',
+  'electronHostTrayTooltip',
+  'electronHostUpdaterCommand',
+] as const;
+
+// A fake Electron API broad enough that every host constructor can close over its injected dependency
+// without calling missing native operations during construction.
 function fakeElectron(): ElectronApi {
   const noop = () => {};
   const off = () => () => {};
@@ -47,14 +169,34 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
-describe('initializeElectronHost', () => {
-  it('is the construction initializer of createElectronHost', () => {
-    expect(typeof initializeElectronHost).toBe('function');
+describe('electronHost', () => {
+  it('exports exactly the canonical full, 26 group, and supported leaf constructors from both lanes', () => {
+    const expected = [...new Set(['electronHost', ...GROUPS.map((entry) => entry[1]), ...LEAVES])].sort();
+    expect(expected).toHaveLength(116);
+    for (const api of [publicApi, contractApi]) {
+      const names = Object.keys(api)
+        .filter((name) => /^electronHost(?:$|[A-Z])/u.test(name))
+        .sort();
+      expect(names).toEqual(expected);
+      expect(
+        Object.keys(api).filter((name) =>
+          /^(?:createElectron|initializeElectron|makeElectron|registerElectron)/u.test(name),
+        ),
+      ).toEqual([]);
+      for (const name of names) expect(Reflect.get(api, name), name).toBeTypeOf('function');
+    }
+    for (const name of expected) expect(Reflect.get(publicApi, name)).toBe(Reflect.get(contractApi, name));
   });
-});
-describe('registerElectronBackends', () => {
+
+  it('constructs all 26 Host groups through explicit canonical boundaries', () => {
+    const host = electronHost(fakeElectron(), { platform: 'linux' }) as unknown as Record<string, unknown>;
+    expect(GROUPS).toHaveLength(26);
+    expect(Object.keys(host).sort()).toEqual(GROUPS.map((entry) => entry[0]).sort());
+    for (const [path] of GROUPS) expect(host[path], path).not.toBeUndefined();
+  });
+
   it('routes capability seams to the Electron backends without throwing', async () => {
-    const host = registerElectronBackends(fakeElectron(), {
+    const host = electronHost(fakeElectron(), {
       platform: 'linux',
     });
     expect(host.media).toEqual({});
@@ -84,10 +226,10 @@ describe('registerElectronBackends', () => {
   });
 
   it('constructs the exact six Shell slots from an injected platform fact', () => {
-    const windowsHost = registerElectronBackends(fakeElectron(), {
+    const windowsHost = electronHost(fakeElectron(), {
       platform: 'windows',
     });
-    const linuxHost = registerElectronBackends(fakeElectron(), {
+    const linuxHost = electronHost(fakeElectron(), {
       platform: 'linux',
     });
     expect(Object.keys(windowsHost.shell).sort()).toEqual([

@@ -2,10 +2,12 @@ import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/c
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  createElectronScreenCapabilities,
+  electronHostScreen,
+  electronHostScreenChange,
+  electronHostScreenQuery,
   initializeEmptyScreenInfo,
-  initializeScreenChangeBackend,
-  initializeScreenQueryBackend,
+  populateElectronHostScreenChange,
+  populateElectronHostScreenQuery,
 } from './electronScreen';
 
 function display(id: number, x: number): ElectronDisplay {
@@ -46,16 +48,16 @@ function fakeElectron(): {
   return { electron, listeners };
 }
 
-describe('createElectronScreenCapabilities', () => {
+describe('electronHostScreen', () => {
   it('returns Entity-backed query and change facets', () => {
-    const capabilities = createElectronScreenCapabilities(fakeElectron().electron);
+    const capabilities = electronHostScreen(fakeElectron().electron);
     expect(EntityRuntimeKey in capabilities.query).toBe(true);
     expect(EntityRuntimeKey in capabilities.change).toBe(true);
   });
 
   it('fills the primary screen into out', () => {
     const { electron } = fakeElectron();
-    const backend = createElectronScreenCapabilities(electron).query;
+    const backend = electronHostScreen(electron).query;
     const out = {} as ScreenInfo;
     const result = backend.getPrimaryScreen(out);
     expect(result).toBe(out);
@@ -75,7 +77,7 @@ describe('createElectronScreenCapabilities', () => {
 
   it('enumerates all screens marking the primary', () => {
     const { electron } = fakeElectron();
-    const backend = createElectronScreenCapabilities(electron).query;
+    const backend = electronHostScreen(electron).query;
     const out: ScreenInfo[] = [];
     backend.getScreens(out);
     expect(out).toHaveLength(2);
@@ -88,7 +90,7 @@ describe('createElectronScreenCapabilities', () => {
 
   it('subscribes to all change events and unsubscribes from all', () => {
     const fake = fakeElectron();
-    const backend = createElectronScreenCapabilities(fake.electron).change;
+    const backend = electronHostScreen(fake.electron).change;
     let count = 0;
     const off = backend.subscribe(() => {
       count++;
@@ -103,20 +105,32 @@ describe('createElectronScreenCapabilities', () => {
     expect(fake.listeners.get('display-metrics-changed')).toHaveLength(0);
   });
 });
+
+describe('electronHostScreenChange', () => {
+  it('constructs an Entity-backed screen change provider', () => {
+    expect(EntityRuntimeKey in electronHostScreenChange(fakeElectron().electron)).toBe(true);
+  });
+});
+
+describe('electronHostScreenQuery', () => {
+  it('constructs an Entity-backed screen query provider', () => {
+    expect(EntityRuntimeKey in electronHostScreenQuery(fakeElectron().electron)).toBe(true);
+  });
+});
 describe('initializeEmptyScreenInfo', () => {
   it('is the construction initializer of createEmptyScreenInfo', () => {
     expect(typeof initializeEmptyScreenInfo).toBe('function');
   });
 });
 
-describe('initializeScreenChangeBackend', () => {
-  it('is the construction initializer of createScreenChangeBackend', () => {
-    expect(typeof initializeScreenChangeBackend).toBe('function');
+describe('populateElectronHostScreenChange', () => {
+  it('is the construction initializer of electronHostScreenChange', () => {
+    expect(typeof populateElectronHostScreenChange).toBe('function');
   });
 });
 
-describe('initializeScreenQueryBackend', () => {
-  it('is the construction initializer of createScreenQueryBackend', () => {
-    expect(typeof initializeScreenQueryBackend).toBe('function');
+describe('populateElectronHostScreenQuery', () => {
+  it('is the construction initializer of electronHostScreenQuery', () => {
+    expect(typeof populateElectronHostScreenQuery).toBe('function');
   });
 });

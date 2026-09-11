@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   ElectronApi,
-  ElectronBackendOptions,
+  ElectronHostOptions,
   ElectronMacosNotificationCapabilities,
   ElectronNotification,
   ElectronNotificationCapabilities,
@@ -21,26 +21,26 @@ type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Pro
   ? ElectronMacosNotificationCapabilities
   : ElectronNotificationCapabilities;
 
-export function createElectronNotificationCapabilities<Profile extends DesktopOsProfile>(
+export function electronHostNotification<Profile extends DesktopOsProfile>(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions> & { readonly platform: Profile },
+  options: Readonly<ElectronHostOptions> & { readonly platform: Profile },
 ): ElectronNotificationCapabilitiesFor<Profile>;
 
-export function createElectronNotificationCapabilities(
+export function electronHostNotification(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions & { platform: 'macos' }>,
+  options: Readonly<ElectronHostOptions & { platform: 'macos' }>,
 ): ElectronMacosNotificationCapabilities;
-export function createElectronNotificationCapabilities(
+export function electronHostNotification(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions & { platform: 'linux' | 'windows' }>,
+  options: Readonly<ElectronHostOptions & { platform: 'linux' | 'windows' }>,
 ): ElectronNotificationCapabilities;
-export function createElectronNotificationCapabilities(
+export function electronHostNotification(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions>,
+  options: Readonly<ElectronHostOptions>,
 ): ElectronMacosNotificationCapabilities | ElectronNotificationCapabilities;
-export function createElectronNotificationCapabilities(
+export function electronHostNotification(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions>,
+  options: Readonly<ElectronHostOptions>,
 ): ElectronMacosNotificationCapabilities | ElectronNotificationCapabilities {
   const nativeByNotification = new Map<Notification, ElectronNotification>();
   const actionListeners = new Set<(notification: Readonly<Notification>, actionId: string) => void>();
@@ -74,7 +74,7 @@ export function createElectronNotificationCapabilities(
   }
 
   const capabilities: Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey> = {
-    click: createElectronNotificationEventBackend(clickListeners, () => destroyed),
+    click: electronHostNotificationEventProvider(clickListeners, () => destroyed),
     close: { closeAllNotifications: closeAll },
     delivery: {
       async notify(request) {
@@ -157,7 +157,7 @@ export function createElectronNotificationCapabilities(
         });
       },
     },
-    dismiss: createElectronNotificationEventBackend(dismissListeners, () => destroyed),
+    dismiss: electronHostNotificationEventProvider(dismissListeners, () => destroyed),
     lifecycle: {
       async destroy() {
         if (destroyCompleted) return { reason: 'already-destroyed' };
@@ -172,25 +172,93 @@ export function createElectronNotificationCapabilities(
         return outcome;
       },
     },
-    received: createElectronNotificationEventBackend(receivedListeners, () => destroyed),
+    received: electronHostNotificationEventProvider(receivedListeners, () => destroyed),
   };
 
   if (options.platform !== 'macos') {
     const out = allocateEntity<ElectronNotificationCapabilities>();
-    initializeElectronNotificationCapabilities(out, capabilities);
+    populateElectronHostNotificationCommon(out, capabilities);
     return finishEntity(out);
   }
   const out = allocateEntity<ElectronMacosNotificationCapabilities>();
-  initializeElectronMacosNotificationCapabilities(
+  populateElectronHostNotificationMacos(
     out,
     capabilities,
-    createElectronNotificationEventBackend(actionListeners, () => destroyed),
-    createElectronNotificationEventBackend(replyListeners, () => destroyed),
+    electronHostNotificationEventProvider(actionListeners, () => destroyed),
+    electronHostNotificationEventProvider(replyListeners, () => destroyed),
   );
   return finishEntity(out);
 }
 
-export function initializeElectronMacosNotificationCapabilities(
+export function electronHostNotificationAction(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions & { platform: 'macos' }>,
+): ElectronMacosNotificationCapabilities['action'] {
+  return electronHostNotification(electron, options).action;
+}
+
+export function electronHostNotificationClick(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['click'] {
+  return electronHostNotification(electron, options).click;
+}
+
+export function electronHostNotificationClose(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['close'] {
+  return electronHostNotification(electron, options).close;
+}
+
+export function electronHostNotificationDelivery(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['delivery'] {
+  return electronHostNotification(electron, options).delivery;
+}
+
+export function electronHostNotificationDismiss(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['dismiss'] {
+  return electronHostNotification(electron, options).dismiss;
+}
+
+export function electronHostNotificationLifecycle(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['lifecycle'] {
+  return electronHostNotification(electron, options).lifecycle;
+}
+
+export function electronHostNotificationReceived(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions>,
+): ElectronNotificationCapabilities['received'] {
+  return electronHostNotification(electron, options).received;
+}
+
+export function electronHostNotificationReply(
+  electron: ElectronApi,
+  options: Readonly<ElectronHostOptions & { platform: 'macos' }>,
+): ElectronMacosNotificationCapabilities['reply'] {
+  return electronHostNotification(electron, options).reply;
+}
+
+export function populateElectronHostNotificationCommon(
+  out: EntityConstruction<ElectronNotificationCapabilities>,
+  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
+): void {
+  out.click = capabilities.click;
+  out.close = capabilities.close;
+  out.delivery = capabilities.delivery;
+  out.dismiss = capabilities.dismiss;
+  out.lifecycle = capabilities.lifecycle;
+  out.received = capabilities.received;
+}
+
+export function populateElectronHostNotificationMacos(
   out: EntityConstruction<ElectronMacosNotificationCapabilities>,
   capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
   action: ElectronMacosNotificationCapabilities['action'],
@@ -206,19 +274,7 @@ export function initializeElectronMacosNotificationCapabilities(
   out.reply = reply;
 }
 
-export function initializeElectronNotificationCapabilities(
-  out: EntityConstruction<ElectronNotificationCapabilities>,
-  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
-): void {
-  out.click = capabilities.click;
-  out.close = capabilities.close;
-  out.delivery = capabilities.delivery;
-  out.dismiss = capabilities.dismiss;
-  out.lifecycle = capabilities.lifecycle;
-  out.received = capabilities.received;
-}
-
-function createElectronNotificationEventBackend<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {
+function electronHostNotificationEventProvider<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {
   return {
     async attach(listener: TListener): Promise<NotificationEventBackendAttachOutcome> {
       if (isDestroyed()) return { reason: 'operation-failed', releaseFailed: false };

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
-import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
+import { getElectronBrowserWindow, electronHost } from '@flighthq/host-electron';
 import type { ApplicationWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createApplicationWindow,
@@ -30,7 +30,7 @@ import electron from 'electron';
 
 const { app, ipcMain } = electron;
 
-// The single Flight window this harness drives. Created via Flight's window backend (which constructs
+// The single Flight window this harness drives. Created via Flight's window provider (which constructs
 // the real BrowserWindow under the hood); we reach the BrowserWindow back out with
 // getElectronBrowserWindow only to load page content — everything else goes through the Flight API.
 let mainWindow: ApplicationWindow | null = null;
@@ -56,8 +56,8 @@ function loadRenderer(win: ApplicationWindow): void {
 
 // Renderer → main bridge: capability calls that must run in the main process. The renderer invokes
 // these over IPC (see preload); each handler is a plain Flight capability call that, thanks to
-// registerElectronBackends, is now serviced by Electron.
-function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): void {
+// electronHost, is now serviced by Electron.
+function installIpcBridge(host: ReturnType<typeof electronHost>): void {
   ipcMain.handle('flight:openFileDialog', async () => {
     const result = await showOpenFileDialog(host.dialog.fileOpen, {});
     // Entity runtime identity is process-local and deliberately never serialized. The harness bridge
@@ -78,8 +78,8 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 }
 
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
-// the Electron backends are wired.
-async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): Promise<void> {
+// the Electron providers are wired.
+async function runOsIntegrationDemo(host: ReturnType<typeof electronHost>): Promise<void> {
   // eslint-disable-next-line no-console -- this executable demo reports the exercised OS integrations.
   console.log(
     '[harness] app:',
@@ -143,7 +143,7 @@ void app.whenReady().then(() => {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
-  const host = registerElectronBackends(electronApi, {
+  const host = electronHost(electronApi, {
     platform: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux',
   });
   installIpcBridge(host);

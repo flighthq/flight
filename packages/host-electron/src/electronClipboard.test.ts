@@ -1,7 +1,12 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronClipboardBackend, initializeElectronClipboardBackend } from './electronClipboard';
+import { electronHostClipboard, populateElectronHostClipboardProvider } from './electronClipboard';
+
+function clipboardProvider(electron: ElectronApi) {
+  const clipboard = electronHostClipboard(electron);
+  return Object.assign(clipboard.bookmark, clipboard.formats, clipboard.image, clipboard.text);
+}
 
 function fakeElectron(): ElectronApi {
   const store = { text: '', html: '', rtf: '', imageDataUrl: '', bookmarkTitle: '', bookmarkUrl: '' };
@@ -49,9 +54,17 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
-describe('createElectronClipboardBackend', () => {
+function clipboardLeaf(slot: keyof ReturnType<typeof electronHostClipboard>): () => void {
+  return () => {
+    it('constructs an Entity-backed provider in the clipboard group', () => {
+      expect(EntityRuntimeKey in electronHostClipboard(fakeElectron())[slot]).toBe(true);
+    });
+  };
+}
+
+describe('electronHostClipboard', () => {
   it('round-trips text through the Electron clipboard', async () => {
-    const backend = createElectronClipboardBackend(fakeElectron());
+    const backend = clipboardProvider(fakeElectron());
     expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
@@ -59,7 +72,7 @@ describe('createElectronClipboardBackend', () => {
   });
 
   it('round-trips HTML and RTF', async () => {
-    const backend = createElectronClipboardBackend(fakeElectron());
+    const backend = clipboardProvider(fakeElectron());
     await backend.writeHtml('<b>x</b>');
     await backend.writeRTF('{\\rtf1 x}');
     expect(await backend.readHtml()).toBe('<b>x</b>');
@@ -67,7 +80,7 @@ describe('createElectronClipboardBackend', () => {
   });
 
   it('round-trips an image as a data URL', async () => {
-    const backend = createElectronClipboardBackend(fakeElectron());
+    const backend = clipboardProvider(fakeElectron());
     expect(await backend.hasImage()).toBe(false);
     await backend.writeImage('data:image/png;base64,AAAA');
     expect(await backend.readImage()).toBe('data:image/png;base64,AAAA');
@@ -75,21 +88,26 @@ describe('createElectronClipboardBackend', () => {
   });
 
   it('returns null for an empty bookmark and round-trips a set one', async () => {
-    const backend = createElectronClipboardBackend(fakeElectron());
+    const backend = clipboardProvider(fakeElectron());
     expect(await backend.readBookmark()).toBeNull();
     await backend.writeBookmark('Flight', 'https://example.test');
     expect(await backend.readBookmark()).toEqual({ title: 'Flight', url: 'https://example.test' });
   });
 
   it('clears all formats', async () => {
-    const backend = createElectronClipboardBackend(fakeElectron());
+    const backend = clipboardProvider(fakeElectron());
     await backend.writeText('x');
     expect(await backend.clear()).toBe(true);
     expect(await backend.readText()).toBe('');
   });
 });
-describe('initializeElectronClipboardBackend', () => {
-  it('is the construction initializer of createElectronClipboardBackend', () => {
-    expect(typeof initializeElectronClipboardBackend).toBe('function');
+describe('electronHostClipboardBookmark', clipboardLeaf('bookmark'));
+describe('electronHostClipboardFormats', clipboardLeaf('formats'));
+describe('electronHostClipboardImage', clipboardLeaf('image'));
+
+describe('electronHostClipboardText', clipboardLeaf('text'));
+describe('populateElectronHostClipboardProvider', () => {
+  it('is the construction initializer used by electronHostClipboard leaves', () => {
+    expect(typeof populateElectronHostClipboardProvider).toBe('function');
   });
 });
