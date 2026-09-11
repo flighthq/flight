@@ -76,8 +76,8 @@ export interface HostMenuSelectProvider extends Entity {
   subscribe(listener: (id: string) => void): () => void;
 }
 
-// These concrete bundles are identity-bearing results of platform factories. HostMenuCapabilities and
-// the HasMenu* traits stay structural so generic host composition remains structural.
+// These concrete bundles are identity-bearing results of platform factories. HostMenuCapabilities
+// stays structural so generic host composition remains structural.
 export type ElectronMenuCapabilities = Entity &
   Required<Pick<HostMenuCapabilities, 'application' | 'popup' | 'select'>>;
 

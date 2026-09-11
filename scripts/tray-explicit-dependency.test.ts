@@ -53,6 +53,15 @@ describe('Tray explicit dependency structure', () => {
     }
   });
 
+  it('passes operation-tight providers instead of capturing Host slots in the Tray entity', () => {
+    expect(trayCoreSource).toContain('hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>');
+    expect(trayCoreSource).toContain('hostTrayImage: Readonly<HostTrayImageProvider>');
+    expect(trayCoreSource).toContain('hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsProvider>');
+    expect(trayCoreSource).not.toContain('HostTrayCapabilities');
+    expect(trayCoreSource).not.toContain('runtime.capabilities');
+    expect(trayTypeSource).not.toMatch(/TrayIconForHost|TrayWith[A-Z]/u);
+  });
+
   it('requires an injected OS profile and never reaches ambient process.platform', () => {
     expect(electronRegisterSource).toMatch(/platform: Profile/);
     expect(tauriRegisterSource).toMatch(/profile: Profile/);

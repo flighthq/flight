@@ -207,10 +207,6 @@ const _watchSubscriptions = new Map<
   ClipboardWatch,
   {
     readonly callback: () => void;
-    readonly change: {
-      readonly clipboard: {
-        readonly change: Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>;
-      };
-    }['clipboard']['change'];
+    readonly change: Readonly<Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>>;
   }
 >();

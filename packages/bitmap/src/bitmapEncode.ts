@@ -26,16 +26,12 @@ export function explainBitmapEncodeFailure(
 
 type BitmapEncodeResolution =
   | {
-      readonly backend: {
-        readonly graphics: { readonly bitmapEncode: HostBitmapEncodeProvider };
-      }['graphics']['bitmapEncode'];
+      readonly backend: Readonly<HostBitmapEncodeProvider>;
       readonly format: ImageFormat;
       readonly reason: null;
     }
   | {
-      readonly backend:
-        | { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeProvider } }['graphics']['bitmapEncode']
-        | null;
+      readonly backend: Readonly<HostBitmapEncodeProvider> | null;
       readonly format: ImageFormat;
       readonly reason: BitmapEncodeFailureExplanation['reason'];
     };

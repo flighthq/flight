@@ -16,7 +16,8 @@ export function attachShareSignals(signals: ShareSignals): void {
 }
 
 // This is payload validation within the content capability. Capability presence itself is expressed
-// by HasShareContent, so a host without the slot is a type error rather than a false probe.
+// by the direct HostShareContentProvider parameter, so an absent provider is a type error rather than
+// a false probe.
 export function canShareContent(
   hostShareContent: Readonly<HostShareContentProvider>,
   content: Readonly<ShareContent>,

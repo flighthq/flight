@@ -51,9 +51,10 @@ function host() {
 }
 
 async function tray() {
-  const result = await createTrayIcon(host());
+  const providers = host();
+  const result = await createTrayIcon(providers.tray.lifecycle);
   if (result.outcome !== 'created') throw new Error(result.outcome);
-  return result.tray;
+  return { icon: result.tray, image: providers.tray.image };
 }
 
 function messages(): string {
@@ -64,8 +65,8 @@ describe('disableTrayGuards', () => {
   it('stops inspecting later animations', async () => {
     enableTrayGuards();
     disableTrayGuards();
-    const icon = await tray();
-    const started = await startTrayIconAnimation(icon, ['a'], 0);
+    const { icon, image } = await tray();
+    const started = await startTrayIconAnimation(image, icon, ['a'], 0);
     if (started.outcome === 'started') await started.release.release();
     await destroyTrayIcon(icon);
     expect(messages()).toBe('');
@@ -75,8 +76,8 @@ describe('disableTrayGuards', () => {
 describe('enableTrayGuards', () => {
   it('warns without refusing a non-positive interval', async () => {
     enableTrayGuards();
-    const icon = await tray();
-    const started = await startTrayIconAnimation(icon, ['a'], 0);
+    const { icon, image } = await tray();
+    const started = await startTrayIconAnimation(image, icon, ['a'], 0);
     expect(started.outcome).toBe('started');
     expect(messages()).toContain('intervalMs is 0');
     if (started.outcome === 'started') await started.release.release();

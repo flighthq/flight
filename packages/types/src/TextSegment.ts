@@ -1,7 +1,7 @@
 import type { Entity } from './Entity';
 // Unicode text-segmentation seam (UAX #29). Free functions in @flighthq/textsegment accept an
-// explicit HasTextSegmenter capability; when omitted, the bundled Intl.Segmenter provider remains
-// the compatibility fallback. A from-scratch UAX #29 backend can be composed by headless/native
+// explicit HostTextSegmenterProvider; when omitted, the bundled Intl.Segmenter provider remains the
+// compatibility fallback. A from-scratch UAX #29 backend can be composed by headless/native
 // hosts or a flight-rs table kernel. Line breaking (UAX #14) is NOT here: it is a different
 // algorithm Intl.Segmenter does not provide and @flighthq/textlayout owns it.
 

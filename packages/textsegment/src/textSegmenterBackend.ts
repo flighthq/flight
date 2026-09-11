@@ -56,8 +56,8 @@ export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTe
  * Installs the backend used by calls that omit an explicit host; pass null to restore the stable
  * bundled web default.
  *
- * @deprecated Pass a HasTextSegmenter to the segmentation or boundary operation. Retained for
- * source compatibility until the legacy global path is removed.
+ * @deprecated Pass a HostTextSegmenterProvider to the segmentation or boundary operation. Retained
+ * for source compatibility until the legacy global path is removed.
  */
 export function setTextSegmenterBackend(backend: HostTextSegmenterProvider | null): void {
   _backend = backend;

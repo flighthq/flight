@@ -120,13 +120,15 @@ async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBack
     console.log('[harness] clipboard round-trip:', await readClipboardText(host.clipboard.text)); // eslint-disable-line
   })();
 
-  const trayResult = await createTrayIcon(host, {
+  const trayResult = await createTrayIcon(host.tray.lifecycle, {
     icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     tooltip: 'Flight Harness',
   });
   if (trayResult.outcome === 'created') {
-    await setTrayIconTooltip(trayResult.tray, 'Flight Harness (ready)');
-    onTrayInteraction(trayResult.tray, (event) => console.log('[harness] tray event:', event.type)); // eslint-disable-line
+    await setTrayIconTooltip(host.tray.tooltip, trayResult.tray, 'Flight Harness (ready)');
+    onTrayInteraction(host.tray.interactionEvents, trayResult.tray, (event) => {
+      console.log('[harness] tray event:', event.type); // eslint-disable-line
+    });
   } else {
     console.warn('[harness] tray unavailable:', trayResult.outcome); // eslint-disable-line
   }

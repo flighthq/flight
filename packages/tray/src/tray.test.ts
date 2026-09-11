@@ -21,7 +21,6 @@ import type {
   TrayBalloonEvent,
   TrayDropEvent,
   TrayIcon,
-  TrayIconForHost,
   TrayInteractionEvent,
   TrayMenuSelectionEvent,
 } from '@flighthq/types/contract';
@@ -239,8 +238,8 @@ function testHost(): { host: TestHost; state: TestState } {
   return { host: host as TestHost, state };
 }
 
-async function acquire(host: TestHost): Promise<TrayIconForHost<TestHost>> {
-  const result = await createTrayIcon(host);
+async function acquire(host: TestHost): Promise<TrayIcon> {
+  const result = await createTrayIcon(host.tray.lifecycle);
   if (result.outcome !== 'created') throw new Error(result.outcome);
   return result.tray;
 }
@@ -248,7 +247,7 @@ async function acquire(host: TestHost): Promise<TrayIconForHost<TestHost>> {
 describe('createTrayIcon', () => {
   it('publishes only after provider acquisition and exposes no public id', async () => {
     const { host, state } = testHost();
-    const pending = createTrayIcon(host);
+    const pending = createTrayIcon(host.tray.lifecycle);
     expect(state.live).toHaveLength(1);
     const result = await pending;
     expect(result.outcome).toBe('created');
@@ -271,14 +270,19 @@ describe('displayTrayBalloon', () => {
   it('owns balloon display on the Tray entity', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    expect((await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' })).outcome).toBe('displayed');
+    expect((await displayTrayBalloon(host.tray.balloon, tray, { text: 'Done', title: 'Flight' })).outcome).toBe(
+      'displayed',
+    );
   });
 });
 
 describe('getTrayIconBounds', () => {
   it('returns provider bounds', async () => {
     const { host } = testHost();
-    expect(await getTrayIconBounds(await acquire(host))).toMatchObject({ outcome: 'available', bounds: { width: 1 } });
+    expect(await getTrayIconBounds(host.tray.bounds, await acquire(host))).toMatchObject({
+      outcome: 'available',
+      bounds: { width: 1 },
+    });
   });
 });
 
@@ -295,8 +299,8 @@ describe('getTrayIconTitle', () => {
   it('reads the title', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    await setTrayIconTitle(tray, 'Flight');
-    expect(await getTrayIconTitle(tray)).toEqual({ outcome: 'available', title: 'Flight' });
+    await setTrayIconTitle(host.tray.title, tray, 'Flight');
+    expect(await getTrayIconTitle(host.tray.title, tray)).toEqual({ outcome: 'available', title: 'Flight' });
   });
 });
 
@@ -304,8 +308,8 @@ describe('getTrayIconTooltip', () => {
   it('reads the tooltip', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    await setTrayIconTooltip(tray, 'Ready');
-    expect(await getTrayIconTooltip(tray)).toEqual({ outcome: 'available', tooltip: 'Ready' });
+    await setTrayIconTooltip(host.tray.tooltip, tray, 'Ready');
+    expect(await getTrayIconTooltip(host.tray.tooltip, tray)).toEqual({ outcome: 'available', tooltip: 'Ready' });
   });
 });
 
@@ -347,7 +351,7 @@ describe('isTrayIconAnimating', () => {
     vi.useFakeTimers();
     const { host } = testHost();
     const tray = await acquire(host);
-    await startTrayIconAnimation(tray, ['a'], 10);
+    await startTrayIconAnimation(host.tray.image, tray, ['a'], 10);
     expect(isTrayIconAnimating(tray)).toBe(true);
     stopTrayIconAnimation(tray);
     expect(isTrayIconAnimating(tray)).toBe(false);
@@ -360,7 +364,7 @@ describe('onTrayBalloonEvent', () => {
     const { host, state } = testHost();
     const tray = await acquire(host);
     const listener = vi.fn();
-    expect(onTrayBalloonEvent(tray, listener).outcome).toBe('attached');
+    expect(onTrayBalloonEvent(host.tray.balloonEvents, tray, listener).outcome).toBe('attached');
     state.balloonEvents.get(tray)!.emit({ type: 'show' });
     expect(listener).toHaveBeenCalledWith({ type: 'show' });
   });
@@ -371,7 +375,7 @@ describe('onTrayDrop', () => {
     const { host, state } = testHost();
     const tray = await acquire(host);
     const listener = vi.fn();
-    expect(onTrayDrop(tray, listener).outcome).toBe('attached');
+    expect(onTrayDrop(host.tray.dropEvents, tray, listener).outcome).toBe('attached');
     state.dropEvents.get(tray)!.emit({ files: ['a'], type: 'files' });
     expect(listener).toHaveBeenCalledWith({ files: ['a'], type: 'files' });
   });
@@ -382,7 +386,7 @@ describe('onTrayInteraction', () => {
     const { host, state } = testHost();
     const tray = await acquire(host);
     const listener = vi.fn();
-    const attached = onTrayInteraction(tray, listener);
+    const attached = onTrayInteraction(host.tray.interactionEvents, tray, listener);
     expect(attached.outcome).toBe('attached');
     state.interactionEvents.get(tray)!.emit({
       altKey: false,
@@ -399,7 +403,7 @@ describe('onTrayInteraction', () => {
       expect((await attached.release.release()).outcome).toBe('already-released');
     }
     const destroyReleased = vi.fn();
-    onTrayInteraction(tray, destroyReleased);
+    onTrayInteraction(host.tray.interactionEvents, tray, destroyReleased);
     await destroyTrayIcon(tray);
     state.interactionEvents.get(tray)!.emit({
       altKey: false,
@@ -419,7 +423,7 @@ describe('onTrayMenuSelection', () => {
     const { host, state } = testHost();
     const tray = await acquire(host);
     const listener = vi.fn();
-    expect(onTrayMenuSelection(tray, listener).outcome).toBe('attached');
+    expect(onTrayMenuSelection(host.tray.menuSelectionEvents, tray, listener).outcome).toBe('attached');
     state.menuSelectionEvents.get(tray)!.emit({ id: 'open' });
     expect(listener).toHaveBeenCalledWith({ id: 'open' });
   });
@@ -428,7 +432,9 @@ describe('onTrayMenuSelection', () => {
 describe('popupTrayContextMenu', () => {
   it('shows the installed menu', async () => {
     const { host } = testHost();
-    expect((await popupTrayContextMenu(await acquire(host), { x: 1, y: 2 })).outcome).toBe('shown');
+    expect((await popupTrayContextMenu(host.tray.popupMenu, await acquire(host), { x: 1, y: 2 })).outcome).toBe(
+      'shown',
+    );
   });
 });
 
@@ -436,8 +442,8 @@ describe('removeTrayBalloon', () => {
   it('owns balloon removal on the Tray entity', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' });
-    expect((await removeTrayBalloon(tray)).outcome).toBe('removed');
+    await displayTrayBalloon(host.tray.balloon, tray, { text: 'Done', title: 'Flight' });
+    expect((await removeTrayBalloon(host.tray.balloon, tray)).outcome).toBe('removed');
   });
 });
 
@@ -448,7 +454,7 @@ describe('setTrayAnimationGuard', () => {
     setTrayAnimationGuard(guard);
     const { host } = testHost();
     const tray = await acquire(host);
-    const started = await startTrayIconAnimation(tray, ['a'], 12);
+    const started = await startTrayIconAnimation(host.tray.image, tray, ['a'], 12);
     expect(guard).toHaveBeenCalledWith(tray, 1, 12);
     if (started.outcome === 'started') await started.release.release();
     setTrayAnimationGuard(null);
@@ -457,9 +463,9 @@ describe('setTrayAnimationGuard', () => {
 });
 
 describe('setTrayIcon', () => {
-  it('uses the acquired provider facet', async () => {
+  it('uses the direct image provider', async () => {
     const { host, state } = testHost();
-    expect((await setTrayIcon(await acquire(host), 'icon')).outcome).toBe('updated');
+    expect((await setTrayIcon(host.tray.image, await acquire(host), 'icon')).outcome).toBe('updated');
     expect(state.images).toEqual(['icon']);
   });
 });
@@ -467,16 +473,16 @@ describe('setTrayIcon', () => {
 describe('setTrayIconContextMenu', () => {
   it('installs a plain descriptor', async () => {
     const { host } = testHost();
-    expect((await setTrayIconContextMenu(await acquire(host), [{ id: 'quit', label: 'Quit' }])).outcome).toBe(
-      'updated',
-    );
+    expect(
+      (await setTrayIconContextMenu(host.tray.menu, await acquire(host), [{ id: 'quit', label: 'Quit' }])).outcome,
+    ).toBe('updated');
   });
 });
 
 describe('setTrayIconTemplate', () => {
   it('updates template treatment', async () => {
     const { host } = testHost();
-    expect((await setTrayIconTemplate(await acquire(host), true)).outcome).toBe('updated');
+    expect((await setTrayIconTemplate(host.tray.templateImage, await acquire(host), true)).outcome).toBe('updated');
   });
 });
 
@@ -484,7 +490,7 @@ describe('setTrayIconTitle', () => {
   it('updates the title', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    expect((await setTrayIconTitle(tray, 'Flight')).outcome).toBe('updated');
+    expect((await setTrayIconTitle(host.tray.title, tray, 'Flight')).outcome).toBe('updated');
   });
 });
 
@@ -492,29 +498,31 @@ describe('setTrayIconTooltip', () => {
   it('updates the tooltip', async () => {
     const { host } = testHost();
     const tray = await acquire(host);
-    expect((await setTrayIconTooltip(tray, 'Ready')).outcome).toBe('updated');
+    expect((await setTrayIconTooltip(host.tray.tooltip, tray, 'Ready')).outcome).toBe('updated');
   });
 });
 
 describe('setTrayIgnoreDoubleClickEvents', () => {
   it('updates the policy', async () => {
     const { host } = testHost();
-    expect((await setTrayIgnoreDoubleClickEvents(await acquire(host), true)).outcome).toBe('updated');
+    expect((await setTrayIgnoreDoubleClickEvents(host.tray.doubleClickPolicy, await acquire(host), true)).outcome).toBe(
+      'updated',
+    );
   });
 });
 describe('setTrayPressedIcon', () => {
   it('updates the pressed icon', async () => {
     const { host } = testHost();
-    expect((await setTrayPressedIcon(await acquire(host), 'pressed')).outcome).toBe('updated');
+    expect((await setTrayPressedIcon(host.tray.pressedImage, await acquire(host), 'pressed')).outcome).toBe('updated');
   });
 });
 
 describe('startTrayIconAnimation', () => {
-  it('writes through the origin-pinned image facet', async () => {
+  it('writes through the direct image provider', async () => {
     vi.useFakeTimers();
     const { host, state } = testHost();
     const tray = await acquire(host);
-    const result = await startTrayIconAnimation(tray, ['a', 'b'], 10);
+    const result = await startTrayIconAnimation(host.tray.image, tray, ['a', 'b'], 10);
     expect(result.outcome).toBe('started');
     await vi.advanceTimersByTimeAsync(10);
     expect(state.images).toEqual(['a', 'b']);
@@ -528,7 +536,7 @@ describe('stopTrayIconAnimation', () => {
     vi.useFakeTimers();
     const { host } = testHost();
     const tray = await acquire(host);
-    await startTrayIconAnimation(tray, ['a'], 10);
+    await startTrayIconAnimation(host.tray.image, tray, ['a'], 10);
     expect(stopTrayIconAnimation(tray).outcome).toBe('stopped');
     expect(stopTrayIconAnimation(tray).outcome).toBe('already-stopped');
     vi.useRealTimers();

@@ -13,7 +13,7 @@ import type {
   ElectronMenuItemOptions,
   ElectronNativeImage,
   ElectronTray,
-  TrayIconForHost,
+  TrayIcon,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -118,10 +118,10 @@ function fakeElectron() {
   return { electron, templates, trays };
 }
 
-async function acquire<
-  Host extends { tray: { lifecycle: NonNullable<ReturnType<typeof createElectronTrayCapabilities>['lifecycle']> } },
->(host: Host): Promise<TrayIconForHost<Host>> {
-  const result = await createTrayIcon(host, { icon: 'icon.png' });
+async function acquire(
+  hostTrayLifecycle: NonNullable<ReturnType<typeof createElectronTrayCapabilities>['lifecycle']>,
+): Promise<TrayIcon> {
+  const result = await createTrayIcon(hostTrayLifecycle, { icon: 'icon.png' });
   if (result.outcome !== 'created') throw new Error(result.outcome);
   return result.tray;
 }
@@ -177,7 +177,7 @@ describe('createElectronTrayCapabilities', () => {
   it('constructs the native resource before publishing the Entity', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
-    const result = await createTrayIcon(host, {
+    const result = await createTrayIcon(host.tray.lifecycle, {
       icon: 'icon.png',
       iconTemplate: true,
       title: 'Flight',
@@ -192,11 +192,11 @@ describe('createElectronTrayCapabilities', () => {
   it('keeps one native listener while delivering full pointer payload to multiple subscribers', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
-    const tray = await acquire(host);
+    const tray = await acquire(host.tray.lifecycle);
     const first = vi.fn();
     const second = vi.fn();
-    onTrayInteraction(tray, first);
-    onTrayInteraction(tray, second);
+    onTrayInteraction(host.tray.interactionEvents, tray, first);
+    onTrayInteraction(host.tray.interactionEvents, tray, second);
     expect(trays[0].handlers.click).toHaveLength(1);
     trays[0].handlers.click[0]!({ altKey: true, ctrlKey: true, metaKey: true, shiftKey: true }, { x: 7, y: 9 });
     expect(first).toHaveBeenCalledWith(
@@ -208,13 +208,13 @@ describe('createElectronTrayCapabilities', () => {
   it('routes a menu selection only through that Tray signal', async () => {
     const { electron, templates } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
-    const first = await acquire(host);
-    const second = await acquire(host);
+    const first = await acquire(host.tray.lifecycle);
+    const second = await acquire(host.tray.lifecycle);
     const firstIds: string[] = [];
     const secondIds: string[] = [];
-    onTrayMenuSelection(first, ({ id }) => firstIds.push(id));
-    onTrayMenuSelection(second, ({ id }) => secondIds.push(id));
-    await setTrayIconContextMenu(first, [{ id: 'open', label: 'Open' }]);
+    onTrayMenuSelection(host.tray.menuSelectionEvents, first, ({ id }) => firstIds.push(id));
+    onTrayMenuSelection(host.tray.menuSelectionEvents, second, ({ id }) => secondIds.push(id));
+    await setTrayIconContextMenu(host.tray.menu, first, [{ id: 'open', label: 'Open' }]);
     templates[0][0].click?.();
     expect(firstIds).toEqual(['open']);
     expect(secondIds).toEqual([]);
@@ -223,15 +223,15 @@ describe('createElectronTrayCapabilities', () => {
   it('realizes later template changes through the current native image', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
-    const tray = await acquire(host);
-    expect((await setTrayIconTemplate(tray, true)).outcome).toBe('updated');
+    const tray = await acquire(host.tray.lifecycle);
+    expect((await setTrayIconTemplate(host.tray.templateImage, tray, true)).outcome).toBe('updated');
     expect((trays[0].image as FakeImage).template).toBe(true);
   });
 
   it('returns invalid-icon without publishing a ghost record', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
-    const result = await createTrayIcon(host, { icon: 'invalid' });
+    const result = await createTrayIcon(host.tray.lifecycle, { icon: 'invalid' });
     expect(result.outcome).toBe('invalid-icon');
     expect(trays).toHaveLength(0);
     expect(host.tray.lifecycle.list()).toEqual([]);
@@ -240,7 +240,7 @@ describe('createElectronTrayCapabilities', () => {
   it('attempts listener and native teardown, then retries only failed steps', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
-    const tray = await acquire(host);
+    const tray = await acquire(host.tray.lifecycle);
     trays[0].removeFailures = 1;
     trays[0].destroyFailures = 1;
     expect((await destroyTrayIcon(tray)).outcome).toBe('tray-destroy-failed');
@@ -251,8 +251,10 @@ describe('createElectronTrayCapabilities', () => {
   it('owns balloon commands only on the Windows shape', async () => {
     const { electron } = fakeElectron();
     const host = { tray: createElectronTrayCapabilities(electron, 'windows') };
-    const tray = await acquire(host);
-    expect((await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' })).outcome).toBe('displayed');
+    const tray = await acquire(host.tray.lifecycle);
+    expect((await displayTrayBalloon(host.tray.balloon, tray, { text: 'Done', title: 'Flight' })).outcome).toBe(
+      'displayed',
+    );
   });
 });
 describe('initializeTrayBalloonBackend', () => {
