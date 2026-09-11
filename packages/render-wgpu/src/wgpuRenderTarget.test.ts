@@ -87,22 +87,21 @@ describe('createWgpuRenderTarget', () => {
 });
 
 describe('declareWgpuRenderTargetColorSpace', () => {
-  it('decodes a nonblack packed sRGB clear when the target is created as linear', async () => {
+  it('passes float RGBA clear values through to the GPU color attachment', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const beginRenderPass = vi.spyOn(runtime.commandEncoder!, 'beginRenderPass');
     const target = createWgpuRenderTarget(state, 32, 32, state.format, 'linear');
-    target.clearColors = [0x0a0c10ff];
 
-    beginWgpuRenderPass(state, target);
+    beginWgpuRenderPass(state, target, { color: [0.25, 0.5, 0.75, 1.0] });
     const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
-    const linearClear = attachment.clearValue as GPUColorDict;
-    expect(beginRenderPass).toHaveBeenCalledTimes(1);
-    expect(linearClear.r).toBeCloseTo(0.00303527);
-    expect(linearClear.g).toBeCloseTo(0.00367651);
-    expect(linearClear.b).toBeCloseTo(0.00518152);
-    expect(linearClear.a).toBe(1);
+    const clearValue = attachment.clearValue as GPUColorDict;
+    expect(clearValue.r).toBe(0.25);
+    expect(clearValue.g).toBe(0.5);
+    expect(clearValue.b).toBe(0.75);
+    expect(clearValue.a).toBe(1.0);
+    expect(attachment.loadOp).toBe('clear');
 
     endWgpuRenderPass(state);
     submitWgpuRenderPass(state);

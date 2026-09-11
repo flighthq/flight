@@ -575,7 +575,6 @@ export * from './RequirementFacet';
 export * from './Requirement';
 export * from './Renderer';
 export * from './RendererData';
-export * from './RenderPassPreserve';
 export * from './RenderProxy';
 export * from './RenderProxy2D';
 export * from './RenderProxyAdapter';

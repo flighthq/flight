@@ -25,17 +25,17 @@ describe('beginCanvasRenderPass', () => {
     expect(state.canvas).toBe(target.canvas);
   });
 
-  it('clears the target by default and preserves it with preserveColor', () => {
+  it('clears the target when a clear descriptor is given and preserves when omitted', () => {
     const state = makeState();
     const target = createCanvasRenderTarget(64, 48);
     const clearRect = vi.spyOn(target.context, 'clearRect');
 
-    beginCanvasRenderPass(state, target);
+    beginCanvasRenderPass(state, target, { color: [0, 0, 0, 0] });
     expect(clearRect).toHaveBeenCalledWith(0, 0, target.width, target.height);
     endCanvasRenderPass(state);
 
     clearRect.mockClear();
-    beginCanvasRenderPass(state, target, { preserveColor: true });
+    beginCanvasRenderPass(state, target);
     expect(clearRect).not.toHaveBeenCalled();
     endCanvasRenderPass(state);
   });

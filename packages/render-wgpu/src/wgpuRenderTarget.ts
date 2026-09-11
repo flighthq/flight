@@ -1,11 +1,10 @@
-import { srgbChannelToLinear } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   EntityConstruction,
   Material,
   Matrix,
-  RenderPassPreserve,
+  RenderTargetClear,
   RenderTargetColorSpace,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -44,20 +43,18 @@ function beginWgpuRenderPassEncoder(
   return pass;
 }
 
-// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
-// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
-// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
-// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
-// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
-// bracket). Mirrors beginGlRenderPass.
+// Begins a render pass into `target`. Omit `clear` to preserve everything (loadOp 'load'); pass a
+// RenderTargetClear to clear specific aspects with explicit values. Color values are linear float
+// RGBA — the caller passes values in the correct space for the target. Pair with endWgpuRenderPass.
+// Carries no 2D transform — a 2D pass that needs a specific root transform calls
+// setWgpuRenderTransform2D after begin (saved/restored by the bracket). Mirrors beginGlRenderPass.
 export function beginWgpuRenderPass(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
-  preserve?: Readonly<RenderPassPreserve>,
+  clear?: Readonly<RenderTargetClear>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
 
-  // End the current render pass before beginning the new one
   if (runtime.renderPass !== null) {
     runtime.renderPass.end();
     runtime.renderPass = null;
@@ -73,22 +70,20 @@ export function beginWgpuRenderPass(
     renderTarget: runtime.currentRenderTarget,
   });
 
-  // LOGICAL extent, not physical: this field feeds the 2D projection, which must map logical coordinates
-  // across the whole target. The GPU viewport below stays physical so the draw covers every device pixel.
   const supersample = getWgpuRenderTargetSupersampleScale(target);
   runtime.renderTargetViewport = { width: target.width / supersample, height: target.height / supersample };
-  // Scene3D pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
   runtime.currentColorFormat = target.format;
   runtime.currentRenderTarget = target;
 
-  // Reset mask/clip state for the new pass
   runtime.currentMaskDepth = 0;
   runtime.maskWriteMode = false;
   runtime.currentScissorRect = null;
   runtime.scissorStack = [];
 
-  const colorLoadOp: GPULoadOp = isWgpuColorPreserved(preserve?.preserveColor ?? false, 0) ? 'load' : 'clear';
-  const depthLoadOp: GPULoadOp = preserve?.preserveDepth === true ? 'load' : 'clear';
+  const hasColor = clear !== undefined && (clear.color !== undefined || clear.colors !== undefined);
+  const colorLoadOp: GPULoadOp = hasColor ? 'clear' : 'load';
+  const depthLoadOp: GPULoadOp = clear?.depth !== undefined ? 'clear' : 'load';
+  const clearColor = resolveWgpuClearColor(clear);
   runtime.renderPass = beginWgpuRenderPassEncoder(
     state,
     target.view,
@@ -96,9 +91,9 @@ export function beginWgpuRenderPass(
     target.width,
     target.height,
     colorLoadOp,
-    resolveWgpuClearColor(target),
+    clearColor,
     depthLoadOp,
-    target.clearDepth,
+    clear?.depth ?? 1.0,
   );
 }
 
@@ -280,8 +275,6 @@ export function initializeWgpuRenderTarget(
   out.depthStencilView = depthStencilView;
   out.format = format;
   out.sampleCount = samples;
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.width = w;
   out.height = h;
 }
@@ -331,28 +324,11 @@ export function resizeWgpuRenderTarget(
   target.depthStencilView = newDepth.createView();
 }
 
-// True when color attachment `index` should be preserved (loadOp 'load') rather than cleared. A boolean
-// applies to every attachment; an array is indexed by attachment location, missing entries defaulting to
-// clear. Wgpu targets are single-attachment today, so index is always 0.
-function isWgpuColorPreserved(preserve: boolean | ReadonlyArray<boolean>, index: number): boolean {
-  if (typeof preserve === 'boolean') return preserve;
-  return preserve[index] === true;
-}
-
-// Unpacks the target's packed-RGBA (0xRRGGBBAA) clear color for attachment 0 into a GPUColor; an empty
-// clearColors means a transparent clear (the render-target default).
-function resolveWgpuClearColor(target: Readonly<WgpuRenderTarget>): GPUColor {
-  const packed = target.clearColors[0];
-  if (packed === undefined) return { r: 0, g: 0, b: 0, a: 0 };
-  const r = ((packed >>> 24) & 0xff) / 255;
-  const g = ((packed >>> 16) & 0xff) / 255;
-  const b = ((packed >>> 8) & 0xff) / 255;
-  return {
-    r: target.colorSpace === 'linear' ? srgbChannelToLinear(r) : r,
-    g: target.colorSpace === 'linear' ? srgbChannelToLinear(g) : g,
-    b: target.colorSpace === 'linear' ? srgbChannelToLinear(b) : b,
-    a: (packed & 0xff) / 255,
-  };
+function resolveWgpuClearColor(clear: Readonly<RenderTargetClear> | undefined): GPUColor {
+  if (clear === undefined) return { r: 0, g: 0, b: 0, a: 0 };
+  const rgba = clear.colors?.[0] ?? clear.color;
+  if (rgba === undefined) return { r: 0, g: 0, b: 0, a: 0 };
+  return { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] };
 }
 
 function resolveWgpuRenderTargetExtent(

@@ -48,31 +48,43 @@ describe('beginWgpuRenderEffectPipeline', () => {
     endWgpuRenderEffectPipeline(state, pipeline, []);
   });
 
-  it('packs the background quadruple into one 0xRRGGBBAA clear color', async () => {
+  it('passes the background color as float RGBA to the clear descriptor', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
-    // Quarter/half/three-quarter channels, chosen so a wrong byte order cannot coincide with the
-    // right one — the ground truth is arithmetic here, not a value read back out of the source.
     state.backgroundColorRgba.splice(0, state.backgroundColorRgba.length, 0x40 / 255, 0x80 / 255, 0xc0 / 255, 1);
 
     beginWgpuFrame(state);
+    const { getWgpuRenderStateRuntime } = await import('@flighthq/render-wgpu/contract');
+    const runtime = getWgpuRenderStateRuntime(state);
+    const beginRenderPass = vi.spyOn(runtime.commandEncoder!, 'beginRenderPass');
     beginWgpuRenderEffectPipeline(state, pipeline);
 
-    expect(pipeline.sceneTarget?.clearColors).toEqual([0x4080c0ff]);
+    const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
+    const clearValue = attachment.clearValue as GPUColorDict;
+    expect(clearValue.r).toBeCloseTo(0x40 / 255);
+    expect(clearValue.g).toBeCloseTo(0x80 / 255);
+    expect(clearValue.b).toBeCloseTo(0xc0 / 255);
+    expect(clearValue.a).toBe(1);
     endWgpuRenderEffectPipeline(state, pipeline, []);
   });
 
-  it('leaves the clear list empty when the background is not a full quadruple', async () => {
+  it('clears with transparent black when the background is not a full quadruple', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
     state.backgroundColorRgba.splice(0, state.backgroundColorRgba.length, 0.5, 0.5, 0.5);
 
     beginWgpuFrame(state);
+    const { getWgpuRenderStateRuntime } = await import('@flighthq/render-wgpu/contract');
+    const runtime = getWgpuRenderStateRuntime(state);
+    const beginRenderPass = vi.spyOn(runtime.commandEncoder!, 'beginRenderPass');
     beginWgpuRenderEffectPipeline(state, pipeline);
 
-    // Empty means "no background to composite" — a different frame than a transparent clear, and the
-    // reason the target falls back to the render state's own background instead.
-    expect(pipeline.sceneTarget?.clearColors).toEqual([]);
+    const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
+    const clearValue = attachment.clearValue as GPUColorDict;
+    expect(clearValue.r).toBe(0);
+    expect(clearValue.g).toBe(0);
+    expect(clearValue.b).toBe(0);
+    expect(clearValue.a).toBe(0);
     endWgpuRenderEffectPipeline(state, pipeline, []);
   });
 
