@@ -92,17 +92,19 @@ export function createEmptyBackendLifecycleReport(): BackendLifecycleReport {
 // this backend owns" from "free one of the things it manages", and it is read from the signature rather
 // than guessed from the verb.
 export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
   const teardowns = new Map<string, string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      if (!declaration.id.name.endsWith('Backend')) continue;
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      if (backend === null) continue;
       for (const member of declaration.body.body) {
         const name = teardownMemberName(member);
         if (name === null) continue;
-        teardowns.set(declaration.id.name, name);
+        teardowns.set(backend, name);
       }
     }
   }
@@ -253,7 +255,7 @@ export function formatBackendLifecycleReport(
         counting:
           'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, structurally matched explicit Host destroy owner, or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported *Backend interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+          'every exported legacy *Backend or primary Host*Provider interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -356,22 +358,60 @@ function teardownMemberName(member: Node): string | null {
 // records why. The day a property-form teardown is written, the two disagree and the comparison fails —
 // which is the correct moment for someone to update the recorded count rather than discover it later.
 export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
   const teardowns = new Map<string, string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      if (!declaration.id.name.endsWith('Backend')) continue;
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      if (backend === null) continue;
       for (const member of declaration.body.body) {
         if (member.type !== 'TSMethodSignature' || member.key.type !== 'Identifier') continue;
         if (member.key.name !== 'destroy' && member.key.name !== 'dispose') continue;
         if (member.params.length > 0) continue;
-        teardowns.set(declaration.id.name, member.key.name);
+        teardowns.set(backend, member.key.name);
       }
     }
   }
   return teardowns;
+}
+
+function canonicalBackendInterfaceName(
+  declarationName: string,
+  backendByProvider: ReadonlyMap<string, string>,
+): string | null {
+  if (declarationName.endsWith('Backend')) return declarationName;
+  return backendByProvider.get(declarationName) ?? null;
+}
+
+function collectHostProviderBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByProvider = new Map<string, string>();
+  const aliasPattern =
+    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Provider)(?:<[^>]+>)?;/gm;
+  let hostSource = '';
+  for (const sourceFile of typeSourceFiles) {
+    const source = getParsedOxcSource(sourceFile).text;
+    if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
+    for (const match of source.matchAll(aliasPattern)) backendByProvider.set(match[2], match[1]);
+  }
+  const hostStart = hostSource.indexOf('export interface Host extends Entity');
+  const witnessStart = hostSource.indexOf('export interface HasAccessibilityProvider');
+  const hostShape = hostSource.slice(hostStart, witnessStart < 0 ? undefined : witnessStart);
+  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Provider)\b/g)) {
+    const provider = match[1];
+    backendByProvider.set(provider, backendByProvider.get(provider) ?? legacyBackendName(provider));
+  }
+  return backendByProvider;
+}
+
+function legacyBackendName(provider: string): string {
+  const stem = provider.slice('Host'.length, -'Provider'.length);
+  if (stem === 'FileSystem') return 'FileSystemHostBackend';
+  if (stem === 'Video') return 'VideoCapabilityBackend';
+  if (stem === 'Wgpu') return 'WgpuHostBackend';
+  return `${stem}Backend`;
 }
 
 export function compareFloorToReport(

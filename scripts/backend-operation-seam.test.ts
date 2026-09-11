@@ -104,7 +104,7 @@ describe('backend operation seam ratchet', () => {
     expect(byName.has('LogTransport')).toBe(false);
     expect(byName.get('Window')).toMatchObject({ migrated: false, packageName: null });
     expect(hostTypes).not.toContain('logTransport');
-    expect(hostTypes).toContain('readonly window: WindowBackend');
+    expect(hostTypes).toContain('readonly window: HostWindowProvider');
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.

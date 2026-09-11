@@ -47,17 +47,20 @@ export function createEmptyBackendOperationSeamReport(): BackendOperationSeamRep
   return { enforced: 0, entries: [], notMigrated: 0, total: 0, violations: [] };
 }
 
-// Every `*Backend` interface declared in `@flighthq/types`. This is the denominator, and it is derived
-// rather than counted once and written down.
+// Every legacy `*Backend` or primary `Host*Provider` interface declared in `@flighthq/types`. During
+// the types-first host migration, Host.ts carries exact `Backend = HostProvider` aliases so historical
+// report identities remain stable while the declaration that owns the methods changes names.
 export function collectBackendInterfaceNames(typeSourceFiles: readonly string[]): string[] {
+  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
   const names = new Set<string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      if (!declaration.id.name.endsWith('Backend')) continue;
-      names.add(declaration.id.name.slice(0, -'Backend'.length));
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      if (backend === null) continue;
+      names.add(backend.slice(0, -'Backend'.length));
     }
   }
   return [...names].sort((a, b) => a.localeCompare(b));
@@ -72,6 +75,7 @@ export function collectExplicitHostOperationSeams(
   typeSourceFiles: readonly string[],
   productionSourceFiles: readonly string[],
 ): ReadonlyMap<string, string> {
+  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
   const methodsByBackend = new Map<string, Set<string>>();
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
@@ -81,7 +85,8 @@ export function collectExplicitHostOperationSeams(
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      if (!declaration.id.name.endsWith('Backend')) continue;
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      if (backend === null) continue;
       const methods = new Set<string>();
       for (const member of declaration.body.body) {
         if (
@@ -96,16 +101,18 @@ export function collectExplicitHostOperationSeams(
           methods.add(method);
         }
       }
-      if (methods.size > 0) methodsByBackend.set(declaration.id.name, methods);
+      if (methods.size > 0) methodsByBackend.set(backend, methods);
     }
   }
 
   const production = productionSourceFiles.map((sourceFile) => readFileSync(sourceFile, 'utf-8')).join('\n');
   const explicit = new Map<string, string>();
   const traitPattern =
-    /export interface (Has[A-Za-z0-9]+)\s*\{\s*readonly ([A-Za-z0-9]+):\s*\{\s*readonly ([A-Za-z0-9]+):\s*([A-Za-z0-9]+Backend)\s*;?\s*\}\s*;?\s*\}/g;
+    /export interface (Has[A-Za-z0-9]+)(?:<[^>{]+>)?\s*\{\s*readonly ([A-Za-z0-9]+):\s*\{\s*readonly ([A-Za-z0-9]+):\s*([A-Za-z0-9]+(?:Backend|Provider))(?:<[^;{}]+>)?\s*;?\s*\}\s*;?\s*\}/g;
   for (const match of hostSource.matchAll(traitPattern)) {
-    const [, trait, group, slot, backend] = match;
+    const [, trait, group, slot, leaf] = match;
+    const backend = canonicalBackendInterfaceName(leaf, backendByProvider);
+    if (backend === null) continue;
     const methods = methodsByBackend.get(backend);
     if (methods === undefined || !new RegExp(`\\b${trait}\\b`).test(production)) continue;
     const covered = [...methods].every((method) =>
@@ -124,6 +131,7 @@ export function collectExplicitHostLifecycleSlots(
   typeSourceFiles: readonly string[],
   productionSourceFiles: readonly string[],
 ): ReadonlyMap<string, string> {
+  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) {
@@ -134,9 +142,11 @@ export function collectExplicitHostLifecycleSlots(
   const production = productionSourceFiles.map((sourceFile) => readFileSync(sourceFile, 'utf-8')).join('\n');
   const explicit = new Map<string, string>();
   const traitPattern =
-    /export interface (Has[A-Za-z0-9]+)\s*\{\s*readonly ([A-Za-z0-9]+):\s*\{\s*readonly ([A-Za-z0-9]+):\s*([A-Za-z0-9]+Backend)\s*;?\s*\}\s*;?\s*\}/g;
+    /export interface (Has[A-Za-z0-9]+)(?:<[^>{]+>)?\s*\{\s*readonly ([A-Za-z0-9]+):\s*\{\s*readonly ([A-Za-z0-9]+):\s*([A-Za-z0-9]+(?:Backend|Provider))(?:<[^;{}]+>)?\s*;?\s*\}\s*;?\s*\}/g;
   for (const match of hostSource.matchAll(traitPattern)) {
-    const [, trait, group, slot, backend] = match;
+    const [, trait, group, slot, leaf] = match;
+    const backend = canonicalBackendInterfaceName(leaf, backendByProvider);
+    if (backend === null) continue;
     if (!new RegExp(`export function destroy[A-Za-z0-9]+\\s*\\([^)]*\\b${trait}\\b`).test(production)) continue;
     explicit.set(backend, `Host.${group}.${slot}`);
   }
@@ -189,7 +199,7 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
         counting:
           'one unit = one interface; enforced = its owning package exports explain<Name>Operation or a derived explicit Host slot is called for every non-lifecycle method; enforced + notMigrated is asserted equal to total',
         scope:
-          'every exported *Backend interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
+          'every exported legacy *Backend or primary Host*Provider interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -238,4 +248,40 @@ export function hasBackendOperationSeamFailure(report: Readonly<BackendOperation
 // and `sdk` is today the only lane in the repo that matches it (142 such re-exports).
 export function isAggregatorContractLane(source: string): boolean {
   return /^export \* from '@flighthq\//m.test(source);
+}
+
+function canonicalBackendInterfaceName(
+  declarationName: string,
+  backendByProvider: ReadonlyMap<string, string>,
+): string | null {
+  if (declarationName.endsWith('Backend')) return declarationName;
+  return backendByProvider.get(declarationName) ?? null;
+}
+
+function collectHostProviderBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByProvider = new Map<string, string>();
+  const aliasPattern =
+    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Provider)(?:<[^>]+>)?;/gm;
+  let hostSource = '';
+  for (const sourceFile of typeSourceFiles) {
+    const source = readFileSync(sourceFile, 'utf-8');
+    if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
+    for (const match of source.matchAll(aliasPattern)) backendByProvider.set(match[2], match[1]);
+  }
+  const hostStart = hostSource.indexOf('export interface Host extends Entity');
+  const witnessStart = hostSource.indexOf('export interface HasAccessibilityProvider');
+  const hostShape = hostSource.slice(hostStart, witnessStart < 0 ? undefined : witnessStart);
+  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Provider)\b/g)) {
+    const provider = match[1];
+    backendByProvider.set(provider, backendByProvider.get(provider) ?? legacyBackendName(provider));
+  }
+  return backendByProvider;
+}
+
+function legacyBackendName(provider: string): string {
+  const stem = provider.slice('Host'.length, -'Provider'.length);
+  if (stem === 'FileSystem') return 'FileSystemHostBackend';
+  if (stem === 'Video') return 'VideoCapabilityBackend';
+  if (stem === 'Wgpu') return 'WgpuHostBackend';
+  return `${stem}Backend`;
 }
