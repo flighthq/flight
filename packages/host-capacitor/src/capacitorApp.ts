@@ -14,33 +14,50 @@ import type {
   MobileOsProfile,
 } from '@flighthq/types/contract';
 
-export function createCapacitorAppCapabilities<Profile extends MobileOsProfile>(
+export function capacitorHostApp<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
 ): CapacitorAppCapabilitiesFor<Profile>;
-export function createCapacitorAppCapabilities(
-  capacitor: CapacitorApi,
-  profile: 'android',
-): CapacitorAndroidAppCapabilities;
-export function createCapacitorAppCapabilities(capacitor: CapacitorApi, profile: 'ios'): CapacitorCommonAppCapabilities;
-export function createCapacitorAppCapabilities(
+export function capacitorHostApp(capacitor: CapacitorApi, profile: 'android'): CapacitorAndroidAppCapabilities;
+export function capacitorHostApp(capacitor: CapacitorApi, profile: 'ios'): CapacitorCommonAppCapabilities;
+export function capacitorHostApp(
   capacitor: CapacitorApi,
   profile: MobileOsProfile,
 ): CapacitorAndroidAppCapabilities | CapacitorCommonAppCapabilities;
-export function createCapacitorAppCapabilities(
+export function capacitorHostApp(
   capacitor: CapacitorApi,
   profile: MobileOsProfile,
 ): CapacitorAndroidAppCapabilities | CapacitorCommonAppCapabilities {
   const common = allocateEntity<CapacitorCommonAppCapabilities>();
-  initializeCapacitorCommonAppCapabilities(common, capacitor);
+  populateCapacitorCommonApp(common, capacitor);
   const finished = finishEntity(common);
   if (profile === 'ios') return finished;
   const android = allocateEntity<CapacitorAndroidAppCapabilities>();
-  initializeCapacitorAndroidAppCapabilities(android, finished, capacitor);
+  populateCapacitorAndroidApp(android, finished, capacitor);
   return finishEntity(android);
 }
 
-export function initializeCapacitorAndroidAppCapabilities(
+export function capacitorHostAppActivate(capacitor: CapacitorApi): HostAppActivateProvider {
+  return capacitorHostApp(capacitor, 'ios').activate;
+}
+
+export function capacitorHostAppHide(capacitor: CapacitorApi): HostAppHideProvider {
+  return capacitorHostApp(capacitor, 'android').hide;
+}
+
+export function capacitorHostAppName(capacitor: CapacitorApi): HostAppNameProvider {
+  return capacitorHostApp(capacitor, 'ios').name;
+}
+
+export function capacitorHostAppQuit(capacitor: CapacitorApi): HostAppQuitProvider {
+  return capacitorHostApp(capacitor, 'android').quit;
+}
+
+export function capacitorHostAppVersion(capacitor: CapacitorApi): HostAppVersionProvider {
+  return capacitorHostApp(capacitor, 'ios').version;
+}
+
+function populateCapacitorAndroidApp(
   out: EntityConstruction<CapacitorAndroidAppCapabilities>,
   common: CapacitorCommonAppCapabilities,
   capacitor: CapacitorApi,
@@ -56,7 +73,7 @@ export function initializeCapacitorAndroidAppCapabilities(
   out.version = common.version;
 }
 
-export function initializeCapacitorCommonAppCapabilities(
+function populateCapacitorCommonApp(
   out: EntityConstruction<CapacitorCommonAppCapabilities>,
   capacitor: CapacitorApi,
 ): void {

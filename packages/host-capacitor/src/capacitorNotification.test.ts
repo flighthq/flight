@@ -7,8 +7,13 @@ import type {
 } from '@flighthq/types/contract';
 
 import {
-  createCapacitorNotificationCapabilities,
-  initializeCapacitorNotificationCapabilities,
+  capacitorHostNotification,
+  capacitorHostNotificationAction,
+  capacitorHostNotificationClick,
+  capacitorHostNotificationDelivery,
+  capacitorHostNotificationLifecycle,
+  capacitorHostNotificationPermission,
+  capacitorHostNotificationScheduling,
 } from './capacitorNotification';
 
 function fakeCapacitor(display = 'granted') {
@@ -60,9 +65,9 @@ function fakeCapacitor(display = 'granted') {
   };
 }
 
-describe('createCapacitorNotificationCapabilities', () => {
+describe('capacitorHostNotification', () => {
   it('constructs the exact Android/iOS common profile', () => {
-    const capabilities = createCapacitorNotificationCapabilities(fakeCapacitor().capacitor);
+    const capabilities = capacitorHostNotification(fakeCapacitor().capacitor);
     expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual([
       'action',
@@ -76,7 +81,7 @@ describe('createCapacitorNotificationCapabilities', () => {
 
   it('validates profile fields and native acquisition ids before publishing', async () => {
     const fixture = fakeCapacitor();
-    const capabilities = createCapacitorNotificationCapabilities(fixture.capacitor);
+    const capabilities = capacitorHostNotification(fixture.capacitor);
     await expect(capabilities.delivery.notify({ icon: 'icon.png', title: 'No' })).resolves.toEqual({
       fields: ['icon'],
       reason: 'invalid-request',
@@ -89,7 +94,7 @@ describe('createCapacitorNotificationCapabilities', () => {
 
   it('keeps duplicate public ids as distinct private native resources', async () => {
     const fixture = fakeCapacitor();
-    const capabilities = createCapacitorNotificationCapabilities(fixture.capacitor);
+    const capabilities = capacitorHostNotification(fixture.capacitor);
     const first = await capabilities.scheduling.scheduleNotification({ id: 'same', title: 'First' }, { at: 1 });
     const second = await capabilities.scheduling.scheduleNotification({ id: 'same', title: 'Second' }, { at: 2 });
     if (first.reason !== 'scheduled' || second.reason !== 'scheduled') throw new Error('fixture schedule failed');
@@ -100,7 +105,7 @@ describe('createCapacitorNotificationCapabilities', () => {
 
   it('reconciles repeated pending enumeration to stable Entity identity', async () => {
     const fixture = fakeCapacitor();
-    const capabilities = createCapacitorNotificationCapabilities(fixture.capacitor);
+    const capabilities = capacitorHostNotification(fixture.capacitor);
     const scheduled = await capabilities.scheduling.scheduleNotification({ id: 'later', title: 'Later' }, { at: 1 });
     if (scheduled.reason !== 'scheduled') throw new Error('fixture schedule failed');
     const first = await capabilities.scheduling.getPendingNotifications();
@@ -118,7 +123,7 @@ describe('createCapacitorNotificationCapabilities', () => {
     fixture.localNotifications.getPending = async () => {
       throw new Error('failed');
     };
-    const capabilities = createCapacitorNotificationCapabilities(fixture.capacitor);
+    const capabilities = capacitorHostNotification(fixture.capacitor);
     await expect(capabilities.permission.getPermission()).resolves.toEqual({
       reason: 'operation-failed',
     });
@@ -127,7 +132,7 @@ describe('createCapacitorNotificationCapabilities', () => {
 
   it('acquires independent click/action resources and releases their native handles', async () => {
     const fixture = fakeCapacitor();
-    const capabilities = createCapacitorNotificationCapabilities(fixture.capacitor);
+    const capabilities = capacitorHostNotification(fixture.capacitor);
     const seen: string[] = [];
     const click = await capabilities.click.attach((notification) => seen.push(`click:${notification.id}`));
     const action = await capabilities.action.attach((notification, actionId) =>
@@ -141,8 +146,39 @@ describe('createCapacitorNotificationCapabilities', () => {
     expect(seen).toHaveLength(2);
   });
 });
-describe('initializeCapacitorNotificationCapabilities', () => {
-  it('is the construction initializer of createCapacitorNotificationCapabilities', () => {
-    expect(typeof initializeCapacitorNotificationCapabilities).toBe('function');
+
+describe('capacitorHostNotificationAction', () => {
+  it('constructs the action provider', () => {
+    expect(capacitorHostNotificationAction(fakeCapacitor().capacitor).attach).toBeTypeOf('function');
+  });
+});
+
+describe('capacitorHostNotificationClick', () => {
+  it('constructs the click provider', () => {
+    expect(capacitorHostNotificationClick(fakeCapacitor().capacitor).attach).toBeTypeOf('function');
+  });
+});
+
+describe('capacitorHostNotificationDelivery', () => {
+  it('constructs the delivery provider', () => {
+    expect(capacitorHostNotificationDelivery(fakeCapacitor().capacitor).notify).toBeTypeOf('function');
+  });
+});
+
+describe('capacitorHostNotificationLifecycle', () => {
+  it('constructs the lifecycle provider', () => {
+    expect(capacitorHostNotificationLifecycle(fakeCapacitor().capacitor).destroy).toBeTypeOf('function');
+  });
+});
+
+describe('capacitorHostNotificationPermission', () => {
+  it('constructs the permission provider', () => {
+    expect(capacitorHostNotificationPermission(fakeCapacitor().capacitor).getPermission).toBeTypeOf('function');
+  });
+});
+
+describe('capacitorHostNotificationScheduling', () => {
+  it('constructs the scheduling provider', () => {
+    expect(capacitorHostNotificationScheduling(fakeCapacitor().capacitor).scheduleNotification).toBeTypeOf('function');
   });
 });

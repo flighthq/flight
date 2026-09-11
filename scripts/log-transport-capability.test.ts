@@ -75,7 +75,7 @@ describe('LogTransport zero-provider capability shape', () => {
       source('packages/host-web/src/webHost.ts'),
       source('packages/host-electron/src/electronRegister.ts'),
       source('packages/host-tauri/src/tauriRegister.ts'),
-      source('packages/host-capacitor/src/capacitorRegister.ts'),
+      source('packages/host-capacitor/src/capacitorHost.ts'),
     ].join('\n');
 
     expect(providers).not.toContain('LogTransport');

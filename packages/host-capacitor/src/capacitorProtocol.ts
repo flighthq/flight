@@ -7,13 +7,17 @@ import type {
   HostProtocolOpenProvider,
 } from '@flighthq/types/contract';
 
-export function createCapacitorProtocolCapabilities(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
+export function capacitorHostProtocol(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
   const out = allocateEntity<CapacitorProtocolCapabilities>();
-  initializeCapacitorProtocolCapabilities(out, capacitor);
+  populateCapacitorProtocol(out, capacitor);
   return finishEntity(out);
 }
 
-export function initializeCapacitorProtocolCapabilities(
+export function capacitorHostProtocolOpen(capacitor: CapacitorApi): HostProtocolOpenProvider {
+  return capacitorHostProtocol(capacitor).open;
+}
+
+function populateCapacitorProtocol(
   out: EntityConstruction<CapacitorProtocolCapabilities>,
   capacitor: CapacitorApi,
 ): void {

@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorClipboardBackend, initializeCapacitorClipboardBackend } from './capacitorClipboard';
+import { capacitorHostClipboard, capacitorHostClipboardImage, capacitorHostClipboardText } from './capacitorClipboard';
 
 function fakeCapacitor() {
   const store = { value: '', type: 'text/plain' };
@@ -27,26 +27,33 @@ function fakeCapacitor() {
   return { capacitor, store, calls };
 }
 
-describe('createCapacitorClipboardBackend', () => {
+describe('capacitorHostClipboard', () => {
+  it('composes the state-coupled image and text slots from one Entity', () => {
+    const clipboard = capacitorHostClipboard(fakeCapacitor().capacitor);
+    expect(clipboard.image).toBe(clipboard.text);
+    expect(EntityRuntimeKey in clipboard.image).toBe(true);
+  });
+});
+
+describe('capacitorHostClipboardImage', () => {
+  it('round-trips a data-URL image', async () => {
+    const hostClipboardImage = capacitorHostClipboardImage(fakeCapacitor().capacitor);
+    expect(await hostClipboardImage.writeImage('data:image/png;base64,AAAA')).toBe(true);
+    expect(await hostClipboardImage.readImage()).toBe('data:image/png;base64,AAAA');
+    expect(await hostClipboardImage.hasImage()).toBe(true);
+  });
+});
+
+describe('capacitorHostClipboardText', () => {
   it('round-trips text through the Capacitor clipboard', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorClipboardBackend(capacitor);
-    expect(EntityRuntimeKey in backend).toBe(true);
-    expect(await backend.writeText('hi')).toBe(true);
-    expect(await backend.readText()).toBe('hi');
-    expect(await backend.hasText()).toBe(true);
+    const hostClipboardText = capacitorHostClipboardText(capacitor);
+    expect(EntityRuntimeKey in hostClipboardText).toBe(true);
+    expect(await hostClipboardText.writeText('hi')).toBe(true);
+    expect(await hostClipboardText.readText()).toBe('hi');
+    expect(await hostClipboardText.hasText()).toBe(true);
     expect(calls).toContain('write');
     expect(calls).toContain('read');
-  });
-
-  it('round-trips a data-URL image', async () => {
-    const backend = createCapacitorClipboardBackend(fakeCapacitor().capacitor);
-    expect(await backend.writeImage('data:image/png;base64,AAAA')).toBe(true);
-    expect(await backend.readImage()).toBe('data:image/png;base64,AAAA');
-    expect(await backend.hasImage()).toBe(true);
-    // An image on the clipboard is not text.
-    expect(await backend.readText()).toBe('');
-    expect(await backend.hasText()).toBe(false);
   });
 
   it('resolves sentinels when the clipboard read throws', async () => {
@@ -57,13 +64,8 @@ describe('createCapacitorClipboardBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    const backend = createCapacitorClipboardBackend(capacitor);
-    expect(await backend.readText()).toBe('');
-    expect(await backend.hasText()).toBe(false);
-  });
-});
-describe('initializeCapacitorClipboardBackend', () => {
-  it('is the construction initializer of createCapacitorClipboardBackend', () => {
-    expect(typeof initializeCapacitorClipboardBackend).toBe('function');
+    const hostClipboardText = capacitorHostClipboardText(capacitor);
+    expect(await hostClipboardText.readText()).toBe('');
+    expect(await hostClipboardText.hasText()).toBe(false);
   });
 });

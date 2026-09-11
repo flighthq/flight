@@ -1,6 +1,6 @@
 import type { HapticsCapabilities, CapacitorApi } from '@flighthq/types/contract';
 
-import { createCapacitorHapticsBackend, initializeCapacitorHapticsBackend } from './capacitorHaptics';
+import { capacitorHostHaptics } from './capacitorHaptics';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];
@@ -29,10 +29,10 @@ function fakeCapacitor() {
   return { capacitor, calls };
 }
 
-describe('createCapacitorHapticsBackend', () => {
+describe('capacitorHostHaptics', () => {
   it('maps impact styles onto Capacitor enums', () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorHapticsBackend(capacitor);
+    const backend = capacitorHostHaptics(capacitor);
     expect(backend.impact('soft')).toBe(true);
     expect(backend.impact('rigid')).toBe(true);
     expect(calls[0].arg).toEqual({ style: 'LIGHT' });
@@ -41,7 +41,7 @@ describe('createCapacitorHapticsBackend', () => {
 
   it('maps notification, selection, and vibrate', () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorHapticsBackend(capacitor);
+    const backend = capacitorHostHaptics(capacitor);
     expect(backend.notification('success')).toBe(true);
     expect(backend.selection()).toBe(true);
     expect(backend.vibrate(200)).toBe(true);
@@ -51,7 +51,7 @@ describe('createCapacitorHapticsBackend', () => {
   });
 
   it('reports capabilities and unsupported operations', () => {
-    const backend = createCapacitorHapticsBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostHaptics(fakeCapacitor().capacitor);
     const out: HapticsCapabilities = {
       amplitudeControl: true,
       customEvents: true,
@@ -70,10 +70,5 @@ describe('createCapacitorHapticsBackend', () => {
     expect(backend.cancel()).toBe(false);
     expect(backend.vibratePattern([10, 20])).toBe(false);
     expect(backend.isSupported()).toBe(true);
-  });
-});
-describe('initializeCapacitorHapticsBackend', () => {
-  it('is the construction initializer of createCapacitorHapticsBackend', () => {
-    expect(typeof initializeCapacitorHapticsBackend).toBe('function');
   });
 });

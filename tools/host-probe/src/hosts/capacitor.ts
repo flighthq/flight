@@ -12,7 +12,7 @@ import { Network } from '@capacitor/network';
 import { Share } from '@capacitor/share';
 import { StatusBar } from '@capacitor/status-bar';
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
-import { registerCapacitorBackends } from '@flighthq/host-capacitor';
+import { capacitorHost } from '@flighthq/host-capacitor';
 import type { CapacitorApi, MobileOsProfile } from '@flighthq/types/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
@@ -38,7 +38,7 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
     share: Share,
     statusBar: StatusBar,
   };
-  const host = registerCapacitorBackends(capacitorApi, mobileOsProfile(Capacitor.getPlatform()));
+  const host = capacitorHost(capacitorApi, mobileOsProfile(Capacitor.getPlatform()));
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   await waitFor(() => getAppName(host.app.name).length > 0);
   const name = getAppName(host.app.name);

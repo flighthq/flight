@@ -4,17 +4,33 @@ import type {
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
   HostConnectivityChangeProvider,
+  HostConnectivityCapabilities,
   ConnectivityConnectionType,
   ConnectivityStatus,
   HostConnectivityStatusProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorConnectivityBackend = HostConnectivityStatusProvider & HostConnectivityChangeProvider;
+type CapacitorConnectivityProvider = HostConnectivityStatusProvider & HostConnectivityChangeProvider;
 
-export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): CapacitorConnectivityBackend {
-  const out = allocateEntity<CapacitorConnectivityBackend>();
-  initializeCapacitorConnectivityBackend(out, capacitor);
+export function capacitorHostConnectivity(
+  capacitor: CapacitorApi,
+): HostConnectivityCapabilities & Required<Pick<HostConnectivityCapabilities, 'change' | 'status'>> {
+  const provider = capacitorConnectivityProvider(capacitor);
+  return { change: provider, status: provider };
+}
+
+export function capacitorHostConnectivityChange(capacitor: CapacitorApi): HostConnectivityChangeProvider {
+  return capacitorConnectivityProvider(capacitor);
+}
+
+export function capacitorHostConnectivityStatus(capacitor: CapacitorApi): HostConnectivityStatusProvider {
+  return capacitorConnectivityProvider(capacitor);
+}
+
+function capacitorConnectivityProvider(capacitor: CapacitorApi): CapacitorConnectivityProvider {
+  const out = allocateEntity<CapacitorConnectivityProvider>();
+  populateCapacitorConnectivity(out, capacitor);
   return finishEntity(out);
 }
 
@@ -22,8 +38,8 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
 // the mirror starts UNKNOWN (`online: null`) rather than making an unmeasured offline claim. One native
 // listener owns the mirror and fans out to every core entity; per-entity unsubscribe only leaves that
 // local subscriber set. Provider destroy owns the one native handle.
-export function initializeCapacitorConnectivityBackend(
-  out: EntityConstruction<CapacitorConnectivityBackend>,
+function populateCapacitorConnectivity(
+  out: EntityConstruction<CapacitorConnectivityProvider>,
   capacitor: CapacitorApi,
 ): void {
   const network = capacitor.network;

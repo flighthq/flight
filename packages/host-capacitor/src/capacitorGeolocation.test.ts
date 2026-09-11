@@ -1,7 +1,7 @@
 import type { CapacitorApi, CapacitorPosition } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorGeolocationBackend, initializeCapacitorGeolocationBackend } from './capacitorGeolocation';
+import { capacitorHostGeolocation } from './capacitorGeolocation';
 
 const flush = async () => {
   await Promise.resolve();
@@ -49,25 +49,25 @@ function fakeCapacitor(permission = 'granted') {
   return { capacitor, cleared, fire: (p: CapacitorPosition) => watchCallback?.(p) };
 }
 
-describe('createCapacitorGeolocationBackend', () => {
+describe('capacitorHostGeolocation', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorGeolocationBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in capacitorHostGeolocation(fakeCapacitor().capacitor)).toBe(true);
   });
 
   it('reports an installed Capacitor geolocation provider as available', () => {
-    const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostGeolocation(fakeCapacitor().capacitor);
     expect(backend.isAvailable()).toBe(true);
   });
 
   it('maps a Capacitor position onto a GeolocationPosition', async () => {
-    const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostGeolocation(fakeCapacitor().capacitor);
     const position = await backend.getCurrentPosition({});
     expect(position).toMatchObject({ latitude: 37.5, longitude: -122.3, accuracy: 5, heading: 90, floorLevel: 0 });
   });
 
   it('bridges the numeric watch id and clears the resolved string id', async () => {
     const { capacitor, cleared, fire } = fakeCapacitor();
-    const backend = createCapacitorGeolocationBackend(capacitor);
+    const backend = capacitorHostGeolocation(capacitor);
     let received = 0;
     const id = backend.watchPosition(() => received++, {});
     expect(typeof id).toBe('number');
@@ -76,10 +76,5 @@ describe('createCapacitorGeolocationBackend', () => {
     expect(received).toBe(1);
     backend.clearWatch(id);
     expect(cleared).toContain('watch-abc');
-  });
-});
-describe('initializeCapacitorGeolocationBackend', () => {
-  it('is the construction initializer of createCapacitorGeolocationBackend', () => {
-    expect(typeof initializeCapacitorGeolocationBackend).toBe('function');
   });
 });

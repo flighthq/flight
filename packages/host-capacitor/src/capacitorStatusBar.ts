@@ -10,26 +10,59 @@ import type {
   StatusBarStyle,
   HostStatusBarStyleProvider,
   HostStatusBarVisibilityProvider,
+  HostUiCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorStatusBarBackend = Entity &
+type CapacitorStatusBarProvider = Entity &
   HostStatusBarColorProvider &
   HostStatusBarInfoProvider &
   HostStatusBarOverlaysProvider &
   HostStatusBarStyleProvider &
   HostStatusBarVisibilityProvider;
 
-export function createCapacitorStatusBarBackend(
+export function capacitorHostStatusBarColor(capacitor: CapacitorApi): HostStatusBarColorProvider {
+  return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostStatusBarInfo(capacitor: CapacitorApi): HostStatusBarInfoProvider {
+  return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostStatusBarOverlays(capacitor: CapacitorApi): HostStatusBarOverlaysProvider {
+  return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostStatusBarStyle(capacitor: CapacitorApi): HostStatusBarStyleProvider {
+  return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostStatusBarVisibility(capacitor: CapacitorApi): HostStatusBarVisibilityProvider {
+  return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostUi(
   capacitor: CapacitorApi,
-): Entity &
-  HostStatusBarColorProvider &
-  HostStatusBarInfoProvider &
-  HostStatusBarOverlaysProvider &
-  HostStatusBarStyleProvider &
-  HostStatusBarVisibilityProvider {
-  const out = allocateEntity<CapacitorStatusBarBackend>();
-  initializeCapacitorStatusBarBackend(out, capacitor);
+): HostUiCapabilities &
+  Required<
+    Pick<
+      HostUiCapabilities,
+      'statusBarColor' | 'statusBarInfo' | 'statusBarOverlays' | 'statusBarStyle' | 'statusBarVisibility'
+    >
+  > {
+  const provider = capacitorStatusBarProvider(capacitor);
+  return {
+    statusBarColor: provider,
+    statusBarInfo: provider,
+    statusBarOverlays: provider,
+    statusBarStyle: provider,
+    statusBarVisibility: provider,
+  };
+}
+
+function capacitorStatusBarProvider(capacitor: CapacitorApi): CapacitorStatusBarProvider {
+  const out = allocateEntity<CapacitorStatusBarProvider>();
+  populateCapacitorStatusBar(out, capacitor);
   return finishEntity(out);
 }
 
@@ -39,8 +72,8 @@ export function createCapacitorStatusBarBackend(
 // getInfo is a synchronous snapshot while Capacitor's getInfo is async, so it is served from a value
 // prefetched once at construction (default until it resolves). Capacitor emits no status-bar change
 // event, so this provider deliberately has no change-subscription member.
-export function initializeCapacitorStatusBarBackend(
-  out: EntityConstruction<CapacitorStatusBarBackend>,
+function populateCapacitorStatusBar(
+  out: EntityConstruction<CapacitorStatusBarProvider>,
   capacitor: CapacitorApi,
 ): void {
   const statusBar = capacitor.statusBar;

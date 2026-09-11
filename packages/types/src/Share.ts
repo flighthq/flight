@@ -43,7 +43,7 @@ export interface CapacitorShareContentOptions {
   readonly chooserTitle?: string;
 }
 
-export interface CapacitorShareContentBackend extends HostShareContentProvider {
+export interface HostCapacitorShareContentProvider extends HostShareContentProvider {
   shareContent(content: Readonly<ShareContent>, options?: Readonly<CapacitorShareContentOptions>): Promise<boolean>;
   shareContentWithResult(
     content: Readonly<ShareContent>,
