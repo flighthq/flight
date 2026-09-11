@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
 const PACKAGES = resolve(ROOT, 'packages');
+const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Provider)\b/u;
 const LEGACY_HOST_TRAITS = /\bHas(?:Menu\w*|ShareContent|TextSegmenter|TextShaper)\b/u;
 
 interface Violation {
@@ -31,6 +32,7 @@ describe('runtime APIs use direct Host providers', () => {
       export function whole(host: Host): void {}
       export function group(tray: Readonly<HostTrayCapabilities>): void {}
       export function structural<T extends { readonly tray: { readonly image: HostTrayImageProvider } }>(host: T): void {}
+      export function structuralMethod(host: { readonly 'tray'?: { readonly create(): void } }): void {}
       export function direct(hostTrayImage: Readonly<HostTrayImageProvider>): void {}
       export const arrow = (host: Host): void => {};
       export const directArrow = (hostTrayImage: Readonly<HostTrayImageProvider>): void => {};
@@ -43,6 +45,11 @@ describe('runtime APIs use direct Host providers', () => {
         declaration: 'structural',
         file: 'fixture.ts',
         type: '{ readonly tray: { readonly image: HostTrayImageProvider } }',
+      },
+      {
+        declaration: 'structuralMethod',
+        file: 'fixture.ts',
+        type: "{ readonly 'tray'?: { readonly create(): void } }",
       },
       { declaration: 'whole', file: 'fixture.ts', type: 'Host' },
     ]);
@@ -58,9 +65,11 @@ describe('runtime APIs use direct Host providers', () => {
 
 function collectOverbroadRuntimeParameters(files: readonly Source[]): Violation[] {
   const hostGroups = collectHostGroups();
+  const hostGroupProperty = hostGroupPropertyPattern(hostGroups);
   const violations: Violation[] = [];
   for (const { file, source } of files) {
-    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    if (!HOST_TYPE_NAME.test(source) && !hostGroupProperty.test(source)) continue;
+    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
     for (const statement of sourceFile.statements) {
       if (!hasExportModifier(statement)) continue;
       if (ts.isFunctionDeclaration(statement)) {
@@ -99,10 +108,11 @@ function collectOverbroadRuntimeParameters(files: readonly Source[]): Violation[
 
 function collectStructuralHostGroupTypes(files: readonly Source[]): Array<Pick<Violation, 'file' | 'type'>> {
   const hostGroups = collectHostGroups();
+  const hostGroupProperty = hostGroupPropertyPattern(hostGroups);
   const violations: Array<Pick<Violation, 'file' | 'type'>> = [];
   for (const { file, source } of files) {
-    if (file.startsWith('packages/types/')) continue;
-    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    if (file.startsWith('packages/types/') || !hostGroupProperty.test(source)) continue;
+    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
     const visit = (node: ts.Node): void => {
       if (
         ts.isTypeLiteralNode(node) &&
@@ -204,6 +214,11 @@ function hasExportModifier(node: ts.Node): boolean {
     ts.canHaveModifiers(node) &&
     (ts.getModifiers(node)?.some(({ kind }) => kind === ts.SyntaxKind.ExportKeyword) ?? false)
   );
+}
+
+function hostGroupPropertyPattern(hostGroups: ReadonlySet<string>): RegExp {
+  const names = [...hostGroups].join('|');
+  return new RegExp(`(?:\\b(?:${names})\\b|['"](?:${names})['"])\\s*\\??\\s*:`, 'u');
 }
 
 function propertyName(name: ts.PropertyName): string {
