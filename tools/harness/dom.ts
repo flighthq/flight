@@ -58,7 +58,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   });
 
   enableFlightDiagnostics(state);
-  registerDomBitmapTextureResolver(webGraphicsHost, state);
+  registerDomBitmapTextureResolver(webGraphicsHost.graphics.image, state);
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
@@ -111,7 +111,10 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
-  registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasBitmapTextureResolver(
+    webGraphicsHost.graphics.image,
+    getCanvasRenderStateTextureResolvers(resolverState),
+  );
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
   return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));

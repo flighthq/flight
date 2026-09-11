@@ -4,7 +4,7 @@ import type {
   DeviceDisplayMetrics,
   DeviceInfo,
   EntityConstruction,
-  HasSystemDevice,
+  HostDeviceProvider,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
@@ -33,24 +33,30 @@ export function createSafeAreaInsets(): SafeAreaInsets {
   return finishEntity(out);
 }
 
-export function getDeviceCapabilities(host: HasSystemDevice, out: DeviceCapabilities): DeviceCapabilities {
-  return host.system.device.getCapabilities(out);
+export function getDeviceCapabilities(
+  hostDevice: Readonly<HostDeviceProvider>,
+  out: DeviceCapabilities,
+): DeviceCapabilities {
+  return hostDevice.getCapabilities(out);
 }
 
-export function getDeviceDisplayMetrics(host: HasSystemDevice, out: DeviceDisplayMetrics): DeviceDisplayMetrics {
-  return host.system.device.getDisplayMetrics(out);
+export function getDeviceDisplayMetrics(
+  hostDevice: Readonly<HostDeviceProvider>,
+  out: DeviceDisplayMetrics,
+): DeviceDisplayMetrics {
+  return hostDevice.getDisplayMetrics(out);
 }
 
-export function getDeviceId(host: HasSystemDevice): string {
-  return host.system.device.getId();
+export function getDeviceId(hostDevice: Readonly<HostDeviceProvider>): string {
+  return hostDevice.getId();
 }
 
-export function getDeviceInfo(host: HasSystemDevice, out: DeviceInfo): DeviceInfo {
-  return host.system.device.getInfo(out);
+export function getDeviceInfo(hostDevice: Readonly<HostDeviceProvider>, out: DeviceInfo): DeviceInfo {
+  return hostDevice.getInfo(out);
 }
 
-export function getSafeAreaInsets(host: HasSystemDevice, out: SafeAreaInsets): SafeAreaInsets {
-  return host.system.device.getSafeAreaInsets(out);
+export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceProvider>, out: SafeAreaInsets): SafeAreaInsets {
+  return hostDevice.getSafeAreaInsets(out);
 }
 
 export function initializeDeviceCapabilities(out: EntityConstruction<DeviceCapabilities>): void {
@@ -104,6 +110,6 @@ export function initializeSafeAreaInsets(out: EntityConstruction<SafeAreaInsets>
   out.top = 0;
 }
 
-export function refreshDeviceInfo(host: HasSystemDevice): void {
-  host.system.device.refresh?.();
+export function refreshDeviceInfo(hostDevice: Readonly<HostDeviceProvider>): void {
+  hostDevice.refresh?.();
 }

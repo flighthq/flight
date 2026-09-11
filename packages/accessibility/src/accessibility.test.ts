@@ -1,5 +1,5 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { AccessibilityBackend, AccessibilityNode, EntityWithoutRuntime } from '@flighthq/types/contract';
+import type { HostAccessibilityProvider, AccessibilityNode, EntityWithoutRuntime } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -16,7 +16,7 @@ describe('announceAccessibility', () => {
     const provider = createProvider();
     const host = { accessibility: { provider } };
 
-    expect(announceAccessibility(host, 'saved')).toEqual({ reason: 'ok' });
+    expect(announceAccessibility(host.accessibility.provider, 'saved')).toEqual({ reason: 'ok' });
     expect(provider.announce).toHaveBeenCalledWith('saved', 'polite');
   });
 });
@@ -25,7 +25,9 @@ describe('clearAccessibilityTree', () => {
   it('returns the selected Host provider outcome', () => {
     const provider = createProvider({ clear: vi.fn(() => ({ reason: 'no-dom' as const })) });
 
-    expect(clearAccessibilityTree({ accessibility: { provider } })).toEqual({ reason: 'no-dom' });
+    expect(clearAccessibilityTree({ accessibility: { provider } }.accessibility.provider)).toEqual({
+      reason: 'no-dom',
+    });
   });
 });
 
@@ -34,7 +36,7 @@ describe('destroyAccessibility', () => {
     const first = createProvider();
     const second = createProvider();
 
-    destroyAccessibility({ accessibility: { provider: first } });
+    destroyAccessibility({ accessibility: { provider: first } }.accessibility.provider);
 
     expect(first.destroy).toHaveBeenCalledOnce();
     expect(second.destroy).not.toHaveBeenCalled();
@@ -45,7 +47,7 @@ describe('removeAccessibilityNode', () => {
   it('forwards the node id and returns a node-not-found outcome', () => {
     const provider = createProvider({ removeNode: vi.fn(() => ({ reason: 'node-not-found' as const })) });
 
-    expect(removeAccessibilityNode({ accessibility: { provider } }, 'missing')).toEqual({
+    expect(removeAccessibilityNode({ accessibility: { provider } }.accessibility.provider, 'missing')).toEqual({
       reason: 'node-not-found',
     });
     expect(provider.removeNode).toHaveBeenCalledWith('missing');
@@ -56,7 +58,7 @@ describe('setAccessibilityFocus', () => {
   it('forwards the node id and returns a focus-not-moved outcome', () => {
     const provider = createProvider({ setFocus: vi.fn(() => ({ reason: 'focus-not-moved' as const })) });
 
-    expect(setAccessibilityFocus({ accessibility: { provider } }, 'subject')).toEqual({
+    expect(setAccessibilityFocus({ accessibility: { provider } }.accessibility.provider, 'subject')).toEqual({
       reason: 'focus-not-moved',
     });
     expect(provider.setFocus).toHaveBeenCalledWith('subject');
@@ -69,14 +71,18 @@ describe('setAccessibilityNode', () => {
     const second = createProvider();
     const subject: AccessibilityNode = { id: 'subject', label: 'Subject', role: 'button' };
 
-    expect(setAccessibilityNode({ accessibility: { provider: first } }, subject)).toEqual({ reason: 'ok' });
+    expect(setAccessibilityNode({ accessibility: { provider: first } }.accessibility.provider, subject)).toEqual({
+      reason: 'ok',
+    });
 
     expect(first.setNode).toHaveBeenCalledWith(subject);
     expect(second.setNode).not.toHaveBeenCalled();
   });
 });
 
-function createProvider(overrides: Partial<EntityWithoutRuntime<AccessibilityBackend>> = {}): AccessibilityBackend {
+function createProvider(
+  overrides: Partial<EntityWithoutRuntime<HostAccessibilityProvider>> = {},
+): HostAccessibilityProvider {
   return {
     [EntityRuntimeKey]: undefined,
     announce: vi.fn(() => ({ reason: 'ok' as const })),

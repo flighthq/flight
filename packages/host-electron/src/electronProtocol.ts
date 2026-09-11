@@ -2,11 +2,11 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronProtocolCapabilities,
-  ProtocolDefaultBackend,
-  ProtocolOpenBackend,
-  ProtocolRegistrationBackend,
-  ProtocolRegistrationQueryBackend,
-  ProtocolUnregistrationBackend,
+  HostProtocolDefaultProvider,
+  HostProtocolOpenProvider,
+  HostProtocolRegistrationProvider,
+  HostProtocolRegistrationQueryProvider,
+  HostProtocolUnregistrationProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -14,23 +14,23 @@ export function createElectronProtocolCapabilities(electron: ElectronApi): Elect
   const app = electron.app;
   const registered = new Set<string>();
 
-  const registration = allocateEntity<ProtocolRegistrationBackend>();
+  const registration = allocateEntity<HostProtocolRegistrationProvider>();
   initializeProtocolRegistrationBackend(registration, app, registered);
   finishEntity(registration);
 
-  const defaultBackend = allocateEntity<ProtocolDefaultBackend>();
+  const defaultBackend = allocateEntity<HostProtocolDefaultProvider>();
   initializeProtocolDefaultBackend(defaultBackend, app, registered);
   finishEntity(defaultBackend);
 
-  const open = allocateEntity<ProtocolOpenBackend>();
+  const open = allocateEntity<HostProtocolOpenProvider>();
   initializeProtocolOpenBackend(open, app);
   finishEntity(open);
 
-  const registrationQuery = allocateEntity<ProtocolRegistrationQueryBackend>();
+  const registrationQuery = allocateEntity<HostProtocolRegistrationQueryProvider>();
   initializeProtocolRegistrationQueryBackend(registrationQuery, app);
   finishEntity(registrationQuery);
 
-  const unregistration = allocateEntity<ProtocolUnregistrationBackend>();
+  const unregistration = allocateEntity<HostProtocolUnregistrationProvider>();
   initializeProtocolUnregistrationBackend(unregistration, app, registered);
   finishEntity(unregistration);
 
@@ -41,11 +41,11 @@ export function createElectronProtocolCapabilities(electron: ElectronApi): Elect
 
 export function initializeElectronProtocolCapabilities(
   out: EntityConstruction<ElectronProtocolCapabilities>,
-  defaultBackend: ProtocolDefaultBackend,
-  open: ProtocolOpenBackend,
-  registration: ProtocolRegistrationBackend,
-  registrationQuery: ProtocolRegistrationQueryBackend,
-  unregistration: ProtocolUnregistrationBackend,
+  defaultBackend: HostProtocolDefaultProvider,
+  open: HostProtocolOpenProvider,
+  registration: HostProtocolRegistrationProvider,
+  registrationQuery: HostProtocolRegistrationQueryProvider,
+  unregistration: HostProtocolUnregistrationProvider,
 ): void {
   out.default = defaultBackend;
   out.open = open;
@@ -55,7 +55,7 @@ export function initializeElectronProtocolCapabilities(
 }
 
 export function initializeProtocolDefaultBackend(
-  out: EntityConstruction<ProtocolDefaultBackend>,
+  out: EntityConstruction<HostProtocolDefaultProvider>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -69,7 +69,7 @@ export function initializeProtocolDefaultBackend(
 }
 
 export function initializeProtocolOpenBackend(
-  out: EntityConstruction<ProtocolOpenBackend>,
+  out: EntityConstruction<HostProtocolOpenProvider>,
   app: ElectronApi['app'],
 ): void {
   out.subscribe = (listener: (url: string) => void) => {
@@ -80,7 +80,7 @@ export function initializeProtocolOpenBackend(
 }
 
 export function initializeProtocolRegistrationBackend(
-  out: EntityConstruction<ProtocolRegistrationBackend>,
+  out: EntityConstruction<HostProtocolRegistrationProvider>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -93,14 +93,14 @@ export function initializeProtocolRegistrationBackend(
 }
 
 export function initializeProtocolRegistrationQueryBackend(
-  out: EntityConstruction<ProtocolRegistrationQueryBackend>,
+  out: EntityConstruction<HostProtocolRegistrationQueryProvider>,
   app: ElectronApi['app'],
 ): void {
   out.isRegistered = (scheme: string) => app.isDefaultProtocolClient(scheme);
 }
 
 export function initializeProtocolUnregistrationBackend(
-  out: EntityConstruction<ProtocolUnregistrationBackend>,
+  out: EntityConstruction<HostProtocolUnregistrationProvider>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {

@@ -1,5 +1,5 @@
 import type { Entity } from './Entity';
-import type { HasMenuApplication, HasMenuHighlight, HasMenuPopup, HasMenuSelect, HostMenuCapabilities } from './Host';
+import type { HostMenuCapabilities } from './Host';
 import type {
   ElectronMenuCapabilities,
   HostMenuApplicationProvider,
@@ -23,10 +23,10 @@ type ConcreteMenuBundlesAreEntities = [
 
 type GenericMenuContractsAreStructural = [
   HostMenuCapabilities extends Entity ? true : false,
-  HasMenuApplication extends Entity ? true : false,
-  HasMenuHighlight extends Entity ? true : false,
-  HasMenuPopup extends Entity ? true : false,
-  HasMenuSelect extends Entity ? true : false,
+  { readonly menu: { readonly application: HostMenuApplicationProvider } } extends Entity ? true : false,
+  { readonly menu: { readonly highlight: HostMenuHighlightProvider } } extends Entity ? true : false,
+  { readonly menu: { readonly popup: HostMenuPopupProvider } } extends Entity ? true : false,
+  { readonly menu: { readonly select: HostMenuSelectProvider } } extends Entity ? true : false,
 ];
 
 describe('menu Entity boundaries', () => {

@@ -1,10 +1,10 @@
-import type { GlyphMetrics, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { GlyphMetrics, HostGlyphRasterizerProvider } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas';
 import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics';
 
-const defaultBackend: GlyphRasterizerBackend = { rasterize: () => null };
+const defaultBackend: HostGlyphRasterizerProvider = { rasterize: () => null };
 
 describe('getGlyphAtlasKerning', () => {
   it('is zero in the first build (no pair kerning source)', () => {
@@ -33,7 +33,7 @@ describe('getGlyphAtlasMetrics', () => {
 });
 
 describe('getGlyphAtlasMetrics from a measuring backend', () => {
-  function backendWith(measured: GlyphMetrics | null): GlyphRasterizerBackend {
+  function backendWith(measured: GlyphMetrics | null): HostGlyphRasterizerProvider {
     return {
       measureMetrics: () => measured,
       rasterize: () => null,

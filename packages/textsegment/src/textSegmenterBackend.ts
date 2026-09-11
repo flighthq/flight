@@ -1,10 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HasTextSegmenter,
+  HostTextSegmenterProvider,
   TextSegment,
   TextSegmentGranularity,
-  TextSegmenterBackend,
   TextSegmenterBackendExplanation,
 } from '@flighthq/types/contract';
 
@@ -16,19 +15,21 @@ import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 // expensive relative to a single segment() call. Where Intl.Segmenter is absent (an old or headless
 // engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
 // the host for those environments.
-export function createWebTextSegmenterBackend(): TextSegmenterBackend {
-  const out = allocateEntity<TextSegmenterBackend>();
+export function createWebTextSegmenterBackend(): HostTextSegmenterProvider {
+  const out = allocateEntity<HostTextSegmenterProvider>();
   initializeWebTextSegmenterBackend(out);
   return finishEntity(out);
 }
 
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object; callers that omit a host receive it as the final fallback.
-export const webTextSegmenterBackend: TextSegmenterBackend = createWebTextSegmenterBackend();
+export const webTextSegmenterBackend: HostTextSegmenterProvider = createWebTextSegmenterBackend();
 
 /** Describes which provider an operation would use and whether Intl.Segmenter is present. */
-export function explainTextSegmenterBackend(host?: HasTextSegmenter): TextSegmenterBackendExplanation {
-  const backend = getTextSegmenterBackend(host);
+export function explainTextSegmenterBackend(
+  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
+): TextSegmenterBackendExplanation {
+  const backend = getTextSegmenterBackend(hostTextSegmenter);
   const web = backend === webTextSegmenterBackend;
   const intlSegmenterAvailable = hasIntlSegmenter();
   return {
@@ -41,11 +42,13 @@ export function explainTextSegmenterBackend(host?: HasTextSegmenter): TextSegmen
 // Returns the explicit host's provider when supplied, then the legacy installed backend, and
 // finally the bundled web provider. The explicit dependency always wins, so independent callers
 // can interleave different hosts without mutating shared capability state.
-export function getTextSegmenterBackend(host?: HasTextSegmenter): TextSegmenterBackend {
-  return host?.text.segmenter ?? _backend ?? webTextSegmenterBackend;
+export function getTextSegmenterBackend(
+  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
+): HostTextSegmenterProvider {
+  return hostTextSegmenter ?? _backend ?? webTextSegmenterBackend;
 }
 
-export function initializeWebTextSegmenterBackend(out: EntityConstruction<TextSegmenterBackend>): void {
+export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTextSegmenterProvider>): void {
   out.segment = segmentWithIntlSegmenter;
 }
 
@@ -56,11 +59,11 @@ export function initializeWebTextSegmenterBackend(out: EntityConstruction<TextSe
  * @deprecated Pass a HasTextSegmenter to the segmentation or boundary operation. Retained for
  * source compatibility until the legacy global path is removed.
  */
-export function setTextSegmenterBackend(backend: TextSegmenterBackend | null): void {
+export function setTextSegmenterBackend(backend: HostTextSegmenterProvider | null): void {
   _backend = backend;
 }
 
-let _backend: TextSegmenterBackend | null = null;
+let _backend: HostTextSegmenterProvider | null = null;
 
 // Cached Intl.Segmenter instances keyed by `locale|granularity`. A Map preserves insertion order, so
 // the first key is the oldest and drives simple FIFO eviction once the cache is full. Instances are

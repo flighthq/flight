@@ -2,7 +2,7 @@ import { parseGlb, parseGltf } from '@flighthq/scene3d-formats/contract';
 import type {
   GltfDocument,
   GltfScene3DDocumentLoadOptions,
-  HasNetHttp,
+  HostNetProvider,
   Scene3DDocument,
   Scene3DDocumentLoadOptions,
 } from '@flighthq/types/contract';
@@ -17,11 +17,11 @@ import {
 // the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and load
 // resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
 export async function loadScene3DDocumentFromGlbUrl(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   url: string,
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
-  const bytes = await loadScene3DDocumentBytesFromUrl(host, url, options);
+  const bytes = await loadScene3DDocumentBytesFromUrl(hostNet, url, options);
   if (bytes === null) return null;
   return parseGlb(bytes, options?.diagnostics, {
     basePath: getScene3DDocumentBasePathFromUrl(url),
@@ -34,11 +34,11 @@ export async function loadScene3DDocumentFromGlbUrl(
 // remain unresolved resource refs carrying the model's base path. Assemble with createScene3DFromDocument and
 // load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
 export async function loadScene3DDocumentFromGltfUrl(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   url: string,
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
-  const source = await loadScene3DDocumentTextFromUrl(host, url, options);
+  const source = await loadScene3DDocumentTextFromUrl(hostNet, url, options);
   if (source === null) return null;
 
   let gltf: GltfDocument;
@@ -50,7 +50,7 @@ export async function loadScene3DDocumentFromGltfUrl(
   if (gltf === null || typeof gltf !== 'object') return null;
 
   const basePath = getScene3DDocumentBasePathFromUrl(url);
-  const externalBuffers = await loadGltfExternalBuffers(host, gltf, basePath, options);
+  const externalBuffers = await loadGltfExternalBuffers(hostNet, gltf, basePath, options);
   if (externalBuffers === null) return null;
   return parseGltf(gltf, options?.diagnostics, {
     basePath,
@@ -60,7 +60,7 @@ export async function loadScene3DDocumentFromGltfUrl(
 }
 
 async function loadGltfExternalBuffers(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   gltf: Readonly<GltfDocument>,
   basePath: string | null,
   options?: Readonly<Scene3DDocumentLoadOptions>,
@@ -74,7 +74,7 @@ async function loadGltfExternalBuffers(
   const externalBuffers: Record<string, Uint8Array> = {};
   const entries = [...uris];
   const bytes = await Promise.all(
-    entries.map((uri) => loadScene3DDocumentBytesFromUrl(host, resolveGltfBufferUrl(uri, basePath), options)),
+    entries.map((uri) => loadScene3DDocumentBytesFromUrl(hostNet, resolveGltfBufferUrl(uri, basePath), options)),
   );
   for (let i = 0; i < entries.length; i++) {
     const value = bytes[i];

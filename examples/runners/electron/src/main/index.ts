@@ -64,10 +64,12 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
     // exposes path/name DTO strings, matching the preload contract exactly.
     return result.outcome === 'selected' ? result.handles.map((handle) => handle.path ?? handle.name) : [];
   });
-  ipcMain.handle('flight:readClipboard', () => readClipboardText(host));
-  ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(host, String(text)));
+  ipcMain.handle('flight:readClipboard', () => readClipboardText(host.clipboard.text));
+  ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) =>
+    writeClipboardText(host.clipboard.text, String(text)),
+  );
   ipcMain.handle('flight:notify', async (_event: unknown, body: unknown) => {
-    const outcome = await showNotification(host, {
+    const outcome = await showNotification(host.notification.delivery, {
       title: 'Flight Harness',
       body: String(body),
     });
@@ -78,13 +80,19 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
 async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): Promise<void> {
-  console.log('[harness] app:', getAppName(host), getAppVersion(host), getAppLocale(host)); // eslint-disable-line
+  // eslint-disable-next-line no-console -- this executable demo reports the exercised OS integrations.
+  console.log(
+    '[harness] app:',
+    getAppName(host.app.name),
+    getAppVersion(host.app.version),
+    getAppLocale(host.app.locale),
+  );
 
   const screens: ScreenInfo[] = [];
-  getScreens(host, screens);
+  getScreens(host.screen.query, screens);
   console.log('[harness] screens:', screens.length); // eslint-disable-line
 
-  if (host.app.badge !== undefined) void setAppBadgeCount({ app: { badge: host.app.badge } }, 3);
+  if (host.app.badge !== undefined) void setAppBadgeCount(host.app.badge, 3);
 
   const menu: readonly MenuItemTemplate[] = [
     createMenuItemTemplate({
@@ -96,20 +104,20 @@ async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBack
       ],
     }),
   ];
-  setApplicationMenu(host, menu);
+  setApplicationMenu(host.menu.application, menu);
   const menuSelect = createMenuSelect();
   connectSignal(menuSelect.onMenuItemSelect, (id) => console.log('[harness] menu select:', id)); // eslint-disable-line
-  attachMenuSelect(host, menuSelect);
+  attachMenuSelect(host.menu.select, menuSelect);
 
   const shortcut = createGlobalShortcut('CommandOrControl+Shift+F');
   if (shortcut.reason === 'created') {
     connectSignal(shortcut.shortcut.onTrigger, () => console.log('[harness] global shortcut fired')); // eslint-disable-line
-    void attachGlobalShortcut(host, shortcut.shortcut);
+    void attachGlobalShortcut(host.shortcut.trigger, shortcut.shortcut);
   }
 
   void (async () => {
-    await writeClipboardText(host, 'Hello from Flight via Electron');
-    console.log('[harness] clipboard round-trip:', await readClipboardText(host)); // eslint-disable-line
+    await writeClipboardText(host.clipboard.text, 'Hello from Flight via Electron');
+    console.log('[harness] clipboard round-trip:', await readClipboardText(host.clipboard.text)); // eslint-disable-line
   })();
 
   const trayResult = await createTrayIcon(host, {
@@ -139,7 +147,7 @@ void app.whenReady().then(() => {
   installIpcBridge(host);
 
   mainWindow = createApplicationWindow();
-  openWindow(host, mainWindow, {
+  openWindow(host.window, mainWindow, {
     title: process.env['FLIGHT_ELECTRON_TITLE'] ?? 'Flight Electron Harness',
     width: 1024,
     height: 720,
@@ -150,7 +158,7 @@ void app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (mainWindow !== null && getElectronBrowserWindow(mainWindow) === null) {
-      openWindow(host, mainWindow, {
+      openWindow(host.window, mainWindow, {
         title: process.env['FLIGHT_ELECTRON_TITLE'] ?? 'Flight Electron Harness',
         width: 1024,
         height: 720,

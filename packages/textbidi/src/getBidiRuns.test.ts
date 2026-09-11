@@ -1,11 +1,11 @@
-import type { BidiClassBackend, BidiDirection, BidiRun } from '@flighthq/types/contract';
+import type { HostBidiClassProvider, BidiDirection, BidiRun } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { getBidiRuns } from './getBidiRuns';
 
-const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
-const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
+const LEFT_TO_RIGHT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
+const RIGHT_TO_LEFT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
 
 const HEBREW = 'שלום';
 
@@ -20,7 +20,7 @@ const PDF = '‬';
 describe('getBidiRuns', () => {
   it('preserves the two-argument source-compatible signature while accepting an explicit backend', () => {
     expectTypeOf(getBidiRuns).toEqualTypeOf<
-      (text: string, baseDirection: BidiDirection, bidiClassBackend?: BidiClassBackend) => readonly BidiRun[]
+      (text: string, baseDirection: BidiDirection, bidiClassBackend?: HostBidiClassProvider) => readonly BidiRun[]
     >();
     expect(getBidiRuns('abc', 'ltr')).toEqual([{ start: 0, end: 3, level: 0, direction: 'ltr' }]);
   });

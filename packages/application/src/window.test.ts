@@ -3,25 +3,20 @@ import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contr
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
-  FullscreenBackend,
+  HostFullscreenProvider,
   FullscreenTargetHandle,
-  HasGraphicsRenderContextSubscription,
-  HasGraphicsRenderSurface,
-  HasInputDropFileSubscription,
-  HasInputFocusSubscription,
-  HasInputPointerLock,
-  InputDropFileBackend,
-  InputFocusBackend,
-  InputPointerLockBackend,
+  HostRenderContextProvider,
+  HostRenderSurfaceProvider,
+  HostInputDropFileProvider,
+  HostInputFocusProvider,
+  HostInputPointerLockProvider,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  InputTargetBackend,
+  HostInputTargetProvider,
   InputTargetHandle,
   Matrix,
-  RenderContextBackend,
   RenderState,
-  RenderSurfaceBackend,
-  WindowBackend,
+  HostWindowProvider,
   WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
@@ -88,7 +83,7 @@ import {
   showWindow,
 } from './window';
 
-type RecordingWindowBackend = Required<WindowBackend> & {
+type RecordingWindowBackend = Required<HostWindowProvider> & {
   readonly calls: string[];
   emitCloseRequest(): boolean;
   emitClosed(): void;
@@ -98,31 +93,31 @@ type RecordingWindowBackend = Required<WindowBackend> & {
   emitVisibility(visible: boolean): void;
 };
 
-type RecordingFullscreenBackend = Required<FullscreenBackend> & {
+type RecordingFullscreenBackend = Required<HostFullscreenProvider> & {
   readonly calls: string[];
   emit(fullscreen: boolean): void;
 };
 
-type RecordingInputDropFileBackend = InputDropFileBackend & {
+type RecordingInputDropFileBackend = HostInputDropFileProvider & {
   readonly calls: string[];
   emit(path: string): void;
 };
 
-type RecordingInputFocusBackend = InputFocusBackend & {
+type RecordingInputFocusBackend = HostInputFocusProvider & {
   readonly calls: string[];
   emitBlur(): void;
   emitFocus(): void;
 };
 
-type RecordingInputPointerLockBackend = InputPointerLockBackend & { readonly calls: string[] };
+type RecordingInputPointerLockBackend = HostInputPointerLockProvider & { readonly calls: string[] };
 
-type RecordingRenderContextBackend = RenderContextBackend & {
+type RecordingRenderContextBackend = HostRenderContextProvider & {
   readonly calls: string[];
   emitLost(): void;
   emitRestored(): void;
 };
 
-type RecordingRenderSurfaceBackend = RenderSurfaceBackend & { readonly calls: string[] };
+type RecordingRenderSurfaceBackend = HostRenderSurfaceProvider & { readonly calls: string[] };
 
 type TestHost = {
   readonly graphics: {
@@ -138,11 +133,11 @@ type TestHost = {
   readonly window: RecordingWindowBackend;
 };
 
-type WindowTargetHost = HasGraphicsRenderContextSubscription &
-  HasGraphicsRenderSurface &
-  HasInputDropFileSubscription &
-  HasInputFocusSubscription &
-  HasInputPointerLock;
+type WindowTargetHost = { readonly graphics: { readonly renderContext: HostRenderContextProvider } } & {
+  readonly graphics: { readonly renderSurface: HostRenderSurfaceProvider };
+} & { readonly input: { readonly dropFile: HostInputDropFileProvider } } & {
+  readonly input: { readonly focus: HostInputFocusProvider };
+} & { readonly input: { readonly pointerLock: HostInputPointerLockProvider } };
 
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
@@ -464,7 +459,7 @@ describe('attachWindow', () => {
     const win = createApplicationWindow();
     const handle = { id: 41 };
 
-    expect(attachWindow(host, win, handle, 'host')).toBe(true);
+    expect(attachWindow(host.window, win, handle, 'host')).toBe(true);
     expect(seen).toEqual([{ handle, win }]);
   });
 
@@ -481,11 +476,11 @@ describe('attachWindow', () => {
     const first = createApplicationWindow();
     const second = createApplicationWindow();
 
-    expect(attachWindow(host, first, { id: 1 }, 'host')).toBe(true);
-    expect(attachWindow(host, second, { id: 2 }, 'flight')).toBe(true);
+    expect(attachWindow(host.window, first, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(host.window, second, { id: 2 }, 'flight')).toBe(true);
     expect(attached).toEqual([first, second]);
-    expect(closeWindow(host, first)).toBe(true);
-    expect(closeWindow(host, first)).toBe(true);
+    expect(closeWindow(host.window, first)).toBe(true);
+    expect(closeWindow(host.window, first)).toBe(true);
     expect(closed).toEqual([first]);
   });
 
@@ -498,10 +493,10 @@ describe('attachWindow', () => {
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    expect(attachWindow(host, win, { id: 1 }, 'flight')).toBe(true);
-    attachWindowFullscreen(host, win);
+    expect(attachWindow(host.window, win, { id: 1 }, 'flight')).toBe(true);
+    attachWindowFullscreen(host.ui.fullscreen, win);
 
-    expect(closeWindow(host, win)).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
     notifyWindowClosed(win);
     host.ui.fullscreen.emit(true);
     expect(closed).toBe(1);
@@ -515,10 +510,10 @@ describe('attachWindow', () => {
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(attachWindow(host, win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(host, win)).toBe(true);
-    expect(attachWindow(host, win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(host, win)).toBe(true);
+    expect(attachWindow(host.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
+    expect(attachWindow(host.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
     expect(closed).toBe(2);
   });
 
@@ -527,8 +522,8 @@ describe('attachWindow', () => {
     const active = createTestHost();
     const win = createApplicationWindow();
 
-    expect(attachWindow(origin, win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(active, win)).toBe(true);
+    expect(attachWindow(origin.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(active.window, win)).toBe(true);
 
     expect(origin.window.calls).toEqual(['attach:host', 'close']);
     expect(active.window.calls).toEqual([]);
@@ -542,7 +537,7 @@ describe('attachWindowClose', () => {
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    attachWindowClose(host, win);
+    attachWindowClose(host.window, win);
     host.window.emitClosed();
     expect(closed).toBe(true);
   });
@@ -554,7 +549,7 @@ describe('attachWindowClose', () => {
       requested = true;
       cancelSignal(win.onCloseRequest);
     });
-    attachWindowClose(host, win);
+    attachWindowClose(host.window, win);
 
     expect(host.window.emitCloseRequest()).toBe(true);
     expect(requested).toBe(true);
@@ -568,7 +563,7 @@ describe('attachWindowDropFile', () => {
     connectSignal(win.onDropFile, (path) => {
       received = path;
     });
-    attachWindowDropFile(host, win, createInputTarget());
+    attachWindowDropFile(host.input.dropFile, win, createInputTarget());
     host.input.dropFile.emit('test.png');
 
     expect(received).toBe('test.png');
@@ -580,8 +575,8 @@ describe('attachWindowDropFile', () => {
     const win = createApplicationWindow();
     const target = createInputTarget();
 
-    attachWindowDropFile(origin, win, target);
-    attachWindowDropFile(replacement, win, target);
+    attachWindowDropFile(origin.input.dropFile, win, target);
+    attachWindowDropFile(replacement.input.dropFile, win, target);
     detachWindowDropFile(win);
 
     expect(origin.input.dropFile.calls).toEqual(['subscribe', 'release']);
@@ -596,7 +591,7 @@ describe('attachWindowFocus', () => {
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(host, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createInputTarget());
     host.input.focus.emitFocus();
     expect(called).toBe(true);
   });
@@ -607,7 +602,7 @@ describe('attachWindowFocus', () => {
     connectSignal(win.onFocusOut, () => {
       called = true;
     });
-    attachWindowFocus(host, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createInputTarget());
     host.input.focus.emitBlur();
     expect(called).toBe(true);
   });
@@ -618,8 +613,8 @@ describe('attachWindowFocus', () => {
     const win = createApplicationWindow();
     const target = createInputTarget();
 
-    attachWindowFocus(origin, win, target);
-    attachWindowFocus(replacement, win, target);
+    attachWindowFocus(origin.input.focus, win, target);
+    attachWindowFocus(replacement.input.focus, win, target);
     detachWindowFocus(win);
 
     expect(origin.input.focus.calls).toEqual(['subscribe', 'release']);
@@ -634,7 +629,7 @@ describe('attachWindowFullscreen', () => {
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    attachWindowFullscreen(host, win);
+    attachWindowFullscreen(host.ui.fullscreen, win);
     host.ui.fullscreen.emit(true);
     expect(win.fullscreen).toBe(true);
     expect(called).toBe(true);
@@ -652,7 +647,7 @@ describe('attachWindowMove', () => {
       moved = true;
     });
 
-    attachWindowMove(host, win);
+    attachWindowMove(host.window, win);
     host.window.emitMove(100, 200);
 
     expect(moved).toBe(true);
@@ -669,7 +664,7 @@ describe('attachWindowMove', () => {
       moved = true;
     });
 
-    attachWindowMove(host, win);
+    attachWindowMove(host.window, win);
     host.window.emitMove(50, 50);
 
     expect(moved).toBe(false);
@@ -684,7 +679,7 @@ describe('attachWindowOrientation', () => {
       called = true;
     });
 
-    attachWindowOrientation(host, win);
+    attachWindowOrientation(host.window, win);
     host.window.emitOrientation();
     expect(called).toBe(true);
   });
@@ -697,7 +692,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
     host.graphics.renderContext.emitLost();
     expect(called).toBe(true);
   });
@@ -708,7 +703,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextRestored, () => {
       called = true;
     });
-    attachWindowRenderContext(host, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
     host.graphics.renderContext.emitRestored();
     expect(called).toBe(true);
   });
@@ -719,8 +714,8 @@ describe('attachWindowRenderContext', () => {
     const win = createApplicationWindow();
     const target = createInputTarget();
 
-    attachWindowRenderContext(origin, win, target);
-    attachWindowRenderContext(replacement, win, target);
+    attachWindowRenderContext(origin.graphics.renderContext, win, target);
+    attachWindowRenderContext(replacement.graphics.renderContext, win, target);
     detachWindowRenderContext(win);
 
     expect(origin.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
@@ -735,7 +730,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 2;
     const state = makeRenderState();
-    attachWindowRenderState(host, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
     expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
     expect(state.renderTransform2D?.a).toBe(2);
     expect(state.renderTransform2D?.d).toBe(2);
@@ -747,7 +742,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
     win.width = 400;
     win.devicePixelRatio = 2;
     emitSignal(win.onResize);
@@ -763,7 +758,7 @@ describe('attachWindowRenderState', () => {
     win.height = 200;
     const state = makeRenderState();
 
-    attachWindowRenderState(origin, win, state, createInputTarget());
+    attachWindowRenderState(origin.graphics.renderSurface, win, state, createInputTarget());
     host = active;
     win.width = 640;
     emitSignal(win.onResize);
@@ -778,18 +773,18 @@ describe('attachWindowRenderState', () => {
     const target = createInputTarget();
     const win = createApplicationWindow();
 
-    attachWindowDropFile(composedHost, win, target);
-    attachWindowFocus(composedHost, win, target);
-    attachWindowRenderContext(composedHost, win, target);
-    attachWindowRenderState(composedHost, win, makeRenderState(), target);
-    await lockApplicationPointer(composedHost, target);
+    attachWindowDropFile(composedHost.input.dropFile, win, target);
+    attachWindowFocus(composedHost.input.focus, win, target);
+    attachWindowRenderContext(composedHost.graphics.renderContext, win, target);
+    attachWindowRenderState(composedHost.graphics.renderSurface, win, makeRenderState(), target);
+    await lockApplicationPointer(composedHost.input.pointerLock, target);
 
     expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
     expect(targetHost.input.focus.calls).toEqual(['subscribe']);
     expect(targetHost.graphics.renderContext.calls).toEqual(['subscribe']);
     expect(targetHost.graphics.renderSurface.calls).toEqual(['resize:0,0']);
     expect(targetHost.input.pointerLock.calls).toEqual(['request']);
-    await exitApplicationPointerLock(targetHost);
+    await exitApplicationPointerLock(targetHost.input.pointerLock);
   });
 });
 
@@ -801,7 +796,7 @@ describe('attachWindowResize', () => {
       called = true;
     });
 
-    attachWindowResize(host, win, createWindowResizeTarget());
+    attachWindowResize(host.window, win, createWindowResizeTarget());
     host.window.emitResize(1280, 720, 2);
 
     expect(called).toBe(true);
@@ -814,8 +809,8 @@ describe('attachWindowResize', () => {
     const win = createApplicationWindow();
     let resized = 0;
     connectSignal(win.onResize, () => resized++);
-    attachWindowResize(host, win, createWindowResizeTarget());
-    attachWindowResize(host, win, createWindowResizeTarget());
+    attachWindowResize(host.window, win, createWindowResizeTarget());
+    attachWindowResize(host.window, win, createWindowResizeTarget());
 
     host.window.emitResize(320, 240, 1);
     expect(resized).toBe(1);
@@ -832,7 +827,7 @@ describe('attachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(host, win);
+    attachWindowVisibility(host.window, win);
     host.window.emitVisibility(false);
 
     expect(called).toBe(true);
@@ -845,7 +840,7 @@ describe('attachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(host, win);
+    attachWindowVisibility(host.window, win);
     host.window.emitVisibility(true);
 
     expect(called).toBe(true);
@@ -856,7 +851,7 @@ describe('centerWindow', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    centerWindow(host, createApplicationWindow());
+    centerWindow(host.window, createApplicationWindow());
     expect(backend.calls).toContain('center');
   });
 });
@@ -870,7 +865,7 @@ describe('closeWindow', () => {
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    expect(closeWindow(host, win)).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
     expect(backend.calls).toContain('close');
     expect(closed).toBe(true);
   });
@@ -880,7 +875,7 @@ describe('closeWindow', () => {
     host = createTestHost(backend);
     const win = createApplicationWindow();
     connectSignal(win.onCloseRequest, () => cancelSignal(win.onCloseRequest));
-    expect(closeWindow(host, win)).toBe(false);
+    expect(closeWindow(host.window, win)).toBe(false);
     expect(backend.calls).not.toContain('close');
   });
 
@@ -889,8 +884,8 @@ describe('closeWindow', () => {
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(closeWindow(host, win)).toBe(true);
-    expect(closeWindow(host, win)).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
 
     expect(closed).toBe(1);
     expect(host.window.calls).toEqual(['close']);
@@ -972,7 +967,7 @@ describe('detachWindowClose', () => {
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    attachWindowClose(host, win);
+    attachWindowClose(host.window, win);
     detachWindowClose(win);
     host.window.emitClosed();
     expect(closed).toBe(false);
@@ -986,7 +981,7 @@ describe('detachWindowDropFile', () => {
     connectSignal(win.onDropFile, () => {
       called = true;
     });
-    attachWindowDropFile(host, win, createInputTarget());
+    attachWindowDropFile(host.input.dropFile, win, createInputTarget());
     detachWindowDropFile(win);
     host.input.dropFile.emit('ignored.txt');
 
@@ -1002,7 +997,7 @@ describe('detachWindowFocus', () => {
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(host, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createInputTarget());
     detachWindowFocus(win);
     host.input.focus.emitFocus();
     expect(called).toBe(false);
@@ -1017,7 +1012,7 @@ describe('detachWindowFullscreen', () => {
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    attachWindowFullscreen(host, win);
+    attachWindowFullscreen(host.ui.fullscreen, win);
     detachWindowFullscreen(win);
     host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
@@ -1034,7 +1029,7 @@ describe('detachWindowMove', () => {
       moved = true;
     });
 
-    attachWindowMove(host, win);
+    attachWindowMove(host.window, win);
     detachWindowMove(win);
     host.window.emitMove(100, 100);
 
@@ -1049,7 +1044,7 @@ describe('detachWindowOrientation', () => {
     connectSignal(win.onOrientationChanged, () => {
       called = true;
     });
-    attachWindowOrientation(host, win);
+    attachWindowOrientation(host.window, win);
     detachWindowOrientation(win);
     host.window.emitOrientation();
 
@@ -1064,7 +1059,7 @@ describe('detachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
     detachWindowRenderContext(win);
     host.graphics.renderContext.emitLost();
     expect(called).toBe(false);
@@ -1079,7 +1074,7 @@ describe('detachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
     detachWindowRenderState(win);
     win.width = 400;
     emitSignal(win.onResize);
@@ -1090,7 +1085,7 @@ describe('detachWindowRenderState', () => {
 describe('detachWindowResize', () => {
   it('disconnects the observer', () => {
     const win = createApplicationWindow();
-    attachWindowResize(host, win, createWindowResizeTarget());
+    attachWindowResize(host.window, win, createWindowResizeTarget());
     detachWindowResize(win);
     host.window.emitResize(640, 480, 2);
 
@@ -1107,7 +1102,7 @@ describe('detachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(host, win);
+    attachWindowVisibility(host.window, win);
     detachWindowVisibility(win);
     host.window.emitVisibility(false);
 
@@ -1118,8 +1113,8 @@ describe('detachWindowVisibility', () => {
 describe('disposeApplicationWindow', () => {
   it('runs all teardown so attached observers stop firing', () => {
     const win = createApplicationWindow();
-    attachWindowResize(host, win, createWindowResizeTarget());
-    attachWindowFullscreen(host, win);
+    attachWindowResize(host.window, win, createWindowResizeTarget());
+    attachWindowFullscreen(host.ui.fullscreen, win);
 
     disposeApplicationWindow(win);
 
@@ -1137,14 +1132,14 @@ describe('disposeApplicationWindow', () => {
 
 describe('exitApplicationFullscreen', () => {
   it('delegates to the fullscreen capability', async () => {
-    await expect(exitApplicationFullscreen(host)).resolves.toBe(true);
+    await expect(exitApplicationFullscreen(host.ui.fullscreen)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['exit']);
   });
 });
 
 describe('exitApplicationPointerLock', () => {
   it('delegates to the input pointer-lock command capability', async () => {
-    await expect(exitApplicationPointerLock(host)).resolves.toEqual({ reason: 'ok' });
+    await expect(exitApplicationPointerLock(host.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['exit']);
   });
 
@@ -1160,9 +1155,9 @@ describe('exitApplicationPointerLock', () => {
         return attempts === 1 ? { reason } : { reason: 'ok' };
       };
 
-      await lockApplicationPointer(origin, createInputTarget());
-      await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason });
-      await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason: 'ok' });
+      await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+      await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason });
+      await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
       expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
       expect(active.input.pointerLock.calls).toEqual([]);
@@ -1180,9 +1175,9 @@ describe('exitApplicationPointerLock', () => {
       return { reason: 'ok' };
     };
 
-    await lockApplicationPointer(origin, createInputTarget());
-    await expect(exitApplicationPointerLock(active)).rejects.toThrow('busy');
-    await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason: 'ok' });
+    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await expect(exitApplicationPointerLock(active.input.pointerLock)).rejects.toThrow('busy');
+    await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
     expect(active.input.pointerLock.calls).toEqual([]);
@@ -1194,7 +1189,7 @@ describe('flashWindowFrame', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    flashWindowFrame(host, win);
+    flashWindowFrame(host.window, win);
     expect(backend.calls).toContain('flashWindowFrame');
   });
 });
@@ -1204,7 +1199,7 @@ describe('focusWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    focusWindow(host, win);
+    focusWindow(host.window, win);
     expect(win.focused).toBe(true);
     expect(backend.calls).toContain('focus');
   });
@@ -1214,7 +1209,7 @@ describe('getWindowBounds', () => {
   it('fills the out bounds from the backend', () => {
     host = createTestHost();
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(getWindowBounds(host, createApplicationWindow(), out)).toBe(out);
+    expect(getWindowBounds(host.window, createApplicationWindow(), out)).toBe(out);
     expect(out.width).toBe(3);
     expect(host.window.calls).toEqual(['getBounds']);
   });
@@ -1225,7 +1220,7 @@ describe('hideWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    hideWindow(host, win);
+    hideWindow(host.window, win);
     expect(win.visible).toBe(false);
     expect(backend.calls).toContain('hide');
   });
@@ -1240,17 +1235,17 @@ describe('initializeApplicationWindow', () => {
 describe('lockApplicationPointer', () => {
   it('passes the opaque target to the pointer-lock command capability', async () => {
     const target = createInputTarget();
-    await expect(lockApplicationPointer(host, target)).resolves.toEqual({ reason: 'ok' });
+    await expect(lockApplicationPointer(host.input.pointerLock, target)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['request']);
-    await exitApplicationPointerLock(host);
+    await exitApplicationPointerLock(host.input.pointerLock);
   });
 
   it('exits through the successful request origin after a different host becomes active', async () => {
     const origin = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin, createInputTarget());
-    await exitApplicationPointerLock(active);
+    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
     expect(active.input.pointerLock.calls).toEqual([]);
@@ -1272,9 +1267,11 @@ describe('lockApplicationPointer', () => {
         return { reason };
       };
 
-      await lockApplicationPointer(origin, createInputTarget());
-      await expect(lockApplicationPointer(declined, createInputTarget())).resolves.toEqual({ reason });
-      await exitApplicationPointerLock(active);
+      await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+      await expect(lockApplicationPointer(declined.input.pointerLock, createInputTarget())).resolves.toEqual({
+        reason,
+      });
+      await exitApplicationPointerLock(active.input.pointerLock);
 
       expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
       expect(declined.input.pointerLock.calls).toEqual([`request:${reason}`]);
@@ -1291,9 +1288,9 @@ describe('lockApplicationPointer', () => {
       throw new Error('defect');
     };
 
-    await lockApplicationPointer(origin, createInputTarget());
-    await expect(lockApplicationPointer(rejected, createInputTarget())).rejects.toThrow('defect');
-    await exitApplicationPointerLock(active);
+    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await expect(lockApplicationPointer(rejected.input.pointerLock, createInputTarget())).rejects.toThrow('defect');
+    await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
     expect(rejected.input.pointerLock.calls).toEqual(['request:rejected']);
@@ -1305,9 +1302,9 @@ describe('lockApplicationPointer', () => {
     const replacement = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin, createInputTarget());
-    await lockApplicationPointer(replacement, createInputTarget());
-    await exitApplicationPointerLock(active);
+    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await lockApplicationPointer(replacement.input.pointerLock, createInputTarget());
+    await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request']);
     expect(replacement.input.pointerLock.calls).toEqual(['request', 'exit']);
@@ -1322,8 +1319,8 @@ describe('maximizeWindow', () => {
     const win = createApplicationWindow();
     let count = 0;
     connectSignal(win.onMaximize, () => count++);
-    maximizeWindow(host, win);
-    maximizeWindow(host, win);
+    maximizeWindow(host.window, win);
+    maximizeWindow(host.window, win);
     expect(win.maximized).toBe(true);
     expect(count).toBe(1);
     expect(backend.calls).toContain('maximize');
@@ -1339,7 +1336,7 @@ describe('minimizeWindow', () => {
     connectSignal(win.onMinimize, () => {
       called = true;
     });
-    minimizeWindow(host, win);
+    minimizeWindow(host.window, win);
     expect(win.minimized).toBe(true);
     expect(called).toBe(true);
   });
@@ -1351,7 +1348,7 @@ describe('notifyWindowClosed', () => {
     const order: string[] = [];
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    attachWindowFullscreen(host, win);
+    attachWindowFullscreen(host.ui.fullscreen, win);
     connectSignal(win.onClose, () => {
       order.push('close');
       host.ui.fullscreen.emit(true);
@@ -1370,7 +1367,7 @@ describe('notifyWindowClosed', () => {
     const win = createApplicationWindow();
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    attachWindowFullscreen(host, win);
+    attachWindowFullscreen(host.ui.fullscreen, win);
     connectSignal(win.onClose, () => {
       throw new Error('close listener failed');
     });
@@ -1388,7 +1385,7 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    expect(openWindow(host, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true })).toBe(true);
+    expect(openWindow(host.window, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true })).toBe(true);
     expect(win.title).toBe('Game');
     expect(win.width).toBe(640);
     expect(win.alwaysOnTop).toBe(true);
@@ -1399,7 +1396,7 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(host, win, { title: 'Centered', center: true });
+    openWindow(host.window, win, { title: 'Centered', center: true });
     expect(backend.calls.filter((call) => call === 'center')).toHaveLength(1);
   });
 
@@ -1407,7 +1404,7 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(host, win, { title: 'Normal' });
+    openWindow(host.window, win, { title: 'Normal' });
     expect(backend.calls).not.toContain('center');
   });
 
@@ -1420,17 +1417,17 @@ describe('openWindow', () => {
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
 
-    expect(openWindow(host, win)).toBe(true);
-    attachWindowFullscreen(host, win);
-    expect(closeWindow(host, win)).toBe(true);
+    expect(openWindow(host.window, win)).toBe(true);
+    attachWindowFullscreen(host.ui.fullscreen, win);
+    expect(closeWindow(host.window, win)).toBe(true);
     host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(0);
 
-    expect(openWindow(host, win)).toBe(true);
-    attachWindowFullscreen(host, win);
+    expect(openWindow(host.window, win)).toBe(true);
+    attachWindowFullscreen(host.ui.fullscreen, win);
     host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(1);
-    expect(closeWindow(host, win)).toBe(true);
+    expect(closeWindow(host.window, win)).toBe(true);
     host.ui.fullscreen.emit(true);
 
     expect(closed).toBe(2);
@@ -1455,8 +1452,8 @@ describe('openWindow', () => {
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(openWindow(origin, win)).toBe(true);
-    expect(closeWindow(active, win)).toBe(true);
+    expect(openWindow(origin.window, win)).toBe(true);
+    expect(closeWindow(active.window, win)).toBe(true);
 
     expect(calls).toEqual(['origin:open', 'origin:close']);
     expect(closed).toBe(1);
@@ -1466,7 +1463,7 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<InputTargetBackend>();
+    const backend = allocateEntity<HostInputTargetProvider>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();
@@ -1474,7 +1471,7 @@ describe('prepareElementForInput', () => {
       return finishEntity(out);
     })();
 
-    prepareElementForInput({ input: { target: backend } }, target);
+    prepareElementForInput({ input: { target: backend } }.input.target, target);
 
     expect(prepare).toHaveBeenCalledOnce();
     expect(prepare).toHaveBeenCalledWith(target);
@@ -1485,7 +1482,7 @@ describe('requestApplicationFullscreen', () => {
   it('passes the opaque target to the fullscreen capability', async () => {
     const target = allocateEntity<FullscreenTargetHandle>();
     target.__brand = 'FullscreenTargetHandle' as const;
-    await expect(requestApplicationFullscreen(host, target)).resolves.toBe(true);
+    await expect(requestApplicationFullscreen(host.ui.fullscreen, target)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['request']);
   });
 });
@@ -1494,7 +1491,7 @@ describe('requestWindowAttention', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    requestWindowAttention(host, createApplicationWindow(), true);
+    requestWindowAttention(host.window, createApplicationWindow(), true);
     expect(backend.calls).toContain('requestAttention:true');
   });
 });
@@ -1517,12 +1514,12 @@ describe('restoreWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    maximizeWindow(host, win);
+    maximizeWindow(host.window, win);
     let restored = false;
     connectSignal(win.onRestore, () => {
       restored = true;
     });
-    restoreWindow(host, win);
+    restoreWindow(host.window, win);
     expect(win.maximized).toBe(false);
     expect(restored).toBe(true);
     expect(backend.calls).toContain('restore');
@@ -1534,7 +1531,7 @@ describe('setWindowAlwaysOnTop', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowAlwaysOnTop(host, win, true);
+    setWindowAlwaysOnTop(host.window, win, true);
     expect(win.alwaysOnTop).toBe(true);
     expect(backend.calls).toContain('setAlwaysOnTop:true');
   });
@@ -1545,7 +1542,7 @@ describe('setWindowContentProtection', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowContentProtection(host, win, true);
+    setWindowContentProtection(host.window, win, true);
     expect(backend.calls).toContain('setContentProtection:true');
   });
 });
@@ -1557,8 +1554,8 @@ describe('setWindowFullscreen', () => {
     const win = createApplicationWindow();
     let count = 0;
     connectSignal(win.onFullscreenChanged, () => count++);
-    setWindowFullscreen(host, win, true);
-    setWindowFullscreen(host, win, true);
+    setWindowFullscreen(host.window, win, true);
+    setWindowFullscreen(host.window, win, true);
     expect(win.fullscreen).toBe(true);
     expect(count).toBe(1);
   });
@@ -1569,7 +1566,7 @@ describe('setWindowHasShadow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowHasShadow(host, win, false);
+    setWindowHasShadow(host.window, win, false);
     expect(backend.calls).toContain('setHasShadow:false');
   });
 });
@@ -1579,7 +1576,7 @@ describe('setWindowIcon', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowIcon(host, win, 'icon.png');
+    setWindowIcon(host.window, win, 'icon.png');
     expect(win.icon).toBe('icon.png');
     expect(backend.calls).toContain('setIcon:icon.png');
   });
@@ -1590,7 +1587,7 @@ describe('setWindowMaximumSize', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowMaximumSize(host, win, 1920, 1080);
+    setWindowMaximumSize(host.window, win, 1920, 1080);
     expect(win.maxWidth).toBe(1920);
     expect(win.maxHeight).toBe(1080);
     expect(backend.calls).toContain('setMaximumSize:1920,1080');
@@ -1601,7 +1598,7 @@ describe('setWindowMenuBarVisible', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowMenuBarVisible(host, createApplicationWindow(), false);
+    setWindowMenuBarVisible(host.window, createApplicationWindow(), false);
     expect(backend.calls).toContain('setMenuBarVisible:false');
   });
 });
@@ -1611,7 +1608,7 @@ describe('setWindowMinimumSize', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowMinimumSize(host, win, 320, 240);
+    setWindowMinimumSize(host.window, win, 320, 240);
     expect(win.minWidth).toBe(320);
     expect(win.minHeight).toBe(240);
   });
@@ -1622,7 +1619,7 @@ describe('setWindowOpacity', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowOpacity(host, win, 0.5);
+    setWindowOpacity(host.window, win, 0.5);
     expect(win.opacity).toBe(0.5);
     expect(backend.calls).toContain('setOpacity:0.5');
   });
@@ -1632,7 +1629,7 @@ describe('setWindowParent', () => {
   it('delegates to the backend with null', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowParent(host, createApplicationWindow(), null);
+    setWindowParent(host.window, createApplicationWindow(), null);
     expect(backend.calls).toContain('setParent:null');
   });
 });
@@ -1646,7 +1643,7 @@ describe('setWindowPosition', () => {
     connectSignal(win.onMove, () => {
       moved = true;
     });
-    setWindowPosition(host, win, 100, 50);
+    setWindowPosition(host.window, win, 100, 50);
     expect(win.x).toBe(100);
     expect(win.y).toBe(50);
     expect(moved).toBe(true);
@@ -1657,7 +1654,7 @@ describe('setWindowProgress', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowProgress(host, createApplicationWindow(), 0.25);
+    setWindowProgress(host.window, createApplicationWindow(), 0.25);
     expect(backend.calls).toContain('setProgress:0.25');
   });
 });
@@ -1667,7 +1664,7 @@ describe('setWindowResizable', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowResizable(host, win, false);
+    setWindowResizable(host.window, win, false);
     expect(win.resizable).toBe(false);
     expect(backend.calls).toContain('setResizable:false');
   });
@@ -1682,7 +1679,7 @@ describe('setWindowSize', () => {
     connectSignal(win.onResize, () => {
       resized = true;
     });
-    setWindowSize(host, win, 800, 600);
+    setWindowSize(host.window, win, 800, 600);
     expect(win.width).toBe(800);
     expect(win.height).toBe(600);
     expect(resized).toBe(true);
@@ -1694,7 +1691,7 @@ describe('setWindowSkipTaskbar', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowSkipTaskbar(host, win, true);
+    setWindowSkipTaskbar(host.window, win, true);
     expect(win.skipTaskbar).toBe(true);
     expect(backend.calls).toContain('setSkipTaskbar:true');
   });
@@ -1705,7 +1702,7 @@ describe('setWindowTitle', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowTitle(host, win, 'My App');
+    setWindowTitle(host.window, win, 'My App');
     expect(win.title).toBe('My App');
     expect(backend.calls).toContain('setTitle:My App');
   });
@@ -1715,8 +1712,8 @@ describe('showWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    hideWindow(host, win);
-    showWindow(host, win);
+    hideWindow(host.window, win);
+    showWindow(host.window, win);
     expect(win.visible).toBe(true);
     expect(backend.calls).toContain('show');
   });

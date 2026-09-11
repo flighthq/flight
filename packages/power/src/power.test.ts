@@ -3,16 +3,15 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
-  HasPowerKeepAwake,
-  PowerAttachHost,
-  PowerChangeBackend,
+  HostPowerCapabilities,
+  HostPowerKeepAwakeProvider,
+  HostPowerChangeProvider,
   PowerIdleState,
-  PowerIdleBackend,
-  PowerKeepAwakeBackend,
-  PowerSessionLockBackend,
+  HostPowerIdleProvider,
+  HostPowerSessionLockProvider,
   PowerStatus,
-  PowerStatusBackend,
-  PowerThermalBackend,
+  HostPowerStatusProvider,
+  HostPowerThermalProvider,
   PowerThermalState,
 } from '@flighthq/types/contract';
 
@@ -40,7 +39,22 @@ import {
 
 // A host built from exactly the slots a test needs. Nothing installs anywhere, so two hosts can be live
 // at once — the property the ambient seam could not express.
-function statusHost(status: Partial<PowerStatus>): PowerAttachHost & { emitChange(): void } {
+interface TestPowerHost {
+  readonly power: Partial<HostPowerCapabilities>;
+}
+
+function powerAttachProviders(host: TestPowerHost) {
+  return [
+    host.power.status,
+    host.power.change,
+    host.power.sessionLock,
+    host.power.suspension,
+    host.power.thermal,
+    host.power.idle,
+  ] as const;
+}
+
+function statusHost(status: Partial<PowerStatus>): TestPowerHost & { emitChange(): void } {
   const listeners = new Set<() => void>();
   return {
     emitChange(): void {
@@ -66,7 +80,9 @@ function statusHost(status: Partial<PowerStatus>): PowerAttachHost & { emitChang
   };
 }
 
-function keepAwakeHost(overrides: Partial<HasPowerKeepAwake['power']['keepAwake']> = {}): HasPowerKeepAwake {
+function keepAwakeHost(
+  overrides: Partial<{ readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake']> = {},
+): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } } {
   return {
     power: {
       keepAwake: (() => {
@@ -90,7 +106,9 @@ describe('acquirePowerKeepAwake', () => {
         return { reason: 'denied' } as const;
       },
     });
-    await expect(acquirePowerKeepAwake(host, 'PreventAppSuspension')).resolves.toEqual({ reason: 'denied' });
+    await expect(acquirePowerKeepAwake(host.power.keepAwake, 'PreventAppSuspension')).resolves.toEqual({
+      reason: 'denied',
+    });
     expect(seen).toBe('PreventAppSuspension');
   });
 
@@ -102,7 +120,7 @@ describe('acquirePowerKeepAwake', () => {
         return { reason: 'ok' } as const;
       },
     });
-    await acquirePowerKeepAwake(host);
+    await acquirePowerKeepAwake(host.power.keepAwake);
     expect(seen).toBe('PreventDisplaySleep');
   });
 });
@@ -114,7 +132,7 @@ describe('attachPower', () => {
     enablePowerSignals(power);
     const seen: Readonly<PowerStatus>[] = [];
     connectSignal(power.onChange!, (status) => seen.push(status));
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     host.emitChange();
     host.emitChange();
     expect(seen).toHaveLength(2);
@@ -126,7 +144,7 @@ describe('attachPower', () => {
   it('derives charging transitions from status changes', () => {
     let charging = false;
     const listeners = new Set<() => void>();
-    const host: PowerAttachHost = {
+    const host: TestPowerHost = {
       power: {
         change: (() => {
           const out = allocateEntity<any>();
@@ -152,7 +170,7 @@ describe('attachPower', () => {
     let discharged = 0;
     connectSignal(power.onCharging!, () => charged++);
     connectSignal(power.onDischarging!, () => discharged++);
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     charging = true;
     for (const l of listeners) l();
     charging = false;
@@ -163,7 +181,7 @@ describe('attachPower', () => {
 
   it('delivers the thermal state as the event payload', () => {
     const listeners = new Set<(state: PowerThermalState) => void>();
-    const host: PowerAttachHost = {
+    const host: TestPowerHost = {
       power: {
         thermal: (() => {
           const out = allocateEntity<any>();
@@ -180,7 +198,7 @@ describe('attachPower', () => {
     enablePowerSignals(power);
     const seen: PowerThermalState[] = [];
     connectSignal(power.onThermalStateChange!, (state) => seen.push(state));
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     for (const l of listeners) l('Critical');
     // ★ An event that only said "something changed" left the state unreadable; the payload is the point.
     expect(seen).toEqual(['Critical']);
@@ -189,7 +207,7 @@ describe('attachPower', () => {
   it('never polls when the host offers no idle slot', () => {
     const spy = vi.spyOn(globalThis, 'setInterval');
     const power = createPower();
-    attachPower(statusHost({}), power);
+    attachPower(...powerAttachProviders(statusHost({})), power);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
@@ -200,8 +218,8 @@ describe('attachPower', () => {
     enablePowerSignals(power);
     let count = 0;
     connectSignal(power.onChange!, () => count++);
-    attachPower(host, power);
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
+    attachPower(...powerAttachProviders(host), power);
     host.emitChange();
     expect(count).toBe(1);
   });
@@ -218,7 +236,9 @@ describe('createPower', () => {
 describe('destroyPowerKeepAwake', () => {
   // Builds the provider ONCE so two hosts can genuinely alias the same object; spreading it per host
   // would silently make them distinct and the alias assertion would prove nothing.
-  function keepAwakeProvider(destroy?: () => void): HasPowerKeepAwake['power']['keepAwake'] {
+  function keepAwakeProvider(
+    destroy?: () => void,
+  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake'] {
     const out = allocateEntity<any>();
     out.acquire = async () => ({ reason: 'ok' }) as const;
     out.destroy = destroy;
@@ -227,7 +247,9 @@ describe('destroyPowerKeepAwake', () => {
     return finishEntity(out);
   }
 
-  function keepAwakeHostWith(provider: HasPowerKeepAwake['power']['keepAwake']): HasPowerKeepAwake {
+  function keepAwakeHostWith(
+    provider: { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake'],
+  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } } {
     return { power: { keepAwake: provider } };
   }
 
@@ -235,7 +257,7 @@ describe('destroyPowerKeepAwake', () => {
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {
     let destroyed = 0;
     const shared = keepAwakeProvider(() => destroyed++);
-    destroyPowerKeepAwake(keepAwakeHostWith(shared), keepAwakeHostWith(shared));
+    destroyPowerKeepAwake(keepAwakeHostWith(shared).power.keepAwake, keepAwakeHostWith(shared).power.keepAwake);
     expect(destroyed).toBe(1);
   });
 
@@ -245,7 +267,9 @@ describe('destroyPowerKeepAwake', () => {
       throw new Error('first failed');
     });
     const healthy = keepAwakeProvider(() => (secondDestroyed = true));
-    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(failing), keepAwakeHostWith(healthy))).toThrow('first failed');
+    expect(() =>
+      destroyPowerKeepAwake(keepAwakeHostWith(failing).power.keepAwake, keepAwakeHostWith(healthy).power.keepAwake),
+    ).toThrow('first failed');
     expect(secondDestroyed).toBe(true);
   });
 
@@ -257,8 +281,12 @@ describe('destroyPowerKeepAwake', () => {
       if (attempts === 1) throw new Error('transient');
     });
     const healthy = keepAwakeProvider(() => healthyDestroyed++);
-    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(flaky), keepAwakeHostWith(healthy))).toThrow();
-    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(flaky), keepAwakeHostWith(healthy))).not.toThrow();
+    expect(() =>
+      destroyPowerKeepAwake(keepAwakeHostWith(flaky).power.keepAwake, keepAwakeHostWith(healthy).power.keepAwake),
+    ).toThrow();
+    expect(() =>
+      destroyPowerKeepAwake(keepAwakeHostWith(flaky).power.keepAwake, keepAwakeHostWith(healthy).power.keepAwake),
+    ).not.toThrow();
     expect(attempts).toBe(2);
     expect(healthyDestroyed).toBe(1);
   });
@@ -271,7 +299,7 @@ describe('detachPower', () => {
     enablePowerSignals(power);
     let count = 0;
     connectSignal(power.onChange!, () => count++);
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     detachPower(power);
     host.emitChange();
     expect(count).toBe(0);
@@ -282,7 +310,7 @@ describe('detachPower', () => {
   // after the first failure leaks.
   it('runs every teardown even when one throws', () => {
     let unlockTornDown = false;
-    const host: PowerAttachHost = {
+    const host: TestPowerHost = {
       power: {
         sessionLock: (() => {
           const out = allocateEntity<any>();
@@ -297,7 +325,7 @@ describe('detachPower', () => {
       },
     };
     const power = createPower();
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     expect(() => detachPower(power)).toThrow('lock teardown failed');
     expect(unlockTornDown).toBe(true);
   });
@@ -309,8 +337,8 @@ describe('detachPower', () => {
     enablePowerSignals(kept);
     let count = 0;
     connectSignal(kept.onChange!, () => count++);
-    attachPower(host, kept);
-    attachPower(host, dropped);
+    attachPower(...powerAttachProviders(host), kept);
+    attachPower(...powerAttachProviders(host), dropped);
     detachPower(dropped);
     host.emitChange();
     expect(count).toBe(1);
@@ -324,7 +352,7 @@ describe('disposePower', () => {
     enablePowerSignals(power);
     let count = 0;
     connectSignal(power.onChange!, () => count++);
-    attachPower(host, power);
+    attachPower(...powerAttachProviders(host), power);
     disposePower(power);
     host.emitChange();
     expect(count).toBe(0);
@@ -372,7 +400,7 @@ describe('getPowerIdlePollingIntervalMs', () => {
 describe('getPowerStatus', () => {
   it('fills the caller-owned out parameter', () => {
     const out = makePowerStatus();
-    expect(getPowerStatus(statusHost({ isCharging: true }) as never, out)).toBe(out);
+    expect(getPowerStatus(statusHost({ isCharging: true }).power.status!, out)).toBe(out);
     expect(out.isCharging).toBe(true);
   });
 });
@@ -393,7 +421,7 @@ describe('getPowerSystemIdleState', () => {
         })(),
       },
     };
-    expect(getPowerSystemIdleState(host, 90)).toBe('Idle');
+    expect(getPowerSystemIdleState(host.power.idle, 90)).toBe('Idle');
     expect(seen).toBe(90);
   });
 });
@@ -410,7 +438,7 @@ describe('getPowerSystemIdleTime', () => {
         })(),
       },
     };
-    expect(getPowerSystemIdleTime(host)).toBe(42);
+    expect(getPowerSystemIdleTime(host.power.idle)).toBe(42);
   });
 });
 
@@ -426,7 +454,7 @@ describe('getPowerThermalState', () => {
         })(),
       },
     };
-    expect(getPowerThermalState(host)).toBe('Fair');
+    expect(getPowerThermalState(host.power.thermal)).toBe('Fair');
   });
 });
 
@@ -438,7 +466,7 @@ describe('initializePower', () => {
 
 describe('isPowerKeepAwakeActive', () => {
   it('reports the provider state', () => {
-    expect(isPowerKeepAwakeActive(keepAwakeHost({ isActive: () => true }))).toBe(true);
+    expect(isPowerKeepAwakeActive(keepAwakeHost({ isActive: () => true }).power.keepAwake)).toBe(true);
   });
 });
 
@@ -481,7 +509,7 @@ describe('makePowerStatus', () => {
 describe('releasePowerKeepAwake', () => {
   it('resolves the provider outcome', async () => {
     const host = keepAwakeHost({ release: async () => ({ reason: 'inactive' }) as const });
-    await expect(releasePowerKeepAwake(host)).resolves.toEqual({ reason: 'inactive' });
+    await expect(releasePowerKeepAwake(host.power.keepAwake)).resolves.toEqual({ reason: 'inactive' });
   });
 });
 describe('setPowerIdlePollingIntervalMs', () => {

@@ -1,9 +1,9 @@
-import type { TextShaperBackend } from '@flighthq/types/contract';
+import type { HostTextShaperProvider } from '@flighthq/types/contract';
 
 import { _setTextShaperBackendHook, _textShaperBackendHook } from './_textShaperHooks';
 import { setTextShaperBackend } from './textShaper';
 
-const _testBackend: TextShaperBackend = {
+const _testBackend: HostTextShaperProvider = {
   measureText: (text) => text.length,
 };
 
@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe('_setTextShaperBackendHook', () => {
   it('installs the hook so setTextShaperBackend invokes it with the new backend', () => {
-    let received: TextShaperBackend | null = _testBackend;
+    let received: HostTextShaperProvider | null = _testBackend;
     let calls = 0;
     _setTextShaperBackendHook((backend) => {
       received = backend;
@@ -27,7 +27,7 @@ describe('_setTextShaperBackendHook', () => {
   });
 
   it('passes null through to the hook when the backend is cleared', () => {
-    let received: TextShaperBackend | null = _testBackend;
+    let received: HostTextShaperProvider | null = _testBackend;
     _setTextShaperBackendHook((backend) => {
       received = backend;
     });

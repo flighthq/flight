@@ -1,6 +1,6 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
+import type { HostAudioDeviceProvider, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource } from './audioChannel';
 import {
@@ -25,7 +25,7 @@ import {
 } from './audioMixer';
 
 let nextSourceHandle = 1;
-let mockBackend: AudioDeviceBackend;
+let mockBackend: HostAudioDeviceProvider;
 const device = 1 as unknown as AudioDeviceHandle;
 
 class MockStereoPannerNode {
@@ -75,7 +75,7 @@ function createMockAudioBuffer(): AudioBuffer {
   } as unknown as AudioBuffer;
 }
 
-function createMockBackend(): AudioDeviceBackend {
+function createMockBackend(): HostAudioDeviceProvider {
   const out = allocateEntity<any>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);

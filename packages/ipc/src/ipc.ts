@@ -1,9 +1,9 @@
 import type {
-  HasIpcHandle,
-  HasIpcInvoke,
-  HasIpcMessage,
-  HasIpcSend,
-  HasIpcTargetedSend,
+  HostIpcHandleProvider,
+  HostIpcInvokeProvider,
+  HostIpcMessageProvider,
+  HostIpcSendProvider,
+  HostIpcTargetedSendProvider,
 } from '@flighthq/types/contract';
 
 // Inter-process messaging over explicitly supplied, operation-tight Host capabilities. Every operation
@@ -16,8 +16,12 @@ import type {
 // _sentinel/_listeners registry. The sentinel in particular answered every operation, so a caller could
 // not tell an installed backend from nothing at all.
 
-export function invokeIpc(host: HasIpcInvoke, channel: string, ...args: readonly unknown[]): Promise<unknown> {
-  return host.ipc.invoke.invoke(channel, args);
+export function invokeIpc(
+  hostIpcInvoke: Readonly<HostIpcInvokeProvider>,
+  channel: string,
+  ...args: readonly unknown[]
+): Promise<unknown> {
+  return hostIpcInvoke.invoke(channel, args);
 }
 
 // Subscribes to messages on `channel` for the NEXT message only, then releases the subscription.
@@ -26,7 +30,7 @@ export function invokeIpc(host: HasIpcInvoke, channel: string, ...args: readonly
 // The unsubscribe is idempotent and ORIGIN-PINNED: it releases exactly the subscription this call
 // opened, whether it runs after the first message or before any arrives.
 export function onceIpcMessage(
-  host: HasIpcMessage,
+  hostIpcMessage: Readonly<HostIpcMessageProvider>,
   channel: string,
   listener: (...args: readonly unknown[]) => void,
 ): () => void {
@@ -39,7 +43,7 @@ export function onceIpcMessage(
     // below releases in that case, so neither ordering leaks a subscription.
     unsubscribe?.();
   };
-  unsubscribe = host.ipc.message.subscribe(channel, (args) => {
+  unsubscribe = hostIpcMessage.subscribe(channel, (args) => {
     if (done) return;
     release();
     listener(...args);
@@ -50,32 +54,36 @@ export function onceIpcMessage(
 
 // Registers an invoke responder on `channel`. The returned release belongs to this registration.
 export function onIpcInvoke(
-  host: HasIpcHandle,
+  hostIpcHandle: Readonly<HostIpcHandleProvider>,
   channel: string,
   handler: (...args: readonly unknown[]) => unknown | Promise<unknown>,
 ): () => void {
-  return host.ipc.handle.handle(channel, handler);
+  return hostIpcHandle.handle(channel, handler);
 }
 
 // Subscribes to every message on `channel`. Returns the unsubscribe for THIS subscription alone —
 // releasing one listener never disturbs another on the same channel.
 export function onIpcMessage(
-  host: HasIpcMessage,
+  hostIpcMessage: Readonly<HostIpcMessageProvider>,
   channel: string,
   listener: (...args: readonly unknown[]) => void,
 ): () => void {
-  return host.ipc.message.subscribe(channel, (args) => listener(...args));
+  return hostIpcMessage.subscribe(channel, (args) => listener(...args));
 }
 
-export function sendIpcMessage(host: HasIpcSend, channel: string, ...args: readonly unknown[]): void {
-  host.ipc.send.send(channel, args);
+export function sendIpcMessage(
+  hostIpcSend: Readonly<HostIpcSendProvider>,
+  channel: string,
+  ...args: readonly unknown[]
+): void {
+  hostIpcSend.send(channel, args);
 }
 
 export function sendIpcMessageTo<Target>(
-  host: HasIpcTargetedSend<Target>,
+  hostIpcTargetedSend: Readonly<HostIpcTargetedSendProvider<Target>>,
   target: NoInfer<Target>,
   channel: string,
   ...args: readonly unknown[]
 ): void {
-  host.ipc.targetedSend.send(target, channel, args);
+  hostIpcTargetedSend.send(target, channel, args);
 }

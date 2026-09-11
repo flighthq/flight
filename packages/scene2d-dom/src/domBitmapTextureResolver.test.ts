@@ -1,14 +1,14 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend } from '@flighthq/types/contract';
+import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
 import { createDomRenderState } from './domRenderState';
 import { resolveDomTexture } from './domTextureResolver';
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -21,8 +21,10 @@ function createTestImageBackend(): ImageBackend {
   };
 }
 
-function imageHost(backend: ImageBackend = createTestImageBackend()): HasGraphicsImage {
-  return { graphics: { image: backend } } as HasGraphicsImage;
+function imageHost(backend: HostImageProvider = createTestImageBackend()): {
+  readonly graphics: { readonly image: HostImageProvider };
+} {
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
 }
 
 afterEach(() => {
@@ -34,18 +36,18 @@ describe('registerDomBitmapTextureResolver', () => {
     const host = imageHost();
     const state = createDomRenderState(document.createElement('div'));
     const bitmap = createBitmap(2, 2, 0xffffffff);
-    registerDomBitmapTextureResolver(host, state);
+    registerDomBitmapTextureResolver(host.graphics.image, state);
     expect(resolveDomTexture(state, createTexture({ dimension: '2d', source: bitmap }))).toBeInstanceOf(
       HTMLCanvasElement,
     );
   });
 
   it('refuses Bitmap resolution without materialization support', () => {
-    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     const host = imageHost(backend);
     const state = createDomRenderState(document.createElement('div'));
     const bitmap = createBitmap(2, 2, 0xffffffff);
-    registerDomBitmapTextureResolver(host, state);
+    registerDomBitmapTextureResolver(host.graphics.image, state);
     const createElement = vi.spyOn(document, 'createElement');
 
     expect(resolveDomTexture(state, createTexture({ dimension: '2d', source: bitmap }))).toBeNull();

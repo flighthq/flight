@@ -5,23 +5,23 @@ import type {
   ElectronDisplay,
   EntityConstruction,
   HostScreenCapabilities,
-  ScreenChangeBackend,
+  HostScreenChangeProvider,
   ScreenChangeEvent,
   ScreenChangeKind,
   ScreenColorSpace,
   ScreenInfo,
   ScreenOrientation,
-  ScreenQueryBackend,
+  HostScreenQueryProvider,
 } from '@flighthq/types/contract';
 
 export function createElectronScreenCapabilities(
   electron: ElectronApi,
 ): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
   const screen = electron.screen;
-  const query = allocateEntity<ScreenQueryBackend>();
+  const query = allocateEntity<HostScreenQueryProvider>();
   initializeScreenQueryBackend(query, screen);
   finishEntity(query);
-  const change = allocateEntity<ScreenChangeBackend>();
+  const change = allocateEntity<HostScreenChangeProvider>();
   initializeScreenChangeBackend(change, screen);
   finishEntity(change);
   return { change, query };
@@ -56,7 +56,7 @@ export function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): 
 }
 
 export function initializeScreenChangeBackend(
-  out: EntityConstruction<ScreenChangeBackend>,
+  out: EntityConstruction<HostScreenChangeProvider>,
   screen: ElectronApi['screen'],
 ): void {
   out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
@@ -91,7 +91,7 @@ export function initializeScreenChangeBackend(
 }
 
 export function initializeScreenQueryBackend(
-  out: EntityConstruction<ScreenQueryBackend>,
+  out: EntityConstruction<HostScreenQueryProvider>,
   screen: ElectronApi['screen'],
 ): void {
   out.getCursorPosition = (target: { x: number; y: number }) => {

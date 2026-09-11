@@ -1,5 +1,5 @@
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
-import type { BidiClassBackend, LogEntry } from '@flighthq/types/contract';
+import type { HostBidiClassProvider, LogEntry } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { disableTextBidiGuards, enableTextBidiGuards } from './enableTextBidiGuards';
@@ -43,7 +43,7 @@ describe('enableTextBidiGuards', () => {
 
   it('stays silent for an explicit non-compact backend', () => {
     enableTextBidiGuards();
-    const custom: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
+    const custom: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
     resolveBidiLevels('中', 'ltr', custom);
     expect(entries).toEqual([]);
   });

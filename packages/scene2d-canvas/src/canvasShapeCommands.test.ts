@@ -22,7 +22,7 @@ import {
   PathCommand,
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, RenderState } from '@flighthq/types/contract';
+import type { HostImageProvider, RenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -61,11 +61,11 @@ function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) 
   });
 }
 
-const host: HasGraphicsImage = {
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as HasGraphicsImage;
+} as { readonly graphics: { readonly image: HostImageProvider } };
 const resolvers = createCanvasTextureResolvers();
-registerCanvasBitmapTextureResolver(host, resolvers);
+registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 registerCanvasImageTextureResolver(resolvers);
 
 describe('defaultCanvasBeginFill', () => {

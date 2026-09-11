@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  AppHideBackend,
-  AppLocaleBackend,
-  AppNameBackend,
-  AppQuitBackend,
-  AppRelaunchBackend,
-  AppShowBackend,
-  AppVersionBackend,
+  HostAppHideProvider,
+  HostAppLocaleProvider,
+  HostAppNameProvider,
+  HostAppQuitProvider,
+  HostAppRelaunchProvider,
+  HostAppShowProvider,
+  HostAppVersionProvider,
   EntityConstruction,
   TauriApi,
   TauriAppCapabilities,
@@ -34,27 +34,27 @@ export function initializeTauriAppCapabilities(out: EntityConstruction<TauriAppC
     .locale()
     .then((value) => (locale = value ?? ''))
     .catch(() => {});
-  const hideBackend = allocateEntity<AppHideBackend>();
+  const hideBackend = allocateEntity<HostAppHideProvider>();
   hideBackend.hideApp = () => void tauri.app.hide().catch(() => {});
   out.hide = finishEntity(hideBackend);
-  const localeBackend = allocateEntity<AppLocaleBackend>();
+  const localeBackend = allocateEntity<HostAppLocaleProvider>();
   localeBackend.getLocale = () => locale;
   localeBackend.getPreferredSystemLanguages = () => (locale === '' ? [] : [locale]);
   localeBackend.getSystemLocale = () => locale;
   out.locale = finishEntity(localeBackend);
-  const nameBackend = allocateEntity<AppNameBackend>();
+  const nameBackend = allocateEntity<HostAppNameProvider>();
   nameBackend.getName = () => name;
   out.name = finishEntity(nameBackend);
-  const quitBackend = allocateEntity<AppQuitBackend>();
+  const quitBackend = allocateEntity<HostAppQuitProvider>();
   quitBackend.quit = () => void tauri.process.exit(0).catch(() => {});
   out.quit = finishEntity(quitBackend);
-  const relaunchBackend = allocateEntity<AppRelaunchBackend>();
+  const relaunchBackend = allocateEntity<HostAppRelaunchProvider>();
   relaunchBackend.relaunch = () => void tauri.process.relaunch().catch(() => {});
   out.relaunch = finishEntity(relaunchBackend);
-  const showBackend = allocateEntity<AppShowBackend>();
+  const showBackend = allocateEntity<HostAppShowProvider>();
   showBackend.showApp = () => void tauri.app.show().catch(() => {});
   out.show = finishEntity(showBackend);
-  const versionBackend = allocateEntity<AppVersionBackend>();
+  const versionBackend = allocateEntity<HostAppVersionProvider>();
   versionBackend.getVersion = () => version;
   out.version = finishEntity(versionBackend);
 }

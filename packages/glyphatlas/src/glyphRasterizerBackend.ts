@@ -3,16 +3,18 @@ import type {
   Entity,
   EntityConstruction,
   GlyphRasterizedBitmap,
-  GlyphRasterizerBackend,
+  HostGlyphRasterizerProvider,
 } from '@flighthq/types/contract';
 
-export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
-  const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+export function createStubGlyphRasterizerBackend(): HostGlyphRasterizerProvider & Entity {
+  const out = allocateEntity<HostGlyphRasterizerProvider & Entity>();
   initializeStubGlyphRasterizerBackend(out);
   return finishEntity(out);
 }
 
-export function initializeStubGlyphRasterizerBackend(out: EntityConstruction<GlyphRasterizerBackend & Entity>): void {
+export function initializeStubGlyphRasterizerBackend(
+  out: EntityConstruction<HostGlyphRasterizerProvider & Entity>,
+): void {
   out.rasterize = (_codepoint, options): GlyphRasterizedBitmap | null => {
     const size = Math.max(1, Math.round(options.fontSize));
     const width = Math.max(1, Math.round(size * 0.6));

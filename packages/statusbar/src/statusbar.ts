@@ -2,40 +2,39 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasUiStatusBarChange,
-  HasUiStatusBarColor,
-  HasUiStatusBarInfo,
-  HasUiStatusBarOverlays,
-  HasUiStatusBarStyle,
-  HasUiStatusBarStyleStack,
-  HasUiStatusBarVisibility,
+  HostStatusBarChangeProvider,
+  HostStatusBarColorProvider,
+  HostStatusBarInfoProvider,
+  HostStatusBarOverlaysProvider,
+  HostStatusBarStyleProvider,
+  HostStatusBarVisibilityProvider,
   StatusBar,
   StatusBarAnimation,
-  StatusBarColorBackend,
   StatusBarInfo,
-  StatusBarOverlaysBackend,
   StatusBarStyle,
-  StatusBarStyleBackend,
   StatusBarStyleEntry,
   StatusBarStyleEntryHandle,
-  StatusBarVisibilityBackend,
 } from '@flighthq/types/contract';
 
-export function attachStatusBar(host: HasUiStatusBarChange & HasUiStatusBarInfo, bar: StatusBar): void {
+export function attachStatusBar(
+  hostStatusBarChange: Readonly<HostStatusBarChangeProvider>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  bar: StatusBar,
+): void {
   detachStatusBar(bar);
-  const changeProvider = host.ui.statusBarChange;
-  const infoProvider = host.ui.statusBarInfo;
+  const changeProvider = hostStatusBarChange;
+  const infoProvider = hostStatusBarInfo;
   const unsubscribe = changeProvider.subscribe(() => {
     emitSignal(bar.onChange, infoProvider.getInfo(createStatusBarInfo()));
   });
   _subscriptions.set(bar, unsubscribe);
 }
 
-export function clearStatusBarStyleStack(host: HasUiStatusBarStyleStack): void {
-  const state = _styleStacks.get(host);
+export function clearStatusBarStyleStack(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>): void {
+  const state = _styleStacks.get(hostStatusBarInfo);
   if (state === undefined || state.entries.length === 0) return;
   state.entries.length = 0;
-  applyTopStyleEntry(host, state);
+  applyTopStyleEntry(hostStatusBarInfo, state);
 }
 
 export function createStatusBar(): StatusBar {
@@ -61,17 +60,23 @@ export function disposeStatusBar(bar: StatusBar): void {
   detachStatusBar(bar);
 }
 
-export function getStatusBarHeight(host: HasUiStatusBarInfo): number {
-  return host.ui.statusBarInfo.getInfo(_scratchInfo).height;
+export function getStatusBarHeight(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>): number {
+  return hostStatusBarInfo.getInfo(_scratchInfo).height;
 }
 
-export function getStatusBarInfo(host: HasUiStatusBarInfo, out: StatusBarInfo): StatusBarInfo {
-  return host.ui.statusBarInfo.getInfo(out);
+export function getStatusBarInfo(
+  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  out: StatusBarInfo,
+): StatusBarInfo {
+  return hostStatusBarInfo.getInfo(out);
 }
 
-export function hasStatusBarStyleEntry(host: HasUiStatusBarStyleStack, handle: StatusBarStyleEntryHandle): boolean {
+export function hasStatusBarStyleEntry(
+  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  handle: StatusBarStyleEntryHandle,
+): boolean {
   if (handle === INVALID_HANDLE) return false;
-  return _styleStacks.get(host)?.entries.some((entry) => entry.handle === handle) ?? false;
+  return _styleStacks.get(hostStatusBarInfo)?.entries.some((entry) => entry.handle === handle) ?? false;
 }
 
 export function initializeStatusBar(out: EntityConstruction<StatusBar>): void {
@@ -91,78 +96,95 @@ export function packedRgbaToHexColor(color: number): string {
   return '#' + rgb.toString(16).padStart(6, '0');
 }
 
-export function popStatusBarStyleEntry(host: HasUiStatusBarStyleStack, handle: StatusBarStyleEntryHandle): void {
+export function popStatusBarStyleEntry(
+  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  handle: StatusBarStyleEntryHandle,
+): void {
   if (handle === INVALID_HANDLE) return;
-  const state = _styleStacks.get(host);
+  const state = _styleStacks.get(hostStatusBarInfo);
   if (state === undefined) return;
   const index = state.entries.findIndex((entry) => entry.handle === handle);
   if (index === -1) return;
   state.entries.splice(index, 1);
-  applyTopStyleEntry(host, state);
+  applyTopStyleEntry(hostStatusBarInfo, state);
 }
 
 export function pushStatusBarStyleEntry(
-  host: HasUiStatusBarStyleStack,
+  hostStatusBarColor: Readonly<HostStatusBarColorProvider>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysProvider>,
+  hostStatusBarStyle: Readonly<HostStatusBarStyleProvider>,
+  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityProvider>,
   entry: Readonly<StatusBarStyleEntry>,
 ): StatusBarStyleEntryHandle {
-  let state = _styleStacks.get(host);
+  let state = _styleStacks.get(hostStatusBarInfo);
   if (state === undefined) {
-    const infoProvider = host.ui.statusBarInfo;
+    const infoProvider = hostStatusBarInfo;
     const baseline = infoProvider.getInfo(createStatusBarInfo());
     state = {
       applied: { ...baseline },
       baseline,
-      colorProvider: host.ui.statusBarColor,
+      colorProvider: hostStatusBarColor,
       entries: [],
-      overlaysProvider: host.ui.statusBarOverlays,
-      styleProvider: host.ui.statusBarStyle,
-      visibilityProvider: host.ui.statusBarVisibility,
+      overlaysProvider: hostStatusBarOverlays,
+      styleProvider: hostStatusBarStyle,
+      visibilityProvider: hostStatusBarVisibility,
     };
-    _styleStacks.set(host, state);
+    _styleStacks.set(hostStatusBarInfo, state);
   }
   const handle = _nextHandle++;
   state.entries.push({ entry, handle });
-  applyTopStyleEntry(host, state);
+  applyTopStyleEntry(hostStatusBarInfo, state);
   return handle;
 }
 
-export function setStatusBarColor(host: HasUiStatusBarColor, color: number, animated?: boolean): void {
-  host.ui.statusBarColor.setBackgroundColor(color, animated);
+export function setStatusBarColor(
+  hostStatusBarColor: Readonly<HostStatusBarColorProvider>,
+  color: number,
+  animated?: boolean,
+): void {
+  hostStatusBarColor.setBackgroundColor(color, animated);
 }
 
-export function setStatusBarOverlaysContent(host: HasUiStatusBarOverlays, overlay: boolean): void {
-  host.ui.statusBarOverlays.setOverlaysContent(overlay);
+export function setStatusBarOverlaysContent(
+  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysProvider>,
+  overlay: boolean,
+): void {
+  hostStatusBarOverlays.setOverlaysContent(overlay);
 }
 
-export function setStatusBarStyle(host: HasUiStatusBarStyle, style: StatusBarStyle): void {
-  host.ui.statusBarStyle.setStyle(style);
+export function setStatusBarStyle(
+  hostStatusBarStyle: Readonly<HostStatusBarStyleProvider>,
+  style: StatusBarStyle,
+): void {
+  hostStatusBarStyle.setStyle(style);
 }
 
 export function setStatusBarVisible(
-  host: HasUiStatusBarVisibility,
+  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityProvider>,
   visible: boolean,
   animation?: StatusBarAnimation,
 ): void {
-  host.ui.statusBarVisibility.setVisible(visible, animation);
+  hostStatusBarVisibility.setVisible(visible, animation);
 }
 
 interface StyleStackState {
   applied: StatusBarInfo;
   baseline: StatusBarInfo;
-  colorProvider: StatusBarColorBackend;
+  colorProvider: HostStatusBarColorProvider;
   entries: Array<{ entry: Readonly<StatusBarStyleEntry>; handle: StatusBarStyleEntryHandle }>;
-  overlaysProvider: StatusBarOverlaysBackend;
-  styleProvider: StatusBarStyleBackend;
-  visibilityProvider: StatusBarVisibilityBackend;
+  overlaysProvider: HostStatusBarOverlaysProvider;
+  styleProvider: HostStatusBarStyleProvider;
+  visibilityProvider: HostStatusBarVisibilityProvider;
 }
 
 const INVALID_HANDLE: StatusBarStyleEntryHandle = -1;
 let _nextHandle: StatusBarStyleEntryHandle = 1;
 const _scratchInfo: StatusBarInfo = createStatusBarInfo();
-const _styleStacks = new WeakMap<HasUiStatusBarStyleStack, StyleStackState>();
+const _styleStacks = new WeakMap<HostStatusBarInfoProvider, StyleStackState>();
 const _subscriptions = new WeakMap<StatusBar, () => void>();
 
-function applyTopStyleEntry(host: HasUiStatusBarStyleStack, state: StyleStackState): void {
+function applyTopStyleEntry(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>, state: StyleStackState): void {
   let animation: StatusBarAnimation | undefined;
   let color: number | undefined;
   let overlaysContent: boolean | undefined;
@@ -193,5 +215,5 @@ function applyTopStyleEntry(host: HasUiStatusBarStyleStack, state: StyleStackSta
   state.applied.overlaysContent = overlaysContent;
   state.applied.style = style;
   state.applied.visible = visible;
-  if (state.entries.length === 0) _styleStacks.delete(host);
+  if (state.entries.length === 0) _styleStacks.delete(hostStatusBarInfo);
 }

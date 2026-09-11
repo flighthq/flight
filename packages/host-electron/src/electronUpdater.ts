@@ -5,7 +5,7 @@ import type {
   DownloadedUpdate,
   ElectronApi,
   UpdateInfo,
-  UpdaterCommandBackend,
+  HostUpdaterCommandProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -23,8 +23,8 @@ const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateChe
 const OPERATION_FAILED: Readonly<{ reason: 'operation-failed' }> = Object.freeze({ reason: 'operation-failed' });
 const INSTALL_OK = Object.freeze({ reason: 'ok' }) as AppUpdateInstallOutcome;
 
-export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: string): UpdaterCommandBackend {
-  const out = allocateEntity<UpdaterCommandBackend>();
+export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: string): HostUpdaterCommandProvider {
+  const out = allocateEntity<HostUpdaterCommandProvider>();
   initializeElectronUpdaterBackend(out, electron, feedUrl);
   return finishEntity(out);
 }
@@ -32,7 +32,7 @@ export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: st
 // Electron's built-in Squirrel updater downloads as part of checkForUpdates. Native events are scoped
 // to one awaited transaction here and never escape as a second public event surface.
 export function initializeElectronUpdaterBackend(
-  out: EntityConstruction<UpdaterCommandBackend>,
+  out: EntityConstruction<HostUpdaterCommandProvider>,
   electron: ElectronApi,
   feedUrl?: string,
 ): void {

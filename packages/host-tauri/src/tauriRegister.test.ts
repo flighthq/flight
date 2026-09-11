@@ -1,7 +1,7 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HasSystemPlatform, TauriApi } from '@flighthq/types/contract';
+import type { TauriApi } from '@flighthq/types/contract';
 
 import { initializeTauriHost, registerTauriBackends } from './tauriRegister';
 
@@ -60,8 +60,8 @@ describe('registerTauriBackends', () => {
     expect(Object.keys(host.clipboard)).toEqual(['text']);
     expect(host.connectivity).toEqual({});
     expect(host.window.open).toBeTypeOf('function');
-    expect(getPlatformName(host as HasSystemPlatform)).toBe('linux');
-    expect(await readClipboardText(host)).toBe('TAURI-TEXT');
+    expect(getPlatformName(host.system.platform!)).toBe('linux');
+    expect(await readClipboardText(host.clipboard.text)).toBe('TAURI-TEXT');
   });
 
   it('claims exactly the three genuine Shell slots', () => {

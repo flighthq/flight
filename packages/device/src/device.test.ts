@@ -1,9 +1,8 @@
 import type {
-  DeviceBackend,
+  HostDeviceProvider,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
-  HasSystemDevice,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown, EntityRuntimeKey } from '@flighthq/types/contract';
@@ -26,7 +25,7 @@ import {
   refreshDeviceInfo,
 } from './device';
 
-function fakeBackend(): DeviceBackend {
+function fakeBackend(): HostDeviceProvider {
   return {
     [EntityRuntimeKey]: undefined,
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
@@ -86,7 +85,7 @@ function fakeBackend(): DeviceBackend {
   };
 }
 
-function fakeHost(): HasSystemDevice {
+function fakeHost(): { readonly system: { readonly device: HostDeviceProvider } } {
   return { system: { device: fakeBackend() } };
 }
 
@@ -153,7 +152,7 @@ describe('getDeviceCapabilities', () => {
   it('fills and returns out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceCapabilities();
-    const result = getDeviceCapabilities(host, out);
+    const result = getDeviceCapabilities(host.system.device, out);
     expect(result).toBe(out);
     expect(out.hasKeyboard).toBe(true);
     expect(out.hasMouse).toBe(true);
@@ -165,7 +164,7 @@ describe('getDeviceDisplayMetrics', () => {
   it('fills and returns out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceDisplayMetrics();
-    const result = getDeviceDisplayMetrics(host, out);
+    const result = getDeviceDisplayMetrics(host.system.device, out);
     expect(result).toBe(out);
     expect(out.colorDepth).toBe(8);
     expect(out.densityDpi).toBe(440);
@@ -180,7 +179,7 @@ describe('getDeviceDisplayMetrics', () => {
 describe('getDeviceId', () => {
   it('returns the value from the host backend', () => {
     const host = fakeHost();
-    expect(getDeviceId(host)).toBe('test-device-id');
+    expect(getDeviceId(host.system.device)).toBe('test-device-id');
   });
 });
 
@@ -188,7 +187,7 @@ describe('getDeviceInfo', () => {
   it('fills and returns out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceInfo();
-    const result = getDeviceInfo(host, out);
+    const result = getDeviceInfo(host.system.device, out);
     expect(result).toBe(out);
     expect(out.arch).toBe('arm64');
     expect(out.availableMemory).toBe(3_000_000_000);
@@ -222,7 +221,7 @@ describe('getSafeAreaInsets', () => {
   it('fills and returns out via the host backend', () => {
     const host = fakeHost();
     const out = createSafeAreaInsets();
-    const result = getSafeAreaInsets(host, out);
+    const result = getSafeAreaInsets(host.system.device, out);
     expect(result).toBe(out);
     expect(out.top).toBe(24);
     expect(out.bottom).toBe(16);
@@ -274,7 +273,7 @@ describe('R3 boundary', () => {
 describe('refreshDeviceInfo', () => {
   it('does not throw on a backend without refresh', () => {
     const host = fakeHost();
-    expect(() => refreshDeviceInfo(host)).not.toThrow();
+    expect(() => refreshDeviceInfo(host.system.device)).not.toThrow();
   });
 
   it('calls refresh() on backends that expose it', () => {
@@ -285,8 +284,8 @@ describe('refreshDeviceInfo', () => {
         refreshed = true;
       },
     };
-    const host: HasSystemDevice = { system: { device: backend } };
-    refreshDeviceInfo(host);
+    const host: { readonly system: { readonly device: HostDeviceProvider } } = { system: { device: backend } };
+    refreshDeviceInfo(host.system.device);
     expect(refreshed).toBe(true);
   });
 });

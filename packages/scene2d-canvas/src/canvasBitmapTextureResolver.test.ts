@@ -1,7 +1,7 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend } from '@flighthq/types/contract';
+import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -11,11 +11,13 @@ import {
   resolveCanvasTexture,
 } from './canvasTestSupport';
 
-function imageHost(backend: ImageBackend = createTestImageBackend()): HasGraphicsImage {
-  return { graphics: { image: backend } } as HasGraphicsImage;
+function imageHost(backend: HostImageProvider = createTestImageBackend()): {
+  readonly graphics: { readonly image: HostImageProvider };
+} {
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
 }
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -37,7 +39,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const host = imageHost();
     const state = createCanvasRenderState(document.createElement('canvas'));
     const bitmap = createBitmap(2, 2, 0xffffffff);
-    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(host.graphics.image, getCanvasRenderStateTextureResolvers(state));
     expect(
       resolveCanvasTexture(
         getCanvasRenderStateTextureResolvers(state),
@@ -47,11 +49,11 @@ describe('registerCanvasBitmapTextureResolver', () => {
   });
 
   it('refuses Bitmap resolution without materialization support', () => {
-    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     const host = imageHost(backend);
     const state = createCanvasRenderState(document.createElement('canvas'));
     const bitmap = createBitmap(2, 2, 0xffffffff);
-    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(host.graphics.image, getCanvasRenderStateTextureResolvers(state));
     const createElement = vi.spyOn(document, 'createElement');
 
     expect(

@@ -1,16 +1,16 @@
-import type {
-  BitmapReadbackBackend,
-  BitmapReadbackBackendReason,
-  HasGraphicsBitmapReadback,
-} from '@flighthq/types/contract';
+import type { HostBitmapReadbackProvider, BitmapReadbackBackendReason } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
 import { createBitmapFromImageSource } from './bitmapFrom';
 import { explainBitmapReadback } from './explainBitmapReadback';
 
-function hostWith(backend: BitmapReadbackBackend): HasGraphicsBitmapReadback {
-  return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
+function hostWith(backend: HostBitmapReadbackProvider): {
+  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+} {
+  return { graphics: { bitmapReadback: backend } } as {
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+  };
 }
 
 function makeCanvas(width = 8, height = 4): HTMLCanvasElement {
@@ -25,24 +25,33 @@ describe('explainBitmapReadback', () => {
     const readBitmap = vi.fn(() => ({ bitmap: null, reason: 'tainted-source' as const }));
     const host = hostWith({ readBitmap });
 
-    expect(explainBitmapReadback(host, makeCanvas(), 0, 4)).toEqual({ readable: false, reason: 'empty-size' });
-    expect(explainBitmapReadback(host, makeCanvas(), 8, 0)).toEqual({ readable: false, reason: 'empty-size' });
-    expect(explainBitmapReadback(host, makeCanvas(), -1, 4)).toEqual({ readable: false, reason: 'empty-size' });
-    expect(createBitmapFromImageSource(host, makeCanvas(), 8, -1)).toBeNull();
+    expect(explainBitmapReadback(host.graphics.bitmapReadback, makeCanvas(), 0, 4)).toEqual({
+      readable: false,
+      reason: 'empty-size',
+    });
+    expect(explainBitmapReadback(host.graphics.bitmapReadback, makeCanvas(), 8, 0)).toEqual({
+      readable: false,
+      reason: 'empty-size',
+    });
+    expect(explainBitmapReadback(host.graphics.bitmapReadback, makeCanvas(), -1, 4)).toEqual({
+      readable: false,
+      reason: 'empty-size',
+    });
+    expect(createBitmapFromImageSource(host.graphics.bitmapReadback, makeCanvas(), 8, -1)).toBeNull();
     expect(readBitmap).not.toHaveBeenCalled();
   });
 
   it('returns the exact success outcome and keeps constructor/explainer parity', () => {
     const bitmap = createBitmap(8, 4);
-    const readBitmap: BitmapReadbackBackend['readBitmap'] = vi.fn((_source, _width, _height, mode) => ({
+    const readBitmap: HostBitmapReadbackProvider['readBitmap'] = vi.fn((_source, _width, _height, mode) => ({
       bitmap: mode === 'bitmap' ? bitmap : null,
       reason: 'ok' as const,
     }));
     const host = hostWith({ readBitmap });
     const source = makeCanvas();
 
-    expect(createBitmapFromImageSource(host, source, 8, 4)).toBe(bitmap);
-    expect(explainBitmapReadback(host, source, 8, 4)).toEqual({ readable: true, reason: 'ok' });
+    expect(createBitmapFromImageSource(host.graphics.bitmapReadback, source, 8, 4)).toBe(bitmap);
+    expect(explainBitmapReadback(host.graphics.bitmapReadback, source, 8, 4)).toEqual({ readable: true, reason: 'ok' });
     expect(readBitmap).toHaveBeenNthCalledWith(1, source, 8, 4, 'bitmap');
     expect(readBitmap).toHaveBeenNthCalledWith(2, source, 8, 4, 'probe');
   });
@@ -53,8 +62,8 @@ describe('explainBitmapReadback', () => {
       const host = hostWith({ readBitmap: () => ({ bitmap: null, reason }) });
       const source = makeCanvas();
 
-      expect(createBitmapFromImageSource(host, source, 8, 4)).toBeNull();
-      expect(explainBitmapReadback(host, source, 8, 4)).toEqual({ readable: false, reason });
+      expect(createBitmapFromImageSource(host.graphics.bitmapReadback, source, 8, 4)).toBeNull();
+      expect(explainBitmapReadback(host.graphics.bitmapReadback, source, 8, 4)).toEqual({ readable: false, reason });
     },
   );
 
@@ -68,7 +77,7 @@ describe('explainBitmapReadback', () => {
     });
     const source = makeCanvas();
 
-    expect(explainBitmapReadback(host, source, 8, 4)).toEqual({ readable: true, reason: 'ok' });
-    expect(() => createBitmapFromImageSource(host, source, 8, 4)).toThrow(fault);
+    expect(explainBitmapReadback(host.graphics.bitmapReadback, source, 8, 4)).toEqual({ readable: true, reason: 'ok' });
+    expect(() => createBitmapFromImageSource(host.graphics.bitmapReadback, source, 8, 4)).toThrow(fault);
   });
 });

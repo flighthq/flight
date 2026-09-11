@@ -1,10 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HasShareContent, ShareContent, ShareContentBackend } from '@flighthq/types/contract';
+import type { HostShareContentProvider, ShareContent } from '@flighthq/types/contract';
 
 import { shareText } from './share';
 
-function createRecordingHost(label: string, calls: string[]): HasShareContent {
-  const content = allocateEntity<ShareContentBackend>();
+function createRecordingHost(
+  label: string,
+  calls: string[],
+): { readonly share: { readonly content: HostShareContentProvider } } {
+  const content = allocateEntity<HostShareContentProvider>();
   content.canShareContent = () => true;
   content.shareContent = async (payload: Readonly<ShareContent>) => {
     calls.push(`${label}:${payload.text ?? ''}`);
@@ -22,8 +25,8 @@ describe('explicit Share host isolation', () => {
     const first = createRecordingHost('first', calls);
     const second = createRecordingHost('second', calls);
 
-    expect(await shareText(first, 'alpha')).toBe(true);
-    expect(await shareText(second, 'beta')).toBe(true);
+    expect(await shareText(first.share.content, 'alpha')).toBe(true);
+    expect(await shareText(second.share.content, 'beta')).toBe(true);
     expect(calls).toEqual(['first:alpha', 'second:beta']);
   });
 });

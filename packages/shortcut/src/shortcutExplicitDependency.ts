@@ -8,18 +8,17 @@ import type {
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,
   GlobalShortcutQueryOutcome,
-  HasShortcutQuery,
-  HasShortcutTrigger,
+  HostShortcutQueryProvider,
+  HostShortcutTriggerProvider,
   NonEntityCreateResult,
   ParsedAccelerator,
-  ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
 } from '@flighthq/types/contract';
 
 import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut';
 
 interface GlobalShortcutAttachment {
-  readonly provider: ShortcutTriggerBackend;
+  readonly provider: HostShortcutTriggerProvider;
   readonly subscription: ShortcutTriggerSubscription;
 }
 
@@ -43,14 +42,14 @@ const _attachedByAccelerator = new Map<Accelerator, GlobalShortcut>();
 const _pendingAccelerators = new Set<Accelerator>();
 
 export async function attachGlobalShortcut(
-  host: HasShortcutTrigger,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutAttachOutcome> {
   if (_attachments.has(shortcut)) return ALREADY_ATTACHED;
   if (_attachedByAccelerator.has(shortcut.accelerator)) return ALREADY_REGISTERED;
   if (_pendingAccelerators.has(shortcut.accelerator)) return REGISTRATION_IN_PROGRESS;
 
-  const provider = host.shortcut.trigger;
+  const provider = hostShortcutTrigger;
   _pendingAccelerators.add(shortcut.accelerator);
   try {
     const outcome = await provider.subscribe(shortcut.accelerator, () => emitSignal(shortcut.onTrigger));
@@ -95,19 +94,19 @@ export function createGlobalShortcut(
   };
 }
 
-export function destroyShortcutTrigger(host: HasShortcutTrigger): Promise<void> {
-  return host.shortcut.trigger.destroy();
+export function destroyShortcutTrigger(hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>): Promise<void> {
+  return hostShortcutTrigger.destroy();
 }
 
 // The Host argument keeps the exact dependency visible, while the stored origin prevents a replacement
 // Host from redirecting a release. Failed releases remain attached and can be retried exactly.
 export async function detachGlobalShortcut(
-  host: HasShortcutTrigger,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutDetachOutcome> {
   const attachment = _attachments.get(shortcut);
   if (attachment === undefined) return NOT_ATTACHED;
-  const selected = host.shortcut.trigger;
+  const selected = hostShortcutTrigger;
   const provider = selected === attachment.provider ? selected : attachment.provider;
   try {
     const outcome = await provider.unsubscribe(attachment.subscription);
@@ -125,11 +124,11 @@ export async function detachGlobalShortcut(
 // Disposal always clears consumer listeners, including when native teardown fails. A failed native
 // release remains attached so detachGlobalShortcut can retry it later.
 export async function disposeGlobalShortcut(
-  host: HasShortcutTrigger,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutDetachOutcome> {
   try {
-    return await detachGlobalShortcut(host, shortcut);
+    return await detachGlobalShortcut(hostShortcutTrigger, shortcut);
   } finally {
     clearSignal(shortcut.onTrigger);
   }
@@ -141,21 +140,21 @@ export function initializeGlobalShortcut(out: EntityConstruction<GlobalShortcut>
 }
 
 export async function queryGlobalShortcutConflict(
-  host: HasShortcutQuery,
+  hostShortcutQuery: Readonly<HostShortcutQueryProvider>,
   accelerator: string,
 ): Promise<GlobalShortcutQueryOutcome> {
-  return queryGlobalShortcutRegistration(host, accelerator);
+  return queryGlobalShortcutRegistration(hostShortcutQuery, accelerator);
 }
 
 export async function queryGlobalShortcutRegistration(
-  host: HasShortcutQuery,
+  hostShortcutQuery: Readonly<HostShortcutQueryProvider>,
   accelerator: string,
 ): Promise<GlobalShortcutQueryOutcome> {
   const parsed = makeParsedAccelerator();
   const outcome = parseAcceleratorDetailed(accelerator, parsed);
   if ('reason' in outcome) return { parseError: outcome, reason: 'unparseable' };
   try {
-    return (await host.shortcut.query.isRegistered(formatParsedAccelerator(outcome))) ? REGISTERED : NOT_REGISTERED;
+    return (await hostShortcutQuery.isRegistered(formatParsedAccelerator(outcome))) ? REGISTERED : NOT_REGISTERED;
   } catch {
     return QUERY_PROVIDER_FAILED;
   }

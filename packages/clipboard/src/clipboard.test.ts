@@ -1,16 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
-  ClipboardBookmarkBackend,
-  ClipboardChangeBackend,
-  ClipboardFormatsBackend,
-  ClipboardImageBackend,
-  ClipboardTextBackend,
-  HasClipboardBookmark,
-  HasClipboardChange,
-  HasClipboardFormats,
-  HasClipboardImage,
-  HasClipboardText,
+  HostClipboardBookmarkProvider,
+  HostClipboardChangeProvider,
+  HostClipboardFormatsProvider,
+  HostClipboardImageProvider,
+  HostClipboardTextProvider,
 } from '@flighthq/types/contract';
 import {
   ClipboardFormatBookmark,
@@ -66,36 +61,41 @@ describe('clipboard', () => {
     expect(EntityRuntimeKey in backend).toBe(true);
 
     expect(
-      await writeClipboard(host, [
+      await writeClipboard(host.clipboard.formats, [
         { format: ClipboardFormatText, data: 'multi-text' },
         { format: ClipboardFormatHtml, data: '<b>multi</b>' },
       ]),
     ).toBe(true);
-    expect(await writeClipboardText(host, 'plain')).toBe(true);
-    expect(await writeClipboardHtml(host, '<b>html</b>')).toBe(true);
-    expect(await writeClipboardImage(host, 'data:image/png;base64,AAAA')).toBe(true);
-    expect(await writeClipboardRTF(host, '{\\rtf1 rich}')).toBe(true);
-    expect(await writeClipboardBookmark(host, 'Flight', 'https://example.com')).toBe(true);
-    expect(await writeClipboardFormat(host, 'application/x-flight', 'custom')).toBe(true);
+    expect(await writeClipboardText(host.clipboard.text, 'plain')).toBe(true);
+    expect(await writeClipboardHtml(host.clipboard.formats, '<b>html</b>')).toBe(true);
+    expect(await writeClipboardImage(host.clipboard.image, 'data:image/png;base64,AAAA')).toBe(true);
+    expect(await writeClipboardRTF(host.clipboard.formats, '{\\rtf1 rich}')).toBe(true);
+    expect(await writeClipboardBookmark(host.clipboard.bookmark, 'Flight', 'https://example.com')).toBe(true);
+    expect(await writeClipboardFormat(host.clipboard.formats, 'application/x-flight', 'custom')).toBe(true);
 
-    expect(await readClipboardText(host)).toBe('plain');
-    expect(await readClipboardHtml(host)).toBe('<b>html</b>');
-    expect(await readClipboardImage(host)).toBe('data:image/png;base64,AAAA');
-    expect(await readClipboardRTF(host)).toBe('{\\rtf1 rich}');
-    expect(await readClipboardBookmark(host)).toEqual({ title: 'Flight', url: 'https://example.com' });
-    expect(await readClipboardFormat(host, 'application/x-flight')).toBe('custom');
-    expect(await readClipboard(host, [ClipboardFormatText, 'application/x-flight', 'missing'])).toEqual({
+    expect(await readClipboardText(host.clipboard.text)).toBe('plain');
+    expect(await readClipboardHtml(host.clipboard.formats)).toBe('<b>html</b>');
+    expect(await readClipboardImage(host.clipboard.image)).toBe('data:image/png;base64,AAAA');
+    expect(await readClipboardRTF(host.clipboard.formats)).toBe('{\\rtf1 rich}');
+    expect(await readClipboardBookmark(host.clipboard.bookmark)).toEqual({
+      title: 'Flight',
+      url: 'https://example.com',
+    });
+    expect(await readClipboardFormat(host.clipboard.formats, 'application/x-flight')).toBe('custom');
+    expect(
+      await readClipboard(host.clipboard.formats, [ClipboardFormatText, 'application/x-flight', 'missing']),
+    ).toEqual({
       [ClipboardFormatText]: 'plain',
       'application/x-flight': 'custom',
     });
 
-    expect(await hasClipboardText(host)).toBe(true);
-    expect(await hasClipboardHtml(host)).toBe(true);
-    expect(await hasClipboardImage(host)).toBe(true);
-    expect(await hasClipboardRTF(host)).toBe(true);
-    expect(await hasClipboardBookmark(host)).toBe(true);
-    expect(await hasClipboardFormat(host, 'application/x-flight')).toBe(true);
-    expect(await getClipboardFormats(host)).toEqual(
+    expect(await hasClipboardText(host.clipboard.text)).toBe(true);
+    expect(await hasClipboardHtml(host.clipboard.formats)).toBe(true);
+    expect(await hasClipboardImage(host.clipboard.image)).toBe(true);
+    expect(await hasClipboardRTF(host.clipboard.formats)).toBe(true);
+    expect(await hasClipboardBookmark(host.clipboard.bookmark)).toBe(true);
+    expect(await hasClipboardFormat(host.clipboard.formats, 'application/x-flight')).toBe(true);
+    expect(await getClipboardFormats(host.clipboard.formats)).toEqual(
       expect.arrayContaining([
         ClipboardFormatText,
         ClipboardFormatHtml,
@@ -106,20 +106,20 @@ describe('clipboard', () => {
       ]),
     );
 
-    expect(await clearClipboard(host)).toBe(true);
-    expect(await readClipboardText(host)).toBe('');
-    expect(await getClipboardFormats(host)).toEqual([]);
+    expect(await clearClipboard(host.clipboard.text)).toBe(true);
+    expect(await readClipboardText(host.clipboard.text)).toBe('');
+    expect(await getClipboardFormats(host.clipboard.formats)).toEqual([]);
   });
 
   it('never consults another host when two clipboard providers coexist', async () => {
     const first = hostFor(fakeBackend());
     const second = hostFor(fakeBackend());
 
-    await writeClipboardText(first, 'first');
-    await writeClipboardText(second, 'second');
+    await writeClipboardText(first.clipboard.text, 'first');
+    await writeClipboardText(second.clipboard.text, 'second');
 
-    expect(await readClipboardText(first)).toBe('first');
-    expect(await readClipboardText(second)).toBe('second');
+    expect(await readClipboardText(first.clipboard.text)).toBe('first');
+    expect(await readClipboardText(second.clipboard.text)).toBe('second');
   });
 });
 
@@ -133,12 +133,12 @@ describe('ClipboardWatch', () => {
       changes++;
     };
 
-    attachClipboardWatch(hostFor(firstBackend), watch);
+    attachClipboardWatch(hostFor(firstBackend).clipboard.change, watch);
     expect(firstBackend.listeners.size).toBe(1);
     firstBackend.listeners.forEach((listener) => listener());
     expect(changes).toBe(1);
 
-    attachClipboardWatch(hostFor(secondBackend), watch);
+    attachClipboardWatch(hostFor(secondBackend).clipboard.change, watch);
     expect(firstBackend.listeners.size).toBe(0);
     expect(secondBackend.listeners.size).toBe(1);
     firstBackend.listeners.forEach((listener) => listener());
@@ -155,8 +155,8 @@ describe('ClipboardWatch', () => {
     const host = hostFor(backend);
     const watch = createClipboardWatch();
 
-    attachClipboardWatch(host, watch);
-    attachClipboardWatch(host, watch);
+    attachClipboardWatch(host.clipboard.change, watch);
+    attachClipboardWatch(host.clipboard.change, watch);
     expect(backend.listeners.size).toBe(1);
 
     disposeClipboardWatch(watch);
@@ -256,11 +256,11 @@ describe('writeClipboardHtml', () => {
 
 interface FakeClipboardBackend
   extends
-    ClipboardBookmarkBackend,
-    Required<Pick<ClipboardChangeBackend, 'subscribe' | 'unsubscribe'>>,
-    ClipboardFormatsBackend,
-    ClipboardImageBackend,
-    ClipboardTextBackend {
+    HostClipboardBookmarkProvider,
+    Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>,
+    HostClipboardFormatsProvider,
+    HostClipboardImageProvider,
+    HostClipboardTextProvider {
   bookmark: ClipboardBookmark | null;
   formats: Record<string, string>;
   html: string;
@@ -270,11 +270,13 @@ interface FakeClipboardBackend
   text: string;
 }
 
-type FakeClipboardHost = HasClipboardBookmark &
-  HasClipboardChange &
-  HasClipboardFormats &
-  HasClipboardImage &
-  HasClipboardText;
+type FakeClipboardHost = { readonly clipboard: { readonly bookmark: HostClipboardBookmarkProvider } } & {
+  readonly clipboard: {
+    readonly change: Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>;
+  };
+} & { readonly clipboard: { readonly formats: HostClipboardFormatsProvider } } & {
+  readonly clipboard: { readonly image: HostClipboardImageProvider };
+} & { readonly clipboard: { readonly text: HostClipboardTextProvider } };
 
 function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
   return {

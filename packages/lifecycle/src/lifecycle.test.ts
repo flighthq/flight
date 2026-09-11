@@ -1,12 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
-  HasSystemLifecycle,
+  HostLifecycleProvider,
   AppLaunchKind,
   AppLifecycleState,
   AppMemoryPressure,
   Entity,
-  LifecycleBackend,
   LifecycleOperation,
 } from '@flighthq/types/contract';
 
@@ -28,14 +27,14 @@ import {
   requestAppBack,
 } from './lifecycle';
 
-type FakeBackend = LifecycleBackend & {
+type FakeBackend = HostLifecycleProvider & {
   state: AppLifecycleState;
   fire: () => void;
   fireMemory: (level: AppMemoryPressure) => void;
 };
 
-function hostOf(backend: LifecycleBackend): HasSystemLifecycle {
-  return { system: { lifecycle: backend } } as HasSystemLifecycle;
+function hostOf(backend: HostLifecycleProvider): { readonly system: { readonly lifecycle: HostLifecycleProvider } } {
+  return { system: { lifecycle: backend } } as { readonly system: { readonly lifecycle: HostLifecycleProvider } };
 }
 
 function fakeBackend(): FakeBackend {
@@ -76,7 +75,7 @@ describe('attachAppLifecycle', () => {
     let pauses = 0;
     connectSignal(app.onStateChange, () => changes++);
     connectSignal(app.onPause, () => pauses++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'background';
     backend.fire();
     expect(changes).toBe(1);
@@ -89,7 +88,7 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     let pauses = 0;
     connectSignal(app.onPause, () => pauses++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'inactive';
     backend.fire();
     expect(pauses).toBe(1);
@@ -102,7 +101,7 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     let pauses = 0;
     connectSignal(app.onPause, () => pauses++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'background';
     backend.fire();
     // inactive → background should not re-fire onPause (already paused)
@@ -116,7 +115,7 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     let resumes = 0;
     connectSignal(app.onResume, () => resumes++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'active';
     backend.fire();
     expect(resumes).toBe(1);
@@ -129,7 +128,7 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     let resumes = 0;
     connectSignal(app.onResume, () => resumes++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'active';
     backend.fire();
     expect(resumes).toBe(1);
@@ -141,8 +140,8 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     let changes = 0;
     connectSignal(app.onStateChange, () => changes++);
-    attachAppLifecycle(host, app);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'background';
     backend.fire();
     // Only one subscription should be active.
@@ -158,7 +157,7 @@ describe('attachAppLifecycle', () => {
       bag['key'] = 'value';
       saved = true;
     });
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.state = 'background';
     backend.fire();
     expect(saved).toBe(true);
@@ -175,7 +174,7 @@ describe('attachAppLifecycle', () => {
     connectSignal(app.onRestoreState, (state) => {
       restored = state;
     });
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     // Transition away to trigger save.
     backend.state = 'background';
     backend.fire();
@@ -192,7 +191,7 @@ describe('attachAppLifecycle', () => {
     const app = createAppLifecycle();
     const levels: AppMemoryPressure[] = [];
     connectSignal(app.onMemoryWarning, (level) => levels.push(level));
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     backend.fireMemory('critical');
     expect(levels).toEqual(['critical']);
   });
@@ -210,7 +209,7 @@ describe('attachAppLifecycle', () => {
       const app = createAppLifecycle();
       let changes = 0;
       connectSignal(app.onStateChange, () => changes++);
-      attachAppLifecycle(host, app);
+      attachAppLifecycle(host.system.lifecycle, app);
       const fireCount = 1 + Math.floor(Math.random() * 30);
       for (let i = 0; i < fireCount; i++) {
         backend.state = states[Math.floor(Math.random() * states.length)];
@@ -234,7 +233,7 @@ describe('attachAppLifecycle', () => {
       let resumes = 0;
       connectSignal(app.onPause, () => pauses++);
       connectSignal(app.onResume, () => resumes++);
-      attachAppLifecycle(host, app);
+      attachAppLifecycle(host.system.lifecycle, app);
 
       // Drive a random storm while computing the expected edge counts from an independent model:
       // a pause edge is every 'active' → non-'active' transition, a resume edge every
@@ -272,7 +271,7 @@ describe('attachAppLifecycle', () => {
       connectSignal(app.onStateChange, () => changes++);
       connectSignal(app.onPause, () => pauses++);
       connectSignal(app.onResume, () => resumes++);
-      attachAppLifecycle(host, app);
+      attachAppLifecycle(host.system.lifecycle, app);
       const fireCount = 1 + Math.floor(Math.random() * 30);
       for (let i = 0; i < fireCount; i++) backend.fire();
       expect(changes).toBe(fireCount);
@@ -297,7 +296,7 @@ describe('attachAppLifecycle', () => {
       let resumes = 0;
       connectSignal(app.onPause, () => pauses++);
       connectSignal(app.onResume, () => resumes++);
-      attachAppLifecycle(host, app);
+      attachAppLifecycle(host.system.lifecycle, app);
       const fireCount = 1 + Math.floor(Math.random() * 30);
       for (let i = 0; i < fireCount; i++) {
         backend.state = states[Math.floor(Math.random() * states.length)];
@@ -411,7 +410,7 @@ describe('detachAppLifecycle', () => {
     const app = createAppLifecycle();
     let changes = 0;
     connectSignal(app.onStateChange, () => changes++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     detachAppLifecycle(app);
     backend.fire();
     expect(changes).toBe(0);
@@ -428,7 +427,7 @@ describe('disposeAppLifecycle', () => {
     const backend = fakeBackend();
     const host = hostOf(backend);
     const app = createAppLifecycle();
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     expect(() => disposeAppLifecycle(app)).not.toThrow();
   });
 
@@ -438,7 +437,7 @@ describe('disposeAppLifecycle', () => {
     const app = createAppLifecycle();
     let changes = 0;
     connectSignal(app.onStateChange, () => changes++);
-    attachAppLifecycle(host, app);
+    attachAppLifecycle(host.system.lifecycle, app);
     disposeAppLifecycle(app);
     backend.fire();
     expect(changes).toBe(0);
@@ -451,7 +450,7 @@ describe('explainLifecycleOperation', () => {
   // about a process-wide fallback that answered everything.
   it('reports the host provider as implementing what it provides', () => {
     const host = hostOf(fakeBackend());
-    expect(explainLifecycleOperation(host, 'getState')).toEqual({
+    expect(explainLifecycleOperation(host.system.lifecycle, 'getState')).toEqual({
       implemented: true,
       layer: 'host',
       operation: 'getState',
@@ -461,13 +460,13 @@ describe('explainLifecycleOperation', () => {
   it('reports an operation the host provider omits as unimplemented', () => {
     const host = hostOf(
       (() => {
-        const out = allocateEntity<LifecycleBackend>();
+        const out = allocateEntity<HostLifecycleProvider>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
       })(),
     );
-    expect(explainLifecycleOperation(host, 'getLaunchKind')).toEqual({
+    expect(explainLifecycleOperation(host.system.lifecycle, 'getLaunchKind')).toEqual({
       implemented: false,
       layer: 'sentinel',
       operation: 'getLaunchKind',
@@ -480,14 +479,14 @@ describe('explainLifecycleOperation', () => {
     const rich = hostOf(fakeBackend());
     const bare = hostOf(
       (() => {
-        const out = allocateEntity<LifecycleBackend>();
+        const out = allocateEntity<HostLifecycleProvider>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
       })(),
     );
-    expect(explainLifecycleOperation(rich, 'subscribeMemoryWarning').implemented).toBe(true);
-    expect(explainLifecycleOperation(bare, 'subscribeMemoryWarning').implemented).toBe(false);
+    expect(explainLifecycleOperation(rich.system.lifecycle, 'subscribeMemoryWarning').implemented).toBe(true);
+    expect(explainLifecycleOperation(bare.system.lifecycle, 'subscribeMemoryWarning').implemented).toBe(false);
   });
 });
 
@@ -495,17 +494,17 @@ describe('getAppLaunchKind', () => {
   it("returns 'warm' when backend does not implement getLaunchKind", () => {
     const backend = fakeBackend();
     const host = hostOf(backend);
-    expect(getAppLaunchKind(host)).toBe('warm');
+    expect(getAppLaunchKind(host.system.lifecycle)).toBe('warm');
   });
 
   it('delegates to backend.getLaunchKind when present', () => {
-    const out = allocateEntity<LifecycleBackend>();
+    const out = allocateEntity<HostLifecycleProvider>();
     out.getState = () => 'active' as AppLifecycleState;
     out.subscribe = () => () => {};
     out.getLaunchKind = () => 'cold' as AppLaunchKind;
     const backend = finishEntity(out);
     const host = hostOf(backend);
-    expect(getAppLaunchKind(host)).toBe('cold');
+    expect(getAppLaunchKind(host.system.lifecycle)).toBe('cold');
   });
 });
 
@@ -514,26 +513,28 @@ describe('getAppLifecycleState', () => {
     const backend = fakeBackend();
     backend.state = 'inactive';
     const host = hostOf(backend);
-    expect(getAppLifecycleState(host)).toBe('inactive');
+    expect(getAppLifecycleState(host.system.lifecycle)).toBe('inactive');
   });
 });
 
 describe('hasLifecycleOperation', () => {
   it('agrees with explainLifecycleOperation for the same host', () => {
     const host = hostOf(fakeBackend());
-    expect(hasLifecycleOperation(host, 'getState')).toBe(explainLifecycleOperation(host, 'getState').implemented);
+    expect(hasLifecycleOperation(host.system.lifecycle, 'getState')).toBe(
+      explainLifecycleOperation(host.system.lifecycle, 'getState').implemented,
+    );
   });
 
   it('is false for an operation the host provider omits', () => {
     const host = hostOf(
       (() => {
-        const out = allocateEntity<LifecycleBackend>();
+        const out = allocateEntity<HostLifecycleProvider>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
       })(),
     );
-    expect(hasLifecycleOperation(host, 'getLaunchKind')).toBe(false);
+    expect(hasLifecycleOperation(host.system.lifecycle, 'getLaunchKind')).toBe(false);
   });
 });
 
@@ -555,8 +556,8 @@ describe('initializeWebLifecycleBackend', () => {
 const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'subscribeMemoryWarning'];
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): LifecycleBackend {
-  const out = allocateEntity<LifecycleBackend>();
+function partialBackend(): HostLifecycleProvider {
+  const out = allocateEntity<HostLifecycleProvider>();
   out.getState = (() => undefined) as never;
   out.subscribe = (() => undefined) as never;
   return finishEntity(out);
@@ -567,21 +568,21 @@ describe('isAppActive', () => {
     const backend = fakeBackend();
     backend.state = 'active';
     const host = hostOf(backend);
-    expect(isAppActive(host)).toBe(true);
+    expect(isAppActive(host.system.lifecycle)).toBe(true);
   });
 
   it("returns false when state is 'background'", () => {
     const backend = fakeBackend();
     backend.state = 'background';
     const host = hostOf(backend);
-    expect(isAppActive(host)).toBe(false);
+    expect(isAppActive(host.system.lifecycle)).toBe(false);
   });
 
   it("returns false when state is 'inactive'", () => {
     const backend = fakeBackend();
     backend.state = 'inactive';
     const host = hostOf(backend);
-    expect(isAppActive(host)).toBe(false);
+    expect(isAppActive(host.system.lifecycle)).toBe(false);
   });
 });
 
@@ -590,14 +591,14 @@ describe('isAppBackground', () => {
     const backend = fakeBackend();
     backend.state = 'background';
     const host = hostOf(backend);
-    expect(isAppBackground(host)).toBe(true);
+    expect(isAppBackground(host.system.lifecycle)).toBe(true);
   });
 
   it("returns false when state is 'active'", () => {
     const backend = fakeBackend();
     backend.state = 'active';
     const host = hostOf(backend);
-    expect(isAppBackground(host)).toBe(false);
+    expect(isAppBackground(host.system.lifecycle)).toBe(false);
   });
 });
 describe('isAppInactive', () => {
@@ -605,14 +606,14 @@ describe('isAppInactive', () => {
     const backend = fakeBackend();
     backend.state = 'inactive';
     const host = hostOf(backend);
-    expect(isAppInactive(host)).toBe(true);
+    expect(isAppInactive(host.system.lifecycle)).toBe(true);
   });
 
   it("returns false when state is 'active'", () => {
     const backend = fakeBackend();
     backend.state = 'active';
     const host = hostOf(backend);
-    expect(isAppInactive(host)).toBe(false);
+    expect(isAppInactive(host.system.lifecycle)).toBe(false);
   });
 });
 

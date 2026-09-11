@@ -3,9 +3,9 @@ import type {
   ElectronApi,
   ElectronMenuCapabilities,
   EntityConstruction,
-  MenuApplicationBackend,
-  MenuPopupBackend,
-  MenuSelectBackend,
+  HostMenuApplicationProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
@@ -23,17 +23,17 @@ import { toElectronTemplate } from './electronMenuTemplate';
 export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuCapabilities {
   const menuState = { selectListener: null as ((id: string) => void) | null, destroyed: false };
   const application = (() => {
-    const b = allocateEntity<MenuApplicationBackend>();
+    const b = allocateEntity<HostMenuApplicationProvider>();
     initializeMenuApplicationBackend(b, electron, menuState);
     return finishEntity(b);
   })();
   const popup = (() => {
-    const b = allocateEntity<MenuPopupBackend>();
+    const b = allocateEntity<HostMenuPopupProvider>();
     initializeMenuPopupBackend(b, electron);
     return finishEntity(b);
   })();
   const select = (() => {
-    const b = allocateEntity<MenuSelectBackend>();
+    const b = allocateEntity<HostMenuSelectProvider>();
     initializeMenuSelectBackend(b, menuState);
     return finishEntity(b);
   })();
@@ -44,9 +44,9 @@ export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuC
 
 export function initializeElectronMenuCapabilities(
   out: EntityConstruction<ElectronMenuCapabilities>,
-  application: MenuApplicationBackend,
-  popup: MenuPopupBackend,
-  select: MenuSelectBackend,
+  application: HostMenuApplicationProvider,
+  popup: HostMenuPopupProvider,
+  select: HostMenuSelectProvider,
 ): void {
   out.application = application;
   out.popup = popup;
@@ -54,7 +54,7 @@ export function initializeElectronMenuCapabilities(
 }
 
 export function initializeMenuApplicationBackend(
-  out: EntityConstruction<MenuApplicationBackend>,
+  out: EntityConstruction<HostMenuApplicationProvider>,
   electron: ElectronApi,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
@@ -73,7 +73,10 @@ export function initializeMenuApplicationBackend(
   };
 }
 
-export function initializeMenuPopupBackend(out: EntityConstruction<MenuPopupBackend>, electron: ElectronApi): void {
+export function initializeMenuPopupBackend(
+  out: EntityConstruction<HostMenuPopupProvider>,
+  electron: ElectronApi,
+): void {
   // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
   // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
   // open". We resolve null only if popup throws.
@@ -90,7 +93,7 @@ export function initializeMenuPopupBackend(out: EntityConstruction<MenuPopupBack
 }
 
 export function initializeMenuSelectBackend(
-  out: EntityConstruction<MenuSelectBackend>,
+  out: EntityConstruction<HostMenuSelectProvider>,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
   out.subscribe = (listener): (() => void) => {

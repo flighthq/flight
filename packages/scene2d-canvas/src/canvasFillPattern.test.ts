@@ -1,6 +1,6 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HasGraphicsImage } from '@flighthq/types/contract';
+import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -32,11 +32,11 @@ function makeTexture(w = 64, h = 64, repeatX = false, repeatY = false, smooth = 
   });
 }
 
-const host: HasGraphicsImage = {
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as HasGraphicsImage;
+} as { readonly graphics: { readonly image: HostImageProvider } };
 const resolvers = createCanvasTextureResolvers();
-registerCanvasBitmapTextureResolver(host, resolvers);
+registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 registerCanvasImageTextureResolver(resolvers);
 
 describe('createBitmapPattern', () => {

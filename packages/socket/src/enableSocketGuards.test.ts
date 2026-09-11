@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { HasNetSocket, LogEntry, SocketBackend } from '@flighthq/types/contract';
+import type { HostSocketProvider, LogEntry } from '@flighthq/types/contract';
 
 import { areSocketGuardsEnabled, disableSocketGuards, enableSocketGuards } from './enableSocketGuards';
 import { closeSocket, createSocket, disposeSocket, enableSocketSignals, sendSocketMessage } from './socket';
@@ -15,7 +15,7 @@ function captureLog(run: () => void): readonly LogEntry[] {
   }
 }
 
-function backend(hasConnection: boolean): SocketBackend {
+function backend(hasConnection: boolean): HostSocketProvider {
   return {
     openSocket() {
       if (!hasConnection) return null;
@@ -28,8 +28,8 @@ afterEach(() => {
   disableSocketGuards();
 });
 
-function hostOf(backend: SocketBackend): HasNetSocket {
-  return { net: { socket: backend } } as HasNetSocket;
+function hostOf(backend: HostSocketProvider): { readonly net: { readonly socket: HostSocketProvider } } {
+  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketProvider } };
 }
 
 describe('areSocketGuardsEnabled', () => {
@@ -46,7 +46,7 @@ describe('disableSocketGuards', () => {
     enableSocketGuards();
     disableSocketGuards();
     const host = hostOf(backend(false));
-    expect(captureLog(() => createSocket(host, { url: 'tcp://silent' }))).toEqual([]);
+    expect(captureLog(() => createSocket(host.net.socket, { url: 'tcp://silent' }))).toEqual([]);
   });
 });
 
@@ -55,8 +55,8 @@ describe('enableSocketGuards', () => {
     enableSocketGuards();
     const host = hostOf(backend(false));
     const entries = captureLog(() => {
-      createSocket(host, { url: 'tcp://unsupported' });
-      createSocket(host, { url: 'tcp://unsupported-again' });
+      createSocket(host.net.socket, { url: 'tcp://unsupported' });
+      createSocket(host.net.socket, { url: 'tcp://unsupported-again' });
     });
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ channel: 'socket' });
@@ -71,7 +71,7 @@ describe('enableSocketGuards', () => {
   it('warns once per command issued after terminal disposal', () => {
     enableSocketGuards();
     const host = hostOf(backend(true));
-    const socket = createSocket(host, { url: 'ws://disposed' });
+    const socket = createSocket(host.net.socket, { url: 'ws://disposed' });
     disposeSocket(socket);
     const entries = captureLog(() => {
       closeSocket(socket);
@@ -94,7 +94,7 @@ describe('enableSocketGuards', () => {
   it('stays silent for ordinary pre-open sends and closes', () => {
     enableSocketGuards();
     const host = hostOf(backend(true));
-    const socket = createSocket(host, { url: 'ws://connecting' });
+    const socket = createSocket(host.net.socket, { url: 'ws://connecting' });
     const entries = captureLog(() => {
       sendSocketMessage(socket, 'early');
       closeSocket(socket);

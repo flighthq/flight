@@ -6,9 +6,9 @@ import type {
   ApplicationStepOptions,
   ApplicationWindow,
   EntityConstruction,
-  HasAppExitSubscription,
-  HasAppLoop,
-  HasAppVisibilityQuery,
+  HostApplicationExitProvider,
+  HostLoopProvider,
+  HostApplicationVisibilityProvider,
 } from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
@@ -22,11 +22,14 @@ const kPaused = Symbol();
 
 // -- Application entity --
 
-export function attachApplicationExit(host: HasAppExitSubscription, app: Application): void {
+export function attachApplicationExit(
+  hostApplicationExit: Readonly<HostApplicationExitProvider>,
+  app: Application,
+): void {
   const observers = getApplicationObservers(app);
   observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
-  const exit = host.app.exit;
+  const exit = hostApplicationExit;
   exit.subscribe(handler);
   observers.set(kExit, () => exit.unsubscribe(handler));
 }
@@ -184,7 +187,8 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
 }
 
 export function startApplicationLoop(
-  host: HasAppLoop & HasAppVisibilityQuery,
+  hostLoop: Readonly<HostLoopProvider>,
+  hostApplicationVisibility: Readonly<HostApplicationVisibilityProvider>,
   app: Application,
   options: Readonly<ApplicationLoopOptions> = {},
 ): void {
@@ -193,8 +197,8 @@ export function startApplicationLoop(
   observers.get(kLoop)?.();
   observers.delete(kPaused);
 
-  const backend = host.app.loop;
-  const visibility = host.app.visibility;
+  const backend = hostLoop;
+  const visibility = hostApplicationVisibility;
   const maxDeltaTime = options.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
   const targetFrameRate = options.targetFrameRate ?? 0;
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;

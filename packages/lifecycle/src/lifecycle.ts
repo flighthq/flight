@@ -3,11 +3,10 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendOperationExplanation, LifecycleOperation, EntityConstruction } from '@flighthq/types/contract';
 import type {
   AppLaunchKind,
-  HasSystemLifecycle,
+  HostLifecycleProvider,
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
-  LifecycleBackend,
 } from '@flighthq/types/contract';
 
 // Begins delivering lifecycle changes to `app`'s signals by subscribing to the active backend. On
@@ -20,9 +19,9 @@ import type {
 // whether the derived state changed. onResume/onPause are deduped edges: 'active'→non-'active'
 // fires onPause (including the interruption edge 'active'→'inactive'); non-'active'→'active' fires
 // onResume. The 'inactive'→'background' and reverse transitions do not fire onPause/onResume again.
-export function attachAppLifecycle(host: HasSystemLifecycle, app: AppLifecycle): void {
+export function attachAppLifecycle(hostLifecycle: Readonly<HostLifecycleProvider>, app: AppLifecycle): void {
   detachAppLifecycle(app);
-  const backend = host.system.lifecycle;
+  const backend = hostLifecycle;
   let previous = backend.getState();
 
   const unsubscribeState = backend.subscribe(() => {
@@ -65,8 +64,8 @@ export function createAppLifecycle(): AppLifecycle {
   return finishEntity(out);
 }
 
-export function createWebLifecycleBackend(): LifecycleBackend {
-  const out = allocateEntity<LifecycleBackend>();
+export function createWebLifecycleBackend(): HostLifecycleProvider {
+  const out = allocateEntity<HostLifecycleProvider>();
   initializeWebLifecycleBackend(out);
   return finishEntity(out);
 }
@@ -94,10 +93,10 @@ export function disposeAppLifecycle(app: AppLifecycle): void {
 // ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
 // this report `true` for everything and say nothing at all.
 export function explainLifecycleOperation(
-  host: HasSystemLifecycle,
+  hostLifecycle: Readonly<HostLifecycleProvider>,
   operation: LifecycleOperation,
 ): BackendOperationExplanation {
-  const implemented = typeof host.system.lifecycle[operation] === 'function';
+  const implemented = typeof hostLifecycle[operation] === 'function';
   return { implemented, layer: implemented ? 'host' : 'sentinel', operation };
 }
 
@@ -105,19 +104,22 @@ export function explainLifecycleOperation(
 // backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
 // others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
 // getLaunchKind (legacy or minimal backends that pre-date the optional method).
-export function getAppLaunchKind(host: HasSystemLifecycle): AppLaunchKind {
-  const backend = host.system.lifecycle;
+export function getAppLaunchKind(hostLifecycle: Readonly<HostLifecycleProvider>): AppLaunchKind {
+  const backend = hostLifecycle;
   return backend.getLaunchKind !== undefined ? backend.getLaunchKind() : 'warm';
 }
 
 // Returns the current application lifecycle state from the active backend.
-export function getAppLifecycleState(host: HasSystemLifecycle): AppLifecycleState {
-  return host.system.lifecycle.getState();
+export function getAppLifecycleState(hostLifecycle: Readonly<HostLifecycleProvider>): AppLifecycleState {
+  return hostLifecycle.getState();
 }
 
 // Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
-export function hasLifecycleOperation(host: HasSystemLifecycle, operation: LifecycleOperation): boolean {
-  return explainLifecycleOperation(host, operation).implemented;
+export function hasLifecycleOperation(
+  hostLifecycle: Readonly<HostLifecycleProvider>,
+  operation: LifecycleOperation,
+): boolean {
+  return explainLifecycleOperation(hostLifecycle, operation).implemented;
 }
 
 // Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
@@ -148,7 +150,7 @@ export function initializeAppLifecycle(out: EntityConstruction<AppLifecycle>): v
 // trial / behind flags). The event detail carries a 'critical' pressure string; this backend maps
 // it to 'critical' and fires 'normal' on the subsequent resolution event when present. Falls back to
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
-export function initializeWebLifecycleBackend(out: EntityConstruction<LifecycleBackend>): void {
+export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecycleProvider>): void {
   let _windowFocused = typeof document !== 'undefined';
   out.getState = (): AppLifecycleState => {
     if (typeof document === 'undefined') return 'active';
@@ -225,19 +227,19 @@ export function initializeWebLifecycleBackend(out: EntityConstruction<LifecycleB
 }
 
 // Returns true when the application is in the 'active' state (visible and focused).
-export function isAppActive(host: HasSystemLifecycle): boolean {
-  return host.system.lifecycle.getState() === 'active';
+export function isAppActive(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+  return hostLifecycle.getState() === 'active';
 }
 
 // Returns true when the application is in the 'background' state (hidden/suspended).
-export function isAppBackground(host: HasSystemLifecycle): boolean {
-  return host.system.lifecycle.getState() === 'background';
+export function isAppBackground(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+  return hostLifecycle.getState() === 'background';
 }
 
 // Returns true when the application is in the 'inactive' state (visible but not focused —
 // e.g. app switcher, control-center overlay, incoming call).
-export function isAppInactive(host: HasSystemLifecycle): boolean {
-  return host.system.lifecycle.getState() === 'inactive';
+export function isAppInactive(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+  return hostLifecycle.getState() === 'inactive';
 }
 
 // Emits app.onBackButton and returns whether the back action may proceed. Returns false when a

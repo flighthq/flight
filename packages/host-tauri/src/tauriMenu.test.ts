@@ -1,4 +1,8 @@
-import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from '@flighthq/types/contract';
+import type {
+  HostMenuApplicationProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
+} from '@flighthq/types/contract';
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -193,9 +197,9 @@ async function flush(): Promise<void> {
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: TauriApi): {
   destroy?: () => void;
-  popupContextMenu: MenuPopupBackend['popup'];
-  setApplicationMenu: MenuApplicationBackend['setApplicationMenu'];
-  subscribeSelect: MenuSelectBackend['subscribe'];
+  popupContextMenu: HostMenuPopupProvider['popup'];
+  setApplicationMenu: HostMenuApplicationProvider['setApplicationMenu'];
+  subscribeSelect: HostMenuSelectProvider['subscribe'];
 } {
   const { application, popup, select } = createTauriMenuBackends(api);
   return {

@@ -1,4 +1,4 @@
-import type { VideoCapabilityBackend } from '@flighthq/types/contract';
+import type { HostVideoProvider } from '@flighthq/types/contract';
 
 import {
   createVideoResourceFromMediaStream,
@@ -9,7 +9,7 @@ import {
 
 let created: HTMLVideoElement[];
 
-function trackingBackend(canPlay = false): VideoCapabilityBackend {
+function trackingBackend(canPlay = false): HostVideoProvider {
   return {
     canPlayType: () => canPlay,
     createVideoElement() {
@@ -20,7 +20,7 @@ function trackingBackend(canPlay = false): VideoCapabilityBackend {
   };
 }
 
-const noElementBackend: VideoCapabilityBackend = { canPlayType: () => false };
+const noElementBackend: HostVideoProvider = { canPlayType: () => false };
 
 beforeEach(() => {
   created = [];

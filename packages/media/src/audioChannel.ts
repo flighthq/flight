@@ -3,7 +3,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AudioBufferHandle,
   AudioChannel,
-  AudioDeviceBackend,
+  HostAudioDeviceProvider,
   AudioDeviceHandle,
   AudioPlayOptions,
   AudioResource,
@@ -82,11 +82,11 @@ export function getAudioChannelOutputNode(channel: AudioChannel): AudioNode | nu
   return getAudioSourceGainNode(runtime.backend, runtime.sourceHandle);
 }
 
-export function hasAudioChannelFade(backend: Readonly<AudioDeviceBackend>): boolean {
+export function hasAudioChannelFade(backend: Readonly<HostAudioDeviceProvider>): boolean {
   return 'getSourceGainNode' in backend;
 }
 
-export function hasAudioChannelNodeAccess(backend: Readonly<AudioDeviceBackend>): boolean {
+export function hasAudioChannelNodeAccess(backend: Readonly<HostAudioDeviceProvider>): boolean {
   return 'getSourceGainNode' in backend;
 }
 
@@ -107,7 +107,7 @@ export function pauseAudioChannel(channel: AudioChannel): void {
 }
 
 export function playAudioResource(
-  backend: Readonly<AudioDeviceBackend>,
+  backend: Readonly<HostAudioDeviceProvider>,
   device: AudioDeviceHandle,
   source: AudioResource,
   options?: Readonly<AudioPlayOptions>,
@@ -220,7 +220,7 @@ export function stopAudioChannel(channel: AudioChannel): void {
 }
 
 interface AudioChannelRuntime {
-  backend: Readonly<AudioDeviceBackend>;
+  backend: Readonly<HostAudioDeviceProvider>;
   bufferHandle: AudioBufferHandle;
   destinationNode: AudioNode | null;
   device: AudioDeviceHandle;

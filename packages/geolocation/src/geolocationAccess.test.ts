@@ -1,15 +1,15 @@
-import type { GeolocationAccessOutcome, GeolocationBackend } from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationProvider } from '@flighthq/types/contract';
 
 import { promptForGeolocationAccess } from './geolocationAccess';
 
 // A backend whose promptForAccess answer the test dictates. Only that member is exercised, so the
 // rest of GeolocationBackend stays absent on purpose — a probe needing a whole backend would be
 // testing the fake.
-function backendAnswering(outcome: GeolocationAccessOutcome): GeolocationBackend {
-  return { promptForAccess: () => Promise.resolve(outcome) } as unknown as GeolocationBackend;
+function backendAnswering(outcome: GeolocationAccessOutcome): HostGeolocationProvider {
+  return { promptForAccess: () => Promise.resolve(outcome) } as unknown as HostGeolocationProvider;
 }
 
-function hostWith(backend: GeolocationBackend | undefined): Parameters<typeof promptForGeolocationAccess>[0] {
+function hostWith(backend: HostGeolocationProvider | undefined): Parameters<typeof promptForGeolocationAccess>[0] {
   return { system: backend === undefined ? {} : { geolocation: backend } } as unknown as Parameters<
     typeof promptForGeolocationAccess
   >[0];
@@ -41,7 +41,7 @@ describe('promptForGeolocationAccess', () => {
   it('reports operation-failed when the provider throws', async () => {
     const throwing = {
       promptForAccess: () => Promise.reject(new Error('boom')),
-    } as unknown as GeolocationBackend;
+    } as unknown as HostGeolocationProvider;
     expect(await promptForGeolocationAccess(hostWith(throwing))).toEqual({ reason: 'operation-failed' });
   });
 

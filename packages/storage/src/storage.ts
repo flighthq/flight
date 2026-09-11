@@ -2,9 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasStorageChange,
-  HasStorageLocal,
-  StorageBackend,
+  HostStorageChangeProvider,
+  HostStorageProvider,
   StorageBooleanOrResult,
   StorageBooleanResult,
   StorageByteSizeResult,
@@ -35,16 +34,22 @@ import type {
 // Starts raw provider change delivery into the caller-owned signal entity. Re-attaching first consumes
 // the exact unsubscribe returned by the prior provider, so a different Host can never redirect teardown.
 // Returns false when the provider cannot establish a real subscription.
-export function attachStorage(host: HasStorageChange, signals: StorageSignals): boolean {
+export function attachStorage(
+  hostStorageChange: Readonly<HostStorageChangeProvider>,
+  signals: StorageSignals,
+): boolean {
   detachStorage(signals);
-  const unsubscribe = host.storage.change.subscribe((change) => emitSignal(signals.onChange, change));
+  const unsubscribe = hostStorageChange.subscribe((change) => emitSignal(signals.onChange, change));
   if (unsubscribe === null) return false;
   _subscriptions.set(signals, unsubscribe);
   return true;
 }
 
-export function clearStorage(host: HasStorageLocal, signals: StorageSignals | null = null): StorageClearResult {
-  const result = host.storage.local.clear();
+export function clearStorage(
+  hostStorage: Readonly<HostStorageProvider>,
+  signals: StorageSignals | null = null,
+): StorageClearResult {
+  const result = hostStorage.clear();
   if (result.reason === 'ok' && storageSignalsActive(signals)) {
     emitSignal(signals.onChange, { key: null, newValue: null, oldValue: null });
   }
@@ -52,12 +57,12 @@ export function clearStorage(host: HasStorageLocal, signals: StorageSignals | nu
 }
 
 export function clearStorageNamespace(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
   signals: StorageSignals | null = null,
 ): StorageClearNamespaceResult {
   const prefix = namespace.prefix + '.';
-  const backend = host.storage.local;
+  const backend = hostStorage;
   const keys = backend.keys();
   if (keys.reason !== 'ok') return { completed: 0, failedKey: null, reason: keys.reason };
   let completed = 0;
@@ -78,8 +83,8 @@ export function createStorageSignals(): StorageSignals {
 
 // Terminal teardown of the Host's raw change provider. Per-entity detach is separate because one
 // provider can fan out to more than one StorageSignals entity.
-export function destroyStorage(host: HasStorageChange): void {
-  host.storage.change.destroy();
+export function destroyStorage(hostStorageChange: Readonly<HostStorageChangeProvider>): void {
+  hostStorageChange.destroy();
 }
 
 export function detachStorage(signals: StorageSignals): void {
@@ -95,18 +100,18 @@ export function disposeStorage(signals: StorageSignals): void {
 }
 
 export function getNamespacedStorageByteSize(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
 ): StorageByteSizeResult {
-  return getStorageByteSizeForPrefix(host.storage.local, namespace.prefix + '.');
+  return getStorageByteSizeForPrefix(hostStorage, namespace.prefix + '.');
 }
 
 export function getNamespacedStorageEntries(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
 ): StorageEntriesResult {
   const prefix = namespace.prefix + '.';
-  const result = getStorageEntriesForPrefix(host.storage.local, prefix);
+  const result = getStorageEntriesForPrefix(hostStorage, prefix);
   if (result.reason !== 'ok') return result;
   return {
     failedKey: null,
@@ -116,27 +121,27 @@ export function getNamespacedStorageEntries(
 }
 
 export function getNamespacedStorageItem(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
   key: string,
 ): StorageGetItemResult {
-  return host.storage.local.getItem(namespacedKey(namespace, key));
+  return hostStorage.getItem(namespacedKey(namespace, key));
 }
 
 export function getNamespacedStorageItemPresence(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
   key: string,
 ): StoragePresenceResult {
-  return getStorageItemPresence(host, namespacedKey(namespace, key));
+  return getStorageItemPresence(hostStorage, namespacedKey(namespace, key));
 }
 
 export function getNamespacedStorageKeys(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
 ): StorageKeysResult {
   const prefix = namespace.prefix + '.';
-  const result = host.storage.local.keys();
+  const result = hostStorage.keys();
   if (result.reason !== 'ok') return result;
   return {
     reason: 'ok',
@@ -144,8 +149,8 @@ export function getNamespacedStorageKeys(
   };
 }
 
-export function getStorageBoolean(host: HasStorageLocal, key: string): StorageBooleanResult {
-  const raw = host.storage.local.getItem(key);
+export function getStorageBoolean(hostStorage: Readonly<HostStorageProvider>, key: string): StorageBooleanResult {
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: null };
   if (raw.value === 'true') return { reason: 'ok', value: true };
@@ -153,8 +158,12 @@ export function getStorageBoolean(host: HasStorageLocal, key: string): StorageBo
   return { reason: 'parse-failed', value: null };
 }
 
-export function getStorageBooleanOr(host: HasStorageLocal, key: string, fallback: boolean): StorageBooleanOrResult {
-  const raw = host.storage.local.getItem(key);
+export function getStorageBooleanOr(
+  hostStorage: Readonly<HostStorageProvider>,
+  key: string,
+  fallback: boolean,
+): StorageBooleanOrResult {
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: fallback };
   if (raw.value === 'true') return { reason: 'ok', value: true };
@@ -162,48 +171,58 @@ export function getStorageBooleanOr(host: HasStorageLocal, key: string, fallback
   return { reason: 'parse-failed', value: fallback };
 }
 
-export function getStorageByteSize(host: HasStorageLocal): StorageByteSizeResult {
-  return getStorageByteSizeForPrefix(host.storage.local, null);
+export function getStorageByteSize(hostStorage: Readonly<HostStorageProvider>): StorageByteSizeResult {
+  return getStorageByteSizeForPrefix(hostStorage, null);
 }
 
-export function getStorageEntries(host: HasStorageLocal): StorageEntriesResult {
-  return getStorageEntriesForPrefix(host.storage.local, null);
+export function getStorageEntries(hostStorage: Readonly<HostStorageProvider>): StorageEntriesResult {
+  return getStorageEntriesForPrefix(hostStorage, null);
 }
 
-export function getStorageItem(host: HasStorageLocal, key: string): StorageGetItemResult {
-  return host.storage.local.getItem(key);
+export function getStorageItem(hostStorage: Readonly<HostStorageProvider>, key: string): StorageGetItemResult {
+  return hostStorage.getItem(key);
 }
 
-export function getStorageItemCount(host: HasStorageLocal): StorageItemCountResult {
-  const result = host.storage.local.keys();
+export function getStorageItemCount(hostStorage: Readonly<HostStorageProvider>): StorageItemCountResult {
+  const result = hostStorage.keys();
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value.length };
 }
 
-export function getStorageItemOr(host: HasStorageLocal, key: string, fallback: string): StorageItemOrResult {
-  const result = host.storage.local.getItem(key);
+export function getStorageItemOr(
+  hostStorage: Readonly<HostStorageProvider>,
+  key: string,
+  fallback: string,
+): StorageItemOrResult {
+  const result = hostStorage.getItem(key);
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value ?? fallback };
 }
 
-export function getStorageItemPresence(host: HasStorageLocal, key: string): StoragePresenceResult {
-  const result = host.storage.local.getItem(key);
+export function getStorageItemPresence(hostStorage: Readonly<HostStorageProvider>, key: string): StoragePresenceResult {
+  const result = hostStorage.getItem(key);
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value !== null };
 }
 
-export function getStorageItems(host: HasStorageLocal, keys: readonly string[]): StorageItemsResult {
+export function getStorageItems(
+  hostStorage: Readonly<HostStorageProvider>,
+  keys: readonly string[],
+): StorageItemsResult {
   const out: (string | null)[] = [];
   for (const key of keys) {
-    const result = host.storage.local.getItem(key);
+    const result = hostStorage.getItem(key);
     if (result.reason !== 'ok') return { failedKey: key, reason: result.reason, value: null };
     out.push(result.value);
   }
   return { failedKey: null, reason: 'ok', value: out };
 }
 
-export function getStorageJSON<Value>(host: HasStorageLocal, key: string): StorageJsonResult<Value> {
-  const raw = host.storage.local.getItem(key);
+export function getStorageJSON<Value>(
+  hostStorage: Readonly<HostStorageProvider>,
+  key: string,
+): StorageJsonResult<Value> {
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: null };
   try {
@@ -214,11 +233,11 @@ export function getStorageJSON<Value>(host: HasStorageLocal, key: string): Stora
 }
 
 export function getStorageJSONOr<Value>(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   fallback: Value,
 ): StorageJsonOrResult<Value> {
-  const raw = host.storage.local.getItem(key);
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: fallback };
   try {
@@ -228,20 +247,24 @@ export function getStorageJSONOr<Value>(
   }
 }
 
-export function getStorageKeys(host: HasStorageLocal): StorageKeysResult {
-  return host.storage.local.keys();
+export function getStorageKeys(hostStorage: Readonly<HostStorageProvider>): StorageKeysResult {
+  return hostStorage.keys();
 }
 
-export function getStorageNumber(host: HasStorageLocal, key: string): StorageNumberResult {
-  const raw = host.storage.local.getItem(key);
+export function getStorageNumber(hostStorage: Readonly<HostStorageProvider>, key: string): StorageNumberResult {
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: null };
   const value = Number(raw.value);
   return Number.isFinite(value) ? { reason: 'ok', value } : { reason: 'parse-failed', value: null };
 }
 
-export function getStorageNumberOr(host: HasStorageLocal, key: string, fallback: number): StorageNumberOrResult {
-  const raw = host.storage.local.getItem(key);
+export function getStorageNumberOr(
+  hostStorage: Readonly<HostStorageProvider>,
+  key: string,
+  fallback: number,
+): StorageNumberOrResult {
+  const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: fallback };
   const value = Number(raw.value);
@@ -256,7 +279,7 @@ export function initializeStorageSignals(out: EntityConstruction<StorageSignals>
 // immediately by its own checkpoint. A checkpoint failure leaves callback effects visible and causes that
 // version to replay next time, so callbacks must be idempotent; exceptions propagate and nothing rolls back.
 export function migrateStorage(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace> | null,
   migrations: readonly Readonly<StorageMigration>[],
   signals: StorageSignals | null = null,
@@ -264,7 +287,7 @@ export function migrateStorage(
   const sorted = validateStorageMigrations(migrations);
   const versionKey =
     namespace === null ? '__flight_storage_version' : namespacedKey(namespace, '__flight_storage_version');
-  const storedVersion = host.storage.local.getItem(versionKey);
+  const storedVersion = hostStorage.getItem(versionKey);
   if (storedVersion.reason !== 'ok') {
     return { failedVersion: null, reason: storedVersion.reason, stage: 'read-version', version: null };
   }
@@ -280,7 +303,7 @@ export function migrateStorage(
   for (const migration of sorted) {
     if (migration.version <= initialCheckpoint) continue;
     migration.migrate(namespace?.prefix ?? null);
-    const stored = setStorageItemOnBackend(host.storage.local, versionKey, String(migration.version), signals);
+    const stored = setStorageItemOnBackend(hostStorage, versionKey, String(migration.version), signals);
     if (stored.reason !== 'ok') {
       return {
         failedVersion: migration.version,
@@ -295,30 +318,30 @@ export function migrateStorage(
 }
 
 export function removeNamespacedStorageItem(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
   key: string,
   signals: StorageSignals | null = null,
 ): StorageRemoveItemResult {
-  return removeStorageItemFromBackend(host.storage.local, namespacedKey(namespace, key), signals);
+  return removeStorageItemFromBackend(hostStorage, namespacedKey(namespace, key), signals);
 }
 
 export function removeStorageItem(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   signals: StorageSignals | null = null,
 ): StorageRemoveItemResult {
-  return removeStorageItemFromBackend(host.storage.local, key, signals);
+  return removeStorageItemFromBackend(hostStorage, key, signals);
 }
 
 export function removeStorageItems(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   keys: readonly string[],
   signals: StorageSignals | null = null,
 ): StorageRemoveItemsResult {
   let completed = 0;
   for (const key of keys) {
-    const result = removeStorageItemFromBackend(host.storage.local, key, signals);
+    const result = removeStorageItemFromBackend(hostStorage, key, signals);
     if (result.reason !== 'ok') return { completed, failedKey: key, reason: result.reason };
     completed++;
   }
@@ -326,41 +349,41 @@ export function removeStorageItems(
 }
 
 export function setNamespacedStorageItem(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   namespace: Readonly<StorageNamespace>,
   key: string,
   value: string,
   signals: StorageSignals | null = null,
 ): StorageSetItemResult {
-  return setStorageItemOnBackend(host.storage.local, namespacedKey(namespace, key), value, signals);
+  return setStorageItemOnBackend(hostStorage, namespacedKey(namespace, key), value, signals);
 }
 
 export function setStorageBoolean(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   value: boolean,
   signals: StorageSignals | null = null,
 ): StorageSetItemResult {
-  return setStorageItemOnBackend(host.storage.local, key, value ? 'true' : 'false', signals);
+  return setStorageItemOnBackend(hostStorage, key, value ? 'true' : 'false', signals);
 }
 
 export function setStorageItem(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   value: string,
   signals: StorageSignals | null = null,
 ): StorageSetItemResult {
-  return setStorageItemOnBackend(host.storage.local, key, value, signals);
+  return setStorageItemOnBackend(hostStorage, key, value, signals);
 }
 
 export function setStorageItems(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   record: Readonly<Record<string, string>>,
   signals: StorageSignals | null = null,
 ): StorageSetItemsResult {
   let completed = 0;
   for (const key of Object.keys(record)) {
-    const result = setStorageItemOnBackend(host.storage.local, key, record[key], signals);
+    const result = setStorageItemOnBackend(hostStorage, key, record[key], signals);
     if (result.reason !== 'ok') return { completed, failedKey: key, reason: result.reason };
     completed++;
   }
@@ -368,7 +391,7 @@ export function setStorageItems(
 }
 
 export function setStorageJSON<Value>(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   value: Value,
   signals: StorageSignals | null = null,
@@ -380,20 +403,20 @@ export function setStorageJSON<Value>(
     return { reason: 'serialization-failed' };
   }
   if (raw === undefined) return { reason: 'serialization-failed' };
-  return setStorageItemOnBackend(host.storage.local, key, raw, signals);
+  return setStorageItemOnBackend(hostStorage, key, raw, signals);
 }
 
 export function setStorageNumber(
-  host: HasStorageLocal,
+  hostStorage: Readonly<HostStorageProvider>,
   key: string,
   value: number,
   signals: StorageSignals | null = null,
 ): StorageSetItemResult {
   if (!Number.isFinite(value)) throw new RangeError('setStorageNumber value must be finite');
-  return setStorageItemOnBackend(host.storage.local, key, String(value), signals);
+  return setStorageItemOnBackend(hostStorage, key, String(value), signals);
 }
 
-function getStorageByteSizeForPrefix(backend: StorageBackend, prefix: string | null): StorageByteSizeResult {
+function getStorageByteSizeForPrefix(backend: HostStorageProvider, prefix: string | null): StorageByteSizeResult {
   const keys = backend.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   let value = 0;
@@ -406,7 +429,7 @@ function getStorageByteSizeForPrefix(backend: StorageBackend, prefix: string | n
   return { failedKey: null, reason: 'ok', value };
 }
 
-function getStorageEntriesForPrefix(backend: StorageBackend, prefix: string | null): StorageEntriesResult {
+function getStorageEntriesForPrefix(backend: HostStorageProvider, prefix: string | null): StorageEntriesResult {
   const keys = backend.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   const value: [string, string][] = [];
@@ -425,7 +448,7 @@ function namespacedKey(namespace: Readonly<StorageNamespace>, key: string): stri
 }
 
 function removeStorageItemFromBackend(
-  backend: StorageBackend,
+  backend: HostStorageProvider,
   key: string,
   signals: StorageSignals | null,
 ): StorageRemoveItemResult {
@@ -439,7 +462,7 @@ function removeStorageItemFromBackend(
 }
 
 function setStorageItemOnBackend(
-  backend: StorageBackend,
+  backend: HostStorageProvider,
   key: string,
   value: string,
   signals: StorageSignals | null,

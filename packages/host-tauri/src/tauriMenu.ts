@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  MenuApplicationBackend,
+  HostMenuApplicationProvider,
   MenuItemTemplate,
-  MenuPopupBackend,
-  MenuSelectBackend,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
   TauriApi,
   TauriMenuCapabilities,
   TauriMenuItemHandle,
@@ -35,7 +35,7 @@ export function initializeTauriMenuBackends(out: EntityConstruction<TauriMenuCap
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
   // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
   // until a replacement installs its own.
-  const applicationBackend = allocateEntity<MenuApplicationBackend>();
+  const applicationBackend = allocateEntity<HostMenuApplicationProvider>();
   applicationBackend.destroy = (): void => {
     if (destroyed) return;
     destroyed = true;
@@ -51,7 +51,7 @@ export function initializeTauriMenuBackends(out: EntityConstruction<TauriMenuCap
     return true;
   };
   out.application = finishEntity(applicationBackend);
-  const popupBackend = allocateEntity<MenuPopupBackend>();
+  const popupBackend = allocateEntity<HostMenuPopupProvider>();
   popupBackend.popup = (items, x, y): Promise<string | null> => {
     return new Promise<string | null>((resolve) => {
       void (async () => {
@@ -62,7 +62,7 @@ export function initializeTauriMenuBackends(out: EntityConstruction<TauriMenuCap
     });
   };
   out.popup = finishEntity(popupBackend);
-  const selectBackend = allocateEntity<MenuSelectBackend>();
+  const selectBackend = allocateEntity<HostMenuSelectProvider>();
   selectBackend.subscribe = (listener): (() => void) => {
     selectListener = listener;
     return () => {

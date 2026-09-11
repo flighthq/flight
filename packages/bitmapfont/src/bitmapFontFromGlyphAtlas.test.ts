@@ -1,11 +1,11 @@
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
-import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerProvider } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getBitmapFontGlyph, getBitmapFontMetrics } from './bitmapFont';
 import { createBitmapFontFromGlyphAtlas } from './bitmapFontFromGlyphAtlas';
 
-function backendProducing(width: number, height: number): GlyphRasterizerBackend {
+function backendProducing(width: number, height: number): HostGlyphRasterizerProvider {
   return {
     measureMetrics: () => ({ ascent: 12, descent: 3, lineGap: 1 }),
     rasterize: () => ({

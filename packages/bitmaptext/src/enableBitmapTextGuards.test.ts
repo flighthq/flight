@@ -1,6 +1,12 @@
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas/contract';
 import { setLogSink } from '@flighthq/log/contract';
-import type { GlyphAtlas, GlyphEntry, GlyphRasterizerBackend, GlyphSource, LogEntry } from '@flighthq/types/contract';
+import type {
+  GlyphAtlas,
+  GlyphEntry,
+  HostGlyphRasterizerProvider,
+  GlyphSource,
+  LogEntry,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -28,7 +34,7 @@ function messages(): string {
 // of them resident at once: laying out its tail evicts its head, every pass invalidates the last, and
 // the layout cannot settle however many passes it is given.
 function createTinyGlyphAtlas(): GlyphAtlas {
-  const backend: GlyphRasterizerBackend = {
+  const backend: HostGlyphRasterizerProvider = {
     rasterize: () => ({
       advance: 8,
       bearingX: 0,

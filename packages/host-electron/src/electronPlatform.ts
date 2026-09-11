@@ -1,8 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, Entity, PlatformBackend, PlatformName, EntityConstruction } from '@flighthq/types/contract';
+import type {
+  ElectronApi,
+  Entity,
+  HostPlatformProvider,
+  PlatformName,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
-export function createElectronPlatformBackend(electron: ElectronApi): PlatformBackend & Entity {
-  const out = allocateEntity<PlatformBackend>();
+export function createElectronPlatformBackend(electron: ElectronApi): HostPlatformProvider & Entity {
+  const out = allocateEntity<HostPlatformProvider>();
   initializeElectronPlatformBackend(out, electron);
   return finishEntity(out);
 }
@@ -12,7 +18,7 @@ export function createElectronPlatformBackend(electron: ElectronApi): PlatformBa
 // typed without @types/node) and falls back to '' / 'unknown' sentinels. Writes into caller-owned
 // `out` so callers control allocation.
 export function initializeElectronPlatformBackend(
-  out: EntityConstruction<PlatformBackend>,
+  out: EntityConstruction<HostPlatformProvider>,
   electron: ElectronApi,
 ): void {
   out.getInfo = (out) => {

@@ -3,7 +3,7 @@ import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend, RenderState } from '@flighthq/types/contract';
+import type { HostImageProvider, RenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -23,7 +23,7 @@ function makeRasterizerState(): RenderState {
   return state;
 }
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -36,8 +36,10 @@ function createTestImageBackend(): ImageBackend {
   };
 }
 
-function imageHost(backend: ImageBackend = createTestImageBackend()): HasGraphicsImage {
-  return { graphics: { image: backend } } as HasGraphicsImage;
+function imageHost(backend: HostImageProvider = createTestImageBackend()): {
+  readonly graphics: { readonly image: HostImageProvider };
+} {
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
 }
 
 const host = imageHost();
@@ -49,7 +51,7 @@ describe('createCanvasShapeRasterizer', () => {
     // fill produced no pattern and the shape drew nothing at all — SWF's lossless bitmaps, specifically.
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    registerCanvasBitmapTextureResolver(host, resolvers);
+    registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));
@@ -82,9 +84,9 @@ describe('createCanvasShapeRasterizer', () => {
   it('paints nothing when the registered Bitmap resolver cannot materialize on this host', () => {
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     const noMaterializeHost = imageHost(backend);
-    registerCanvasBitmapTextureResolver(noMaterializeHost, resolvers);
+    registerCanvasBitmapTextureResolver(noMaterializeHost.graphics.image, resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));

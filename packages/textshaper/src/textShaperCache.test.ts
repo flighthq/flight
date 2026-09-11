@@ -1,4 +1,4 @@
-import type { HasTextShaper, ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
+import type { HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {
@@ -18,7 +18,7 @@ const _stubRun: ShapedRun = {
   script: 'Latn',
 };
 
-function _makeCountingBackend(): { backend: TextShaperBackend; readonly calls: number } {
+function _makeCountingBackend(): { backend: HostTextShaperProvider; readonly calls: number } {
   let calls = 0;
   return {
     backend: {
@@ -91,7 +91,7 @@ describe('initializeTextShaperCache', () => {
   });
 });
 
-function _hostWithAdvance(advanceWidth: number): HasTextShaper {
+function _hostWithAdvance(advanceWidth: number): { readonly text: { readonly shaper: HostTextShaperProvider } } {
   return {
     text: {
       shaper: {
@@ -106,9 +106,9 @@ describe('shapeTextRunCached', () => {
     const cache = createTextShaperCache();
     const first = _hostWithAdvance(1);
     const second = _hostWithAdvance(2);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first)?.advanceWidth).toBe(1);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, second)?.advanceWidth).toBe(2);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first)?.advanceWidth).toBe(1);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first.text.shaper)?.advanceWidth).toBe(1);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, second.text.shaper)?.advanceWidth).toBe(2);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first.text.shaper)?.advanceWidth).toBe(1);
   });
 
   it('returns null when no backend is set', () => {

@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity, stripEntityRuntime } from '@flighthq/enti
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasScreenChange,
-  HasScreenDetails,
-  HasScreenPermissionChange,
-  HasScreenQuery,
+  HostScreenChangeProvider,
+  HostScreenDetailsProvider,
+  HostScreenPermissionChangeProvider,
+  HostScreenQueryProvider,
   RectangleLike,
   ScreenInfo,
   ScreenMode,
@@ -16,17 +16,20 @@ import type {
 } from '@flighthq/types/contract';
 
 export function attachScreenPermissionChange(
-  host: HasScreenPermissionChange,
+  hostScreenPermissionChange: Readonly<HostScreenPermissionChangeProvider>,
   permissionChange: ScreenPermissionChange,
 ): void {
   detachScreenPermissionChange(permissionChange);
-  const unsubscribe = host.screen.permissionChange.subscribe((state) => emitSignal(permissionChange.onChange, state));
+  const unsubscribe = hostScreenPermissionChange.subscribe((state) => emitSignal(permissionChange.onChange, state));
   _permissionSubscriptions.set(permissionChange, unsubscribe);
 }
 
-export function attachScreenSignals(host: HasScreenChange, signals: ScreenSignals): void {
+export function attachScreenSignals(
+  hostScreenChange: Readonly<HostScreenChangeProvider>,
+  signals: ScreenSignals,
+): void {
   detachScreenSignals(signals);
-  const unsubscribe = host.screen.change.subscribe((event) => {
+  const unsubscribe = hostScreenChange.subscribe((event) => {
     if (event.kind === 'ScreenAdded') emitSignal(signals.onScreenAdded, event.screen);
     else if (event.kind === 'ScreenRemoved') emitSignal(signals.onScreenRemoved, event.screen);
     else emitSignal(signals.onScreenMetricsChanged, event);
@@ -102,8 +105,8 @@ export function disposeScreenSignals(signals: ScreenSignals): void {
   clearSignal(signals.onScreenRemoved);
 }
 
-export function getPrimaryScreen(host: HasScreenQuery, out: ScreenInfo): ScreenInfo {
-  return host.screen.query.getPrimaryScreen(out);
+export function getPrimaryScreen(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo): ScreenInfo {
+  return hostScreenQuery.getPrimaryScreen(out);
 }
 
 export function getScreenBounds(
@@ -117,10 +120,14 @@ export function getScreenBounds(
   return out;
 }
 
-export function getScreenById(host: HasScreenQuery, id: number, out: ScreenInfo): ScreenInfo | null {
+export function getScreenById(
+  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  id: number,
+  out: ScreenInfo,
+): ScreenInfo | null {
   const screens = _scratchScreens;
   screens.length = 0;
-  getScreens(host, screens);
+  getScreens(hostScreenQuery, screens);
   const found = screens.find((screen) => screen.id === id);
   if (found === undefined) return null;
   copyScreenInfo(found, out);
@@ -128,13 +135,13 @@ export function getScreenById(host: HasScreenQuery, id: number, out: ScreenInfo)
 }
 
 export function getScreenContainingRect(
-  host: HasScreenQuery,
+  hostScreenQuery: Readonly<HostScreenQueryProvider>,
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
 ): ScreenInfo {
   const screens = _scratchScreens;
   screens.length = 0;
-  getScreens(host, screens);
+  getScreens(hostScreenQuery, screens);
   if (screens.length === 0) return fillDefaultScreenInfo(out);
   let best = screens[0];
   let bestOverlap = -1;
@@ -147,7 +154,7 @@ export function getScreenContainingRect(
       bestOverlap = overlap;
     }
   }
-  if (bestOverlap <= 0) return getScreenNearestPoint(host, rectCenter(rect), out);
+  if (bestOverlap <= 0) return getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
   copyScreenInfo(best, out);
   return out;
 }
@@ -161,23 +168,32 @@ export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMo
   return out;
 }
 
-export function getScreenCursorPosition(host: HasScreenQuery, out: { x: number; y: number }): { x: number; y: number } {
-  return host.screen.query.getCursorPosition(out);
+export function getScreenCursorPosition(
+  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  out: { x: number; y: number },
+): { x: number; y: number } {
+  return hostScreenQuery.getCursorPosition(out);
 }
 
-export function getScreenCursorScreen(host: HasScreenQuery, out: ScreenInfo): ScreenInfo {
-  getScreenCursorPosition(host, _scratchPoint);
-  return getScreenNearestPoint(host, _scratchPoint, out);
+export function getScreenCursorScreen(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo): ScreenInfo {
+  getScreenCursorPosition(hostScreenQuery, _scratchPoint);
+  return getScreenNearestPoint(hostScreenQuery, _scratchPoint, out);
 }
 
-export function getScreenDetailPermission(host: HasScreenDetails): Promise<ScreenPermissionState> {
-  return host.screen.details.queryPermission();
+export function getScreenDetailPermission(
+  hostScreenDetails: Readonly<HostScreenDetailsProvider>,
+): Promise<ScreenPermissionState> {
+  return hostScreenDetails.queryPermission();
 }
 
-export function getScreenNearestPoint(host: HasScreenQuery, point: Readonly<Vector2Like>, out: ScreenInfo): ScreenInfo {
+export function getScreenNearestPoint(
+  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  point: Readonly<Vector2Like>,
+  out: ScreenInfo,
+): ScreenInfo {
   const screens = _scratchScreens;
   screens.length = 0;
-  getScreens(host, screens);
+  getScreens(hostScreenQuery, screens);
   if (screens.length === 0) return fillDefaultScreenInfo(out);
   for (const screen of screens) {
     if (
@@ -205,10 +221,14 @@ export function getScreenNearestPoint(host: HasScreenQuery, point: Readonly<Vect
   return out;
 }
 
-export function getScreenNearestRect(host: HasScreenQuery, rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
+export function getScreenNearestRect(
+  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  rect: Readonly<RectangleLike>,
+  out: ScreenInfo,
+): ScreenInfo {
   const screens = _scratchScreens;
   screens.length = 0;
-  getScreens(host, screens);
+  getScreens(hostScreenQuery, screens);
   const containing = screens.find(
     (screen) =>
       rect.x >= screen.x &&
@@ -220,11 +240,11 @@ export function getScreenNearestRect(host: HasScreenQuery, rect: Readonly<Rectan
     copyScreenInfo(containing, out);
     return out;
   }
-  return getScreenNearestPoint(host, rectCenter(rect), out);
+  return getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
 }
 
-export function getScreens(host: HasScreenQuery, out: ScreenInfo[]): ScreenInfo[] {
-  return host.screen.query.getScreens(out);
+export function getScreens(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo[]): ScreenInfo[] {
+  return hostScreenQuery.getScreens(out);
 }
 
 export function getScreenWorkArea(
@@ -284,8 +304,8 @@ export function initializeScreenSignals(out: EntityConstruction<ScreenSignals>):
   out.onScreenRemoved = createSignal();
 }
 
-export function requestScreenDetails(host: HasScreenDetails): Promise<boolean> {
-  return host.screen.details.request();
+export function requestScreenDetails(hostScreenDetails: Readonly<HostScreenDetailsProvider>): Promise<boolean> {
+  return hostScreenDetails.request();
 }
 
 export function screenToDipPoint(

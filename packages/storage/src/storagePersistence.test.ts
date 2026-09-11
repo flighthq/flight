@@ -1,9 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HasStoragePersistenceQuery,
-  HasStoragePersistenceRequest,
-  StoragePersistenceQueryBackend,
-  StoragePersistenceRequestBackend,
+  HostStoragePersistenceQueryProvider,
+  HostStoragePersistenceRequestProvider,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -26,7 +24,7 @@ describe('getStoragePersistence', () => {
       })(),
     );
 
-    await expect(getStoragePersistence(host)).resolves.toEqual(result);
+    await expect(getStoragePersistence(host.storage.persistenceQuery)).resolves.toEqual(result);
     expect(getPersistence).toHaveBeenCalledOnce();
   });
 
@@ -47,8 +45,8 @@ describe('getStoragePersistence', () => {
     })();
     let reads = 0;
     const storage = { persistenceRequest: request } as {
-      persistenceQuery: StoragePersistenceQueryBackend;
-      persistenceRequest: StoragePersistenceRequestBackend;
+      persistenceQuery: HostStoragePersistenceQueryProvider;
+      persistenceRequest: HostStoragePersistenceRequestProvider;
     };
     Object.defineProperty(storage, 'persistenceQuery', {
       get() {
@@ -57,7 +55,7 @@ describe('getStoragePersistence', () => {
       },
     });
 
-    await expect(getStoragePersistence({ storage })).resolves.toEqual({
+    await expect(getStoragePersistence({ storage }.storage.persistenceQuery)).resolves.toEqual({
       outcome: 'persistent',
       permissionState: 'granted',
     });
@@ -82,7 +80,7 @@ describe('requestStoragePersistence', () => {
       })(),
     );
 
-    await expect(requestStoragePersistence(host)).resolves.toEqual(result);
+    await expect(requestStoragePersistence(host.storage.persistenceRequest)).resolves.toEqual(result);
     expect(requestPersistence).toHaveBeenCalledOnce();
   });
 
@@ -103,8 +101,8 @@ describe('requestStoragePersistence', () => {
     })();
     let reads = 0;
     const storage = { persistenceQuery: query } as {
-      persistenceQuery: StoragePersistenceQueryBackend;
-      persistenceRequest: StoragePersistenceRequestBackend;
+      persistenceQuery: HostStoragePersistenceQueryProvider;
+      persistenceRequest: HostStoragePersistenceRequestProvider;
     };
     Object.defineProperty(storage, 'persistenceRequest', {
       get() {
@@ -113,7 +111,7 @@ describe('requestStoragePersistence', () => {
       },
     });
 
-    await expect(requestStoragePersistence({ storage })).resolves.toEqual({
+    await expect(requestStoragePersistence({ storage }.storage.persistenceRequest)).resolves.toEqual({
       outcome: 'best-effort',
       permissionState: null,
     });
@@ -122,10 +120,14 @@ describe('requestStoragePersistence', () => {
   });
 });
 
-function queryHost(backend: StoragePersistenceQueryBackend): HasStoragePersistenceQuery {
+function queryHost(backend: HostStoragePersistenceQueryProvider): {
+  readonly storage: { readonly persistenceQuery: HostStoragePersistenceQueryProvider };
+} {
   return { storage: { persistenceQuery: backend } };
 }
 
-function requestHost(backend: StoragePersistenceRequestBackend): HasStoragePersistenceRequest {
+function requestHost(backend: HostStoragePersistenceRequestProvider): {
+  readonly storage: { readonly persistenceRequest: HostStoragePersistenceRequestProvider };
+} {
   return { storage: { persistenceRequest: backend } };
 }

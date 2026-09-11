@@ -1,4 +1,4 @@
-import type { HasSystemPlatform, PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
+import type { HostPlatformProvider, PlatformInfo } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as platformContract from './platform';
@@ -19,7 +19,7 @@ import {
   isPlatformWeb,
 } from './platform';
 
-function fakeBackend(info: Partial<PlatformInfo>): PlatformBackend {
+function fakeBackend(info: Partial<PlatformInfo>): HostPlatformProvider {
   return {
     [EntityRuntimeKey]: undefined,
     getInfo(out) {
@@ -29,7 +29,7 @@ function fakeBackend(info: Partial<PlatformInfo>): PlatformBackend {
   };
 }
 
-function fakeHost(info: Partial<PlatformInfo>): HasSystemPlatform {
+function fakeHost(info: Partial<PlatformInfo>): { readonly system: { readonly platform: HostPlatformProvider } } {
   return { system: { platform: fakeBackend(info) } };
 }
 
@@ -93,19 +93,19 @@ describe('createPlatformInfo', () => {
 
 describe('getPlatformEngine', () => {
   it('returns the engine from the host backend', () => {
-    expect(getPlatformEngine(fakeHost({ engine: 'blink' }))).toBe('blink');
+    expect(getPlatformEngine(fakeHost({ engine: 'blink' }).system.platform)).toBe('blink');
   });
 
   it('returns gecko when set', () => {
-    expect(getPlatformEngine(fakeHost({ engine: 'gecko' }))).toBe('gecko');
+    expect(getPlatformEngine(fakeHost({ engine: 'gecko' }).system.platform)).toBe('gecko');
   });
 
   it('returns webkit when set', () => {
-    expect(getPlatformEngine(fakeHost({ engine: 'webkit' }))).toBe('webkit');
+    expect(getPlatformEngine(fakeHost({ engine: 'webkit' }).system.platform)).toBe('webkit');
   });
 
   it('returns unknown for native backends', () => {
-    expect(getPlatformEngine(fakeHost({ engine: 'unknown' }))).toBe('unknown');
+    expect(getPlatformEngine(fakeHost({ engine: 'unknown' }).system.platform)).toBe('unknown');
   });
 });
 
@@ -113,7 +113,7 @@ describe('getPlatformInfo', () => {
   it('fills and returns the out parameter', () => {
     const host = fakeHost({ arch: 'arm64', kind: 'mobile', name: 'ios' });
     const out = createPlatformInfo();
-    expect(getPlatformInfo(host, out)).toBe(out);
+    expect(getPlatformInfo(host.system.platform, out)).toBe(out);
     expect(out.name).toBe('ios');
     expect(out.arch).toBe('arm64');
   });
@@ -121,35 +121,35 @@ describe('getPlatformInfo', () => {
 
 describe('getPlatformKind', () => {
   it('returns the host backend kind', () => {
-    expect(getPlatformKind(fakeHost({ kind: 'desktop' }))).toBe('desktop');
+    expect(getPlatformKind(fakeHost({ kind: 'desktop' }).system.platform)).toBe('desktop');
   });
 });
 
 describe('getPlatformName', () => {
   it('returns the host backend name', () => {
-    expect(getPlatformName(fakeHost({ name: 'macos' }))).toBe('macos');
+    expect(getPlatformName(fakeHost({ name: 'macos' }).system.platform)).toBe('macos');
   });
 });
 
 describe('getPlatformRuntime', () => {
   it('returns web when no host shell is detected', () => {
-    expect(getPlatformRuntime(fakeHost({ runtime: 'web' }))).toBe('web');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'web' }).system.platform)).toBe('web');
   });
 
   it('returns electron when set', () => {
-    expect(getPlatformRuntime(fakeHost({ runtime: 'electron' }))).toBe('electron');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'electron' }).system.platform)).toBe('electron');
   });
 
   it('returns tauri when set', () => {
-    expect(getPlatformRuntime(fakeHost({ runtime: 'tauri' }))).toBe('tauri');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'tauri' }).system.platform)).toBe('tauri');
   });
 
   it('returns capacitor when set', () => {
-    expect(getPlatformRuntime(fakeHost({ runtime: 'capacitor' }))).toBe('capacitor');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'capacitor' }).system.platform)).toBe('capacitor');
   });
 
   it('returns native when set by a native backend', () => {
-    expect(getPlatformRuntime(fakeHost({ runtime: 'native' }))).toBe('native');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'native' }).system.platform)).toBe('native');
   });
 });
 
@@ -161,76 +161,76 @@ describe('initializePlatformInfo', () => {
 
 describe('isPlatformDesktop', () => {
   it('is true only for desktop kind', () => {
-    expect(isPlatformDesktop(fakeHost({ kind: 'desktop' }))).toBe(true);
-    expect(isPlatformDesktop(fakeHost({ kind: 'web' }))).toBe(false);
+    expect(isPlatformDesktop(fakeHost({ kind: 'desktop' }).system.platform)).toBe(true);
+    expect(isPlatformDesktop(fakeHost({ kind: 'web' }).system.platform)).toBe(false);
   });
 });
 
 describe('isPlatformMobile', () => {
   it('is true only for mobile kind', () => {
-    expect(isPlatformMobile(fakeHost({ kind: 'mobile' }))).toBe(true);
+    expect(isPlatformMobile(fakeHost({ kind: 'mobile' }).system.platform)).toBe(true);
   });
 });
 
 describe('isPlatformNative', () => {
   it('is true for electron runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'electron' }))).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'electron' }).system.platform)).toBe(true);
   });
 
   it('is true for tauri runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'tauri' }))).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'tauri' }).system.platform)).toBe(true);
   });
 
   it('is true for capacitor runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'capacitor' }))).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'capacitor' }).system.platform)).toBe(true);
   });
 
   it('is true for native runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'native' }))).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'native' }).system.platform)).toBe(true);
   });
 
   it('is false for web runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'web' }))).toBe(false);
+    expect(isPlatformNative(fakeHost({ runtime: 'web' }).system.platform)).toBe(false);
   });
 
   it('is false for unknown runtime', () => {
-    expect(isPlatformNative(fakeHost({ runtime: 'unknown' }))).toBe(false);
+    expect(isPlatformNative(fakeHost({ runtime: 'unknown' }).system.platform)).toBe(false);
   });
 });
 
 describe('isPlatformTouch', () => {
   it('reflects the backend isTouch flag', () => {
-    expect(isPlatformTouch(fakeHost({ isTouch: true }))).toBe(true);
+    expect(isPlatformTouch(fakeHost({ isTouch: true }).system.platform)).toBe(true);
   });
 });
 
 describe('isPlatformVersionAtLeast', () => {
   it('is true when version equals minimum', () => {
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '14.0' }), '14.0')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '14.0' }).system.platform, '14.0')).toBe(true);
   });
 
   it('is true when version exceeds minimum', () => {
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '15.0' }), '14.0')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '15.0' }).system.platform, '14.0')).toBe(true);
   });
 
   it('is false when version is below minimum', () => {
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '13.0' }), '14.0')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '13.0' }).system.platform, '14.0')).toBe(false);
   });
 
   it('is false when version is empty (unknown)', () => {
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '' }), '1.0')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '' }).system.platform, '1.0')).toBe(false);
   });
 
   it('handles patch-level comparison', () => {
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.6')).toBe(true);
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.7')).toBe(true);
-    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.8')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }).system.platform, '10.15.6')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }).system.platform, '10.15.7')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }).system.platform, '10.15.8')).toBe(false);
   });
 });
 
 describe('isPlatformWeb', () => {
   it('is true only for web kind', () => {
-    expect(isPlatformWeb(fakeHost({ kind: 'web' }))).toBe(true);
+    expect(isPlatformWeb(fakeHost({ kind: 'web' }).system.platform)).toBe(true);
   });
 });
 describe('R3 boundary', () => {

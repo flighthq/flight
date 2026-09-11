@@ -3,7 +3,7 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type {
   Bitmap,
-  HasGraphicsBitmapReadback,
+  HostBitmapReadbackProvider,
   ImageResource,
   Node2D,
   NodeAny,
@@ -14,13 +14,18 @@ import { BitmapTextureSourceKind, ImageChannel, ImageTextureSourceKind, SpriteKi
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
 
-export function registerSpriteHitTest(host: Readonly<HasGraphicsBitmapReadback>, alphaThreshold: number = 1): void {
-  registerHitTestPrecise(SpriteKind, (source, x, y) => hitTestSpriteAlpha(host, source, x, y, alphaThreshold));
+export function registerSpriteHitTest(
+  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  alphaThreshold: number = 1,
+): void {
+  registerHitTestPrecise(SpriteKind, (source, x, y) =>
+    hitTestSpriteAlpha(hostBitmapReadback, source, x, y, alphaThreshold),
+  );
 }
 
 // Returns 0 on a hit (opaque pixel, or bounds fallback when pixels are unreadable), -1 on a miss.
 function hitTestSpriteAlpha(
-  host: Readonly<HasGraphicsBitmapReadback>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
   source: NodeAny,
   x: number,
   y: number,
@@ -34,7 +39,7 @@ function hitTestSpriteAlpha(
   const image = texture.source;
   if (image === null) return 0;
 
-  const bitmap = bitmapForImage(host, image);
+  const bitmap = bitmapForImage(hostBitmapReadback, image);
   if (bitmap === null) return 0;
 
   inverseMatrixTransformPointXY(bitmapAlphaLocalPoint, getNodeWorldMatrix(source as Node2D), x, y);
@@ -44,13 +49,13 @@ function hitTestSpriteAlpha(
   return getBitmapPixelChannel(bitmap, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
-function bitmapForImage(host: Readonly<HasGraphicsBitmapReadback>, image: TextureSource): Bitmap | null {
+function bitmapForImage(hostBitmapReadback: Readonly<HostBitmapReadbackProvider>, image: TextureSource): Bitmap | null {
   if (image.kind === BitmapTextureSourceKind) return image as Bitmap;
   if (image.kind !== ImageTextureSourceKind) return null;
   const resource = image as ImageResource;
   const cached = bitmapCache.get(resource);
   if (cached !== undefined) return cached;
-  const bitmap = captureBitmapFromImageResource(host, resource);
+  const bitmap = captureBitmapFromImageResource(hostBitmapReadback, resource);
   // Cache only successes so an image that is not yet readable is retried later.
   if (bitmap !== null) bitmapCache.set(resource, bitmap);
   return bitmap;

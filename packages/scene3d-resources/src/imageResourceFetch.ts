@@ -1,11 +1,11 @@
 import { loadImageResourceFromUrl } from '@flighthq/image/contract';
-import type { HasGraphicsImage, ImageResourceFetch } from '@flighthq/types/contract';
+import type { HostImageProvider, ImageResourceFetch } from '@flighthq/types/contract';
 
-export function createWebImageResourceFetch(host: Readonly<HasGraphicsImage>): ImageResourceFetch {
+export function createWebImageResourceFetch(hostImage: Readonly<HostImageProvider>): ImageResourceFetch {
   return async (ref, signal) => {
     const url = resolveImageResourceUri(ref.uri, ref.basePath);
     try {
-      return await loadImageResourceFromUrl(host, url, undefined, signal);
+      return await loadImageResourceFromUrl(hostImage, url, undefined, signal);
     } catch (error) {
       if (signal.aborted) throw error;
       return null;

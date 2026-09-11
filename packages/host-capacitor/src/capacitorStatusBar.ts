@@ -3,31 +3,31 @@ import type {
   CapacitorApi,
   CapacitorStatusBarInfoResult,
   Entity,
-  StatusBarColorBackend,
+  HostStatusBarColorProvider,
   StatusBarInfo,
-  StatusBarInfoBackend,
-  StatusBarOverlaysBackend,
+  HostStatusBarInfoProvider,
+  HostStatusBarOverlaysProvider,
   StatusBarStyle,
-  StatusBarStyleBackend,
-  StatusBarVisibilityBackend,
+  HostStatusBarStyleProvider,
+  HostStatusBarVisibilityProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorStatusBarBackend = Entity &
-  StatusBarColorBackend &
-  StatusBarInfoBackend &
-  StatusBarOverlaysBackend &
-  StatusBarStyleBackend &
-  StatusBarVisibilityBackend;
+  HostStatusBarColorProvider &
+  HostStatusBarInfoProvider &
+  HostStatusBarOverlaysProvider &
+  HostStatusBarStyleProvider &
+  HostStatusBarVisibilityProvider;
 
 export function createCapacitorStatusBarBackend(
   capacitor: CapacitorApi,
 ): Entity &
-  StatusBarColorBackend &
-  StatusBarInfoBackend &
-  StatusBarOverlaysBackend &
-  StatusBarStyleBackend &
-  StatusBarVisibilityBackend {
+  HostStatusBarColorProvider &
+  HostStatusBarInfoProvider &
+  HostStatusBarOverlaysProvider &
+  HostStatusBarStyleProvider &
+  HostStatusBarVisibilityProvider {
   const out = allocateEntity<CapacitorStatusBarBackend>();
   initializeCapacitorStatusBarBackend(out, capacitor);
   return finishEntity(out);

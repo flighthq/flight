@@ -1,4 +1,4 @@
-import type { HasTextShaper, TextFormat, TextShaperBackend, TextShaperOperation } from '@flighthq/types/contract';
+import type { HostTextShaperProvider, TextFormat, TextShaperOperation } from '@flighthq/types/contract';
 
 import {
   explainTextShaperOperation,
@@ -36,15 +36,15 @@ describe('explainTextShaperOperation', () => {
 
   it('reports an operation the backend does provide', () => {
     const operation = OPTIONAL_OPERATIONS[0];
-    setTextShaperBackend({ ...partialBackend(), [operation]: () => undefined } as TextShaperBackend);
+    setTextShaperBackend({ ...partialBackend(), [operation]: () => undefined } as HostTextShaperProvider);
     expect(explainTextShaperOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
   });
 
   it('reports an explicitly supplied provider as the host layer', () => {
     const operation = OPTIONAL_OPERATIONS[0];
-    const backend = { ...partialBackend(), [operation]: () => undefined } as TextShaperBackend;
+    const backend = { ...partialBackend(), [operation]: () => undefined } as HostTextShaperProvider;
     setTextShaperBackend(partialBackend());
-    expect(explainTextShaperOperation(operation, shaperHost(backend))).toEqual({
+    expect(explainTextShaperOperation(operation, shaperHost(backend).text.shaper)).toEqual({
       implemented: true,
       layer: 'host',
       operation,
@@ -54,10 +54,10 @@ describe('explainTextShaperOperation', () => {
 
 describe('getTextShaperBackend', () => {
   it('returns an explicit host provider ahead of the legacy backend', () => {
-    const legacy: TextShaperBackend = { measureText: () => 1 };
-    const explicit: TextShaperBackend = { measureText: () => 2 };
+    const legacy: HostTextShaperProvider = { measureText: () => 1 };
+    const explicit: HostTextShaperProvider = { measureText: () => 2 };
     setTextShaperBackend(legacy);
-    expect(getTextShaperBackend(shaperHost(explicit))).toBe(explicit);
+    expect(getTextShaperBackend(shaperHost(explicit).text.shaper)).toBe(explicit);
   });
 
   it('returns null before a backend is set', () => {
@@ -93,21 +93,21 @@ const OPTIONAL_OPERATIONS: readonly TextShaperOperation[] = [
 describe('measureText', () => {
   it('accepts an optional explicit shaper host without breaking the existing signature', () => {
     expectTypeOf(measureText).toEqualTypeOf<
-      (text: string, format: Readonly<TextFormat>, host?: HasTextShaper) => number
+      (text: string, format: Readonly<TextFormat>, hostTextShaper?: Readonly<HostTextShaperProvider>) => number
     >();
   });
 
   it('gives an explicit host precedence over the legacy installed backend', () => {
     setTextShaperBackend({ measureText: () => 99 });
-    expect(measureText('abc', {}, shaperHost({ measureText: (text) => text.length }))).toBe(3);
+    expect(measureText('abc', {}, shaperHost({ measureText: (text) => text.length }).text.shaper)).toBe(3);
   });
 
   it('isolates callers that interleave different explicit hosts', () => {
     const first = shaperHost({ measureText: () => 1 });
     const second = shaperHost({ measureText: () => 2 });
-    expect(measureText('x', {}, first)).toBe(1);
-    expect(measureText('x', {}, second)).toBe(2);
-    expect(measureText('x', {}, first)).toBe(1);
+    expect(measureText('x', {}, first.text.shaper)).toBe(1);
+    expect(measureText('x', {}, second.text.shaper)).toBe(2);
+    expect(measureText('x', {}, first.text.shaper)).toBe(1);
   });
 
   it('returns -1 when no backend is registered', () => {
@@ -122,7 +122,7 @@ describe('measureText', () => {
 
 describe('setTextShaperBackend', () => {
   it('stores the backend and clears it with null', () => {
-    const backend: TextShaperBackend = { measureText: (text) => text.length };
+    const backend: HostTextShaperProvider = { measureText: (text) => text.length };
     setTextShaperBackend(backend);
     expect(getTextShaperBackend()).toBe(backend);
     setTextShaperBackend(null);
@@ -130,8 +130,8 @@ describe('setTextShaperBackend', () => {
   });
 
   it('replaces an existing backend (last write wins, no throw)', () => {
-    const first: TextShaperBackend = { measureText: () => 1 };
-    const second: TextShaperBackend = { measureText: () => 2 };
+    const first: HostTextShaperProvider = { measureText: () => 1 };
+    const second: HostTextShaperProvider = { measureText: () => 2 };
     setTextShaperBackend(first);
     setTextShaperBackend(second);
     expect(getTextShaperBackend()).toBe(second);
@@ -139,12 +139,12 @@ describe('setTextShaperBackend', () => {
 });
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): TextShaperBackend {
+function partialBackend(): HostTextShaperProvider {
   return {
     measureText: (() => undefined) as never,
-  } as TextShaperBackend;
+  } as HostTextShaperProvider;
 }
 
-function shaperHost(shaper: TextShaperBackend): HasTextShaper {
+function shaperHost(shaper: HostTextShaperProvider): { readonly text: { readonly shaper: HostTextShaperProvider } } {
   return { text: { shaper } };
 }

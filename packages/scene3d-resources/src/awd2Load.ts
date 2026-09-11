@@ -1,5 +1,5 @@
 import { parseAwd2 } from '@flighthq/scene3d-formats/contract';
-import type { HasNetHttp, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { HostNetProvider, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -9,11 +9,11 @@ import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFrom
 // updateScene3DResourceStreaming. On a fetch failure returns null; it never creates a renderer or GPU
 // resource.
 export async function loadScene3DDocumentFromAwd2Url(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
-  const bytes = await loadScene3DDocumentBytesFromUrl(host, url, options);
+  const bytes = await loadScene3DDocumentBytesFromUrl(hostNet, url, options);
   if (bytes === null) return null;
   const document = parseAwd2(bytes);
   setScene3DDocumentResourceBasePathFromUrl(document, url);

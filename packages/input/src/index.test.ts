@@ -1,10 +1,13 @@
-import type { InputIngressBackend } from '@flighthq/types/contract';
+import type { HostInputIngressProvider } from '@flighthq/types/contract';
 
 import * as inputContract from './contract';
 import * as inputPublic from './index';
 
 type LegacyInputPointerLockBackendMember = 'exitPointerLock' | 'hasPointerLock';
-type LegacyInputPointerLockIngressOperation = Extract<keyof InputIngressBackend, LegacyInputPointerLockBackendMember>;
+type LegacyInputPointerLockIngressOperation = Extract<
+  keyof HostInputIngressProvider,
+  LegacyInputPointerLockBackendMember
+>;
 
 const LEGACY_INPUT_POINTER_LOCK_EXPORTS = [
   'exitInputPointerLock',

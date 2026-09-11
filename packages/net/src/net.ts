@@ -1,5 +1,5 @@
 import type {
-  HasNetHttp,
+  HostNetProvider,
   NetGuard,
   NetRequest,
   NetRequestOptions,
@@ -28,12 +28,12 @@ export function explainNetResponse(response: Readonly<NetResponse>): NetResponse
 }
 
 export function sendNetRequest(
-  host: HasNetHttp,
+  hostNet: Readonly<HostNetProvider>,
   request: Readonly<NetRequest>,
   options?: Readonly<NetRequestOptions>,
 ): Promise<NetResponse> {
   const guard = _guard;
-  if (guard === null) return host.net.http.sendNetRequest(request, options);
+  if (guard === null) return hostNet.sendNetRequest(request, options);
 
   const method = request.method.toUpperCase();
   if ((method === 'GET' || method === 'HEAD') && request.body !== undefined && request.body !== null) {
@@ -44,7 +44,7 @@ export function sendNetRequest(
   }
 
   const progress = options?.progress;
-  if (progress === undefined) return host.net.http.sendNetRequest(request, options);
+  if (progress === undefined) return hostNet.sendNetRequest(request, options);
   let emitted = false;
   const guardedProgress: Signal<typeof progress.emit> = {
     ...progress,
@@ -53,7 +53,7 @@ export function sendNetRequest(
       progress.emit(value);
     },
   };
-  return host.net.http.sendNetRequest(request, { ...options, progress: guardedProgress }).then((response) => {
+  return hostNet.sendNetRequest(request, { ...options, progress: guardedProgress }).then((response) => {
     if (!emitted && response.status !== 0) {
       guard({ operation: 'sendNetRequest', reason: 'progress-not-emitted', request });
     }

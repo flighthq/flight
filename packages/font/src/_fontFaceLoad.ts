@@ -1,10 +1,10 @@
-import type { FontLoadingBackend, FontUrl } from '@flighthq/types/contract';
+import type { HostFontLoadingProvider, FontUrl } from '@flighthq/types/contract';
 
 import { inferFontFormatFromUrl } from './fontFormat';
 import { getFontShorthand } from './fontShorthand';
 
 export async function _loadFontFaceFromBytes(
-  backend: Readonly<FontLoadingBackend>,
+  backend: Readonly<HostFontLoadingProvider>,
   family: string,
   bytes: Uint8Array,
 ): Promise<FontFace> {
@@ -13,7 +13,7 @@ export async function _loadFontFaceFromBytes(
 }
 
 export function _loadFontFaceFromUrl(
-  backend: Readonly<FontLoadingBackend>,
+  backend: Readonly<HostFontLoadingProvider>,
   family: string,
   url: string,
 ): Promise<FontFace> {
@@ -21,7 +21,7 @@ export function _loadFontFaceFromUrl(
 }
 
 export function _loadFontFaceFromUrls(
-  backend: Readonly<FontLoadingBackend>,
+  backend: Readonly<HostFontLoadingProvider>,
   family: string,
   sources: readonly FontUrl[],
 ): Promise<FontFace> {
@@ -34,12 +34,15 @@ export function _loadFontFaceFromUrls(
   return loadAndRegisterFontFace(backend, family, source);
 }
 
-export function _loadFontFacesFromName(backend: Readonly<FontLoadingBackend>, family: string): Promise<FontFace[]> {
+export function _loadFontFacesFromName(
+  backend: Readonly<HostFontLoadingProvider>,
+  family: string,
+): Promise<FontFace[]> {
   return backend.loadFontFaces(getFontShorthand(family));
 }
 
 async function loadAndRegisterFontFace(
-  backend: Readonly<FontLoadingBackend>,
+  backend: Readonly<HostFontLoadingProvider>,
   family: string,
   source: string | ArrayBuffer,
 ): Promise<FontFace> {

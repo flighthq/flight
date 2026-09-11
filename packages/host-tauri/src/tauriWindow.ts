@@ -9,14 +9,14 @@ import type {
   TauriUnlisten,
   TauriWindow,
   WindowAttachmentOwnership,
-  WindowBackend,
+  HostWindowProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createTauriWindowBackend(
   tauri: TauriApi,
-): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> & Entity {
-  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+): HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>> & Entity {
+  const out = allocateEntity<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>();
   initializeTauriWindowBackend(out, tauri);
   return finishEntity(out);
 }
@@ -30,7 +30,7 @@ export function createTauriWindowBackend(
 // mirrored fields. Scope: this is the single current window (the browser-page-window analogue); creating
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
 export function initializeTauriWindowBackend(
-  out: EntityConstruction<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>,
+  out: EntityConstruction<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>>,
   tauri: TauriApi,
 ): void {
   const windowModule = tauri.window;

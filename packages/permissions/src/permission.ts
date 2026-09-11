@@ -4,8 +4,8 @@ import type {
   PermissionQueryOutcome,
   PermissionRequestOutcome,
   PermissionState,
-  StoragePersistenceQueryBackend,
-  StoragePersistenceRequestBackend,
+  HostStoragePersistenceQueryProvider,
+  HostStoragePersistenceRequestProvider,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 
@@ -73,7 +73,7 @@ type NotificationPermissionRequestProjectionOutcome = {
 interface PermissionQueryOrigins {
   readonly midi: MidiPermissionProjectionBackend | null;
   readonly notification: NotificationPermissionProjectionBackend | null;
-  readonly persistence: StoragePersistenceQueryBackend | null;
+  readonly persistence: HostStoragePersistenceQueryProvider | null;
   readonly web: WebPermissionQueryOrigin | null;
 }
 
@@ -112,11 +112,11 @@ function captureNotificationPermission(host: Host): NotificationPermissionProjec
   return notification.permission ?? null;
 }
 
-function captureStoragePersistenceQuery(host: Host): StoragePersistenceQueryBackend | null {
+function captureStoragePersistenceQuery(host: Host): HostStoragePersistenceQueryProvider | null {
   return host.storage.persistenceQuery ?? null;
 }
 
-function captureStoragePersistenceRequest(host: Host): StoragePersistenceRequestBackend | null {
+function captureStoragePersistenceRequest(host: Host): HostStoragePersistenceRequestProvider | null {
   return host.storage.persistenceRequest ?? null;
 }
 
@@ -159,7 +159,7 @@ async function queryMidiPermission(provider: MidiPermissionProjectionBackend | n
 }
 
 async function queryStoragePersistencePermission(
-  provider: StoragePersistenceQueryBackend | null,
+  provider: HostStoragePersistenceQueryProvider | null,
 ): Promise<PermissionQueryOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -207,7 +207,7 @@ async function requestNotificationPermission(
 }
 
 async function requestStoragePersistencePermission(
-  provider: StoragePersistenceRequestBackend | null,
+  provider: HostStoragePersistenceRequestProvider | null,
 ): Promise<PermissionRequestOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {

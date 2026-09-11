@@ -5,7 +5,7 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { HasGraphicsImage, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
+import type { HostImageProvider, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
@@ -20,10 +20,10 @@ import {
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.
 export function createBuiltInScene3DResourceResolver(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
-  const resolver = createScene3DResourceResolver(host, options);
+  const resolver = createScene3DResourceResolver(hostImage, options);
   registerStandardPbrScene3DMaterialTextures(resolver.registry);
   registerUnlitScene3DMaterialTextures(resolver.registry);
   registerExtendedPbrScene3DMaterialTextures(resolver.registry);
@@ -31,11 +31,11 @@ export function createBuiltInScene3DResourceResolver(
 }
 
 export function createScene3DResourceResolver(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
   const out = allocateEntity<Scene3DResourceResolverWithRuntime>();
-  initializeScene3DResourceResolver(out, host, options);
+  initializeScene3DResourceResolver(out, hostImage, options);
   return finishEntity(out);
 }
 
@@ -54,12 +54,12 @@ export function disposeScene3DResourceResolver(resolver: Scene3DResourceResolver
 
 export function initializeScene3DResourceResolver(
   out: EntityConstruction<Scene3DResourceResolverWithRuntime>,
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): void {
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
   startResourceLoad(loader);
-  out.fetch = options?.fetch ?? createWebImageResourceFetch(host);
+  out.fetch = options?.fetch ?? createWebImageResourceFetch(hostImage);
   out.registry = options?.registry ?? createScene3DMaterialTextureRegistry();
   out[Scene3DResourceResolverRuntimeKey] = {
     inFlight: new Map(),

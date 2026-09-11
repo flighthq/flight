@@ -1,4 +1,4 @@
-import type { BidiClass, BidiClassBackend, BidiDirection } from '@flighthq/types/contract';
+import type { BidiClass, HostBidiClassProvider, BidiDirection } from '@flighthq/types/contract';
 
 import { getBidiClassBackend } from './bidiClassBackend';
 
@@ -22,7 +22,7 @@ import { getBidiClassBackend } from './bidiClassBackend';
 export function resolveBidiLevels(
   text: string,
   baseDirection: BidiDirection,
-  bidiClassBackend?: BidiClassBackend,
+  bidiClassBackend?: HostBidiClassProvider,
 ): Uint8Array {
   const length = text.length;
   const levels = new Uint8Array(length);

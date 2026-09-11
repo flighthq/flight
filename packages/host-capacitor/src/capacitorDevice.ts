@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorDeviceInfo,
-  DeviceBackend,
+  HostDeviceProvider,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBackend & Entity {
-  const out = allocateEntity<DeviceBackend>();
+export function createCapacitorDeviceBackend(capacitor: CapacitorApi): HostDeviceProvider & Entity {
+  const out = allocateEntity<HostDeviceProvider>();
   initializeCapacitorDeviceBackend(out, capacitor);
   return finishEntity(out);
 }
@@ -26,7 +26,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
 export function initializeCapacitorDeviceBackend(
-  out: EntityConstruction<DeviceBackend>,
+  out: EntityConstruction<HostDeviceProvider>,
   capacitor: CapacitorApi,
 ): void {
   const device = capacitor.device;

@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, EntityConstruction, HasGraphicsImage, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, EntityConstruction, HostImageProvider, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 export function createImageResourceFromBitmap(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   bitmap: Readonly<Bitmap>,
 ): ImageResource | null {
-  const backend = host.graphics.image;
+  const backend = hostImage;
   if (backend.createImageFromBitmap === undefined) return null;
   return backend.createImageFromBitmap(bitmap);
 }
@@ -79,29 +79,29 @@ export function isImageUrlSameOrigin(url: string): boolean {
 }
 
 export async function loadImageResourceFromBase64(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
 ): Promise<ImageResource> {
-  return loadImageResourceFromUrl(host, `data:${mimeType};base64,${base64}`, undefined, signal);
+  return loadImageResourceFromUrl(hostImage, `data:${mimeType};base64,${base64}`, undefined, signal);
 }
 
 export async function loadImageResourceFromBlob(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   blob: Blob,
   signal?: AbortSignal,
 ): Promise<ImageResource> {
   const url = URL.createObjectURL(blob);
   try {
-    return await loadImageResourceFromUrl(host, url, undefined, signal);
+    return await loadImageResourceFromUrl(hostImage, url, undefined, signal);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
 export async function loadImageResourceFromBytes(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
@@ -111,16 +111,16 @@ export async function loadImageResourceFromBytes(
     throw new Error('Unable to determine image type from bytes');
   }
   const buf = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  return loadImageResourceFromBlob(host, new Blob([buf], { type }), signal);
+  return loadImageResourceFromBlob(hostImage, new Blob([buf], { type }), signal);
 }
 
 export async function loadImageResourceFromUrl(
-  host: Readonly<HasGraphicsImage>,
+  hostImage: Readonly<HostImageProvider>,
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<ImageResource> {
-  return host.graphics.image.loadImageFromUrl(url, crossOrigin, signal);
+  return hostImage.loadImageFromUrl(url, crossOrigin, signal);
 }
 
 const DECODED_ALPHA_TYPE = 'straight';

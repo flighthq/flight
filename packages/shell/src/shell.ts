@@ -1,16 +1,16 @@
 import type {
-  HasShellBeep,
-  HasShellExternal,
-  HasShellPathOpen,
-  HasShellPathReveal,
-  HasShellShortcutLink,
-  HasShellTrash,
+  HostShellBeepProvider,
+  HostShellExternalProvider,
+  HostShellPathOpenProvider,
+  HostShellPathRevealProvider,
+  HostShellProcessProvider,
+  HostShellShortcutLinkProvider,
+  HostShellTrashProvider,
   ShellExternalOutcome,
   ShellExternalUrlPolicy,
   ShellPathOpenOutcome,
   ShellPathRevealOutcome,
   ShellProcess,
-  ShellProcessHost,
   ShellProcessOptions,
   ShellShortcutLink,
   ShellShortcutLinkReadOutcome,
@@ -33,61 +33,70 @@ export function isShellUrlAllowed(url: string, policy: Readonly<ShellExternalUrl
 // Projects the one-path provider operation across the batch. Promise.all starts every operation,
 // awaits every settlement, and returns outcomes in the same order as paths.
 export function moveShellItemsToTrash(
-  host: HasShellTrash,
+  hostShellTrash: Readonly<HostShellTrashProvider>,
   paths: readonly string[],
 ): Promise<readonly ShellTrashOutcome[]> {
-  return Promise.all(paths.map((path) => host.shell.trash.moveToTrash(path)));
+  return Promise.all(paths.map((path) => hostShellTrash.moveToTrash(path)));
 }
 
-export function moveShellItemToTrash(host: HasShellTrash, path: string): Promise<ShellTrashOutcome> {
-  return host.shell.trash.moveToTrash(path);
+export function moveShellItemToTrash(
+  hostShellTrash: Readonly<HostShellTrashProvider>,
+  path: string,
+): Promise<ShellTrashOutcome> {
+  return hostShellTrash.moveToTrash(path);
 }
 
 // Handing a URL to an OS handler can launch a local application or registered protocol. The required
 // per-call policy is validated before dispatch, so a blocked or malformed scheme never reaches the
 // host. There is intentionally no policy default, ambient allowlist, or allow-all path.
 export function openShellExternalUrl(
-  host: HasShellExternal,
+  hostShellExternal: Readonly<HostShellExternalProvider>,
   url: string,
   policy: Readonly<ShellExternalUrlPolicy>,
 ): Promise<ShellExternalOutcome> {
   if (!isShellUrlAllowed(url, policy)) return Promise.resolve({ reason: 'blocked-scheme' });
-  return host.shell.external.open(url);
+  return hostShellExternal.open(url);
 }
 
-export function openShellPath(host: HasShellPathOpen, path: string): Promise<ShellPathOpenOutcome> {
-  return host.shell.pathOpen.open(path);
+export function openShellPath(
+  hostShellPathOpen: Readonly<HostShellPathOpenProvider>,
+  path: string,
+): Promise<ShellPathOpenOutcome> {
+  return hostShellPathOpen.open(path);
 }
 
 export function readShellShortcutLink(
-  host: HasShellShortcutLink,
+  hostShellShortcutLink: Readonly<HostShellShortcutLinkProvider>,
   shortcutPath: string,
 ): Promise<ShellShortcutLinkReadOutcome> {
-  return host.shell.shortcutLink.read(shortcutPath);
+  return hostShellShortcutLink.read(shortcutPath);
 }
 
-export function revealShellPath(host: HasShellPathReveal, path: string): Promise<ShellPathRevealOutcome> {
-  return host.shell.pathReveal.reveal(path);
+export function revealShellPath(
+  hostShellPathReveal: Readonly<HostShellPathRevealProvider>,
+  path: string,
+): Promise<ShellPathRevealOutcome> {
+  return hostShellPathReveal.reveal(path);
 }
 
-export function shellBeep(host: HasShellBeep): void {
-  host.shell.beep.beep();
+export function shellBeep(hostShellBeep: Readonly<HostShellBeepProvider>): void {
+  hostShellBeep.beep();
 }
 
 export function spawnShellProcess(
-  host: ShellProcessHost,
+  hostShellProcess: Readonly<HostShellProcessProvider>,
   command: string,
   args: readonly string[],
   options?: Readonly<ShellProcessOptions>,
-): ShellProcess | null {
-  return host.shell.process?.spawn(command, args, options) ?? null;
+): ShellProcess {
+  return hostShellProcess.spawn(command, args, options);
 }
 
 export function writeShellShortcutLink(
-  host: HasShellShortcutLink,
+  hostShellShortcutLink: Readonly<HostShellShortcutLinkProvider>,
   shortcutPath: string,
   link: Readonly<ShellShortcutLink>,
   operation: ShellShortcutWriteOperation,
 ): Promise<ShellShortcutLinkWriteOutcome> {
-  return host.shell.shortcutLink.write(shortcutPath, link, operation);
+  return hostShellShortcutLink.write(shortcutPath, link, operation);
 }

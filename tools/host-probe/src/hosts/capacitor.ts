@@ -40,9 +40,9 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
   };
   const host = registerCapacitorBackends(capacitorApi, mobileOsProfile(Capacitor.getPlatform()));
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
-  await waitFor(() => getAppName(host).length > 0);
-  const name = getAppName(host);
-  const version = getAppVersion(host);
+  await waitFor(() => getAppName(host.app.name).length > 0);
+  const name = getAppName(host.app.name);
+  const version = getAppVersion(host.app.version);
   return {
     changedCapabilities,
     results: [

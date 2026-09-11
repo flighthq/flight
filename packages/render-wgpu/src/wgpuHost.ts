@@ -1,19 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
+import type { EntityConstruction, WgpuHostAcquisition, HostWgpuProvider } from '@flighthq/types/contract';
 
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.
-export function createWebWgpuHostBackend(): WgpuHostBackend {
-  const out = allocateEntity<WgpuHostBackend>();
+export function createWebWgpuHostBackend(): HostWgpuProvider {
+  const out = allocateEntity<HostWgpuProvider>();
   initializeWebWgpuHostBackend(out);
   return finishEntity(out);
 }
 
-export function getWgpuHostBackend(): WgpuHostBackend {
+export function getWgpuHostBackend(): HostWgpuProvider {
   return _custom ?? _host ?? _web;
 }
 
-export function initializeWebWgpuHostBackend(out: EntityConstruction<WgpuHostBackend>): void {
+export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuProvider>): void {
   out.acquire = async (canvas, options): Promise<WgpuHostAcquisition> => {
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
@@ -63,7 +63,7 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<WgpuHostBac
 }
 
 // First host wins and a custom backend installed through setWgpuHostBackend always takes precedence.
-export function installWgpuHostBackend(backend: WgpuHostBackend): void {
+export function installWgpuHostBackend(backend: HostWgpuProvider): void {
   if (_host === null) _host = backend;
 }
 
@@ -74,7 +74,7 @@ export function resetWgpuHostBackendForTest(): void {
 
 // Installs a process-wide custom backend. Clearing it reveals the first installed host, or the
 // built-in explicit web adapter when no host has been installed.
-export function setWgpuHostBackend(backend: WgpuHostBackend | null): void {
+export function setWgpuHostBackend(backend: HostWgpuProvider | null): void {
   _custom = backend;
 }
 
@@ -88,5 +88,5 @@ function getWebWgpu(): GPU | null {
 }
 
 const _web = createWebWgpuHostBackend();
-let _custom: WgpuHostBackend | null = null;
-let _host: WgpuHostBackend | null = null;
+let _custom: HostWgpuProvider | null = null;
+let _host: HostWgpuProvider | null = null;

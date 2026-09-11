@@ -1,45 +1,47 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  DirectoryOpenDialogBackend,
+  HostDirectoryOpenDialogProvider,
   DirectoryOpenDialogResult,
   ElectronApi,
   Entity,
   FileDialogFilter,
-  FileOpenDialogBackend,
+  HostFileOpenDialogProvider,
   FileOpenDialogResult,
-  FileSaveDialogBackend,
+  HostFileSaveDialogProvider,
   FileSaveDialogResult,
-  MessageDialogBackend,
+  HostMessageDialogProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi): DirectoryOpenDialogBackend & Entity {
-  const out = allocateEntity<DirectoryOpenDialogBackend>();
+export function createElectronDirectoryOpenDialogBackend(
+  electron: ElectronApi,
+): HostDirectoryOpenDialogProvider & Entity {
+  const out = allocateEntity<HostDirectoryOpenDialogProvider>();
   initializeElectronDirectoryOpenDialogBackend(out, electron);
   return finishEntity(out);
 }
 
-export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
-  const out = allocateEntity<FileOpenDialogBackend>();
+export function createElectronFileOpenDialogBackend(electron: ElectronApi): HostFileOpenDialogProvider & Entity {
+  const out = allocateEntity<HostFileOpenDialogProvider>();
   initializeElectronFileOpenDialogBackend(out, electron);
   return finishEntity(out);
 }
 
-export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
-  const out = allocateEntity<FileSaveDialogBackend>();
+export function createElectronFileSaveDialogBackend(electron: ElectronApi): HostFileSaveDialogProvider & Entity {
+  const out = allocateEntity<HostFileSaveDialogProvider>();
   initializeElectronFileSaveDialogBackend(out, electron);
   return finishEntity(out);
 }
 
-export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
-  const out = allocateEntity<MessageDialogBackend>();
+export function createElectronMessageDialogBackend(electron: ElectronApi): HostMessageDialogProvider {
+  const out = allocateEntity<HostMessageDialogProvider>();
   initializeElectronMessageDialogBackend(out, electron);
   return finishEntity(out);
 }
 
 export function initializeElectronDirectoryOpenDialogBackend(
-  out: EntityConstruction<DirectoryOpenDialogBackend>,
+  out: EntityConstruction<HostDirectoryOpenDialogProvider>,
   electron: ElectronApi,
 ): void {
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
@@ -62,7 +64,7 @@ export function initializeElectronDirectoryOpenDialogBackend(
 }
 
 export function initializeElectronFileOpenDialogBackend(
-  out: EntityConstruction<FileOpenDialogBackend>,
+  out: EntityConstruction<HostFileOpenDialogProvider>,
   electron: ElectronApi,
 ): void {
   out.open = async (options): Promise<FileOpenDialogResult> => {
@@ -90,7 +92,7 @@ export function initializeElectronFileOpenDialogBackend(
 }
 
 export function initializeElectronFileSaveDialogBackend(
-  out: EntityConstruction<FileSaveDialogBackend>,
+  out: EntityConstruction<HostFileSaveDialogProvider>,
   electron: ElectronApi,
 ): void {
   out.save = async (options): Promise<FileSaveDialogResult> => {
@@ -114,7 +116,7 @@ export function initializeElectronFileSaveDialogBackend(
 // Electron provides message boxes and confirmation, but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
 export function initializeElectronMessageDialogBackend(
-  out: EntityConstruction<MessageDialogBackend>,
+  out: EntityConstruction<HostMessageDialogProvider>,
   electron: ElectronApi,
 ): void {
   const dialog = electron.dialog;

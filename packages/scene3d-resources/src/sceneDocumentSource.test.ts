@@ -1,7 +1,6 @@
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  HasNetHttp,
-  NetBackend,
+  HostNetProvider,
   NetResponse,
   Scene3DDocument,
   Scene3DDocumentLoadProgress,
@@ -16,7 +15,9 @@ import {
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
-function fakeNetHost(backend: Omit<NetBackend, typeof EntityRuntimeKey>): HasNetHttp {
+function fakeNetHost(backend: Omit<HostNetProvider, typeof EntityRuntimeKey>): {
+  readonly net: { readonly http: HostNetProvider };
+} {
   return { net: { http: { ...backend, [EntityRuntimeKey]: undefined } } };
 }
 
@@ -49,7 +50,10 @@ describe('loadScene3DDocumentBytesFromUrl', () => {
       },
     });
 
-    const bytes = await loadScene3DDocumentBytesFromUrl(host, 'model.bin', { progress, signal: controller.signal });
+    const bytes = await loadScene3DDocumentBytesFromUrl(host.net.http, 'model.bin', {
+      progress,
+      signal: controller.signal,
+    });
 
     expect(Array.from(bytes!)).toEqual([1, 2, 3]);
     expect(events).toEqual([{ loaded: 2, phase: 'download', total: 3, url: 'model.bin' }]);
@@ -57,7 +61,7 @@ describe('loadScene3DDocumentBytesFromUrl', () => {
 
   it('returns null on an expected transport failure', async () => {
     const host = fakeNetHost({ sendNetRequest: async () => failResponse() });
-    await expect(loadScene3DDocumentBytesFromUrl(host, 'missing.bin')).resolves.toBeNull();
+    await expect(loadScene3DDocumentBytesFromUrl(host.net.http, 'missing.bin')).resolves.toBeNull();
   });
 });
 
@@ -71,13 +75,13 @@ describe('loadScene3DDocumentTextFromUrl', () => {
       },
     });
 
-    await expect(loadScene3DDocumentTextFromUrl(host, 'model.obj')).resolves.toBe('v 0 0 0');
+    await expect(loadScene3DDocumentTextFromUrl(host.net.http, 'model.obj')).resolves.toBe('v 0 0 0');
     expect(requestedType).toBe('text');
   });
 
   it('returns null on an expected transport failure', async () => {
     const host = fakeNetHost({ sendNetRequest: async () => failResponse() });
-    await expect(loadScene3DDocumentTextFromUrl(host, 'missing.obj')).resolves.toBeNull();
+    await expect(loadScene3DDocumentTextFromUrl(host.net.http, 'missing.obj')).resolves.toBeNull();
   });
 });
 

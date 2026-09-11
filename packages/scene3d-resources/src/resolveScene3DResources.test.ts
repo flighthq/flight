@@ -6,7 +6,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type {
-  HasGraphicsImage,
+  HostImageProvider,
   ImageResource,
   ImageResourceReference,
   Scene3DResourceResolverWithRuntime,
@@ -31,9 +31,9 @@ import {
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const host: HasGraphicsImage = {
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as HasGraphicsImage;
+} as { readonly graphics: { readonly image: HostImageProvider } };
 const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as ImageResource;
 const testResources: ImageResourceReference[] = [];
 let sceneResources: ImageResourceReference[] = [];
@@ -108,7 +108,7 @@ describe('initializeImageResourceFailure', () => {
 describe('resolveOneScene3DResourceTexture', () => {
   it('decodes embedded bytes through @flighthq/image', async () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockResolvedValue(fakeImage);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const ref = embeddedRef('image/jpeg');
     const signal = new AbortController().signal;
     const result = await resolveOneScene3DResourceTexture(resolver, ref, signal);
@@ -119,7 +119,7 @@ describe('resolveOneScene3DResourceTexture', () => {
 
   it('passes the complete plain embedded reference to the shared resource atom', async () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockResolvedValue(fakeImage);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const ref = embeddedRef(null);
     const signal = new AbortController().signal;
     await resolveOneScene3DResourceTexture(resolver, ref, signal);
@@ -132,7 +132,7 @@ describe('resolveOneScene3DResourceTexture', () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation((ref, resolveFetch, signal) =>
       ref.kind === ImageResourceReferenceKind.External ? resolveFetch(ref, signal) : Promise.resolve(null),
     );
-    const resolver = createBuiltInScene3DResourceResolver(host, { fetch });
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch });
     const ref = externalRef();
     const signal = new AbortController().signal;
     const result = await resolveOneScene3DResourceTexture(resolver, ref, signal);
@@ -154,7 +154,7 @@ describe('resolveScene3DResources', () => {
     );
     const ref = embeddedRef();
     const scene = meshScene3D(createTexture({ resource: ref }));
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     updateScene3DResourceStreaming(scene, resolver);
     await vi.waitFor(() => expect(loadSignal).toBeDefined());
 
@@ -173,7 +173,7 @@ describe('resolveScene3DResources', () => {
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     const resources = resolveScene3DResources(scene, resolver);
 
@@ -192,7 +192,7 @@ describe('resolveScene3DResources', () => {
     if (a.dimension !== '2d') throw new Error('test texture must be 2d');
     a.source = fakeImage;
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     const resources = resolveScene3DResources(scene, resolver);
 
@@ -209,7 +209,7 @@ describe('updateScene3DResourceStreaming', () => {
     const a = pendingTexture();
     const b = pendingTexture();
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
@@ -228,7 +228,7 @@ describe('updateScene3DResourceStreaming', () => {
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
@@ -253,7 +253,7 @@ describe('updateScene3DResourceStreaming', () => {
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver);
     await vi.waitFor(() => expect(loadSignal).toBeDefined());
@@ -273,7 +273,7 @@ describe('updateScene3DResourceStreaming', () => {
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
     const scene = meshScene3D(a, b);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver, { select: (texture) => texture === a });
     await settle(resolver);
@@ -291,7 +291,7 @@ describe('updateScene3DResourceStreaming', () => {
     const wanted = pendingTexture();
     const skipped = pendingTexture();
     const scene = meshScene3D(wanted, skipped);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver, { select: (texture) => texture === wanted });
     await settle(resolver);
@@ -319,7 +319,7 @@ describe('updateScene3DResourceStreaming', () => {
     });
     const texture = createTexture({ resource: externalRef() });
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host, { fetch: async () => null });
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch: async () => null });
 
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
@@ -338,7 +338,7 @@ describe('updateScene3DResourceStreaming', () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockRejectedValue(new Error('bad image'));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
@@ -364,7 +364,7 @@ describe('updateScene3DResourceStreaming', () => {
     );
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver, { select: () => true });
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Loading);
@@ -388,7 +388,7 @@ describe('updateScene3DResourceStreaming', () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(() => new Promise<ImageResource>(() => {}));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
 
     updateScene3DResourceStreaming(scene, resolver);
     await vi.waitFor(() => expect(imageModule.resolveImageResourceReference).toHaveBeenCalledTimes(1));
@@ -402,7 +402,7 @@ describe('updateScene3DResourceStreaming', () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockResolvedValue(fakeImage);
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const signals = enableScene3DResourceSignals(resolver);
     const resolved: Texture[] = [];
     const failed: Texture[] = [];
@@ -421,7 +421,7 @@ describe('updateScene3DResourceStreaming', () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockRejectedValue(new Error('bad image'));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
-    const resolver = createBuiltInScene3DResourceResolver(host);
+    const resolver = createBuiltInScene3DResourceResolver(host.graphics.image);
     const signals = enableScene3DResourceSignals(resolver);
     const failed: Texture[] = [];
     connectSignal(signals.onResourceFailed, (event) => failed.push(event.texture));

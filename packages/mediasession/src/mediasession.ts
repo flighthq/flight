@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasMediaSession,
-  HasMediaSessionAction,
+  HostMediaSessionProvider,
+  HostMediaSessionActionProvider,
   MediaSessionAction,
   MediaSessionActionSignal,
   MediaSessionClearMetadataOutcome,
@@ -18,9 +18,12 @@ import type {
 
 // Attaches exactly the action named by `signal`. A null provider subscription is a truthful runtime
 // refusal and leaves the entity detached. Reattaching first releases the prior exact origin.
-export function attachMediaSessionAction(host: HasMediaSessionAction, signal: MediaSessionActionSignal): boolean {
+export function attachMediaSessionAction(
+  hostMediaSessionAction: Readonly<HostMediaSessionActionProvider>,
+  signal: MediaSessionActionSignal,
+): boolean {
   detachMediaSessionAction(signal);
-  const unsubscribe = host.media.sessionAction.subscribe(signal.action, (details) => {
+  const unsubscribe = hostMediaSessionAction.subscribe(signal.action, (details) => {
     emitSignal(signal.onAction, details);
   });
   if (unsubscribe === null) return false;
@@ -28,12 +31,16 @@ export function attachMediaSessionAction(host: HasMediaSessionAction, signal: Me
   return true;
 }
 
-export function clearMediaSessionMetadata(host: HasMediaSession): MediaSessionClearMetadataOutcome {
-  return host.media.session.clearMetadata();
+export function clearMediaSessionMetadata(
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
+): MediaSessionClearMetadataOutcome {
+  return hostMediaSession.clearMetadata();
 }
 
-export function clearMediaSessionPositionState(host: HasMediaSession): MediaSessionClearPositionStateOutcome {
-  return host.media.session.clearPositionState();
+export function clearMediaSessionPositionState(
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
+): MediaSessionClearPositionStateOutcome {
+  return hostMediaSession.clearPositionState();
 }
 
 export function createMediaSessionActionSignal(action: MediaSessionAction): MediaSessionActionSignal {
@@ -45,8 +52,11 @@ export function createMediaSessionActionSignal(action: MediaSessionAction): Medi
 // Provider lifetime is separate from per-action subscription lifetime. Every distinct provider is
 // destroyed once; aliasing the two Host slots cannot double-release it, and one throwing provider does
 // not prevent the other distinct provider from being attempted.
-export function destroyMediaSession(host: HasMediaSession & HasMediaSessionAction): void {
-  const providers = new Set([host.media.session, host.media.sessionAction]);
+export function destroyMediaSession(
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSessionAction: Readonly<HostMediaSessionActionProvider>,
+): void {
+  const providers = new Set([hostMediaSession, hostMediaSessionAction]);
   let firstError: unknown;
   let hasError = false;
   for (const provider of providers) {
@@ -86,14 +96,14 @@ export function initializeMediaSessionActionSignal(
 }
 
 export function setMediaSessionMetadata(
-  host: HasMediaSession,
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
   metadata: Readonly<MediaSessionMetadata>,
 ): MediaSessionSetMetadataOutcome {
-  return host.media.session.setMetadata(metadata);
+  return hostMediaSession.setMetadata(metadata);
 }
 
 export function setMediaSessionPlaybackState(
-  host: HasMediaSession,
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
   state: MediaSessionPlaybackState,
 ): MediaSessionSetPlaybackStateOutcome {
   // TypeScript callers cannot construct this misuse, but untyped JavaScript can. It is programmer error,
@@ -101,11 +111,11 @@ export function setMediaSessionPlaybackState(
   if (state !== 'none' && state !== 'paused' && state !== 'playing') {
     throw new TypeError(`Invalid media-session playback state: ${String(state)}`);
   }
-  return host.media.session.setPlaybackState(state);
+  return hostMediaSession.setPlaybackState(state);
 }
 
 export function setMediaSessionPositionState(
-  host: HasMediaSession,
+  hostMediaSession: Readonly<HostMediaSessionProvider>,
   state: Readonly<MediaSessionPositionState>,
 ): MediaSessionSetPositionStateOutcome {
   // The W3C algorithm classifies these values locally. Invalid caller data wins over runtime API
@@ -115,7 +125,7 @@ export function setMediaSessionPositionState(
     return INVALID_POSITION;
   }
   if (!Number.isFinite(state.playbackRate) || state.playbackRate === 0) return INVALID_PLAYBACK_RATE;
-  return host.media.session.setPositionState(state);
+  return hostMediaSession.setPositionState(state);
 }
 
 const INVALID_DURATION = { reason: 'invalid-duration' } as const;

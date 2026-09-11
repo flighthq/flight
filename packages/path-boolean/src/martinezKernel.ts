@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  PathBooleanBackend,
+  HostPathBooleanProvider,
   PathBooleanContour,
   PathBooleanFillRule,
   PathBooleanOperation,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createMartinezPathBooleanBackend(): PathBooleanBackend {
-  const out = allocateEntity<PathBooleanBackend>();
+export function createMartinezPathBooleanBackend(): HostPathBooleanProvider {
+  const out = allocateEntity<HostPathBooleanProvider>();
   initializeMartinezPathBooleanBackend(out);
   return finishEntity(out);
 }
@@ -35,7 +35,7 @@ export function createMartinezPathBooleanBackend(): PathBooleanBackend {
 // edge orientations fall out of the same arithmetic with no field-staleness. It trades the classic
 // algorithm's O(n log n) inline classification for an O(n²) post-pass, which is the right call for a
 // correctness-first kernel on the modest polygon sizes booleans see.
-export function initializeMartinezPathBooleanBackend(out: EntityConstruction<PathBooleanBackend>): void {
+export function initializeMartinezPathBooleanBackend(out: EntityConstruction<HostPathBooleanProvider>): void {
   out.computePathBoolean = (
     subject: readonly PathBooleanContour[],
     clip: readonly PathBooleanContour[],

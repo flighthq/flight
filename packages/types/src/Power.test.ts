@@ -1,15 +1,5 @@
 import type { Entity } from './Entity';
-import type {
-  HasPowerBatteryHealth,
-  HasPowerChange,
-  HasPowerIdle,
-  HasPowerKeepAwake,
-  HasPowerSessionLock,
-  HasPowerStatus,
-  HasPowerSuspension,
-  HasPowerThermal,
-  HostPowerCapabilities,
-} from './Host';
+import type { HostPowerCapabilities } from './Host';
 import type {
   ElectronPowerCapabilities,
   HostPowerBatteryHealthProvider,
@@ -43,14 +33,14 @@ type ConcretePowerBundlesAreEntities = [
 
 type GenericPowerContractsAreStructural = [
   HostPowerCapabilities extends Entity ? true : false,
-  HasPowerBatteryHealth extends Entity ? true : false,
-  HasPowerChange extends Entity ? true : false,
-  HasPowerIdle extends Entity ? true : false,
-  HasPowerKeepAwake extends Entity ? true : false,
-  HasPowerSessionLock extends Entity ? true : false,
-  HasPowerStatus extends Entity ? true : false,
-  HasPowerSuspension extends Entity ? true : false,
-  HasPowerThermal extends Entity ? true : false,
+  { readonly power: { readonly batteryHealth: HostPowerBatteryHealthProvider } } extends Entity ? true : false,
+  { readonly power: { readonly change: HostPowerChangeProvider } } extends Entity ? true : false,
+  { readonly power: { readonly idle: HostPowerIdleProvider } } extends Entity ? true : false,
+  { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } } extends Entity ? true : false,
+  { readonly power: { readonly sessionLock: HostPowerSessionLockProvider } } extends Entity ? true : false,
+  { readonly power: { readonly status: HostPowerStatusProvider } } extends Entity ? true : false,
+  { readonly power: { readonly suspension: HostPowerSuspensionProvider } } extends Entity ? true : false,
+  { readonly power: { readonly thermal: HostPowerThermalProvider } } extends Entity ? true : false,
 ];
 
 describe('power Entity boundaries', () => {

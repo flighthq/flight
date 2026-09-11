@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
-  ClipboardImageBackend,
-  ClipboardTextBackend,
+  HostClipboardImageProvider,
+  HostClipboardTextProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorClipboardBackend = ClipboardImageBackend & ClipboardTextBackend;
+type CapacitorClipboardBackend = HostClipboardImageProvider & HostClipboardTextProvider;
 
 // Capacitor covers the text/clear and image clipboard vectors. Other capability slots are
 // deliberately absent from its returned host rather than simulated by sentinels.

@@ -3,14 +3,14 @@ import type {
   CapacitorApi,
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
-  ConnectivityChangeBackend,
+  HostConnectivityChangeProvider,
   ConnectivityConnectionType,
   ConnectivityStatus,
-  ConnectivityStatusBackend,
+  HostConnectivityStatusProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorConnectivityBackend = ConnectivityStatusBackend & ConnectivityChangeBackend;
+type CapacitorConnectivityBackend = HostConnectivityStatusProvider & HostConnectivityChangeProvider;
 
 export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): CapacitorConnectivityBackend {
   const out = allocateEntity<CapacitorConnectivityBackend>();

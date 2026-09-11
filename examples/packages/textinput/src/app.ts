@@ -301,4 +301,4 @@ connectSignal(app.onRender, () => {
   updateHud();
   render(root);
 });
-startApplicationLoop(webHost, app);
+startApplicationLoop(webHost.app.loop, webHost.app.visibility, app);

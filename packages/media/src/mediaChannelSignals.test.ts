@@ -1,7 +1,7 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
+import type { HostAudioDeviceProvider, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource, resumeAudioChannel, stopAudioChannel } from './audioChannel';
 import {
@@ -14,7 +14,7 @@ import {
 const device = 1 as unknown as AudioDeviceHandle;
 let onEnded: Map<number, (() => void) | null>;
 let nextHandle = 1;
-let backend: AudioDeviceBackend;
+let backend: HostAudioDeviceProvider;
 
 function mockBuffer(): AudioBuffer {
   return {
@@ -26,7 +26,7 @@ function mockBuffer(): AudioBuffer {
   } as unknown as AudioBuffer;
 }
 
-function mockBackend(): AudioDeviceBackend {
+function mockBackend(): HostAudioDeviceProvider {
   const out = allocateEntity<any>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);

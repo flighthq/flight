@@ -1,4 +1,8 @@
-import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from '@flighthq/types/contract';
+import type {
+  HostMenuApplicationProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
+} from '@flighthq/types/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -143,9 +147,9 @@ describe('createElectronMenuBackends', () => {
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: ElectronApi): {
   destroy?: () => void;
-  popupContextMenu: MenuPopupBackend['popup'];
-  setApplicationMenu: MenuApplicationBackend['setApplicationMenu'];
-  subscribeSelect: MenuSelectBackend['subscribe'];
+  popupContextMenu: HostMenuPopupProvider['popup'];
+  setApplicationMenu: HostMenuApplicationProvider['setApplicationMenu'];
+  subscribeSelect: HostMenuSelectProvider['subscribe'];
 } {
   const { application, popup, select } = createElectronMenuBackends(api);
   return {

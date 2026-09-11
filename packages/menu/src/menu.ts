@@ -2,11 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HasMenuApplication,
-  HasMenuHighlight,
-  HasMenuPopup,
-  HasMenuSelect,
-  MenuApplicationBackend,
+  HostMenuApplicationProvider,
+  HostMenuHighlightProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
   MenuHighlight,
   MenuItemTemplate,
   MenuSelect,
@@ -20,17 +19,20 @@ import type {
 // The unsubscribe is ORIGIN-PINNED: it is stored beside the entity that opened it, so detach ends
 // exactly the subscription this attach created. Under the old ambient model a rebind could leave an
 // earlier subscription live against a replaced backend with nothing holding its unsubscribe.
-export function attachMenuHighlight(host: HasMenuHighlight, highlight: MenuHighlight): void {
+export function attachMenuHighlight(
+  hostMenuHighlight: Readonly<HostMenuHighlightProvider>,
+  highlight: MenuHighlight,
+): void {
   detachMenuHighlight(highlight);
-  const unsubscribe = host.menu.highlight.subscribe((id) => emitSignal(highlight.onMenuItemHighlight, id));
+  const unsubscribe = hostMenuHighlight.subscribe((id) => emitSignal(highlight.onMenuItemHighlight, id));
   _highlightUnsubscribe.set(highlight, unsubscribe);
 }
 
 // Starts delivering application menu-bar selections from the host's provider into `select`. Same
 // origin-pinned unsubscribe contract as attachMenuHighlight.
-export function attachMenuSelect(host: HasMenuSelect, select: MenuSelect): void {
+export function attachMenuSelect(hostMenuSelect: Readonly<HostMenuSelectProvider>, select: MenuSelect): void {
   detachMenuSelect(select);
-  const unsubscribe = host.menu.select.subscribe((id) => emitSignal(select.onMenuItemSelect, id));
+  const unsubscribe = hostMenuSelect.subscribe((id) => emitSignal(select.onMenuItemSelect, id));
   _selectUnsubscribe.set(select, unsubscribe);
 }
 
@@ -83,10 +85,9 @@ export function createMenuSelect(): MenuSelect {
 // Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
 // siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
 // failures; the ones that succeeded are forgotten and never destroyed twice.
-export function destroyMenuApplication(...hosts: readonly HasMenuApplication[]): void {
-  const pending = new Set<MenuApplicationBackend>();
-  for (const host of hosts) {
-    const provider = host.menu.application;
+export function destroyMenuApplication(...hostMenuApplication: readonly Readonly<HostMenuApplicationProvider>[]): void {
+  const pending = new Set<HostMenuApplicationProvider>();
+  for (const provider of hostMenuApplication) {
     if (!_destroyedApplication.has(provider)) pending.add(provider);
   }
   let failure: unknown = null;
@@ -156,21 +157,24 @@ export function initializeMenuSelect(out: EntityConstruction<MenuSelect>): void 
 // Installs the application menu bar through the host's provider. Returns false when the install did
 // not take effect. A host without a native menu bar omits the slot entirely, so this cannot be reached
 // with a stub that always answers false.
-export function setApplicationMenu(host: HasMenuApplication, items: readonly MenuItemTemplate[]): boolean {
-  return host.menu.application.setApplicationMenu(items);
+export function setApplicationMenu(
+  hostMenuApplication: Readonly<HostMenuApplicationProvider>,
+  items: readonly MenuItemTemplate[],
+): boolean {
+  return hostMenuApplication.setApplicationMenu(items);
 }
 
 // Pops up a context menu through the host's provider and resolves the chosen item id, or null when
 // dismissed. Emits the core open/close dispatcher signals around the call when they are enabled.
 export function showContextMenu(
-  host: HasMenuPopup,
+  hostMenuPopup: Readonly<HostMenuPopupProvider>,
   items: readonly MenuItemTemplate[],
   x: number,
   y: number,
 ): Promise<string | null> {
   const signals = _menuSignals;
   if (signals !== null) emitSignal(signals.onContextMenuOpen);
-  const promise = host.menu.popup.popup(items, x, y);
+  const promise = hostMenuPopup.popup(items, x, y);
   if (signals !== null) void promise.then(() => emitSignal(signals.onContextMenuClose));
   return promise;
 }
@@ -250,7 +254,7 @@ const _selectUnsubscribe = new WeakMap<MenuSelect, () => void>();
 
 // Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
 // retries exactly the failed obligations and never re-destroys a successful one.
-const _destroyedApplication = new WeakSet<MenuApplicationBackend>();
+const _destroyedApplication = new WeakSet<HostMenuApplicationProvider>();
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

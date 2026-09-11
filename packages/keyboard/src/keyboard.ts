@@ -3,13 +3,13 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  HasSoftKeyboardAccessoryBar,
-  HasSoftKeyboardChange,
-  HasSoftKeyboardInfo,
-  HasSoftKeyboardResizeModeWrite,
-  HasSoftKeyboardScrollAssist,
-  HasSoftKeyboardStyle,
-  HasSoftKeyboardVisibility,
+  HostSoftKeyboardAccessoryBarProvider,
+  HostSoftKeyboardChangeProvider,
+  HostSoftKeyboardInfoProvider,
+  HostSoftKeyboardResizeModeWriteProvider,
+  HostSoftKeyboardScrollAssistProvider,
+  HostSoftKeyboardStyleProvider,
+  HostSoftKeyboardVisibilityProvider,
   SoftKeyboard,
   SoftKeyboardAttachResult,
   SoftKeyboardInfo,
@@ -20,12 +20,13 @@ import type {
 } from '@flighthq/types/contract';
 
 export async function attachSoftKeyboard(
-  host: HasSoftKeyboardChange & HasSoftKeyboardInfo,
+  hostSoftKeyboardChange: Readonly<HostSoftKeyboardChangeProvider>,
+  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>,
   keyboard: SoftKeyboard,
 ): Promise<SoftKeyboardAttachResult> {
   detachSoftKeyboard(keyboard);
-  const change = host.input.softKeyboardChange;
-  const info = host.input.softKeyboardInfo;
+  const change = hostSoftKeyboardChange;
+  const info = hostSoftKeyboardInfo;
   let prevHeight = info.getInfo(_scratch).height;
   const subscription = await change.subscribe(() => {
     const nowInfo = info.getInfo(_scratch);
@@ -66,16 +67,21 @@ export function disposeSoftKeyboard(keyboard: SoftKeyboard): void {
   detachSoftKeyboard(keyboard);
 }
 
-export function getSoftKeyboardHeight(host: HasSoftKeyboardInfo): number {
-  return host.input.softKeyboardInfo.getInfo(_scratch).height;
+export function getSoftKeyboardHeight(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>): number {
+  return hostSoftKeyboardInfo.getInfo(_scratch).height;
 }
 
-export function getSoftKeyboardInfo(host: HasSoftKeyboardInfo, out: SoftKeyboardInfo): SoftKeyboardInfo {
-  return host.input.softKeyboardInfo.getInfo(out);
+export function getSoftKeyboardInfo(
+  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>,
+  out: SoftKeyboardInfo,
+): SoftKeyboardInfo {
+  return hostSoftKeyboardInfo.getInfo(out);
 }
 
-export function hideSoftKeyboard(host: HasSoftKeyboardVisibility): Promise<SoftKeyboardVisibilityResult> {
-  return host.input.softKeyboardVisibility.hide();
+export function hideSoftKeyboard(
+  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityProvider>,
+): Promise<SoftKeyboardVisibilityResult> {
+  return hostSoftKeyboardVisibility.hide();
 }
 
 export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard & Entity>): void {
@@ -84,40 +90,42 @@ export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard & En
   out.onShow = createSignal();
 }
 
-export function isSoftKeyboardVisible(host: HasSoftKeyboardInfo): boolean {
-  return host.input.softKeyboardInfo.getInfo(_scratch).visible;
+export function isSoftKeyboardVisible(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>): boolean {
+  return hostSoftKeyboardInfo.getInfo(_scratch).visible;
 }
 
 export function setSoftKeyboardAccessoryBarVisible(
-  host: HasSoftKeyboardAccessoryBar,
+  hostSoftKeyboardAccessoryBar: Readonly<HostSoftKeyboardAccessoryBarProvider>,
   visible: boolean,
 ): Promise<SoftKeyboardSetterResult> {
-  return host.input.softKeyboardAccessoryBar.setAccessoryBarVisible(visible);
+  return hostSoftKeyboardAccessoryBar.setAccessoryBarVisible(visible);
 }
 
 export function setSoftKeyboardResizeMode(
-  host: HasSoftKeyboardResizeModeWrite,
+  hostSoftKeyboardResizeModeWrite: Readonly<HostSoftKeyboardResizeModeWriteProvider>,
   mode: SoftKeyboardResizeMode,
 ): Promise<SoftKeyboardSetterResult> {
-  return host.input.softKeyboardResizeModeWrite.setResizeMode(mode);
+  return hostSoftKeyboardResizeModeWrite.setResizeMode(mode);
 }
 
 export function setSoftKeyboardScrollAssistEnabled(
-  host: HasSoftKeyboardScrollAssist,
+  hostSoftKeyboardScrollAssist: Readonly<HostSoftKeyboardScrollAssistProvider>,
   enabled: boolean,
 ): Promise<SoftKeyboardSetterResult> {
-  return host.input.softKeyboardScrollAssist.setScrollAssistEnabled(enabled);
+  return hostSoftKeyboardScrollAssist.setScrollAssistEnabled(enabled);
 }
 
 export function setSoftKeyboardStyle(
-  host: HasSoftKeyboardStyle,
+  hostSoftKeyboardStyle: Readonly<HostSoftKeyboardStyleProvider>,
   style: SoftKeyboardStyleKind,
 ): Promise<SoftKeyboardSetterResult> {
-  return host.input.softKeyboardStyle.setStyle(style);
+  return hostSoftKeyboardStyle.setStyle(style);
 }
 
-export function showSoftKeyboard(host: HasSoftKeyboardVisibility): Promise<SoftKeyboardVisibilityResult> {
-  return host.input.softKeyboardVisibility.show();
+export function showSoftKeyboard(
+  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityProvider>,
+): Promise<SoftKeyboardVisibilityResult> {
+  return hostSoftKeyboardVisibility.show();
 }
 
 const _scratch: SoftKeyboardInfo = { visible: false, height: 0, x: 0, y: 0, width: 0 };

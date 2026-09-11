@@ -3,15 +3,14 @@ import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
   DownloadedUpdate,
-  HasUpdaterCommand,
-  UpdaterCommandBackend,
+  HostUpdaterCommandProvider,
 } from '@flighthq/types/contract';
 
 import * as updaterContract from './contract';
 import * as updaterPublic from './index';
 import { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './updater';
 
-interface FakeBackend extends UpdaterCommandBackend {
+interface FakeBackend extends HostUpdaterCommandProvider {
   readonly calls: {
     check: number;
     destroy: number;
@@ -56,7 +55,9 @@ function fakeBackend(
   };
 }
 
-function host(command: UpdaterCommandBackend): HasUpdaterCommand {
+function host(command: HostUpdaterCommandProvider): {
+  readonly updater: { readonly command: HostUpdaterCommandProvider };
+} {
   return { updater: { command } };
 }
 
@@ -64,7 +65,7 @@ describe('checkForAppUpdate', () => {
   it('awaits exactly one explicit Host updater check', async () => {
     const backend = fakeBackend({ reason: 'not-available' });
 
-    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'not-available' });
+    await expect(checkForAppUpdate(host(backend).updater.command)).resolves.toEqual({ reason: 'not-available' });
     expect(backend.calls.check).toBe(1);
   });
 
@@ -74,7 +75,7 @@ describe('checkForAppUpdate', () => {
       throw new Error('native detail must not leak through a portable outcome');
     };
 
-    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(checkForAppUpdate(host(backend).updater.command)).resolves.toEqual({ reason: 'operation-failed' });
   });
 });
 
@@ -83,7 +84,7 @@ describe('destroyUpdater', () => {
     const selected = fakeBackend();
     const other = fakeBackend();
 
-    destroyUpdater(host(selected));
+    destroyUpdater(host(selected).updater.command);
 
     expect(selected.calls.destroy).toBe(1);
     expect(other.calls.destroy).toBe(0);
@@ -95,16 +96,20 @@ describe('installDownloadedUpdate', () => {
     const update = downloadedUpdate();
     const origin = fakeBackend({ reason: 'downloaded', update });
     const replacement = fakeBackend();
-    const checked = await checkForAppUpdate(host(origin));
+    const checked = await checkForAppUpdate(host(origin).updater.command);
     if (checked.reason !== 'downloaded') throw new Error('expected downloaded update');
 
-    await expect(installDownloadedUpdate(host(replacement), checked.update)).resolves.toEqual({ reason: 'ok' });
+    await expect(installDownloadedUpdate(host(replacement).updater.command, checked.update)).resolves.toEqual({
+      reason: 'ok',
+    });
     expect(origin.calls.install).toEqual([update]);
     expect(replacement.calls.install).toEqual([]);
   });
 
   it('rejects an update handle that did not originate from a completed check', async () => {
-    await expect(installDownloadedUpdate(host(fakeBackend()), downloadedUpdate())).rejects.toThrow(TypeError);
+    await expect(installDownloadedUpdate(host(fakeBackend()).updater.command, downloadedUpdate())).rejects.toThrow(
+      TypeError,
+    );
   });
 
   it('exports only the reduced transaction surface from both entry points', () => {

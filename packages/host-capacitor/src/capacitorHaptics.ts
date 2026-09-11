@@ -3,13 +3,13 @@ import type {
   CapacitorApi,
   HapticImpactStyle,
   HapticNotificationType,
-  HapticsBackend,
+  HostHapticsProvider,
   HapticsCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsBackend {
-  const out = allocateEntity<HapticsBackend>();
+export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HostHapticsProvider {
+  const out = allocateEntity<HostHapticsProvider>();
   initializeCapacitorHapticsBackend(out, capacitor);
   return finishEntity(out);
 }
@@ -22,7 +22,7 @@ export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsB
 // no amplitude waveform, so cancel/vibratePattern report false and the optional vibrateWaveform is
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
 export function initializeCapacitorHapticsBackend(
-  out: EntityConstruction<HapticsBackend>,
+  out: EntityConstruction<HostHapticsProvider>,
   capacitor: CapacitorApi,
 ): void {
   const haptics = capacitor.haptics;

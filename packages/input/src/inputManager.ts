@@ -9,7 +9,7 @@ import type {
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
-  InputIngressBackend,
+  HostInputIngressProvider,
   InputIngressSink,
   InputIngressSource,
   InputKeyboardData,
@@ -263,8 +263,8 @@ export function createInputState(): InputState {
   return finishEntity(out);
 }
 
-export function createWebInputIngressBackend(): InputIngressBackend & Entity {
-  const out = allocateEntity<InputIngressBackend & Entity>();
+export function createWebInputIngressBackend(): HostInputIngressProvider & Entity {
+  const out = allocateEntity<HostInputIngressProvider & Entity>();
   initializeWebInputIngressBackend(out);
   return finishEntity(out);
 }
@@ -359,7 +359,7 @@ export function getInputGamepadAxis(state: Readonly<InputState>, gamepad: number
   return state.axisValues.get(gamepad * MAX_GAMEPAD_AXES + axis) ?? 0;
 }
 
-export function getInputIngressBackend(): InputIngressBackend {
+export function getInputIngressBackend(): HostInputIngressProvider {
   return _customInputIngressBackend ?? _hostInputIngressBackend ?? _webInputIngressBackend;
 }
 
@@ -495,7 +495,7 @@ export function initializeInputState(out: EntityConstruction<InputState>): void 
 }
 
 /** Explicit browser adapter for the process-wide input-ingress seam. */
-export function initializeWebInputIngressBackend(out: EntityConstruction<InputIngressBackend & Entity>): void {
+export function initializeWebInputIngressBackend(out: EntityConstruction<HostInputIngressProvider & Entity>): void {
   out.attachGamepad = (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
@@ -707,7 +707,7 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<InputIn
 }
 
 // First host wins; a custom backend installed through setInputIngressBackend always takes precedence.
-export function installInputIngressHostBackend(backend: InputIngressBackend): void {
+export function installInputIngressHostBackend(backend: HostInputIngressProvider): void {
   if (_hostInputIngressBackend === null) _hostInputIngressBackend = backend;
 }
 
@@ -752,7 +752,7 @@ export function resetInputIngressBackendForTest(): void {
   _hostInputIngressBackend = null;
 }
 
-export function setInputIngressBackend(backend: InputIngressBackend | null): void {
+export function setInputIngressBackend(backend: HostInputIngressProvider | null): void {
   _customInputIngressBackend = backend;
 }
 
@@ -1221,8 +1221,8 @@ function setInputGamepadConnectData(out: InputGamepadConnectData, gamepad: Gamep
 }
 
 const _webInputIngressBackend = createWebInputIngressBackend();
-let _customInputIngressBackend: InputIngressBackend | null = null;
-let _hostInputIngressBackend: InputIngressBackend | null = null;
+let _customInputIngressBackend: HostInputIngressProvider | null = null;
+let _hostInputIngressBackend: HostInputIngressProvider | null = null;
 
 // Internal teardown registry: maps a manager to its per-source, per-input-kind origin release.
 // Kept off the public InputManager entity so attach/detach track bindings internally and callers hold

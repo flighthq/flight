@@ -5,17 +5,17 @@ import type {
   EntityConstruction,
   HostShellCapabilities,
   PlatformName,
-  ShellBeepBackend,
-  ShellExternalBackend,
-  ShellPathOpenBackend,
-  ShellPathRevealBackend,
+  HostShellBeepProvider,
+  HostShellExternalProvider,
+  HostShellPathOpenProvider,
+  HostShellPathRevealProvider,
   ShellShortcutLink,
-  ShellShortcutLinkBackend,
-  ShellTrashBackend,
+  HostShellShortcutLinkProvider,
+  HostShellTrashProvider,
 } from '@flighthq/types/contract';
 
 export function initializeShellBeepBackend(
-  out: EntityConstruction<ShellBeepBackend>,
+  out: EntityConstruction<HostShellBeepProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.beep = () => {
@@ -24,7 +24,7 @@ export function initializeShellBeepBackend(
 }
 
 export function initializeShellExternalBackend(
-  out: EntityConstruction<ShellExternalBackend>,
+  out: EntityConstruction<HostShellExternalProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.open = async (url) => {
@@ -38,7 +38,7 @@ export function initializeShellExternalBackend(
 }
 
 export function initializeShellPathOpenBackend(
-  out: EntityConstruction<ShellPathOpenBackend>,
+  out: EntityConstruction<HostShellPathOpenProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.open = async (path) => {
@@ -52,7 +52,7 @@ export function initializeShellPathOpenBackend(
 }
 
 export function initializeShellPathRevealBackend(
-  out: EntityConstruction<ShellPathRevealBackend>,
+  out: EntityConstruction<HostShellPathRevealProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.reveal = async (path) => {
@@ -66,7 +66,7 @@ export function initializeShellPathRevealBackend(
 }
 
 export function initializeShellShortcutLinkBackend(
-  out: EntityConstruction<ShellShortcutLinkBackend>,
+  out: EntityConstruction<HostShellShortcutLinkProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.read = async (shortcutPath) => {
@@ -105,7 +105,7 @@ export function initializeShellShortcutLinkBackend(
 }
 
 export function initializeShellTrashBackend(
-  out: EntityConstruction<ShellTrashBackend>,
+  out: EntityConstruction<HostShellTrashProvider>,
   shell: ElectronApi['shell'],
 ): void {
   out.moveToTrash = async (path) => {
@@ -126,25 +126,25 @@ export function makeElectronShellCapabilities(
 ): HostShellCapabilities &
   Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
   const shell = electron.shell;
-  const beep = allocateEntity<ShellBeepBackend>();
+  const beep = allocateEntity<HostShellBeepProvider>();
   initializeShellBeepBackend(beep, shell);
   const external = (() => {
-    const out = allocateEntity<ShellExternalBackend>();
+    const out = allocateEntity<HostShellExternalProvider>();
     initializeShellExternalBackend(out, shell);
     return finishEntity(out);
   })();
   const pathOpen = (() => {
-    const out = allocateEntity<ShellPathOpenBackend>();
+    const out = allocateEntity<HostShellPathOpenProvider>();
     initializeShellPathOpenBackend(out, shell);
     return finishEntity(out);
   })();
   const pathReveal = (() => {
-    const out = allocateEntity<ShellPathRevealBackend>();
+    const out = allocateEntity<HostShellPathRevealProvider>();
     initializeShellPathRevealBackend(out, shell);
     return finishEntity(out);
   })();
   const trash = (() => {
-    const out = allocateEntity<ShellTrashBackend>();
+    const out = allocateEntity<HostShellTrashProvider>();
     initializeShellTrashBackend(out, shell);
     return finishEntity(out);
   })();
@@ -153,8 +153,8 @@ export function makeElectronShellCapabilities(
   return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
 }
 
-function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
-  const out = allocateEntity<ShellShortcutLinkBackend>();
+function createElectronShellShortcutLinkBackend(electron: ElectronApi): HostShellShortcutLinkProvider {
+  const out = allocateEntity<HostShellShortcutLinkProvider>();
   initializeShellShortcutLinkBackend(out, electron.shell);
   return finishEntity(out);
 }

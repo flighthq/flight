@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
-  StorageBackend,
+  HostStorageProvider,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
@@ -18,8 +18,8 @@ type StorageRecordResult =
 export function createElectronStorageBackend(
   electron: ElectronApi,
   fileName = 'storage.json',
-): StorageBackend & Entity {
-  const out = allocateEntity<StorageBackend>();
+): HostStorageProvider & Entity {
+  const out = allocateEntity<HostStorageProvider>();
   initializeElectronStorageBackend(out, electron, fileName);
   return finishEntity(out);
 }
@@ -29,7 +29,7 @@ export function createElectronStorageBackend(
 // target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
 // not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
 export function initializeElectronStorageBackend(
-  out: EntityConstruction<StorageBackend>,
+  out: EntityConstruction<HostStorageProvider>,
   electron: ElectronApi,
   fileName = 'storage.json',
 ): void {

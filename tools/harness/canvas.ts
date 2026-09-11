@@ -72,7 +72,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
-  registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(state));
+  registerCanvasBitmapTextureResolver(webGraphicsHost.graphics.image, getCanvasRenderStateTextureResolvers(state));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   for (const kind of options.kinds ?? []) {

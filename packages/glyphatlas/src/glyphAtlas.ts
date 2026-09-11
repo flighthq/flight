@@ -7,7 +7,7 @@ import type {
   GlyphAtlasOptions,
   GlyphMetrics,
   GlyphRasterizeOptions,
-  GlyphRasterizerBackend,
+  HostGlyphRasterizerProvider,
 } from '@flighthq/types/contract';
 
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
@@ -101,7 +101,7 @@ export function initializeGlyphAtlas(out: EntityConstruction<GlyphAtlas>, option
 // cannot. Metrics are resolved once at construction rather than per query: they describe the font at
 // a size, which does not change over the atlas's life, and a backend measurement can touch a canvas.
 function _resolveGlyphAtlasMetrics(
-  backend: Readonly<GlyphRasterizerBackend>,
+  backend: Readonly<HostGlyphRasterizerProvider>,
   rasterizeOptions: Readonly<GlyphRasterizeOptions>,
 ): GlyphMetrics {
   const measured = backend.measureMetrics?.(rasterizeOptions) ?? null;

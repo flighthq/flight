@@ -1,7 +1,7 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
 import { createImageResource, createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { HasGraphicsImage, ImageBackend, TextureSource } from '@flighthq/types/contract';
+import type { HostImageProvider, TextureSource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -20,7 +20,7 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-function createTestImageBackend(): ImageBackend {
+function createTestImageBackend(): HostImageProvider {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -33,7 +33,9 @@ function createTestImageBackend(): ImageBackend {
   };
 }
 
-const host: HasGraphicsImage = { graphics: { image: createTestImageBackend() } } as HasGraphicsImage;
+const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+  graphics: { image: createTestImageBackend() },
+} as { readonly graphics: { readonly image: HostImageProvider } };
 
 describe('explainCanvasImageSource', () => {
   it('reports element for a host-element-backed resource', () => {
@@ -52,8 +54,8 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const stateB = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
     const texture = createTexture({ dimension: '2d', source: bitmap });
-    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(stateA));
-    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(stateB));
+    registerCanvasBitmapTextureResolver(host.graphics.image, getCanvasRenderStateTextureResolvers(stateA));
+    registerCanvasBitmapTextureResolver(host.graphics.image, getCanvasRenderStateTextureResolvers(stateB));
 
     const first = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(stateA), texture);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
@@ -65,7 +67,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const state = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
     const texture = createTexture({ dimension: '2d', source: bitmap });
-    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(host.graphics.image, getCanvasRenderStateTextureResolvers(state));
     const first = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture);
     invalidateBitmap(bitmap);
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture)).not.toBe(first);

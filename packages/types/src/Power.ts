@@ -137,13 +137,6 @@ export type WebPowerReadingCapabilities = Entity & Required<Pick<HostPowerCapabi
 export type WebPowerCapabilities = Entity &
   Required<Pick<HostPowerCapabilities, 'change' | 'keepAwake' | 'status' | 'suspension'>>;
 
-// The host whose slots attachPower subscribes through. Every slot in the group is optional, so a caller
-// passes whichever it has: a host without `sessionLock` simply never delivers lock/unlock edges. A real
-// Host satisfies this directly.
-export interface PowerAttachHost {
-  readonly power: Partial<HostPowerCapabilities>;
-}
-
 // The consumer-held power event entity. Signals are null until enablePowerSignals allocates them, so an
 // unused group tree-shakes out. Entity-composed: this is a user-held identity-bearing object, unlike the
 // PowerStatus / PowerBatteryHealth value structs the queries fill.

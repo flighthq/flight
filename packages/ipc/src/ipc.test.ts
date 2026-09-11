@@ -1,23 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
-  HasIpcHandle,
-  HasIpcInvoke,
-  HasIpcMessage,
-  HasIpcSend,
-  HasIpcTargetedSend,
-  IpcHandleBackend,
-  IpcInvokeBackend,
-  IpcMessageBackend,
-  IpcSendBackend,
-  IpcTargetedSendBackend,
+  HostIpcHandleProvider,
+  HostIpcInvokeProvider,
+  HostIpcMessageProvider,
+  HostIpcSendProvider,
+  HostIpcTargetedSendProvider,
 } from '@flighthq/types/contract';
 
 import { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './ipc';
 
 // A host carrying a recording message provider. Nothing installs anywhere, so two hosts can be live at
 // once — the property the ambient seam could not express.
-function messageHost(): HasIpcMessage & {
+function messageHost(): { readonly ipc: { readonly message: HostIpcMessageProvider } } & {
   deliver(channel: string, ...args: readonly unknown[]): void;
   subscriberCount(channel: string): number;
 } {
@@ -48,19 +43,20 @@ interface TestIpcTarget {
   readonly id: number;
 }
 
-function operationHost(): HasIpcHandle &
-  HasIpcInvoke &
-  HasIpcSend &
-  HasIpcTargetedSend<TestIpcTarget> & {
-    readonly handlers: Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>;
-    readonly invocations: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
-    readonly sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
-    readonly sentTo: Array<{
-      readonly args: readonly unknown[];
-      readonly channel: string;
-      readonly target: TestIpcTarget;
-    }>;
-  } {
+function operationHost(): { readonly ipc: { readonly handle: HostIpcHandleProvider } } & {
+  readonly ipc: { readonly invoke: HostIpcInvokeProvider };
+} & { readonly ipc: { readonly send: HostIpcSendProvider } } & {
+  readonly ipc: { readonly targetedSend: HostIpcTargetedSendProvider<TestIpcTarget> };
+} & {
+  readonly handlers: Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>;
+  readonly invocations: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
+  readonly sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
+  readonly sentTo: Array<{
+    readonly args: readonly unknown[];
+    readonly channel: string;
+    readonly target: TestIpcTarget;
+  }>;
+} {
   const handlers = new Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>();
   const invocations: Array<{ readonly args: readonly unknown[]; readonly channel: string }> = [];
   const sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }> = [];
@@ -74,7 +70,7 @@ function operationHost(): HasIpcHandle &
     invocations,
     ipc: {
       handle: (() => {
-        const out = allocateEntity<IpcHandleBackend>();
+        const out = allocateEntity<HostIpcHandleProvider>();
         out.handle = (channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>) => {
           handlers.set(channel, handler);
           return () => {
@@ -84,7 +80,7 @@ function operationHost(): HasIpcHandle &
         return finishEntity(out);
       })(),
       invoke: (() => {
-        const out = allocateEntity<IpcInvokeBackend>();
+        const out = allocateEntity<HostIpcInvokeProvider>();
         out.invoke = (channel: string, args: readonly unknown[]) => {
           invocations.push({ args, channel });
           return Promise.resolve({ args, channel });
@@ -92,14 +88,14 @@ function operationHost(): HasIpcHandle &
         return finishEntity(out);
       })(),
       send: (() => {
-        const out = allocateEntity<IpcSendBackend>();
+        const out = allocateEntity<HostIpcSendProvider>();
         out.send = (channel: string, args: readonly unknown[]) => {
           sent.push({ args, channel });
         };
         return finishEntity(out);
       })(),
       targetedSend: (() => {
-        const out = allocateEntity<IpcTargetedSendBackend<TestIpcTarget>>();
+        const out = allocateEntity<HostIpcTargetedSendProvider<TestIpcTarget>>();
         out.send = (target: TestIpcTarget, channel: string, args: readonly unknown[]) => {
           sentTo.push({ args, channel, target });
         };
@@ -113,10 +109,10 @@ function operationHost(): HasIpcHandle &
 
 describe('invokeIpc', () => {
   it('requires the invoke capability and returns its response', async () => {
-    expectTypeOf(invokeIpc).parameter(0).toEqualTypeOf<HasIpcInvoke>();
+    expectTypeOf(invokeIpc).parameter(0).toEqualTypeOf<Readonly<HostIpcInvokeProvider>>();
     const host = operationHost();
 
-    const response = await invokeIpc(host, 'compute', 1, 2);
+    const response = await invokeIpc(host.ipc.invoke, 'compute', 1, 2);
 
     expect(response).toEqual({ args: [1, 2], channel: 'compute' });
     expect(host.invocations).toEqual([{ args: [1, 2], channel: 'compute' }]);
@@ -127,7 +123,7 @@ describe('onceIpcMessage', () => {
   it('delivers the first message and then releases the subscription', () => {
     const host = messageHost();
     const seen: (readonly unknown[])[] = [];
-    onceIpcMessage(host, 'ping', (...args) => seen.push(args));
+    onceIpcMessage(host.ipc.message, 'ping', (...args) => seen.push(args));
     host.deliver('ping', 1);
     host.deliver('ping', 2);
     expect(seen).toEqual([[1]]);
@@ -138,7 +134,7 @@ describe('onceIpcMessage', () => {
   it('returns an unsubscribe that works before any message arrives', () => {
     const host = messageHost();
     let count = 0;
-    const stop = onceIpcMessage(host, 'ping', () => count++);
+    const stop = onceIpcMessage(host.ipc.message, 'ping', () => count++);
     stop();
     expect(host.subscriberCount('ping')).toBe(0);
     host.deliver('ping');
@@ -147,7 +143,7 @@ describe('onceIpcMessage', () => {
 
   it('releases exactly once across repeated stop calls', () => {
     let releases = 0;
-    const host: HasIpcMessage = {
+    const host: { readonly ipc: { readonly message: HostIpcMessageProvider } } = {
       ipc: {
         message: (() => {
           const out = allocateEntity<any>();
@@ -158,7 +154,7 @@ describe('onceIpcMessage', () => {
         })(),
       },
     };
-    const stop = onceIpcMessage(host, 'ping', () => {});
+    const stop = onceIpcMessage(host.ipc.message, 'ping', () => {});
     stop();
     stop();
     expect(releases).toBe(1);
@@ -169,10 +165,10 @@ describe('onceIpcMessage', () => {
   // anything to release.
   it('releases even when the provider delivers during subscribe', () => {
     let released = false;
-    const host: HasIpcMessage = {
+    const host: { readonly ipc: { readonly message: HostIpcMessageProvider } } = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<IpcMessageBackend>();
+          const out = allocateEntity<HostIpcMessageProvider>();
           out.subscribe = (_channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
             listener([42]);
             return () => (released = true);
@@ -182,7 +178,7 @@ describe('onceIpcMessage', () => {
       },
     };
     const seen: (readonly unknown[])[] = [];
-    onceIpcMessage(host, 'ping', (...args) => seen.push(args));
+    onceIpcMessage(host.ipc.message, 'ping', (...args) => seen.push(args));
     expect(seen).toEqual([[42]]);
     expect(released).toBe(true);
   });
@@ -190,9 +186,9 @@ describe('onceIpcMessage', () => {
 
 describe('onIpcInvoke', () => {
   it('requires the handle capability, spreads arguments, and returns its release', async () => {
-    expectTypeOf(onIpcInvoke).parameter(0).toEqualTypeOf<HasIpcHandle>();
+    expectTypeOf(onIpcInvoke).parameter(0).toEqualTypeOf<Readonly<HostIpcHandleProvider>>();
     const host = operationHost();
-    const stop = onIpcInvoke(host, 'double', (value) => (value as number) * 2);
+    const stop = onIpcInvoke(host.ipc.handle, 'double', (value) => (value as number) * 2);
 
     expect(await host.handlers.get('double')?.(4)).toBe(8);
 
@@ -205,7 +201,7 @@ describe('onIpcMessage', () => {
   it('delivers every message on its channel with the sent arguments', () => {
     const host = messageHost();
     const seen: (readonly unknown[])[] = [];
-    onIpcMessage(host, 'ping', (...args) => seen.push(args));
+    onIpcMessage(host.ipc.message, 'ping', (...args) => seen.push(args));
     host.deliver('ping', 1, 'two');
     host.deliver('ping', 3);
     expect(seen).toEqual([[1, 'two'], [3]]);
@@ -214,7 +210,7 @@ describe('onIpcMessage', () => {
   it('delivers only its own channel', () => {
     const host = messageHost();
     let count = 0;
-    onIpcMessage(host, 'wanted', () => count++);
+    onIpcMessage(host.ipc.message, 'wanted', () => count++);
     host.deliver('other', 1);
     expect(count).toBe(0);
   });
@@ -223,8 +219,8 @@ describe('onIpcMessage', () => {
   it('unsubscribes exactly its own subscription', () => {
     const host = messageHost();
     const kept: unknown[] = [];
-    const stopDropped = onIpcMessage(host, 'shared', () => kept.push('dropped'));
-    onIpcMessage(host, 'shared', () => kept.push('kept'));
+    const stopDropped = onIpcMessage(host.ipc.message, 'shared', () => kept.push('dropped'));
+    onIpcMessage(host.ipc.message, 'shared', () => kept.push('kept'));
     stopDropped();
     host.deliver('shared');
     expect(kept).toEqual(['kept']);
@@ -237,8 +233,8 @@ describe('onIpcMessage', () => {
     const first = messageHost();
     const second = messageHost();
     const seen: string[] = [];
-    onIpcMessage(first, 'c', () => seen.push('first'));
-    onIpcMessage(second, 'c', () => seen.push('second'));
+    onIpcMessage(first.ipc.message, 'c', () => seen.push('first'));
+    onIpcMessage(second.ipc.message, 'c', () => seen.push('second'));
     second.deliver('c');
     first.deliver('c');
     expect(seen).toEqual(['second', 'first']);
@@ -247,10 +243,10 @@ describe('onIpcMessage', () => {
 
 describe('sendIpcMessage', () => {
   it('requires the send capability and forwards the arguments', () => {
-    expectTypeOf(sendIpcMessage).parameter(0).toEqualTypeOf<HasIpcSend>();
+    expectTypeOf(sendIpcMessage).parameter(0).toEqualTypeOf<Readonly<HostIpcSendProvider>>();
     const host = operationHost();
 
-    sendIpcMessage(host, 'log', 'hello', 7);
+    sendIpcMessage(host.ipc.send, 'log', 'hello', 7);
 
     expect(host.sent).toEqual([{ args: ['hello', 7], channel: 'log' }]);
   });
@@ -260,11 +256,11 @@ describe('sendIpcMessageTo', () => {
   it('requires a capability for the target type and forwards that target unchanged', () => {
     expectTypeOf(sendIpcMessageTo<TestIpcTarget>)
       .parameter(0)
-      .toEqualTypeOf<HasIpcTargetedSend<TestIpcTarget>>();
+      .toEqualTypeOf<Readonly<HostIpcTargetedSendProvider<TestIpcTarget>>>();
     const host = operationHost();
     const target = { id: 7 };
 
-    sendIpcMessageTo(host, target, 'log', 'hello');
+    sendIpcMessageTo(host.ipc.targetedSend, target, 'log', 'hello');
 
     expect(host.sentTo).toEqual([{ args: ['hello'], channel: 'log', target }]);
     expect(host.sentTo[0].target).toBe(target);

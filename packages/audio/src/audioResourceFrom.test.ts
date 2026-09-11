@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, HasMediaAudioCodec, HasNetHttp, NetBackend } from '@flighthq/types/contract';
+import type { AudioDecoder, HostAudioProvider, HostNetProvider } from '@flighthq/types/contract';
 
 import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
@@ -13,18 +13,22 @@ import {
   selectAudioResourceUrl,
 } from './audioResourceFrom';
 
-function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCodec {
+function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
+  readonly media: { readonly audioCodec: HostAudioProvider };
+} {
   const out = allocateEntity<any>();
   out.canPlayType = canPlay;
   return {
     media: {
       audioCodec: finishEntity(out),
     },
-  } as HasMediaAudioCodec;
+  } as { readonly media: { readonly audioCodec: HostAudioProvider } };
 }
 
-function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
-  const out = allocateEntity<NetBackend>();
+function fakeNetHost(backend?: Pick<HostNetProvider, 'sendNetRequest'>): {
+  readonly net: { readonly http: HostNetProvider };
+} {
+  const out = allocateEntity<HostNetProvider>();
   Object.assign(
     out,
     backend ?? {
@@ -40,8 +44,10 @@ function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
 
 function fakeNetAudioHost(
   canPlay: (type: string) => boolean,
-  backend?: Pick<NetBackend, 'sendNetRequest'>,
-): HasNetHttp & HasMediaAudioCodec {
+  backend?: Pick<HostNetProvider, 'sendNetRequest'>,
+): { readonly net: { readonly http: HostNetProvider } } & {
+  readonly media: { readonly audioCodec: HostAudioProvider };
+} {
   return { ...fakeNetHost(backend), ...fakeAudioCodecHost(canPlay) };
 }
 
@@ -247,7 +253,7 @@ describe('loadAudioResourceFromUrl', () => {
     });
     const host = fakeNetHost({ sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrl(host, mockContext, 'sound.mp3');
+    const resource = await loadAudioResourceFromUrl(host.net.http, mockContext, 'sound.mp3');
 
     expect(resource.buffer).toBe(decodedBuffer);
     expect(mockSendNetRequest).toHaveBeenCalledWith(
@@ -267,7 +273,7 @@ describe('loadAudioResourceFromUrl', () => {
         url: 'sound.mp3',
       }),
     });
-    const resource = await loadAudioResourceFromUrl(host, mockContext, 'sound.mp3');
+    const resource = await loadAudioResourceFromUrl(host.net.http, mockContext, 'sound.mp3');
     expect(resource.buffer).toBe(decodedBuffer);
   });
 
@@ -284,7 +290,7 @@ describe('loadAudioResourceFromUrl', () => {
       }),
     });
     await expect(
-      loadAudioResourceFromUrl(host, { decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
+      loadAudioResourceFromUrl(host.net.http, { decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
     ).rejects.toThrow('Failed to load audio: missing.mp3 (404 Not Found)');
     expect(decodeAudioData).not.toHaveBeenCalled();
   });
@@ -302,7 +308,7 @@ describe('loadAudioResourceFromUrl', () => {
       }),
     });
     const controller = new AbortController();
-    const promise = loadAudioResourceFromUrl(host, context, 'sound.mp3', controller.signal);
+    const promise = loadAudioResourceFromUrl(host.net.http, context, 'sound.mp3', controller.signal);
     await Promise.resolve();
     controller.abort(new Error('cancelled'));
     finishDecode();
@@ -313,7 +319,7 @@ describe('loadAudioResourceFromUrl', () => {
 describe('loadAudioResourceFromUrls', () => {
   it('resolves with a null-buffer resource when sources is empty', async () => {
     const host = fakeNetAudioHost(() => false);
-    const resource = await loadAudioResourceFromUrls(host, mockContext, []);
+    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, []);
     expect(resource.buffer).toBeNull();
   });
 
@@ -328,7 +334,10 @@ describe('loadAudioResourceFromUrls', () => {
     });
     const host = fakeNetAudioHost((type) => type === 'audio/ogg', { sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrls(host, mockContext, [{ url: 'sound.mp3' }, { url: 'sound.ogg' }]);
+    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, [
+      { url: 'sound.mp3' },
+      { url: 'sound.ogg' },
+    ]);
 
     expect(resource.buffer).toBe(decodedBuffer);
     expect(mockSendNetRequest).toHaveBeenCalledWith(
@@ -352,7 +361,7 @@ describe('loadAudioResourceFromUrls', () => {
       }),
     });
 
-    const resource = await loadAudioResourceFromUrls(host, mockContext, [
+    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, [
       { type: 'audio/vnd.acme.custom', url: 'sound.custom' },
     ]);
 
@@ -366,24 +375,23 @@ describe('selectAudioResourceUrl', () => {
   const host = fakeAudioCodecHost((type) => type === 'audio/ogg');
 
   it('returns the first source whose inferred type is playable', () => {
-    expect(selectAudioResourceUrl(host, [{ url: 'a.mp3' }, { url: 'b.ogg' }])).toBe('b.ogg');
+    expect(selectAudioResourceUrl(host.media.audioCodec, [{ url: 'a.mp3' }, { url: 'b.ogg' }])).toBe('b.ogg');
   });
 
   it('honours an explicit type over the URL extension', () => {
-    expect(selectAudioResourceUrl(host, [{ type: 'audio/ogg', url: 'stream' }])).toBe('stream');
+    expect(selectAudioResourceUrl(host.media.audioCodec, [{ type: 'audio/ogg', url: 'stream' }])).toBe('stream');
   });
 
   it('returns null when no source is playable', () => {
-    expect(selectAudioResourceUrl(host, [{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
+    expect(selectAudioResourceUrl(host.media.audioCodec, [{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
   });
 
   it('returns a source handled by a registered decoder', () => {
     registerAudioDecoder('audio/vnd.acme.custom', async () => createAudioResource());
     expect(
-      selectAudioResourceUrl(
-        fakeAudioCodecHost(() => false),
-        [{ type: 'audio/vnd.acme.custom', url: 'sound.custom' }],
-      ),
+      selectAudioResourceUrl(fakeAudioCodecHost(() => false).media.audioCodec, [
+        { type: 'audio/vnd.acme.custom', url: 'sound.custom' },
+      ]),
     ).toBe('sound.custom');
   });
 });
