@@ -72,7 +72,7 @@ describe('initializeFileDialogHandle', () => {
 
 describe('showOpenDirectoryDialog', () => {
   it('routes the single-directory operation through its independent capability slot', async () => {
-    const result = await showOpenDirectoryDialog(fakeHost());
+    const result = await showOpenDirectoryDialog(fakeHost().dialog.directoryOpen);
     expect(result.outcome === 'selected' ? result.handle.kind : null).toBe('Directory');
   });
 
@@ -88,7 +88,7 @@ describe('showOpenDirectoryDialog', () => {
         })(),
       },
     };
-    expect((await showOpenDirectoryDialog(host)).outcome).toBe('runtime-unavailable');
+    expect((await showOpenDirectoryDialog(host.dialog.directoryOpen)).outcome).toBe('runtime-unavailable');
   });
 
   it('forwards cancellation options through the independent capability slot', async () => {
@@ -103,7 +103,7 @@ describe('showOpenDirectoryDialog', () => {
       },
     };
     const signal = new AbortController().signal;
-    await showOpenDirectoryDialog(host, { signal });
+    await showOpenDirectoryDialog(host.dialog.directoryOpen, { signal });
     expect(open).toHaveBeenCalledWith({ signal });
   });
 });
@@ -113,7 +113,7 @@ describe('showOpenFileDialog', () => {
     const signal = new AbortController().signal;
     const host = fakeHost();
     const open = vi.spyOn(host.dialog.fileOpen, 'open');
-    const result = await showOpenFileDialog(host, { multiple: true, signal });
+    const result = await showOpenFileDialog(host.dialog.fileOpen, { multiple: true, signal });
     expect(result.outcome === 'selected' ? result.handles.length : 0).toBe(2);
     expect(open).toHaveBeenCalledWith({ multiple: true, signal });
   });
@@ -130,12 +130,12 @@ describe('showOpenFileDialog', () => {
         })(),
       },
     };
-    expect((await showOpenFileDialog(host, {})).outcome).toBe('security-denied');
+    expect((await showOpenFileDialog(host.dialog.fileOpen, {})).outcome).toBe('security-denied');
   });
 });
 describe('showSaveFileDialog', () => {
   it('routes file save through its independent capability slot', async () => {
-    const result = await showSaveFileDialog(fakeHost(), { defaultName: 'out.txt' });
+    const result = await showSaveFileDialog(fakeHost().dialog.fileSave, { defaultName: 'out.txt' });
     expect(result.outcome === 'selected' ? result.handle.name : null).toBe('out.txt');
   });
 
@@ -151,6 +151,6 @@ describe('showSaveFileDialog', () => {
         })(),
       },
     };
-    expect((await showSaveFileDialog(host, {})).outcome).toBe('file-save-failed');
+    expect((await showSaveFileDialog(host.dialog.fileSave, {})).outcome).toBe('file-save-failed');
   });
 });

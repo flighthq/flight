@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web';
+import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
@@ -72,7 +72,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
-  registerCanvasBitmapTextureResolver(webGraphicsHost.graphics.image, getCanvasRenderStateTextureResolvers(state));
+  registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(state));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   for (const kind of options.kinds ?? []) {

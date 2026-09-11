@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostStorageCapabilities } from '@flighthq/types/contract';
 
 import { webHostFileSystem } from './webFilesystem';
@@ -12,5 +11,3 @@ export const webHostStorageGroup = {
   persistenceQuery: webHostStoragePersistenceQuery,
   persistenceRequest: webHostStoragePersistenceRequest,
 } satisfies HostStorageCapabilities;
-
-export const webStorageHost = /* @__PURE__ */ createHost({ storage: webHostStorageGroup });

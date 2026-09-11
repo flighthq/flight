@@ -1,7 +1,7 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { EntityWithoutRuntime, HasInputPointerLock, HostInputPointerLockProvider } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, HostInputPointerLockProvider } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
 import {
@@ -112,11 +112,15 @@ describe('webHostInputPointerLock', () => {
       out.request = async () => ({ reason: 'ok' });
       return finishEntity(out);
     })();
-    const fallbackHost: HasInputPointerLock = { input: { pointerLock: fallbackBackend } };
+    const fallbackHost: { readonly input: { readonly pointerLock: HostInputPointerLockProvider } } = {
+      input: { pointerLock: fallbackBackend },
+    };
     resetWebInputTargetBackendForTest();
 
-    await expect(lockApplicationPointer(webHost, target)).resolves.toEqual({ reason: 'target-not-found' });
-    await exitApplicationPointerLock(fallbackHost);
+    await expect(lockApplicationPointer(webHost.input.pointerLock, target)).resolves.toEqual({
+      reason: 'target-not-found',
+    });
+    await exitApplicationPointerLock(fallbackHost.input.pointerLock);
 
     expect(fallbackExit).toHaveBeenCalledOnce();
   });

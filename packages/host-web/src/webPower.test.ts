@@ -6,7 +6,7 @@ import {
   initializeWebPowerKeepAwakeBackend,
   initializeWebPowerReadings,
   initializeWebPowerSuspensionBackend,
-  webPowerCapabilities,
+  webHostPower,
   webHostPowerKeepAwake,
   webHostPowerSuspension,
 } from './webPower';
@@ -103,6 +103,30 @@ describe('initializeWebPowerSuspensionBackend', () => {
   });
 });
 
+describe('webHostPower', () => {
+  // ★ EXACT SLOT COVERAGE for W. The four absent slots are the point: web previously implemented all of
+  // them with inert subscriptions and constant sentinels, which no structural probe could tell from a
+  // real provider. Asserting the exact key set is what stops one being quietly re-added as a stub.
+  it('offers exactly status, change, keepAwake and suspension', () => {
+    expect(EntityRuntimeKey in webHostPower).toBe(true);
+    for (const provider of Object.values(webHostPower)) expect(EntityRuntimeKey in provider).toBe(true);
+    expect(
+      Object.keys(webHostPower)
+        .filter((k) => k !== 'constructor')
+        .sort(),
+    ).toEqual(['change', 'keepAwake', 'status', 'suspension']);
+    expect('idle' in webHostPower).toBe(false);
+    expect('sessionLock' in webHostPower).toBe(false);
+    expect('batteryHealth' in webHostPower).toBe(false);
+    expect('thermal' in webHostPower).toBe(false);
+  });
+
+  it('declares a teardown obligation on keepAwake alone', () => {
+    expect(typeof webHostPower.keepAwake.destroy).toBe('function');
+    expect('destroy' in webHostPower.suspension).toBe(false);
+  });
+});
+
 describe('webHostPowerKeepAwake', () => {
   it('reports unavailable when the Wake Lock API is absent', async () => {
     setNavigator(undefined);
@@ -196,29 +220,5 @@ describe('webHostPowerSuspension', () => {
     stopSuspend();
     stopResume();
     expect(removed).toEqual(['freeze', 'resume']);
-  });
-});
-
-describe('webPowerCapabilities', () => {
-  // ★ EXACT SLOT COVERAGE for W. The four absent slots are the point: web previously implemented all of
-  // them with inert subscriptions and constant sentinels, which no structural probe could tell from a
-  // real provider. Asserting the exact key set is what stops one being quietly re-added as a stub.
-  it('offers exactly status, change, keepAwake and suspension', () => {
-    expect(EntityRuntimeKey in webPowerCapabilities).toBe(true);
-    for (const provider of Object.values(webPowerCapabilities)) expect(EntityRuntimeKey in provider).toBe(true);
-    expect(
-      Object.keys(webPowerCapabilities)
-        .filter((k) => k !== 'constructor')
-        .sort(),
-    ).toEqual(['change', 'keepAwake', 'status', 'suspension']);
-    expect('idle' in webPowerCapabilities).toBe(false);
-    expect('sessionLock' in webPowerCapabilities).toBe(false);
-    expect('batteryHealth' in webPowerCapabilities).toBe(false);
-    expect('thermal' in webPowerCapabilities).toBe(false);
-  });
-
-  it('declares a teardown obligation on keepAwake alone', () => {
-    expect(typeof webPowerCapabilities.keepAwake.destroy).toBe('function');
-    expect('destroy' in webPowerCapabilities.suspension).toBe(false);
   });
 });

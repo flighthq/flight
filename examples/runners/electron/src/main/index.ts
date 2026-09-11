@@ -59,7 +59,7 @@ function loadRenderer(win: ApplicationWindow): void {
 // registerElectronBackends, is now serviced by Electron.
 function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): void {
   ipcMain.handle('flight:openFileDialog', async () => {
-    const result = await showOpenFileDialog(host, {});
+    const result = await showOpenFileDialog(host.dialog.fileOpen, {});
     // Entity runtime identity is process-local and deliberately never serialized. The harness bridge
     // exposes path/name DTO strings, matching the preload contract exactly.
     return result.outcome === 'selected' ? result.handles.map((handle) => handle.path ?? handle.name) : [];

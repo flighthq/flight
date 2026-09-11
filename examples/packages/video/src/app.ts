@@ -1,4 +1,4 @@
-import { webVideoCapabilityBackend } from '@flighthq/host-web';
+import { webHostVideo } from '@flighthq/host-web';
 import type { Node2D, VideoChannel, VideoResource } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -156,9 +156,9 @@ if (captureWindow.__flightCapture === true) {
   generateVideoBlob().then(async (blob) => {
     const opts = { muted: true, playsInline: true } as const;
     const [resource1, resource2, resource3] = await Promise.all([
-      loadVideoResourceFromBlob(webVideoCapabilityBackend, blob, opts),
-      loadVideoResourceFromBlob(webVideoCapabilityBackend, blob, opts),
-      loadVideoResourceFromBlob(webVideoCapabilityBackend, blob, opts),
+      loadVideoResourceFromBlob(webHostVideo, blob, opts),
+      loadVideoResourceFromBlob(webHostVideo, blob, opts),
+      loadVideoResourceFromBlob(webHostVideo, blob, opts),
     ]);
 
     setVideoSources(resource1, resource2, resource3);

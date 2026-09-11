@@ -18,13 +18,6 @@ export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBa
 
 export const webHostStorage = createWebStorageProvider();
 export const webHostStorageChange = createWebStorageChangeProvider();
-export const webStorageBackend = createWebStorageBackend();
-
-function createWebStorageBackend(): WebStorageBackend {
-  const out = allocateEntity<WebStorageBackend>();
-  initializeWebStorageBackend(out);
-  return finishEntity(out);
-}
 
 function createWebStorageChangeProvider(): HostStorageChangeProvider {
   const out = allocateEntity<HostStorageChangeProvider>();

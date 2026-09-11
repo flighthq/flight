@@ -220,7 +220,6 @@ export const webHostPower: WebPowerCapabilities = (() => {
 })();
 export const webHostPowerChange = webPowerReadings.change;
 export const webHostPowerStatus = webPowerReadings.status;
-export const webPowerCapabilities = webHostPower;
 
 function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
   if (typeof navigator === 'undefined') return null;

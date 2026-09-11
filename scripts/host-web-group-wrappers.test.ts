@@ -1,165 +1,50 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import * as hostWebContract from '../packages/host-web/src/contract';
 import * as hostWebPublic from '../packages/host-web/src/index';
 
 const root = process.cwd();
-const HOST_GROUPS = [
-  'accessibility',
-  'app',
-  'clipboard',
-  'connectivity',
-  'dialog',
-  'graphics',
-  'input',
-  'ipc',
-  'media',
-  'menu',
-  'midi',
-  'net',
-  'notification',
-  'power',
-  'protocol',
-  'screen',
-  'share',
-  'shell',
-  'shortcut',
-  'storage',
-  'system',
-  'text',
-  'tray',
-  'ui',
-  'updater',
-  'window',
+const GROUP_MODULES = [
+  { file: 'webAccessibilityHost.ts', group: 'accessibility', name: 'webHostAccessibilityGroup' },
+  { file: 'webAppHost.ts', group: 'app', name: 'webHostApp' },
+  { file: 'webClipboardHost.ts', group: 'clipboard', name: 'webHostClipboard' },
+  { file: 'webConnectivityHost.ts', group: 'connectivity', name: 'webHostConnectivity' },
+  { file: 'webDialogHost.ts', group: 'dialog', name: 'webHostDialog' },
+  { file: 'webGraphicsHost.ts', group: 'graphics', name: 'webHostGraphics' },
+  { file: 'webInputHost.ts', group: 'input', name: 'webHostInput' },
+  { file: 'webMediaHost.ts', group: 'media', name: 'webHostMedia' },
+  { file: 'webMenuHost.ts', group: 'menu', name: 'webHostMenu' },
+  { file: 'webProtocolHost.ts', group: 'protocol', name: 'webHostProtocol' },
+  { file: 'webShareHost.ts', group: 'share', name: 'webHostShare' },
+  { file: 'webShellHost.ts', group: 'shell', name: 'webHostShell' },
+  { file: 'webStorageHost.ts', group: 'storage', name: 'webHostStorageGroup' },
+  { file: 'webSystemHost.ts', group: 'system', name: 'webHostSystem' },
+  { file: 'webUiHost.ts', group: 'ui', name: 'webHostUi' },
 ] as const;
 
-const WRAPPERS = [
-  {
-    file: 'webAccessibilityHost.ts',
-    group: 'accessibility',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webAccessibility'],
-    name: 'webAccessibilityHost',
-    slots: ['provider'],
-  },
-  {
-    file: 'webClipboardHost.ts',
-    group: 'clipboard',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webClipboard'],
-    name: 'webClipboardHost',
-    slots: ['change', 'formats', 'image', 'text'],
-  },
-  {
-    file: 'webConnectivityHost.ts',
-    group: 'connectivity',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webConnectivity'],
-    name: 'webConnectivityHost',
-    slots: ['change', 'reachability', 'status'],
-  },
-  {
-    file: 'webDialogHost.ts',
-    group: 'dialog',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webDialog'],
-    name: 'webDialogHost',
-    slots: ['directoryOpen', 'fileOpen', 'fileSave', 'imageOpen', 'message', 'photoCapture', 'prompt', 'videoCapture'],
-  },
-  {
-    file: 'webGraphicsHost.ts',
-    group: 'graphics',
-    imports: [
-      '@flighthq/entity/contract',
-      '@flighthq/types/contract',
-      './webBitmapEncode',
-      './webBitmapReadback',
-      './webImage',
-      './webInputTarget',
-    ],
-    name: 'webGraphicsHost',
-    slots: ['bitmapEncode', 'bitmapReadback', 'image', 'renderContext', 'renderSurface'],
-  },
-  {
-    file: 'webInputHost.ts',
-    group: 'input',
-    imports: [
-      '@flighthq/entity/contract',
-      '@flighthq/types/contract',
-      './webHaptics',
-      './webInputTarget',
-      './webKeyboard',
-    ],
-    name: 'webInputHost',
-    slots: [
-      'dropFile',
-      'focus',
-      'haptics',
-      'pointerLock',
-      'softKeyboardChange',
-      'softKeyboardInfo',
-      'softKeyboardVisibility',
-      'target',
-    ],
-  },
-  {
-    file: 'webMenuHost.ts',
-    group: 'menu',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webMenu'],
-    name: 'webMenuHost',
-    slots: ['highlight', 'popup'],
-  },
-  {
-    file: 'webShareHost.ts',
-    group: 'share',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webShare'],
-    name: 'webShareHost',
-    slots: ['content', 'files'],
-  },
-  {
-    file: 'webShellHost.ts',
-    group: 'shell',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webShell'],
-    name: 'webShellHost',
-    slots: ['external'],
-  },
-] as const;
+describe('host-Web canonical group boundaries', () => {
+  it.each(GROUP_MODULES)('$name is the public group identity composed by webHost', (spec) => {
+    const group = requiredValue<Record<string, unknown>>(hostWebContract, spec.name);
 
-describe('host-Web group wrapper boundaries', () => {
-  it.each(WRAPPERS)('$name is a public Entity Host with only its truthful Has* slots', (spec) => {
-    const wrapper = requiredValue<Record<PropertyKey, any>>(hostWebContract, spec.name);
-
-    expect(Reflect.get(hostWebPublic, spec.name)).toBe(wrapper);
-    expect(EntityRuntimeKey in wrapper).toBe(true);
-    expect(wrapper[EntityRuntimeKey]).toBeUndefined();
-    expect(Object.keys(wrapper[spec.group]).sort()).toEqual(spec.slots);
-    expect(requiredValue<Record<string, unknown>>(hostWebContract, 'webHost')[spec.group]).toBe(wrapper[spec.group]);
-    for (const group of HOST_GROUPS) {
-      if (group !== spec.group) expect(wrapper[group]).toEqual({});
-    }
+    expect(Reflect.get(hostWebPublic, spec.name)).toBe(group);
+    expect(requiredValue<Record<string, unknown>>(hostWebContract, 'webHost')[spec.group]).toBe(group);
+    expect(Object.keys(group).length).toBeGreaterThan(0);
   });
 
-  it.each(WRAPPERS)('$file is isolated to createHost and its own group providers', (spec) => {
+  it.each(GROUP_MODULES)('$file declares a group without constructing a partial Host', (spec) => {
     const path = resolve(root, 'packages/host-web/src', spec.file);
     expect(existsSync(path), `${spec.file} source`).toBe(true);
     if (!existsSync(path)) return;
     const source = readFileSync(path, 'utf8');
-    const groupName =
-      spec.group === 'accessibility'
-        ? 'webHostAccessibilityGroup'
-        : `webHost${spec.group[0]!.toUpperCase()}${spec.group.slice(1)}`;
 
-    expect(collectImportSpecifiers(source).sort()).toEqual([...spec.imports].sort());
-    expect(source).toContain(`export const ${groupName} = {`);
-    expect(source).toContain(
-      `export const ${spec.name} = /* @__PURE__ */ createHost({ ${spec.group}: ${groupName} });`,
-    );
+    expect(source).toContain(`export const ${spec.name} = {`);
+    expect(source).not.toContain('createHost');
+    expect(source).not.toMatch(/^export const web(?!Host)[A-Z]\w*Host\b/mu);
   });
 });
-
-function collectImportSpecifiers(source: string): string[] {
-  return Array.from(source.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g), (match) => match[1]!);
-}
 
 function requiredValue<Type>(module: object, name: string): Type {
   const value = Reflect.get(module, name);

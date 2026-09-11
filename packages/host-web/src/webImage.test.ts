@@ -1,10 +1,10 @@
-import type { Bitmap, HasGraphicsImage } from '@flighthq/types/contract';
+import type { Bitmap, HostImageProvider } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createWebImageBackend, initializeWebImageBackend, webHostImage } from './webImage';
 
-function hostWith(backend = webHostImage): HasGraphicsImage {
-  return { graphics: { image: backend } } as HasGraphicsImage;
+function hostWith(backend = webHostImage): { readonly graphics: { readonly image: HostImageProvider } } {
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
 }
 
 describe('createWebImageBackend', () => {

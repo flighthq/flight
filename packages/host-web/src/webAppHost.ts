@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostAppCapabilities } from '@flighthq/types/contract';
 
 import {
@@ -25,5 +24,3 @@ export const webHostApp = {
   relaunch: webHostAppRelaunch,
   visibility: webHostApplicationVisibility,
 } satisfies HostAppCapabilities;
-
-export const webAppHost = /* @__PURE__ */ createHost({ app: webHostApp });

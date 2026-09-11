@@ -232,11 +232,11 @@ describe('webHostWindow', () => {
   it('detaches a host-owned page window without closing it', () => {
     const close = vi.spyOn(window, 'close').mockImplementation(() => {});
     const win = createApplicationWindow();
-    expect(attachWindow(webHost, win, window, 'host')).toBe(true);
-    expect(attachWindow(webHost, createApplicationWindow(), window, 'host')).toBe(false);
+    expect(attachWindow(webHost.window, win, window, 'host')).toBe(true);
+    expect(attachWindow(webHost.window, createApplicationWindow(), window, 'host')).toBe(false);
 
-    expect(closeWindow(webHost, win)).toBe(true);
-    expect(closeWindow(webHost, win)).toBe(true);
+    expect(closeWindow(webHost.window, win)).toBe(true);
+    expect(closeWindow(webHost.window, win)).toBe(true);
 
     expect(close).not.toHaveBeenCalled();
   });
@@ -244,10 +244,10 @@ describe('webHostWindow', () => {
   it('closes a Flight-owned page window once', () => {
     const close = vi.spyOn(window, 'close').mockImplementation(() => {});
     const win = createApplicationWindow();
-    expect(attachWindow(webHost, win, window, 'flight')).toBe(true);
+    expect(attachWindow(webHost.window, win, window, 'flight')).toBe(true);
 
-    expect(closeWindow(webHost, win)).toBe(true);
-    expect(closeWindow(webHost, win)).toBe(true);
+    expect(closeWindow(webHost.window, win)).toBe(true);
+    expect(closeWindow(webHost.window, win)).toBe(true);
 
     expect(close).toHaveBeenCalledTimes(1);
   });
@@ -256,7 +256,7 @@ describe('webHostWindow', () => {
     const win = createApplicationWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
-    expect(attachWindow(webHost, win, window, 'host')).toBe(true);
+    expect(attachWindow(webHost.window, win, window, 'host')).toBe(true);
 
     window.dispatchEvent(new Event('pagehide'));
     window.dispatchEvent(new Event('pagehide'));

@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostConnectivityCapabilities } from '@flighthq/types/contract';
 
 import {
@@ -12,5 +11,3 @@ export const webHostConnectivity = {
   reachability: webHostConnectivityReachability,
   status: webHostConnectivityStatus,
 } satisfies HostConnectivityCapabilities;
-
-export const webConnectivityHost = /* @__PURE__ */ createHost({ connectivity: webHostConnectivity });

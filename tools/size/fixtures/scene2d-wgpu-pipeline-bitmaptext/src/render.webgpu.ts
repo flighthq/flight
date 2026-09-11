@@ -1,6 +1,6 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas';
-import { createWebWgpuRenderSurfaceProvider, webGlyphRasterizerBackend } from '@flighthq/host-web';
+import { createWebWgpuRenderSurfaceProvider, webHostGlyphRasterizer } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
@@ -43,7 +43,7 @@ const atlas = createGlyphAtlas({
   fontFamily: 'sans-serif',
   fontSize: 42,
   height: 128,
-  rasterizerBackend: webGlyphRasterizerBackend,
+  rasterizerBackend: webHostGlyphRasterizer,
   width: 256,
 });
 const root = createDisplayObject();
