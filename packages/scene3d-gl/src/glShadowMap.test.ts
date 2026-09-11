@@ -53,6 +53,7 @@ function makeShadowState() {
   const { state, gl } = makeGlScene3DState();
 
   const calls = gl.calls;
+  const originalGetParameter = gl.getParameter.bind(gl);
   const record =
     (name: string, result?: unknown) =>
     (...args: unknown[]): unknown => {
@@ -90,7 +91,7 @@ function makeShadowState() {
       if (param === gl2['MAX_SAMPLES']) return 4;
       if (param === gl2['FRAMEBUFFER_BINDING']) return null;
       if (param === gl2['VIEWPORT']) return new Int32Array([0, 0, 256, 256]);
-      return null;
+      return originalGetParameter(param);
     },
     clear: record('clear'),
     createRenderbuffer: () => ({}),

@@ -51,7 +51,7 @@ export function uploadGlSkinPaletteTexture(
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
   if (jointCount > palette.jointCapacity) {
-    const maxWidth = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+    const maxWidth = getGlPaletteTextureMaxWidth(gl);
     const width = Math.min(totalTexels, maxWidth);
     const height = Math.ceil(totalTexels / width);
     if (height === 1) {
@@ -66,7 +66,7 @@ export function uploadGlSkinPaletteTexture(
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     palette.jointCapacity = jointCount;
   } else {
-    const maxWidth = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+    const maxWidth = getGlPaletteTextureMaxWidth(gl);
     const allocatedTexels = palette.jointCapacity * texelsPerJoint;
     const width = Math.min(allocatedTexels, maxWidth);
     if (totalTexels <= width) {
@@ -76,6 +76,12 @@ export function uploadGlSkinPaletteTexture(
       uploadGlPaletteTextureRows(gl, jointMatrices as Float32Array, totalTexels, width, height);
     }
   }
+}
+
+function getGlPaletteTextureMaxWidth(gl: GlContext): number {
+  const maxWidth = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+  if (!(maxWidth > 0)) throw new Error('WebGL MAX_TEXTURE_SIZE must be greater than zero');
+  return maxWidth;
 }
 
 function uploadGlPaletteTextureRows(
