@@ -23,8 +23,6 @@ function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width 
   out.colorFormats = ['rgba16f'];
   out.depth = 'none';
   out.colorSpace = 'linear';
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.sampleCount = 1;
   out.framebuffer = framebuffer;
   out.resolveFramebuffer = null;

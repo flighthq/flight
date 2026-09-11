@@ -48,8 +48,6 @@ export function initializeRenderTextureTarget(
   out.colorAttachments = options.colorAttachments;
   out.colorFormats = options.colorFormats;
   out.colorSpace = colorSpace;
-  out.clearColors = options.clearColors;
-  out.clearDepth = options.clearDepth;
   out.depth = options.depth;
   out.format = options.format;
   out.height = options.height;

@@ -43,7 +43,7 @@ export function clearGlRenderTexture(state: GlRenderState, renderTexture: Render
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
-      clearGlRenderTarget(state, target);
+      clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
     } finally {
       popGlRenderState(state);
     }
@@ -117,7 +117,7 @@ export function renderIntoGlRenderTexture(
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
-      beginGlRenderPass(state, target);
+      beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
       try {
         callback(state);
       } finally {
@@ -181,8 +181,6 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture
         depth: requested.depth,
         colorSpace: requested.colorSpace,
       };
-      entry.target.clearColors = [...requested.clearColors];
-      entry.target.clearDepth = requested.clearDepth;
     } else {
       destroyGlRenderTarget(state, entry.target);
       entry.target = createGlRenderTarget(state, descriptor);

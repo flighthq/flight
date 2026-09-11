@@ -113,7 +113,6 @@ export type GlRenderEffectApplicationGuard = (
 ) => void;
 
 export interface RenderEffectPipelineOptions {
-  backgroundClear?: boolean;
   // Depth attachment for depth-dependent effects (SSAO, DoF, fog). Default 'none'.
   depth?: RenderTargetDepth;
   // 'rgba16f' gives bloom/tone-mapping HDR headroom. Default 'rgba8'.

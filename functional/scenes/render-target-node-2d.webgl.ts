@@ -96,7 +96,6 @@ appendShapeEndFill(backing);
 addNodeChild(root, backing);
 
 const renderTexture = createRenderTexture({
-  clearColors: [0x05070dff],
   depth: 'depth-stencil',
   height: NODE_HEIGHT,
   width: NODE_WIDTH,

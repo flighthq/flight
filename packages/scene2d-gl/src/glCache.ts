@@ -119,7 +119,7 @@ export function refreshGlRenderCache(
   // Preserve on begin — the bake below clears and redraws only when dirty; clearing here would wipe the
   // retained cache content on the not-dirty path. The cache's local-space transform is set explicitly,
   // since a pass no longer carries one.
-  beginGlRenderPass(cacheState, target, { preserveColor: true, preserveDepth: true });
+  beginGlRenderPass(cacheState, target);
   let dirty = false;
   try {
     setGlRenderTransform2D(cacheState, _renderTransform);

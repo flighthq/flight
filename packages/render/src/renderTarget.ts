@@ -110,8 +110,6 @@ export function resolveRenderTargetDescriptor(
     sampleCount: Math.max(1, Math.ceil(descriptor.sampleCount ?? 1)),
     depth: descriptor.depth ?? 'none',
     colorSpace: descriptor.colorSpace ?? 'srgb',
-    clearColors: descriptor.clearColors ? [...descriptor.clearColors] : [],
-    clearDepth: descriptor.clearDepth ?? 1,
   };
 }
 

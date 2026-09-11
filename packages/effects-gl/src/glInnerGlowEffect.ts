@@ -88,11 +88,11 @@ export function applyInnerGlowEffectToGl(
 
   // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the blend doesn't retain the exterior red.
-  clearGlRenderTarget(state, s0);
+  clearGlRenderTarget(state, s0, { color: [0, 0, 0, 0] });
   applyGlInnerClipPass(state, s1, src, s0);
 
   // Final composite: source first, unless hidden, then clipped glow on top.
-  clearGlRenderTarget(state, dst);
+  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
   if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }

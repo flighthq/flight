@@ -188,7 +188,6 @@ function captureSubtree(): {
   computeNodeRootLocalBoundsRectangle(bounds, source);
   const size = computeRenderTargetSize(_targetSize, bounds, padding);
   const descriptor = {
-    clearColors: [0x00000000],
     depth: 'none' as const,
     height: size.height,
     width: size.width,

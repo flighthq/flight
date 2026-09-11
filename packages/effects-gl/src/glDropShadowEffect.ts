@@ -57,7 +57,7 @@ export function applyDropShadowEffectToGl(
     passes: quality,
   });
 
-  clearGlRenderTarget(state, dst);
+  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
   for (let i = 0; i < shadowPasses; i++) {
     applyGlEffectBlitOffsetPass(state, blurred, dst, dx, dy);
   }

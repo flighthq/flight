@@ -29,8 +29,6 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
   out.colorFormats = ['rgba8'];
   out.depth = 'depth-stencil';
   out.colorSpace = 'srgb';
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.sampleCount = 1;
   out.framebuffer = {} as WebGLFramebuffer;
   out.resolveFramebuffer = null;
@@ -44,56 +42,68 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
 }
 
 describe('beginGlRenderPass', () => {
-  it('clears every color attachment and depth by default', () => {
+  it('clears color and depth when clear descriptor specifies both', () => {
+    const { state, gl } = createGlState();
+    const clearColor = vi.spyOn(gl, 'clearBufferfv');
+    const clearDepth = vi.spyOn(gl, 'clearBufferfi');
+
+    beginGlRenderPass(state, makeTarget(), { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+
+    expect(clearColor).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
+    expect(clearDepth).toHaveBeenCalledWith(gl.DEPTH_STENCIL, 0, 1, 0);
+  });
+
+  it('preserves everything when no clear descriptor is given', () => {
     const { state, gl } = createGlState();
     const clearColor = vi.spyOn(gl, 'clearBufferfv');
     const clearDepth = vi.spyOn(gl, 'clearBufferfi');
 
     beginGlRenderPass(state, makeTarget());
 
-    expect(clearColor).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
-    expect(clearDepth).toHaveBeenCalledWith(gl.DEPTH_STENCIL, 0, 1, 0);
+    expect(clearColor).not.toHaveBeenCalled();
+    expect(clearDepth).not.toHaveBeenCalled();
   });
 
-  it('spares color when preserveColor is true, still clears depth', () => {
+  it('preserves color when color is omitted from clear descriptor', () => {
     const { state, gl } = createGlState();
     const clearColor = vi.spyOn(gl, 'clearBufferfv');
     const clearDepth = vi.spyOn(gl, 'clearBufferfi');
 
-    beginGlRenderPass(state, makeTarget(), { preserveColor: true });
+    beginGlRenderPass(state, makeTarget(), { depth: 1.0, stencil: 0 });
 
     expect(clearColor).not.toHaveBeenCalled();
     expect(clearDepth).toHaveBeenCalled();
   });
 
-  it('spares depth when preserveDepth is true, still clears color', () => {
+  it('preserves depth when depth is omitted from clear descriptor', () => {
     const { state, gl } = createGlState();
     const clearColor = vi.spyOn(gl, 'clearBufferfv');
     const clearDepth = vi.spyOn(gl, 'clearBufferfi');
 
-    beginGlRenderPass(state, makeTarget(), { preserveDepth: true });
+    beginGlRenderPass(state, makeTarget(), { color: [0, 0, 0, 0] });
 
     expect(clearColor).toHaveBeenCalled();
     expect(clearDepth).not.toHaveBeenCalled();
   });
 
-  it('preserves per attachment location when preserveColor is an array', () => {
+  it('clears per-attachment with colors array, skipping undefined entries', () => {
     const { state, gl } = createGlState();
     const c0 = { id: 'c0' } as unknown as WebGLTexture;
     const c1 = { id: 'c1' } as unknown as WebGLTexture;
     const clearColor = vi.spyOn(gl, 'clearBufferfv');
 
-    // Keep location 0, clear location 1 — the MRT / G-buffer path.
-    beginGlRenderPass(state, makeTarget({ textures: [c0, c1], texture: c0 }), { preserveColor: [true, false] });
+    beginGlRenderPass(state, makeTarget({ textures: [c0, c1], texture: c0 }), {
+      colors: [undefined, [0, 0, 0, 0]],
+    });
 
     expect(clearColor.mock.calls.map((c) => c[1])).toEqual([1]);
   });
 
-  it("uses the target's packed clearColor over the background color when present", () => {
-    const { state, gl } = createGlState({ backgroundColorRgba: [0, 0, 0, 1] });
+  it('writes float RGBA values directly to clearBufferfv', () => {
+    const { state, gl } = createGlState();
     const clearColor = vi.spyOn(gl, 'clearBufferfv');
 
-    beginGlRenderPass(state, makeTarget({ clearColors: [0xff0000ff] })); // opaque red
+    beginGlRenderPass(state, makeTarget(), { color: [1, 0, 0, 1] });
 
     const rgba = clearColor.mock.calls[0][2] as Float32Array;
     expect(rgba[0]).toBeCloseTo(1);
@@ -117,7 +127,7 @@ describe('beginGlRenderPass', () => {
     const target = makeTarget({ width: 100, height: 80 });
     const viewport = makeViewport(10, 20, 30, 40);
 
-    beginGlRenderPass(state, target, undefined, viewport);
+    beginGlRenderPass(state, target, { color: [0, 0, 0, 0] }, viewport);
 
     expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
     expect(gl.enable).toHaveBeenCalledWith(gl.SCISSOR_TEST);
@@ -284,9 +294,9 @@ describe('endGlRenderPass', () => {
     });
     vi.mocked(gl.getParameter).mockImplementation((parameter) => (parameter === gl.DEPTH_WRITEMASK ? depthMask : null));
 
-    beginGlRenderPass(state, makeTarget(), { preserveDepth: true });
+    beginGlRenderPass(state, makeTarget(), { color: [0, 0, 0, 0] });
     gl.depthMask(false);
-    beginGlRenderPass(state, makeTarget());
+    beginGlRenderPass(state, makeTarget(), { depth: 1.0, stencil: 0 });
     expect(depthMask).toBe(true);
     endGlRenderPass(state);
 
@@ -401,7 +411,7 @@ describe('setGlRenderTransform2D', () => {
     const cacheTransform = createMatrix();
     cacheTransform.tx = 99;
 
-    beginGlRenderPass(state, target, { preserveColor: true });
+    beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 });
     setGlRenderTransform2D(state, cacheTransform);
     expect(state.renderTransform2D?.tx).toBe(99);
     endGlRenderPass(state);

@@ -76,7 +76,7 @@ export function applyGradientGlowEffectToGl(
   applyGradientLookupPass(state, s1, ramp, s0);
   gl.deleteTexture(ramp);
 
-  clearGlRenderTarget(state, dst);
+  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
   applyGlEffectBlitPass(state, s0, dst);
   if (sourceMode === 'knockout') {
     applyGlEffectErasePass(state, src, dst);

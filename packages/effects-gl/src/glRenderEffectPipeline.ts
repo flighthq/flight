@@ -5,7 +5,6 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
-import { packColor } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireGlRenderTarget,
@@ -65,13 +64,7 @@ export function beginGlRenderEffectPipeline(
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  if (pipeline.options.backgroundClear !== false) {
-    const rgba = state.backgroundColorRgba;
-    pipeline.sceneTarget.clearColors =
-      rgba !== undefined && rgba.length >= 4 ? [packColor(rgba[0], rgba[1], rgba[2], rgba[3])] : [];
-  } else {
-    pipeline.sceneTarget.clearColors = [0];
-  }
+  clearGlRenderTarget(state, pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
   beginGlRenderPass(state, pipeline.sceneTarget);
 }
 
@@ -133,7 +126,7 @@ export function endGlRenderEffectPipeline(
     if (pending.length === 0) return;
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    clearGlRenderTarget(state, dest);
+    clearGlRenderTarget(state, dest, { color: [0, 0, 0, 0] });
     if (pending.some(isColorLutAdjustment)) {
       applyColorLutPassToGl(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
@@ -161,7 +154,7 @@ export function endGlRenderEffectPipeline(
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    clearGlRenderTarget(state, dest);
+    clearGlRenderTarget(state, dest, { color: [0, 0, 0, 0] });
     // Depth/velocity always come from the original scene target, not the ping-ponged `source`.
     runner(
       {

@@ -92,7 +92,7 @@ const lights = {
   directional: null,
 };
 
-beginGlRenderPass(view.renderState, view.renderTarget);
+beginGlRenderPass(view.renderState, view.renderTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
 renderGlBackground(view.renderState);
 prepareScene3DRender(view.renderState, scene, camera, lights);
 drawGlScene3D(view.renderState, scene, camera, lights);

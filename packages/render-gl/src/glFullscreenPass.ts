@@ -1,4 +1,11 @@
-import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlFullscreenProgram,
+  GlRenderState,
+  GlRenderTarget,
+  RectangleLike,
+  RenderTargetClear,
+} from '@flighthq/types/contract';
 
 import { applyGlBlendMode } from './glDraw';
 import { createGlProgram } from './glProgram';
@@ -18,18 +25,74 @@ void main() {
   v_texCoord = a_texCoord;
 }`;
 
-/** Clears a render target to fully transparent and binds it as the current framebuffer. */
-export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget): void {
-  const runtime = getGlRenderStateRuntime(state);
+// Clears a render target using `color` (broadcast to every color attachment) plus optional depth
+// and stencil. Color values are float RGBA written directly to the framebuffer — no conversion.
+// Self-contained: temporarily disables scissor and enables depth writes so the clear covers the
+// full target regardless of inherited GL state. Both are restored before returning.
+export function clearGlRenderTarget(
+  state: GlRenderState,
+  target: GlRenderTarget,
+  clear: Readonly<RenderTargetClear>,
+): void {
   const gl = state.gl;
-  if (runtime.currentFramebuffer !== target.framebuffer) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
-    runtime.currentFramebuffer = target.framebuffer;
+  bindGlRenderTarget(state, target);
+
+  const { color, depth, stencil } = clear;
+
+  const scissorWas = gl.isEnabled(gl.SCISSOR_TEST);
+  if (scissorWas) gl.disable(gl.SCISSOR_TEST);
+
+  if (color !== undefined) {
+    _clearRgba[0] = color[0];
+    _clearRgba[1] = color[1];
+    _clearRgba[2] = color[2];
+    _clearRgba[3] = color[3];
+    for (let i = 0; i < target.textures.length; i++) {
+      gl.clearBufferfv(gl.COLOR, i, _clearRgba);
+    }
   }
-  gl.viewport(0, 0, target.width, target.height);
-  runtime.renderTargetViewport = { height: target.height, width: target.width, x: 0, y: 0 };
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  clearGlDepthStencil(gl, depth, stencil, true);
+
+  if (scissorWas) gl.enable(gl.SCISSOR_TEST);
+
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.context.currentTextureRealization = null;
+  runtime.context.currentBlendSignature = null;
+}
+
+// Per-attachment clear for MRT targets. Each entry in `colors` is a float RGBA tuple or undefined
+// (preserve that attachment). Self-contained like clearGlRenderTarget.
+export function clearGlRenderTargetAttachments(
+  state: GlRenderState,
+  target: GlRenderTarget,
+  clear: Readonly<RenderTargetClear>,
+): void {
+  const gl = state.gl;
+  bindGlRenderTarget(state, target);
+
+  const { colors, depth, stencil } = clear;
+
+  const scissorWas = gl.isEnabled(gl.SCISSOR_TEST);
+  if (scissorWas) gl.disable(gl.SCISSOR_TEST);
+
+  if (colors !== undefined) {
+    for (let i = 0; i < colors.length; i++) {
+      const rgba = colors[i];
+      if (rgba === undefined) continue;
+      _clearRgba[0] = rgba[0];
+      _clearRgba[1] = rgba[1];
+      _clearRgba[2] = rgba[2];
+      _clearRgba[3] = rgba[3];
+      gl.clearBufferfv(gl.COLOR, i, _clearRgba);
+    }
+  }
+
+  clearGlDepthStencil(gl, depth, stencil, true);
+
+  if (scissorWas) gl.enable(gl.SCISSOR_TEST);
+
+  const runtime = getGlRenderStateRuntime(state);
   runtime.context.currentTextureRealization = null;
   runtime.context.currentBlendSignature = null;
 }
@@ -74,15 +137,7 @@ export function drawGlFullscreenPass(
   }
   runtime.context.currentShader = { locations: null, program: program.program };
 
-  const destFramebuffer = dest?.framebuffer ?? null;
-  if (runtime.currentFramebuffer !== destFramebuffer) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
-    runtime.currentFramebuffer = destFramebuffer;
-  }
-  const destWidth = dest?.width ?? gl.drawingBufferWidth;
-  const destHeight = dest?.height ?? gl.drawingBufferHeight;
-  gl.viewport(0, 0, destWidth, destHeight);
-  runtime.renderTargetViewport = dest ? { height: destHeight, width: destWidth, x: 0, y: 0 } : null;
+  bindGlRenderTarget(state, dest);
 
   for (let i = 0; i < inputs.length; i++) {
     gl.activeTexture(gl.TEXTURE0 + i);
@@ -149,6 +204,56 @@ export function drawGlFullscreenPass(
   gl.activeTexture(gl.TEXTURE0);
 }
 
+// Draws a solid-color rectangle into the currently bound framebuffer. A rendering primitive — unlike
+// clear, this is a draw call that participates in the current blend mode and scissor state. When
+// `rect` is omitted the fill covers the full viewport. Color is a packed sRGB RGBA integer.
+export function fillGlRect(state: GlRenderState, color: number, rect?: Readonly<RectangleLike>): void {
+  const runtime = getGlRenderStateRuntime(state);
+  const gl = state.gl;
+
+  let program = _fillPrograms.get(gl);
+  if (program === undefined) {
+    program = compileFillProgram(gl);
+    _fillPrograms.set(gl, program);
+    runtime.context.teardowns.push((ownerGl) => ownerGl.deleteProgram(program!.glProgram));
+  }
+
+  if (runtime.context.currentShader?.program !== program.fullscreen.program) {
+    gl.useProgram(program.fullscreen.program);
+  }
+  runtime.context.currentShader = { locations: null, program: program.fullscreen.program };
+
+  const r = ((color >>> 24) & 0xff) / 255;
+  const g = ((color >>> 16) & 0xff) / 255;
+  const b = ((color >>> 8) & 0xff) / 255;
+  const a = (color & 0xff) / 255;
+  gl.uniform4f(program.locColor, r, g, b, a);
+
+  const useScissor = rect !== undefined;
+  let scissorWasEnabled = false;
+  if (useScissor) {
+    scissorWasEnabled = gl.isEnabled(gl.SCISSOR_TEST);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(rect.x, rect.y, rect.width, rect.height);
+  }
+
+  const blendEnabled = gl.isEnabled(gl.BLEND);
+  const depthTestEnabled = gl.isEnabled(gl.DEPTH_TEST);
+  if (!blendEnabled) gl.enable(gl.BLEND);
+  if (depthTestEnabled) gl.disable(gl.DEPTH_TEST);
+
+  runtime.context.currentBlendSignature = null;
+  applyGlBlendMode(state, null);
+
+  drawGlFullscreenQuad(state, program.fullscreen);
+
+  runtime.context.currentBlendSignature = null;
+
+  if (depthTestEnabled) gl.enable(gl.DEPTH_TEST);
+  if (!blendEnabled) gl.disable(gl.BLEND);
+  if (useScissor && !scissorWasEnabled) gl.disable(gl.SCISSOR_TEST);
+}
+
 function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscreenProgram>): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -200,6 +305,71 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   gl.bindVertexArray(null);
 }
 
-// Per-context dedicated VAO for the fullscreen quad. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a
-// caller's (e.g. a mesh's) currently-bound VAO. See drawGlFullscreenQuad.
+// Binds a render target (or the canvas when null) as the active framebuffer, sets its full viewport,
+// and synchronizes the runtime tracking fields. Shared by clearGlRenderTarget and drawGlFullscreenPass.
+function bindGlRenderTarget(state: GlRenderState, target: Readonly<GlRenderTarget> | null): void {
+  const runtime = getGlRenderStateRuntime(state);
+  const gl = state.gl;
+  const framebuffer = target?.framebuffer ?? null;
+  if (runtime.currentFramebuffer !== framebuffer) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    runtime.currentFramebuffer = framebuffer;
+  }
+  const width = target?.width ?? gl.drawingBufferWidth;
+  const height = target?.height ?? gl.drawingBufferHeight;
+  gl.viewport(0, 0, width, height);
+  runtime.renderTargetViewport = target ? { height, width, x: 0, y: 0 } : null;
+}
+
+// Clears depth and/or stencil aspects. When `saveRestore` is true, saves and restores the depth write
+// mask (for standalone clears outside a pass). The pass calls with false since it owns depthMask.
+function clearGlDepthStencil(
+  gl: GlContext,
+  depth: number | undefined,
+  stencil: number | undefined,
+  saveRestore: boolean,
+): void {
+  const depthMaskWas = saveRestore && depth !== undefined ? gl.getParameter(gl.DEPTH_WRITEMASK) !== false : true;
+  if (depth !== undefined && stencil !== undefined) {
+    if (!depthMaskWas) gl.depthMask(true);
+    gl.clearBufferfi(gl.DEPTH_STENCIL, 0, depth, stencil);
+  } else if (depth !== undefined) {
+    if (!depthMaskWas) gl.depthMask(true);
+    _clearDepth[0] = depth;
+    gl.clearBufferfv(gl.DEPTH, 0, _clearDepth);
+  } else if (stencil !== undefined) {
+    _clearStencil[0] = stencil;
+    gl.clearBufferiv(gl.STENCIL, 0, _clearStencil);
+  }
+  if (saveRestore && !depthMaskWas) gl.depthMask(false);
+}
+
 const _quadVaos = new WeakMap<GlContext, WebGLVertexArrayObject>();
+const _clearRgba = new Float32Array(4);
+const _clearDepth = new Float32Array(1);
+const _clearStencil = new Int32Array(1);
+
+interface FillProgram {
+  readonly fullscreen: GlFullscreenProgram;
+  readonly glProgram: WebGLProgram;
+  readonly locColor: WebGLUniformLocation;
+}
+
+const FILL_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+uniform vec4 u_color;
+out vec4 o_color;
+void main() {
+  o_color = u_color;
+}`;
+
+function compileFillProgram(gl: GlContext): FillProgram {
+  const fullscreen = compileGlFullscreenProgram(gl, FILL_FRAGMENT_SRC);
+  return {
+    fullscreen,
+    glProgram: fullscreen.program,
+    locColor: gl.getUniformLocation(fullscreen.program, 'u_color')!,
+  };
+}
+
+const _fillPrograms = new WeakMap<GlContext, FillProgram>();

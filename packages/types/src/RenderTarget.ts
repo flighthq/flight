@@ -73,13 +73,6 @@ export interface RenderTargetDescriptor {
   // unchanged: presented as-is). Producers of linear content (the 3D scene path) declare 'linear' so
   // the present applies the single sRGB encode.
   colorSpace?: RenderTargetColorSpace;
-  // Packed-RGBA (0xRRGGBBAA) clear color per color attachment, applied when a pass clears that
-  // attachment. Fixed per target — a pass decides only WHETHER to clear (RenderPassPreserve), never to
-  // what. Index i covers attachment location i; a single-entry array covers attachment 0. Attachments
-  // with no entry fall back to the render state's background color.
-  clearColors?: ReadonlyArray<number>;
-  // Depth clear value applied when a pass clears depth. Default 1 (the far plane).
-  clearDepth?: number;
 }
 
 // GPU-owned TextureSource descriptor. A render backend realizes this request lazily in the state that
@@ -88,9 +81,6 @@ export interface RenderTarget extends RenderTargetDescriptor, TextureSource {
   readonly kind: typeof RenderTargetTextureSourceKind;
 }
 
-// A descriptor with every default resolved. Clear policy travels with the target but remains distinct
-// from the storage axes so pools can match physical identity and re-stamp clear values independently.
-export interface ResolvedRenderTargetDescriptor extends RenderTargetAxes {
-  readonly clearColors: ReadonlyArray<number>;
-  readonly clearDepth: number;
-}
+// A descriptor with every default resolved. Backend realizations start from this shape and apply
+// only device capability substitutions.
+export interface ResolvedRenderTargetDescriptor extends RenderTargetAxes {}

@@ -50,8 +50,8 @@ const state = createGlRenderState(
     pixelRatio: scale,
   },
 );
+const GREEN: readonly [number, number, number, number] = [33 / 255, 196 / 255, 90 / 255, 1];
 const descriptor = {
-  clearColors: [0x21c45aff],
   colorSpace: 'srgb' as const,
   format: 'rgba32f' as const,
   height: canvas.height,
@@ -87,7 +87,7 @@ if (floatSupported) {
   }
 }
 
-beginGlRenderPass(state, target);
+beginGlRenderPass(state, target, { color: GREEN });
 endGlRenderPass(state);
 presentGlRenderTarget(state, target);
 

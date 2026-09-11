@@ -182,8 +182,6 @@ export function initializeGlRenderTarget(
   target.colorFormats = [...storage.colorFormats];
   target.depth = storage.depth;
   target.colorSpace = storage.colorSpace;
-  target.clearColors = [...requested.clearColors];
-  target.clearDepth = requested.clearDepth;
   target.sampleCount = storage.sampleCount;
   target.framebuffer = storage.framebuffer;
   target.resolveFramebuffer = storage.resolveFramebuffer;
@@ -209,8 +207,6 @@ export function resizeGlRenderTarget(
     ...target.requestedAxes,
     width,
     height,
-    clearColors: target.clearColors,
-    clearDepth: target.clearDepth,
   });
   const effective = resolveEffectiveGlRenderTargetAxes(state.gl, requested, 'preferred')!;
   if (effective.width === target.width && effective.height === target.height) return;

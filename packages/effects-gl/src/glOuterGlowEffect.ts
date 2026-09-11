@@ -51,7 +51,7 @@ export function applyOuterGlowEffectToGl(
     passes: quality,
   });
 
-  clearGlRenderTarget(state, dst);
+  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
   for (let i = 0; i < glowPasses; i++) {
     applyGlEffectBlitPass(state, blurred, dst);
   }
