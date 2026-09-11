@@ -26,10 +26,8 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerStandardWgpuTextureResolvers,
-  registerWgpuBlinnPhongMaterial,
   renderWgpuBackground,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -53,12 +51,10 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   backgroundColor: 0x080b12ff,
   pixelRatio,
 });
-registerStandardWgpuTextureResolvers(state);
-registerWgpuBlinnPhongMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',

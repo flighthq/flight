@@ -42,13 +42,8 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerGlAnisotropyPbrExtension,
-  registerGlClearcoatPbrExtension,
-  registerGlExtendedPbrMaterial,
-  registerGlSheenPbrExtension,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
 } from '@flighthq/sdk';
@@ -75,14 +70,9 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   { backgroundColor: 0x080b12ff, pixelRatio },
 );
-registerStandardGlTextureResolvers(state);
-registerGlAnisotropyPbrExtension(state);
-registerGlClearcoatPbrExtension(state);
-registerGlSheenPbrExtension(state);
-registerGlExtendedPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

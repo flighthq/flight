@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createScene3DLights,
   addNodeChild,
@@ -26,8 +26,6 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  registerStandardGlTextureResolvers,
-  registerGlStandardPbrMaterial,
   renderGlBackground,
   setTextureUvScale,
   setCamera3DViewMatrix4FromLookAt,
@@ -73,14 +71,12 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x002850ff,
   },
 );
-registerStandardGlTextureResolvers(state);
-registerGlStandardPbrMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

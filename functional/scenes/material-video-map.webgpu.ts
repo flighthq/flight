@@ -17,10 +17,9 @@ import {
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  registerWgpuUnlitMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -38,11 +37,10 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x000000ff,
 });
-registerWgpuUnlitMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

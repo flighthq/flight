@@ -28,10 +28,8 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerGlBlinnPhongMaterial,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -59,11 +57,9 @@ const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   { backgroundColor: 0x080b12ff, pixelRatio },
 );
-registerStandardGlTextureResolvers(state);
-registerGlBlinnPhongMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

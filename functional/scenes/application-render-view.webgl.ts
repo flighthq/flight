@@ -10,9 +10,8 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
 import { beginGlRenderPass, endGlRenderPass, renderGlBackground } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
-import { scene2DGlPipeline } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
+import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -48,7 +47,7 @@ const view = createGlApplicationRenderView(applicationWindow, canvas, {
   context: {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   },
-  pipeline: scene2DGlPipeline,
+  pipeline: scene3DGlPipeline,
   render: {
     backgroundColor: 0x101522ff,
   },
@@ -77,7 +76,6 @@ if (
   throw new Error('[application-render-view] window resize did not synchronize canvas, target, and viewport extents');
 }
 
-registerGlUnlitMaterial(view.renderState);
 const scene = createScene3D().root;
 addNodeChild(scene, createMesh(createBoxMeshGeometry(1.6, 1.6, 1.6), [createUnlitMaterial({ baseColor: 0x37bde8ff })]));
 const camera = createCamera3D({

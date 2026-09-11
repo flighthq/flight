@@ -1,11 +1,6 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import {
-  drawWgpuScene3D,
-  registerBuiltInWgpuModifierSnippets,
-  registerWgpuShadedMaterial,
-  setWgpuScene3DTime,
-} from '@flighthq/scene3d-wgpu';
+import { drawWgpuScene3D, setWgpuScene3DTime } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -29,13 +24,12 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   EmissiveModifierFacing,
   endWgpuRenderEffectPipeline,
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -59,13 +53,10 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x05070cff,
 });
-registerWgpuImageTextureResolver(state);
-registerWgpuShadedMaterial(state);
-registerBuiltInWgpuModifierSnippets(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 1,

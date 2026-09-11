@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Bitmap, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -27,7 +27,6 @@ import {
   getNode3DWorldBounds,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  registerGlBlinnPhongMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
@@ -60,13 +59,12 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0c10ff,
   },
 );
-registerGlBlinnPhongMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,
