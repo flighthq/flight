@@ -2,6 +2,7 @@ import type { TauriApi, TauriDialogOpenOptions, TauriDialogSaveOptions } from '@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
+  tauriHostDialog,
   tauriHostDirectoryOpenDialog,
   tauriHostFileOpenDialog,
   tauriHostFileSaveDialog,
@@ -43,6 +44,14 @@ function fakeTauri(openResult: string | string[] | null | Error, saveResult: str
   } as unknown as TauriApi;
   return { tauri, calls };
 }
+
+describe('tauriHostDialog', () => {
+  it('constructs exactly the four supported dialog leaves', () => {
+    const group = tauriHostDialog(fakeTauri(null, null).tauri);
+    expect(Object.keys(group).sort()).toEqual(['directoryOpen', 'fileOpen', 'fileSave', 'message']);
+    expect(Object.values(group).every((provider) => EntityRuntimeKey in provider)).toBe(true);
+  });
+});
 
 describe('tauriHostDirectoryOpenDialog', () => {
   it('uses a method-tight single-directory operation', async () => {

@@ -1,7 +1,7 @@
 import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { tauriHostShortcutQuery, tauriHostShortcutTrigger } from './tauriShortcut';
+import { tauriHostShortcut, tauriHostShortcutQuery, tauriHostShortcutTrigger } from './tauriShortcut';
 
 interface Deferred {
   readonly promise: Promise<void>;
@@ -36,6 +36,15 @@ function fakeTauri() {
   } as unknown as TauriApi;
   return { handlers, tauri, unregisterCalls, unregisterFailures };
 }
+
+describe('tauriHostShortcut', () => {
+  it('constructs exactly the query and trigger group', () => {
+    const group = tauriHostShortcut(fakeTauri().tauri);
+    expect(Object.keys(group).sort()).toEqual(['query', 'trigger']);
+    expect(EntityRuntimeKey in group.query).toBe(true);
+    expect(EntityRuntimeKey in group.trigger).toBe(true);
+  });
+});
 
 describe('tauriHostShortcutQuery', () => {
   it('returns an Entity and awaits the plugin query', async () => {

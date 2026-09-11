@@ -18,7 +18,17 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { tauriHostTray } from './tauriTray';
+import {
+  tauriHostTray,
+  tauriHostTrayImage,
+  tauriHostTrayInteractionEvents,
+  tauriHostTrayLifecycle,
+  tauriHostTrayMenu,
+  tauriHostTrayMenuSelectionEvents,
+  tauriHostTrayTemplateImage,
+  tauriHostTrayTitle,
+  tauriHostTrayTooltip,
+} from './tauriTray';
 
 interface FakeIcon extends TauriTrayIcon {
   closeFailures: number;
@@ -251,5 +261,53 @@ describe('tauriHostTray', () => {
     expect((await destroyTrayIcon(tray)).outcome).toBe('destroyed');
     expect(menus[0].closed).toBe(1);
     expect(icons[0].closed).toBe(1);
+  });
+});
+
+describe('tauriHostTrayImage', () => {
+  it('constructs the image provider independently', () => {
+    expect(tauriHostTrayImage(fakeTauri().tauri, 'linux').set).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayInteractionEvents', () => {
+  it('constructs the interaction-events provider independently', () => {
+    expect(tauriHostTrayInteractionEvents(fakeTauri().tauri, 'windows').getSignal).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayLifecycle', () => {
+  it('constructs the lifecycle provider independently', () => {
+    expect(tauriHostTrayLifecycle(fakeTauri().tauri, 'linux').create).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayMenu', () => {
+  it('constructs the menu provider independently', () => {
+    expect(tauriHostTrayMenu(fakeTauri().tauri, 'linux').set).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayMenuSelectionEvents', () => {
+  it('constructs the menu-selection provider independently', () => {
+    expect(tauriHostTrayMenuSelectionEvents(fakeTauri().tauri, 'linux').getSignal).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayTemplateImage', () => {
+  it('constructs the template-image provider independently', () => {
+    expect(tauriHostTrayTemplateImage(fakeTauri().tauri).set).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayTitle', () => {
+  it('constructs the title provider independently', () => {
+    expect(tauriHostTrayTitle(fakeTauri().tauri, 'linux').get).toBeTypeOf('function');
+  });
+});
+
+describe('tauriHostTrayTooltip', () => {
+  it('constructs the tooltip provider independently', () => {
+    expect(tauriHostTrayTooltip(fakeTauri().tauri, 'windows').get).toBeTypeOf('function');
   });
 });

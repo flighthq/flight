@@ -1,7 +1,7 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { tauriHostShell } from './tauriShell';
+import { tauriHostShell, tauriHostShellExternal, tauriHostShellPathOpen, tauriHostShellPathReveal } from './tauriShell';
 
 function fakeTauri(rejection: unknown = NO_REJECTION) {
   const calls: { openUrl: string[]; openPath: string[]; reveal: string[] } = {
@@ -71,4 +71,19 @@ describe('tauriHostShell', () => {
     expect(capabilities.shortcutLink).toBeUndefined();
     expect(capabilities.trash).toBeUndefined();
   });
+});
+
+describe('tauriHostShellExternal', () => {
+  it('constructs the external provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostShellExternal(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostShellPathOpen', () => {
+  it('constructs the path-open provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostShellPathOpen(fakeTauri().tauri)).toBe(true));
+});
+
+describe('tauriHostShellPathReveal', () => {
+  it('constructs the path-reveal provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostShellPathReveal(fakeTauri().tauri)).toBe(true));
 });
