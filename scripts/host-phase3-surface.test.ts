@@ -131,6 +131,10 @@ describe('Host Phase 3 surface', () => {
   it('keeps Capacitor packages, tools, and examples free of the removed constructor era', () => {
     expect(findCapacitorLegacyReferences()).toEqual([]);
   });
+
+  it('keeps canonical capacitorHost declarations free of backend return types', () => {
+    expect(findCapacitorConstructorBackendReturns()).toEqual([]);
+  });
 });
 
 function canonicalWebHostNames(api: object): string[] {
@@ -186,6 +190,21 @@ function findCapacitorLegacyReferences(): string[] {
         const line = source.slice(0, match.index).split('\n').length;
         findings.push(`${relative(ROOT, path)}:${line}: ${match[0]}`);
       }
+    }
+  }
+  return findings.sort();
+}
+
+function findCapacitorConstructorBackendReturns(): string[] {
+  const findings: string[] = [];
+  const declaration =
+    /\bexport\s+function\s+(capacitorHost[A-Za-z0-9]*)(?:<[^;{]*?>)?\s*\([^;{]*?\)\s*:\s*([^;{]+)[;{]/gu;
+  for (const path of sourceFiles(resolve(ROOT, 'packages/host-capacitor/src'))) {
+    if (path.endsWith('.test.ts')) continue;
+    const source = readSource(path);
+    for (const match of source.matchAll(declaration)) {
+      if (!/\b[A-Z][A-Za-z0-9]*Backend\b/u.test(match[2] ?? '')) continue;
+      findings.push(`${relative(ROOT, path)}: ${match[1]} returns ${(match[2] ?? '').trim()}`);
     }
   }
   return findings.sort();
