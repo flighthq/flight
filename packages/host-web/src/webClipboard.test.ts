@@ -1,6 +1,13 @@
 import { ClipboardFormatText, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { initializeWebClipboardBackend, webClipboardBackend } from './webClipboard';
+import {
+  initializeWebClipboardBackend,
+  webClipboardBackend,
+  webHostClipboardChange,
+  webHostClipboardFormats,
+  webHostClipboardImage,
+  webHostClipboardText,
+} from './webClipboard';
 import { webHost } from './webHost';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -10,39 +17,40 @@ describe('initializeWebClipboardBackend', () => {
     expect(typeof initializeWebClipboardBackend).toBe('function');
   });
 });
-describe('webClipboardBackend', () => {
-  it('is the exact provider for every web clipboard capability slot', () => {
+describe('webHostClipboard providers', () => {
+  it('decomposes the legacy provider into four exact Host leaves', () => {
     expect(EntityRuntimeKey in webClipboardBackend).toBe(true);
     expect(EntityRuntimeKey in webHost).toBe(true);
     expect(webHost.shortcut).toEqual({});
     expect(Object.keys(webHost.clipboard).sort()).toEqual(['change', 'formats', 'image', 'text']);
-    expect(webHost.clipboard.change).toBe(webClipboardBackend);
-    expect(webHost.clipboard.formats).toBe(webClipboardBackend);
-    expect(webHost.clipboard.image).toBe(webClipboardBackend);
-    expect(webHost.clipboard.text).toBe(webClipboardBackend);
+    expect(webHost.clipboard.change).toBe(webHostClipboardChange);
+    expect(webHost.clipboard.formats).toBe(webHostClipboardFormats);
+    expect(webHost.clipboard.image).toBe(webHostClipboardImage);
+    expect(webHost.clipboard.text).toBe(webHostClipboardText);
+    expect(new Set(Object.values(webHost.clipboard)).size).toBe(4);
   });
 
   it('uses capability sentinels when browser clipboard APIs are unavailable', async () => {
     vi.stubGlobal('navigator', {});
 
-    expect(await webClipboardBackend.readText()).toBe('');
-    expect(await webClipboardBackend.readHtml()).toBe('');
-    expect(await webClipboardBackend.readImage()).toBe('');
-    expect(await webClipboardBackend.readRTF()).toBe('');
-    expect(await webClipboardBackend.readFormat('application/x-flight')).toBe('');
-    expect(await webClipboardBackend.readItems([ClipboardFormatText])).toEqual({});
-    expect(await webClipboardBackend.getFormats()).toEqual([]);
-    expect(await webClipboardBackend.hasText()).toBe(false);
-    expect(await webClipboardBackend.hasImage()).toBe(false);
-    expect(await webClipboardBackend.hasFormat(ClipboardFormatText)).toBe(false);
+    expect(await webHostClipboardText.readText()).toBe('');
+    expect(await webHostClipboardFormats.readHtml()).toBe('');
+    expect(await webHostClipboardImage.readImage()).toBe('');
+    expect(await webHostClipboardFormats.readRTF()).toBe('');
+    expect(await webHostClipboardFormats.readFormat('application/x-flight')).toBe('');
+    expect(await webHostClipboardFormats.readItems([ClipboardFormatText])).toEqual({});
+    expect(await webHostClipboardFormats.getFormats()).toEqual([]);
+    expect(await webHostClipboardText.hasText()).toBe(false);
+    expect(await webHostClipboardImage.hasImage()).toBe(false);
+    expect(await webHostClipboardFormats.hasFormat(ClipboardFormatText)).toBe(false);
 
-    expect(await webClipboardBackend.writeText('text')).toBe(false);
-    expect(await webClipboardBackend.writeHtml('<b>html</b>')).toBe(false);
-    expect(await webClipboardBackend.writeImage('data:image/png;base64,AAAA')).toBe(false);
-    expect(await webClipboardBackend.writeRTF('{\\rtf1 rich}')).toBe(false);
-    expect(await webClipboardBackend.writeFormat('application/x-flight', 'data')).toBe(false);
-    expect(await webClipboardBackend.writeItems([{ format: ClipboardFormatText, data: 'text' }])).toBe(false);
-    expect(await webClipboardBackend.clear()).toBe(false);
+    expect(await webHostClipboardText.writeText('text')).toBe(false);
+    expect(await webHostClipboardFormats.writeHtml('<b>html</b>')).toBe(false);
+    expect(await webHostClipboardImage.writeImage('data:image/png;base64,AAAA')).toBe(false);
+    expect(await webHostClipboardFormats.writeRTF('{\\rtf1 rich}')).toBe(false);
+    expect(await webHostClipboardFormats.writeFormat('application/x-flight', 'data')).toBe(false);
+    expect(await webHostClipboardFormats.writeItems([{ format: ClipboardFormatText, data: 'text' }])).toBe(false);
+    expect(await webHostClipboardText.clear()).toBe(false);
   });
 
   it('routes text operations through the supplied browser environment', async () => {
@@ -56,12 +64,12 @@ describe('webClipboardBackend', () => {
       },
     });
 
-    expect(await webClipboardBackend.readText()).toBe('before');
-    expect(await webClipboardBackend.hasText()).toBe(true);
-    expect(await webClipboardBackend.writeText('after')).toBe(true);
-    expect(await webClipboardBackend.readText()).toBe('after');
-    expect(await webClipboardBackend.clear()).toBe(true);
-    expect(await webClipboardBackend.readText()).toBe('');
+    expect(await webHostClipboardText.readText()).toBe('before');
+    expect(await webHostClipboardText.hasText()).toBe(true);
+    expect(await webHostClipboardText.writeText('after')).toBe(true);
+    expect(await webHostClipboardText.readText()).toBe('after');
+    expect(await webHostClipboardText.clear()).toBe(true);
+    expect(await webHostClipboardText.readText()).toBe('');
   });
 
   it('folds rejected browser text operations to sentinels', async () => {
@@ -72,8 +80,8 @@ describe('webClipboardBackend', () => {
       },
     });
 
-    expect(await webClipboardBackend.readText()).toBe('');
-    expect(await webClipboardBackend.writeText('text')).toBe(false);
+    expect(await webHostClipboardText.readText()).toBe('');
+    expect(await webHostClipboardText.writeText('text')).toBe(false);
   });
 
   it('keeps change delivery inert when clipboardchange is not a standard event', () => {
@@ -82,11 +90,11 @@ describe('webClipboardBackend', () => {
     let changes = 0;
     const callback = () => changes++;
 
-    webClipboardBackend.subscribe(callback);
+    webHostClipboardChange.subscribe(callback);
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
 
     expect(changes).toBe(0);
-    expect(() => webClipboardBackend.unsubscribe(callback)).not.toThrow();
+    expect(() => webHostClipboardChange.unsubscribe(callback)).not.toThrow();
   });
 
   it('removes the exact clipboardchange callback on unsubscribe', () => {
@@ -95,9 +103,9 @@ describe('webClipboardBackend', () => {
     let changes = 0;
     const callback = () => changes++;
 
-    webClipboardBackend.subscribe(callback);
+    webHostClipboardChange.subscribe(callback);
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
-    webClipboardBackend.unsubscribe(callback);
+    webHostClipboardChange.unsubscribe(callback);
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
 
     expect(changes).toBe(1);

@@ -1,13 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  ConnectivityChangeBackend,
   ConnectivityConnectionType,
-  ConnectivityReachabilityBackend,
-  ConnectivityStatusBackend,
   EntityConstruction,
+  HostConnectivityChangeProvider,
+  HostConnectivityReachabilityProvider,
+  HostConnectivityStatusProvider,
 } from '@flighthq/types/contract';
 
-type WebConnectivityBackend = ConnectivityStatusBackend & ConnectivityChangeBackend & ConnectivityReachabilityBackend;
+type WebConnectivityBackend = HostConnectivityStatusProvider &
+  HostConnectivityChangeProvider &
+  HostConnectivityReachabilityProvider;
 
 export function createWebConnectivityBackend(): WebConnectivityBackend {
   const backend = allocateEntity<WebConnectivityBackend>();
@@ -15,9 +17,38 @@ export function createWebConnectivityBackend(): WebConnectivityBackend {
   return finishEntity(backend);
 }
 
-// A fresh provider is useful when a caller owns a shorter-lived web host. The full webHost below uses
-// the module singleton, and references that same Entity from all three truthful capability slots.
+// Retain the flat constructor for the Phase 2 compatibility lane while the canonical exports below
+// provide independently importable and independently owned provider Entities.
 export function initializeWebConnectivityBackend(backend: EntityConstruction<WebConnectivityBackend>): void {
+  initializeWebConnectivityChangeProvider(backend);
+  initializeWebConnectivityReachabilityProvider(backend);
+  initializeWebConnectivityStatusProvider(backend);
+}
+
+export const webConnectivityBackend = createWebConnectivityBackend();
+export const webHostConnectivityChange = createWebConnectivityChangeProvider();
+export const webHostConnectivityReachability = createWebConnectivityReachabilityProvider();
+export const webHostConnectivityStatus = createWebConnectivityStatusProvider();
+
+function createWebConnectivityChangeProvider(): HostConnectivityChangeProvider {
+  const out = allocateEntity<HostConnectivityChangeProvider>();
+  initializeWebConnectivityChangeProvider(out);
+  return finishEntity(out);
+}
+
+function createWebConnectivityReachabilityProvider(): HostConnectivityReachabilityProvider {
+  const out = allocateEntity<HostConnectivityReachabilityProvider>();
+  initializeWebConnectivityReachabilityProvider(out);
+  return finishEntity(out);
+}
+
+function createWebConnectivityStatusProvider(): HostConnectivityStatusProvider {
+  const out = allocateEntity<HostConnectivityStatusProvider>();
+  initializeWebConnectivityStatusProvider(out);
+  return finishEntity(out);
+}
+
+function initializeWebConnectivityChangeProvider(backend: EntityConstruction<HostConnectivityChangeProvider>): void {
   const releases = new Set<() => void>();
   let destroyed = false;
   backend.destroy = () => {
@@ -25,46 +56,6 @@ export function initializeWebConnectivityBackend(backend: EntityConstruction<Web
     destroyed = true;
     for (const release of [...releases]) release();
     releases.clear();
-  };
-  backend.detectReachability = async (options, out) => {
-    if (typeof fetch !== 'function' || typeof AbortController === 'undefined') {
-      out.reachable = false;
-      out.latency = -1;
-      return out;
-    }
-    const timeout = options.timeout ?? 5000;
-    const controller = new AbortController();
-    const timerId = setTimeout(() => controller.abort(), timeout);
-    const combinedSignal = options.signal ? anyAbortSignal(options.signal, controller.signal) : controller.signal;
-    const start = Date.now();
-    try {
-      const response = await fetch(options.url, {
-        cache: 'no-store',
-        method: 'HEAD',
-        signal: combinedSignal,
-      });
-      out.reachable = response.ok;
-      out.latency = Date.now() - start;
-    } catch {
-      out.reachable = false;
-      out.latency = -1;
-    } finally {
-      clearTimeout(timerId);
-    }
-    return out;
-  };
-  backend.getStatus = (out) => {
-    const nav = typeof navigator !== 'undefined' ? navigator : null;
-    out.online = typeof nav?.onLine === 'boolean' ? nav.onLine : null;
-    const connection = getWebConnection();
-    out.type = mapWebConnectionType(connection?.type);
-    out.downlink = typeof connection?.downlink === 'number' ? connection.downlink : -1;
-    out.downlinkMax = typeof connection?.downlinkMax === 'number' ? connection.downlinkMax : -1;
-    out.effectiveType = typeof connection?.effectiveType === 'string' ? connection.effectiveType : '';
-    out.rtt = typeof connection?.rtt === 'number' ? connection.rtt : -1;
-    out.saveData = connection?.saveData === true;
-    out.metered = out.saveData || out.type === 'cellular';
-    return out;
   };
   backend.subscribe = (listener) => {
     if (
@@ -110,7 +101,53 @@ export function initializeWebConnectivityBackend(backend: EntityConstruction<Web
   };
 }
 
-export const webConnectivityBackend = createWebConnectivityBackend();
+function initializeWebConnectivityReachabilityProvider(
+  backend: EntityConstruction<HostConnectivityReachabilityProvider>,
+): void {
+  backend.detectReachability = async (options, out) => {
+    if (typeof fetch !== 'function' || typeof AbortController === 'undefined') {
+      out.reachable = false;
+      out.latency = -1;
+      return out;
+    }
+    const timeout = options.timeout ?? 5000;
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), timeout);
+    const combinedSignal = options.signal ? anyAbortSignal(options.signal, controller.signal) : controller.signal;
+    const start = Date.now();
+    try {
+      const response = await fetch(options.url, {
+        cache: 'no-store',
+        method: 'HEAD',
+        signal: combinedSignal,
+      });
+      out.reachable = response.ok;
+      out.latency = Date.now() - start;
+    } catch {
+      out.reachable = false;
+      out.latency = -1;
+    } finally {
+      clearTimeout(timerId);
+    }
+    return out;
+  };
+}
+
+function initializeWebConnectivityStatusProvider(backend: EntityConstruction<HostConnectivityStatusProvider>): void {
+  backend.getStatus = (out) => {
+    const nav = typeof navigator !== 'undefined' ? navigator : null;
+    out.online = typeof nav?.onLine === 'boolean' ? nav.onLine : null;
+    const connection = getWebConnection();
+    out.type = mapWebConnectionType(connection?.type);
+    out.downlink = typeof connection?.downlink === 'number' ? connection.downlink : -1;
+    out.downlinkMax = typeof connection?.downlinkMax === 'number' ? connection.downlinkMax : -1;
+    out.effectiveType = typeof connection?.effectiveType === 'string' ? connection.effectiveType : '';
+    out.rtt = typeof connection?.rtt === 'number' ? connection.rtt : -1;
+    out.saveData = connection?.saveData === true;
+    out.metered = out.saveData || out.type === 'cellular';
+    return out;
+  };
+}
 
 interface WebConnectivityConnection {
   type?: string;

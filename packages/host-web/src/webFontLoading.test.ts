@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebFontLoadingBackend, initializeWebFontLoadingBackend, webFontLoadingBackend } from './webFontLoading';
+import { createWebFontLoadingBackend, initializeWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 
 describe('createWebFontLoadingBackend', () => {
   it('returns an Entity', () => {
@@ -25,16 +25,16 @@ describe('initializeWebFontLoadingBackend', () => {
     expect(typeof initializeWebFontLoadingBackend).toBe('function');
   });
 });
-describe('webFontLoadingBackend', () => {
+describe('webHostFontLoading', () => {
   it('is an Entity with all four operations', () => {
-    expect(EntityRuntimeKey in webFontLoadingBackend).toBe(true);
-    expect(webFontLoadingBackend.addFontFace).toBeTypeOf('function');
-    expect(webFontLoadingBackend.checkFontFace).toBeTypeOf('function');
-    expect(webFontLoadingBackend.loadFontFaces).toBeTypeOf('function');
-    expect(webFontLoadingBackend.whenReady).toBeTypeOf('function');
+    expect(EntityRuntimeKey in webHostFontLoading).toBe(true);
+    expect(webHostFontLoading.addFontFace).toBeTypeOf('function');
+    expect(webHostFontLoading.checkFontFace).toBeTypeOf('function');
+    expect(webHostFontLoading.loadFontFaces).toBeTypeOf('function');
+    expect(webHostFontLoading.whenReady).toBeTypeOf('function');
   });
 
   it('is a stable singleton', () => {
-    expect(webFontLoadingBackend).toBe(webFontLoadingBackend);
+    expect(webHostFontLoading).toBe(webHostFontLoading);
   });
 });

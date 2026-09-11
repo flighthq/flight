@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { PlatformBackend, PlatformInfo, EntityConstruction } from '@flighthq/types/contract';
+import type { HostPlatformProvider, PlatformInfo, EntityConstruction } from '@flighthq/types/contract';
 import {
   detectEndianness,
   parseUserAgentArch,
@@ -12,17 +12,17 @@ import {
   parseUserAgentVersion,
 } from '@flighthq/useragent/contract';
 
-export function createWebPlatformBackend(): PlatformBackend {
-  const out = allocateEntity<PlatformBackend>();
+export function createWebPlatformBackend(): HostPlatformProvider {
+  const out = allocateEntity<HostPlatformProvider>();
   initializeWebPlatformBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebPlatformBackend(out: EntityConstruction<PlatformBackend>): void {
+export function initializeWebPlatformBackend(out: EntityConstruction<HostPlatformProvider>): void {
   out.getInfo = getWebPlatformInfo;
 }
 
-export const webPlatformBackend: PlatformBackend = createWebPlatformBackend();
+export const webHostPlatform: HostPlatformProvider = createWebPlatformBackend();
 
 function getWebPlatformInfo(out: PlatformInfo): PlatformInfo {
   const nav = typeof navigator !== 'undefined' ? navigator : null;

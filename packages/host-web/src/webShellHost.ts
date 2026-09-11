@@ -1,8 +1,10 @@
 import { createHost } from '@flighthq/entity/contract';
-import type { HasShellExternal, Host } from '@flighthq/types/contract';
+import type { HostShellCapabilities } from '@flighthq/types/contract';
 
-import { webShellExternalBackend } from './webShell';
+import { webHostShellExternal } from './webShell';
 
-export const webShellHost: Host & HasShellExternal = createHost({
-  shell: { external: webShellExternalBackend },
-});
+export const webHostShell = {
+  external: webHostShellExternal,
+} satisfies HostShellCapabilities;
+
+export const webShellHost = /* @__PURE__ */ createHost({ shell: webHostShell });

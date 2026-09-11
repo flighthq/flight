@@ -1,4 +1,4 @@
 import { createWebGeolocationBackend } from '@flighthq/geolocation/contract';
-import type { GeolocationBackend } from '@flighthq/types/contract';
+import type { HostGeolocationProvider } from '@flighthq/types/contract';
 
-export const webGeolocationBackend: GeolocationBackend = createWebGeolocationBackend();
+export const webHostGeolocation: HostGeolocationProvider = createWebGeolocationBackend();

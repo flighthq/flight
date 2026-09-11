@@ -2,12 +2,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
   EntityConstruction,
-  ScreenChangeBackend,
   ScreenChangeEvent,
-  ScreenDetailsBackend,
+  HostScreenChangeProvider,
+  HostScreenDetailsProvider,
+  HostScreenPermissionChangeProvider,
+  HostScreenQueryProvider,
   ScreenInfo,
-  ScreenPermissionChangeBackend,
-  ScreenQueryBackend,
   WebScreenCapabilities,
   ScreenPermissionState,
 } from '@flighthq/types/contract';
@@ -185,7 +185,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
     };
 
   const query = (() => {
-    const out = allocateEntity<ScreenQueryBackend>();
+    const out = allocateEntity<HostScreenQueryProvider>();
     out.destroy = () => {
       if (typeof window !== 'undefined') {
         for (const subscription of subscriptions) {
@@ -230,7 +230,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const change = (() => {
-    const out = allocateEntity<ScreenChangeBackend>();
+    const out = allocateEntity<HostScreenChangeProvider>();
     out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
       if (typeof window === 'undefined') return () => {};
       const subscription: DisplaySubscription = {
@@ -253,7 +253,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const detailsBackend = (() => {
-    const out = allocateEntity<ScreenDetailsBackend>();
+    const out = allocateEntity<HostScreenDetailsProvider>();
     out.queryPermission = async (): Promise<ScreenPermissionState> => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return 'prompt';
       try {
@@ -285,7 +285,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const permissionChange = (() => {
-    const out = allocateEntity<ScreenPermissionChangeBackend>();
+    const out = allocateEntity<HostScreenPermissionChangeProvider>();
     out.subscribe = (listener: (state: ScreenPermissionState) => void) => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return () => {};
       let cancelled = false;
@@ -314,10 +314,10 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
 
 export function initializeWebScreenCapabilities(
   out: EntityConstruction<WebScreenCapabilities>,
-  change: ScreenChangeBackend,
-  detailsBackend: ScreenDetailsBackend,
-  permissionChange: ScreenPermissionChangeBackend,
-  query: ScreenQueryBackend,
+  change: HostScreenChangeProvider,
+  detailsBackend: HostScreenDetailsProvider,
+  permissionChange: HostScreenPermissionChangeProvider,
+  query: HostScreenQueryProvider,
 ): void {
   out.change = change;
   out.details = detailsBackend;
@@ -325,7 +325,12 @@ export function initializeWebScreenCapabilities(
   out.query = query;
 }
 
-export const webScreenCapabilities = createWebScreenCapabilities();
+export const webHostScreen = createWebScreenCapabilities();
+export const webHostScreenChange = webHostScreen.change;
+export const webHostScreenDetails = webHostScreen.details;
+export const webHostScreenPermissionChange = webHostScreen.permissionChange;
+export const webHostScreenQuery = webHostScreen.query;
+export const webScreenCapabilities = webHostScreen;
 
 function media(query: string): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;

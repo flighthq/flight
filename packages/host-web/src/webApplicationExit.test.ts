@@ -1,13 +1,13 @@
-import { webApplicationExitBackend } from './webApplicationExit';
+import { webHostApplicationExit } from './webApplicationExit';
 import { webHost } from './webHost';
 
-describe('webApplicationExitBackend', () => {
+describe('webHostApplicationExit', () => {
   it('owns the browser beforeunload subscription and removes the exact listener', () => {
     const listener = vi.fn();
 
-    webApplicationExitBackend.subscribe(listener);
+    webHostApplicationExit.subscribe(listener);
     window.dispatchEvent(new Event('beforeunload'));
-    webApplicationExitBackend.unsubscribe(listener);
+    webHostApplicationExit.unsubscribe(listener);
     window.dispatchEvent(new Event('beforeunload'));
 
     expect(listener).toHaveBeenCalledOnce();
@@ -16,15 +16,15 @@ describe('webApplicationExitBackend', () => {
   it('replaces a repeated subscription without duplicating delivery', () => {
     const listener = vi.fn();
 
-    webApplicationExitBackend.subscribe(listener);
-    webApplicationExitBackend.subscribe(listener);
+    webHostApplicationExit.subscribe(listener);
+    webHostApplicationExit.subscribe(listener);
     window.dispatchEvent(new Event('beforeunload'));
-    webApplicationExitBackend.unsubscribe(listener);
+    webHostApplicationExit.unsubscribe(listener);
 
     expect(listener).toHaveBeenCalledOnce();
   });
 
   it('occupies the explicit web host application-exit slot', () => {
-    expect(webHost.app.exit).toBe(webApplicationExitBackend);
+    expect(webHost.app.exit).toBe(webHostApplicationExit);
   });
 });

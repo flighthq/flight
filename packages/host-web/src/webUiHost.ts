@@ -1,11 +1,12 @@
 import { createHost } from '@flighthq/entity/contract';
+import type { HostUiCapabilities } from '@flighthq/types/contract';
 
-import { webStatusBarColorBackend } from './webStatusbar';
-import { webFullscreenBackend } from './webWindow';
+import { webHostStatusBarColor } from './webStatusbar';
+import { webHostFullscreen } from './webWindow';
 
-export const webUiHost = createHost({
-  ui: {
-    fullscreen: webFullscreenBackend,
-    statusBarColor: webStatusBarColorBackend,
-  },
-});
+export const webHostUi = {
+  fullscreen: webHostFullscreen,
+  statusBarColor: webHostStatusBarColor,
+} satisfies HostUiCapabilities;
+
+export const webUiHost = /* @__PURE__ */ createHost({ ui: webHostUi });

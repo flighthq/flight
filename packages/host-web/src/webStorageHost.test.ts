@@ -9,7 +9,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import { webFileSystemBackend, webStorageBackend, webStorageHost } from './index';
+import { webHostFileSystem, webHostStorage, webHostStorageChange, webHostStorageGroup, webStorageHost } from './index';
 
 type WebStorageHost = HasStorageChange &
   HasStorageFileSystem &
@@ -30,9 +30,10 @@ describe('webStorageHost', () => {
       'persistenceQuery',
       'persistenceRequest',
     ]);
-    expect(webStorageHost.storage.change).toBe(webStorageBackend);
-    expect(webStorageHost.storage.fileSystem).toBe(webFileSystemBackend);
-    expect(webStorageHost.storage.local).toBe(webStorageBackend);
+    expect(webStorageHost.storage).toBe(webHostStorageGroup);
+    expect(webStorageHost.storage.change).toBe(webHostStorageChange);
+    expect(webStorageHost.storage.fileSystem).toBe(webHostFileSystem);
+    expect(webStorageHost.storage.local).toBe(webHostStorage);
   });
 
   it('is created in an isolated Storage wrapper module', () => {
@@ -40,7 +41,7 @@ describe('webStorageHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]).sort();
 
     expect(relativeImports).toEqual(['./webFilesystem', './webStorage', './webStoragePersistence']);
-    expect(source).toMatch(/export const webStorageHost = createHost\(/);
+    expect(source).toMatch(/export const webStorageHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

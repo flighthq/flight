@@ -1,5 +1,5 @@
 import { createHost } from '@flighthq/entity/contract';
 
-import { webScreenCapabilities } from './webScreen';
+import { webHostScreen } from './webScreen';
 
-export const webScreenHost = createHost({ screen: webScreenCapabilities });
+export const webScreenHost = /* @__PURE__ */ createHost({ screen: webHostScreen });

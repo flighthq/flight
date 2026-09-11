@@ -1,5 +1,11 @@
 import { createHost } from '@flighthq/entity/contract';
+import type { HostProtocolCapabilities } from '@flighthq/types/contract';
 
-import { createWebProtocolCapabilities } from './webProtocol';
+import { webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
 
-export const webProtocolHost = createHost({ protocol: createWebProtocolCapabilities() });
+export const webHostProtocol = {
+  launch: webHostProtocolLaunch,
+  registration: webHostProtocolRegistration,
+} satisfies HostProtocolCapabilities;
+
+export const webProtocolHost = /* @__PURE__ */ createHost({ protocol: webHostProtocol });

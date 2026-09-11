@@ -2,19 +2,19 @@ import { notifyWindowClosed } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
-  FullscreenBackend,
+  HostFullscreenProvider,
   FullscreenTargetHandle,
   NativeWindowHandle,
   WindowAttachmentOwnership,
-  WindowBackend,
+  HostWindowProvider,
   WindowResizeTargetHandle,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type WebWindowBackend = WindowBackend &
+type WebWindowBackend = HostWindowProvider &
   Required<
     Pick<
-      WindowBackend,
+      HostWindowProvider,
       | 'attach'
       | 'close'
       | 'open'
@@ -26,7 +26,7 @@ type WebWindowBackend = WindowBackend &
     >
   >;
 
-export const webWindowBackend = (() => {
+export const webHostWindow = (() => {
   const out = allocateEntity<WebWindowBackend>();
   out.attach = (win, handle, ownership) => {
     if (!isWebWindow(handle)) return false;
@@ -162,41 +162,41 @@ export const webWindowBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> =
-  {
-    async exit() {
-      if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
-      try {
-        await document.exitFullscreen();
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async request(target) {
-      const element = _fullscreenTargets.get(target);
-      if (element === undefined || typeof element.requestFullscreen !== 'function') return false;
-      try {
-        await element.requestFullscreen();
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    subscribe(callback) {
-      webFullscreenBackend.unsubscribe(callback);
-      if (typeof document === 'undefined') return;
-      const handler = (): void => callback(document.fullscreenElement !== null);
-      _fullscreenListeners.set(callback, handler);
-      document.addEventListener('fullscreenchange', handler);
-    },
-    unsubscribe(callback) {
-      const handler = _fullscreenListeners.get(callback);
-      if (handler === undefined) return;
-      _fullscreenListeners.delete(callback);
-      if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
-    },
-  };
+export const webHostFullscreen: HostFullscreenProvider &
+  Required<Pick<HostFullscreenProvider, 'subscribe' | 'unsubscribe'>> = {
+  async exit() {
+    if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
+    try {
+      await document.exitFullscreen();
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  async request(target) {
+    const element = _fullscreenTargets.get(target);
+    if (element === undefined || typeof element.requestFullscreen !== 'function') return false;
+    try {
+      await element.requestFullscreen();
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  subscribe(callback) {
+    webHostFullscreen.unsubscribe(callback);
+    if (typeof document === 'undefined') return;
+    const handler = (): void => callback(document.fullscreenElement !== null);
+    _fullscreenListeners.set(callback, handler);
+    document.addEventListener('fullscreenchange', handler);
+  },
+  unsubscribe(callback) {
+    const handler = _fullscreenListeners.get(callback);
+    if (handler === undefined) return;
+    _fullscreenListeners.delete(callback);
+    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
+  },
+};
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
   const target = allocateEntity<FullscreenTargetHandle>();

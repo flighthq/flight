@@ -19,7 +19,7 @@ describe('webProtocolHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]);
 
     expect(relativeImports).toEqual(['./webProtocol']);
-    expect(source).toMatch(/export const webProtocolHost = createHost\(/);
+    expect(source).toMatch(/export const webProtocolHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

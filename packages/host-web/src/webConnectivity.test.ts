@@ -4,7 +4,9 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   createWebConnectivityBackend,
   initializeWebConnectivityBackend,
-  webConnectivityBackend,
+  webHostConnectivityChange,
+  webHostConnectivityReachability,
+  webHostConnectivityStatus,
 } from './webConnectivity';
 import { webHost } from './webHost';
 
@@ -98,12 +100,13 @@ describe('initializeWebConnectivityBackend', () => {
   });
 });
 describe('webHost connectivity', () => {
-  it('publishes stable status/change/reachability slots backed by one Entity', () => {
+  it('publishes three stable and distinct Host leaves', () => {
     expect(webHost.connectivity).toEqual({
-      change: webConnectivityBackend,
-      reachability: webConnectivityBackend,
-      status: webConnectivityBackend,
+      change: webHostConnectivityChange,
+      reachability: webHostConnectivityReachability,
+      status: webHostConnectivityStatus,
     });
+    expect(new Set(Object.values(webHost.connectivity)).size).toBe(3);
     expect(EntityRuntimeKey in webHost.connectivity.status).toBe(true);
   });
 });

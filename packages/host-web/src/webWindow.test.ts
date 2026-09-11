@@ -8,8 +8,8 @@ import {
   initializeWebFullscreenTargetHandle,
   initializeWebWindowResizeTargetHandle,
   resetWebWindowBackendForTest,
-  webFullscreenBackend,
-  webWindowBackend,
+  webHostFullscreen,
+  webHostWindow,
 } from './webWindow';
 
 afterEach(() => {
@@ -26,7 +26,7 @@ describe('createWebFullscreenTargetHandle', () => {
 
     const target = createWebFullscreenTargetHandle(element);
 
-    expect(await webFullscreenBackend.request(target)).toBe(true);
+    expect(await webHostFullscreen.request(target)).toBe(true);
     expect(request).toHaveBeenCalledOnce();
   });
 });
@@ -43,7 +43,7 @@ describe('createWebWindowResizeTargetHandle', () => {
       },
     );
 
-    webWindowBackend.subscribeResize(createWebWindowResizeTargetHandle(element), vi.fn());
+    webHostWindow.subscribeResize(createWebWindowResizeTargetHandle(element), vi.fn());
 
     expect(observe).toHaveBeenCalledWith(element);
   });
@@ -67,22 +67,22 @@ describe('resetWebWindowBackendForTest', () => {
     element.requestFullscreen = vi.fn().mockResolvedValue(undefined);
     const target = createWebFullscreenTargetHandle(element);
     const callback = vi.fn();
-    webFullscreenBackend.subscribe(callback);
+    webHostFullscreen.subscribe(callback);
 
     resetWebWindowBackendForTest();
     document.dispatchEvent(new Event('fullscreenchange'));
 
-    expect(await webFullscreenBackend.request(target)).toBe(false);
+    expect(await webHostFullscreen.request(target)).toBe(false);
     expect(callback).not.toHaveBeenCalled();
   });
 });
-describe('webFullscreenBackend', () => {
+describe('webHostFullscreen', () => {
   it('requests fullscreen for the arbitrary element carried by the opaque handle', async () => {
     const element = document.createElement('div');
     const request = vi.fn().mockResolvedValue(undefined);
     element.requestFullscreen = request;
 
-    expect(await webFullscreenBackend.request(createWebFullscreenTargetHandle(element))).toBe(true);
+    expect(await webHostFullscreen.request(createWebFullscreenTargetHandle(element))).toBe(true);
     expect(request).toHaveBeenCalledOnce();
   });
 
@@ -90,25 +90,25 @@ describe('webFullscreenBackend', () => {
     const element = document.createElement('div');
     element.requestFullscreen = vi.fn().mockRejectedValue(new Error('denied'));
 
-    expect(await webFullscreenBackend.request(createWebFullscreenTargetHandle(element))).toBe(false);
+    expect(await webHostFullscreen.request(createWebFullscreenTargetHandle(element))).toBe(false);
   });
 
   it('delegates global exit and reports success', async () => {
     const exit = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exit });
 
-    expect(await webFullscreenBackend.exit()).toBe(true);
+    expect(await webHostFullscreen.exit()).toBe(true);
     expect(exit).toHaveBeenCalledOnce();
   });
 
   it('subscribes and unsubscribes the exact fullscreen listener', () => {
     Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
     const callback = vi.fn();
-    webFullscreenBackend.subscribe(callback);
+    webHostFullscreen.subscribe(callback);
     document.dispatchEvent(new Event('fullscreenchange'));
     Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: document.body });
     document.dispatchEvent(new Event('fullscreenchange'));
-    webFullscreenBackend.unsubscribe(callback);
+    webHostFullscreen.unsubscribe(callback);
     document.dispatchEvent(new Event('fullscreenchange'));
 
     expect(callback).toHaveBeenCalledTimes(2);
@@ -117,10 +117,10 @@ describe('webFullscreenBackend', () => {
   });
 });
 
-describe('webWindowBackend', () => {
+describe('webHostWindow', () => {
   it('adapter-roster axis: publishes the 10 P1 operations plus the five retained window subscriptions', () => {
     expect(
-      Object.keys(webWindowBackend)
+      Object.keys(webHostWindow)
         .filter((operation) => operation !== 'attach')
         .sort(),
     ).toEqual([
@@ -145,7 +145,7 @@ describe('webWindowBackend', () => {
   it('provides close-request cancellation and terminal-close subscriptions with exact cleanup', () => {
     const onCloseRequest = vi.fn().mockReturnValue(true);
     const onClose = vi.fn();
-    const unsubscribe = webWindowBackend.subscribeClose(onCloseRequest, onClose);
+    const unsubscribe = webHostWindow.subscribeClose(onCloseRequest, onClose);
     const request = new Event('beforeunload', { cancelable: true });
 
     window.dispatchEvent(request);
@@ -162,7 +162,7 @@ describe('webWindowBackend', () => {
     vi.stubGlobal('screenX', 100);
     vi.stubGlobal('screenY', 200);
     const listener = vi.fn();
-    const unsubscribe = webWindowBackend.subscribeMove(listener);
+    const unsubscribe = webHostWindow.subscribeMove(listener);
 
     window.dispatchEvent(new Event('resize'));
     unsubscribe();
@@ -178,7 +178,7 @@ describe('webWindowBackend', () => {
     vi.stubGlobal('screen', { orientation: { addEventListener, removeEventListener } });
     const listener = vi.fn();
 
-    const unsubscribe = webWindowBackend.subscribeOrientation(listener);
+    const unsubscribe = webHostWindow.subscribeOrientation(listener);
     unsubscribe();
 
     expect(addEventListener).toHaveBeenCalledWith('change', listener);
@@ -202,7 +202,7 @@ describe('webWindowBackend', () => {
       },
     );
     const listener = vi.fn();
-    const unsubscribe = webWindowBackend.subscribeResize(createWebWindowResizeTargetHandle(element), listener);
+    const unsubscribe = webHostWindow.subscribeResize(createWebWindowResizeTargetHandle(element), listener);
 
     callback([{ contentRect: { width: 320.4, height: 199.6 } } as ResizeObserverEntry], {} as ResizeObserver);
     unsubscribe();
@@ -216,7 +216,7 @@ describe('webWindowBackend', () => {
     let hidden = true;
     vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
     const listener = vi.fn();
-    const unsubscribe = webWindowBackend.subscribeVisibility(listener);
+    const unsubscribe = webHostWindow.subscribeVisibility(listener);
 
     document.dispatchEvent(new Event('visibilitychange'));
     hidden = false;

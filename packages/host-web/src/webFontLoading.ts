@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, FontLoadingBackend, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, HostFontLoadingProvider, EntityConstruction } from '@flighthq/types/contract';
 
-export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
-  const out = allocateEntity<FontLoadingBackend & Entity>();
+export function createWebFontLoadingBackend(): HostFontLoadingProvider & Entity {
+  const out = allocateEntity<HostFontLoadingProvider & Entity>();
   initializeWebFontLoadingBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebFontLoadingBackend(out: EntityConstruction<FontLoadingBackend & Entity>): void {
+export function initializeWebFontLoadingBackend(out: EntityConstruction<HostFontLoadingProvider & Entity>): void {
   out.addFontFace = (face: FontFace): void => {
     document.fonts.add(face);
   };
@@ -22,4 +22,4 @@ export function initializeWebFontLoadingBackend(out: EntityConstruction<FontLoad
   };
 }
 
-export const webFontLoadingBackend: FontLoadingBackend & Entity = createWebFontLoadingBackend();
+export const webHostFontLoading: HostFontLoadingProvider & Entity = createWebFontLoadingBackend();

@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  ShareContentBackend,
+  HostShareContentProvider,
   ShareFile,
-  ShareFilesBackend,
+  HostShareFilesProvider,
   ShareFilesContent,
   ShareResult,
 } from '@flighthq/types/contract';
 
-export function initializeWebShareContentBackend(out: EntityConstruction<ShareContentBackend>): void {
+export function initializeWebShareContentBackend(out: EntityConstruction<HostShareContentProvider>): void {
   out.canShareContent = (content) => {
     return hasShareableContent(content) && canNavigatorShare(contentToNavigatorData(content));
   };
@@ -22,7 +22,7 @@ export function initializeWebShareContentBackend(out: EntityConstruction<ShareCo
   };
 }
 
-export function initializeWebShareFilesBackend(out: EntityConstruction<ShareFilesBackend>): void {
+export function initializeWebShareFilesBackend(out: EntityConstruction<HostShareFilesProvider>): void {
   out.canShareContent = (content) => {
     if (content.files.length === 0) return false;
     try {
@@ -49,14 +49,14 @@ export function initializeWebShareFilesBackend(out: EntityConstruction<ShareFile
   };
 }
 
-export const webShareContentBackend = (() => {
-  const out = allocateEntity<ShareContentBackend>();
+export const webHostShareContent = (() => {
+  const out = allocateEntity<HostShareContentProvider>();
   initializeWebShareContentBackend(out);
   return finishEntity(out);
 })();
 
-export const webShareFilesBackend = (() => {
-  const out = allocateEntity<ShareFilesBackend>();
+export const webHostShareFiles = (() => {
+  const out = allocateEntity<HostShareFilesProvider>();
   initializeWebShareFilesBackend(out);
   return finishEntity(out);
 })();

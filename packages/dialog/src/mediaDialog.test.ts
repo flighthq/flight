@@ -5,10 +5,10 @@ import type {
   HasDialogImageOpen,
   HasDialogPhotoCapture,
   HasDialogVideoCapture,
-  ImageOpenDialogBackend,
+  HostImageOpenDialogProvider,
+  HostPhotoCaptureDialogProvider,
+  HostVideoCaptureDialogProvider,
   OpenImageDialogOptions,
-  PhotoCaptureDialogBackend,
-  VideoCaptureDialogBackend,
 } from '@flighthq/types/contract';
 
 import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog';
@@ -24,7 +24,7 @@ describe('showCapturePhotoDialog', () => {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as PhotoCaptureDialogBackend;
+          return finishEntity(out) as HostPhotoCaptureDialogProvider;
         })(),
       },
     };
@@ -46,7 +46,7 @@ describe('showCapturePhotoDialog', () => {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as PhotoCaptureDialogBackend;
+          return finishEntity(out) as HostPhotoCaptureDialogProvider;
         })(),
       },
     };
@@ -66,7 +66,7 @@ describe('showCaptureVideoDialog', () => {
         videoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as VideoCaptureDialogBackend;
+          return finishEntity(out) as HostVideoCaptureDialogProvider;
         })(),
       },
     };
@@ -87,7 +87,7 @@ describe('showOpenImageDialog', () => {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as ImageOpenDialogBackend;
+          return finishEntity(out) as HostImageOpenDialogProvider;
         })(),
       },
     };
@@ -104,7 +104,7 @@ describe('showOpenImageDialog', () => {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as ImageOpenDialogBackend;
+          return finishEntity(out) as HostImageOpenDialogProvider;
         })(),
       },
     };

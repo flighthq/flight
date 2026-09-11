@@ -1,8 +1,8 @@
-import type { ApplicationExitBackend } from '@flighthq/types/contract';
+import type { HostApplicationExitProvider } from '@flighthq/types/contract';
 
-export const webApplicationExitBackend: ApplicationExitBackend = {
+export const webHostApplicationExit: HostApplicationExitProvider = {
   subscribe(listener) {
-    webApplicationExitBackend.unsubscribe(listener);
+    webHostApplicationExit.unsubscribe(listener);
     if (typeof window === 'undefined') return;
     const pageWindow = window;
     _applicationExitOrigins.set(listener, pageWindow);

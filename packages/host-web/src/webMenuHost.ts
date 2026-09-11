@@ -1,8 +1,11 @@
 import { createHost } from '@flighthq/entity/contract';
-import type { HasMenuHighlight, HasMenuPopup, Host } from '@flighthq/types/contract';
+import type { HostMenuCapabilities } from '@flighthq/types/contract';
 
-import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webHostMenuHighlight, webHostMenuPopup } from './webMenu';
 
-export const webMenuHost: Host & HasMenuHighlight & HasMenuPopup = createHost({
-  menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
-});
+export const webHostMenu = {
+  highlight: webHostMenuHighlight,
+  popup: webHostMenuPopup,
+} satisfies HostMenuCapabilities;
+
+export const webMenuHost = /* @__PURE__ */ createHost({ menu: webHostMenu });

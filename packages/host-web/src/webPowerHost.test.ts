@@ -20,7 +20,7 @@ describe('webPowerHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]);
 
     expect(relativeImports).toEqual(['./webPower']);
-    expect(source).toMatch(/export const webPowerHost = createHost\(/);
+    expect(source).toMatch(/export const webPowerHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

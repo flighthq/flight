@@ -14,14 +14,15 @@ const EVIDENCE_DIR = resolve(__dirname, '../evidence');
 const EVIDENCE_TEST_TIMEOUT_MS = 30_000;
 
 interface CapabilityEntry {
+  readonly excludedGroupModulePattern?: string;
   readonly fixture: string;
   readonly modulePattern: string;
 }
 
 const CAPABILITIES: readonly CapabilityEntry[] = [
   { fixture: 'cursor', modulePattern: 'webCursor' },
-  { fixture: 'glyph', modulePattern: 'webGlyphRasterizer' },
-  { fixture: 'loop', modulePattern: 'webLoop' },
+  { excludedGroupModulePattern: 'webTextHost', fixture: 'glyph', modulePattern: 'webGlyphRasterizer' },
+  { excludedGroupModulePattern: 'webAppHost', fixture: 'loop', modulePattern: 'webLoop' },
 ];
 
 interface FixtureResult {
@@ -125,6 +126,15 @@ describe('evidence: tree-shaking isolation', { timeout: EVIDENCE_TEST_TIMEOUT_MS
   });
 
   for (const cap of CAPABILITIES) {
+    it(`${cap.fixture} fixture includes its own implementation but excludes the full host`, async () => {
+      const { modules } = await getFixture(cap.fixture);
+      expect(hasCapabilityModule(modules, cap.modulePattern)).toBe(true);
+      expect(hasCapabilityModule(modules, 'webHost.ts')).toBe(false);
+      if (cap.excludedGroupModulePattern !== undefined) {
+        expect(hasCapabilityModule(modules, cap.excludedGroupModulePattern)).toBe(false);
+      }
+    });
+
     for (const other of CAPABILITIES) {
       if (other === cap) continue;
       it(`${cap.fixture} fixture excludes ${other.fixture} modules`, async () => {

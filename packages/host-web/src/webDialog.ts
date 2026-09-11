@@ -5,85 +5,87 @@ import type {
   CaptureVideoDialogOptions,
   DialogImage,
   DialogVideo,
-  DirectoryOpenDialogBackend,
+  HostDirectoryOpenDialogProvider,
   DirectoryOpenDialogResult,
   EntityConstruction,
   FileDialogFilter,
   FileDialogHandleOperations,
-  FileOpenDialogBackend,
+  HostFileOpenDialogProvider,
   FileOpenDialogResult,
-  FileSaveDialogBackend,
+  HostFileSaveDialogProvider,
   FileSaveDialogResult,
-  ImageOpenDialogBackend,
+  HostImageOpenDialogProvider,
   ImageOpenDialogResult,
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   OpenImageDialogOptions,
-  PhotoCaptureDialogBackend,
+  HostPhotoCaptureDialogProvider,
   PhotoCaptureDialogResult,
   SaveFileDialogOptions,
-  VideoCaptureDialogBackend,
+  HostVideoCaptureDialogProvider,
   VideoCaptureDialogResult,
 } from '@flighthq/types/contract';
 
-export { webMessageDialogBackend, webPromptDialogBackend } from '@flighthq/dialog/contract';
+export { webHostMessageDialog, webHostPromptDialog } from '@flighthq/dialog/contract';
 
-export function initializeWebDirectoryOpenDialogBackend(out: EntityConstruction<DirectoryOpenDialogBackend>): void {
+export function initializeWebDirectoryOpenDialogBackend(
+  out: EntityConstruction<HostDirectoryOpenDialogProvider>,
+): void {
   out.open = openDirectory;
 }
 
-export function initializeWebFileOpenDialogBackend(out: EntityConstruction<FileOpenDialogBackend>): void {
+export function initializeWebFileOpenDialogBackend(out: EntityConstruction<HostFileOpenDialogProvider>): void {
   out.open = openFile;
 }
 
-export function initializeWebFileSaveDialogBackend(out: EntityConstruction<FileSaveDialogBackend>): void {
+export function initializeWebFileSaveDialogBackend(out: EntityConstruction<HostFileSaveDialogProvider>): void {
   out.save = saveFile;
 }
 
-export function initializeWebImageOpenDialogBackend(out: EntityConstruction<ImageOpenDialogBackend>): void {
+export function initializeWebImageOpenDialogBackend(out: EntityConstruction<HostImageOpenDialogProvider>): void {
   out.open = openImage;
 }
 
-export function initializeWebPhotoCaptureDialogBackend(out: EntityConstruction<PhotoCaptureDialogBackend>): void {
+export function initializeWebPhotoCaptureDialogBackend(out: EntityConstruction<HostPhotoCaptureDialogProvider>): void {
   out.capture = capturePhoto;
 }
 
-export function initializeWebVideoCaptureDialogBackend(out: EntityConstruction<VideoCaptureDialogBackend>): void {
+export function initializeWebVideoCaptureDialogBackend(out: EntityConstruction<HostVideoCaptureDialogProvider>): void {
   out.capture = captureVideo;
 }
 
-export const webDirectoryOpenDialogBackend = (() => {
-  const out = allocateEntity<DirectoryOpenDialogBackend>();
+export const webHostDirectoryOpenDialog = (() => {
+  const out = allocateEntity<HostDirectoryOpenDialogProvider>();
   initializeWebDirectoryOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
-export const webFileOpenDialogBackend = (() => {
-  const out = allocateEntity<FileOpenDialogBackend>();
+export const webHostFileOpenDialog = (() => {
+  const out = allocateEntity<HostFileOpenDialogProvider>();
   initializeWebFileOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
-export const webFileSaveDialogBackend = (() => {
-  const out = allocateEntity<FileSaveDialogBackend>();
+export const webHostFileSaveDialog = (() => {
+  const out = allocateEntity<HostFileSaveDialogProvider>();
   initializeWebFileSaveDialogBackend(out);
   return finishEntity(out);
 })();
 
-export const webImageOpenDialogBackend = (() => {
-  const out = allocateEntity<ImageOpenDialogBackend>();
+export const webHostImageOpenDialog = (() => {
+  const out = allocateEntity<HostImageOpenDialogProvider>();
   initializeWebImageOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
-export const webPhotoCaptureDialogBackend = (() => {
-  const out = allocateEntity<PhotoCaptureDialogBackend>();
+export const webHostPhotoCaptureDialog = (() => {
+  const out = allocateEntity<HostPhotoCaptureDialogProvider>();
   initializeWebPhotoCaptureDialogBackend(out);
   return finishEntity(out);
 })();
 
-export const webVideoCaptureDialogBackend = (() => {
-  const out = allocateEntity<VideoCaptureDialogBackend>();
+export const webHostVideoCaptureDialog = (() => {
+  const out = allocateEntity<HostVideoCaptureDialogProvider>();
   initializeWebVideoCaptureDialogBackend(out);
   return finishEntity(out);
 })();

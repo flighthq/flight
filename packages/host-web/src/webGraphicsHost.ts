@@ -1,29 +1,17 @@
 import { createHost } from '@flighthq/entity/contract';
-import type {
-  HasGraphicsBitmapEncode,
-  HasGraphicsBitmapReadback,
-  HasGraphicsImage,
-  HasGraphicsRenderContextSubscription,
-  HasGraphicsRenderSurface,
-  Host,
-} from '@flighthq/types/contract';
+import type { HostGraphicsCapabilities } from '@flighthq/types/contract';
 
-import { webBitmapEncodeBackend } from './webBitmapEncode';
-import { webBitmapReadbackBackend } from './webBitmapReadback';
-import { webImageBackend } from './webImage';
-import { webRenderContextBackend, webRenderSurfaceBackend } from './webInputTarget';
+import { webHostBitmapEncode } from './webBitmapEncode';
+import { webHostBitmapReadback } from './webBitmapReadback';
+import { webHostImage } from './webImage';
+import { webHostRenderContext, webHostRenderSurface } from './webInputTarget';
 
-export const webGraphicsHost: Host &
-  HasGraphicsBitmapEncode &
-  HasGraphicsBitmapReadback &
-  HasGraphicsImage &
-  HasGraphicsRenderContextSubscription &
-  HasGraphicsRenderSurface = createHost({
-  graphics: {
-    bitmapEncode: webBitmapEncodeBackend,
-    bitmapReadback: webBitmapReadbackBackend,
-    image: webImageBackend,
-    renderContext: webRenderContextBackend,
-    renderSurface: webRenderSurfaceBackend,
-  },
-});
+export const webHostGraphics = {
+  bitmapEncode: webHostBitmapEncode,
+  bitmapReadback: webHostBitmapReadback,
+  image: webHostImage,
+  renderContext: webHostRenderContext,
+  renderSurface: webHostRenderSurface,
+} satisfies HostGraphicsCapabilities;
+
+export const webGraphicsHost = /* @__PURE__ */ createHost({ graphics: webHostGraphics });

@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  InputDropFileBackend,
-  InputFocusBackend,
-  InputPointerLockBackend,
+  HostInputDropFileProvider,
+  HostInputFocusProvider,
+  HostInputPointerLockProvider,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  InputTargetBackend,
+  HostInputTargetProvider,
   InputTargetHandle,
-  RenderContextBackend,
-  RenderSurfaceBackend,
+  HostRenderContextProvider,
+  HostRenderSurfaceProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -16,8 +16,8 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
 }
 
-export const webInputDropFileBackend = (() => {
-  const out = allocateEntity<InputDropFileBackend>();
+export const webHostInputDropFile = (() => {
+  const out = allocateEntity<HostInputDropFileProvider>();
   out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -36,8 +36,8 @@ export const webInputDropFileBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webInputFocusBackend = (() => {
-  const out = allocateEntity<InputFocusBackend>();
+export const webHostInputFocus = (() => {
+  const out = allocateEntity<HostInputFocusProvider>();
   out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -51,8 +51,8 @@ export const webInputFocusBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webInputPointerLockBackend = (() => {
-  const out = allocateEntity<InputPointerLockBackend>();
+export const webHostInputPointerLock = (() => {
+  const out = allocateEntity<HostInputPointerLockProvider>();
   out.exit = () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
@@ -94,8 +94,8 @@ export const webInputPointerLockBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webInputTargetBackend = (() => {
-  const out = allocateEntity<InputTargetBackend>();
+export const webHostInputTarget = (() => {
+  const out = allocateEntity<HostInputTargetProvider>();
   out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
@@ -108,8 +108,8 @@ export const webInputTargetBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webRenderContextBackend = (() => {
-  const out = allocateEntity<RenderContextBackend>();
+export const webHostRenderContext = (() => {
+  const out = allocateEntity<HostRenderContextProvider>();
   out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
@@ -129,8 +129,8 @@ export const webRenderContextBackend = (() => {
   return finishEntity(out);
 })();
 
-export const webRenderSurfaceBackend = (() => {
-  const out = allocateEntity<RenderSurfaceBackend>();
+export const webHostRenderSurface = (() => {
+  const out = allocateEntity<HostRenderSurfaceProvider>();
   out.resize = (target: InputTargetHandle, width: number, height: number) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {

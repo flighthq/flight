@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  PowerChangeBackend,
+  HostPowerChangeProvider,
+  HostPowerKeepAwakeProvider,
+  HostPowerStatusProvider,
+  HostPowerSuspensionProvider,
   PowerKeepAwakeAcquireResult,
-  PowerKeepAwakeBackend,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
   PowerStatus,
-  PowerStatusBackend,
-  PowerSuspensionBackend,
   WebPowerCapabilities,
   WebPowerReadingCapabilities,
 } from '@flighthq/types/contract';
@@ -26,15 +26,15 @@ import type {
 // Keep-awake over the Wake Lock API. Both operations AWAIT the platform, so the reported outcome is the
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
-export const webPowerKeepAwakeBackend = (() => {
-  const out = allocateEntity<PowerKeepAwakeBackend>();
+export const webHostPowerKeepAwake = (() => {
+  const out = allocateEntity<HostPowerKeepAwakeProvider>();
   initializeWebPowerKeepAwakeBackend(out);
   return finishEntity(out);
 })();
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
-export const webPowerSuspensionBackend = (() => {
-  const out = allocateEntity<PowerSuspensionBackend>();
+export const webHostPowerSuspension = (() => {
+  const out = allocateEntity<HostPowerSuspensionProvider>();
   initializeWebPowerSuspensionBackend(out);
   return finishEntity(out);
 })();
@@ -50,7 +50,7 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   let cachedLevel = -1;
 
   const out = allocateEntity<WebPowerReadingCapabilities>();
-  const changeEntity = allocateEntity<PowerChangeBackend>();
+  const changeEntity = allocateEntity<HostPowerChangeProvider>();
   changeEntity.subscribe = (listener: () => void) => {
     const battery = _getWebBatteryManagerPromise();
     if (battery === null) return () => {};
@@ -104,7 +104,7 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
       manager = null;
     };
   };
-  const statusEntity = allocateEntity<PowerStatusBackend>();
+  const statusEntity = allocateEntity<HostPowerStatusProvider>();
   statusEntity.getStatus = (statusOut: PowerStatus): PowerStatus => {
     statusOut.batteryLevel = cachedLevel;
     statusOut.chargingTime = cachedChargingTime;
@@ -127,12 +127,12 @@ export function initializeWebPowerCapabilities(
   readings: WebPowerReadingCapabilities,
 ): void {
   out.change = readings.change;
-  out.keepAwake = webPowerKeepAwakeBackend;
+  out.keepAwake = webHostPowerKeepAwake;
   out.status = readings.status;
-  out.suspension = webPowerSuspensionBackend;
+  out.suspension = webHostPowerSuspension;
 }
 
-export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<PowerKeepAwakeBackend>): void {
+export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<HostPowerKeepAwakeProvider>): void {
   out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
     if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
@@ -190,14 +190,14 @@ export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<Power
 
 export function initializeWebPowerReadings(
   out: EntityConstruction<WebPowerReadingCapabilities>,
-  change: PowerChangeBackend,
-  status: PowerStatusBackend,
+  change: HostPowerChangeProvider,
+  status: HostPowerStatusProvider,
 ): void {
   out.change = change;
   out.status = status;
 }
 
-export function initializeWebPowerSuspensionBackend(out: EntityConstruction<PowerSuspensionBackend>): void {
+export function initializeWebPowerSuspensionBackend(out: EntityConstruction<HostPowerSuspensionProvider>): void {
   out.subscribeResume = (listener: () => void): (() => void) => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('resume', listener);
@@ -211,12 +211,16 @@ export function initializeWebPowerSuspensionBackend(out: EntityConstruction<Powe
 }
 
 // The web power capability group, for composing into a Host.
-export const webPowerCapabilities: WebPowerCapabilities = (() => {
-  const readings = createWebPowerReadings();
+const webPowerReadings = createWebPowerReadings();
+
+export const webHostPower: WebPowerCapabilities = (() => {
   const out = allocateEntity<WebPowerCapabilities>();
-  initializeWebPowerCapabilities(out, readings);
+  initializeWebPowerCapabilities(out, webPowerReadings);
   return finishEntity(out);
 })();
+export const webHostPowerChange = webPowerReadings.change;
+export const webHostPowerStatus = webPowerReadings.status;
+export const webPowerCapabilities = webHostPower;
 
 function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
   if (typeof navigator === 'undefined') return null;

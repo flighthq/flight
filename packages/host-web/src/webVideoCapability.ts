@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, VideoCapabilityBackend, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, HostVideoProvider, EntityConstruction } from '@flighthq/types/contract';
 
-export function createWebVideoCapabilityBackend(): VideoCapabilityBackend & Entity {
-  const out = allocateEntity<VideoCapabilityBackend & Entity>();
+export function createWebVideoCapabilityBackend(): HostVideoProvider & Entity {
+  const out = allocateEntity<HostVideoProvider & Entity>();
   initializeWebVideoCapabilityBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebVideoCapabilityBackend(out: EntityConstruction<VideoCapabilityBackend & Entity>): void {
+export function initializeWebVideoCapabilityBackend(out: EntityConstruction<HostVideoProvider & Entity>): void {
   out.canPlayType = (mimeType): boolean => {
     try {
       const result = document.createElement('video').canPlayType(mimeType);
@@ -25,4 +25,4 @@ export function initializeWebVideoCapabilityBackend(out: EntityConstruction<Vide
   };
 }
 
-export const webVideoCapabilityBackend: VideoCapabilityBackend & Entity = createWebVideoCapabilityBackend();
+export const webHostVideo: HostVideoProvider & Entity = createWebVideoCapabilityBackend();
