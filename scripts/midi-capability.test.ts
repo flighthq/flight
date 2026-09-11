@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest';
 const ROOT = resolve(import.meta.dirname, '..');
 
 describe('MIDI explicit Host capability shape', () => {
-  it('publishes one required group with only split access and permission slots and exact traits', () => {
+  it('publishes one required group with split provider leaves and transitional exact traits', () => {
     const host = source('packages/types/src/Host.ts');
     expect(host).toContain('readonly midi: HostMidiCapabilities;');
     const body = interfaceBody(host, 'HostMidiCapabilities');
     expect(propertyNames(body)).toEqual(['access', 'permission']);
-    expect(body).toContain('readonly access?: MidiAccessBackend;');
-    expect(body).toContain('readonly permission?: MidiPermissionBackend;');
+    expect(body).toContain('readonly access?: HostMidiAccessProvider;');
+    expect(body).toContain('readonly permission?: HostMidiPermissionProvider;');
     expect(host).toContain('export interface HasMidiAccess');
     expect(host).toContain('export interface HasMidiPermission');
   });
