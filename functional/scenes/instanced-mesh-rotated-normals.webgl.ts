@@ -28,9 +28,8 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  registerGlLambertMaterial,
   renderGlBackground,
-  scene2DGlPipeline,
+  scene3DGlPipeline,
 } from '@flighthq/sdk';
 import { declareAntialiasingPolicy, declareExpectedImageDescription } from '@ft/render';
 
@@ -51,10 +50,9 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   { pixelRatio, backgroundColor: 0x0a0c10ff },
 );
-registerGlLambertMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

@@ -28,9 +28,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
   endWgpuRenderEffectPipeline,
-  registerWgpuUnlitMaterial,
   renderWgpuBackground,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { declareAntialiasingPolicy, declareExpectedImageDescription } from '@ft/render';
@@ -47,11 +46,10 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
 });
-registerWgpuUnlitMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 1,

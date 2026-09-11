@@ -1,6 +1,6 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D, registerWgpuGpuSkinning } from '@flighthq/scene3d-wgpu';
+import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -20,13 +20,12 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   endWgpuRenderEffectPipeline,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   prepareScene3DSkinning,
-  registerWgpuBlinnPhongMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
@@ -64,12 +63,10 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
 });
-registerWgpuBlinnPhongMaterial(state);
-registerWgpuGpuSkinning(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',

@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   addNodeChild,
   advanceVideoTexture,
@@ -21,8 +21,6 @@ import {
   createVector3,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  registerStandardGlTextureResolvers,
-  registerGlUnlitMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   createGlContextFromCanvasElement,
@@ -43,14 +41,12 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x000000ff,
   },
 );
-registerStandardGlTextureResolvers(state);
-registerGlUnlitMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

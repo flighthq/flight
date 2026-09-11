@@ -3,7 +3,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createScene3DLights,
   addNodeChild,
@@ -25,7 +25,6 @@ import {
   endGlRenderEffectPipeline,
   getBitmapPixel,
   prepareScene3DRender,
-  registerGlStandardPbrMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
@@ -79,13 +78,12 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0c10ff,
   },
 );
-registerGlStandardPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,
