@@ -53,7 +53,6 @@ export {
   registerGlTextureResolver,
   presentGlRenderTarget,
   pushGlRenderState,
-  renderGlBackground,
   renderIntoGlRenderTexture,
   releaseGlRenderTexture,
   resolveGlTexture,

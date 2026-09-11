@@ -1,4 +1,3 @@
-export * from './glBackground';
 export * from './glCompressedTexture';
 export * from './glContext';
 export * from './glCubeRenderTarget';
