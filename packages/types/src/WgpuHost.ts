@@ -38,7 +38,7 @@ export interface WgpuHostAcquisitionOptions {
 // return its own structurally compatible handles without coupling render-wgpu to Application or a
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
-export interface WgpuHostBackend extends Entity {
+export interface HostWgpuProvider extends Entity {
   acquire(canvas: HTMLCanvasElement, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
   isSupported(): boolean;
   release(acquisition: Readonly<WgpuHostAcquisition>): void;

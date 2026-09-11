@@ -2,7 +2,7 @@ import type { Entity } from './Entity';
 
 // Unicode bidirectional-text itemize seam (UAX #9). Free functions in @flighthq/textbidi resolve the
 // embedding levels of a mixed LTR/RTL string and reorder its runs from logical (storage) to visual
-// (display) order. Each character's bidi class comes from a BidiClassBackend passed to the resolver;
+// (display) order. Each character's bidi class comes from a HostBidiClassProvider passed to the resolver;
 // when omitted, @flighthq/textbidi uses its compact bundled table covering the common
 // Latin/Hebrew/Arabic ranges. A full-coverage backend can be supplied by a flight-rs Rust table kernel.
 // Unlike segmentation (UAX #29), the ECMAScript Intl API exposes NO bidi surface, so there is no
@@ -42,7 +42,7 @@ export type BidiClass =
 // The class-lookup seam the UAX #9 algorithm queries per code point. A single method keeps a
 // from-scratch or native backend to one function to implement. The compact default answers the common
 // scripts; pass a complete-coverage backend (flight-rs) explicitly for full Unicode.
-export interface BidiClassBackend extends Entity {
+export interface HostBidiClassProvider extends Entity {
   // Returns the UAX #9 bidi class of `codepoint` (a Unicode scalar value, not a UTF-16 code unit).
   getBidiClass(codepoint: number): BidiClass;
 }

@@ -19,7 +19,7 @@ export interface GlyphOutlineMetrics {
 //
 // This is a bound method object because a parser-produced font owns its outline/codepoint tables. It
 // is a sibling of the codepoint-keyed GlyphSource raster seam, not a subtype of it; callers compose an
-// outline source into either vector paths or a GlyphRasterizerBackend explicitly.
+// outline source into either vector paths or a HostGlyphRasterizerProvider explicitly.
 export interface GlyphOutlineSource {
   getGlyphOutline(out: Path, glyphIndex: number): boolean;
   getGlyphOutlineAdvance(glyphIndex: number): number;

@@ -47,7 +47,7 @@ export interface ShortcutTriggerUnsubscribeOutcome {
 // Native registration is the trigger event subscription. It is awaited uniformly: Electron lifts its
 // synchronous boolean into this shape, while Tauri awaits the plugin Promise. destroy owns any native
 // registrations whose exact tokens have not yet been successfully unsubscribed.
-export interface ShortcutTriggerBackend extends Entity {
+export interface HostShortcutTriggerProvider extends Entity {
   destroy(): Promise<void>;
   subscribe(accelerator: Accelerator, trigger: () => void): Promise<ShortcutTriggerSubscribeOutcome>;
   unsubscribe(subscription: ShortcutTriggerSubscription): Promise<ShortcutTriggerUnsubscribeOutcome>;
@@ -55,6 +55,6 @@ export interface ShortcutTriggerBackend extends Entity {
 
 // Kept separate from trigger despite identical E/T coverage because a query is a command/result shape,
 // not an event subscription. Provider absence is represented only by an omitted Host slot.
-export interface ShortcutQueryBackend extends Entity {
+export interface HostShortcutQueryProvider extends Entity {
   isRegistered(accelerator: Accelerator): Promise<boolean>;
 }

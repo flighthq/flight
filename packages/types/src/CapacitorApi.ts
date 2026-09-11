@@ -29,7 +29,7 @@
 // while several Flight seams (device/statusbar/connectivity snapshot getters, keyboard info) are
 // synchronous. Those adapters prefetch-and-cache (and, where the value is live, subscribe to keep the
 // cache fresh) — see each adapter for the exact contract. `@capacitor/preferences` is deliberately
-// absent: `StorageBackend` is synchronous but Preferences is async, an unbridgeable mismatch, so the
+// absent: `HostStorageProvider` is synchronous but Preferences is async, an unbridgeable mismatch, so the
 // storage seam keeps its web default rather than being adapted (see registerCapacitorBackends).
 
 export interface CapacitorApi {
@@ -96,7 +96,7 @@ export interface CapacitorClipboardWriteOptions {
   url?: string;
 }
 
-// `@capacitor/device` — device identity. All async, so the sync DeviceBackend getInfo/getId are served
+// `@capacitor/device` — device identity. All async, so the sync HostDeviceProvider getInfo/getId are served
 // from values prefetched once at construction (async→sync bridge; sentinels until the probe resolves).
 export interface CapacitorDevicePlugin {
   getId(): Promise<CapacitorDeviceId>;
@@ -238,7 +238,7 @@ export interface CapacitorFilesystemStatResult {
 }
 
 // `@capacitor/geolocation` — device location. Async; permission getters map through
-// check/requestPermissions. `watchPosition` resolves a string callback id, whereas GeolocationBackend
+// check/requestPermissions. `watchPosition` resolves a string callback id, whereas HostGeolocationProvider
 // returns a number synchronously — the adapter mints a local numeric id and maps it to the resolved
 // string for clearWatch (fire-and-forget).
 export interface CapacitorGeolocationPlugin {
@@ -286,7 +286,7 @@ export interface CapacitorPositionCoords {
 }
 
 // `@capacitor/haptics` — physical feedback. Every call is async and returns void; the sync
-// HapticsBackend triggers fire-and-forget and report `true`. `style`/`type` are Capacitor's uppercase
+// HostHapticsProvider triggers fire-and-forget and report `true`. `style`/`type` are Capacitor's uppercase
 // enums ('HEAVY' | 'MEDIUM' | 'LIGHT'; 'SUCCESS' | 'WARNING' | 'ERROR').
 export interface CapacitorHapticsPlugin {
   impact(options: Readonly<{ style: string }>): Promise<void>;
@@ -298,7 +298,7 @@ export interface CapacitorHapticsPlugin {
 }
 
 // `@capacitor/keyboard` — the soft keyboard. Show/hide and the setters are async fire-and-forget; the
-// sync SoftKeyboardInfoBackend.getInfo reads a local mirror kept fresh by the plugin's will/did show/hide
+// sync HostSoftKeyboardInfoProvider.getInfo reads a local mirror kept fresh by the plugin's will/did show/hide
 // events. `mode`/`style` are Capacitor's enums ('none' | 'body' | 'ionic' | 'native'; 'DARK' | 'LIGHT' |
 // 'DEFAULT').
 export interface CapacitorKeyboardPlugin {

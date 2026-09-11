@@ -18,7 +18,7 @@ export type PathBooleanContour = readonly number[];
 // rebuild into a single `nonZero` path directly. Backends must be re-entrant: a guard or diagnostic
 // callback may initiate another boolean operation before the outer call returns, so implementations must
 // not retain per-call subject, clip, or result state in module globals.
-export interface PathBooleanBackend extends Entity {
+export interface HostPathBooleanProvider extends Entity {
   computePathBoolean(
     subject: readonly PathBooleanContour[],
     clip: readonly PathBooleanContour[],

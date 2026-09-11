@@ -7,5 +7,5 @@ import type { PathWinding } from './ShapeCommand';
 // on: `positive` is the cleanup fill that dissolves the self-overlap a polygon offset produces at concave
 // corners and drops over-deflated (orientation-inverted) rings, which neither `evenOdd` nor `nonZero` can.
 // They are deliberately kept out of the core `PathWinding` (shapes/SVG stay lean on evenOdd/nonZero) and
-// reachable only through the `PathBooleanBackend` seam, not the common boolean-op options.
+// reachable only through the `HostPathBooleanProvider` seam, not the common boolean-op options.
 export type PathBooleanFillRule = PathWinding | 'negative' | 'positive';

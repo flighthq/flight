@@ -24,7 +24,7 @@ export interface ImageResource extends TextureSource {
 // `crossOrigin` is the DOM attribute's vocabulary because that is what the format of the request is,
 // not because the backend must be a DOM one: a native host reads it as the credential mode to use.
 // `signal` cancels the load; an aborted load rejects with the signal's reason rather than resolving.
-export interface ImageBackend extends Entity {
+export interface HostImageProvider extends Entity {
   // Materializes raw Bitmap pixels into this host's drawable ImageResource representation. Optional
   // because native providers may decode URLs without owning a synchronous raw-pixel bridge; absence
   // is the capability signal and callers must not silently fall back to browser globals.
@@ -36,4 +36,4 @@ export interface ImageBackend extends Entity {
   ): Promise<ImageResource>;
 }
 
-export type ImageBackendOperation = keyof EntityWithoutRuntime<ImageBackend>;
+export type ImageBackendOperation = keyof EntityWithoutRuntime<HostImageProvider>;

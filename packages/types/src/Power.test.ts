@@ -12,27 +12,27 @@ import type {
 } from './Host';
 import type {
   ElectronPowerCapabilities,
-  PowerBatteryHealthBackend,
-  PowerChangeBackend,
-  PowerIdleBackend,
-  PowerKeepAwakeBackend,
-  PowerSessionLockBackend,
-  PowerStatusBackend,
-  PowerSuspensionBackend,
-  PowerThermalBackend,
+  HostPowerBatteryHealthProvider,
+  HostPowerChangeProvider,
+  HostPowerIdleProvider,
+  HostPowerKeepAwakeProvider,
+  HostPowerSessionLockProvider,
+  HostPowerStatusProvider,
+  HostPowerSuspensionProvider,
+  HostPowerThermalProvider,
   WebPowerCapabilities,
   WebPowerReadingCapabilities,
 } from './Power';
 
 type PowerProvidersAreEntities = [
-  PowerBatteryHealthBackend extends Entity ? true : false,
-  PowerChangeBackend extends Entity ? true : false,
-  PowerIdleBackend extends Entity ? true : false,
-  PowerKeepAwakeBackend extends Entity ? true : false,
-  PowerSessionLockBackend extends Entity ? true : false,
-  PowerStatusBackend extends Entity ? true : false,
-  PowerSuspensionBackend extends Entity ? true : false,
-  PowerThermalBackend extends Entity ? true : false,
+  HostPowerBatteryHealthProvider extends Entity ? true : false,
+  HostPowerChangeProvider extends Entity ? true : false,
+  HostPowerIdleProvider extends Entity ? true : false,
+  HostPowerKeepAwakeProvider extends Entity ? true : false,
+  HostPowerSessionLockProvider extends Entity ? true : false,
+  HostPowerStatusProvider extends Entity ? true : false,
+  HostPowerSuspensionProvider extends Entity ? true : false,
+  HostPowerThermalProvider extends Entity ? true : false,
 ];
 
 type ConcretePowerBundlesAreEntities = [

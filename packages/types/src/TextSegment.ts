@@ -31,7 +31,7 @@ export interface TextSegmentRange {
 // BCP-47 `locale`. One method keeps a from-scratch backend to a single function to implement, and
 // mirrors Intl.Segmenter, which is itself parameterized by granularity. Returns segments in order,
 // covering the whole string with no gaps.
-export interface TextSegmenterBackend extends Entity {
+export interface HostTextSegmenterProvider extends Entity {
   segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[];
 }
 

@@ -38,31 +38,31 @@ export interface StatusBarStyleEntry {
   visible?: boolean;
 }
 
-export interface StatusBarChangeBackend {
+export interface HostStatusBarChangeProvider {
   // Registers a listener invoked on any OS-driven status bar change; returns an unsubscribe function.
   subscribe(listener: () => void): () => void;
 }
 
-export interface StatusBarInfoBackend {
+export interface HostStatusBarInfoProvider {
   // Fills `out` with the current status bar state snapshot and returns it.
   getInfo(out: StatusBarInfo): StatusBarInfo;
 }
 
-export interface StatusBarOverlaysBackend {
+export interface HostStatusBarOverlaysProvider {
   setOverlaysContent(overlay: boolean): void;
 }
 
-export interface StatusBarStyleBackend {
+export interface HostStatusBarStyleProvider {
   setStyle(style: StatusBarStyle): void;
 }
 
-export interface StatusBarColorBackend {
+export interface HostStatusBarColorProvider {
   // `color` is a packed RGBA integer (0xRRGGBBAA, Flight convention). `animated` requests a smooth
   // transition on native hosts; web ignores it.
   setBackgroundColor(color: number, animated?: boolean): void;
 }
 
-export interface StatusBarVisibilityBackend {
+export interface HostStatusBarVisibilityProvider {
   setVisible(visible: boolean, animation?: StatusBarAnimation): void;
 }
 

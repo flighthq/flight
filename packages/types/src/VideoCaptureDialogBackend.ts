@@ -1,6 +1,6 @@
 import type { CaptureVideoDialogOptions, VideoCaptureDialogResult } from './Dialog';
 import type { Entity } from './Entity';
 
-export interface VideoCaptureDialogBackend extends Entity {
+export interface HostVideoCaptureDialogProvider extends Entity {
   capture(options?: Readonly<CaptureVideoDialogOptions>): Promise<VideoCaptureDialogResult>;
 }

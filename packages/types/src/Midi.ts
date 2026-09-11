@@ -137,11 +137,11 @@ export interface MidiPortStateSubscription extends Entity {
   readonly onMidiPortStateChange: Signal<(port: Readonly<MidiPort>) => void>;
 }
 
-export interface MidiAccessBackend extends Entity {
+export interface HostMidiAccessProvider extends Entity {
   requestAccess(): Promise<MidiAccessRequestOutcome>;
 }
 
-export interface MidiPermissionBackend extends Entity {
+export interface HostMidiPermissionProvider extends Entity {
   getPermission(): Promise<PermissionQueryOutcome>;
 }
 
@@ -169,11 +169,11 @@ export interface MidiOutputPortResourceOperations extends MidiPortResourceOperat
 
 export type WebMidiAccessCapabilities = Entity &
   Readonly<{
-    access: MidiAccessBackend;
+    access: HostMidiAccessProvider;
   }>;
 
 export type WebMidiPermissionAccessCapabilities = Entity &
   Readonly<{
-    access: MidiAccessBackend;
-    permission: MidiPermissionBackend;
+    access: HostMidiAccessProvider;
+    permission: HostMidiPermissionProvider;
   }>;
