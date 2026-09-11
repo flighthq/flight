@@ -47,7 +47,7 @@ const TEXTURE_FIXTURES = [
 
 // Aggregates whose whole purpose is to bind everything at once. A per-feature fixture that reaches one
 // stops measuring its feature and starts measuring the aggregate.
-const AGGREGATES = ['scene2dCanvasPipeline', 'canvasShapeCommandTable', 'enableHostWeb'] as const;
+const AGGREGATES = ['scene2DCanvasPipeline', 'canvasShapeCommandTable', 'enableHostWeb'] as const;
 
 // ★ THE ROLE IS DECLARED IN PACKAGE METADATA, NOT IN A LIST HERE. `flightSize.kind` is what makes a
 // fixture the control: it draws nothing, carries no capture manifest, and is the subtrahend the other

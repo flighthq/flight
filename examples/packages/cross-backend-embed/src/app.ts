@@ -1,6 +1,6 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   addNodeChild,
@@ -48,7 +48,7 @@ const producerState = createGlRenderState(
       contextAttributes: { alpha: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     backgroundColor: 0x18253dff,
     sceneGraphSyncPolicy: 'requiresInvalidation',

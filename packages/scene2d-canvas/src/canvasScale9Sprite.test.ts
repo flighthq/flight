@@ -11,13 +11,13 @@ import { getCanvasPipelineRegistries } from './canvasPipeline';
 import { defaultCanvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './canvasScale9Sprite';
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
 import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { scene2dCanvasPipeline } from './scene2dCanvasPipeline';
+import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
 
 // The registry deliberately makes a tombstone unreachable without narrowing, so the helper narrows once
 // here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the
 // coupling assertions want to distinguish from a bound renderer.
 function pipelineRenderer(kind: Kind): Renderer | null {
-  const entry = getCanvasPipelineRegistries(scene2dCanvasPipeline).renderers.entries.get(kind);
+  const entry = getCanvasPipelineRegistries(scene2DCanvasPipeline).renderers.entries.get(kind);
   return entry !== undefined && entry.state === RegistryEntryState.Bound ? entry.value : null;
 }
 

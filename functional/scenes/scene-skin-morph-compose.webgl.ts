@@ -2,7 +2,7 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Mesh, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   createGlContextState,
   createScene3DLights,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -80,7 +80,7 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0c10ff,

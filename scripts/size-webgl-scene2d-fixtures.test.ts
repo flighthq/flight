@@ -280,7 +280,7 @@ describe('WebGL Scene2D size fixtures', () => {
         expect(renderers).toEqual([profile.renderer]);
         expect(source.match(/withRegistryTableEntry\s*\(/g)).toHaveLength(1);
         expect(source).toContain('createWebGlRenderSurfaceProvider');
-        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|scene2dGlPipeline|webHost)\b/);
+        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|scene2DGlPipeline|webHost)\b/);
       });
 
       it('threads the feature through the complete rendering call chain', () => {

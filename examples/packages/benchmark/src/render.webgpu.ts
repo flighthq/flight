@@ -5,7 +5,7 @@ import {
   TextLabelKind,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2dWgpuPipeline,
+  scene2DWgpuPipeline,
   enableFlightDiagnostics,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuTextLabelRenderer,
@@ -22,7 +22,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x2a2a3aff,
   sceneGraphSyncPolicy: 'requiresInvalidation',

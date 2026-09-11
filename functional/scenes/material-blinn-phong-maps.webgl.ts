@@ -31,7 +31,7 @@ import {
   registerGlBlinnPhongMaterial,
   registerStandardGlTextureResolvers,
   renderGlBackground,
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -59,7 +59,7 @@ const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   { backgroundColor: 0x080b12ff, pixelRatio },
 );
 registerStandardGlTextureResolvers(state);

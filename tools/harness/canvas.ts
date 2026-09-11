@@ -33,7 +33,7 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
   RichTextKind,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -58,7 +58,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       pixelRatio,
       width,
     }),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
     {
       backgroundColor: options.background,

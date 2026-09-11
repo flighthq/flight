@@ -12,7 +12,7 @@ import {
   registerCanvasImageTextureResolver,
   renderCanvasBackground,
   renderCanvasScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
 import { RegistryEntryState } from '@flighthq/types';
@@ -25,12 +25,12 @@ document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
 );
 
-const registries = getCanvasPipelineRegistries(scene2dCanvasPipeline);
+const registries = getCanvasPipelineRegistries(scene2DCanvasPipeline);
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }

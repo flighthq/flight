@@ -29,7 +29,7 @@ import {
   registerStandardWgpuTextureResolvers,
   registerWgpuBlinnPhongMaterial,
   renderWgpuBackground,
-  scene2dWgpuPipeline,
+  scene2DWgpuPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -53,7 +53,7 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
   backgroundColor: 0x080b12ff,
   pixelRatio,
 });

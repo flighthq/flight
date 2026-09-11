@@ -14,7 +14,7 @@ import {
   resizeGlRenderTarget,
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
-import { scene2dGlPipeline } from '@flighthq/scene2d-gl/contract';
+import { scene2DGlPipeline } from '@flighthq/scene2d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -43,7 +43,7 @@ const state = createGlRenderState(
       contextAttributes: { alpha: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     pixelRatio: scale,
   },

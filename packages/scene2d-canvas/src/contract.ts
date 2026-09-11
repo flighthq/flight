@@ -43,7 +43,7 @@ export * from './explainCanvasTextureResolution';
 export * from './canvasPipeline';
 export * from './canvasShapeCommandTable';
 export * from './canvasShapeRasterizer';
-export * from './scene2dCanvasPipeline';
+export * from './scene2DCanvasPipeline';
 export { initializeCanvasRenderTarget } from './canvasRenderTarget';
 export { initializeEmptyCanvasRegistries } from './canvasPipeline';
 export { initializeCanvasTextureResolvers } from './canvasTextureResolver';

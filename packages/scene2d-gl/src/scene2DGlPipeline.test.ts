@@ -24,7 +24,7 @@ import {
 } from '@flighthq/types/contract';
 
 import { defaultGlSpriteRenderer } from './glSprite';
-import { scene2dGlPipeline } from './scene2dGlPipeline';
+import { scene2DGlPipeline } from './scene2DGlPipeline';
 
 describe('manual single-capability pipeline', () => {
   it('carries only the explicitly registered Sprite renderer', () => {
@@ -40,13 +40,13 @@ describe('manual single-capability pipeline', () => {
   });
 });
 
-describe('scene2dGlPipeline', () => {
+describe('scene2DGlPipeline', () => {
   it('is an Entity with EntityRuntimeKey', () => {
-    expect(EntityRuntimeKey in scene2dGlPipeline).toBe(true);
+    expect(EntityRuntimeKey in scene2DGlPipeline).toBe(true);
   });
 
   it('carries all thirteen standard 2D GL renderers', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     const expectedKinds = [
       BitmapTextKind,
       DisplayObjectKind,
@@ -71,11 +71,11 @@ describe('scene2dGlPipeline', () => {
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {
-    expect(scene2dGlPipeline).toBe(scene2dGlPipeline);
+    expect(scene2DGlPipeline).toBe(scene2DGlPipeline);
   });
 
   it('carries the three standard texture resolvers', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     expect(registries.textureResolvers.entries.size).toBe(3);
     expect(registries.textureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
     expect(registries.textureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
@@ -83,7 +83,7 @@ describe('scene2dGlPipeline', () => {
   });
 
   it('carries the six standard fixed-function blend realizations', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     expect(registries.blendRealizations.entries.size).toBe(6);
     expect(registries.blendRealizations.entries.has(BlendMode.Normal)).toBe(true);
     expect(registries.blendRealizations.entries.has(BlendMode.Add)).toBe(true);
@@ -92,13 +92,13 @@ describe('scene2dGlPipeline', () => {
   });
 
   it('carries the stroke tessellator in the slot table', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     expect(registries.strokeTessellator.entry).not.toBeNull();
     expect(registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
   });
 
   it('carries the standard material renderer for StandardMaterialKind', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     expect(registries.materialRenderers.entries.size).toBe(1);
     const entry = registries.materialRenderers.entries.get(StandardMaterialKind);
     expect(entry).toBeDefined();
@@ -106,7 +106,7 @@ describe('scene2dGlPipeline', () => {
   });
 
   it('starts with empty GL-specific tables that no family populates', () => {
-    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    const registries = getGlPipelineRegistries(scene2DGlPipeline);
     expect(registries.customEffectShaders.entries.size).toBe(0);
     expect(registries.customMaterialShaders.entries.size).toBe(0);
   });

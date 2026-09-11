@@ -4,13 +4,13 @@ import {
   createCanvasRenderSurface,
   createCanvasTextureResolvers,
   enableFlightDiagnostics,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
 } from '@flighthq/sdk';
 
 enableFlightDiagnostics(
   createCanvasRenderState(
     createCanvasRenderSurface(webCanvasRenderSurfaceCreator, document.createElement('canvas')),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   ),
 );

@@ -12,7 +12,7 @@ import {
   presentGlRenderTarget,
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
-import { scene2dGlPipeline } from '@flighthq/scene2d-gl/contract';
+import { scene2DGlPipeline } from '@flighthq/scene2d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -42,7 +42,7 @@ const state = createGlRenderState(
       contextAttributes: { alpha: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   {
     // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
     // color-renderable storage only, so sample with the universally valid nearest filter.

@@ -11,7 +11,7 @@ import {
   renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
-import { registerGlStandardMaterial, renderGlScene2D, scene2dGlPipeline } from '@flighthq/scene2d-gl';
+import { registerGlStandardMaterial, renderGlScene2D, scene2DGlPipeline } from '@flighthq/scene2d-gl';
 import { RegistryEntryState } from '@flighthq/types';
 
 const canvas = createGlCanvasElement(400, 300, 1);
@@ -22,11 +22,11 @@ const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
 );
 
-const registries = getGlPipelineRegistries(scene2dGlPipeline);
+const registries = getGlPipelineRegistries(scene2DGlPipeline);
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }

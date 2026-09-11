@@ -28,7 +28,7 @@ import {
   prepareScene3DRender,
   registerGlUnlitMaterial,
   renderGlBackground,
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   setCamera3DViewMatrix4FromLookAt,
   translateMatrix4,
 } from '@flighthq/sdk';
@@ -51,7 +51,7 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2dGlPipeline,
+  scene2DGlPipeline,
   { pixelRatio, backgroundColor: 0x0a0c10ff },
 );
 registerGlUnlitMaterial(state);

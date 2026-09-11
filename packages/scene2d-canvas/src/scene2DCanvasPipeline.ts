@@ -51,7 +51,7 @@ function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
   return table;
 }
 
-export const scene2dCanvasPipeline: CanvasPipeline = createCanvasPipeline({
+export const scene2DCanvasPipeline: CanvasPipeline = createCanvasPipeline({
   ...createEmptyCanvasRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),

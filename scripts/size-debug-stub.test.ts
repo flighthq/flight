@@ -21,7 +21,7 @@ describe('createSizeDebugStub', () => {
       'enableFlightDiagnostics(',
       '  createCanvasRenderState(',
       '    createCanvasRenderSurface(canvas),',
-      '    scene2dCanvasPipeline,',
+      '    scene2DCanvasPipeline,',
       '  ),',
       ');',
     ].join('\n');
@@ -31,7 +31,7 @@ describe('createSizeDebugStub', () => {
         'void (',
         '  createCanvasRenderState(',
         '    createCanvasRenderSurface(canvas),',
-        '    scene2dCanvasPipeline,',
+        '    scene2DCanvasPipeline,',
         '  ));',
       ].join('\n'),
     );

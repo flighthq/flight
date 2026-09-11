@@ -38,8 +38,8 @@ describe('Scene3D size fixture isolation', () => {
     const banned = [
       '@flighthq/sdk',
       'webHost',
-      'scene2dGlPipeline',
-      'scene2dWgpuPipeline',
+      'scene2DGlPipeline',
+      'scene2DWgpuPipeline',
       'scene3dGlPipeline',
       'scene3dWgpuPipeline',
       'registerGlUnlitMaterial',

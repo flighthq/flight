@@ -13,7 +13,7 @@ import {
   createMatrix,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2dWgpuPipeline,
+  scene2DWgpuPipeline,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
@@ -46,7 +46,7 @@ import {
   registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
-  scene2dCanvasPipeline,
+  scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -67,7 +67,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+  const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
     pixelRatio,
     backgroundColor: options.background,
     raster2DSurfaceProvider: webRaster2DSurfaceProvider,
@@ -141,7 +141,7 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
     createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
-    scene2dCanvasPipeline,
+    scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));
