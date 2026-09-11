@@ -4,31 +4,24 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import {
-  drawWgpuScene3D,
-  registerBuiltInWgpuModifierSnippets,
-  registerWgpuShadedMaterial,
-} from '@flighthq/sdk/rendering';
+import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x07101bff,
 });
 enableFlightDiagnostics(state);
-registerWgpuShadedMaterial(state);
-registerBuiltInWgpuModifierSnippets(state);
-
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
