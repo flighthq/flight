@@ -14,9 +14,8 @@ import {
   createGlRenderTargetPool,
   destroyGlRenderTarget,
   destroyGlRenderTargetPool,
-  drawGlFullscreenPass,
-  drawGlLinearToSrgbPass,
   endGlRenderPass,
+  presentGlRenderTarget,
   releaseGlRenderTarget,
   resizeGlRenderTarget,
 } from '@flighthq/render-gl/contract';
@@ -34,7 +33,6 @@ import type {
 
 import { applyColorLutPassToGl } from './glColorLutPass';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';
-import { getGlEffectProgram } from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
 // Opt-in post-process pipeline. The scene renders into the pipeline's (optionally MSAA / HDR) target
@@ -171,7 +169,7 @@ export function endGlRenderEffectPipeline(
   }
   flushAdjustments();
 
-  presentGlRenderEffectResult(state, source);
+  presentGlRenderTarget(state, source);
 
   if (scratchA !== null) releaseGlRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseGlRenderTarget(pipeline.pool, scratchB);
@@ -206,30 +204,6 @@ export function setGlRenderEffectPipelineSkipGuard(
 export function setGlRenderEffectVelocityTexture(pipeline: GlRenderEffectPipeline, texture: WebGLTexture | null): void {
   pipeline.velocityTexture = texture;
 }
-
-// Presents the final effect result to the canvas, adapting to the source target's declared color space.
-// 'linear' content (a 3D scene declared its target linear) is sRGB-encoded once here via
-// drawGlLinearToSrgbPass — the single gamma encode, never in a material shader. 'srgb' content (2D
-// display objects, already encoded) is blitted as-is (GL→GL, no orientation flip), byte-identical to
-// before this seam existed. A tonemap effect, when present, stays a linear HDR→LDR step upstream and
-// never encodes gamma itself.
-function presentGlRenderEffectResult(state: GlRenderState, source: Readonly<GlRenderTarget>): void {
-  if (source.colorSpace === 'linear') {
-    drawGlLinearToSrgbPass(state, source, null);
-    return;
-  }
-  const program = getGlEffectProgram(state, 'effect.present', PRESENT_FRAGMENT_SRC);
-  drawGlFullscreenPass(state, program, [source.texture], null, () => {});
-}
-
-const PRESENT_FRAGMENT_SRC = `#version 300 es
-precision highp float;
-in vec2 v_texCoord;
-uniform sampler2D u_texture0;
-out vec4 o_color;
-void main() {
-  o_color = texture(u_texture0, v_texCoord);
-}`;
 
 function reportGlRenderEffectPipelineSkip(state: GlRenderState, kind: string): void {
   _skipGuards.get(state)?.(state, kind);
