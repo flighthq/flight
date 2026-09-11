@@ -2,18 +2,18 @@
 // CI (.github/workflows/tests.yml) runs the full build and the complete suite; this hook
 // only runs what the push is likely to have affected, so it stays fast as the repo grows.
 //
-//   1. typecheck              — always; incremental, catches cross-package type breakage
-//   2. vitest run --changed   — only when package source changed; vitest walks its own module
-//                               graph from <base> and reruns affected fast-path tests. Tool-capture's
-//                               browser contracts run once in CI through its package config.
+//   1. changed-file classify  — first, so a closed Markdown-only change can skip typecheck
+//   2. typecheck              — unless every changed file is Markdown documentation
+//   3. vitest run --changed   — only when package source changed; vitest walks the shared project's
+//                               module graph from <base> and reruns affected fast-path tests.
+//                               Tool-capture's browser contracts run once in CI through its package config.
 //
 // We let vitest derive the affected test set from its module graph (`--changed <base>`) rather than
-// computing it ourselves from the package dependency graph. The root vitest config is a single
-// non-isolated jsdom project (see vitest.config.ts), so there is no longer a per-project config-load
-// cost to dodge — that fixed cost (near two minutes across ~100 projects) was the only reason the
-// old hand-rolled affected-set traversal existed. vitest's graph is finer-grained (per test file, by
-// real imports) and needs no maintenance as packages are added; a module-graph edge it can't see
-// (e.g. a computed dynamic import) only means that test slips to CI, never to production.
+// computing it ourselves from the package dependency graph. The root config now has multiple projects;
+// this fast lane names `shared` explicitly so Vitest does not discover the serial tool-capture or other
+// independently routed projects. Vitest's graph is finer-grained (per test file, by real imports) and
+// needs no maintenance as packages are added; a module-graph edge it can't see (e.g. a computed dynamic
+// import) only means that test slips to CI, never to production.
 //
 // <base> is what the push is measured against. In the hook, git hands us on stdin the sha the
 // remote already has (see readPushBase) — the exact "what am I newly pushing" boundary, so we never
@@ -23,6 +23,8 @@
 
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
@@ -71,28 +73,54 @@ function run(cmd: string): void {
   execSync(cmd, { stdio: 'inherit' });
 }
 
-const base = readPushBase() ?? resolveBase();
-
-run('npm run typecheck');
-
-if (!base) {
-  console.log(pc.yellow('pre-push: no base commit to diff against (initial commit?) — CI will cover the tests.'));
-  process.exit(0);
+// Markdown is the entire allowlist. Everything else — including configuration, extensionless files,
+// and extensions the hook does not know — defaults to typecheck. An empty or unreadable diff likewise
+// fails closed instead of acquiring the vacuous "every file is documentation" interpretation.
+export function shouldRunPrepushTypecheck(changedFiles: readonly string[] | null): boolean {
+  return changedFiles === null || changedFiles.length === 0 || changedFiles.some((file) => !file.endsWith('.md'));
 }
 
-const changed = (capture(`git diff --name-only ${base}...HEAD`) ?? '').split('\n').filter(Boolean);
-// Only fast-path package source sits in a colocated test's module graph, so only those changes can
-// flip a result here. Tool-capture source is still compiled by typecheck, while its tests run in the
-// per-package CI lane. A push touching only tool-capture, scripts/, tools/, docs, or config skips
-// vitest's workspace startup entirely; CI still runs everything.
-const affectsFastPackageTests = changed.some(
-  (file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file) && !file.startsWith('packages/tool-capture/'),
-);
-
-console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
-
-if (affectsFastPackageTests) {
-  run(`npx vitest run --changed ${base}`);
-} else {
-  console.log(pc.dim('pre-push: no fast-path package source changed — skipping vitest'));
+export function affectsSharedPackageTests(changedFiles: readonly string[]): boolean {
+  return changedFiles.some(
+    (file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file) && !file.startsWith('packages/tool-capture/'),
+  );
 }
+
+export function resolveChangedTestArguments(base: string): string[] {
+  return ['--project', 'shared', '--changed', base];
+}
+
+function main(): void {
+  const base = readPushBase() ?? resolveBase();
+  const changed =
+    base === null
+      ? null
+      : ((capture(`git diff --name-only ${base}...HEAD`) ?? undefined)?.split('\n').filter(Boolean) ?? null);
+
+  if (shouldRunPrepushTypecheck(changed)) {
+    run('npm run typecheck');
+  } else {
+    console.log(pc.dim('pre-push: Markdown-only change — skipping typecheck'));
+  }
+
+  if (base === null) {
+    console.log(pc.yellow('pre-push: no base commit to diff against (initial commit?) — CI will cover the tests.'));
+    return;
+  }
+
+  if (changed === null) {
+    console.log(pc.yellow(`pre-push: could not diff against ${base} — CI will cover the tests.`));
+    return;
+  }
+
+  console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
+
+  if (affectsSharedPackageTests(changed)) {
+    // Route through the repository wrapper so the structured completion gate also judges worker loss.
+    run(`npm run test -- ${resolveChangedTestArguments(base).join(' ')}`);
+  } else {
+    console.log(pc.dim('pre-push: no shared-project package source changed — skipping vitest'));
+  }
+}
+
+if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) main();
