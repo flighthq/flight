@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import { packColor } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireGlRenderTarget,
@@ -63,14 +64,11 @@ export function beginGlRenderEffectPipeline(
   } else {
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
-  // Declare the producer's space before the pass opens. A background clear happens before the first
-  // scene draw, so the target must already say whether renderGlBackground should decode its packed
-  // sRGB input into linear storage. The explicit frame value also prevents a reused pipeline from
-  // carrying the previous producer's color space.
   pipeline.sceneTarget.colorSpace = colorSpace;
-  // Preserve, don't clear: the frame's scene render fills the target (matching the pre-pass behavior),
-  // and the current 2D render transform is inherited — begin no longer sets it.
-  beginGlRenderPass(state, pipeline.sceneTarget, { preserveColor: true, preserveDepth: true });
+  const rgba = state.backgroundColorRgba;
+  pipeline.sceneTarget.clearColors =
+    rgba !== undefined && rgba.length >= 4 ? [packColor(rgba[0], rgba[1], rgba[2], rgba[3])] : [];
+  beginGlRenderPass(state, pipeline.sceneTarget);
 }
 
 export function createGlRenderEffectPipeline(
