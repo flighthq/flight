@@ -15,6 +15,7 @@ import type {
   HostSystemCapabilities,
   HostUpdaterCapabilities,
 } from './Host';
+import type { HostIpcTargetedSendProvider } from './Ipc';
 import type { ElectronMenuCapabilities } from './Menu';
 import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification';
 import type { ElectronPowerCapabilities } from './Power';
@@ -53,10 +54,8 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   readonly app: ElectronAppCapabilitiesFor<Profile>;
   readonly clipboard: Required<Pick<HostClipboardCapabilities, 'bookmark' | 'formats' | 'image' | 'text'>>;
   readonly dialog: Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>>;
-  readonly ipc: Required<Pick<HostIpcCapabilities, 'handle' | 'message' | 'targetedSend'>> & {
-    readonly targetedSend: NonNullable<HostIpcCapabilities['targetedSend']> & {
-      send(target: ElectronIpcTarget, channel: string, args: readonly unknown[]): void;
-    };
+  readonly ipc: Required<Pick<HostIpcCapabilities, 'handle' | 'message'>> & {
+    readonly targetedSend: HostIpcTargetedSendProvider<ElectronIpcTarget>;
   };
   readonly menu: ElectronMenuCapabilities;
   readonly notification: ElectronNotificationCapabilitiesFor<Profile>;
