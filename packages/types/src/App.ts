@@ -44,23 +44,23 @@ export interface App extends Entity {
 
 export type MobileOsProfile = 'android' | 'ios';
 
-export interface AppActivateBackend extends Entity {
+export interface HostAppActivateProvider extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface AppActivationPolicyBackend extends Entity {
+export interface HostAppActivationPolicyProvider extends Entity {
   setActivationPolicy(policy: AppActivationPolicy): void;
 }
 
-export interface AppAllWindowsClosedBackend extends Entity {
+export interface HostAppAllWindowsClosedProvider extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface AppBadgeBackend extends Entity {
+export interface HostAppBadgeProvider extends Entity {
   setBadgeCount(count: number): Promise<boolean>;
 }
 
-export interface AppDockBackend extends Entity {
+export interface HostAppDockProvider extends Entity {
   bounceDock(): number;
   cancelAttention(id: number): void;
   cancelDockBounce(id: number): void;
@@ -69,86 +69,86 @@ export interface AppDockBackend extends Entity {
   setDockMenu(items: readonly MenuItemTemplate[]): void;
 }
 
-export interface AppFocusBackend extends Entity {
+export interface HostAppFocusProvider extends Entity {
   focus(): void;
 }
 
-export interface AppLocaleBackend extends Entity {
+export interface HostAppLocaleProvider extends Entity {
   getLocale(): string;
   getPreferredSystemLanguages(): readonly string[];
   getSystemLocale(): string;
 }
 
-export interface AppLoginItemBackend extends Entity {
+export interface HostAppLoginItemProvider extends Entity {
   getLoginItem(): AppLoginItem;
   setLoginItem(settings: Readonly<AppLoginItemLike>): void;
 }
 
-export interface AppNameBackend extends Entity {
+export interface HostAppNameProvider extends Entity {
   getName(): string;
 }
 
-export interface AppNameWriteBackend extends Entity {
+export interface HostAppNameWriteProvider extends Entity {
   setName(name: string): void;
 }
 
-export interface AppOpenFileBackend extends Entity {
+export interface HostAppOpenFileProvider extends Entity {
   subscribe(listener: (path: string) => void): () => void;
 }
 
-export interface AppPathBackend extends Entity {
+export interface HostAppPathProvider extends Entity {
   getAppDirectoryPath(kind: AppPathKind): string;
   getAppPath(): string;
   getExecutablePath(): string;
 }
 
-export interface AppQuitBackend extends Entity {
+export interface HostAppQuitProvider extends Entity {
   quit(): void;
 }
 
-export interface AppQuitRequestBackend extends Entity {
+export interface HostAppQuitRequestProvider extends Entity {
   subscribe(listener: (cancelHost: () => void) => void): () => void;
 }
 
-export interface AppReadyBackend extends Entity {
+export interface HostAppReadyProvider extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface AppRecentDocumentsBackend extends Entity {
+export interface HostAppRecentDocumentsProvider extends Entity {
   addRecentDocument(path: string): void;
   clearRecentDocuments(): void;
 }
 
-export interface AppRelaunchBackend extends Entity {
+export interface HostAppRelaunchProvider extends Entity {
   relaunch(): void;
 }
 
-export interface AppSecondInstanceBackend extends Entity {
+export interface HostAppSecondInstanceProvider extends Entity {
   subscribe(listener: (argv: readonly string[]) => void): () => void;
 }
 
-export interface AppSingleInstanceBackend extends Entity {
+export interface HostAppSingleInstanceProvider extends Entity {
   hasSingleInstanceLock(): boolean;
   releaseSingleInstanceLock(): void;
   requestSingleInstanceLock(): boolean;
 }
 
-export interface AppUserModelIdBackend extends Entity {
+export interface HostAppUserModelIdProvider extends Entity {
   setUserModelId(id: string): void;
 }
 
-export interface AppVersionBackend extends Entity {
+export interface HostAppVersionProvider extends Entity {
   getVersion(): string;
 }
 
-export interface AppHideBackend extends Entity {
+export interface HostAppHideProvider extends Entity {
   hideApp(): void;
 }
 
-export interface AppShowBackend extends Entity {
+export interface HostAppShowProvider extends Entity {
   showApp(): void;
 }
 
-export interface AppVisibilityQueryBackend extends Entity {
+export interface HostAppVisibilityQueryProvider extends Entity {
   isAppHidden(): boolean;
 }

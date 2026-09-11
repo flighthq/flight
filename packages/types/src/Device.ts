@@ -4,7 +4,7 @@ import type { DeviceFormFactor } from './DeviceFormFactor';
 import type { Entity } from './Entity';
 
 // Device identity and environment seam. Free functions in @flighthq/device delegate to the active
-// DeviceBackend (web default or a native host's). Snapshot reads fill an `out` value and return it;
+// HostDeviceProvider (web default or a native host's). Snapshot reads fill an `out` value and return it;
 // unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
 export interface DeviceInfo extends Entity {
   arch: string;
@@ -46,7 +46,7 @@ export interface SafeAreaInsets extends Entity {
 
 // The swappable backend behind @flighthq/device. Each read fills the caller's `out` value and returns
 // it; unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface DeviceBackend extends Entity {
+export interface HostDeviceProvider extends Entity {
   getCapabilities(out: DeviceCapabilities): DeviceCapabilities;
   getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics;
   getId(): string;

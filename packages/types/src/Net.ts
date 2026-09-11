@@ -2,7 +2,7 @@ import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // HTTP(S) transport seam — the Flight home for what OpenFL/Lime expose as URLLoader/URLRequest.
-// Free functions in @flighthq/net delegate to the active NetBackend (a fetch-based web default, or a
+// Free functions in @flighthq/net delegate to the active HostNetProvider (a fetch-based web default, or a
 // native host's stack). Transport is async, so the backend returns a Promise<NetResponse>. Expected
 // transport failures (DNS, network error, timeout, non-2xx) are surfaced as a NetResponse — a
 // sentinel status 0 for a failed transport, the real status for an HTTP error response — never a
@@ -102,6 +102,6 @@ export interface NetRequestOptions {
 
 // The HTTP transport seam realized by the web default (createWebNetBackend) and by native hosts. A
 // backend implements one async method; @flighthq/net dispatches every request through it.
-export interface NetBackend extends Entity {
+export interface HostNetProvider extends Entity {
   sendNetRequest(request: Readonly<NetRequest>, options?: Readonly<NetRequestOptions>): Promise<NetResponse>;
 }

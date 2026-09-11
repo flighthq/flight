@@ -59,7 +59,7 @@ export interface FileSystemBasicBackend {
 // member is structurally omittable. The seven public absence operations (symlink, permissions, real
 // path, watch, and well-known path lookup) are deliberately not host members; @flighthq/filesystem
 // owns their documented sentinel results.
-export interface FileSystemHostBackend extends Partial<FileSystemBasicBackend> {
+export interface HostFileSystemProvider extends Partial<FileSystemBasicBackend> {
   canAccessFile?(path: string, mode: 'readable' | 'writable' | 'executable'): Promise<boolean>;
   getFileSystemUsage?(): Promise<FileSystemUsage | null>;
   openFileReadStream?(path: string, signal?: AbortSignal): Promise<ReadableStream<Uint8Array> | null>;

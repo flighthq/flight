@@ -254,7 +254,7 @@ export interface TauriTrayIcon {
 }
 
 // `@tauri-apps/api/window` — the OS window. `getCurrentWindow` returns the window this webview is in.
-// Every method is async; the sync WindowBackend fires them and forgets, mirroring state on the entity.
+// Every method is async; the sync HostWindowProvider fires them and forgets, mirroring state on the entity.
 // Position/size take a `Logical*` value, constructed through the module's classes.
 export interface TauriWindowModule {
   getCurrentWindow(): TauriWindow;

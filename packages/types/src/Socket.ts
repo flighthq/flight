@@ -5,7 +5,7 @@ import type { Signal } from './Signal';
 // as Socket/WebSocket/XMLSocket. The framed Socket entity is an event source (open/message/close/error
 // arrive over time), so it takes the platform suite's event-capability shape: a plain entity plus an
 // opaque SocketRuntime holding the live connection and opt-in signals. Raw TCP is a separate byte-
-// stream connection on the same swappable SocketBackend; it never masquerades as framed Socket state.
+// stream connection on the same swappable HostSocketProvider; it never masquerades as framed Socket state.
 // Sibling of @flighthq/net (one-shot request/response), this package owns long-lived channels.
 
 // The four WebSocket-standard connection phases. Read via getSocketReadyState; driven by the backend
@@ -47,7 +47,7 @@ export interface SocketSignals extends Entity {
 
 // The backend→entity event sink. The backend calls these as its underlying transport fires; socket
 // supplies an implementation (createSocket) that updates the runtime's readyState and emits the
-// opt-in signals. Modeled on ConnectivityChangeBackend.subscribe's listener, but split per event kind so the
+// opt-in signals. Modeled on HostConnectivityChangeProvider.subscribe's listener, but split per event kind so the
 // backend can carry each event's payload.
 export interface SocketEventSink {
   handleSocketOpen(): void;
@@ -88,7 +88,7 @@ export interface TcpSocketConnection {
 // hosts. openSocket opens a framed connection for the given options and returns a live handle,
 // wiring the transport's open/message/close/error into `events`. A native backend may additionally
 // expose openTcpSocket; omission means raw TCP is unsupported and @flighthq/socket returns null.
-export interface SocketBackend {
+export interface HostSocketProvider {
   openSocket(options: Readonly<SocketOptions>, events: Readonly<SocketEventSink>): SocketConnection | null;
   openTcpSocket?(options: Readonly<TcpSocketOptions>): TcpSocketConnection | null;
 }

@@ -1,4 +1,4 @@
-export interface FontLoadingBackend {
+export interface HostFontLoadingProvider {
   addFontFace(face: FontFace): void;
   checkFontFace(shorthand: string): boolean;
   loadFontFaces(shorthand: string): Promise<FontFace[]>;

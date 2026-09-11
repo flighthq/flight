@@ -1,3 +1,3 @@
-export interface ApplicationVisibilityBackend {
+export interface HostApplicationVisibilityProvider {
   isVisible(): boolean;
 }

@@ -1,5 +1,5 @@
 import type { Entity } from './Entity';
 
-export interface AudioBackend extends Entity {
+export interface HostAudioProvider extends Entity {
   canPlayType(mimeType: string): boolean;
 }

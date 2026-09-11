@@ -8,14 +8,14 @@ import type {
 } from './Dialog';
 import type { Entity } from './Entity';
 
-export interface DirectoryOpenDialogBackend extends Entity {
+export interface HostDirectoryOpenDialogProvider extends Entity {
   open(options?: Readonly<OpenDirectoryDialogOptions>): Promise<DirectoryOpenDialogResult>;
 }
 
-export interface FileOpenDialogBackend extends Entity {
+export interface HostFileOpenDialogProvider extends Entity {
   open(options: Readonly<OpenFileDialogOptions>): Promise<FileOpenDialogResult>;
 }
 
-export interface FileSaveDialogBackend extends Entity {
+export interface HostFileSaveDialogProvider extends Entity {
   save(options: Readonly<SaveFileDialogOptions>): Promise<FileSaveDialogResult>;
 }

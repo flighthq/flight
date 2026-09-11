@@ -52,11 +52,11 @@ export interface ConnectivityReachabilityOptions {
 // Their provider coverage differs, and the change subscription has a teardown lifetime that the two
 // command shapes do not. A host therefore exposes them as separate slots even when one provider
 // object implements more than one facet.
-export interface ConnectivityStatusBackend extends Entity {
+export interface HostConnectivityStatusProvider extends Entity {
   getStatus(out: ConnectivityStatus): ConnectivityStatus;
 }
 
-export interface ConnectivityChangeBackend extends Entity {
+export interface HostConnectivityChangeProvider extends Entity {
   // Terminal provider teardown. Per-entity detach consumes only the unsubscribe returned below.
   destroy(): void;
   // Returns null when the provider cannot establish a real change subscription. A no-op thunk would
@@ -64,7 +64,7 @@ export interface ConnectivityChangeBackend extends Entity {
   subscribe(listener: () => void): (() => void) | null;
 }
 
-export interface ConnectivityReachabilityBackend extends Entity {
+export interface HostConnectivityReachabilityProvider extends Entity {
   detectReachability(
     options: Readonly<ConnectivityReachabilityOptions>,
     out: ConnectivityReachability,

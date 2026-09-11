@@ -34,7 +34,7 @@ export interface InputIngressSink {
  * Process-wide input-ingress seam. Its canonical lifecycle and ownership contract is recorded in
  * `agents/backend-lifecycle-ownership.md`.
  */
-export interface InputIngressBackend {
+export interface HostInputIngressProvider {
   attachGamepad(source: InputIngressSource, sink: InputIngressSink, options?: Readonly<AttachInputOptions>): () => void;
   attachKeyboard(
     source: InputIngressSource,

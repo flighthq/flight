@@ -1,4 +1,4 @@
-// Geolocation seam. Free functions in @flighthq/geolocation delegate to the active GeolocationBackend
+// Geolocation seam. Free functions in @flighthq/geolocation delegate to the active HostGeolocationProvider
 // (web default over navigator.geolocation, or a native host's). Position reads resolve to null and
 // permission requests resolve to false when the host denies or lacks access rather than throwing —
 // location access is an expected-failure surface, not a programmer error.
@@ -60,7 +60,7 @@ export type GeolocationAccessOutcome = {
     | 'timeout';
 };
 
-export interface GeolocationBackend extends Entity {
+export interface HostGeolocationProvider extends Entity {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPositionResult>;
   // Reports whether this provider can acquire positions now; permission denial is a separate state.

@@ -13,6 +13,6 @@ export interface BitmapReadbackOutcome {
   readonly reason: BitmapReadbackBackendReason;
 }
 
-export interface BitmapReadbackBackend {
+export interface HostBitmapReadbackProvider {
   readBitmap(source: HostImageSource, width: number, height: number, mode: BitmapReadbackMode): BitmapReadbackOutcome;
 }

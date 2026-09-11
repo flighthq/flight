@@ -18,13 +18,13 @@ import type { TextMeasureFunction } from './TextLayout';
 // backend (HarfBuzz) implements the same measureText and may, in future, add cluster/glyph methods
 // here without breaking advances-only callers.
 
-// Options passed to TextShaperBackend.shapeRun for run-level shaping hints.
+// Options passed to HostTextShaperProvider.shapeRun for run-level shaping hints.
 export interface ShapeRunOptions {
   direction?: TextDirection;
   script?: string;
 }
 
-export interface TextShaperBackend {
+export interface HostTextShaperProvider {
   // Returns the unicode code point that produced `glyphId`, or -1 if unknown. Reverse map of
   // getGlyphIndexForCodePoint; useful for hit-testing and accessibility.
   getCodePointForGlyph?: (glyphId: number) => number;
@@ -51,4 +51,4 @@ export interface TextShaperBackend {
 // Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type TextShaperOperation = keyof TextShaperBackend;
+export type TextShaperOperation = keyof HostTextShaperProvider;

@@ -80,7 +80,7 @@ export type AccessibilityOperationOutcome<
 
 // The assistive-technology command provider. It is an Entity because it owns the mirrored tree and
 // provider lifecycle. destroy is terminal and idempotent; later operations report `destroyed`.
-export interface AccessibilityBackend extends Entity {
+export interface HostAccessibilityProvider extends Entity {
   announce(message: string, liveness: AccessibilityLiveness): AccessibilityOperationOutcome<'destroyed' | 'no-dom'>;
   clear(): AccessibilityOperationOutcome<'destroyed' | 'no-dom'>;
   destroy(): void;

@@ -1,6 +1,6 @@
 import type { Entity } from './Entity';
 
-// Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HapticsBackend
+// Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HostHapticsProvider
 // (web default over navigator.vibrate, or a native host's). Each trigger returns false when the host
 // lacks haptics or denies the request rather than throwing.
 export type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid';
@@ -16,7 +16,7 @@ export interface HapticsCapabilities {
   supported: boolean;
 }
 
-export interface HapticsBackend extends Entity {
+export interface HostHapticsProvider extends Entity {
   // Cancels any in-progress vibration. Returns false when haptics are unavailable.
   cancel(): boolean;
   // Fills `out` with the backend's capabilities and returns it.
@@ -40,4 +40,4 @@ export interface HapticsBackend extends Entity {
 // Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type HapticsOperation = keyof HapticsBackend;
+export type HapticsOperation = keyof HostHapticsProvider;

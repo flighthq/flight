@@ -62,30 +62,30 @@ export interface ShellProcessHost {
 // Host.shell slot is capability absence, never a provider whose methods return unsupported sentinels.
 // The six bounded command providers own no whole-provider resource. Process lifetime belongs to each
 // returned ShellProcess, so the spawning provider itself likewise has no destroy hook.
-export interface ShellBeepBackend extends Entity {
+export interface HostShellBeepProvider extends Entity {
   beep(): void;
 }
 
-export interface ShellExternalBackend extends Entity {
+export interface HostShellExternalProvider extends Entity {
   open(url: string): Promise<ShellExternalOutcome>;
 }
 
-export interface ShellPathOpenBackend extends Entity {
+export interface HostShellPathOpenProvider extends Entity {
   open(path: string): Promise<ShellPathOpenOutcome>;
 }
 
-export interface ShellPathRevealBackend extends Entity {
+export interface HostShellPathRevealProvider extends Entity {
   reveal(path: string): Promise<ShellPathRevealOutcome>;
 }
 
 // Spawn is asynchronous work with a synchronously returned live handle, not a synchronous execution
 // API: completion is observed through ShellProcess.exit. The backend receives an argument vector and
 // never a shell command string to parse.
-export interface ShellProcessBackend extends Entity {
+export interface HostShellProcessProvider extends Entity {
   spawn(command: string, args: readonly string[], options?: Readonly<ShellProcessOptions>): ShellProcess;
 }
 
-export interface ShellShortcutLinkBackend extends Entity {
+export interface HostShellShortcutLinkProvider extends Entity {
   read(shortcutPath: string): Promise<ShellShortcutLinkReadOutcome>;
   write(
     shortcutPath: string,
@@ -94,7 +94,7 @@ export interface ShellShortcutLinkBackend extends Entity {
   ): Promise<ShellShortcutLinkWriteOutcome>;
 }
 
-export interface ShellTrashBackend extends Entity {
+export interface HostShellTrashProvider extends Entity {
   moveToTrash(path: string): Promise<ShellTrashOutcome>;
 }
 

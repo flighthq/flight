@@ -2,18 +2,18 @@ import type { Entity } from './Entity';
 import type { HasMenuApplication, HasMenuHighlight, HasMenuPopup, HasMenuSelect, HostMenuCapabilities } from './Host';
 import type {
   ElectronMenuCapabilities,
-  MenuApplicationBackend,
-  MenuHighlightBackend,
-  MenuPopupBackend,
-  MenuSelectBackend,
+  HostMenuApplicationProvider,
+  HostMenuHighlightProvider,
+  HostMenuPopupProvider,
+  HostMenuSelectProvider,
   TauriMenuCapabilities,
 } from './Menu';
 
 type MenuProvidersAreEntities = [
-  MenuApplicationBackend extends Entity ? true : false,
-  MenuHighlightBackend extends Entity ? true : false,
-  MenuPopupBackend extends Entity ? true : false,
-  MenuSelectBackend extends Entity ? true : false,
+  HostMenuApplicationProvider extends Entity ? true : false,
+  HostMenuHighlightProvider extends Entity ? true : false,
+  HostMenuPopupProvider extends Entity ? true : false,
+  HostMenuSelectProvider extends Entity ? true : false,
 ];
 
 type ConcreteMenuBundlesAreEntities = [
