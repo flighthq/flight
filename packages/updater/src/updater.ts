@@ -50,7 +50,7 @@ export async function installDownloadedUpdate(
   if (origin === undefined) throw new TypeError('Downloaded update did not originate from a completed check');
 
   try {
-    // Keep the direct Host capability path visible while still honoring the handle's exact origin after
+    // Keep the direct provider path visible while still honoring the handle's exact origin after
     // provider replacement. A different selected provider never observes the downloaded handle.
     const outcome =
       hostUpdaterCommand === origin ? await hostUpdaterCommand.install(update) : await origin.install(update);

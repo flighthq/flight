@@ -76,7 +76,7 @@ export interface RotationRateReading extends Entity, SensorReading {
 }
 
 // Event seam for device motion and orientation sensors: independent per-sensor subscriptions, support
-// queries, and permission handling. The web backend wraps the devicemotion / deviceorientation window
+// queries, and permission handling. The Web provider wraps the devicemotion / deviceorientation window
 // events plus the Generic Sensor API; a native host reports its own readings through the same callbacks.
 //
 // Each subscribe* registers a listener and returns an unsubscribe function. Readings handed to listeners

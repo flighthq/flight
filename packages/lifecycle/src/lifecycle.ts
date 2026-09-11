@@ -9,13 +9,13 @@ import type {
   AppMemoryPressure,
 } from '@flighthq/types/contract';
 
-// Begins delivering lifecycle changes to `app`'s signals by subscribing to the active backend. On
+// Begins delivering lifecycle changes to `app`'s signals by subscribing to the supplied provider. On
 // each change it reads the current state and emits onStateChange plus onResume when transitioning
-// to 'active' and onPause when leaving 'active'. The web backend drives onBackButton only in
-// environments that support it; native hosts emit it through their own backend. Idempotent: a prior
+// to 'active' and onPause when leaving 'active'. The Web provider drives onBackButton only in
+// environments that support it; native hosts emit it through their own provider. Idempotent: a prior
 // subscription is torn down first. Pair with detachAppLifecycle/disposeAppLifecycle.
 //
-// onStateChange is "raw, not deduped" — it fires on every backend notification regardless of
+// onStateChange is "raw, not deduped" — it fires on every provider notification regardless of
 // whether the derived state changed. onResume/onPause are deduped edges: 'active'→non-'active'
 // fires onPause (including the interruption edge 'active'→'inactive'); non-'active'→'active' fires
 // onResume. The 'inactive'→'background' and reverse transitions do not fire onPause/onResume again.
@@ -79,19 +79,15 @@ export function detachAppLifecycle(app: AppLifecycle): void {
   }
 }
 
-// Releases `app` for garbage collection by detaching its backend subscription. The signals remain
+// Releases `app` for garbage collection by detaching its provider subscription. The signals remain
 // plain GC-managed memory afterward.
 export function disposeAppLifecycle(app: AppLifecycle): void {
   detachAppLifecycle(app);
   _savedState.delete(app);
 }
 
-// Which layer implements `operation`, and whether anything real does — the per-operation answer
-// `explainLifecycleBackend` cannot give: that one reports a backend is installed, this one reports whether
-// THIS operation on it is a genuine implementation or the sentinel standing in.
-//
-// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
-// this report `true` for everything and say nothing at all.
+// Reports whether the supplied provider implements `operation`. Optional methods that the provider
+// omits are reported as the sentinel layer so callers can distinguish absence from a real operation.
 export function explainLifecycleOperation(
   hostLifecycle: Readonly<HostLifecycleProvider>,
   operation: LifecycleOperation,
@@ -101,20 +97,20 @@ export function explainLifecycleOperation(
 }
 
 // Returns the kind of launch — 'cold' (fresh process) or 'warm' (resumed from background). The web
-// backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
-// others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
-// getLaunchKind (legacy or minimal backends that pre-date the optional method).
+// provider approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
+// others → 'cold'). Returns 'warm' as a safe fallback when the provider does not implement
+// getLaunchKind (legacy or minimal providers that pre-date the optional method).
 export function getAppLaunchKind(hostLifecycle: Readonly<HostLifecycleProvider>): AppLaunchKind {
   const backend = hostLifecycle;
   return backend.getLaunchKind !== undefined ? backend.getLaunchKind() : 'warm';
 }
 
-// Returns the current application lifecycle state from the active backend.
+// Returns the current application lifecycle state from the supplied provider.
 export function getAppLifecycleState(hostLifecycle: Readonly<HostLifecycleProvider>): AppLifecycleState {
   return hostLifecycle.getState();
 }
 
-// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+// Whether the supplied provider implements `operation`.
 export function hasLifecycleOperation(
   hostLifecycle: Readonly<HostLifecycleProvider>,
   operation: LifecycleOperation,
@@ -133,7 +129,7 @@ export function initializeAppLifecycle(out: EntityConstruction<AppLifecycle>): v
   out.onRestoreState = createSignal();
 }
 
-// Builds the default web backend over document visibility, window focus/blur, and pagehide/pageshow
+// Builds the default Web provider over document visibility, window focus/blur, and pagehide/pageshow
 // events. Produces three states:
 //   'active'     — document visible and window focused
 //   'inactive'   — document visible but window not focused (app switcher, control-center, other window)
@@ -147,7 +143,7 @@ export function initializeAppLifecycle(out: EntityConstruction<AppLifecycle>): v
 // Falls back to 'cold' when the Performance Navigation Timing API is unavailable (SSR/jsdom).
 //
 // subscribeMemoryWarning() wires the experimental 'memory-pressure' window event (Chrome origin
-// trial / behind flags). The event detail carries a 'critical' pressure string; this backend maps
+// trial / behind flags). The event detail carries a 'critical' pressure string; this provider maps
 // it to 'critical' and fires 'normal' on the subsequent resolution event when present. Falls back to
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
 export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecycleProvider>): void {
@@ -194,7 +190,7 @@ export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecy
   };
   out.subscribeMemoryWarning = (listener: (level: AppMemoryPressure) => void): (() => void) => {
     // The 'memory-pressure' window event is an experimental Chrome API (origin trial / behind
-    // flags as of 2026). The event carries a detail object with a 'pressure' string. This backend
+    // flags as of 2026). The event carries a detail object with a 'pressure' string. This provider
     // maps 'critical' pressure to AppMemoryPressure 'critical'; a pressure-resolved / 'moderate'
     // event maps to 'moderate'. Falls back to no-op unsubscribe when the event is not supported
     // (no cross-browser API for memory pressure is widely deployed yet).

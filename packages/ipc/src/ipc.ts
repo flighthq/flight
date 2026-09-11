@@ -6,15 +6,9 @@ import type {
   HostIpcTargetedSendProvider,
 } from '@flighthq/types/contract';
 
-// Inter-process messaging over explicitly supplied, operation-tight Host capabilities. Every operation
-// reads its own slot directly: there is no aggregate backend, resolver, sentinel, installed state, or
-// "no provider" runtime arm. A caller without the exact witness cannot compile the call.
-//
-// ★ THE WHOLE AMBIENT FAMILY IS GONE — getIpcBackend / setIpcBackend / installIpcHostBackend /
-// resetIpcBackendForTest / observeIpcHostResult / explainIpcBackend / explainIpcOperation /
-// hasIpcBackend / hasIpcOperation, plus the module-scoped _custom/_host/_hostConflict/_hostObservation/
-// _sentinel/_listeners registry. The sentinel in particular answered every operation, so a caller could
-// not tell an installed backend from nothing at all.
+// Inter-process messaging over explicitly supplied, operation-tight Host providers. Every operation
+// takes its own provider directly: there is no aggregate resolver, installed state, or runtime
+// missing-provider arm. A caller without the exact provider cannot compile the call.
 
 export function invokeIpc(
   hostIpcInvoke: Readonly<HostIpcInvokeProvider>,

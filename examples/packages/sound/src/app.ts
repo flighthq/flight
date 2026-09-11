@@ -91,7 +91,7 @@ attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
 // Audio mixer with two buses: sfx and music. The mixer stays web-only (AudioContext) for now;
-// bus routing is a no-op when channels are managed through AudioDeviceBackend (Option A).
+// bus routing is a no-op when channels are managed through a HostAudioDeviceProvider (Option A).
 let mixer: ReturnType<typeof createAudioMixer> | null = null;
 const sfxBus = createAudioBus({ name: 'sfx', gain: 0.8 });
 const musicBus = createAudioBus({ name: 'music', gain: 0.6 });

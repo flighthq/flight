@@ -1,5 +1,5 @@
-// Display/monitor enumeration seam. Free functions in @flighthq/screen delegate to the active
-// ScreenBackend (web default or a native host's). The web sees a single logical screen; a native host
+// Display/monitor enumeration seam. Free functions in @flighthq/screen take the relevant query or
+// event provider directly. The Web provider sees a single logical screen; a native host
 // (Electron/Tauri) reports every attached display. Enumeration writes into caller-owned `out` arrays
 // and objects so hot paths allocate nothing.
 
@@ -50,7 +50,7 @@ export interface ScreenInfo extends Entity {
   monochrome: boolean;
 }
 
-// The seam every screen query follows: a host backend that fills caller-owned `out` values. The
+// The provider every screen query takes directly, filling caller-owned `out` values. The
 // fill methods return the same `out` they were given so callers can chain or read inline.
 // The window-management permission states a screen host can report. Deliberately the three the web
 // Permissions API uses, with no `'unsupported'` member: a host that cannot answer omits the operation

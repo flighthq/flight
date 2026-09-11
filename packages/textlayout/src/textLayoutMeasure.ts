@@ -16,7 +16,7 @@ export function getTextLayoutMeasureProvider(): TextMeasureFunction | null {
 
 // Installs an explicit measure provider, bypassing the shaper seam. Pass null to clear it and fall
 // back to the registered shaper backend. Prefer setTextShaperBackend for normal setup; this remains
-// for direct injection (tests, a host wiring its own measure without a full TextShaperBackend).
+// for direct injection (tests, a host wiring its own measure without a full HostTextShaperProvider).
 export function setTextLayoutMeasureProvider(measure: TextMeasureFunction | null): void {
   _measureProvider = measure;
 }

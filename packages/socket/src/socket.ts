@@ -18,7 +18,7 @@ import type {
   TcpSocketOptions,
 } from '@flighthq/types/contract';
 
-// Resumes delivery of backend events to the socket's signals (idempotent). Pair with detachSocket.
+// Resumes delivery of provider events to the socket's signals (idempotent). Pair with detachSocket.
 // createSocket leaves a new socket attached, so this is only needed to resume after detachSocket. A
 // disposed socket is terminal and cannot be reattached.
 export function attachSocket(socket: Socket): void {
@@ -27,7 +27,7 @@ export function attachSocket(socket: Socket): void {
 }
 
 // Begins a clean close of the live connection. Transitions readyState connecting/open → 'closing';
-// the backend's close event later transitions it to 'closed'. A no-op when already closing or closed.
+// the provider's close event later transitions it to 'closed'. A no-op when already closing or closed.
 // This is the connection command, distinct from disposeSocket (which releases the entity to GC).
 export function closeSocket(socket: Socket, code?: number, reason?: string): void {
   const runtime = socket.runtime;
@@ -42,9 +42,9 @@ export function closeSocket(socket: Socket, code?: number, reason?: string): voi
 
 // Allocates a Socket entity plus its runtime and opens the connection through the host's socket
 // provider,
-// wiring the backend's open/message/close/error into the socket's (still inert) signal group. The
+// wiring the provider's open/message/close/error into the socket's (still inert) signal group. The
 // socket starts in 'connecting' and is left attached (delivering). Enable signals with
-// enableSocketSignals to observe events. A backend that does not support the transport yields a null
+// enableSocketSignals to observe events. A provider that does not support the transport yields a null
 // connection and the socket stays in 'connecting' until closed.
 export function createSocket(hostSocket: Readonly<HostSocketProvider>, options: Readonly<SocketOptions>): Socket {
   const runtime: SocketRuntime = {
@@ -72,7 +72,7 @@ export function createWebSocketBackend(): HostSocketProvider & Entity {
   return finishEntity(out);
 }
 
-// Stops delivery of backend events to the socket's signals. The live connection is untouched — use
+// Stops delivery of provider events to the socket's signals. The live connection is untouched — use
 // closeSocket to close it. Safe to call repeatedly; resume with attachSocket.
 export function detachSocket(socket: Socket): void {
   socket.runtime.delivering = false;
@@ -112,15 +112,15 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   return runtime.signals;
 }
 
-// The socket's current connection phase, tracked on the runtime from backend events and closeSocket.
+// The socket's current connection phase, tracked on the runtime from provider events and closeSocket.
 export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState {
   return socket.runtime.readyState;
 }
 
-// Builds the web backend over the DOM WebSocket. Nothing constructs one at import time, so importing
+// Builds the Web provider over the DOM WebSocket. Nothing constructs one at import time, so importing
 // the package has no side effect; a host composes this value into its own net group. Returns a
 // null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
-// is likewise unsupported here and only reachable through a native backend.
+// is likewise unsupported here and only reachable through a native provider.
 export function initializeWebSocketBackend(out: EntityConstruction<HostSocketProvider & Entity>): void {
   out.openSocket = (options, events): SocketConnection | null => {
     if (typeof WebSocket === 'undefined') return null;
@@ -159,7 +159,7 @@ export function openTcpSocket(
 
 // Sends a text or binary frame over the live connection without mutating or copying either argument.
 // Returns false — a sentinel, not a throw — when the socket is disposed, not open, has no connection,
-// or the backend rejects the send. explainSocketSendFailure diagnoses the deterministic preflight paths.
+// or the provider rejects the send. explainSocketSendFailure diagnoses the deterministic preflight paths.
 export function sendSocketMessage(socket: Readonly<Socket>, data: string | ArrayBuffer): boolean {
   const runtime = socket.runtime;
   if (runtime.disposed) {
@@ -178,9 +178,9 @@ export function setSocketGuard(guard: SocketGuard | null): void {
 
 let _guard: SocketGuard | null = null;
 
-// Builds the backend→entity sink bound to one socket's runtime: it updates readyState and emits the
+// Builds the provider→entity sink bound to one socket's runtime: it updates readyState and emits the
 // opt-in signals. Every handler is a no-op once the runtime stops delivering (detach/dispose), so a
-// late backend event after teardown fires nothing.
+// late provider event after teardown fires nothing.
 function makeSocketEventSink(runtime: SocketRuntime): SocketEventSink {
   return {
     handleSocketOpen(): void {

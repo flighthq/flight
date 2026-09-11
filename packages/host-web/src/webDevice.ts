@@ -85,7 +85,7 @@ export function initializeWebDeviceBackend(out: EntityConstruction<HostDevicePro
     // Web: crypto.randomUUID() persisted to localStorage as a stable install id.
     // Returns '' when storage is unavailable (SSR, private browsing with blocked storage).
     // This is an install id — it resets if localStorage is cleared. Not a hardware serial.
-    // For a durable cross-storage id, use @flighthq/storage as the backend's persistence layer.
+    // For a durable cross-storage id, use @flighthq/storage as the provider's persistence layer.
     try {
       const key = '__flighthq_device_id';
       const existing = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
@@ -139,7 +139,7 @@ export function initializeWebDeviceBackend(out: EntityConstruction<HostDevicePro
     return out;
   };
   out.getSafeAreaInsets = (out: SafeAreaInsets): SafeAreaInsets => {
-    // Reading CSS env(safe-area-inset-*) requires a probe element in the DOM. The web backend
+    // Reading CSS env(safe-area-inset-*) requires a probe element in the DOM. The Web provider
     // returns zero insets by default. Call enableWebSafeAreaInsets() to mount a live CSS-var probe
     // that updates this when the device reports real insets (notched PWAs).
     const insets = _safeAreaInsets;

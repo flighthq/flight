@@ -10,7 +10,7 @@ export interface ApplicationWindow extends Entity {
   width: number;
   height: number;
   devicePixelRatio: number;
-  // Window state mirror. Commands update these and emit the matching signal; native backends also
+  // Window state mirror. Commands update these and emit the matching signal; native providers also
   // update them when the OS changes state (user clicks minimize, etc.).
   minimized: boolean;
   maximized: boolean;
@@ -87,22 +87,22 @@ export interface WindowBounds {
 export type NativeWindowHandle = unknown;
 
 // Existing-window ownership is fixed when the handle is attached. Host-owned windows are detached from
-// Flight on close but left alive; Flight-owned windows are closed by the backend after detachment.
+// Flight on close but left alive; Flight-owned windows are closed by the provider after detachment.
 export type WindowAttachmentOwnership = 'host' | 'flight';
 
 // Provider-bound identity for the element whose content box drives attachWindowResize. The web host
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
 export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
 
-// Control seam for windowing: a host backend the window command functions delegate to. The web
-// backend covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
+// Control seam for windowing: the provider that window command functions call directly. The Web
+// provider covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
 // a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Operations whose
 // absence is a safe command no-op are optional, so a host declares support by providing the method rather
 // than by publishing a false implementation. Every method takes the target window so the seam supports
 // multiple windows.
 export interface HostWindowProvider extends Entity {
   // Attaches an existing native window. Optional because absence is the structural declaration that a
-  // backend cannot adopt host-created windows. A host passed to attachWindow must also provide close,
+  // provider cannot adopt host-created windows. A provider passed to attachWindow must also provide close,
   // which owns the resulting release obligation.
   attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
   // A host passed to openWindow must also provide close. Successful opens follow the canonical

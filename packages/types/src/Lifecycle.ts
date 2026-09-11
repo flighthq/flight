@@ -11,18 +11,18 @@ export type AppLaunchKind = 'cold' | 'warm';
 // 'moderate' a warning, 'critical' an imminent termination risk.
 export type AppMemoryPressure = 'normal' | 'moderate' | 'critical';
 
-// Event seam for application lifecycle: a state reader plus a change subscription. The web backend
+// Event seam for application lifecycle: a state reader plus a change subscription. The Web provider
 // wraps document visibility and window pagehide/pageshow events; a native host reports its own
 // foreground/background transitions through the same subscribe callback.
 export interface HostLifecycleProvider extends Entity {
   getState(): AppLifecycleState;
   // Registers a listener invoked on any lifecycle change; returns an unsubscribe function.
   subscribe(listener: () => void): () => void;
-  // Returns whether the launch was cold or warm. Optional: minimal/legacy backends may omit it, in
+  // Returns whether the launch was cold or warm. Optional: minimal/legacy providers may omit it, in
   // which case getAppLaunchKind falls back to 'warm'.
   getLaunchKind?(): AppLaunchKind;
   // Registers a listener invoked on OS memory-pressure changes; returns an unsubscribe function.
-  // Optional: backends without a memory-pressure source omit it.
+  // Optional: providers without a memory-pressure source omit it.
   subscribeMemoryWarning?(listener: (level: AppMemoryPressure) => void): () => void;
 }
 
@@ -41,7 +41,7 @@ export interface AppLifecycle extends Entity {
   onRestoreState: Signal<(state: Readonly<Record<string, unknown>>) => void>;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot. Entity runtime identity is infrastructure rather than a backend operation.
+// `keyof` cannot. Entity runtime identity is infrastructure rather than a provider operation.
 export type LifecycleOperation = Exclude<keyof HostLifecycleProvider, keyof Entity>;

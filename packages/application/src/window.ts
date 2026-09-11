@@ -36,7 +36,7 @@ const kResize = Symbol();
 const kVisibility = Symbol();
 
 // Attaches an existing native window without requiring an Application. A false result leaves the
-// window's current lifecycle unchanged; success pins its eventual close to this exact host backend.
+// window's current lifecycle unchanged; success pins its eventual close to this exact host provider.
 export function attachWindow(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close'>>>,
   win: ApplicationWindow,
@@ -224,7 +224,7 @@ export function attachWindowVisibility(
   );
 }
 
-// Centers the window on its current display via the backend.
+// Centers the window on its current display through the supplied provider.
 export function centerWindow(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'center'>>>,
   win: ApplicationWindow,
@@ -233,7 +233,7 @@ export function centerWindow(
 }
 
 // Closes the window. First emits onCloseRequest; if a listener vetoes (cancelSignal), the close is
-// aborted and this returns false. Otherwise the backend closes the window, onClose fires, and it
+// aborted and this returns false. Otherwise the origin provider closes the window, onClose fires, and it
 // returns true.
 export function closeWindow(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'close'>>>,
@@ -346,8 +346,8 @@ export async function exitApplicationPointerLock(
   return outcome;
 }
 
-// Briefly flashes the window frame to attract attention. Native hosts may implement it via the
-// WindowBackend (for example Electron window.flashFrame(true)).
+// Briefly flashes the window frame to attract attention. Native hosts may implement it through their
+// HostWindowProvider (for example Electron window.flashFrame(true)).
 export function flashWindowFrame(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'flashWindowFrame'>>>,
   win: ApplicationWindow,
@@ -425,7 +425,7 @@ export function initializeApplicationWindow(out: EntityConstruction<ApplicationW
 // Requests Pointer Lock on an opaque target, hiding and confining the cursor so raw mouse deltas are
 // delivered via pointermove events. Expected target, availability, denial, and operation failures are
 // returned as method-tight outcomes. Only successful acquisition pins its eventual exit to this exact
-// provider even if the caller later supplies a different Host.
+// provider even if the caller later supplies a different provider.
 export async function lockApplicationPointer(
   hostInputPointerLock: Readonly<HostInputPointerLockProvider>,
   target: InputTargetHandle,
@@ -459,7 +459,7 @@ export function minimizeWindow(
 }
 
 // The single terminal-close choke point for both app-driven and host-driven closes. Native callbacks may
-// fire synchronously inside backend.close; whichever path arrives first emits and every later path no-ops.
+// fire synchronously inside provider.close; whichever path arrives first emits and every later path no-ops.
 // After the terminal signal is delivered, application-side observers are drained even when a listener
 // throws. This state belongs to the ApplicationWindow entity, never to an Application or per-app registry.
 export function notifyWindowClosed(win: ApplicationWindow): void {
@@ -474,7 +474,7 @@ export function notifyWindowClosed(win: ApplicationWindow): void {
 }
 
 // Opens (or configures) the window from options, applying each provided field to the entity and
-// delegating to the backend. Returns whether the host opened a window. On web this configures the
+// delegating to the supplied provider. Returns whether the host opened a window. On web this configures the
 // existing page-window; native hosts create a real OS window.
 export function openWindow(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'close' | 'open'>>>,
@@ -502,7 +502,7 @@ export function openWindow(
     _windowBackends.set(win, backend);
     _terminalWindows.delete(win);
   }
-  // Apply center after open so the backend has registered the OS window before moving it.
+  // Apply center after open so the provider has registered the OS window before moving it.
   if (result && options.center === true) backend.center?.(win);
   return result;
 }
@@ -562,7 +562,7 @@ export function setWindowAlwaysOnTop(
 }
 
 // Prevents (or allows) the window contents from being captured in screenshots or screen sharing.
-// Native hosts may implement it via the WindowBackend (for example Electron setContentProtection).
+// Native hosts may implement it through their HostWindowProvider (for example Electron setContentProtection).
 export function setWindowContentProtection(
   hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setContentProtection'>>>,
   win: ApplicationWindow,

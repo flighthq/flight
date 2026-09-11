@@ -33,7 +33,7 @@ export function clearCanvasTextShaperBackendCache(backend: CanvasTextShaperBacke
 // metrics for previously-measured strings.
 //
 // This is the extraction of the former createCanvasTextMeasure — the SDK's existing measurement,
-// formalized as a TextShaperBackend.
+// formalized as a HostTextShaperProvider.
 export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
   const ctx = _createContext();
   if (ctx === null) {

@@ -328,7 +328,7 @@ export interface HostMediaCapabilities {
 }
 
 // Menu is a top-level group rather than a ui slot: its three capabilities have different provider
-// coverage AND incompatible shapes, so one MenuBackend could not represent them honestly. The group is
+// coverage AND incompatible shapes, so one combined provider could not represent them honestly. The group is
 // non-optional like every other; the slots inside it are optional, and an omitted slot means the host
 // genuinely lacks that capability — never a stub that answers false.
 export interface HostMenuCapabilities {
@@ -371,7 +371,7 @@ export interface HostShareCapabilities {
 
 // Power is a top-level group: its capabilities vary independently by host (web has keep-awake and
 // suspend/resume but no idle, session lock or battery health; electron has all of them), so one
-// PowerBackend could not represent any host honestly.
+// combined power provider could not represent any host honestly.
 export interface HostPowerCapabilities {
   readonly batteryHealth?: HostPowerBatteryHealthProvider;
   readonly change?: HostPowerChangeProvider;

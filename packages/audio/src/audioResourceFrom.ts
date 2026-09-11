@@ -78,7 +78,7 @@ async function _loadAudioResourceFromUrl(
     { method: 'GET', responseType: 'arraybuffer', url },
     signal === undefined ? undefined : { signal },
   );
-  // The NetBackend reports network failures and non-2xx responses alike through the response, before
+  // The HostNetProvider reports network failures and non-2xx responses alike through the response, before
   // the audio decoder can misdiagnose an HTTP error body as invalid audio. This function retains its
   // existing reject-on-failure contract; the transport itself remains caller-replaceable.
   if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);

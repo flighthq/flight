@@ -1,5 +1,5 @@
 // The precise slice of the Tauri (v2) JavaScript API — `@tauri-apps/api` plus its official plugins —
-// that Flight's host backends call. A consumer aggregates the real Tauri modules and passes the object:
+// that Flight's host providers call. A consumer aggregates the real Tauri modules and passes the object:
 //
 //   import * as app from '@tauri-apps/api/app';
 //   import * as window from '@tauri-apps/api/window';
@@ -22,7 +22,7 @@
 // testable with a fake — and documents exactly which Tauri surface the seams require, which is the real
 // coupling between Flight and a Tauri host. Tauri's Resource/DPI classes contain nominal private/symbol
 // fields, so menu/tray/window need the narrow boundary assertions shown above even though the runtime
-// surface matches. Members are intentionally minimal; widen only when a backend needs more. Note the
+// surface matches. Members are intentionally minimal; widen only when a provider needs more. Note the
 // wide async/sync gap: most Tauri calls are Promise-based, while several Flight
 // seams (window/shortcut/app getters/menu install/tray create) are synchronous. Those adapters call the
 // async Tauri method fire-and-forget and mirror state locally — see each adapter for the exact contract.
@@ -142,8 +142,8 @@ export interface TauriShortcutEvent {
   state: string;
 }
 
-// `@tauri-apps/plugin-global-shortcut` — global OS hotkeys. All async, whereas ShortcutBackend is
-// synchronous; the adapter fires register/unregister-and-forget and mirrors the registered set locally.
+// `@tauri-apps/plugin-global-shortcut` — global OS hotkeys. All async, whereas the Flight shortcut
+// providers are synchronous; the adapter fires register/unregister-and-forget and mirrors the set locally.
 export interface TauriGlobalShortcutPlugin {
   isRegistered(shortcut: string): Promise<boolean>;
   register(shortcut: string, handler: (event: Readonly<TauriShortcutEvent>) => void): Promise<void>;
@@ -212,7 +212,7 @@ export interface TauriMenu {
 }
 
 // `@tauri-apps/api/tray` — the system tray. `TrayIcon.new` is async and returns a handle; the sync
-// TrayBackend.create returns a numeric id immediately and adopts the handle when it resolves.
+// the Flight tray-create provider returns a numeric id immediately and adopts the handle when it resolves.
 export interface TauriTrayModule {
   TrayIcon: TauriTrayIconFactory;
 }

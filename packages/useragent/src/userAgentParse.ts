@@ -11,7 +11,7 @@ import {
 
 // UA-string parsers for device identity fields.
 // All functions are pure and side-effect-free — no DOM access, no globals, no state.
-// Used by the @flighthq/device web backend; importable independently for testing or custom backends.
+// Used by the @flighthq/device Web provider; importable independently for testing or custom providers.
 //
 // Note: UA string parsing is inherently best-effort. Browsers freeze and spoof UAs regularly.
 // These parsers target the most common real-world patterns; they are not exhaustive.
