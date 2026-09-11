@@ -69,6 +69,42 @@ const ENTITY_CONSTRUCTORS = [
   'tauriHostWindow',
 ] as const;
 
+const LEAF_MODULE_BY_EXPORT = {
+  tauriHostAppHide: 'tauriApp.js',
+  tauriHostAppLocale: 'tauriApp.js',
+  tauriHostAppName: 'tauriApp.js',
+  tauriHostAppQuit: 'tauriApp.js',
+  tauriHostAppRelaunch: 'tauriApp.js',
+  tauriHostAppShow: 'tauriApp.js',
+  tauriHostAppVersion: 'tauriApp.js',
+  tauriHostClipboardText: 'tauriClipboard.js',
+  tauriHostDirectoryOpenDialog: 'tauriDialog.js',
+  tauriHostFileOpenDialog: 'tauriDialog.js',
+  tauriHostFileSaveDialog: 'tauriDialog.js',
+  tauriHostMenuApplication: 'tauriMenu.js',
+  tauriHostMenuPopup: 'tauriMenu.js',
+  tauriHostMenuSelect: 'tauriMenu.js',
+  tauriHostMessageDialog: 'tauriDialog.js',
+  tauriHostNotificationDelivery: 'tauriNotification.js',
+  tauriHostNotificationLifecycle: 'tauriNotification.js',
+  tauriHostNotificationPermission: 'tauriNotification.js',
+  tauriHostPlatform: 'tauriPlatform.js',
+  tauriHostShellExternal: 'tauriShell.js',
+  tauriHostShellPathOpen: 'tauriShell.js',
+  tauriHostShellPathReveal: 'tauriShell.js',
+  tauriHostShortcutQuery: 'tauriShortcut.js',
+  tauriHostShortcutTrigger: 'tauriShortcut.js',
+  tauriHostTrayImage: 'tauriTray.js',
+  tauriHostTrayInteractionEvents: 'tauriTray.js',
+  tauriHostTrayLifecycle: 'tauriTray.js',
+  tauriHostTrayMenu: 'tauriTray.js',
+  tauriHostTrayMenuSelectionEvents: 'tauriTray.js',
+  tauriHostTrayTemplateImage: 'tauriTray.js',
+  tauriHostTrayTitle: 'tauriTray.js',
+  tauriHostTrayTooltip: 'tauriTray.js',
+  tauriHostWindow: 'tauriWindow.js',
+} as const;
+
 interface PackedFile {
   path: string;
 }
@@ -165,14 +201,25 @@ describe('packed Tauri leaf isolation', () => {
     },
   ] as const;
 
+  it('retains exactly one Tauri implementation module for every supported leaf', async () => {
+    const actual = Object.fromEntries(
+      await Promise.all(
+        Object.entries(LEAF_MODULE_BY_EXPORT).map(async ([exportName]) => {
+          const modules = implementationModuleNames(await bundleLeaf(exportName));
+          expect(modules, exportName).toHaveLength(1);
+          return [exportName, modules[0]];
+        }),
+      ),
+    );
+
+    expect(actual).toEqual(LEAF_MODULE_BY_EXPORT);
+  });
+
   for (const leaf of isolatedLeaves) {
     it(`${leaf.exportName} retains only its leaf implementation`, async () => {
       const chunk = await bundleLeaf(leaf.exportName);
-      const implementationModules = Object.keys(chunk.modules)
-        .filter((id) => id.startsWith(DIST_ROOT) && !id.endsWith('/index.js'))
-        .map((id) => id.slice(DIST_ROOT.length + 1));
 
-      expect(implementationModules).toEqual([leaf.module]);
+      expect(implementationModuleNames(chunk)).toEqual([leaf.module]);
       for (const siblingToken of leaf.siblingTokens) expect(chunk.code).not.toContain(siblingToken);
     });
   }
@@ -215,6 +262,12 @@ function moduleExportNames(checker: ts.TypeChecker, source: ts.SourceFile): stri
 
 function resolvedSymbol(checker: ts.TypeChecker, symbol: ts.Symbol): ts.Symbol {
   return symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+}
+
+function implementationModuleNames(chunk: OutputChunk): string[] {
+  return Object.keys(chunk.modules)
+    .filter((id) => id.startsWith(DIST_ROOT) && !id.endsWith('/index.js'))
+    .map((id) => id.slice(DIST_ROOT.length + 1));
 }
 
 async function bundleLeaf(exportName: string): Promise<OutputChunk> {
