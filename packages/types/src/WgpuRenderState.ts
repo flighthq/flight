@@ -29,6 +29,7 @@ import type { WgpuRenderEffectRegistration } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
+import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter';
 import type { WgpuTextureResolver } from './WgpuTextureResolver';
 import type { WgpuVelocityWriter } from './WgpuVelocityWriter';
 
@@ -75,6 +76,7 @@ export interface WgpuRenderRegistries extends RenderRegistries, Entity {
   compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder>;
   compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader>;
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
+  gpuSkinning: SlotTable<WgpuSkinningAdapter>;
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<WgpuModifierSnippet>;

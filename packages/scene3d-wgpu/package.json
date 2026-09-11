@@ -50,6 +50,7 @@
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
+    "@flighthq/scene2d-wgpu": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/texture": "*",

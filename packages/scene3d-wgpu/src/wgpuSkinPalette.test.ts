@@ -1,9 +1,12 @@
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import {
   destroyWgpuSkinPalette,
+  defaultWgpuSkinningAdapter,
   ensureWgpuSkinDrawBindGroup,
   ensureWgpuSkinDrawLayout,
   ensureWgpuSkinMeshDrawBindGroup,
@@ -101,7 +104,11 @@ describe('registerWgpuGpuSkinning', () => {
     const { state } = makeWgpuScene3DState();
     expect(getWgpuScene3DRuntime(state).skinningAdapter).toBeNull();
     registerWgpuGpuSkinning(state);
-    expect(getWgpuScene3DRuntime(state).skinningAdapter).not.toBeNull();
+    expect(getWgpuScene3DRuntime(state).skinningAdapter).toBe(defaultWgpuSkinningAdapter);
+    expect(getWgpuRenderStateRuntime(state).registries.gpuSkinning.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: defaultWgpuSkinningAdapter,
+    });
   });
 });
 

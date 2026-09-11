@@ -15,6 +15,7 @@ describe('createEmptyWgpuRegistries', () => {
     expect(registries.compressedTextureDecoder.shape).toBe('slot');
     expect(registries.compressedTextureUpload.shape).toBe('slot');
     expect(registries.customMaterialShaders.shape).toBe('keyed');
+    expect(registries.gpuSkinning.shape).toBe('slot');
     expect(registries.materialRenderers.shape).toBe('keyed');
     expect(registries.meshMaterialRenderers.shape).toBe('keyed');
     expect(registries.modifierSnippets.shape).toBe('keyed');

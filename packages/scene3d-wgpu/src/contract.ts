@@ -16,6 +16,7 @@ export * from './normalWgpuMeshMaterialRenderer';
 export * from './phongWgpuMeshMaterialRenderer';
 export * from './prepareWgpuScene3DForwardLights';
 export * from './registerWgpuStandardPbrMaterial';
+export * from './scene3DWgpuPipeline';
 export * from './shadedWgpuMeshMaterialRenderer';
 export * from './specularGlossinessPbrWgpuMeshMaterialRenderer';
 export * from './standardPbrWgpuMeshMaterialRenderer';

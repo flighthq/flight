@@ -1,4 +1,4 @@
-import { withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createKeyedTable, withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -120,3 +120,19 @@ function resolveWgpuImageTexture(
 function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
   return bindWgpuRenderTexture(state, texture as Readonly<RenderTexture>);
 }
+
+const _standardWgpuTextureResolvers = withRegistryTableEntry(
+  withRegistryTableEntry(
+    withRegistryTableEntry(
+      createKeyedTable<WgpuTextureResolver>('WgpuTextureResolver', 'Unregistered'),
+      BitmapTextureSourceKind,
+      resolveWgpuBitmapTexture,
+    ),
+    ImageTextureSourceKind,
+    resolveWgpuImageTexture,
+  ),
+  RenderTargetTextureSourceKind,
+  resolveWgpuRenderTexture,
+);
+
+export { _standardWgpuTextureResolvers as standardWgpuTextureResolvers };

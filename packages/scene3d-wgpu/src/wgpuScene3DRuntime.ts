@@ -4,7 +4,7 @@ import type {
   WgpuRenderState,
   WgpuRenderStateRuntime,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 // Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it and wiring its device-tier
@@ -14,6 +14,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
   const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
+    const skinningEntry = stateRuntime.registries.gpuSkinning.entry;
     // The runtime accessor routes this slot to the device tier. A derived state must retain the map
     // already installed by its primary instead of replacing it with a state-local upload identity.
     let uploadCache = stateRuntime.context.sceneMeshUploadCache as WeakMap<object, WgpuMeshUpload> | null | undefined;
@@ -92,7 +93,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       skinPaletteArenaRows: 0,
       skinPaletteTexture: null,
       skinPaletteView: null,
-      skinningAdapter: null,
+      skinningAdapter: skinningEntry?.state === RegistryEntryState.Bound ? skinningEntry.value : null,
       uploadCache,
     };
     sceneRuntimes.set(state, scene);

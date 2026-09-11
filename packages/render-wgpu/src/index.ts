@@ -46,6 +46,7 @@ export {
   resolveWgpuApplyBlendMode,
   resolveWgpuTexture,
   resolveWgpuSmoothingBindGroup,
+  standardWgpuTextureResolvers,
   setWgpuRenderTransform2D,
   submitWgpuRenderPass,
   withWgpuRenderTextures,
