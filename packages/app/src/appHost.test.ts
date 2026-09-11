@@ -7,40 +7,36 @@ import { attachApp, createApp, focusApp, getAppName, quitApp, setAppBadgeCount }
 import * as appContract from './contract';
 
 describe('app explicit Host ownership', () => {
-  it('delegates commands and queries only through the selected Host slots', () => {
+  it('delegates commands and queries only through the selected direct providers', async () => {
     const focus = vi.fn();
     const getName = vi.fn(() => 'Explicit App');
     const quit = vi.fn();
-    const setBadgeCount = vi.fn(() => true);
-    const host = {
-      app: {
-        badge: (() => {
-          const out = allocateEntity<any>();
-          out.setBadgeCount = setBadgeCount;
-          return finishEntity(out);
-        })(),
-        focus: (() => {
-          const out = allocateEntity<any>();
-          out.focus = focus;
-          return finishEntity(out);
-        })(),
-        name: (() => {
-          const out = allocateEntity<any>();
-          out.getName = getName;
-          return finishEntity(out);
-        })(),
-        quit: (() => {
-          const out = allocateEntity<any>();
-          out.quit = quit;
-          return finishEntity(out);
-        })(),
-      },
-    };
+    const setBadgeCount = vi.fn(async () => true);
+    const hostAppBadge = (() => {
+      const out = allocateEntity<any>();
+      out.setBadgeCount = setBadgeCount;
+      return finishEntity(out);
+    })();
+    const hostAppFocus = (() => {
+      const out = allocateEntity<any>();
+      out.focus = focus;
+      return finishEntity(out);
+    })();
+    const hostAppName = (() => {
+      const out = allocateEntity<any>();
+      out.getName = getName;
+      return finishEntity(out);
+    })();
+    const hostAppQuit = (() => {
+      const out = allocateEntity<any>();
+      out.quit = quit;
+      return finishEntity(out);
+    })();
 
-    Reflect.apply(focusApp, undefined, [host]);
-    expect(Reflect.apply(getAppName, undefined, [host])).toBe('Explicit App');
-    Reflect.apply(quitApp, undefined, [host]);
-    expect(Reflect.apply(setAppBadgeCount, undefined, [host, 3])).toBe(true);
+    focusApp(hostAppFocus);
+    expect(getAppName(hostAppName)).toBe('Explicit App');
+    quitApp(hostAppQuit);
+    await expect(setAppBadgeCount(hostAppBadge, 3)).resolves.toBe(true);
 
     expect(focus).toHaveBeenCalledOnce();
     expect(getName).toHaveBeenCalledOnce();
@@ -48,7 +44,7 @@ describe('app explicit Host ownership', () => {
     expect(setBadgeCount).toHaveBeenCalledExactlyOnceWith(3);
   });
 
-  it('takes event providers from Host and publishes an Entity', () => {
+  it('takes event providers directly and publishes an Entity', () => {
     const listeners: { ready?: () => void } = {};
     const subscribe = vi.fn((listener: () => void) => {
       listeners.ready = listener;
@@ -59,25 +55,16 @@ describe('app explicit Host ownership', () => {
       out.subscribe = () => vi.fn();
       return finishEntity(out);
     })();
-    const host = {
-      app: {
-        activate: inert,
-        allWindowsClosed: inert,
-        openFile: inert,
-        quitRequest: inert,
-        ready: (() => {
-          const out = allocateEntity<any>();
-          out.subscribe = subscribe;
-          return finishEntity(out);
-        })(),
-        secondInstance: inert,
-      },
-    };
+    const hostAppReady = (() => {
+      const out = allocateEntity<any>();
+      out.subscribe = subscribe;
+      return finishEntity(out);
+    })();
     const app = createApp();
     let readyCount = 0;
     connectSignal(app.onReady, () => readyCount++);
 
-    Reflect.apply(attachApp, undefined, [host, app]);
+    attachApp(inert, inert, inert, inert, hostAppReady, inert, app);
     listeners.ready?.();
 
     expect(subscribe).toHaveBeenCalledOnce();
