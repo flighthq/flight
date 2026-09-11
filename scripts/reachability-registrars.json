@@ -630,10 +630,6 @@
       "registrar": "registerWgpuWhiteBalanceEffect"
     },
     {
-      "packageName": "host-capacitor",
-      "registrar": "registerCapacitorBackends"
-    },
-    {
       "packageName": "host-electron",
       "registrar": "registerElectronBackends"
     },

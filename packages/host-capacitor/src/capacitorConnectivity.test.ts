@@ -1,7 +1,11 @@
 import type { CapacitorApi, CapacitorConnectionStatus, ConnectivityStatus } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorConnectivityBackend, initializeCapacitorConnectivityBackend } from './capacitorConnectivity';
+import {
+  capacitorHostConnectivity,
+  capacitorHostConnectivityChange,
+  capacitorHostConnectivityStatus,
+} from './capacitorConnectivity';
 
 async function flush(): Promise<void> {
   await Promise.resolve();
@@ -63,12 +67,13 @@ function fakeCapacitor() {
   };
 }
 
-describe('createCapacitorConnectivityBackend', () => {
+describe('capacitorHostConnectivity', () => {
   it('returns one Entity and reports unknown before the async status is ready', () => {
     const fake = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(fake.capacitor);
-    expect(EntityRuntimeKey in backend).toBe(true);
-    expect(backend.getStatus(status())).toEqual({
+    const connectivity = capacitorHostConnectivity(fake.capacitor);
+    expect(connectivity.change).toBe(connectivity.status);
+    expect(EntityRuntimeKey in connectivity.status).toBe(true);
+    expect(connectivity.status.getStatus(status())).toEqual({
       downlink: -1,
       downlinkMax: -1,
       effectiveType: '',
@@ -82,11 +87,11 @@ describe('createCapacitorConnectivityBackend', () => {
 
   it('uses one native listener for any number of local subscribers', () => {
     const fake = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    const hostConnectivityChange = capacitorHostConnectivity(fake.capacitor).change;
     let a = 0;
     let b = 0;
-    const releaseA = backend.subscribe(() => a++);
-    backend.subscribe(() => b++);
+    const releaseA = hostConnectivityChange.subscribe(() => a++);
+    hostConnectivityChange.subscribe(() => b++);
     expect(fake.addListenerCalls()).toBe(1);
     fake.fire({ connected: true, connectionType: 'wifi' });
     expect([a, b]).toEqual([1, 1]);
@@ -97,32 +102,32 @@ describe('createCapacitorConnectivityBackend', () => {
 
   it('notifies subscribers when the initial unknown status becomes measured', async () => {
     const fake = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    const connectivity = capacitorHostConnectivity(fake.capacitor);
     let changes = 0;
-    backend.subscribe(() => changes++);
+    connectivity.change.subscribe(() => changes++);
     fake.resolveInitial({ connected: true, connectionType: 'wifi' });
     await flush();
     expect(changes).toBe(1);
-    expect(backend.getStatus(status())).toMatchObject({ online: true, type: 'wifi' });
+    expect(connectivity.status.getStatus(status())).toMatchObject({ online: true, type: 'wifi' });
   });
 
   it('does not let a late initial query overwrite a newer native event', async () => {
     const fake = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    const hostConnectivityStatus = capacitorHostConnectivity(fake.capacitor).status;
     fake.fire({ connected: false, connectionType: 'none' });
     fake.resolveInitial({ connected: true, connectionType: 'wifi' });
     await flush();
-    expect(backend.getStatus(status())).toMatchObject({ online: false, type: 'none' });
+    expect(hostConnectivityStatus.getStatus(status())).toMatchObject({ online: false, type: 'none' });
   });
 
   it('destroy-before-handle-resolution removes the exact handle once and clears fanout', async () => {
     const fake = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    const hostConnectivityChange = capacitorHostConnectivity(fake.capacitor).change;
     let changes = 0;
-    backend.subscribe(() => changes++);
-    backend.destroy();
-    backend.destroy();
-    expect(backend.subscribe(() => {})).toBeNull();
+    hostConnectivityChange.subscribe(() => changes++);
+    hostConnectivityChange.destroy();
+    hostConnectivityChange.destroy();
+    expect(hostConnectivityChange.subscribe(() => {})).toBeNull();
     fake.fire({ connected: true, connectionType: 'wifi' });
     expect(changes).toBe(0);
     expect(fake.removals()).toBe(0);
@@ -131,8 +136,15 @@ describe('createCapacitorConnectivityBackend', () => {
     expect(fake.removals()).toBe(1);
   });
 });
-describe('initializeCapacitorConnectivityBackend', () => {
-  it('is the construction initializer of createCapacitorConnectivityBackend', () => {
-    expect(typeof initializeCapacitorConnectivityBackend).toBe('function');
+
+describe('capacitorHostConnectivityChange', () => {
+  it('constructs an Entity-backed change provider', () => {
+    expect(EntityRuntimeKey in capacitorHostConnectivityChange(fakeCapacitor().capacitor)).toBe(true);
+  });
+});
+
+describe('capacitorHostConnectivityStatus', () => {
+  it('constructs an Entity-backed status provider', () => {
+    expect(EntityRuntimeKey in capacitorHostConnectivityStatus(fakeCapacitor().capacitor)).toBe(true);
   });
 });

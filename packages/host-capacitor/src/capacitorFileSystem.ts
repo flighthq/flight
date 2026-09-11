@@ -8,9 +8,9 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
+export function capacitorHostFileSystem(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
   const out = allocateEntity<FileSystemBasicBackend & Entity>();
-  initializeCapacitorFileSystemBackend(out, capacitor);
+  populateCapacitorFileSystem(out, capacitor);
   return finishEntity(out);
 }
 
@@ -22,7 +22,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
 // Capacitor-resolvable path (a `file://` URI, or a path the host's default Directory resolves).
 //
 // Operations the plugin cannot perform are absent from the returned provider.
-export function initializeCapacitorFileSystemBackend(
+function populateCapacitorFileSystem(
   out: EntityConstruction<FileSystemBasicBackend & Entity>,
   capacitor: CapacitorApi,
 ): void {

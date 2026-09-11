@@ -8,9 +8,9 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HostHapticsProvider {
+export function capacitorHostHaptics(capacitor: CapacitorApi): HostHapticsProvider {
   const out = allocateEntity<HostHapticsProvider>();
-  initializeCapacitorHapticsBackend(out, capacitor);
+  populateCapacitorHaptics(out, capacitor);
   return finishEntity(out);
 }
 
@@ -21,10 +21,7 @@ export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HostHapt
 // `selection` maps to `selectionChanged`. Capacitor has no cancel, no arbitrary vibration pattern, and
 // no amplitude waveform, so cancel/vibratePattern report false and the optional vibrateWaveform is
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
-export function initializeCapacitorHapticsBackend(
-  out: EntityConstruction<HostHapticsProvider>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorHaptics(out: EntityConstruction<HostHapticsProvider>, capacitor: CapacitorApi): void {
   const haptics = capacitor.haptics;
   out.cancel = () => {
     // Capacitor exposes no cancel-vibration call.

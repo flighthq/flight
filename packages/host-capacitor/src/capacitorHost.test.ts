@@ -2,12 +2,11 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHost, initializeCapacitorHost, registerCapacitorBackends } from './capacitorRegister';
+import { capacitorHost } from './capacitorHost';
 
-// A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching
-// missing members. Backends close over `capacitor` and only call in when their methods run (plus the
-// app/device/statusbar/connectivity prefetches), so a thin fake proves registration
-// routes the seams to the Capacitor backends.
+// A fake Capacitor API broad enough that every provider constructs without touching missing members.
+// Providers close over `capacitor` and only call in when their methods run (plus the app, device,
+// status-bar, and connectivity prefetches), so a thin fake proves composition routes the seams.
 function fakeCapacitor(): CapacitorApi {
   const asyncNoop = async () => {};
   const asyncListener = async () => ({ async remove() {} });
@@ -62,12 +61,43 @@ describe('capacitor power slot coverage', () => {
   // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
   // examined absence stays distinguishable from an unexamined one.
   it('claims no power capability at all', () => {
-    const host = registerCapacitorBackends(fakeCapacitor(), 'ios');
+    const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(host.power).toEqual({});
   });
 });
 
 describe('capacitorHost', () => {
+  it('publishes all 26 Host groups and no parallel top-level surface', () => {
+    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios')).sort()).toEqual([
+      'accessibility',
+      'app',
+      'clipboard',
+      'connectivity',
+      'dialog',
+      'graphics',
+      'input',
+      'ipc',
+      'media',
+      'menu',
+      'midi',
+      'net',
+      'notification',
+      'power',
+      'protocol',
+      'screen',
+      'share',
+      'shell',
+      'shortcut',
+      'storage',
+      'system',
+      'text',
+      'tray',
+      'ui',
+      'updater',
+      'window',
+    ]);
+  });
+
   it('exposes the real Capacitor haptics provider', () => {
     const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(EntityRuntimeKey in host).toBe(true);
@@ -112,16 +142,9 @@ describe('capacitorHost', () => {
     const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(host.shell).toEqual({});
   });
-});
 
-describe('initializeCapacitorHost', () => {
-  it('is the construction initializer of createCapacitorHost', () => {
-    expect(typeof initializeCapacitorHost).toBe('function');
-  });
-});
-describe('registerCapacitorBackends', () => {
-  it('installs a backend for each covered capability', () => {
-    const host = registerCapacitorBackends(fakeCapacitor(), 'ios');
+  it('installs a provider for each covered capability', () => {
+    const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.dialog.prompt.prompt).toBeTypeOf('function');
@@ -143,17 +166,8 @@ describe('registerCapacitorBackends', () => {
     expect(host.ui.statusBarInfo.getInfo).toBeTypeOf('function');
   });
 
-  // Haptics has migrated off the ambient seam: registerCapacitorBackends now RETURNS a Host carrying the
-  // real Capacitor provider, so the capability is proven by what the host exposes rather than by what a
-  // module-scoped variable happens to hold.
-  it('returns a host exposing the real Capacitor haptics capability', () => {
-    const host = registerCapacitorBackends(fakeCapacitor(), 'ios');
-    expect(host.input.haptics).toBeDefined();
-    expect(typeof host.input.haptics?.vibrate).toBe('function');
-  });
-
-  it('routes a capability call through to the Capacitor backend', async () => {
-    const host = registerCapacitorBackends(fakeCapacitor(), 'ios');
+  it('routes a capability call through to the Capacitor provider', async () => {
+    const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(await readClipboardText(host.clipboard.text)).toBe('CAP-TEXT');
   });
 });

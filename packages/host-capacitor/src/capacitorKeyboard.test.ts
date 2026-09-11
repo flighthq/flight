@@ -2,20 +2,13 @@ import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types/contract';
 import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
 
 import {
-  createCapacitorSoftKeyboardAccessoryBarBackend,
-  createCapacitorSoftKeyboardChangeBackend,
-  createCapacitorSoftKeyboardInfoBackend,
-  createCapacitorSoftKeyboardResizeModeWriteBackend,
-  createCapacitorSoftKeyboardScrollAssistBackend,
-  createCapacitorSoftKeyboardStyleBackend,
-  createCapacitorSoftKeyboardVisibilityBackend,
-  initializeCapacitorSoftKeyboardAccessoryBarBackend,
-  initializeCapacitorSoftKeyboardChangeBackend,
-  initializeCapacitorSoftKeyboardInfoBackend,
-  initializeCapacitorSoftKeyboardResizeModeWriteBackend,
-  initializeCapacitorSoftKeyboardScrollAssistBackend,
-  initializeCapacitorSoftKeyboardStyleBackend,
-  initializeCapacitorSoftKeyboardVisibilityBackend,
+  capacitorHostSoftKeyboardAccessoryBar,
+  capacitorHostSoftKeyboardChange,
+  capacitorHostSoftKeyboardInfo,
+  capacitorHostSoftKeyboardResizeModeWrite,
+  capacitorHostSoftKeyboardScrollAssist,
+  capacitorHostSoftKeyboardStyle,
+  capacitorHostSoftKeyboardVisibility,
 } from './capacitorKeyboard';
 
 function fakeCapacitor() {
@@ -57,14 +50,14 @@ function blankInfo(): SoftKeyboardInfo {
   return { visible: false, height: 0, x: 0, y: 0, width: 0 };
 }
 
-describe('createCapacitorSoftKeyboardAccessoryBarBackend', () => {
+describe('capacitorHostSoftKeyboardAccessoryBar', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorSoftKeyboardAccessoryBarBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in capacitorHostSoftKeyboardAccessoryBar(fakeCapacitor().capacitor)).toBe(true);
   });
 
   it('returns ok on success', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardAccessoryBarBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardAccessoryBar(capacitor);
     expect(await backend.setAccessoryBarVisible(true)).toBe('ok');
     expect(calls[0].arg).toEqual({ isVisible: true });
   });
@@ -80,16 +73,16 @@ describe('createCapacitorSoftKeyboardAccessoryBarBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardAccessoryBarBackend(failCapacitor).setAccessoryBarVisible(true)).toBe(
+    expect(await capacitorHostSoftKeyboardAccessoryBar(failCapacitor).setAccessoryBarVisible(true)).toBe(
       'operation-failed',
     );
   });
 });
 
-describe('createCapacitorSoftKeyboardChangeBackend', () => {
+describe('capacitorHostSoftKeyboardChange', () => {
   it('subscribe returns ok with unsubscribe and fires on will events', async () => {
     const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardChangeBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardChange(capacitor);
     let fires = 0;
     const subscription = await backend.subscribe(() => fires++);
     expect(subscription.result).toBe('ok');
@@ -108,20 +101,20 @@ describe('createCapacitorSoftKeyboardChangeBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    const subscription = await createCapacitorSoftKeyboardChangeBackend(failCapacitor).subscribe(() => {});
+    const subscription = await capacitorHostSoftKeyboardChange(failCapacitor).subscribe(() => {});
     expect(subscription.result).toBe('acquisition-failed');
     expect(subscription.unsubscribe).toBeNull();
   });
 });
 
-describe('createCapacitorSoftKeyboardInfoBackend', () => {
+describe('capacitorHostSoftKeyboardInfo', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorSoftKeyboardInfoBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in capacitorHostSoftKeyboardInfo(fakeCapacitor().capacitor)).toBe(true);
   });
 
   it('tracks the keyboard mirror from will-show/will-hide events', async () => {
     const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardInfoBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardInfo(capacitor);
     await Promise.resolve();
     fire('keyboardWillShow', { keyboardHeight: 320 });
     const shown = backend.getInfo(blankInfo());
@@ -132,10 +125,10 @@ describe('createCapacitorSoftKeyboardInfoBackend', () => {
   });
 });
 
-describe('createCapacitorSoftKeyboardResizeModeWriteBackend', () => {
+describe('capacitorHostSoftKeyboardResizeModeWrite', () => {
   it('returns ok on success and maps the mode', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardResizeModeWrite(capacitor);
     expect(await backend.setResizeMode(SoftKeyboardResizeBodyKind)).toBe('ok');
     expect(calls[0].arg).toEqual({ mode: 'body' });
   });
@@ -151,16 +144,16 @@ describe('createCapacitorSoftKeyboardResizeModeWriteBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardResizeModeWriteBackend(failCapacitor).setResizeMode('None')).toBe(
+    expect(await capacitorHostSoftKeyboardResizeModeWrite(failCapacitor).setResizeMode('None')).toBe(
       'operation-failed',
     );
   });
 });
 
-describe('createCapacitorSoftKeyboardScrollAssistBackend', () => {
+describe('capacitorHostSoftKeyboardScrollAssist', () => {
   it('returns ok on success', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardScrollAssistBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardScrollAssist(capacitor);
     expect(await backend.setScrollAssistEnabled(false)).toBe('ok');
     expect(calls[0].arg).toEqual({ isDisabled: true });
   });
@@ -176,16 +169,16 @@ describe('createCapacitorSoftKeyboardScrollAssistBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardScrollAssistBackend(failCapacitor).setScrollAssistEnabled(true)).toBe(
+    expect(await capacitorHostSoftKeyboardScrollAssist(failCapacitor).setScrollAssistEnabled(true)).toBe(
       'operation-failed',
     );
   });
 });
 
-describe('createCapacitorSoftKeyboardStyleBackend', () => {
+describe('capacitorHostSoftKeyboardStyle', () => {
   it('returns ok on success', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardStyleBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardStyle(capacitor);
     expect(await backend.setStyle('Dark')).toBe('ok');
     expect(calls[0].arg).toEqual({ style: 'DARK' });
   });
@@ -201,14 +194,14 @@ describe('createCapacitorSoftKeyboardStyleBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardStyleBackend(failCapacitor).setStyle('Dark')).toBe('operation-failed');
+    expect(await capacitorHostSoftKeyboardStyle(failCapacitor).setStyle('Dark')).toBe('operation-failed');
   });
 });
 
-describe('createCapacitorSoftKeyboardVisibilityBackend', () => {
+describe('capacitorHostSoftKeyboardVisibility', () => {
   it('returns ok when show/hide succeed', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorSoftKeyboardVisibilityBackend(capacitor);
+    const backend = capacitorHostSoftKeyboardVisibility(capacitor);
     expect(await backend.show()).toBe('ok');
     expect(await backend.hide()).toBe('ok');
     expect(calls.map((c) => c.method)).toEqual(['show', 'hide']);
@@ -226,7 +219,7 @@ describe('createCapacitorSoftKeyboardVisibilityBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardVisibilityBackend(failCapacitor).show()).toBe('operation-failed');
+    expect(await capacitorHostSoftKeyboardVisibility(failCapacitor).show()).toBe('operation-failed');
   });
 
   it('returns operation-failed when hide rejects', async () => {
@@ -241,47 +234,6 @@ describe('createCapacitorSoftKeyboardVisibilityBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardVisibilityBackend(failCapacitor).hide()).toBe('operation-failed');
-  });
-});
-describe('initializeCapacitorSoftKeyboardAccessoryBarBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardAccessoryBarBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardAccessoryBarBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardChangeBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardChangeBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardChangeBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardInfoBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardInfoBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardInfoBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardResizeModeWriteBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardResizeModeWriteBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardResizeModeWriteBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardScrollAssistBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardScrollAssistBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardScrollAssistBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardStyleBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardStyleBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardStyleBackend).toBe('function');
-  });
-});
-
-describe('initializeCapacitorSoftKeyboardVisibilityBackend', () => {
-  it('is the construction initializer of createCapacitorSoftKeyboardVisibilityBackend', () => {
-    expect(typeof initializeCapacitorSoftKeyboardVisibilityBackend).toBe('function');
+    expect(await capacitorHostSoftKeyboardVisibility(failCapacitor).hide()).toBe('operation-failed');
   });
 });

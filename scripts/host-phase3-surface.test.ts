@@ -5,11 +5,78 @@ import { describe, expect, it } from 'vitest';
 
 import * as dialogContract from '../packages/dialog/src/contract';
 import * as dialogPublic from '../packages/dialog/src/index';
+import * as hostCapacitorContract from '../packages/host-capacitor/src/contract';
+import * as hostCapacitorPublic from '../packages/host-capacitor/src/index';
 import * as hostWebContract from '../packages/host-web/src/contract';
 import * as hostWebPublic from '../packages/host-web/src/index';
 
 const ROOT = resolve(__dirname, '..');
+const THIS_FILE = resolve(__dirname, 'host-phase3-surface.test.ts');
 const PLATFORM_ADAPTERS = ['host-capacitor', 'host-electron', 'host-tauri', 'host-web'] as const;
+const CAPACITOR_HOST_EXPORTS = [
+  'capacitorHost',
+  'capacitorHostAccessibility',
+  'capacitorHostApp',
+  'capacitorHostAppActivate',
+  'capacitorHostAppHide',
+  'capacitorHostAppName',
+  'capacitorHostAppQuit',
+  'capacitorHostAppVersion',
+  'capacitorHostClipboard',
+  'capacitorHostClipboardImage',
+  'capacitorHostClipboardText',
+  'capacitorHostConnectivity',
+  'capacitorHostConnectivityChange',
+  'capacitorHostConnectivityStatus',
+  'capacitorHostDevice',
+  'capacitorHostDialog',
+  'capacitorHostFileSystem',
+  'capacitorHostGeolocation',
+  'capacitorHostGraphics',
+  'capacitorHostHaptics',
+  'capacitorHostInput',
+  'capacitorHostIpc',
+  'capacitorHostMedia',
+  'capacitorHostMenu',
+  'capacitorHostMessageDialog',
+  'capacitorHostMidi',
+  'capacitorHostNet',
+  'capacitorHostNotification',
+  'capacitorHostNotificationAction',
+  'capacitorHostNotificationClick',
+  'capacitorHostNotificationDelivery',
+  'capacitorHostNotificationLifecycle',
+  'capacitorHostNotificationPermission',
+  'capacitorHostNotificationScheduling',
+  'capacitorHostPower',
+  'capacitorHostPromptDialog',
+  'capacitorHostProtocol',
+  'capacitorHostProtocolOpen',
+  'capacitorHostScreen',
+  'capacitorHostShare',
+  'capacitorHostShareContent',
+  'capacitorHostShell',
+  'capacitorHostShortcut',
+  'capacitorHostSoftKeyboardAccessoryBar',
+  'capacitorHostSoftKeyboardChange',
+  'capacitorHostSoftKeyboardInfo',
+  'capacitorHostSoftKeyboardResizeModeWrite',
+  'capacitorHostSoftKeyboardScrollAssist',
+  'capacitorHostSoftKeyboardStyle',
+  'capacitorHostSoftKeyboardVisibility',
+  'capacitorHostStatusBarColor',
+  'capacitorHostStatusBarInfo',
+  'capacitorHostStatusBarOverlays',
+  'capacitorHostStatusBarStyle',
+  'capacitorHostStatusBarVisibility',
+  'capacitorHostStorage',
+  'capacitorHostSystem',
+  'capacitorHostText',
+  'capacitorHostTray',
+  'capacitorHostUi',
+  'capacitorHostUpdater',
+  'capacitorHostWindow',
+] as const;
 
 describe('Host Phase 3 surface', () => {
   it('keeps every platform adapter free of legacy names derived from canonical Host providers', () => {
@@ -54,6 +121,16 @@ describe('Host Phase 3 surface', () => {
       expect(names).not.toContain('webScreenCapabilities');
     }
   });
+
+  it('publishes exactly the 62 canonical capacitorHost constructors from both package lanes', () => {
+    const expected = [...CAPACITOR_HOST_EXPORTS].sort();
+    expect(Object.keys(hostCapacitorPublic).sort()).toEqual(expected);
+    expect(Object.keys(hostCapacitorContract).sort()).toEqual(expected);
+  });
+
+  it('keeps Capacitor packages, tools, and examples free of the removed constructor era', () => {
+    expect(findCapacitorLegacyReferences()).toEqual([]);
+  });
 });
 
 function canonicalWebHostNames(api: object): string[] {
@@ -91,6 +168,29 @@ function findLegacyReferences(legacyNames: readonly string[]): string[] {
   return findings.sort();
 }
 
+function findCapacitorLegacyReferences(): string[] {
+  const pattern =
+    /\b(?:createCapacitor[A-Z][A-Za-z0-9]*(?:Backend|Capabilities)|initializeCapacitor[A-Z][A-Za-z0-9]*|registerCapacitorBackends|CapacitorShareContentBackend)\b/gu;
+  const findings: string[] = [];
+  const directories = [
+    resolve(ROOT, 'packages'),
+    resolve(ROOT, 'tools'),
+    resolve(ROOT, 'examples'),
+    resolve(ROOT, 'scripts'),
+  ];
+  for (const directory of directories) {
+    for (const path of repositoryTextFiles(directory)) {
+      if (path === THIS_FILE) continue;
+      const source = readSource(path);
+      for (const match of source.matchAll(pattern)) {
+        const line = source.slice(0, match.index).split('\n').length;
+        findings.push(`${relative(ROOT, path)}:${line}: ${match[0]}`);
+      }
+    }
+  }
+  return findings.sort();
+}
+
 function findRemovedRuntimeDeclarations(path: string): string[] {
   const source = readSource(path);
   const patterns = [
@@ -110,6 +210,19 @@ function sourceFiles(directory: string): string[] {
     .flatMap((entry) => {
       const path = join(directory, entry.name);
       return entry.isDirectory() ? sourceFiles(path) : entry.isFile() && entry.name.endsWith('.ts') ? [path] : [];
+    })
+    .sort();
+}
+
+function repositoryTextFiles(directory: string): string[] {
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      if (entry.isDirectory() && ['build', 'coverage', 'dist', 'node_modules'].includes(entry.name)) return [];
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return repositoryTextFiles(path);
+      if (!entry.isFile() || !/\.(?:cjs|cts|js|json|md|mjs|mts|ts|tsx)$/u.test(entry.name)) return [];
+      return [path];
     })
     .sort();
 }

@@ -1,7 +1,7 @@
 import type { CapacitorApi, HostShareContentProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorShareContentBackend, initializeCapacitorShareContentBackend } from './capacitorShare';
+import { capacitorHostShare, capacitorHostShareContent } from './capacitorShare';
 
 function fakeCapacitor(shareImpl?: () => Promise<{ activityType?: string }>) {
   const shared: Array<{ dialogTitle?: string; title?: string; text?: string; url?: string }> = [];
@@ -16,27 +16,35 @@ function fakeCapacitor(shareImpl?: () => Promise<{ activityType?: string }>) {
   return { capacitor, shared };
 }
 
-describe('createCapacitorShareContentBackend', () => {
+describe('capacitorHostShare', () => {
+  it('publishes only the content slot', () => {
+    const share = capacitorHostShare(fakeCapacitor().capacitor);
+    expect(Object.keys(share)).toEqual(['content']);
+    expect(EntityRuntimeKey in share.content).toBe(true);
+  });
+});
+
+describe('capacitorHostShareContent', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorShareContentBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in capacitorHostShareContent(fakeCapacitor().capacitor)).toBe(true);
   });
 
   it('validates meaningful payloads synchronously without an availability cache', () => {
-    const backend = createCapacitorShareContentBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostShareContent(fakeCapacitor().capacitor);
     expect(backend.canShareContent({ text: 'ready now' })).toBe(true);
     expect(backend.canShareContent({ text: '' })).toBe(false);
   });
 
   it('shares title, text, and URL content', async () => {
     const { capacitor, shared } = fakeCapacitor();
-    const backend = createCapacitorShareContentBackend(capacitor);
+    const backend = capacitorHostShareContent(capacitor);
     expect(await backend.shareContent({ title: 'T', url: 'https://flight.dev' })).toBe(true);
     expect(shared[0]).toMatchObject({ title: 'T', url: 'https://flight.dev' });
   });
 
   it('keeps chooserTitle on only the concrete Capacitor provider type', async () => {
     const { capacitor, shared } = fakeCapacitor();
-    const backend = createCapacitorShareContentBackend(capacitor);
+    const backend = capacitorHostShareContent(capacitor);
     expect(await backend.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
     expect(shared[0]?.dialogTitle).toBe('Choose an app');
     const portable: HostShareContentProvider = backend;
@@ -45,7 +53,7 @@ describe('createCapacitorShareContentBackend', () => {
   });
 
   it('maps a completed share to a detailed result with the activity type', async () => {
-    const backend = createCapacitorShareContentBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostShareContent(fakeCapacitor().capacitor);
     expect(await backend.shareContentWithResult({ text: 'x' })).toEqual({
       activityType: 'com.apple.UIKit.activity.Mail',
       completed: true,
@@ -54,7 +62,7 @@ describe('createCapacitorShareContentBackend', () => {
   });
 
   it('reports rejected commands as platform outcomes', async () => {
-    const backend = createCapacitorShareContentBackend(
+    const backend = capacitorHostShareContent(
       fakeCapacitor(async () => {
         throw new Error('cancelled');
       }).capacitor,
@@ -65,10 +73,5 @@ describe('createCapacitorShareContentBackend', () => {
       completed: false,
       dismissed: true,
     });
-  });
-});
-describe('initializeCapacitorShareContentBackend', () => {
-  it('is the construction initializer of createCapacitorShareContentBackend', () => {
-    expect(typeof initializeCapacitorShareContentBackend).toBe('function');
   });
 });

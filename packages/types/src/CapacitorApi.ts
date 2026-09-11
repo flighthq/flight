@@ -19,18 +19,18 @@
 //     haptics: Haptics as CapacitorApi['haptics'], keyboard: Keyboard,
 //     localNotifications: LocalNotifications, network: Network, share: Share, statusBar: StatusBar,
 //   };
-//   registerCapacitorBackends(capacitorApi);
+//   capacitorHost(capacitorApi, 'ios');
 //
 // Typing it here (rather than importing `@capacitor/*`) keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Capacitor surface the seams require, which is the
 // real coupling between Flight and a Capacitor host. Capacitor's string-valued TypeScript enums are
 // nominal, so Filesystem and Haptics need the narrow boundary assertions shown above. Members are
-// intentionally minimal; widen only when a backend needs more. Note the wide async/sync gap: every Capacitor plugin call is Promise-based,
+// intentionally minimal; widen only when a provider needs more. Note the wide async/sync gap: every Capacitor plugin call is Promise-based,
 // while several Flight seams (device/statusbar/connectivity snapshot getters, keyboard info) are
 // synchronous. Those adapters prefetch-and-cache (and, where the value is live, subscribe to keep the
 // cache fresh) — see each adapter for the exact contract. `@capacitor/preferences` is deliberately
 // absent: `HostStorageProvider` is synchronous but Preferences is async, an unbridgeable mismatch, so the
-// storage seam keeps its web default rather than being adapted (see registerCapacitorBackends).
+// the Capacitor Host omits the local-storage slot instead of adapting it dishonestly.
 
 export interface CapacitorApi {
   app: CapacitorAppPlugin;

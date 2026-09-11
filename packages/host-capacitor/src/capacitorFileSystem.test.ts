@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorFileSystemBackend, initializeCapacitorFileSystemBackend } from './capacitorFileSystem';
+import { capacitorHostFileSystem } from './capacitorFileSystem';
 
 function fakeCapacitor() {
   const files = new Map<string, { data: string; type: string }>();
@@ -48,13 +48,13 @@ function fakeCapacitor() {
   return { capacitor, files };
 }
 
-describe('createCapacitorFileSystemBackend', () => {
+describe('capacitorHostFileSystem', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorFileSystemBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in capacitorHostFileSystem(fakeCapacitor().capacitor)).toBe(true);
   });
 
   it('round-trips a text file', async () => {
-    const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     expect(await backend.writeTextFile('/a.txt', 'hello')).toBe(true);
     expect(await backend.readTextFile('/a.txt')).toBe('hello');
     expect(await backend.appendTextFile('/a.txt', '!')).toBe(true);
@@ -62,7 +62,7 @@ describe('createCapacitorFileSystemBackend', () => {
   });
 
   it('round-trips a binary file through Base64', async () => {
-    const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     const bytes = new Uint8Array([0, 1, 2, 254, 255]);
     expect(await backend.writeBinaryFile('/b.bin', bytes)).toBe(true);
     const read = await backend.readBinaryFile('/b.bin');
@@ -79,7 +79,7 @@ describe('createCapacitorFileSystemBackend', () => {
       text: { value: async () => 'Flight' },
     });
     capacitor.filesystem.readFile = async () => ({ data: blob });
-    const backend = createCapacitorFileSystemBackend(capacitor);
+    const backend = capacitorHostFileSystem(capacitor);
     expect(await backend.readTextFile('/blob.txt')).toBe('Flight');
     expect([...(await backend.readBinaryFile('/blob.bin'))!]).toEqual([70, 108, 105, 103, 104, 116]);
   });
@@ -90,7 +90,7 @@ describe('createCapacitorFileSystemBackend', () => {
     const controller = new AbortController();
     const reason = new Error('cancel Capacitor read');
     controller.abort(reason);
-    const backend = createCapacitorFileSystemBackend(capacitor);
+    const backend = capacitorHostFileSystem(capacitor);
     await expect(backend.readTextFile('/a.txt', controller.signal)).rejects.toBe(reason);
     expect(readFile).not.toHaveBeenCalled();
   });
@@ -104,13 +104,13 @@ describe('createCapacitorFileSystemBackend', () => {
       controller.abort(new Error('after native write'));
       return result;
     };
-    const backend = createCapacitorFileSystemBackend(capacitor);
+    const backend = capacitorHostFileSystem(capacitor);
     await expect(backend.writeTextFile('/complete.txt', 'saved', controller.signal)).resolves.toBe(true);
     expect(files.get('/complete.txt')?.data).toBe('saved');
   });
 
   it('maps exists/stat/remove and reports null for a missing file', async () => {
-    const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     await backend.writeTextFile('/c.txt', 'x');
     expect(await backend.fileExists('/c.txt')).toBe(true);
     expect(await backend.directoryExists('/c.txt')).toBe(false);
@@ -122,7 +122,7 @@ describe('createCapacitorFileSystemBackend', () => {
   });
 
   it('omits operations the Capacitor plugin cannot perform', () => {
-    const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
+    const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     expect(Object.keys(backend)).not.toEqual(
       expect.arrayContaining([
         'canAccessFile',
@@ -133,10 +133,5 @@ describe('createCapacitorFileSystemBackend', () => {
         'watch',
       ]),
     );
-  });
-});
-describe('initializeCapacitorFileSystemBackend', () => {
-  it('is the construction initializer of createCapacitorFileSystemBackend', () => {
-    expect(typeof initializeCapacitorFileSystemBackend).toBe('function');
   });
 });

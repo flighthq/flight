@@ -12,9 +12,9 @@ import type {
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-export function createCapacitorDeviceBackend(capacitor: CapacitorApi): HostDeviceProvider & Entity {
+export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceProvider & Entity {
   const out = allocateEntity<HostDeviceProvider>();
-  initializeCapacitorDeviceBackend(out, capacitor);
+  populateCapacitorDevice(out, capacitor);
   return finishEntity(out);
 }
 
@@ -25,10 +25,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): HostDevic
 // webview), which map onto DeviceInfo; the fields it does not report (arch, memory, GPU, ABIs, board,
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
-export function initializeCapacitorDeviceBackend(
-  out: EntityConstruction<HostDeviceProvider>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorDevice(out: EntityConstruction<HostDeviceProvider>, capacitor: CapacitorApi): void {
   const device = capacitor.device;
   // Sync getters over async Capacitor: prefetch identity once and serve the cached values.
   let cachedInfo: CapacitorDeviceInfo | null = null;
@@ -110,7 +107,7 @@ export function initializeCapacitorDeviceBackend(
 }
 
 // Capacitor's platform is 'ios' | 'android' | 'web'; a mobile platform is a phone (no tablet signal),
-// otherwise unknown. A native host that classifies tablets can override this backend.
+// otherwise unknown. A native host that classifies tablets can override this provider.
 function toFormFactor(info: Readonly<CapacitorDeviceInfo> | null): string {
   if (info === null) return DeviceFormFactorUnknown;
   if (info.platform === 'ios' || info.platform === 'android') return DeviceFormFactorPhone;

@@ -2,14 +2,14 @@ import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCapacitorProtocolCapabilities, initializeCapacitorProtocolCapabilities } from './capacitorProtocol';
+import { capacitorHostProtocol, capacitorHostProtocolOpen } from './capacitorProtocol';
 
 const flush = async () => {
   await Promise.resolve();
   await Promise.resolve();
 };
 
-describe('createCapacitorProtocolCapabilities', () => {
+describe('capacitorHostProtocol', () => {
   it('publishes only a live-open Entity and adapts appUrlOpen', async () => {
     let listener: ((event: { url: string }) => void) | undefined;
     let removed = 0;
@@ -25,7 +25,7 @@ describe('createCapacitorProtocolCapabilities', () => {
         },
       },
     } as unknown as CapacitorApi;
-    const protocol = createCapacitorProtocolCapabilities(capacitor);
+    const protocol = capacitorHostProtocol(capacitor);
     expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol)).toEqual(['open']);
     expect(EntityRuntimeKey in protocol.open).toBe(true);
@@ -39,8 +39,10 @@ describe('createCapacitorProtocolCapabilities', () => {
     expect(removed).toBe(1);
   });
 });
-describe('initializeCapacitorProtocolCapabilities', () => {
-  it('is the construction initializer of createCapacitorProtocolCapabilities', () => {
-    expect(typeof initializeCapacitorProtocolCapabilities).toBe('function');
+
+describe('capacitorHostProtocolOpen', () => {
+  it('constructs the open provider as an Entity', () => {
+    const capacitor = { app: { addListener: async () => ({ async remove() {} }) } } as unknown as CapacitorApi;
+    expect(EntityRuntimeKey in capacitorHostProtocolOpen(capacitor)).toBe(true);
   });
 });

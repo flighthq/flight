@@ -1,23 +1,39 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
+  HostClipboardCapabilities,
   HostClipboardImageProvider,
   HostClipboardTextProvider,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorClipboardBackend = HostClipboardImageProvider & HostClipboardTextProvider;
+type CapacitorClipboardProvider = HostClipboardImageProvider & HostClipboardTextProvider;
 
 // Capacitor covers the text/clear and image clipboard vectors. Other capability slots are
 // deliberately absent from its returned host rather than simulated by sentinels.
-export function createCapacitorClipboardBackend(capacitor: CapacitorApi): CapacitorClipboardBackend {
-  const out = allocateEntity<CapacitorClipboardBackend>();
-  initializeCapacitorClipboardBackend(out, capacitor.clipboard);
+export function capacitorHostClipboard(
+  capacitor: CapacitorApi,
+): HostClipboardCapabilities & Required<Pick<HostClipboardCapabilities, 'image' | 'text'>> {
+  const provider = capacitorClipboardProvider(capacitor);
+  return { image: provider, text: provider };
+}
+
+export function capacitorHostClipboardImage(capacitor: CapacitorApi): HostClipboardImageProvider {
+  return capacitorClipboardProvider(capacitor);
+}
+
+export function capacitorHostClipboardText(capacitor: CapacitorApi): HostClipboardTextProvider {
+  return capacitorClipboardProvider(capacitor);
+}
+
+function capacitorClipboardProvider(capacitor: CapacitorApi): CapacitorClipboardProvider {
+  const out = allocateEntity<CapacitorClipboardProvider>();
+  populateCapacitorClipboard(out, capacitor.clipboard);
   return finishEntity(out);
 }
 
-export function initializeCapacitorClipboardBackend(
-  out: EntityConstruction<CapacitorClipboardBackend>,
+function populateCapacitorClipboard(
+  out: EntityConstruction<CapacitorClipboardProvider>,
   clipboard: CapacitorApi['clipboard'],
 ): void {
   // Capacitor has no clear call; overwriting with empty text is the closest honest equivalent.

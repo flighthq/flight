@@ -9,6 +9,12 @@ import type {
   CapacitorLocalNotificationAction,
   CapacitorLocalNotificationSchema,
   CapacitorNotificationCapabilities,
+  HostNotificationActionProvider,
+  HostNotificationClickProvider,
+  HostNotificationDeliveryProvider,
+  HostNotificationLifecycleProvider,
+  HostNotificationPermissionProvider,
+  HostNotificationSchedulingProvider,
   Notification,
   NotificationEventAttachment,
   NotificationEventBackendAttachOutcome,
@@ -21,13 +27,37 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
+export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
   const out = allocateEntity<CapacitorNotificationCapabilities>();
-  initializeCapacitorNotificationCapabilities(out, capacitor);
+  populateCapacitorNotification(out, capacitor);
   return finishEntity(out);
 }
 
-export function initializeCapacitorNotificationCapabilities(
+export function capacitorHostNotificationAction(capacitor: CapacitorApi): HostNotificationActionProvider {
+  return capacitorHostNotification(capacitor).action;
+}
+
+export function capacitorHostNotificationClick(capacitor: CapacitorApi): HostNotificationClickProvider {
+  return capacitorHostNotification(capacitor).click;
+}
+
+export function capacitorHostNotificationDelivery(capacitor: CapacitorApi): HostNotificationDeliveryProvider {
+  return capacitorHostNotification(capacitor).delivery;
+}
+
+export function capacitorHostNotificationLifecycle(capacitor: CapacitorApi): HostNotificationLifecycleProvider {
+  return capacitorHostNotification(capacitor).lifecycle;
+}
+
+export function capacitorHostNotificationPermission(capacitor: CapacitorApi): HostNotificationPermissionProvider {
+  return capacitorHostNotification(capacitor).permission;
+}
+
+export function capacitorHostNotificationScheduling(capacitor: CapacitorApi): HostNotificationSchedulingProvider {
+  return capacitorHostNotification(capacitor).scheduling;
+}
+
+function populateCapacitorNotification(
   out: EntityConstruction<CapacitorNotificationCapabilities>,
   capacitor: CapacitorApi,
 ): void {

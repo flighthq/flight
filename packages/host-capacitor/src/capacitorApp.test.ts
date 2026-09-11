@@ -3,9 +3,12 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createCapacitorAppCapabilities,
-  initializeCapacitorAndroidAppCapabilities,
-  initializeCapacitorCommonAppCapabilities,
+  capacitorHostApp,
+  capacitorHostAppActivate,
+  capacitorHostAppHide,
+  capacitorHostAppName,
+  capacitorHostAppQuit,
+  capacitorHostAppVersion,
 } from './capacitorApp';
 
 const flush = async () => {
@@ -38,9 +41,9 @@ function fakeCapacitor() {
   return { calls, capacitor, listeners };
 }
 
-describe('createCapacitorAppCapabilities', () => {
+describe('capacitorHostApp', () => {
   it('publishes common activation and identity slots on iOS', () => {
-    const app = createCapacitorAppCapabilities(fakeCapacitor().capacitor, 'ios');
+    const app = capacitorHostApp(fakeCapacitor().capacitor, 'ios');
     expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['activate', 'name', 'version']);
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
@@ -48,7 +51,7 @@ describe('createCapacitorAppCapabilities', () => {
 
   it('adds Android-only hide and quit slots', async () => {
     const { calls, capacitor } = fakeCapacitor();
-    const app = createCapacitorAppCapabilities(capacitor, 'android');
+    const app = capacitorHostApp(capacitor, 'android');
     expect(Object.keys(app).sort()).toEqual(['activate', 'hide', 'name', 'quit', 'version']);
     app.hide.hideApp();
     app.quit.quit();
@@ -57,7 +60,7 @@ describe('createCapacitorAppCapabilities', () => {
   });
 
   it('serves name and version from the construction-time prefetch', async () => {
-    const app = createCapacitorAppCapabilities(fakeCapacitor().capacitor, 'ios');
+    const app = capacitorHostApp(fakeCapacitor().capacitor, 'ios');
     expect(app.name.getName()).toBe('');
     await flush();
     expect(app.name.getName()).toBe('FlightApp');
@@ -66,7 +69,7 @@ describe('createCapacitorAppCapabilities', () => {
 
   it('translates active app-state changes and removes the listener', async () => {
     const { calls, capacitor, listeners } = fakeCapacitor();
-    const app = createCapacitorAppCapabilities(capacitor, 'ios');
+    const app = capacitorHostApp(capacitor, 'ios');
     let activated = 0;
     const off = app.activate.subscribe(() => activated++);
     await flush();
@@ -78,14 +81,33 @@ describe('createCapacitorAppCapabilities', () => {
     expect(calls).toEqual(['remove:appStateChange']);
   });
 });
-describe('initializeCapacitorAndroidAppCapabilities', () => {
-  it('is the construction initializer of createCapacitorAndroidAppCapabilities', () => {
-    expect(typeof initializeCapacitorAndroidAppCapabilities).toBe('function');
+
+describe('capacitorHostAppActivate', () => {
+  it('constructs an Entity-backed activation provider', () => {
+    expect(EntityRuntimeKey in capacitorHostAppActivate(fakeCapacitor().capacitor)).toBe(true);
   });
 });
 
-describe('initializeCapacitorCommonAppCapabilities', () => {
-  it('is the construction initializer of createCapacitorCommonAppCapabilities', () => {
-    expect(typeof initializeCapacitorCommonAppCapabilities).toBe('function');
+describe('capacitorHostAppHide', () => {
+  it('constructs an Entity-backed Android hide provider', () => {
+    expect(EntityRuntimeKey in capacitorHostAppHide(fakeCapacitor().capacitor)).toBe(true);
+  });
+});
+
+describe('capacitorHostAppName', () => {
+  it('constructs an Entity-backed name provider', () => {
+    expect(EntityRuntimeKey in capacitorHostAppName(fakeCapacitor().capacitor)).toBe(true);
+  });
+});
+
+describe('capacitorHostAppQuit', () => {
+  it('constructs an Entity-backed Android quit provider', () => {
+    expect(EntityRuntimeKey in capacitorHostAppQuit(fakeCapacitor().capacitor)).toBe(true);
+  });
+});
+
+describe('capacitorHostAppVersion', () => {
+  it('constructs an Entity-backed version provider', () => {
+    expect(EntityRuntimeKey in capacitorHostAppVersion(fakeCapacitor().capacitor)).toBe(true);
   });
 });

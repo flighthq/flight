@@ -9,23 +9,20 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): HostGeolocationProvider & Entity {
+export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocationProvider & Entity {
   const out = allocateEntity<HostGeolocationProvider>();
-  initializeCapacitorGeolocationBackend(out, capacitor);
+  populateCapacitorGeolocation(out, capacitor);
   return finishEntity(out);
 }
 
 // Maps Flight's HostGeolocationProvider onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
-// permission calls are async and map directly. `watchPosition` is the one sync/async seam: the backend
+// permission calls are async and map directly. `watchPosition` is the one sync/async seam: the provider
 // returns a numeric watch id synchronously, whereas Capacitor resolves a string callback id, so the
 // adapter mints a local numeric id, kicks off the async watch (fire-and-forget), and records the string
 // id against the number once it resolves; clearWatch resolves the number back to that string (and cancels
 // a watch that was cleared before it even started). Capacitor has no permission-change event, so
 // subscribePermission is inert.
-export function initializeCapacitorGeolocationBackend(
-  out: EntityConstruction<HostGeolocationProvider>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorGeolocation(out: EntityConstruction<HostGeolocationProvider>, capacitor: CapacitorApi): void {
   const geolocation = capacitor.geolocation;
   let nextWatchId = 1;
   // The Capacitor string callback id keyed by the numeric id handed to the caller; null while the async
