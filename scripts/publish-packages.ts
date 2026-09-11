@@ -5,10 +5,12 @@
 // publishes, then restores "*" (the working tree stays packages:check-clean). This is the npm-native
 // equivalent of pnpm's workspace:* protocol.
 //
-// All prepack scripts are the standard clean+build and there are no other publish hooks, so we build
-// the whole graph once (npm run build) and publish with --ignore-scripts; the `files` field already
-// excludes test outputs from the tarball. Idempotent: a package whose version is already on the
-// registry is skipped, so a re-run after a partial failure completes the set.
+// All prepack scripts are the standard clean+build and there are no other publish hooks, so we clean
+// and build the whole graph once (npm run build:clean) and publish with --ignore-scripts; the `files`
+// field already excludes test outputs from the tarball. The clean is part of the publication
+// boundary: TypeScript does not delete output for a removed source file, so a plain incremental build
+// can otherwise pack an obsolete module from dist. Idempotent: a package whose version is already on
+// the registry is skipped, so a re-run after a partial failure completes the set.
 //
 // A package is also skipped when the target dist-tag already points at a NEWER version, because
 // `npm publish --tag` moves that tag and npm offers no publish-without-a-tag. Two builds whose CI
@@ -140,8 +142,8 @@ if (filter === undefined && distinctVersions.length > 1) {
 }
 
 if (!noBuild && !dryRun) {
-  console.log('[publish] building all packages (npm run build)…');
-  execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'inherit' });
+  console.log('[publish] cleaning and building all packages (npm run build:clean)…');
+  execFileSync('npm', ['run', 'build:clean'], { cwd: root, stdio: 'inherit' });
 }
 
 const published: string[] = [];
