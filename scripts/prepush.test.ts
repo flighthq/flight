@@ -22,8 +22,30 @@ describe('shouldRunPrepushTypecheck', () => {
 });
 
 describe('resolveChangedTestArguments', () => {
-  it('scopes changed tests to the shared project', () => {
-    expect(resolveChangedTestArguments('origin/main')).toEqual(['--project', 'shared', '--changed', 'origin/main']);
+  it('leaves Vitest worker selection at its default when the override is unset', () => {
+    expect(resolveChangedTestArguments('origin/main', undefined)).toEqual([
+      '--project',
+      'shared',
+      '--changed',
+      'origin/main',
+    ]);
+  });
+
+  it('adds the opt-in worker limit', () => {
+    expect(resolveChangedTestArguments('origin/main', '4')).toEqual([
+      '--project',
+      'shared',
+      '--changed',
+      'origin/main',
+      '--maxWorkers',
+      '4',
+    ]);
+  });
+
+  it.each(['0', '-1', '1.5', 'many'])('rejects invalid worker count %s', (workerCount) => {
+    expect(() => resolveChangedTestArguments('origin/main', workerCount)).toThrow(
+      'FLIGHT_PREPUSH_VITEST_WORKERS must be a positive integer',
+    );
   });
 });
 

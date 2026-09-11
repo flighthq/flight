@@ -1,15 +1,14 @@
 import path from 'path';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 import { TestRunCompletenessReporter } from './scripts/testRunCompleteness.js';
 import { TestRunCoverageReporter } from './scripts/testRunCoverage.js';
+import { createVitestTypeScriptConfig } from './scripts/vitestTypeScriptConfig.js';
 
 const rootDir = __dirname;
-const rootTsconfig = path.resolve(rootDir, 'tsconfig.json');
 
 export default defineConfig({
-  plugins: [tsconfigPaths({ projects: [rootTsconfig], root: rootDir })],
+  ...createVitestTypeScriptConfig(rootDir),
   test: {
     globals: true,
     setupFiles: [path.resolve(rootDir, 'vitest.setup.ts')],
