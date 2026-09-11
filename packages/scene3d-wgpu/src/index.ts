@@ -24,6 +24,7 @@ export {
   registerWgpuCustomMaterialShader,
   registerWgpuGpuSkinning,
   registerWgpuWireframeMaterial,
+  scene3DWgpuPipeline,
   setWgpuScene3DTime,
   standardPbrWgpuMeshMaterialRenderer,
   unlitWgpuMeshMaterialRenderer,

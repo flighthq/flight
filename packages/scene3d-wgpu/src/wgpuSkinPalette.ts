@@ -6,7 +6,7 @@ import type {
   MeshSkinBindPose,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -131,7 +131,12 @@ export function ensureWgpuSkinMeshDrawLayout(state: WgpuRenderState): GPUBindGro
 }
 
 export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
-  getWgpuScene3DRuntime(state).skinningAdapter = WGPU_SKINNING_ADAPTER;
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.registries.gpuSkinning = {
+    ...runtime.registries.gpuSkinning,
+    entry: { state: RegistryEntryState.Bound, value: defaultWgpuSkinningAdapter },
+  };
+  getWgpuScene3DRuntime(state).skinningAdapter = defaultWgpuSkinningAdapter;
 }
 
 // Uploads the per-joint NORMAL palette into its own arena and returns the base TEXEL index its region
@@ -430,7 +435,7 @@ function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: stri
   return -1;
 }
 
-const WGPU_SKINNING_ADAPTER: WgpuSkinningAdapter = {
+export const defaultWgpuSkinningAdapter: WgpuSkinningAdapter = {
   extendMeshPrelude,
   extendShadowDepthPrelude,
   getDrawBindGroup: ensureWgpuSkinDrawBindGroup,

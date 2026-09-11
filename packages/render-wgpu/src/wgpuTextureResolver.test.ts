@@ -20,6 +20,7 @@ import {
   registerStandardWgpuTextureResolvers,
   registerWgpuTextureResolver,
   resolveWgpuTexture,
+  standardWgpuTextureResolvers,
 } from './wgpuTextureResolver';
 
 beforeAll(() => {
@@ -208,5 +209,13 @@ describe('resolveWgpuTexture', () => {
   it('returns null without an exact registered source kind', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(resolveWgpuTexture(state, textureWithImage(null))).toBeNull();
+  });
+});
+
+describe('standardWgpuTextureResolvers', () => {
+  it('carries exactly the three standard source kinds', () => {
+    const kinds: string[] = [];
+    getRegistryTableKeys(kinds, standardWgpuTextureResolvers);
+    expect(kinds).toEqual([BitmapTextureSourceKind, ImageTextureSourceKind, RenderTargetTextureSourceKind]);
   });
 });

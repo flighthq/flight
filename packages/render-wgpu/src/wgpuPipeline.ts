@@ -24,6 +24,7 @@ export function initializeEmptyWgpuRegistries(out: EntityConstruction<WgpuRender
   out.compressedTextureDecoder = createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('WgpuCompressedTextureUpload', 'Unregistered');
   out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');
+  out.gpuSkinning = createSlotTable('WgpuGpuSkinning', 'Unregistered');
   out.materialRenderers = createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial');
   out.meshMaterialRenderers = createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial');
   out.modifierSnippets = createKeyedTable('WgpuModifierSnippet', 'Unregistered');

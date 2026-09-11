@@ -52,6 +52,9 @@
       "path": "../render-wgpu"
     },
     {
+      "path": "../scene2d-wgpu"
+    },
+    {
       "path": "../scene3d"
     },
     {
