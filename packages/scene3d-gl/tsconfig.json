@@ -52,6 +52,9 @@
       "path": "../render-gl"
     },
     {
+      "path": "../scene2d-gl"
+    },
+    {
       "path": "../scene3d"
     },
     {
