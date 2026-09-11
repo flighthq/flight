@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostSystemCapabilities } from '@flighthq/types/contract';
 
 import { webHostDevice } from './webDevice';
@@ -14,5 +13,3 @@ export const webHostSystem = {
   platform: webHostPlatform,
   sensors: webHostSensors,
 } satisfies HostSystemCapabilities;
-
-export const webSystemHost = /* @__PURE__ */ createHost({ system: webHostSystem });

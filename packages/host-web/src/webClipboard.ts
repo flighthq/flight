@@ -22,17 +22,10 @@ export function initializeWebClipboardBackend(out: EntityConstruction<WebClipboa
   initializeWebClipboardTextProvider(out);
 }
 
-export const webClipboardBackend = createWebClipboardBackend();
 export const webHostClipboardChange = createWebClipboardChangeProvider();
 export const webHostClipboardFormats = createWebClipboardFormatsProvider();
 export const webHostClipboardImage = createWebClipboardImageProvider();
 export const webHostClipboardText = createWebClipboardTextProvider();
-
-function createWebClipboardBackend(): WebClipboardBackend {
-  const out = allocateEntity<WebClipboardBackend>();
-  initializeWebClipboardBackend(out);
-  return finishEntity(out);
-}
 
 function createWebClipboardChangeProvider(): WebClipboardChangeProvider {
   const out = allocateEntity<WebClipboardChangeProvider>();

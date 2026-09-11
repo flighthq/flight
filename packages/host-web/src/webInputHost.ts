@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostInputCapabilities } from '@flighthq/types/contract';
 
 import { webHostHaptics } from './webHaptics';
@@ -15,5 +14,3 @@ export const webHostInput = {
   softKeyboardVisibility: webHostSoftKeyboardVisibility,
   target: webHostInputTarget,
 } satisfies HostInputCapabilities;
-
-export const webInputHost = /* @__PURE__ */ createHost({ input: webHostInput });

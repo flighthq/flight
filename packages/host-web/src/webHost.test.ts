@@ -111,60 +111,6 @@ const LEAVES = [
   ['window', '', 'webHostWindow'],
 ] as const;
 
-const CONTRACT_ONLY_BACKEND_ALIASES = [
-  'webLifecycleBackend',
-  'webPowerKeepAwakeBackend',
-  'webPowerSuspensionBackend',
-  'webSensorsBackend',
-] as const;
-const PUBLIC_ONLY_BACKEND_ALIASES = ['webNetBackend', 'webSocketBackend'] as const;
-const SHARED_BACKEND_ALIASES = [
-  'webAccessibilityBackend',
-  'webApplicationExitBackend',
-  'webApplicationVisibilityBackend',
-  'webAudioBackend',
-  'webAudioDeviceBackend',
-  'webBitmapEncodeBackend',
-  'webBitmapReadbackBackend',
-  'webClipboardBackend',
-  'webConnectivityBackend',
-  'webDeviceBackend',
-  'webDirectoryOpenDialogBackend',
-  'webFileOpenDialogBackend',
-  'webFileSaveDialogBackend',
-  'webFileSystemBackend',
-  'webFontLoadingBackend',
-  'webFullscreenBackend',
-  'webGeolocationBackend',
-  'webGlyphRasterizerBackend',
-  'webHapticsBackend',
-  'webImageBackend',
-  'webImageOpenDialogBackend',
-  'webInputDropFileBackend',
-  'webInputFocusBackend',
-  'webInputPointerLockBackend',
-  'webInputTargetBackend',
-  'webLoopBackend',
-  'webMediaSessionActionBackend',
-  'webMediaSessionBackend',
-  'webMenuHighlightBackend',
-  'webMenuPopupBackend',
-  'webMessageDialogBackend',
-  'webPhotoCaptureDialogBackend',
-  'webPlatformBackend',
-  'webPromptDialogBackend',
-  'webRenderContextBackend',
-  'webRenderSurfaceBackend',
-  'webShareContentBackend',
-  'webShareFilesBackend',
-  'webShellExternalBackend',
-  'webStatusBarColorBackend',
-  'webStorageBackend',
-  'webVideoCapabilityBackend',
-  'webVideoCaptureDialogBackend',
-  'webWindowBackend',
-] as const;
-
 describe('webHost', () => {
   it('composes all 26 direct groups from their separately exported identities', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
@@ -210,16 +156,13 @@ describe('webHost', () => {
     expect(publicApi.webHost.window).toBe(publicApi.webHostWindow);
   });
 
-  it('retains the reproducible 46-public and 48-contract backend alias lanes until Phase 3', () => {
-    const publicNames = Object.keys(publicApi)
-      .filter((name) => /^web[A-Z].*Backend$/u.test(name))
-      .sort();
-    const contractNames = Object.keys(contractApi)
-      .filter((name) => /^web[A-Z].*Backend$/u.test(name))
-      .sort();
-
-    expect(publicNames).toEqual([...SHARED_BACKEND_ALIASES, ...PUBLIC_ONLY_BACKEND_ALIASES].sort());
-    expect(contractNames).toEqual([...SHARED_BACKEND_ALIASES, ...CONTRACT_ONLY_BACKEND_ALIASES].sort());
-    expect(new Set([...publicNames, ...contractNames]).size).toBe(50);
+  it('does not expose the removed Backend aliases, partial Hosts, or capability aliases', () => {
+    for (const api of [publicApi, contractApi]) {
+      const names = Object.keys(api);
+      expect(names.filter((name) => /^web[A-Z].*Backend$/u.test(name))).toEqual([]);
+      expect(names.filter((name) => /^web(?!Host$)[A-Z].*Host$/u.test(name))).toEqual([]);
+      expect(names).not.toContain('webPowerCapabilities');
+      expect(names).not.toContain('webScreenCapabilities');
+    }
   });
 });

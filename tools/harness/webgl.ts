@@ -1,7 +1,7 @@
 import {
   enableHostWebGlRenderSurface,
   webCanvasRenderSurfaceCreator,
-  webGraphicsHost,
+  webHostImage,
   webRaster2DSurfaceProvider,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
@@ -147,10 +147,7 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
-  registerCanvasBitmapTextureResolver(
-    webGraphicsHost.graphics.image,
-    getCanvasRenderStateTextureResolvers(resolverState),
-  );
+  registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
   return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));

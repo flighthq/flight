@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostClipboardCapabilities } from '@flighthq/types/contract';
 
 import {
@@ -14,5 +13,3 @@ export const webHostClipboard = {
   image: webHostClipboardImage,
   text: webHostClipboardText,
 } satisfies HostClipboardCapabilities;
-
-export const webClipboardHost = /* @__PURE__ */ createHost({ clipboard: webHostClipboard });

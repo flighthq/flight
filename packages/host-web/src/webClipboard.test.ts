@@ -2,7 +2,6 @@ import { ClipboardFormatText, EntityRuntimeKey } from '@flighthq/types/contract'
 
 import {
   initializeWebClipboardBackend,
-  webClipboardBackend,
   webHostClipboardChange,
   webHostClipboardFormats,
   webHostClipboardImage,
@@ -13,13 +12,12 @@ import { webHost } from './webHost';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('initializeWebClipboardBackend', () => {
-  it('is the construction initializer of createWebClipboardBackend', () => {
+  it('remains available for caller-owned aggregate construction', () => {
     expect(typeof initializeWebClipboardBackend).toBe('function');
   });
 });
 describe('webHostClipboard providers', () => {
-  it('decomposes the legacy provider into four exact Host leaves', () => {
-    expect(EntityRuntimeKey in webClipboardBackend).toBe(true);
+  it('publishes four independently owned Host leaves', () => {
     expect(EntityRuntimeKey in webHost).toBe(true);
     expect(webHost.shortcut).toEqual({});
     expect(Object.keys(webHost.clipboard).sort()).toEqual(['change', 'formats', 'image', 'text']);

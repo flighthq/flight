@@ -71,7 +71,7 @@ describe('initializeWebPromptDialogBackend', () => {
 
 describe('showConfirmDialog', () => {
   it('delegates confirmation through the explicit message slot', async () => {
-    expect(await showConfirmDialog(fakeHost(), { message: 'sure?' })).toBe(true);
+    expect(await showConfirmDialog(fakeHost().dialog.message, { message: 'sure?' })).toBe(true);
   });
 
   it('forwards a live signal through the explicit message slot', async () => {
@@ -87,7 +87,7 @@ describe('showConfirmDialog', () => {
       },
     };
     const signal = new AbortController().signal;
-    await showConfirmDialog(host, { message: 'sure?', signal });
+    await showConfirmDialog(host.dialog.message, { message: 'sure?', signal });
     expect(confirm).toHaveBeenCalledWith({ message: 'sure?', signal });
   });
 });
@@ -95,7 +95,7 @@ describe('showConfirmDialog', () => {
 describe('showErrorBox', () => {
   it('maps the error-box convenience call to error severity', async () => {
     const observed: string[] = [];
-    await showErrorBox(severityHost(observed), 'Fatal', 'boom');
+    await showErrorBox(severityHost(observed).dialog.message, 'Fatal', 'boom');
     expect(observed).toEqual(['error']);
   });
 });
@@ -103,7 +103,7 @@ describe('showErrorBox', () => {
 describe('showErrorDialog', () => {
   it('maps the error convenience call to error severity', async () => {
     const observed: string[] = [];
-    await showErrorDialog(severityHost(observed), { message: 'boom' });
+    await showErrorDialog(severityHost(observed).dialog.message, { message: 'boom' });
     expect(observed).toEqual(['error']);
   });
 });
@@ -111,19 +111,19 @@ describe('showErrorDialog', () => {
 describe('showInfoDialog', () => {
   it('maps the info convenience call to info severity', async () => {
     const observed: string[] = [];
-    await showInfoDialog(severityHost(observed), { message: 'note' });
+    await showInfoDialog(severityHost(observed).dialog.message, { message: 'note' });
     expect(observed).toEqual(['info']);
   });
 });
 
 describe('showMessageDialog', () => {
   it('delegates messages through the explicit message slot', async () => {
-    expect((await showMessageDialog(fakeHost(), { message: 'hello' })).buttonIndex).toBe(2);
+    expect((await showMessageDialog(fakeHost().dialog.message, { message: 'hello' })).buttonIndex).toBe(2);
   });
 });
 describe('showPromptDialog', () => {
   it('delegates prompts through the explicit prompt slot', async () => {
-    expect(await showPromptDialog(fakeHost(), { message: 'name?' })).toBe('typed');
+    expect(await showPromptDialog(fakeHost().dialog.prompt, { message: 'name?' })).toBe('typed');
   });
 
   it('keeps the existing browser message and prompt providers callable', async () => {
@@ -143,7 +143,7 @@ describe('showPromptDialog', () => {
 describe('showWarningDialog', () => {
   it('maps the warning convenience call to warning severity', async () => {
     const observed: string[] = [];
-    await showWarningDialog(severityHost(observed), { message: 'careful' });
+    await showWarningDialog(severityHost(observed).dialog.message, { message: 'careful' });
     expect(observed).toEqual(['warning']);
   });
 });

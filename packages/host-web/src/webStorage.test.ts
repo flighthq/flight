@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
-import { initializeWebStorageBackend, webHostStorage, webHostStorageChange, webStorageBackend } from './webStorage';
+import { initializeWebStorageBackend, webHostStorage, webHostStorageChange } from './webStorage';
 
 function namedError(name: string): Error {
   const error = new Error(name);
@@ -10,7 +10,7 @@ function namedError(name: string): Error {
 }
 
 describe('initializeWebStorageBackend', () => {
-  it('is the construction initializer of createWebStorageBackend', () => {
+  it('remains available for caller-owned aggregate construction', () => {
     expect(typeof initializeWebStorageBackend).toBe('function');
   });
 });
@@ -18,8 +18,8 @@ describe('webHostStorage providers', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => vi.restoreAllMocks());
 
-  it('decomposes the legacy provider into exact local and change Host leaves', () => {
-    expect(EntityRuntimeKey in webStorageBackend).toBe(true);
+  it('publishes independently owned local and change Host leaves', () => {
+    expect(EntityRuntimeKey in webHostStorage).toBe(true);
     expect(webHost.storage.local).toBe(webHostStorage);
     expect(webHost.storage.change).toBe(webHostStorageChange);
     expect(webHostStorage).not.toBe(webHostStorageChange);

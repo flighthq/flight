@@ -17,15 +17,12 @@ export function createWebConnectivityBackend(): WebConnectivityBackend {
   return finishEntity(backend);
 }
 
-// Retain the flat constructor for the Phase 2 compatibility lane while the canonical exports below
-// provide independently importable and independently owned provider Entities.
 export function initializeWebConnectivityBackend(backend: EntityConstruction<WebConnectivityBackend>): void {
   initializeWebConnectivityChangeProvider(backend);
   initializeWebConnectivityReachabilityBackend(backend);
   initializeWebConnectivityStatusProvider(backend);
 }
 
-export const webConnectivityBackend = createWebConnectivityBackend();
 export const webHostConnectivityChange = createWebConnectivityChangeProvider();
 export const webHostConnectivityReachability = createWebConnectivityReachabilityProvider();
 export const webHostConnectivityStatus = createWebConnectivityStatusProvider();

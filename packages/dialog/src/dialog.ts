@@ -1,8 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HasDialogMessage,
-  HasDialogPrompt,
   HostMessageDialogProvider,
   HostPromptDialogProvider,
   MessageDialogOptions,
@@ -14,8 +12,6 @@ import type {
 // identities alongside the file-picker providers it owns.
 export const webHostMessageDialog = createWebMessageDialogBackend();
 export const webHostPromptDialog = createWebPromptDialogBackend();
-export const webMessageDialogBackend = webHostMessageDialog;
-export const webPromptDialogBackend = webHostPromptDialog;
 
 function createWebMessageDialogBackend(): HostMessageDialogProvider {
   const out = allocateEntity<HostMessageDialogProvider>();
@@ -66,17 +62,20 @@ export function initializeWebPromptDialogBackend(out: EntityConstruction<HostPro
   };
 }
 
-export function showConfirmDialog(host: HasDialogMessage, options: Readonly<MessageDialogOptions>): Promise<boolean> {
-  return host.dialog.message.confirm(options);
+export function showConfirmDialog(
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
+  options: Readonly<MessageDialogOptions>,
+): Promise<boolean> {
+  return hostMessageDialog.confirm(options);
 }
 
 export function showErrorBox(
-  host: HasDialogMessage,
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
   title: string,
   content: string,
   signal?: AbortSignal,
 ): Promise<MessageDialogResult> {
-  return host.dialog.message.message(
+  return hostMessageDialog.message(
     signal === undefined
       ? { kind: 'error', message: content, title }
       : { kind: 'error', message: content, signal, title },
@@ -84,36 +83,36 @@ export function showErrorBox(
 }
 
 export function showErrorDialog(
-  host: HasDialogMessage,
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
   options: Readonly<MessageDialogOptions>,
 ): Promise<MessageDialogResult> {
-  return host.dialog.message.message({ ...options, kind: 'error' });
+  return hostMessageDialog.message({ ...options, kind: 'error' });
 }
 
 export function showInfoDialog(
-  host: HasDialogMessage,
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
   options: Readonly<MessageDialogOptions>,
 ): Promise<MessageDialogResult> {
-  return host.dialog.message.message({ ...options, kind: 'info' });
+  return hostMessageDialog.message({ ...options, kind: 'info' });
 }
 
 export function showMessageDialog(
-  host: HasDialogMessage,
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
   options: Readonly<MessageDialogOptions>,
 ): Promise<MessageDialogResult> {
-  return host.dialog.message.message(options);
+  return hostMessageDialog.message(options);
 }
 
 export function showPromptDialog(
-  host: HasDialogPrompt,
+  hostPromptDialog: Readonly<HostPromptDialogProvider>,
   options: Readonly<PromptDialogOptions>,
 ): Promise<string | null> {
-  return host.dialog.prompt.prompt(options);
+  return hostPromptDialog.prompt(options);
 }
 
 export function showWarningDialog(
-  host: HasDialogMessage,
+  hostMessageDialog: Readonly<HostMessageDialogProvider>,
   options: Readonly<MessageDialogOptions>,
 ): Promise<MessageDialogResult> {
-  return host.dialog.message.message({ ...options, kind: 'warning' });
+  return hostMessageDialog.message({ ...options, kind: 'warning' });
 }

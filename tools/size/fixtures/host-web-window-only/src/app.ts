@@ -1,22 +1,21 @@
 import { createApplicationWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/application';
-import { webWindowBackend } from '@flighthq/host-web';
+import { webHostWindow } from '@flighthq/host-web';
 
 import { renderHostWebWindowCard } from './render.canvas';
 
 const applicationWindow = createApplicationWindow();
-const windowHost = { window: webWindowBackend };
-const opened = openWindow(windowHost.window, applicationWindow, {
+const opened = openWindow(webHostWindow, applicationWindow, {
   height: window.innerHeight,
   title: 'Direct Web Window',
   width: window.innerWidth,
 });
 
-const readBounds = webWindowBackend.getBounds;
-const setTitle = webWindowBackend.setTitle;
+const readBounds = webHostWindow.getBounds;
+const setTitle = webHostWindow.setTitle;
 if (readBounds === undefined || setTitle === undefined) {
-  throw new Error('The direct web window backend must provide title and bounds operations.');
+  throw new Error('The direct Web window provider must provide title and bounds operations.');
 }
-const windowOperations = webWindowBackend as typeof webWindowBackend & {
+const windowOperations = webHostWindow as typeof webHostWindow & {
   getBounds: typeof readBounds;
   setTitle: typeof setTitle;
 };

@@ -2,9 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
-  HasDialogImageOpen,
-  HasDialogPhotoCapture,
-  HasDialogVideoCapture,
   HostImageOpenDialogProvider,
   HostPhotoCaptureDialogProvider,
   HostVideoCaptureDialogProvider,
@@ -19,7 +16,7 @@ describe('showCapturePhotoDialog', () => {
       outcome: 'selected' as const,
       photo: { dataUrl: 'data:image/png;base64,AA==', height: 480, mimeType: 'image/png', width: 640 },
     }));
-    const host: HasDialogPhotoCapture = {
+    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogProvider } } = {
       dialog: {
         photoCapture: (() => {
           const out = allocateEntity<any>();
@@ -33,7 +30,7 @@ describe('showCapturePhotoDialog', () => {
       signal: new AbortController().signal,
     };
 
-    const result = await showCapturePhotoDialog(host, options);
+    const result = await showCapturePhotoDialog(host.dialog.photoCapture, options);
 
     expect(result.outcome === 'selected' ? result.photo.width : 0).toBe(640);
     expect(capture).toHaveBeenCalledWith(options);
@@ -41,7 +38,7 @@ describe('showCapturePhotoDialog', () => {
 
   it('preserves the operation-specific failure outcome', async () => {
     const capture = async () => ({ outcome: 'photo-capture-failed' as const });
-    const host: HasDialogPhotoCapture = {
+    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogProvider } } = {
       dialog: {
         photoCapture: (() => {
           const out = allocateEntity<any>();
@@ -51,7 +48,7 @@ describe('showCapturePhotoDialog', () => {
       },
     };
 
-    expect(await showCapturePhotoDialog(host)).toEqual({ outcome: 'photo-capture-failed' });
+    expect(await showCapturePhotoDialog(host.dialog.photoCapture)).toEqual({ outcome: 'photo-capture-failed' });
   });
 });
 
@@ -61,7 +58,7 @@ describe('showCaptureVideoDialog', () => {
       outcome: 'selected' as const,
       video: { dataUrl: 'data:video/mp4;base64,AA==', duration: 2.5, mimeType: 'video/mp4' },
     }));
-    const host: HasDialogVideoCapture = {
+    const host: { readonly dialog: { readonly videoCapture: HostVideoCaptureDialogProvider } } = {
       dialog: {
         videoCapture: (() => {
           const out = allocateEntity<any>();
@@ -72,7 +69,7 @@ describe('showCaptureVideoDialog', () => {
     };
     const options: CaptureVideoDialogOptions = { facingMode: 'environment' };
 
-    const result = await showCaptureVideoDialog(host, options);
+    const result = await showCaptureVideoDialog(host.dialog.videoCapture, options);
 
     expect(result.outcome === 'selected' ? result.video.duration : 0).toBe(2.5);
     expect(capture).toHaveBeenCalledWith(options);
@@ -82,7 +79,7 @@ describe('showCaptureVideoDialog', () => {
 describe('showOpenImageDialog', () => {
   it('routes selection through the explicit image-open slot and forwards cancellation', async () => {
     const open = vi.fn(async () => ({ outcome: 'cancelled' as const }));
-    const host: HasDialogImageOpen = {
+    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogProvider } } = {
       dialog: {
         imageOpen: (() => {
           const out = allocateEntity<any>();
@@ -93,13 +90,13 @@ describe('showOpenImageDialog', () => {
     };
     const options: OpenImageDialogOptions = { signal: new AbortController().signal };
 
-    await expect(showOpenImageDialog(host, options)).resolves.toEqual({ outcome: 'cancelled' });
+    await expect(showOpenImageDialog(host.dialog.imageOpen, options)).resolves.toEqual({ outcome: 'cancelled' });
     expect(open).toHaveBeenCalledWith(options);
   });
 
   it('preserves the operation-specific failure outcome', async () => {
     const open = async () => ({ outcome: 'image-open-failed' as const });
-    const host: HasDialogImageOpen = {
+    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogProvider } } = {
       dialog: {
         imageOpen: (() => {
           const out = allocateEntity<any>();
@@ -109,6 +106,6 @@ describe('showOpenImageDialog', () => {
       },
     };
 
-    expect(await showOpenImageDialog(host)).toEqual({ outcome: 'image-open-failed' });
+    expect(await showOpenImageDialog(host.dialog.imageOpen)).toEqual({ outcome: 'image-open-failed' });
   });
 });

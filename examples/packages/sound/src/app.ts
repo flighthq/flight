@@ -1,4 +1,4 @@
-import { createWebCursorBackend, webAudioDeviceBackend } from '@flighthq/host-web';
+import { createWebCursorBackend, webHostAudioDevice } from '@flighthq/host-web';
 import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -69,7 +69,7 @@ let audioDevice: AudioDeviceHandle | null = null;
 
 function getAudioDevice(): AudioDeviceHandle {
   if (audioDevice === null) {
-    audioDevice = webAudioDeviceBackend.createDevice(SAMPLE_RATE);
+    audioDevice = webHostAudioDevice.createDevice(SAMPLE_RATE);
   }
   return audioDevice;
 }
@@ -107,7 +107,7 @@ function ensureMixer(): ReturnType<typeof createAudioMixer> {
 
 function playSfx(resource: AudioResource, gain: number, pan: number): AudioChannel | null {
   const dev = getAudioDevice();
-  const channel = playAudioResource(webAudioDeviceBackend, dev, resource, { gain });
+  const channel = playAudioResource(webHostAudioDevice, dev, resource, { gain });
   if (channel !== null) {
     routeAudioChannelToMixerBus(ensureMixer(), channel, sfxBus);
   }

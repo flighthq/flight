@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostMediaCapabilities } from '@flighthq/types/contract';
 
 import { webHostAudio } from './webAudio';
@@ -13,5 +12,3 @@ export const webHostMedia = {
   sessionAction: webHostMediaSessionAction,
   video: webHostVideo,
 } satisfies HostMediaCapabilities;
-
-export const webMediaHost = /* @__PURE__ */ createHost({ media: webHostMedia });

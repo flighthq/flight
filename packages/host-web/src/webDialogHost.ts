@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostDialogCapabilities } from '@flighthq/types/contract';
 
 import {
@@ -22,5 +21,3 @@ export const webHostDialog = {
   prompt: webHostPromptDialog,
   videoCapture: webHostVideoCaptureDialog,
 } satisfies HostDialogCapabilities;
-
-export const webDialogHost = /* @__PURE__ */ createHost({ dialog: webHostDialog });

@@ -1,5 +1,5 @@
 import { createBitmapFromImageSource, explainBitmapReadback } from '@flighthq/bitmap/contract';
-import type { HasGraphicsBitmapReadback } from '@flighthq/types/contract';
+import type { HostBitmapReadbackProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
@@ -9,8 +9,8 @@ import {
   webHostBitmapReadback,
 } from './webBitmapReadback';
 
-function hostWith(backend: HasGraphicsBitmapReadback['graphics']['bitmapReadback']): HasGraphicsBitmapReadback {
-  return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
+function hostWith(backend: HostBitmapReadbackProvider): HostBitmapReadbackProvider {
+  return backend;
 }
 
 afterEach(() => {

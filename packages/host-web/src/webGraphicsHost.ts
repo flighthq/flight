@@ -1,4 +1,3 @@
-import { createHost } from '@flighthq/entity/contract';
 import type { HostGraphicsCapabilities } from '@flighthq/types/contract';
 
 import { webHostBitmapEncode } from './webBitmapEncode';
@@ -13,5 +12,3 @@ export const webHostGraphics = {
   renderContext: webHostRenderContext,
   renderSurface: webHostRenderSurface,
 } satisfies HostGraphicsCapabilities;
-
-export const webGraphicsHost = /* @__PURE__ */ createHost({ graphics: webHostGraphics });

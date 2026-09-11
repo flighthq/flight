@@ -330,7 +330,6 @@ export const webHostScreenChange = webHostScreen.change;
 export const webHostScreenDetails = webHostScreen.details;
 export const webHostScreenPermissionChange = webHostScreen.permissionChange;
 export const webHostScreenQuery = webHostScreen.query;
-export const webScreenCapabilities = webHostScreen;
 
 function media(query: string): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;

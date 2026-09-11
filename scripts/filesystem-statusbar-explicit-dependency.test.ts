@@ -14,18 +14,18 @@ const statusbarSource = readFileSync(resolve(root, 'packages/statusbar/src/statu
 describe('Filesystem and Statusbar explicit dependency ownership', () => {
   it('routes one filesystem call through the Host value passed at that call site', async () => {
     const readTextFile = requiredFunction(filesystem, 'readTextFile');
-    const firstHost = { storage: { fileSystem: { readTextFile: vi.fn(async () => 'first') } } };
-    const secondHost = { storage: { fileSystem: { readTextFile: vi.fn(async () => 'second') } } };
+    const firstProvider = { readTextFile: vi.fn(async () => 'first') };
+    const secondProvider = { readTextFile: vi.fn(async () => 'second') };
 
-    await expect(readTextFile(firstHost, 'same.txt')).resolves.toBe('first');
-    await expect(readTextFile(secondHost, 'same.txt')).resolves.toBe('second');
-    expect(firstHost.storage.fileSystem.readTextFile).toHaveBeenCalledWith('same.txt');
-    expect(secondHost.storage.fileSystem.readTextFile).toHaveBeenCalledWith('same.txt');
+    await expect(readTextFile(firstProvider, 'same.txt')).resolves.toBe('first');
+    await expect(readTextFile(secondProvider, 'same.txt')).resolves.toBe('second');
+    expect(firstProvider.readTextFile).toHaveBeenCalledWith('same.txt');
+    expect(secondProvider.readTextFile).toHaveBeenCalledWith('same.txt');
   });
 
   it('keeps the seven documented filesystem absence results in core, not on the Web provider', async () => {
-    const webFileSystemBackend = requiredValue<Record<string, unknown>>(hostWeb, 'webFileSystemBackend');
-    expect(Object.keys(webFileSystemBackend).sort()).not.toEqual(
+    const webHostFileSystem = requiredValue<Record<string, unknown>>(hostWeb, 'webHostFileSystem');
+    expect(Object.keys(webHostFileSystem).sort()).not.toEqual(
       expect.arrayContaining([
         'createFileSymlink',
         'getFilePermissions',
@@ -36,40 +36,39 @@ describe('Filesystem and Statusbar explicit dependency ownership', () => {
         'watch',
       ]),
     );
-    const host = { storage: { fileSystem: webFileSystemBackend } };
-    await expect(requiredFunction(filesystem, 'createFileSymlink')(host, 'target', 'link')).resolves.toBe(false);
-    await expect(requiredFunction(filesystem, 'getFilePermissions')(host, 'file')).resolves.toBe(null);
-    await expect(requiredFunction(filesystem, 'getFileRealPath')(host, 'file')).resolves.toBe(null);
-    expect(requiredFunction(filesystem, 'getFileSystemPath')(host, 'home')).toBe('');
-    await expect(requiredFunction(filesystem, 'readFileSymlink')(host, 'link')).resolves.toBe(null);
-    await expect(requiredFunction(filesystem, 'setFilePermissions')(host, 'file', {})).resolves.toBe(false);
-    expect(requiredFunction(filesystem, 'watchPath')(host, 'file', vi.fn())).toBeTypeOf('function');
+    await expect(requiredFunction(filesystem, 'createFileSymlink')('target', 'link')).resolves.toBe(false);
+    await expect(requiredFunction(filesystem, 'getFilePermissions')('file')).resolves.toBe(null);
+    await expect(requiredFunction(filesystem, 'getFileRealPath')('file')).resolves.toBe(null);
+    expect(requiredFunction(filesystem, 'getFileSystemPath')('home')).toBe('');
+    await expect(requiredFunction(filesystem, 'readFileSymlink')('link')).resolves.toBe(null);
+    await expect(requiredFunction(filesystem, 'setFilePermissions')('file', {})).resolves.toBe(false);
+    expect(requiredFunction(filesystem, 'watchPath')('file', vi.fn())).toBeTypeOf('function');
   });
 
   it('publishes Web theme color without pretending Web owns a native status bar', () => {
-    const webStatusBarColorBackend = requiredValue<Record<string, unknown>>(hostWeb, 'webStatusBarColorBackend');
-    expect(Object.keys(webStatusBarColorBackend)).toEqual(['setBackgroundColor']);
+    const webHostStatusBarColor = requiredValue<Record<string, unknown>>(hostWeb, 'webHostStatusBarColor');
+    expect(Object.keys(webHostStatusBarColor)).toEqual(['setBackgroundColor']);
     const webHost = requiredValue<{ ui: Record<string, unknown> }>(hostWeb, 'webHost');
-    expect(webHost.ui.statusBarColor).toBe(webStatusBarColorBackend);
+    expect(webHost.ui.statusBarColor).toBe(webHostStatusBarColor);
     expect(webHost.ui).not.toHaveProperty('statusBarInfo');
     expect(webHost.ui).not.toHaveProperty('statusBarChange');
   });
 
   it('keeps style stacks isolated by explicit Host identity', () => {
-    const first = fakeStatusBarHost('light');
-    const second = fakeStatusBarHost('dark');
+    const first = fakeStatusBarProviders('light');
+    const second = fakeStatusBarProviders('dark');
     const push = requiredFunction(statusbar, 'pushStatusBarStyleEntry');
     const clear = requiredFunction(statusbar, 'clearStatusBarStyleStack');
 
-    push(first.host, { style: 'dark' });
-    push(second.host, { style: 'light' });
+    push(first.color, first.info, first.overlays, first.style, first.visibility, { style: 'dark' });
+    push(second.color, second.info, second.overlays, second.style, second.visibility, { style: 'light' });
     expect(first.setStyle).toHaveBeenLastCalledWith('dark');
     expect(second.setStyle).toHaveBeenLastCalledWith('light');
 
-    clear(first.host);
+    clear(first.info);
     expect(first.setStyle).toHaveBeenLastCalledWith('light');
     expect(second.setStyle).toHaveBeenCalledTimes(1);
-    clear(second.host);
+    clear(second.info);
     expect(second.setStyle).toHaveBeenLastCalledWith('dark');
   });
 
@@ -81,30 +80,26 @@ describe('Filesystem and Statusbar explicit dependency ownership', () => {
   });
 });
 
-function fakeStatusBarHost(baselineStyle: 'dark' | 'light') {
+function fakeStatusBarProviders(baselineStyle: 'dark' | 'light') {
   const setStyle = vi.fn();
   return {
-    host: {
-      ui: {
-        statusBarColor: { setBackgroundColor: vi.fn() },
-        statusBarInfo: {
-          getInfo(out: Record<string, unknown>) {
-            Object.assign(out, {
-              color: 0,
-              height: 20,
-              overlaysContent: false,
-              style: baselineStyle,
-              visible: true,
-            });
-            return out;
-          },
-        },
-        statusBarOverlays: { setOverlaysContent: vi.fn() },
-        statusBarStyle: { setStyle },
-        statusBarVisibility: { setVisible: vi.fn() },
+    color: { setBackgroundColor: vi.fn() },
+    info: {
+      getInfo(out: Record<string, unknown>) {
+        Object.assign(out, {
+          color: 0,
+          height: 20,
+          overlaysContent: false,
+          style: baselineStyle,
+          visible: true,
+        });
+        return out;
       },
     },
+    overlays: { setOverlaysContent: vi.fn() },
     setStyle,
+    style: { setStyle },
+    visibility: { setVisible: vi.fn() },
   };
 }
 
