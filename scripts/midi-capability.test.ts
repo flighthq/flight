@@ -6,15 +6,15 @@ import { describe, expect, it } from 'vitest';
 const ROOT = resolve(import.meta.dirname, '..');
 
 describe('MIDI explicit Host capability shape', () => {
-  it('publishes one required group with split provider leaves and transitional exact traits', () => {
+  it('publishes one required group with split direct provider leaves', () => {
     const host = source('packages/types/src/Host.ts');
     expect(host).toContain('readonly midi: HostMidiCapabilities;');
     const body = interfaceBody(host, 'HostMidiCapabilities');
     expect(propertyNames(body)).toEqual(['access', 'permission']);
     expect(body).toContain('readonly access?: HostMidiAccessProvider;');
     expect(body).toContain('readonly permission?: HostMidiPermissionProvider;');
-    expect(host).toContain('export interface HasMidiAccess');
-    expect(host).toContain('export interface HasMidiPermission');
+    expect(host).not.toContain('export interface HasMidiAccess');
+    expect(host).not.toContain('export interface HasMidiPermission');
   });
 
   it('keeps native Web MIDI types in the injected Web adapter and out of Permissions', () => {
@@ -37,7 +37,9 @@ describe('MIDI explicit Host capability shape', () => {
     expect(adapter).not.toContain('sysex: true');
 
     const defaultHost = source('packages/host-web/src/webHost.ts');
-    expect(defaultHost).toMatch(/midi:\s*\{\}/u);
+    const defaultGroups = source('packages/host-web/src/webDefaultHostGroups.ts');
+    expect(defaultGroups).toContain('export const webHostMidi = {} satisfies HostMidiCapabilities;');
+    expect(defaultHost).toContain('midi: webHostMidi,');
     expect(defaultHost).not.toContain('requestMIDIAccess');
 
     const implementation = productionSources('packages/midi/src');
