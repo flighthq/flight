@@ -12,10 +12,13 @@ describe('Shortcut explicit dependency structure', () => {
     const hostTypes = source('packages/types/src/Host.ts');
     expect(hostTypes).toContain('readonly shortcut: HostShortcutCapabilities;');
     expect(hostTypes).not.toContain('readonly shortcut?: ShortcutBackend;');
-    expect(hostTypes).toContain('export interface HasShortcutTrigger');
-    expect(hostTypes).toContain('export interface HasShortcutQuery');
+    expect(hostTypes).not.toContain('export interface HasShortcutTrigger');
+    expect(hostTypes).not.toContain('export interface HasShortcutQuery');
 
-    expect(source('packages/host-web/src/webHost.ts')).toMatch(/shortcut\s*[:=]\s*\{\}/u);
+    const webHost = source('packages/host-web/src/webHost.ts');
+    const webDefaultGroups = source('packages/host-web/src/webDefaultHostGroups.ts');
+    expect(webDefaultGroups).toContain('export const webHostShortcut = {} satisfies HostShortcutCapabilities;');
+    expect(webHost).toContain('shortcut: webHostShortcut,');
     expect(source('packages/host-capacitor/src/capacitorRegister.ts')).toMatch(/shortcut\s*[:=]\s*\{\}/u);
     for (const path of ['packages/host-electron/src/electronRegister.ts', 'packages/host-tauri/src/tauriRegister.ts']) {
       const host = source(path);
