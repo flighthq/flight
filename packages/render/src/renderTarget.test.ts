@@ -110,7 +110,7 @@ describe('computeScene2DRenderTargetTransform', () => {
 });
 
 describe('resolveRenderTargetDescriptor', () => {
-  it('resolves every optional target axis and clear policy', () => {
+  it('resolves every optional target axis', () => {
     expect(resolveRenderTargetDescriptor({ width: 64, height: 48 })).toEqual({
       width: 64,
       height: 48,
@@ -120,8 +120,6 @@ describe('resolveRenderTargetDescriptor', () => {
       sampleCount: 1,
       depth: 'none',
       colorSpace: 'srgb',
-      clearColors: [],
-      clearDepth: 1,
     });
   });
 
@@ -186,10 +184,10 @@ describe('resolveRenderTargetDescriptor', () => {
     expect(resolved.colorFormats).toEqual(['rgba8', 'rgba32f', 'rgba16f']);
   });
 
-  it('copies caller-owned clear arrays', () => {
-    const clearColors = [0xff0000ff];
-    const resolved = resolveRenderTargetDescriptor({ width: 64, height: 48, clearColors });
-    clearColors[0] = 0;
-    expect(resolved.clearColors).toEqual([0xff0000ff]);
+  it('copies caller-owned color format arrays', () => {
+    const colorFormats: ('rgba8' | 'rgba16f')[] = ['rgba8', 'rgba16f'];
+    const resolved = resolveRenderTargetDescriptor({ width: 64, height: 48, colorAttachments: 2, colorFormats });
+    colorFormats[0] = 'rgba16f';
+    expect(resolved.colorFormats).toEqual(['rgba8', 'rgba16f']);
   });
 });

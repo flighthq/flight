@@ -6,7 +6,7 @@ import type {
   CanvasRenderTarget,
   EntityConstruction,
   Matrix,
-  RenderPassPreserve,
+  RenderTargetClear,
 } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -21,18 +21,16 @@ type SavedCanvasState = {
 
 const _targetStack = new WeakMap<CanvasRenderState, SavedCanvasState[]>();
 
-/**
- * Begins a render pass into `target`: redirects subsequent canvas rendering into it (saving the state's
- * current canvas, context, and 2D transform for restore, so passes nest) and CLEARS it by default.
- * `preserve` keeps the target's pixels instead. Canvas clears by erasing (clearRect), so there is no
- * colored render-target clear here; a colored backdrop is drawn as content. Carries no transform — a 2D
- * pass that needs a specific root transform calls setCanvasRenderTransform2D after begin. Pair with
- * endCanvasRenderPass. Mirrors beginGlRenderPass / beginWgpuRenderPass.
- */
+// Begins a render pass into `target`: redirects subsequent canvas rendering into it (saving the state's
+// current canvas, context, and 2D transform for restore, so passes nest). Pass a RenderTargetClear to
+// clear the target; omit to preserve existing pixels. Canvas clears by erasing (clearRect) — the color
+// value is ignored; a colored backdrop is drawn as content. Carries no transform — a 2D pass that needs
+// a specific root transform calls setCanvasRenderTransform2D after begin. Pair with endCanvasRenderPass.
+// Mirrors beginGlRenderPass / beginWgpuRenderPass.
 export function beginCanvasRenderPass(
   state: CanvasRenderState,
   target: CanvasRenderTarget,
-  preserve?: Readonly<RenderPassPreserve>,
+  clear?: Readonly<RenderTargetClear>,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);
 
@@ -52,9 +50,9 @@ export function beginCanvasRenderPass(
   state.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
   state.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
 
-  const preserveColor = preserve?.preserveColor;
-  const preserved = typeof preserveColor === 'boolean' ? preserveColor : preserveColor?.[0] === true;
-  if (!preserved) state.context.clearRect(0, 0, target.width, target.height);
+  if (clear !== undefined && (clear.color !== undefined || clear.colors !== undefined)) {
+    state.context.clearRect(0, 0, target.width, target.height);
+  }
 }
 
 export function createCanvasRenderTarget(

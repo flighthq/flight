@@ -94,8 +94,6 @@ function applyRenderTargetDescriptor(target: RenderTarget, descriptor: Readonly<
   target.sampleCount = descriptor.sampleCount;
   target.depth = descriptor.depth;
   target.colorSpace = descriptor.colorSpace ?? 'srgb';
-  target.clearColors = descriptor.clearColors === undefined ? undefined : [...descriptor.clearColors];
-  target.clearDepth = descriptor.clearDepth;
   target.version = (target.version + 1) >>> 0;
 }
 

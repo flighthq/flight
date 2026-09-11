@@ -78,7 +78,7 @@ export function renderIntoCanvasRenderTexture(
   callback: (state: CanvasRenderState) => void,
 ): void {
   writeCanvasRenderTextureTarget(ownerState, renderTexture, (target) => {
-    beginCanvasRenderPass(renderState, target);
+    beginCanvasRenderPass(renderState, target, { color: [0, 0, 0, 0] });
     try {
       callback(renderState);
     } finally {

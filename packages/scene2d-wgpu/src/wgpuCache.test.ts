@@ -100,8 +100,6 @@ beforeEach(() => {
       view: {} as GPUTextureView,
       format: 'bgra8unorm',
       sampleCount: 1,
-      clearColors: [],
-      clearDepth: 1,
       width,
       height,
     })) as never,

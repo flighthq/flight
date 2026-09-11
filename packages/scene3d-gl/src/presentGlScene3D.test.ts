@@ -46,8 +46,6 @@ function makeTarget(): GlRenderTarget {
   out.colorFormats = ['rgba16f'];
   out.depth = 'depth-stencil';
   out.colorSpace = 'linear';
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.sampleCount = 1;
   out.framebuffer = { id: 'sceneFb' } as unknown as WebGLFramebuffer;
   out.resolveFramebuffer = null;

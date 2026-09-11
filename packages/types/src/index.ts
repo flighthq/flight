@@ -560,7 +560,6 @@ export * from './Raster2DSurface';
 export * from './RequirementFacet';
 export * from './Requirement';
 export * from './Renderer';
-export * from './RenderPassPreserve';
 export * from './RenderState';
 export * from './RenderTarget';
 export * from './RenderTargetClear';

@@ -62,17 +62,11 @@ export function beginWgpuRenderEffectPipeline(
   } else {
     resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h, pipeline.options.sampleCount);
   }
-  // Declare the producer's space before the pass opens: the clear value is packed sRGB input and
-  // must be decoded when the target stores linear scene color.
   pipeline.sceneTarget.colorSpace = colorSpace;
-  // Clear the scene target to the background colour (not transparent) so the background is part of the
-  // image the effects process and the replace-blend present composites — mirroring the Gl pipeline,
-  // where renderGlBackground draws into the scene target. The clear color is a target property now, so
-  // set it from the background before begin (default clear); the transform is inherited from the current
-  // pass rather than passed.
   const rgba = state.backgroundColorRgba;
-  pipeline.sceneTarget.clearColors = rgba !== undefined && rgba.length >= 4 ? [packBackgroundClearColor(rgba)] : [];
-  beginWgpuRenderPass(state, pipeline.sceneTarget);
+  const clearColor: readonly [number, number, number, number] =
+    rgba !== undefined && rgba.length >= 4 ? [rgba[0]!, rgba[1]!, rgba[2]!, rgba[3]!] : [0, 0, 0, 0];
+  beginWgpuRenderPass(state, pipeline.sceneTarget, { color: clearColor, depth: 1.0 });
 }
 
 export function createWgpuRenderEffectPipeline(
@@ -240,15 +234,6 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
     'replace',
   );
   drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
-}
-
-// Packs normalized sRGB + coverage alpha into the 0xRRGGBBAA integer WgpuRenderTarget.clearColors holds.
-function packBackgroundClearColor(rgba: ReadonlyArray<number>): number {
-  const r = Math.round((rgba[0] ?? 0) * 255) & 0xff;
-  const g = Math.round((rgba[1] ?? 0) * 255) & 0xff;
-  const b = Math.round((rgba[2] ?? 0) * 255) & 0xff;
-  const a = Math.round((rgba[3] ?? 0) * 255) & 0xff;
-  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
 const PRESENT_FRAGMENT_WGSL = /* wgsl */ `

@@ -87,7 +87,7 @@ export function renderIntoWgpuRenderTexture(
   callback: (state: WgpuRenderState) => void,
 ): void {
   writeWgpuRenderTextureTarget(state, renderTexture, (target) => {
-    beginWgpuRenderPass(state, target);
+    beginWgpuRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     try {
       callback(state);
     } finally {
@@ -144,8 +144,6 @@ function ensureWgpuRenderTextureEntry(
       colorSpace,
       requested.sampleCount,
     );
-    target.clearColors = [...requested.clearColors];
-    target.clearDepth = requested.clearDepth;
     entry = { status: 'unrendered', target };
     entries.set(renderTexture, entry);
   } else {
@@ -164,8 +162,6 @@ function ensureWgpuRenderTextureEntry(
       resizeWgpuRenderTarget(state, entry.target, requested.width, requested.height, requested.sampleCount);
       entry.target.colorSpace = colorSpace;
     }
-    entry.target.clearColors = [...requested.clearColors];
-    entry.target.clearDepth = requested.clearDepth;
   }
   return entry;
 }

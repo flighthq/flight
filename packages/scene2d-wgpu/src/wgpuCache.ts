@@ -128,7 +128,7 @@ export function refreshWgpuRenderCache(
     _yInvert.ty = target.height;
     multiplyMatrix(_bakeTransform, _yInvert, _renderTransform);
 
-    beginWgpuRenderPass(cacheState, target);
+    beginWgpuRenderPass(cacheState, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     try {
       setWgpuRenderTransform2D(cacheState, _bakeTransform);
       const dirty = prepareScene2DRender(cacheState, source);

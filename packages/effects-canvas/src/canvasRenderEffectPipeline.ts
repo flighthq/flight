@@ -61,9 +61,7 @@ export function beginCanvasRenderEffectPipeline(state: CanvasRenderState, pipeli
   } else {
     resizeCanvasRenderTarget(pipeline.sceneTarget, w, h);
   }
-  // beginCanvasRenderPass clears the offscreen scene canvas by default (an unchanged size would keep last
-  // frame's pixels otherwise); the current 2D transform is inherited rather than passed.
-  beginCanvasRenderPass(state, pipeline.sceneTarget);
+  beginCanvasRenderPass(state, pipeline.sceneTarget, { color: [0, 0, 0, 0] });
 }
 
 export function createCanvasRenderEffectPipeline(
