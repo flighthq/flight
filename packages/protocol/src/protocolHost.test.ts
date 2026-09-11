@@ -26,8 +26,8 @@ describe('protocol explicit Host ownership', () => {
       },
     };
 
-    expect(Reflect.apply(registerProtocolScheme, undefined, [host, 'flight'])).toBe(true);
-    expect(Reflect.apply(getProtocolLaunchUrl, undefined, [host])).toBe('flight://cold-start');
+    expect(Reflect.apply(registerProtocolScheme, undefined, [host.protocol.registration, 'flight'])).toBe(true);
+    expect(Reflect.apply(getProtocolLaunchUrl, undefined, [host.protocol.launch])).toBe('flight://cold-start');
     expect(register).toHaveBeenCalledExactlyOnceWith('flight');
     expect(getLaunchUrl).toHaveBeenCalledOnce();
   });
@@ -51,7 +51,7 @@ describe('protocol explicit Host ownership', () => {
     let received = '';
     connectSignal(handler.onOpenUrl, (url) => (received = url));
 
-    Reflect.apply(attachProtocolHandler, undefined, [host, handler]);
+    Reflect.apply(attachProtocolHandler, undefined, [host.protocol.open, handler]);
     listeners.open?.('flight://warm-open');
 
     expect(subscribe).toHaveBeenCalledOnce();
