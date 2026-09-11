@@ -14,7 +14,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
   return finishEntity(out);
 }
 
-// Maps Flight's honest FileSystemHostBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
+// Maps Flight's honest HostFileSystemProvider onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64
 // (Capacitor omits `encoding` for binary and crosses bytes as a Base64 string), plus
 // exists/remove/mkdir/readdir/stat/rename/copy/append. Reads resolve to null / [] and writes to false on

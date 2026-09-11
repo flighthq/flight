@@ -13,7 +13,7 @@ export function createElectronPlatformBackend(electron: ElectronApi): HostPlatfo
   return finishEntity(out);
 }
 
-// Maps Flight's PlatformBackend onto the Node `process` running the Electron main process, with the
+// Maps Flight's HostPlatformProvider onto the Node `process` running the Electron main process, with the
 // locale sourced from Electron's `app`. `process` is accessed defensively (it may be absent and is not
 // typed without @types/node) and falls back to '' / 'unknown' sentinels. Writes into caller-owned
 // `out` so callers control allocation.

@@ -14,8 +14,8 @@ export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HostHapt
   return finishEntity(out);
 }
 
-// Maps Flight's HapticsBackend onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
-// void, whereas the HapticsBackend triggers are synchronous booleans, so each adapter method fires the
+// Maps Flight's HostHapticsProvider onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
+// void, whereas the provider triggers are synchronous booleans, so each adapter method fires the
 // async call and forgets, reporting `true` (the request was issued). Flight's five impact styles fold
 // onto Capacitor's three ('soft' → LIGHT, 'rigid' → HEAVY); notification types uppercase directly.
 // `selection` maps to `selectionChanged`. Capacitor has no cancel, no arbitrary vibration pattern, and

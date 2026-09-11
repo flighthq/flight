@@ -21,8 +21,8 @@ export function createTauriWindowBackend(
   return finishEntity(out);
 }
 
-// Maps Flight's WindowBackend onto Tauri's `@tauri-apps/api/window`. Every Tauri window call is async
-// while WindowBackend's commands are synchronous (void), so the adapter fires each call and forgets,
+// Maps Flight's HostWindowProvider onto Tauri's `@tauri-apps/api/window`. Every Tauri window call is async
+// while the provider's commands are synchronous (void), so the adapter fires each call and forgets,
 // swallowing rejections at the seam. `open` adopts the webview's current OS window (`getCurrentWindow`),
 // applies the WindowOptions, and wires Tauri's onMoved/onResized/onFocusChanged/onCloseRequested events
 // back onto the entity + its signals — the same pattern the electron seam uses for user-driven state

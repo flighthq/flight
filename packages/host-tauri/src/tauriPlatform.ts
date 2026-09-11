@@ -7,7 +7,7 @@ export function createTauriPlatformBackend(tauri: TauriApi): HostPlatformProvide
   return finishEntity(out);
 }
 
-// Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
+// Maps Flight's HostPlatformProvider onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
 // identity accessor, so it is prefetched once and cached for the synchronous getInfo seam. Writes into
 // caller-owned `out` so callers control allocation.
 export function initializeTauriPlatformBackend(out: EntityConstruction<HostPlatformProvider>, tauri: TauriApi): void {

@@ -39,7 +39,7 @@ export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
   return _windows.get(win as ApplicationWindow)?.id ?? -1;
 }
 
-// Maps Flight's WindowBackend onto Electron's BrowserWindow, one BrowserWindow per ApplicationWindow.
+// Maps Flight's HostWindowProvider onto Electron's BrowserWindow, one BrowserWindow per ApplicationWindow.
 // open() constructs the real OS window from WindowOptions and wires BrowserWindow OS events back to
 // the entity: each native event mutates the matching ApplicationWindow field and emits its signal, so
 // user-driven state changes (minimize, move, focus, …) flow through the same signals the command
