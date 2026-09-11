@@ -630,10 +630,6 @@
       "registrar": "registerWgpuWhiteBalanceEffect"
     },
     {
-      "packageName": "host-electron",
-      "registrar": "registerElectronBackends"
-    },
-    {
       "packageName": "image-codec",
       "registrar": "registerImageBitmapComposer"
     },

@@ -228,7 +228,7 @@ export * from './EasingFunction';
 export * from './EasingSegment';
 export * from './ElectronApi';
 export * from './ElectronAppCapabilitiesFor';
-export * from './ElectronBackendOptions';
+export * from './ElectronHostOptions';
 export * from './ElectronHost';
 export * from './ElectronProtocolCapabilities';
 export * from './ElectronTrayCapabilitiesFor';

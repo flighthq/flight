@@ -3,35 +3,35 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  createElectronAppCapabilities,
-  initializeAppActivateBackend,
-  initializeAppActivationPolicyBackend,
-  initializeAppAllWindowsClosedBackend,
-  initializeAppBadgeBackend,
-  initializeAppDockBackend,
-  initializeAppFocusBackend,
-  initializeAppHideBackend,
-  initializeAppLocaleBackend,
-  initializeAppLoginItemBackend,
-  initializeAppNameBackend,
-  initializeAppNameWriteBackend,
-  initializeAppOpenFileBackend,
-  initializeAppPathBackend,
-  initializeAppQuitBackend,
-  initializeAppQuitRequestBackend,
-  initializeAppReadyBackend,
-  initializeAppRecentDocumentsBackend,
-  initializeAppRelaunchBackend,
-  initializeAppSecondInstanceBackend,
-  initializeAppShowBackend,
-  initializeAppSingleInstanceBackend,
-  initializeAppUserModelIdBackend,
-  initializeAppVersionBackend,
-  initializeAppVisibilityQueryBackend,
-  initializeElectronCommonAppCapabilities,
-  initializeElectronLinuxAppCapabilities,
-  initializeElectronMacosAppCapabilities,
-  initializeElectronWindowsAppCapabilities,
+  electronHostApp,
+  populateElectronHostAppActivate,
+  populateElectronHostAppActivationPolicy,
+  populateElectronHostAppAllWindowsClosed,
+  populateElectronHostAppBadge,
+  populateElectronHostAppDock,
+  populateElectronHostAppFocus,
+  populateElectronHostAppHide,
+  populateElectronHostAppLocale,
+  populateElectronHostAppLoginItem,
+  populateElectronHostAppName,
+  populateElectronHostAppNameWrite,
+  populateElectronHostAppOpenFile,
+  populateElectronHostAppPath,
+  populateElectronHostAppQuit,
+  populateElectronHostAppQuitRequest,
+  populateElectronHostAppReady,
+  populateElectronHostAppRecentDocuments,
+  populateElectronHostAppRelaunch,
+  populateElectronHostAppSecondInstance,
+  populateElectronHostAppShow,
+  populateElectronHostAppSingleInstance,
+  populateElectronHostAppUserModelId,
+  populateElectronHostAppVersion,
+  populateElectronHostAppHiddenQuery,
+  populateElectronHostAppCommon,
+  populateElectronHostAppLinux,
+  populateElectronHostAppMacos,
+  populateElectronHostAppWindows,
 } from './electronApp';
 
 function fakeElectron() {
@@ -99,10 +99,19 @@ function fakeElectron() {
   };
 }
 
-describe('createElectronAppCapabilities', () => {
+function appLeaf(profile: 'linux' | 'macos' | 'windows', slot: string): () => void {
+  return () => {
+    it('constructs an Entity-backed provider in the application group', () => {
+      const app = electronHostApp(fakeElectron().electron, profile) as unknown as Record<string, object>;
+      expect(EntityRuntimeKey in app[slot]).toBe(true);
+    });
+  };
+}
+
+describe('electronHostApp', () => {
   it('publishes common application identity, control, and event slots on every profile', async () => {
     const fake = fakeElectron();
-    const app = createElectronAppCapabilities(fake.electron, 'linux');
+    const app = electronHostApp(fake.electron, 'linux');
     expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual([
       'allWindowsClosed',
@@ -131,7 +140,7 @@ describe('createElectronAppCapabilities', () => {
 
   it('publishes macOS-only dock, visibility, login, open-file, and activation slots', () => {
     const fake = fakeElectron();
-    const app = createElectronAppCapabilities(fake.electron, 'macos');
+    const app = electronHostApp(fake.electron, 'macos');
     expect(app.hiddenQuery.isAppHidden()).toBe(true);
     app.dock.setDockMenu([{ id: 'a', label: 'A', submenu: [{ id: 'b', label: 'B' }] }]);
     expect(fake.dockMenuTemplate?.[0]?.submenu).toHaveLength(1);
@@ -146,7 +155,7 @@ describe('createElectronAppCapabilities', () => {
 
   it('publishes Windows login, recent-document, and app-user-model slots', () => {
     const fake = fakeElectron();
-    const app = createElectronAppCapabilities(fake.electron, 'windows');
+    const app = electronHostApp(fake.electron, 'windows');
     app.recentDocuments.addRecentDocument('/tmp/a');
     app.userModelId.setUserModelId('flight.app');
     expect(fake.calls).toEqual(['recent:/tmp/a', 'userModel:flight.app']);
@@ -155,7 +164,7 @@ describe('createElectronAppCapabilities', () => {
 
   it('adapts quit-veto and second-instance event arguments', () => {
     const fake = fakeElectron();
-    const app = createElectronAppCapabilities(fake.electron, 'linux');
+    const app = electronHostApp(fake.electron, 'linux');
     const preventDefault = vi.fn();
     const cancel = vi.fn((cancelHost: () => void) => cancelHost());
     let argv: readonly string[] = [];
@@ -171,173 +180,198 @@ describe('createElectronAppCapabilities', () => {
   it('rejects a macOS facade whose dock API is absent', () => {
     const electron = fakeElectron().electron;
     Object.assign(electron.app, { dock: undefined });
-    expect(() => createElectronAppCapabilities(electron, 'macos')).toThrow('require app.dock');
+    expect(() => electronHostApp(electron, 'macos')).toThrow('require app.dock');
   });
 });
-describe('initializeAppActivateBackend', () => {
-  it('is the construction initializer of createAppActivateBackend', () => {
-    expect(typeof initializeAppActivateBackend).toBe('function');
+describe('electronHostAppActivate', appLeaf('macos', 'activate'));
+describe('electronHostAppActivationPolicy', appLeaf('macos', 'activationPolicy'));
+describe('electronHostAppAllWindowsClosed', appLeaf('linux', 'allWindowsClosed'));
+describe('electronHostAppBadge', appLeaf('linux', 'badge'));
+describe('electronHostAppDock', appLeaf('macos', 'dock'));
+describe('electronHostAppFocus', appLeaf('linux', 'focus'));
+describe('electronHostAppHiddenQuery', appLeaf('macos', 'hiddenQuery'));
+describe('electronHostAppHide', appLeaf('macos', 'hide'));
+describe('electronHostAppLocale', appLeaf('linux', 'locale'));
+describe('electronHostAppLoginItem', appLeaf('windows', 'loginItem'));
+describe('electronHostAppName', appLeaf('linux', 'name'));
+describe('electronHostAppNameWrite', appLeaf('linux', 'nameWrite'));
+describe('electronHostAppOpenFile', appLeaf('macos', 'openFile'));
+describe('electronHostAppPath', appLeaf('linux', 'path'));
+describe('electronHostAppQuit', appLeaf('linux', 'quit'));
+describe('electronHostAppQuitRequest', appLeaf('linux', 'quitRequest'));
+describe('electronHostAppReady', appLeaf('linux', 'ready'));
+describe('electronHostAppRecentDocuments', appLeaf('windows', 'recentDocuments'));
+describe('electronHostAppRelaunch', appLeaf('linux', 'relaunch'));
+describe('electronHostAppSecondInstance', appLeaf('linux', 'secondInstance'));
+describe('electronHostAppShow', appLeaf('macos', 'show'));
+describe('electronHostAppSingleInstance', appLeaf('linux', 'singleInstance'));
+describe('electronHostAppUserModelId', appLeaf('windows', 'userModelId'));
+
+describe('electronHostAppVersion', appLeaf('linux', 'version'));
+describe('populateElectronHostAppActivate', () => {
+  it('is the construction initializer of electronHostAppActivate', () => {
+    expect(typeof populateElectronHostAppActivate).toBe('function');
   });
 });
 
-describe('initializeAppActivationPolicyBackend', () => {
-  it('is the construction initializer of createAppActivationPolicyBackend', () => {
-    expect(typeof initializeAppActivationPolicyBackend).toBe('function');
+describe('populateElectronHostAppActivationPolicy', () => {
+  it('is the construction initializer of electronHostAppActivationPolicy', () => {
+    expect(typeof populateElectronHostAppActivationPolicy).toBe('function');
   });
 });
 
-describe('initializeAppAllWindowsClosedBackend', () => {
-  it('is the construction initializer of createAppAllWindowsClosedBackend', () => {
-    expect(typeof initializeAppAllWindowsClosedBackend).toBe('function');
+describe('populateElectronHostAppAllWindowsClosed', () => {
+  it('is the construction initializer of electronHostAppAllWindowsClosed', () => {
+    expect(typeof populateElectronHostAppAllWindowsClosed).toBe('function');
   });
 });
 
-describe('initializeAppBadgeBackend', () => {
-  it('is the construction initializer of createAppBadgeBackend', () => {
-    expect(typeof initializeAppBadgeBackend).toBe('function');
+describe('populateElectronHostAppBadge', () => {
+  it('is the construction initializer of electronHostAppBadge', () => {
+    expect(typeof populateElectronHostAppBadge).toBe('function');
   });
 });
 
-describe('initializeAppDockBackend', () => {
-  it('is the construction initializer of createAppDockBackend', () => {
-    expect(typeof initializeAppDockBackend).toBe('function');
+describe('populateElectronHostAppCommon', () => {
+  it('is the construction initializer of electronHostApp', () => {
+    expect(typeof populateElectronHostAppCommon).toBe('function');
   });
 });
 
-describe('initializeAppFocusBackend', () => {
-  it('is the construction initializer of createAppFocusBackend', () => {
-    expect(typeof initializeAppFocusBackend).toBe('function');
+describe('populateElectronHostAppDock', () => {
+  it('is the construction initializer of electronHostAppDock', () => {
+    expect(typeof populateElectronHostAppDock).toBe('function');
   });
 });
 
-describe('initializeAppHideBackend', () => {
-  it('is the construction initializer of createAppHideBackend', () => {
-    expect(typeof initializeAppHideBackend).toBe('function');
+describe('populateElectronHostAppFocus', () => {
+  it('is the construction initializer of electronHostAppFocus', () => {
+    expect(typeof populateElectronHostAppFocus).toBe('function');
   });
 });
 
-describe('initializeAppLocaleBackend', () => {
-  it('is the construction initializer of createAppLocaleBackend', () => {
-    expect(typeof initializeAppLocaleBackend).toBe('function');
+describe('populateElectronHostAppHiddenQuery', () => {
+  it('is the construction initializer of electronHostAppVisibilityQuery', () => {
+    expect(typeof populateElectronHostAppHiddenQuery).toBe('function');
   });
 });
 
-describe('initializeAppLoginItemBackend', () => {
-  it('is the construction initializer of createAppLoginItemBackend', () => {
-    expect(typeof initializeAppLoginItemBackend).toBe('function');
+describe('populateElectronHostAppHide', () => {
+  it('is the construction initializer of electronHostAppHide', () => {
+    expect(typeof populateElectronHostAppHide).toBe('function');
   });
 });
 
-describe('initializeAppNameBackend', () => {
-  it('is the construction initializer of createAppNameBackend', () => {
-    expect(typeof initializeAppNameBackend).toBe('function');
+describe('populateElectronHostAppLinux', () => {
+  it('is the construction initializer of electronHostApp', () => {
+    expect(typeof populateElectronHostAppLinux).toBe('function');
   });
 });
 
-describe('initializeAppNameWriteBackend', () => {
-  it('is the construction initializer of createAppNameWriteBackend', () => {
-    expect(typeof initializeAppNameWriteBackend).toBe('function');
+describe('populateElectronHostAppLocale', () => {
+  it('is the construction initializer of electronHostAppLocale', () => {
+    expect(typeof populateElectronHostAppLocale).toBe('function');
   });
 });
 
-describe('initializeAppOpenFileBackend', () => {
-  it('is the construction initializer of createAppOpenFileBackend', () => {
-    expect(typeof initializeAppOpenFileBackend).toBe('function');
+describe('populateElectronHostAppLoginItem', () => {
+  it('is the construction initializer of electronHostAppLoginItem', () => {
+    expect(typeof populateElectronHostAppLoginItem).toBe('function');
   });
 });
 
-describe('initializeAppPathBackend', () => {
-  it('is the construction initializer of createAppPathBackend', () => {
-    expect(typeof initializeAppPathBackend).toBe('function');
+describe('populateElectronHostAppMacos', () => {
+  it('is the construction initializer of electronHostApp', () => {
+    expect(typeof populateElectronHostAppMacos).toBe('function');
   });
 });
 
-describe('initializeAppQuitBackend', () => {
-  it('is the construction initializer of createAppQuitBackend', () => {
-    expect(typeof initializeAppQuitBackend).toBe('function');
+describe('populateElectronHostAppName', () => {
+  it('is the construction initializer of electronHostAppName', () => {
+    expect(typeof populateElectronHostAppName).toBe('function');
   });
 });
 
-describe('initializeAppQuitRequestBackend', () => {
-  it('is the construction initializer of createAppQuitRequestBackend', () => {
-    expect(typeof initializeAppQuitRequestBackend).toBe('function');
+describe('populateElectronHostAppNameWrite', () => {
+  it('is the construction initializer of electronHostAppNameWrite', () => {
+    expect(typeof populateElectronHostAppNameWrite).toBe('function');
   });
 });
 
-describe('initializeAppReadyBackend', () => {
-  it('is the construction initializer of createAppReadyBackend', () => {
-    expect(typeof initializeAppReadyBackend).toBe('function');
+describe('populateElectronHostAppOpenFile', () => {
+  it('is the construction initializer of electronHostAppOpenFile', () => {
+    expect(typeof populateElectronHostAppOpenFile).toBe('function');
   });
 });
 
-describe('initializeAppRecentDocumentsBackend', () => {
-  it('is the construction initializer of createAppRecentDocumentsBackend', () => {
-    expect(typeof initializeAppRecentDocumentsBackend).toBe('function');
+describe('populateElectronHostAppPath', () => {
+  it('is the construction initializer of electronHostAppPath', () => {
+    expect(typeof populateElectronHostAppPath).toBe('function');
   });
 });
 
-describe('initializeAppRelaunchBackend', () => {
-  it('is the construction initializer of createAppRelaunchBackend', () => {
-    expect(typeof initializeAppRelaunchBackend).toBe('function');
+describe('populateElectronHostAppQuit', () => {
+  it('is the construction initializer of electronHostAppQuit', () => {
+    expect(typeof populateElectronHostAppQuit).toBe('function');
   });
 });
 
-describe('initializeAppSecondInstanceBackend', () => {
-  it('is the construction initializer of createAppSecondInstanceBackend', () => {
-    expect(typeof initializeAppSecondInstanceBackend).toBe('function');
+describe('populateElectronHostAppQuitRequest', () => {
+  it('is the construction initializer of electronHostAppQuitRequest', () => {
+    expect(typeof populateElectronHostAppQuitRequest).toBe('function');
   });
 });
 
-describe('initializeAppShowBackend', () => {
-  it('is the construction initializer of createAppShowBackend', () => {
-    expect(typeof initializeAppShowBackend).toBe('function');
+describe('populateElectronHostAppReady', () => {
+  it('is the construction initializer of electronHostAppReady', () => {
+    expect(typeof populateElectronHostAppReady).toBe('function');
   });
 });
 
-describe('initializeAppSingleInstanceBackend', () => {
-  it('is the construction initializer of createAppSingleInstanceBackend', () => {
-    expect(typeof initializeAppSingleInstanceBackend).toBe('function');
+describe('populateElectronHostAppRecentDocuments', () => {
+  it('is the construction initializer of electronHostAppRecentDocuments', () => {
+    expect(typeof populateElectronHostAppRecentDocuments).toBe('function');
   });
 });
 
-describe('initializeAppUserModelIdBackend', () => {
-  it('is the construction initializer of createAppUserModelIdBackend', () => {
-    expect(typeof initializeAppUserModelIdBackend).toBe('function');
+describe('populateElectronHostAppRelaunch', () => {
+  it('is the construction initializer of electronHostAppRelaunch', () => {
+    expect(typeof populateElectronHostAppRelaunch).toBe('function');
   });
 });
 
-describe('initializeAppVersionBackend', () => {
-  it('is the construction initializer of createAppVersionBackend', () => {
-    expect(typeof initializeAppVersionBackend).toBe('function');
+describe('populateElectronHostAppSecondInstance', () => {
+  it('is the construction initializer of electronHostAppSecondInstance', () => {
+    expect(typeof populateElectronHostAppSecondInstance).toBe('function');
   });
 });
 
-describe('initializeAppVisibilityQueryBackend', () => {
-  it('is the construction initializer of createAppVisibilityQueryBackend', () => {
-    expect(typeof initializeAppVisibilityQueryBackend).toBe('function');
+describe('populateElectronHostAppShow', () => {
+  it('is the construction initializer of electronHostAppShow', () => {
+    expect(typeof populateElectronHostAppShow).toBe('function');
   });
 });
 
-describe('initializeElectronCommonAppCapabilities', () => {
-  it('is the construction initializer of createElectronCommonAppCapabilities', () => {
-    expect(typeof initializeElectronCommonAppCapabilities).toBe('function');
+describe('populateElectronHostAppSingleInstance', () => {
+  it('is the construction initializer of electronHostAppSingleInstance', () => {
+    expect(typeof populateElectronHostAppSingleInstance).toBe('function');
   });
 });
 
-describe('initializeElectronLinuxAppCapabilities', () => {
-  it('is the construction initializer of createElectronLinuxAppCapabilities', () => {
-    expect(typeof initializeElectronLinuxAppCapabilities).toBe('function');
+describe('populateElectronHostAppUserModelId', () => {
+  it('is the construction initializer of electronHostAppUserModelId', () => {
+    expect(typeof populateElectronHostAppUserModelId).toBe('function');
   });
 });
 
-describe('initializeElectronMacosAppCapabilities', () => {
-  it('is the construction initializer of createElectronMacosAppCapabilities', () => {
-    expect(typeof initializeElectronMacosAppCapabilities).toBe('function');
+describe('populateElectronHostAppVersion', () => {
+  it('is the construction initializer of electronHostAppVersion', () => {
+    expect(typeof populateElectronHostAppVersion).toBe('function');
   });
 });
 
-describe('initializeElectronWindowsAppCapabilities', () => {
-  it('is the construction initializer of createElectronWindowsAppCapabilities', () => {
-    expect(typeof initializeElectronWindowsAppCapabilities).toBe('function');
+describe('populateElectronHostAppWindows', () => {
+  it('is the construction initializer of electronHostApp', () => {
+    expect(typeof populateElectronHostAppWindows).toBe('function');
   });
 });

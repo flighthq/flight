@@ -2,57 +2,36 @@ import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  initializeShellBeepBackend,
-  initializeShellExternalBackend,
-  initializeShellPathOpenBackend,
-  initializeShellPathRevealBackend,
-  initializeShellShortcutLinkBackend,
-  initializeShellTrashBackend,
-  makeElectronShellCapabilities,
+  electronHostShell,
+  electronHostShellBeep,
+  electronHostShellExternal,
+  electronHostShellPathOpen,
+  electronHostShellPathReveal,
+  electronHostShellShortcutLink,
+  electronHostShellTrash,
+  populateElectronHostShellBeep,
+  populateElectronHostShellExternal,
+  populateElectronHostShellPathOpen,
+  populateElectronHostShellPathReveal,
+  populateElectronHostShellShortcutLink,
+  populateElectronHostShellTrash,
 } from './electronShell';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;
 }
 
-describe('initializeShellBeepBackend', () => {
-  it('is the construction initializer of createShellBeepBackend', () => {
-    expect(typeof initializeShellBeepBackend).toBe('function');
-  });
-});
-describe('initializeShellExternalBackend', () => {
-  it('is the construction initializer of createShellExternalBackend', () => {
-    expect(typeof initializeShellExternalBackend).toBe('function');
-  });
-});
+function shellLeaf(factory: () => object): () => void {
+  return () => {
+    it('constructs an Entity-backed shell provider', () => {
+      expect(EntityRuntimeKey in factory()).toBe(true);
+    });
+  };
+}
 
-describe('initializeShellPathOpenBackend', () => {
-  it('is the construction initializer of createShellPathOpenBackend', () => {
-    expect(typeof initializeShellPathOpenBackend).toBe('function');
-  });
-});
-
-describe('initializeShellPathRevealBackend', () => {
-  it('is the construction initializer of createShellPathRevealBackend', () => {
-    expect(typeof initializeShellPathRevealBackend).toBe('function');
-  });
-});
-
-describe('initializeShellShortcutLinkBackend', () => {
-  it('is the construction initializer of createShellShortcutLinkBackend', () => {
-    expect(typeof initializeShellShortcutLinkBackend).toBe('function');
-  });
-});
-
-describe('initializeShellTrashBackend', () => {
-  it('is the construction initializer of createShellTrashBackend', () => {
-    expect(typeof initializeShellTrashBackend).toBe('function');
-  });
-});
-
-describe('makeElectronShellCapabilities', () => {
+describe('electronHostShell', () => {
   it('constructs every Windows provider as an Entity', () => {
-    const capabilities = makeElectronShellCapabilities(fakeElectron({}), 'windows');
+    const capabilities = electronHostShell(fakeElectron({}), 'windows');
     expect(Object.keys(capabilities).sort()).toEqual([
       'beep',
       'external',
@@ -65,7 +44,7 @@ describe('makeElectronShellCapabilities', () => {
   });
 
   it('omits shortcutLink on an injected non-Windows platform', () => {
-    expect(Object.keys(makeElectronShellCapabilities(fakeElectron({}), 'linux')).sort()).toEqual([
+    expect(Object.keys(electronHostShell(fakeElectron({}), 'linux')).sort()).toEqual([
       'beep',
       'external',
       'pathOpen',
@@ -75,9 +54,9 @@ describe('makeElectronShellCapabilities', () => {
   });
 
   it('maps awaited external completion and rejection', async () => {
-    const ok = makeElectronShellCapabilities(fakeElectron({ openExternal: async () => {} }), 'linux');
+    const ok = electronHostShell(fakeElectron({ openExternal: async () => {} }), 'linux');
     await expect(ok.external?.open('https://example.test')).resolves.toEqual({ reason: 'ok' });
-    const failed = makeElectronShellCapabilities(
+    const failed = electronHostShell(
       fakeElectron({
         openExternal: async () => {
           throw new Error('denied');
@@ -89,9 +68,9 @@ describe('makeElectronShellCapabilities', () => {
   });
 
   it('preserves an Electron path error string', async () => {
-    const success = makeElectronShellCapabilities(fakeElectron({ openPath: async () => '' }), 'linux');
+    const success = electronHostShell(fakeElectron({ openPath: async () => '' }), 'linux');
     await expect(success.pathOpen?.open('/a')).resolves.toEqual({ reason: 'ok' });
-    const failed = makeElectronShellCapabilities(fakeElectron({ openPath: async () => 'no such file' }), 'linux');
+    const failed = electronHostShell(fakeElectron({ openPath: async () => 'no such file' }), 'linux');
     await expect(failed.pathOpen?.open('/a')).resolves.toEqual({
       message: 'no such file',
       reason: 'operation-failed',
@@ -99,7 +78,7 @@ describe('makeElectronShellCapabilities', () => {
   });
 
   it('does not turn an empty rejected path open into success', async () => {
-    const capabilities = makeElectronShellCapabilities(
+    const capabilities = electronHostShell(
       fakeElectron({
         openPath: async () => {
           throw new Error('');
@@ -112,7 +91,7 @@ describe('makeElectronShellCapabilities', () => {
 
   it('maps path reveal and trash outcomes', async () => {
     let revealed = '';
-    const capabilities = makeElectronShellCapabilities(
+    const capabilities = electronHostShell(
       fakeElectron({
         showItemInFolder(path) {
           revealed = path;
@@ -127,7 +106,7 @@ describe('makeElectronShellCapabilities', () => {
   });
 
   it('keeps shortcut read and write outcomes method-tight', async () => {
-    const capabilities = makeElectronShellCapabilities(
+    const capabilities = electronHostShell(
       fakeElectron({
         readShortcutLink: () => ({ target: '/target' }),
         writeShortcutLink: () => false,
@@ -145,7 +124,55 @@ describe('makeElectronShellCapabilities', () => {
 
   it('dispatches beep synchronously', () => {
     const beep = vi.fn();
-    makeElectronShellCapabilities(fakeElectron({ beep }), 'linux').beep?.beep();
+    electronHostShell(fakeElectron({ beep }), 'linux').beep?.beep();
     expect(beep).toHaveBeenCalledOnce();
+  });
+});
+const shellBeep = shellLeaf(() => electronHostShellBeep(fakeElectron({})));
+const shellExternal = shellLeaf(() => electronHostShellExternal(fakeElectron({})));
+const shellPathOpen = shellLeaf(() => electronHostShellPathOpen(fakeElectron({})));
+const shellPathReveal = shellLeaf(() => electronHostShellPathReveal(fakeElectron({})));
+const shellShortcutLink = shellLeaf(() => electronHostShellShortcutLink(fakeElectron({})));
+const shellTrash = shellLeaf(() => electronHostShellTrash(fakeElectron({})));
+
+describe('electronHostShellBeep', shellBeep);
+describe('electronHostShellExternal', shellExternal);
+describe('electronHostShellPathOpen', shellPathOpen);
+describe('electronHostShellPathReveal', shellPathReveal);
+describe('electronHostShellShortcutLink', shellShortcutLink);
+describe('electronHostShellTrash', shellTrash);
+describe('populateElectronHostShellBeep', () => {
+  it('is the construction initializer of electronHostShellBeep', () => {
+    expect(typeof populateElectronHostShellBeep).toBe('function');
+  });
+});
+
+describe('populateElectronHostShellExternal', () => {
+  it('is the construction initializer of electronHostShellExternal', () => {
+    expect(typeof populateElectronHostShellExternal).toBe('function');
+  });
+});
+
+describe('populateElectronHostShellPathOpen', () => {
+  it('is the construction initializer of electronHostShellPathOpen', () => {
+    expect(typeof populateElectronHostShellPathOpen).toBe('function');
+  });
+});
+
+describe('populateElectronHostShellPathReveal', () => {
+  it('is the construction initializer of electronHostShellPathReveal', () => {
+    expect(typeof populateElectronHostShellPathReveal).toBe('function');
+  });
+});
+
+describe('populateElectronHostShellShortcutLink', () => {
+  it('is the construction initializer of electronHostShellShortcutLink', () => {
+    expect(typeof populateElectronHostShellShortcutLink).toBe('function');
+  });
+});
+
+describe('populateElectronHostShellTrash', () => {
+  it('is the construction initializer of electronHostShellTrash', () => {
+    expect(typeof populateElectronHostShellTrash).toBe('function');
   });
 });

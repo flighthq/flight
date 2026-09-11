@@ -225,7 +225,7 @@ export * from './EasingFunction';
 export * from './EasingSegment';
 export * from './ElectronApi';
 export type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
-export * from './ElectronBackendOptions';
+export * from './ElectronHostOptions';
 export type { ElectronHost, ElectronMacosHost } from './ElectronHost';
 export type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
 export type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor';

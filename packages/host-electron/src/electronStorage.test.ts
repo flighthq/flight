@@ -1,7 +1,7 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronStorageBackend, initializeElectronStorageBackend } from './electronStorage';
+import { electronHostStorage, electronHostStorageGroup, populateElectronHostStorage } from './electronStorage';
 
 const STORAGE_PATH = '/userData/storage.json';
 
@@ -70,13 +70,13 @@ function json(value: Readonly<Record<string, string>>): string {
   return JSON.stringify(value);
 }
 
-describe('createElectronStorageBackend', () => {
+describe('electronHostStorage', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronStorageBackend(fakeElectron().electron)).toBe(true);
+    expect(EntityRuntimeKey in electronHostStorage(fakeElectron().electron)).toBe(true);
   });
 
   it('treats a missing file as successful empty storage', () => {
-    const backend = createElectronStorageBackend(fakeElectron().electron);
+    const backend = electronHostStorage(fakeElectron().electron);
     expect(backend.getItem('missing')).toEqual({ reason: 'ok', value: null });
     expect(backend.keys()).toEqual({ reason: 'ok', value: [] });
   });
@@ -84,7 +84,7 @@ describe('createElectronStorageBackend', () => {
   it('reports corrupt and non-string persistence without silently resetting it', () => {
     for (const raw of ['{', '[]', '{"key":1}']) {
       const state = fakeElectron(raw);
-      const backend = createElectronStorageBackend(state.electron);
+      const backend = electronHostStorage(state.electron);
       expect(backend.getItem('key')).toEqual({ reason: 'persistence-invalid', value: null });
       expect(backend.keys()).toEqual({ reason: 'persistence-invalid', value: null });
       expect(backend.setItem('key', 'value')).toEqual({ reason: 'persistence-invalid' });
@@ -96,7 +96,7 @@ describe('createElectronStorageBackend', () => {
 
   it('clear deliberately recovers corrupt persistence through atomic replacement', () => {
     const state = fakeElectron('{');
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.clear()).toEqual({ reason: 'ok' });
     expect(state.files.get(STORAGE_PATH)).toBe('{}');
     expect(backend.keys()).toEqual({ reason: 'ok', value: [] });
@@ -104,7 +104,7 @@ describe('createElectronStorageBackend', () => {
 
   it('persists a candidate through same-directory rename before committing cache', () => {
     const state = fakeElectron(json({ a: 'old' }));
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.setItem('a', 'new')).toEqual({ reason: 'ok' });
     expect(state.written).toHaveLength(1);
     expect(state.written[0]!.path.startsWith(`${STORAGE_PATH}.tmp-`)).toBe(true);
@@ -115,7 +115,7 @@ describe('createElectronStorageBackend', () => {
 
   it('never exposes a false cache commit or replaced target when rename fails', () => {
     const state = fakeElectron(json({ a: 'old' }));
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.getItem('a')).toEqual({ reason: 'ok', value: 'old' });
     state.renameFailure = codeError('EIO');
     expect(backend.setItem('a', 'candidate')).toEqual({ reason: 'write-failed' });
@@ -127,7 +127,7 @@ describe('createElectronStorageBackend', () => {
 
   it('keeps a partial temporary write unobservable and cleans it after failure', () => {
     const state = fakeElectron(json({ a: 'old' }));
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.getItem('a')).toEqual({ reason: 'ok', value: 'old' });
     state.writeFailure = codeError('EIO');
     state.writePartialBeforeFailure = true;
@@ -140,29 +140,29 @@ describe('createElectronStorageBackend', () => {
   it('classifies only reliable filesystem codes and otherwise uses the method fallback', () => {
     const denied = fakeElectron(json({ a: '1' }));
     denied.readFailure = codeError('EACCES');
-    expect(createElectronStorageBackend(denied.electron).getItem('a')).toEqual({
+    expect(electronHostStorage(denied.electron).getItem('a')).toEqual({
       reason: 'security-denied',
       value: null,
     });
 
     const quota = fakeElectron(json({ a: '1' }));
-    const quotaBackend = createElectronStorageBackend(quota.electron);
+    const quotaBackend = electronHostStorage(quota.electron);
     quota.writeFailure = codeError('ENOSPC');
     expect(quotaBackend.setItem('a', '2')).toEqual({ reason: 'quota-exceeded' });
 
     const remove = fakeElectron(json({ a: '1' }));
-    const removeBackend = createElectronStorageBackend(remove.electron);
+    const removeBackend = electronHostStorage(remove.electron);
     remove.renameFailure = codeError('EIO');
     expect(removeBackend.removeItem('a')).toEqual({ reason: 'remove-failed' });
 
     const clear = fakeElectron(json({ a: '1' }));
     clear.renameFailure = codeError('EIO');
-    expect(createElectronStorageBackend(clear.electron).clear()).toEqual({ reason: 'clear-failed' });
+    expect(electronHostStorage(clear.electron).clear()).toEqual({ reason: 'clear-failed' });
   });
 
   it('treats absent remove as idempotent success without writing', () => {
     const state = fakeElectron(json({}));
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.removeItem('missing')).toEqual({ reason: 'ok' });
     expect(state.written).toEqual([]);
     expect(state.renamed).toEqual([]);
@@ -173,14 +173,22 @@ describe('createElectronStorageBackend', () => {
   // power-loss durability claim.
   it('defines ok as atomic visibility rather than power-loss durability', () => {
     const state = fakeElectron(json({ a: 'old' }));
-    const backend = createElectronStorageBackend(state.electron);
+    const backend = electronHostStorage(state.electron);
     expect(backend.setItem('a', 'visible')).toEqual({ reason: 'ok' });
     expect(state.renamed).toHaveLength(1);
     expect(backend.getItem('a')).toEqual({ reason: 'ok', value: 'visible' });
   });
 });
-describe('initializeElectronStorageBackend', () => {
-  it('is the construction initializer of createElectronStorageBackend', () => {
-    expect(typeof initializeElectronStorageBackend).toBe('function');
+
+describe('electronHostStorageGroup', () => {
+  it('constructs the Entity-backed local storage slot', () => {
+    const storage = electronHostStorageGroup(fakeElectron().electron);
+    expect(Object.keys(storage)).toEqual(['local']);
+    expect(EntityRuntimeKey in storage.local).toBe(true);
+  });
+});
+describe('populateElectronHostStorage', () => {
+  it('is the construction initializer of electronHostStorage', () => {
+    expect(typeof populateElectronHostStorage).toBe('function');
   });
 });

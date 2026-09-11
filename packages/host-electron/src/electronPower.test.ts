@@ -2,16 +2,24 @@ import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  createElectronPowerBackends,
-  initializeElectronPowerCapabilities,
-  initializePowerBatteryHealthBackend,
-  initializePowerChangeBackend,
-  initializePowerIdleBackend,
-  initializePowerKeepAwakeBackend,
-  initializePowerSessionLockBackend,
-  initializePowerStatusBackend,
-  initializePowerSuspensionBackend,
-  initializePowerThermalBackend,
+  electronHostPower,
+  electronHostPowerBatteryHealth,
+  electronHostPowerChange,
+  electronHostPowerIdle,
+  electronHostPowerKeepAwake,
+  electronHostPowerSessionLock,
+  electronHostPowerStatus,
+  electronHostPowerSuspension,
+  electronHostPowerThermal,
+  populateElectronHostPower,
+  populateElectronHostPowerBatteryHealth,
+  populateElectronHostPowerChange,
+  populateElectronHostPowerIdle,
+  populateElectronHostPowerKeepAwake,
+  populateElectronHostPowerSessionLock,
+  populateElectronHostPowerStatus,
+  populateElectronHostPowerSuspension,
+  populateElectronHostPowerThermal,
 } from './electronPower';
 
 function emptyStatus(): PowerStatus {
@@ -65,15 +73,61 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number; the
   return { electron, monitorListeners, blocker };
 }
 
-describe('createElectronPowerBackends', () => {
+function powerLeaf(factory: () => object | undefined): () => void {
+  return () => {
+    it('constructs an Entity-backed power provider', () => {
+      const provider = factory();
+      expect(provider).toBeDefined();
+      expect(EntityRuntimeKey in provider!).toBe(true);
+    });
+  };
+}
+
+describe('electron power slot coverage', () => {
+  // ★ EXACT SLOT COVERAGE for E, including the conditional thermal slot.
+  it('offers every slot when the platform reports thermal state', () => {
+    const slots = electronHostPower(fakeElectron({}).electron);
+    expect(Object.keys(slots).sort()).toEqual([
+      'batteryHealth',
+      'change',
+      'idle',
+      'keepAwake',
+      'sessionLock',
+      'status',
+      'suspension',
+      'thermal',
+    ]);
+  });
+
+  it('drops only the thermal slot when the platform cannot report the level', () => {
+    const slots = electronHostPower(fakeElectron({ thermal: null }).electron);
+    expect(Object.keys(slots).sort()).toEqual([
+      'batteryHealth',
+      'change',
+      'idle',
+      'keepAwake',
+      'sessionLock',
+      'status',
+      'suspension',
+    ]);
+  });
+
+  it('declares a teardown obligation on keepAwake alone', () => {
+    const slots = electronHostPower(fakeElectron({}).electron);
+    expect(typeof slots.keepAwake.destroy).toBe('function');
+    expect('destroy' in slots.sessionLock).toBe(false);
+    expect('destroy' in slots.status).toBe(false);
+  });
+});
+describe('electronHostPower', () => {
   it('returns Entity-composed slots', () => {
-    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    const slots = electronHostPower(fakeElectron({}).electron);
     expect(EntityRuntimeKey in slots).toBe(true);
     for (const provider of Object.values(slots)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('getStatus reports no battery level and infers charging from AC power', () => {
-    const onAc = createElectronPowerBackends(fakeElectron({ onBatteryPower: false }).electron);
+    const onAc = electronHostPower(fakeElectron({ onBatteryPower: false }).electron);
     const status = onAc.status.getStatus(emptyStatus());
     expect(status.batteryLevel).toBe(-1);
     expect(status.isCharging).toBe(true);
@@ -81,7 +135,7 @@ describe('createElectronPowerBackends', () => {
   });
 
   it('reads a real thermal state rather than a hardcoded Unknown', () => {
-    const slots = createElectronPowerBackends(fakeElectron({ thermal: 'serious' }).electron);
+    const slots = electronHostPower(fakeElectron({ thermal: 'serious' }).electron);
     expect(slots.status.getStatus(emptyStatus()).thermalState).toBe('Serious');
     expect(slots.thermal?.getThermalState()).toBe('Serious');
   });
@@ -90,7 +144,7 @@ describe('createElectronPowerBackends', () => {
   // cannot then read is not an actionable capability.
   it('delivers the thermal state as the subscription payload', () => {
     const { electron, monitorListeners } = fakeElectron({ thermal: 'critical' });
-    const slots = createElectronPowerBackends(electron);
+    const slots = electronHostPower(electron);
     const seen: string[] = [];
     const stop = slots.thermal!.subscribeThermalStateChange((state) => seen.push(state));
     for (const l of monitorListeners.get('thermal-state-change') ?? []) l();
@@ -102,13 +156,13 @@ describe('createElectronPowerBackends', () => {
 
   // ★ If the installed Electron cannot report the level, the slot is OMITTED and the gap is real.
   it('omits the thermal slot entirely when the platform cannot report the level', () => {
-    const slots = createElectronPowerBackends(fakeElectron({ thermal: null }).electron);
+    const slots = electronHostPower(fakeElectron({ thermal: null }).electron);
     expect(slots.thermal).toBeUndefined();
   });
 
   it('brackets session lock and unlock through the same mechanism', () => {
     const { electron, monitorListeners } = fakeElectron({});
-    const slots = createElectronPowerBackends(electron);
+    const slots = electronHostPower(electron);
     let locked = 0;
     let unlocked = 0;
     const stopLock = slots.sessionLock.subscribeLock(() => locked++);
@@ -124,7 +178,7 @@ describe('createElectronPowerBackends', () => {
 
   it('lifts the synchronous blocker into the common async result', async () => {
     const { electron, blocker } = fakeElectron({ startId: 3 });
-    const slots = createElectronPowerBackends(electron);
+    const slots = electronHostPower(electron);
     await expect(slots.keepAwake.acquire('PreventDisplaySleep')).resolves.toEqual({ reason: 'ok' });
     expect(slots.keepAwake.isActive()).toBe(true);
     await expect(slots.keepAwake.release()).resolves.toEqual({ reason: 'ok' });
@@ -134,98 +188,78 @@ describe('createElectronPowerBackends', () => {
   });
 
   it('reports idle state and time from the platform', () => {
-    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    const slots = electronHostPower(fakeElectron({}).electron);
     expect(slots.idle.getIdleState(60)).toBe('Active');
     expect(slots.idle.getIdleTimeSeconds()).toBe(11);
   });
 });
+const powerBatteryHealth = powerLeaf(() => electronHostPowerBatteryHealth(fakeElectron({}).electron));
+const powerChange = powerLeaf(() => electronHostPowerChange(fakeElectron({}).electron));
+const powerIdle = powerLeaf(() => electronHostPowerIdle(fakeElectron({}).electron));
+const powerKeepAwake = powerLeaf(() => electronHostPowerKeepAwake(fakeElectron({}).electron));
+const powerSessionLock = powerLeaf(() => electronHostPowerSessionLock(fakeElectron({}).electron));
+const powerStatus = powerLeaf(() => electronHostPowerStatus(fakeElectron({}).electron));
+const powerSuspension = powerLeaf(() => electronHostPowerSuspension(fakeElectron({}).electron));
+const powerThermal = powerLeaf(() => electronHostPowerThermal(fakeElectron({}).electron));
 
-describe('electron power slot coverage', () => {
-  // ★ EXACT SLOT COVERAGE for E, including the conditional thermal slot.
-  it('offers every slot when the platform reports thermal state', () => {
-    const slots = createElectronPowerBackends(fakeElectron({}).electron);
-    expect(Object.keys(slots).sort()).toEqual([
-      'batteryHealth',
-      'change',
-      'idle',
-      'keepAwake',
-      'sessionLock',
-      'status',
-      'suspension',
-      'thermal',
-    ]);
-  });
-
-  it('drops only the thermal slot when the platform cannot report the level', () => {
-    const slots = createElectronPowerBackends(fakeElectron({ thermal: null }).electron);
-    expect(Object.keys(slots).sort()).toEqual([
-      'batteryHealth',
-      'change',
-      'idle',
-      'keepAwake',
-      'sessionLock',
-      'status',
-      'suspension',
-    ]);
-  });
-
-  it('declares a teardown obligation on keepAwake alone', () => {
-    const slots = createElectronPowerBackends(fakeElectron({}).electron);
-    expect(typeof slots.keepAwake.destroy).toBe('function');
-    expect('destroy' in slots.sessionLock).toBe(false);
-    expect('destroy' in slots.status).toBe(false);
-  });
-});
-describe('initializeElectronPowerCapabilities', () => {
-  it('is the construction initializer of createElectronPowerCapabilities', () => {
-    expect(typeof initializeElectronPowerCapabilities).toBe('function');
+describe('electronHostPowerBatteryHealth', powerBatteryHealth);
+describe('electronHostPowerChange', powerChange);
+describe('electronHostPowerIdle', powerIdle);
+describe('electronHostPowerKeepAwake', powerKeepAwake);
+describe('electronHostPowerSessionLock', powerSessionLock);
+describe('electronHostPowerStatus', powerStatus);
+describe('electronHostPowerSuspension', powerSuspension);
+describe('electronHostPowerThermal', powerThermal);
+describe('populateElectronHostPower', () => {
+  it('is the construction initializer of electronHostPower', () => {
+    expect(typeof populateElectronHostPower).toBe('function');
   });
 });
 
-describe('initializePowerBatteryHealthBackend', () => {
-  it('is the construction initializer of createPowerBatteryHealthBackend', () => {
-    expect(typeof initializePowerBatteryHealthBackend).toBe('function');
+describe('populateElectronHostPowerBatteryHealth', () => {
+  it('is the construction initializer of electronHostPowerBatteryHealth', () => {
+    expect(typeof populateElectronHostPowerBatteryHealth).toBe('function');
   });
 });
 
-describe('initializePowerChangeBackend', () => {
-  it('is the construction initializer of createPowerChangeBackend', () => {
-    expect(typeof initializePowerChangeBackend).toBe('function');
+describe('populateElectronHostPowerChange', () => {
+  it('is the construction initializer of electronHostPowerChange', () => {
+    expect(typeof populateElectronHostPowerChange).toBe('function');
   });
 });
 
-describe('initializePowerIdleBackend', () => {
-  it('is the construction initializer of createPowerIdleBackend', () => {
-    expect(typeof initializePowerIdleBackend).toBe('function');
+describe('populateElectronHostPowerIdle', () => {
+  it('is the construction initializer of electronHostPowerIdle', () => {
+    expect(typeof populateElectronHostPowerIdle).toBe('function');
   });
 });
 
-describe('initializePowerKeepAwakeBackend', () => {
-  it('is the construction initializer of createPowerKeepAwakeBackend', () => {
-    expect(typeof initializePowerKeepAwakeBackend).toBe('function');
+describe('populateElectronHostPowerKeepAwake', () => {
+  it('is the construction initializer of electronHostPowerKeepAwake', () => {
+    expect(typeof populateElectronHostPowerKeepAwake).toBe('function');
   });
 });
 
-describe('initializePowerSessionLockBackend', () => {
-  it('is the construction initializer of createPowerSessionLockBackend', () => {
-    expect(typeof initializePowerSessionLockBackend).toBe('function');
+describe('populateElectronHostPowerSessionLock', () => {
+  it('is the construction initializer of electronHostPowerSessionLock', () => {
+    expect(typeof populateElectronHostPowerSessionLock).toBe('function');
   });
 });
 
-describe('initializePowerStatusBackend', () => {
-  it('is the construction initializer of createPowerStatusBackend', () => {
-    expect(typeof initializePowerStatusBackend).toBe('function');
+describe('populateElectronHostPowerStatus', () => {
+  it('is the construction initializer of electronHostPowerStatus', () => {
+    expect(typeof populateElectronHostPowerStatus).toBe('function');
   });
 });
 
-describe('initializePowerSuspensionBackend', () => {
-  it('is the construction initializer of createPowerSuspensionBackend', () => {
-    expect(typeof initializePowerSuspensionBackend).toBe('function');
+describe('populateElectronHostPowerSuspension', () => {
+  it('is the construction initializer of electronHostPowerSuspension', () => {
+    expect(typeof populateElectronHostPowerSuspension).toBe('function');
   });
 });
 
-describe('initializePowerThermalBackend', () => {
-  it('is the construction initializer of createPowerThermalBackend', () => {
-    expect(typeof initializePowerThermalBackend).toBe('function');
+describe('populateElectronHostPowerThermal', () => {
+  it('is the construction initializer of electronHostPowerThermal', () => {
+    expect(typeof populateElectronHostPowerThermal).toBe('function');
   });
 });

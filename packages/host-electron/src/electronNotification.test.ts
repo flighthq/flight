@@ -3,9 +3,17 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types/contract';
 
 import {
-  createElectronNotificationCapabilities,
-  initializeElectronMacosNotificationCapabilities,
-  initializeElectronNotificationCapabilities,
+  electronHostNotification,
+  electronHostNotificationAction,
+  electronHostNotificationClick,
+  electronHostNotificationClose,
+  electronHostNotificationDelivery,
+  electronHostNotificationDismiss,
+  electronHostNotificationLifecycle,
+  electronHostNotificationReceived,
+  electronHostNotificationReply,
+  populateElectronHostNotificationMacos,
+  populateElectronHostNotificationCommon,
 } from './electronNotification';
 
 interface FakeNotification {
@@ -38,20 +46,28 @@ function fakeElectron(supported = true) {
   return { electron, notifications };
 }
 
-describe('createElectronNotificationCapabilities', () => {
+function notificationLeaf(factory: () => object): () => void {
+  return () => {
+    it('constructs the requested notification provider', () => {
+      expect(factory()).toBeDefined();
+    });
+  };
+}
+
+describe('electronHostNotification', () => {
   it.each([
     ['macos', ['action', 'click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received', 'reply']],
     ['windows', ['click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received']],
     ['linux', ['click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received']],
   ] as const)('constructs the exact %s profile', (platform, expected) => {
-    const capabilities = createElectronNotificationCapabilities(fakeElectron().electron, { platform });
+    const capabilities = electronHostNotification(fakeElectron().electron, { platform });
     expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual(expected);
     expect('permission' in capabilities).toBe(false);
   });
 
   it('rejects Darwin-only actions on Windows instead of dropping them', async () => {
-    const capabilities = createElectronNotificationCapabilities(fakeElectron().electron, { platform: 'windows' });
+    const capabilities = electronHostNotification(fakeElectron().electron, { platform: 'windows' });
     await expect(
       capabilities.delivery.notify({
         actions: [{ id: 'open', title: 'Open' }],
@@ -62,7 +78,7 @@ describe('createElectronNotificationCapabilities', () => {
 
   it('publishes only after the native show event', async () => {
     const { electron, notifications } = fakeElectron();
-    const capabilities = createElectronNotificationCapabilities(electron, {
+    const capabilities = electronHostNotification(electron, {
       platform: 'linux',
     });
     let show: (() => void) | null = null;
@@ -103,7 +119,7 @@ describe('createElectronNotificationCapabilities', () => {
       },
       { isSupported: () => true },
     ) as unknown as ElectronApi['Notification'];
-    const capabilities = createElectronNotificationCapabilities(electron, {
+    const capabilities = electronHostNotification(electron, {
       platform: 'linux',
     });
     await expect(capabilities.delivery.notify({ id: 'ghost', title: 'Ghost' })).resolves.toEqual({
@@ -119,7 +135,7 @@ describe('createElectronNotificationCapabilities', () => {
 
   it('maps Darwin action/reply and all-platform click/dismiss/received to one Entity', async () => {
     const { electron, notifications } = fakeElectron();
-    const capabilities = createElectronNotificationCapabilities(electron, {
+    const capabilities = electronHostNotification(electron, {
       platform: 'macos',
     });
     const seen: string[] = [];
@@ -145,7 +161,7 @@ describe('createElectronNotificationCapabilities', () => {
 
   it('pins close to the returned Entity', async () => {
     const { electron, notifications } = fakeElectron();
-    const capabilities = createElectronNotificationCapabilities(electron, {
+    const capabilities = electronHostNotification(electron, {
       platform: 'linux',
     });
     const delivered = await capabilities.delivery.notify({
@@ -168,7 +184,7 @@ describe('createElectronNotificationCapabilities', () => {
 
   it('attempts all live closes and retries only failures', async () => {
     const { electron, notifications } = fakeElectron();
-    const capabilities = createElectronNotificationCapabilities(electron, {
+    const capabilities = electronHostNotification(electron, {
       platform: 'linux',
     });
     await capabilities.delivery.notify({ id: 'first', title: 'First' });
@@ -190,14 +206,47 @@ describe('createElectronNotificationCapabilities', () => {
     expect(secondCloses).toBe(2);
   });
 });
-describe('initializeElectronMacosNotificationCapabilities', () => {
-  it('is the construction initializer of createElectronMacosNotificationCapabilities', () => {
-    expect(typeof initializeElectronMacosNotificationCapabilities).toBe('function');
+const notificationAction = notificationLeaf(() =>
+  electronHostNotificationAction(fakeElectron().electron, { platform: 'macos' }),
+);
+const notificationClick = notificationLeaf(() =>
+  electronHostNotificationClick(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationClose = notificationLeaf(() =>
+  electronHostNotificationClose(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationDelivery = notificationLeaf(() =>
+  electronHostNotificationDelivery(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationDismiss = notificationLeaf(() =>
+  electronHostNotificationDismiss(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationLifecycle = notificationLeaf(() =>
+  electronHostNotificationLifecycle(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationReceived = notificationLeaf(() =>
+  electronHostNotificationReceived(fakeElectron().electron, { platform: 'linux' }),
+);
+const notificationReply = notificationLeaf(() =>
+  electronHostNotificationReply(fakeElectron().electron, { platform: 'macos' }),
+);
+
+describe('electronHostNotificationAction', notificationAction);
+describe('electronHostNotificationClick', notificationClick);
+describe('electronHostNotificationClose', notificationClose);
+describe('electronHostNotificationDelivery', notificationDelivery);
+describe('electronHostNotificationDismiss', notificationDismiss);
+describe('electronHostNotificationLifecycle', notificationLifecycle);
+describe('electronHostNotificationReceived', notificationReceived);
+describe('electronHostNotificationReply', notificationReply);
+describe('populateElectronHostNotificationCommon', () => {
+  it('is the construction initializer of electronHostNotification', () => {
+    expect(typeof populateElectronHostNotificationCommon).toBe('function');
   });
 });
 
-describe('initializeElectronNotificationCapabilities', () => {
-  it('is the construction initializer of createElectronNotificationCapabilities', () => {
-    expect(typeof initializeElectronNotificationCapabilities).toBe('function');
+describe('populateElectronHostNotificationMacos', () => {
+  it('is the construction initializer of electronHostNotification', () => {
+    expect(typeof populateElectronHostNotificationMacos).toBe('function');
   });
 });

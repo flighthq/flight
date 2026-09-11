@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
+  HostStorageCapabilities,
   HostStorageProvider,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
@@ -15,20 +16,24 @@ type StorageRecordResult =
   | { readonly reason: 'ok'; readonly value: StorageRecord }
   | { readonly reason: StorageGetItemFailureReason; readonly value: null };
 
-export function createElectronStorageBackend(
+export function electronHostStorage(electron: ElectronApi, fileName = 'storage.json'): HostStorageProvider & Entity {
+  const out = allocateEntity<HostStorageProvider>();
+  populateElectronHostStorage(out, electron, fileName);
+  return finishEntity(out);
+}
+
+export function electronHostStorageGroup(
   electron: ElectronApi,
   fileName = 'storage.json',
-): HostStorageProvider & Entity {
-  const out = allocateEntity<HostStorageProvider>();
-  initializeElectronStorageBackend(out, electron, fileName);
-  return finishEntity(out);
+): Required<Pick<HostStorageCapabilities, 'local'>> {
+  return { local: electronHostStorage(electron, fileName) };
 }
 
 // Maps synchronous Storage commands to one JSON file in Electron's userData directory. Mutations build
 // a candidate record, write it to a temporary file in the SAME directory, atomically rename it over the
 // target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
 // not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
-export function initializeElectronStorageBackend(
+export function populateElectronHostStorage(
   out: EntityConstruction<HostStorageProvider>,
   electron: ElectronApi,
   fileName = 'storage.json',

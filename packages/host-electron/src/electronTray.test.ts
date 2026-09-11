@@ -15,25 +15,41 @@ import type {
   ElectronTray,
   TrayIcon,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  createElectronTrayCapabilities,
-  initializeTrayBalloonBackend,
-  initializeTrayBalloonEventsBackend,
-  initializeTrayBoundsBackend,
-  initializeTrayDoubleClickPolicyBackend,
-  initializeTrayDropEventsBackend,
-  initializeTrayImageBackend,
-  initializeTrayInteractionEventsBackend,
-  initializeTrayLifecycleBackend,
-  initializeTrayMenuBackend,
-  initializeTrayMenuSelectionEventsBackend,
-  initializeTrayPopupMenuBackend,
-  initializeTrayPressedImageBackend,
-  initializeTrayTemplateImageBackend,
-  initializeTrayTitleBackend,
-  initializeTrayTooltipBackend,
+  electronHostTray,
+  electronHostTrayBalloon,
+  electronHostTrayBalloonEvents,
+  electronHostTrayBounds,
+  electronHostTrayDoubleClickPolicy,
+  electronHostTrayDropEvents,
+  electronHostTrayImage,
+  electronHostTrayInteractionEvents,
+  electronHostTrayLifecycle,
+  electronHostTrayMenu,
+  electronHostTrayMenuSelectionEvents,
+  electronHostTrayPopupMenu,
+  electronHostTrayPressedImage,
+  electronHostTrayTemplateImage,
+  electronHostTrayTitle,
+  electronHostTrayTooltip,
+  populateElectronHostTrayBalloon,
+  populateElectronHostTrayBalloonEvents,
+  populateElectronHostTrayBounds,
+  populateElectronHostTrayDoubleClickPolicy,
+  populateElectronHostTrayDropEvents,
+  populateElectronHostTrayImage,
+  populateElectronHostTrayInteractionEvents,
+  populateElectronHostTrayLifecycle,
+  populateElectronHostTrayMenu,
+  populateElectronHostTrayMenuSelectionEvents,
+  populateElectronHostTrayPopupMenu,
+  populateElectronHostTrayPressedImage,
+  populateElectronHostTrayTemplateImage,
+  populateElectronHostTrayTitle,
+  populateElectronHostTrayTooltip,
 } from './electronTray';
 
 interface FakeImage extends ElectronNativeImage {
@@ -119,17 +135,25 @@ function fakeElectron() {
 }
 
 async function acquire(
-  hostTrayLifecycle: NonNullable<ReturnType<typeof createElectronTrayCapabilities>['lifecycle']>,
+  hostTrayLifecycle: NonNullable<ReturnType<typeof electronHostTray>['lifecycle']>,
 ): Promise<TrayIcon> {
   const result = await createTrayIcon(hostTrayLifecycle, { icon: 'icon.png' });
   if (result.outcome !== 'created') throw new Error(result.outcome);
   return result.tray;
 }
 
-describe('createElectronTrayCapabilities', () => {
+function trayLeaf(factory: () => object): () => void {
+  return () => {
+    it('constructs an Entity-backed tray provider', () => {
+      expect(EntityRuntimeKey in factory()).toBe(true);
+    });
+  };
+}
+
+describe('electronHostTray', () => {
   it('exposes only the slots supported by the injected OS profile', () => {
     const { electron } = fakeElectron();
-    expect(Object.keys(createElectronTrayCapabilities(electron, 'linux')).sort()).toEqual(
+    expect(Object.keys(electronHostTray(electron, 'linux')).sort()).toEqual(
       [
         'bounds',
         'image',
@@ -141,7 +165,7 @@ describe('createElectronTrayCapabilities', () => {
         'tooltip',
       ].sort(),
     );
-    expect(Object.keys(createElectronTrayCapabilities(electron, 'macos')).sort()).toEqual(
+    expect(Object.keys(electronHostTray(electron, 'macos')).sort()).toEqual(
       [
         'bounds',
         'doubleClickPolicy',
@@ -158,7 +182,7 @@ describe('createElectronTrayCapabilities', () => {
         'tooltip',
       ].sort(),
     );
-    expect(Object.keys(createElectronTrayCapabilities(electron, 'windows')).sort()).toEqual(
+    expect(Object.keys(electronHostTray(electron, 'windows')).sort()).toEqual(
       [
         'balloon',
         'balloonEvents',
@@ -176,7 +200,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('constructs the native resource before publishing the Entity', async () => {
     const { electron, trays } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
+    const host = { tray: electronHostTray(electron, 'macos') };
     const result = await createTrayIcon(host.tray.lifecycle, {
       icon: 'icon.png',
       iconTemplate: true,
@@ -191,7 +215,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('keeps one native listener while delivering full pointer payload to multiple subscribers', async () => {
     const { electron, trays } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const host = { tray: electronHostTray(electron, 'linux') };
     const tray = await acquire(host.tray.lifecycle);
     const first = vi.fn();
     const second = vi.fn();
@@ -207,7 +231,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('routes a menu selection only through that Tray signal', async () => {
     const { electron, templates } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const host = { tray: electronHostTray(electron, 'linux') };
     const first = await acquire(host.tray.lifecycle);
     const second = await acquire(host.tray.lifecycle);
     const firstIds: string[] = [];
@@ -222,7 +246,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('realizes later template changes through the current native image', async () => {
     const { electron, trays } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
+    const host = { tray: electronHostTray(electron, 'macos') };
     const tray = await acquire(host.tray.lifecycle);
     expect((await setTrayIconTemplate(host.tray.templateImage, tray, true)).outcome).toBe('updated');
     expect((trays[0].image as FakeImage).template).toBe(true);
@@ -230,7 +254,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('returns invalid-icon without publishing a ghost record', async () => {
     const { electron, trays } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const host = { tray: electronHostTray(electron, 'linux') };
     const result = await createTrayIcon(host.tray.lifecycle, { icon: 'invalid' });
     expect(result.outcome).toBe('invalid-icon');
     expect(trays).toHaveLength(0);
@@ -239,7 +263,7 @@ describe('createElectronTrayCapabilities', () => {
 
   it('attempts listener and native teardown, then retries only failed steps', async () => {
     const { electron, trays } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const host = { tray: electronHostTray(electron, 'linux') };
     const tray = await acquire(host.tray.lifecycle);
     trays[0].removeFailures = 1;
     trays[0].destroyFailures = 1;
@@ -250,99 +274,130 @@ describe('createElectronTrayCapabilities', () => {
 
   it('owns balloon commands only on the Windows shape', async () => {
     const { electron } = fakeElectron();
-    const host = { tray: createElectronTrayCapabilities(electron, 'windows') };
+    const host = { tray: electronHostTray(electron, 'windows') };
     const tray = await acquire(host.tray.lifecycle);
     expect((await displayTrayBalloon(host.tray.balloon, tray, { text: 'Done', title: 'Flight' })).outcome).toBe(
       'displayed',
     );
   });
 });
-describe('initializeTrayBalloonBackend', () => {
-  it('is the construction initializer of createTrayBalloonBackend', () => {
-    expect(typeof initializeTrayBalloonBackend).toBe('function');
+const trayBalloon = trayLeaf(() => electronHostTrayBalloon(fakeElectron().electron));
+const trayBalloonEvents = trayLeaf(() => electronHostTrayBalloonEvents(fakeElectron().electron));
+const trayBounds = trayLeaf(() => electronHostTrayBounds(fakeElectron().electron, 'linux'));
+const trayDoubleClickPolicy = trayLeaf(() => electronHostTrayDoubleClickPolicy(fakeElectron().electron));
+const trayDropEvents = trayLeaf(() => electronHostTrayDropEvents(fakeElectron().electron));
+const trayImage = trayLeaf(() => electronHostTrayImage(fakeElectron().electron, 'linux'));
+const trayInteractionEvents = trayLeaf(() => electronHostTrayInteractionEvents(fakeElectron().electron, 'linux'));
+const trayLifecycle = trayLeaf(() => electronHostTrayLifecycle(fakeElectron().electron, 'linux'));
+const trayMenu = trayLeaf(() => electronHostTrayMenu(fakeElectron().electron, 'linux'));
+const trayMenuSelectionEvents = trayLeaf(() => electronHostTrayMenuSelectionEvents(fakeElectron().electron, 'linux'));
+const trayPopupMenu = trayLeaf(() => electronHostTrayPopupMenu(fakeElectron().electron, 'linux'));
+const trayPressedImage = trayLeaf(() => electronHostTrayPressedImage(fakeElectron().electron));
+const trayTemplateImage = trayLeaf(() => electronHostTrayTemplateImage(fakeElectron().electron));
+const trayTitle = trayLeaf(() => electronHostTrayTitle(fakeElectron().electron));
+const trayTooltip = trayLeaf(() => electronHostTrayTooltip(fakeElectron().electron, 'linux'));
+
+describe('electronHostTrayBalloon', trayBalloon);
+describe('electronHostTrayBalloonEvents', trayBalloonEvents);
+describe('electronHostTrayBounds', trayBounds);
+describe('electronHostTrayDoubleClickPolicy', trayDoubleClickPolicy);
+describe('electronHostTrayDropEvents', trayDropEvents);
+describe('electronHostTrayImage', trayImage);
+describe('electronHostTrayInteractionEvents', trayInteractionEvents);
+describe('electronHostTrayLifecycle', trayLifecycle);
+describe('electronHostTrayMenu', trayMenu);
+describe('electronHostTrayMenuSelectionEvents', trayMenuSelectionEvents);
+describe('electronHostTrayPopupMenu', trayPopupMenu);
+describe('electronHostTrayPressedImage', trayPressedImage);
+describe('electronHostTrayTemplateImage', trayTemplateImage);
+describe('electronHostTrayTitle', trayTitle);
+describe('electronHostTrayTooltip', trayTooltip);
+describe('populateElectronHostTrayBalloon', () => {
+  it('is the construction initializer of electronHostTrayBalloon', () => {
+    expect(typeof populateElectronHostTrayBalloon).toBe('function');
   });
 });
 
-describe('initializeTrayBalloonEventsBackend', () => {
-  it('is the construction initializer of createTrayBalloonEventsBackend', () => {
-    expect(typeof initializeTrayBalloonEventsBackend).toBe('function');
+describe('populateElectronHostTrayBalloonEvents', () => {
+  it('is the construction initializer of electronHostTrayBalloonEvents', () => {
+    expect(typeof populateElectronHostTrayBalloonEvents).toBe('function');
   });
 });
 
-describe('initializeTrayBoundsBackend', () => {
-  it('is the construction initializer of createTrayBoundsBackend', () => {
-    expect(typeof initializeTrayBoundsBackend).toBe('function');
+describe('populateElectronHostTrayBounds', () => {
+  it('is the construction initializer of electronHostTrayBounds', () => {
+    expect(typeof populateElectronHostTrayBounds).toBe('function');
   });
 });
 
-describe('initializeTrayDoubleClickPolicyBackend', () => {
-  it('is the construction initializer of createTrayDoubleClickPolicyBackend', () => {
-    expect(typeof initializeTrayDoubleClickPolicyBackend).toBe('function');
+describe('populateElectronHostTrayDoubleClickPolicy', () => {
+  it('is the construction initializer of electronHostTrayDoubleClickPolicy', () => {
+    expect(typeof populateElectronHostTrayDoubleClickPolicy).toBe('function');
   });
 });
 
-describe('initializeTrayDropEventsBackend', () => {
-  it('is the construction initializer of createTrayDropEventsBackend', () => {
-    expect(typeof initializeTrayDropEventsBackend).toBe('function');
+describe('populateElectronHostTrayDropEvents', () => {
+  it('is the construction initializer of electronHostTrayDropEvents', () => {
+    expect(typeof populateElectronHostTrayDropEvents).toBe('function');
   });
 });
 
-describe('initializeTrayImageBackend', () => {
-  it('is the construction initializer of createTrayImageBackend', () => {
-    expect(typeof initializeTrayImageBackend).toBe('function');
+describe('populateElectronHostTrayImage', () => {
+  it('is the construction initializer of electronHostTrayImage', () => {
+    expect(typeof populateElectronHostTrayImage).toBe('function');
   });
 });
 
-describe('initializeTrayInteractionEventsBackend', () => {
-  it('is the construction initializer of createTrayInteractionEventsBackend', () => {
-    expect(typeof initializeTrayInteractionEventsBackend).toBe('function');
+describe('populateElectronHostTrayInteractionEvents', () => {
+  it('is the construction initializer of electronHostTrayInteractionEvents', () => {
+    expect(typeof populateElectronHostTrayInteractionEvents).toBe('function');
   });
 });
 
-describe('initializeTrayLifecycleBackend', () => {
-  it('is the construction initializer of createTrayLifecycleBackend', () => {
-    expect(typeof initializeTrayLifecycleBackend).toBe('function');
+describe('populateElectronHostTrayLifecycle', () => {
+  it('is the construction initializer of electronHostTrayLifecycle', () => {
+    expect(typeof populateElectronHostTrayLifecycle).toBe('function');
   });
 });
 
-describe('initializeTrayMenuBackend', () => {
-  it('is the construction initializer of createTrayMenuBackend', () => {
-    expect(typeof initializeTrayMenuBackend).toBe('function');
+describe('populateElectronHostTrayMenu', () => {
+  it('is the construction initializer of electronHostTrayMenu', () => {
+    expect(typeof populateElectronHostTrayMenu).toBe('function');
   });
 });
 
-describe('initializeTrayMenuSelectionEventsBackend', () => {
-  it('is the construction initializer of createTrayMenuSelectionEventsBackend', () => {
-    expect(typeof initializeTrayMenuSelectionEventsBackend).toBe('function');
+describe('populateElectronHostTrayMenuSelectionEvents', () => {
+  it('is the construction initializer of electronHostTrayMenuSelectionEvents', () => {
+    expect(typeof populateElectronHostTrayMenuSelectionEvents).toBe('function');
   });
 });
 
-describe('initializeTrayPopupMenuBackend', () => {
-  it('is the construction initializer of createTrayPopupMenuBackend', () => {
-    expect(typeof initializeTrayPopupMenuBackend).toBe('function');
+describe('populateElectronHostTrayPopupMenu', () => {
+  it('is the construction initializer of electronHostTrayPopupMenu', () => {
+    expect(typeof populateElectronHostTrayPopupMenu).toBe('function');
   });
 });
 
-describe('initializeTrayPressedImageBackend', () => {
-  it('is the construction initializer of createTrayPressedImageBackend', () => {
-    expect(typeof initializeTrayPressedImageBackend).toBe('function');
+describe('populateElectronHostTrayPressedImage', () => {
+  it('is the construction initializer of electronHostTrayPressedImage', () => {
+    expect(typeof populateElectronHostTrayPressedImage).toBe('function');
   });
 });
 
-describe('initializeTrayTemplateImageBackend', () => {
-  it('is the construction initializer of createTrayTemplateImageBackend', () => {
-    expect(typeof initializeTrayTemplateImageBackend).toBe('function');
+describe('populateElectronHostTrayTemplateImage', () => {
+  it('is the construction initializer of electronHostTrayTemplateImage', () => {
+    expect(typeof populateElectronHostTrayTemplateImage).toBe('function');
   });
 });
 
-describe('initializeTrayTitleBackend', () => {
-  it('is the construction initializer of createTrayTitleBackend', () => {
-    expect(typeof initializeTrayTitleBackend).toBe('function');
+describe('populateElectronHostTrayTitle', () => {
+  it('is the construction initializer of electronHostTrayTitle', () => {
+    expect(typeof populateElectronHostTrayTitle).toBe('function');
   });
 });
 
-describe('initializeTrayTooltipBackend', () => {
-  it('is the construction initializer of createTrayTooltipBackend', () => {
-    expect(typeof initializeTrayTooltipBackend).toBe('function');
+describe('populateElectronHostTrayTooltip', () => {
+  it('is the construction initializer of electronHostTrayTooltip', () => {
+    expect(typeof populateElectronHostTrayTooltip).toBe('function');
   });
 });
