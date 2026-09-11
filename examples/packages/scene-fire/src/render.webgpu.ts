@@ -4,13 +4,11 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
-  registerStandardWgpuTextureResolvers,
   registerWgpuBloomEffect,
-  registerWgpuStandardPbrMaterial,
   registerWgpuToneMapEffect,
   registerWgpuVignetteEffect,
   renderWgpuBackground,
@@ -24,13 +22,11 @@ export const height = 600;
 export const canvas = createWgpuCanvasElement(width, height, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x09070aff,
 });
 enableFlightDiagnostics(state);
-registerStandardWgpuTextureResolvers(state);
-registerWgpuStandardPbrMaterial(state);
 registerWgpuBloomEffect(state);
 registerWgpuToneMapEffect(state);
 registerWgpuVignetteEffect(state);

@@ -1,6 +1,6 @@
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   beginGlRenderEffectPipeline,
@@ -10,10 +10,9 @@ import {
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
 } from '@flighthq/sdk';
-import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerGlShadedMaterial } from '@flighthq/sdk/rendering';
+import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);
@@ -23,17 +22,13 @@ const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x07101bff,
   },
 );
 enableFlightDiagnostics(state);
-registerStandardGlTextureResolvers(state);
-registerGlShadedMaterial(state);
-registerBuiltInGlModifierSnippets(state);
-
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
