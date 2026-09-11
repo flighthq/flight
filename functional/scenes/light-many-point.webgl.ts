@@ -25,7 +25,6 @@ import {
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   createGlContextFromCanvasElement,
@@ -163,7 +162,6 @@ const lights = createScene3DLights({
 });
 
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
-renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

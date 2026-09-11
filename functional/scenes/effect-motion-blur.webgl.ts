@@ -31,7 +31,6 @@ import {
   registerGlStandardMaterial,
   registerGlVelocityWriter,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   renderGlVelocity,
   setGlRenderEffectVelocityTexture,
@@ -98,7 +97,6 @@ export function render(root: Node2D): void {
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }

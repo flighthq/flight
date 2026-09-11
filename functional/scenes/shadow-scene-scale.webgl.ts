@@ -27,7 +27,6 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   createGlContextFromCanvasElement,
@@ -128,7 +127,6 @@ prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
-renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

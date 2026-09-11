@@ -27,7 +27,6 @@ import {
   registerGlStandardMaterial,
   registerGlBlendEffectBackdrop,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -111,7 +110,6 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
 export function render(layerRoot: Node2D): void {
   if (!prepareScene2DRender(state, layerRoot)) return;
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, layerRoot);
   endGlRenderEffectPipeline(state, pipeline, [
     createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),

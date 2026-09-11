@@ -28,7 +28,6 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  renderGlBackground,
   scene3DGlPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
@@ -137,7 +136,6 @@ const lights = createScene3DLights({
 
 function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

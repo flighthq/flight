@@ -24,7 +24,6 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderGlBackground,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
   createGlContextFromCanvasElement,
@@ -124,7 +123,6 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,
 });
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
-renderGlBackground(state);
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 drawGlScene3D(state, consumerScene, consumerCamera, lights);
 endGlRenderEffectPipeline(state, pipeline, []);

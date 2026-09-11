@@ -10,7 +10,6 @@ import {
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
-  renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/sdk/rendering';
 
@@ -48,7 +47,6 @@ export function render(
   drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

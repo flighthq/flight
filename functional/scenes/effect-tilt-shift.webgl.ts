@@ -22,7 +22,6 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -77,7 +76,6 @@ const TILT_WIDTH = 0.25;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createTiltShiftEffect({ center: TILT_CENTER, width: TILT_WIDTH, blur: 6 }),
