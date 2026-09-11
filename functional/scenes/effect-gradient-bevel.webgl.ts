@@ -71,7 +71,10 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlGradientBevelEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+  backgroundClear: false,
+  sampleCount: 1,
+});
 
 export const scale = pixelRatio;
 export const width = 800;

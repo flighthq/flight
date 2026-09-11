@@ -65,9 +65,13 @@ export function beginGlRenderEffectPipeline(
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  const rgba = state.backgroundColorRgba;
-  pipeline.sceneTarget.clearColors =
-    rgba !== undefined && rgba.length >= 4 ? [packColor(rgba[0], rgba[1], rgba[2], rgba[3])] : [];
+  if (pipeline.options.backgroundClear !== false) {
+    const rgba = state.backgroundColorRgba;
+    pipeline.sceneTarget.clearColors =
+      rgba !== undefined && rgba.length >= 4 ? [packColor(rgba[0], rgba[1], rgba[2], rgba[3])] : [];
+  } else {
+    pipeline.sceneTarget.clearColors = [0];
+  }
   beginGlRenderPass(state, pipeline.sceneTarget);
 }
 

@@ -113,12 +113,13 @@ export type GlRenderEffectApplicationGuard = (
 ) => void;
 
 export interface RenderEffectPipelineOptions {
-  // MSAA on the scene target so going offscreen for effects keeps edge AA. Default 1.
-  sampleCount?: number;
-  // 'rgba16f' gives bloom/tone-mapping HDR headroom. Default 'rgba8'.
-  format?: RenderTargetFormat;
+  backgroundClear?: boolean;
   // Depth attachment for depth-dependent effects (SSAO, DoF, fog). Default 'none'.
   depth?: RenderTargetDepth;
+  // 'rgba16f' gives bloom/tone-mapping HDR headroom. Default 'rgba8'.
+  format?: RenderTargetFormat;
+  // MSAA on the scene target so going offscreen for effects keeps edge AA. Default 1.
+  sampleCount?: number;
 }
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
