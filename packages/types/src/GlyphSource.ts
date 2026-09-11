@@ -82,7 +82,7 @@ export interface GlyphRasterizedBitmap {
 }
 
 // The knobs a rasterizer needs to render a glyph. Held per-atlas (from `GlyphAtlasOptions`) and
-// passed on every `rasterize` call. Weight/style are optional and backend-interpreted.
+// passed on every `rasterize` call. Weight/style are optional and provider-interpreted.
 export interface GlyphRasterizeOptions {
   fontFamily: string;
   fontSize: number;
@@ -90,13 +90,13 @@ export interface GlyphRasterizeOptions {
   fontWeight?: number | string;
 }
 
-// The swappable glyph-rasterization seam. The web backend renders via an offscreen canvas; a native
-// host supplies a FreeType-style backend. `rasterize` returns null for an unrenderable codepoint
+// The swappable glyph-rasterization seam. The Web provider renders via an offscreen canvas; a native
+// host supplies a FreeType-style provider. `rasterize` returns null for an unrenderable codepoint
 // (or when no canvas is available), never throwing.
 export interface HostGlyphRasterizerProvider {
   rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
-  // Font-level line metrics, when the backend can measure them. Optional so existing backends stay
-  // valid: an atlas whose backend does not implement it, or which returns null, keeps the font-size
+  // Font-level line metrics, when the provider can measure them. Optional so existing providers stay
+  // valid: an atlas whose provider does not implement it, or which returns null, keeps the font-size
   // heuristic from deriveGlyphMetricsFromFontSize. Measured once per atlas rather than per glyph,
   // because these describe the font at a size, not any particular character.
   measureMetrics?(options: Readonly<GlyphRasterizeOptions>): GlyphMetrics | null;
@@ -111,7 +111,7 @@ export interface GlyphAtlasOptions {
   // Style and weight are per-atlas, not per-glyph: the cache is keyed by codepoint alone, so one atlas
   // holds one rendering of each character. Bold or italic text needs its own atlas rather than a flag
   // at draw time — one atlas per (family, size, style, weight) combination the app actually uses.
-  // Backend-interpreted strings, forwarded verbatim to the rasterizer.
+  // Provider-interpreted strings, forwarded verbatim to the rasterizer.
   fontStyle?: string;
   fontWeight?: string;
   height: number;
@@ -186,7 +186,7 @@ export interface GlyphAtlas extends Entity {
   runtime: GlyphAtlasRuntime;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
 export type GlyphRasterizerOperation = keyof HostGlyphRasterizerProvider;

@@ -48,7 +48,7 @@ export function detachClipboardWatch(watch: ClipboardWatch): void {
   }
 }
 
-// Detaches watch's backend subscription and releases it for garbage collection.
+// Detaches watch's provider subscription and releases it for garbage collection.
 // The signal remains plain GC-managed memory afterward.
 export function disposeClipboardWatch(watch: ClipboardWatch): void {
   detachClipboardWatch(watch);
@@ -202,7 +202,7 @@ export function writeClipboardText(
 }
 
 // Active watches are deliberate registry roots until detach/dispose; enumeration is unnecessary now
-// that provider selection is explicit and subscriptions never rebind through an ambient backend swap.
+// that provider selection is explicit and subscriptions never rebind through a later provider choice.
 const _watchSubscriptions = new Map<
   ClipboardWatch,
   {

@@ -32,7 +32,7 @@ import type {
 } from '@flighthq/types/contract';
 
 // Starts raw provider change delivery into the caller-owned signal entity. Re-attaching first consumes
-// the exact unsubscribe returned by the prior provider, so a different Host can never redirect teardown.
+// the exact unsubscribe returned by the prior provider, so a different provider can never redirect teardown.
 // Returns false when the provider cannot establish a real subscription.
 export function attachStorage(
   hostStorageChange: Readonly<HostStorageChangeProvider>,
@@ -81,7 +81,7 @@ export function createStorageSignals(): StorageSignals {
   return finishEntity(out);
 }
 
-// Terminal teardown of the Host's raw change provider. Per-entity detach is separate because one
+// Terminal teardown of the supplied raw-change provider. Per-entity detach is separate because one
 // provider can fan out to more than one StorageSignals entity.
 export function destroyStorage(hostStorageChange: Readonly<HostStorageChangeProvider>): void {
   hostStorageChange.destroy();

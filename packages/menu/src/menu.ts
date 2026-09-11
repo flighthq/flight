@@ -18,7 +18,7 @@ import type {
 //
 // The unsubscribe is ORIGIN-PINNED: it is stored beside the entity that opened it, so detach ends
 // exactly the subscription this attach created. Under the old ambient model a rebind could leave an
-// earlier subscription live against a replaced backend with nothing holding its unsubscribe.
+// earlier subscription live against a replaced provider with nothing holding its unsubscribe.
 export function attachMenuHighlight(
   hostMenuHighlight: Readonly<HostMenuHighlightProvider>,
   highlight: MenuHighlight,
@@ -76,7 +76,7 @@ export function createMenuSelect(): MenuSelect {
 }
 
 // Stops delivery without discarding the entity: runs this entity's own unsubscribe, if it has one.
-// Safe to call when never attached. Does NOT touch the provider — backend teardown is `destroy` on the
+// Safe to call when never attached. Does NOT touch the provider — provider teardown is `destroy` on the
 // slot, a separate host/provider lifecycle concern.
 // FINAL RELEASE for the one menu slot that owns a whole-provider resource: the installed native menu.
 // Destroys every DISTINCT application provider exactly once — alias-safe, because two hosts may share
@@ -126,7 +126,7 @@ export function disposeMenuSelect(select: MenuSelect): void {
 }
 
 // Activates the core context-menu dispatcher signals and returns the group. These are NOT host
-// capabilities: the dispatcher below emits them around the popup call, so no backend can deliver them.
+// capabilities: the dispatcher below emits them around the popup call, so no provider can deliver them.
 // The module-level identity/enable state here is package state, not ambient capability resolution —
 // nothing about which provider serves a call is decided by it.
 export function enableMenuSignals(): MenuSignals {
@@ -206,8 +206,8 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
     return `item type "${item.type ?? 'normal'}" has a submenu (only type "submenu" should carry children)`;
   }
   // `checked` only means something on the two toggle types. Setting it elsewhere is the mistake that
-  // renders silently: the web backend draws the checkmark from `checked` alone, so a normal item with
-  // checked: true grows a tick it can never clear, and native backends typically drop it instead —
+  // renders silently: the Web popup provider draws the checkmark from `checked` alone, so a normal item with
+  // checked: true grows a tick it can never clear, and native providers typically drop it instead —
   // same descriptor, two different wrong results, which is exactly what validation is for.
   if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
     return `item type "${item.type ?? 'normal'}" has "checked" (only "checkbox" and "radio" items are checkable)`;
@@ -227,7 +227,7 @@ function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<Menu
 
 // A radio group is a run of adjacent radio items — any other item type, including a separator, starts
 // a new one. Exactly one member of a run may be checked; two checked members describe a state the
-// widget cannot represent, and each backend picks a different winner. Checked on a non-radio item is
+// widget cannot represent, and each provider picks a different winner. Checked on a non-radio item is
 // caught per-item above; this is the rule that only exists across siblings, which is why it runs where
 // the child list is known rather than inside the per-item walk.
 function _validateRadioGroups(items: readonly Readonly<MenuItemTemplate>[]): string | null {

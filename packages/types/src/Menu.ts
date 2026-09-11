@@ -2,9 +2,9 @@ import type { Entity } from './Entity';
 import type { HostMenuCapabilities } from './Host';
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
-// Application and context menu seam. Free functions in @flighthq/menu delegate to the active
-// MenuBackend (web default or a native host's). Web cannot install an application menu bar, but the
-// web backend renders context menus in the DOM; Electron/Tauri hosts can replace it with native OS
+// Application and context menu seam. Free functions in @flighthq/menu take the operation-specific
+// provider directly. Web cannot install an application menu bar, but the Web popup provider renders
+// context menus in the DOM; Electron/Tauri hosts provide native OS
 // menus. This is the platform-suite command pattern: a plain-data MenuItemTemplate descriptor plus
 // flat free functions, kept symmetric with tray/notification/shell. The same MenuItemTemplate is
 // consumed by tray via setTrayIconContextMenu, so the descriptor must not grow a menu-specific OOP
@@ -14,7 +14,7 @@ export type MenuItemType = 'normal' | 'separator' | 'submenu' | 'checkbox' | 'ra
 // Open enum: the documented built-in roles (WellKnownMenuItemRole) plus any other string, so native
 // hosts and vendors can introduce their own (vendor-prefix custom roles to avoid collisions). The
 // `(string & {})` arm keeps editor autocomplete for the well-known values while still accepting any
-// string; backends resolve an unrecognized role to a sentinel/no-op. The full role list and platform
+// string; providers resolve an unrecognized role to a sentinel/no-op. The full role list and platform
 // support matrix live in WellKnownMenuItemRole.
 export type MenuItemRole = WellKnownMenuItemRoleValue | (string & {});
 
@@ -29,7 +29,7 @@ export interface MenuItemTemplate {
   // Omitting the item entirely, distinct from `enabled: false` which shows it greyed and unselectable.
   // Defaults to visible, so `visible: false` is the only value that changes anything.
   visible?: boolean;
-  // Secondary text shown alongside the label (macOS-style). Advisory: a backend without a place to put
+  // Secondary text shown alongside the label (macOS-style). Advisory: a provider without a place to put
   // it ignores it rather than failing.
   sublabel?: string;
   // Hover/long-press help text. Advisory in the same way as `sublabel`.
@@ -37,13 +37,13 @@ export interface MenuItemTemplate {
   submenu?: MenuItemTemplate[];
 }
 
-// The menu capability is split into three backend shapes, one per slot, and they are deliberately NOT
+// The menu capability is split into operation-specific provider shapes, and they are deliberately NOT
 // merged. Coverage differs — every provider can pop up a context menu, only Electron/Tauri own a native
 // application menu bar or deliver menu-bar selections — but coverage alone is not the reason. The shapes
 // are incompatible: `application` is a fire-and-forget command returning success, `select` is an event
 // subscription returning an unsubscribe, and `popup` is a request/response resolving to a chosen id.
 // Merging them would force a provider to present members it cannot honour, which is precisely how the
-// old single MenuBackend let the web backend claim four operations while implementing one.
+// old combined shape let the Web implementation claim four operations while implementing one.
 //
 // `destroy` appears on the application slot ALONE. Only that provider acquires a whole-provider
 // resource — the installed native menu — which outlives any single call: Electron clears the app menu

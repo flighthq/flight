@@ -98,8 +98,8 @@ export function destroyShortcutTrigger(hostShortcutTrigger: Readonly<HostShortcu
   return hostShortcutTrigger.destroy();
 }
 
-// The Host argument keeps the exact dependency visible, while the stored origin prevents a replacement
-// Host from redirecting a release. Failed releases remain attached and can be retried exactly.
+// The provider argument keeps the exact dependency visible, while the stored origin prevents a replacement
+// provider from redirecting a release. Failed releases remain attached and can be retried exactly.
 export async function detachGlobalShortcut(
   hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
   shortcut: GlobalShortcut,

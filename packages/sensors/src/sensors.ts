@@ -16,7 +16,7 @@ import type {
   SensorSubscribeOptions,
 } from '@flighthq/types/contract';
 
-// Begins delivering sensor readings to `sensors`'s signals by subscribing to the active backend's
+// Begins delivering sensor readings to `sensors`'s signals by subscribing to the supplied provider's
 // streams. Idempotent: a prior subscription is torn down first. Pair with detachSensors/disposeSensors.
 //
 // Readings passed to signal listeners are scratch-reused objects. Listeners must not retain a
@@ -278,7 +278,7 @@ export function createSensors(): Sensors {
   return finishEntity(out);
 }
 
-// Builds the default web backend over the devicemotion, deviceorientation, and deviceorientationabsolute
+// Builds the default Web provider over the devicemotion, deviceorientation, and deviceorientationabsolute
 // window events, plus the Generic Sensor API where available. Degrades to no-op subscriptions where
 // window is absent and to a granted permission where the host does not gate sensors.
 //
@@ -288,7 +288,7 @@ export function createSensors(): Sensors {
 export function createWebSensorsBackend(): HostSensorsProvider {
   // Explicit type argument so the literal keeps its contextual method parameter types — without one,
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
-  // the runtime slot: `allocateEntity<SensorsBackend>` cannot work, because allocateEntity's type parameter
+  // the runtime slot: `allocateEntity<HostSensorsProvider>` cannot work, because allocateEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
   const out = allocateEntity<HostSensorsProvider>();
   out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {
@@ -558,7 +558,7 @@ export function detachSensors(sensors: Sensors): void {
   }
 }
 
-// Releases `sensors` for garbage collection by detaching its backend subscriptions. The signals
+// Releases `sensors` for garbage collection by detaching its provider subscriptions. The signals
 // remain plain GC-managed memory afterward.
 export function disposeSensors(sensors: Sensors): void {
   detachSensors(sensors);

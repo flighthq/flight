@@ -7,7 +7,7 @@ import type { Signal } from './Signal';
 export type PowerIdleState = 'Active' | 'Idle' | 'Unknown';
 
 // What a keep-awake lock prevents. 'PreventDisplaySleep' keeps the screen on; 'PreventAppSuspension'
-// additionally keeps the process running. The web backend only supports 'PreventDisplaySleep'.
+// additionally keeps the process running. The Web provider only supports 'PreventDisplaySleep'.
 export type PowerKeepAwakeMode = 'PreventDisplaySleep' | 'PreventAppSuspension';
 
 // System thermal pressure level, or 'Unknown' when the host cannot report it.
@@ -29,8 +29,8 @@ export interface PowerStatus {
   thermalState: PowerThermalState;
 }
 
-// Event seam for power: a snapshot reader, a change subscription, and a keep-awake toggle. The web
-// backend wraps the Battery Status API and the Screen Wake Lock API; a native host reports its own
+// Event seam for power: a snapshot reader, a change subscription, and a keep-awake toggle. The Web
+// providers wrap the Battery Status API and the Screen Wake Lock API; a native host reports its own
 // battery changes through the same subscribe callback.
 // Keep-awake outcomes. `ok` means the provider ACQUIRED or RELEASED its keep-awake mechanism — never
 // that the hardware can no longer sleep for other policy reasons, which no host can promise.
@@ -144,7 +144,7 @@ export type WebPowerCapabilities = Entity &
 // `onChange` receives a FRESH status per event. It is deliberately not a shared reusable buffer: a
 // listener that retains the payload must not have it mutate underneath on the next power event.
 //
-// onCharging / onDischarging / onIdleStateChange are CORE-derived — no backend emits them; core computes
+// onCharging / onDischarging / onIdleStateChange are CORE-derived — no provider emits them; core computes
 // them from status transitions and idle polling. They are therefore signals rather than host slots.
 export interface Power extends Entity {
   onChange: Signal<(status: Readonly<PowerStatus>) => void> | null;

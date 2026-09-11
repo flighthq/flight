@@ -6,7 +6,7 @@ import type { Entity } from './Entity';
 export type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid';
 export type HapticNotificationType = 'success' | 'warning' | 'error';
 
-// Snapshot of what the active backend supports. Filled into a caller-owned `out` value; absent
+// Snapshot of what the supplied provider supports. Filled into a caller-owned `out` value; absent
 // features resolve to false rather than throwing.
 export interface HapticsCapabilities {
   amplitudeControl: boolean;
@@ -19,14 +19,14 @@ export interface HapticsCapabilities {
 export interface HostHapticsProvider extends Entity {
   // Cancels any in-progress vibration. Returns false when haptics are unavailable.
   cancel(): boolean;
-  // Fills `out` with the backend's capabilities and returns it.
+  // Fills `out` with the provider's capabilities and returns it.
   capabilities(out: HapticsCapabilities): HapticsCapabilities;
   // Triggers a physical impact, with optional continuous intensity (0..1).
   impact(style: HapticImpactStyle, intensity?: number): boolean;
   // Reports whether haptics are available on the current device.
   isSupported(): boolean;
   notification(type: HapticNotificationType): boolean;
-  // Warm-up hint to reduce first-trigger latency. Optional; no-op on backends without pre-allocation.
+  // Warm-up hint to reduce first-trigger latency. Optional; no-op on providers without pre-allocation.
   prepare?(): void;
   selection(): boolean;
   vibrate(durationMs: number): boolean;
@@ -37,7 +37,7 @@ export interface HostHapticsProvider extends Entity {
   vibrateWaveform?(timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number): boolean;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
 export type HapticsOperation = keyof HostHapticsProvider;

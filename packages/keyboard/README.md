@@ -2,7 +2,7 @@
 
 On-screen keyboard snapshots, change delivery, and controls through explicit host capabilities.
 
-`keyboard` is an event cell in the platform-integration suite. A `SoftKeyboard` is a plain entity of signals; allocate it with `createSoftKeyboard()`, start delivery with `attachSoftKeyboard(host, keyboard)`, and release it with `disposeSoftKeyboard(keyboard)`. Every operation that needs a provider takes the matching `HasSoftKeyboard*` host witness first. There is no module-global backend and no runtime missing-provider branch: a caller without the required capability does not type-check.
+`keyboard` is an event cell in the platform-integration suite. A `SoftKeyboard` is a plain entity of signals; allocate it with `createSoftKeyboard()`, start delivery with `attachSoftKeyboard(changeProvider, infoProvider, keyboard)`, and release it with `disposeSoftKeyboard(keyboard)`. Every operation that needs a provider takes the matching `HostSoftKeyboard*Provider` directly. There is no module-global provider and no runtime missing-provider branch: a caller without the required capability does not type-check.
 
 Per-field input traits (input type, return-key label, auto-capitalize/correct, and spell-check) belong to `@flighthq/textinput`. Safe-area insets belong to `@flighthq/device`.
 
@@ -10,7 +10,7 @@ Per-field input traits (input type, return-key label, auto-capitalize/correct, a
 
 | Function | Required host capability | Purpose |
 | --- | --- | --- |
-| `attachSoftKeyboard(host, keyboard)` | change + info | Subscribe the entity to keyboard changes. Returns `acquisition-failed` when subscription acquisition fails. |
+| `attachSoftKeyboard(changeProvider, infoProvider, keyboard)` | change + info | Subscribe the entity to keyboard changes. Returns `acquisition-failed` when subscription acquisition fails. |
 | `createSoftKeyboard()` | none | Allocate a `SoftKeyboard` with inert signals. |
 | `detachSoftKeyboard(keyboard)` | none | Stop delivery for this entity. Safe when not attached. |
 | `disposeSoftKeyboard(keyboard)` | none | Detach the entity so it is eligible for collection. |
@@ -60,7 +60,7 @@ import { connectSignal } from '@flighthq/signals';
 const keyboard = createSoftKeyboard();
 connectSignal(keyboard.onResize, (height) => updateContentInset(height));
 
-await attachSoftKeyboard(webHost, keyboard);
+await attachSoftKeyboard(webHost.input.softKeyboardChange, webHost.input.softKeyboardInfo, keyboard);
 
 // Later, when the surface is torn down:
 disposeSoftKeyboard(keyboard);

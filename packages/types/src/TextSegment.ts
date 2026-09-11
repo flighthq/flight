@@ -1,7 +1,7 @@
 import type { Entity } from './Entity';
 // Unicode text-segmentation seam (UAX #29). Free functions in @flighthq/textsegment accept an
 // explicit HostTextSegmenterProvider; when omitted, the bundled Intl.Segmenter provider remains the
-// compatibility fallback. A from-scratch UAX #29 backend can be composed by headless/native
+// compatibility fallback. A from-scratch UAX #29 provider can be composed by headless/native
 // hosts or a flight-rs table kernel. Line breaking (UAX #14) is NOT here: it is a different
 // algorithm Intl.Segmenter does not provide and @flighthq/textlayout owns it.
 
@@ -27,8 +27,8 @@ export interface TextSegmentRange {
   end: number;
 }
 
-// The seam: a host backend whose single method segments `text` at `granularity`, given an optional
-// BCP-47 `locale`. One method keeps a from-scratch backend to a single function to implement, and
+// The seam: a host provider whose single method segments `text` at `granularity`, given an optional
+// BCP-47 `locale`. One method keeps a from-scratch provider to a single function to implement, and
 // mirrors Intl.Segmenter, which is itself parameterized by granularity. Returns segments in order,
 // covering the whole string with no gaps.
 export interface HostTextSegmenterProvider extends Entity {

@@ -1,9 +1,7 @@
 // The platform-integration suite's shared contracts. Each desktop/mobile capability (clipboard,
-// dialog, filesystem, …) is its own cellular package exposing flat free functions over a swappable
-// backend: a web/DOM implementation is always available so there is no escape hatch, and a native
-// host (Electron, Tauri, Capacitor, a C/C++ shell) replaces it via the capability's set*Backend.
-// "Electron support" is therefore one backend, not a coupling — the descriptors and function
-// signatures here are host-agnostic.
+// dialog, filesystem, …) is its own cellular package exposing flat free functions over an explicit
+// provider. Web/DOM and native hosts supply provider values; callers choose and pass the exact
+// capability each operation needs. The descriptors and function signatures remain host-agnostic.
 
 export type PlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
 
@@ -48,8 +46,7 @@ export interface PlatformInfo extends Entity {
   distroVersion: string;
 }
 
-// The seam every capability follows: a host backend object whose methods the package's free
-// functions delegate to. HostPlatformProvider is the root capability — environment identification.
+// The root environment-identification capability passed directly to the package's free functions.
 export interface HostPlatformProvider extends Entity {
   getInfo(out: PlatformInfo): PlatformInfo;
 }

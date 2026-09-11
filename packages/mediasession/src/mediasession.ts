@@ -50,7 +50,7 @@ export function createMediaSessionActionSignal(action: MediaSessionAction): Medi
 }
 
 // Provider lifetime is separate from per-action subscription lifetime. Every distinct provider is
-// destroyed once; aliasing the two Host slots cannot double-release it, and one throwing provider does
+// destroyed once; passing it as both provider arguments cannot double-release it, and one throwing provider does
 // not prevent the other distinct provider from being attempted.
 export function destroyMediaSession(
   hostMediaSession: Readonly<HostMediaSessionProvider>,

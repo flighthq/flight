@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 
 // Starts raw host-change delivery and turns it into the five core-owned diff signals. Status and
-// change are separate Host witnesses: a snapshot command cannot stand in for an event subscription.
+// change are separate providers: a snapshot command cannot stand in for an event subscription.
 // Re-attaching always consumes the prior provider's exact unsubscribe before touching the new one.
 // Returns false when the change provider cannot establish a real subscription.
 export function attachConnectivity(
@@ -133,7 +133,7 @@ export function isConnectivitySaveDataEnabled(
   return hostConnectivityStatus.getStatus(connectivityStatusOut()).saveData;
 }
 
-// ConnectivityStatus is a backend-produced query/out snapshot, not a user-created identity. Keep its
+// ConnectivityStatus is a provider-produced query/out snapshot, not a user-created identity. Keep its
 // sentinel allocation package-private so the public create* vocabulary remains Entity-only.
 function connectivityStatusOut(): ConnectivityStatus {
   return {

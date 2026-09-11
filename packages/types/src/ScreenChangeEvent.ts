@@ -13,7 +13,7 @@ export interface ScreenChangedMetrics {
   orientation: boolean;
 }
 
-// A single display change delivered to a ScreenBackend subscriber. `screen` is the affected display;
+// A single display change delivered to a HostScreenChangeProvider subscriber. `screen` is the affected display;
 // `changedMetrics` is non-null only for ScreenMetricsChanged events and null for add/remove.
 export interface ScreenChangeEvent {
   kind: ScreenChangeKind;

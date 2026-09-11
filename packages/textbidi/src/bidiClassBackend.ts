@@ -54,7 +54,7 @@ export function initializeCompactBidiClassBackend(out: EntityConstruction<HostBi
  * Installs the backend used by calls that omit an explicit backend; pass null to restore the lazily
  * created compact default.
  *
- * @deprecated Pass a BidiClassBackend directly to resolveBidiLevels or getBidiRuns. Retained for
+ * @deprecated Pass a HostBidiClassProvider directly to resolveBidiLevels or getBidiRuns. Retained for
  * source compatibility until the legacy path is removed.
  */
 export function setBidiClassBackend(backend: HostBidiClassProvider | null): void {

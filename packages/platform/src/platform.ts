@@ -40,7 +40,7 @@ export function getPlatformEngine(hostPlatform: Readonly<HostPlatformProvider>):
   return getPlatformInfo(hostPlatform, _scratch).engine;
 }
 
-// Fills `out` with the running platform's identity and returns it. Cheap; reads the active backend.
+// Fills `out` with the running platform's identity through the supplied provider and returns it.
 export function getPlatformInfo(hostPlatform: Readonly<HostPlatformProvider>, out: PlatformInfo): PlatformInfo {
   return hostPlatform.getInfo(out);
 }
@@ -61,7 +61,7 @@ export function getPlatformRuntime(hostPlatform: Readonly<HostPlatformProvider>)
   return getPlatformInfo(hostPlatform, _scratch).runtime;
 }
 
-// Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a backend.
+// Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a provider.
 export function initializePlatformInfo(out: EntityConstruction<PlatformInfo>): void {
   out.arch = '';
   out.distro = '';
