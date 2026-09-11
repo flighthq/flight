@@ -30,7 +30,6 @@ import {
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   prepareScene3DSkinning,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   skinVertices,
@@ -176,7 +175,6 @@ configureDirectionalShadowCamera3D(shadowCamera, lightTravel, sceneBounds);
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
-renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

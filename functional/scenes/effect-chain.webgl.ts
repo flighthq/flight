@@ -25,7 +25,6 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -87,7 +86,6 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),

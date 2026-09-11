@@ -28,7 +28,6 @@ import {
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   createGlContextFromCanvasElement,
@@ -99,7 +98,6 @@ export function render(
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

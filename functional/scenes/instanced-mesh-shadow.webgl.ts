@@ -32,7 +32,6 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   endGlRenderEffectPipeline,
-  renderGlBackground,
   scene3DGlPipeline,
 } from '@flighthq/sdk';
 import { declareAntialiasingPolicy, declareExpectedImageDescription } from '@ft/render';
@@ -78,7 +77,6 @@ export function render(
   drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

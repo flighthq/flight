@@ -22,7 +22,6 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -77,7 +76,6 @@ const VIGNETTE_SOFTNESS = 0.5;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createVignetteEffect({ intensity: 1, radius: VIGNETTE_RADIUS, softness: VIGNETTE_SOFTNESS }),

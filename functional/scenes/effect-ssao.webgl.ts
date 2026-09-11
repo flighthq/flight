@@ -22,7 +22,6 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -74,7 +73,6 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 }),

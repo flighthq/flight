@@ -42,7 +42,6 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  renderGlBackground,
   scene3DGlPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
@@ -97,7 +96,6 @@ export function render(
     baked = true;
   }
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

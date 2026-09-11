@@ -10,7 +10,6 @@ import {
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
-  renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
@@ -41,7 +40,6 @@ export const supportsVertexColor0 = true;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

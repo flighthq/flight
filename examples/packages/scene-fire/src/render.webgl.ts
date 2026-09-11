@@ -13,7 +13,6 @@ import {
   registerGlBloomEffect,
   registerGlToneMapEffect,
   registerGlVignetteEffect,
-  renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
@@ -53,11 +52,6 @@ export function render(
   effects: readonly RenderEffect[],
 ): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, effects);

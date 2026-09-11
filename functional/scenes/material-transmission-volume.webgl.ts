@@ -31,7 +31,6 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setGlPbrTransmissionSceneColor,
   createGlContextFromCanvasElement,
@@ -83,7 +82,6 @@ export const height = 600;
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   setGlPbrTransmissionSceneColor(state, null);
   beginGlRenderPass(state, opaqueSceneTarget);
-  renderGlBackground(state);
   prepareScene3DRender(state, opaqueScene, camera, lights);
   drawGlScene3D(state, opaqueScene, camera, lights);
   endGlRenderPass(state);
@@ -102,7 +100,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
-  renderGlBackground(state);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);

@@ -25,7 +25,6 @@ import {
   ImageChannel,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   BlendMode,
   createGlContextFromCanvasElement,
@@ -100,7 +99,6 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

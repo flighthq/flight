@@ -22,7 +22,6 @@ import {
   getBitmapPixelRgb,
   prepareScene3DRender,
   registerGlCustomMaterialShader,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -107,10 +106,6 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  renderGlBackground(state);
-  state.gl.depthMask(true);
-  state.gl.clearDepth(1);
-  state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
