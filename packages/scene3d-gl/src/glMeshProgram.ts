@@ -367,9 +367,10 @@ export const INSTANCE_COLOR_PALETTE_TEXTURE_UNIT = 15;
 // the linear-blend `skinMatrix()` the body applies to position/normal/tangent. The palette is an RGBA32F
 // texture read with texelFetch (GLSL ES 3.0 core — no float-filter extension), one mat4 packed as four
 // consecutive texels (column 0..3) so joint j's column c is at texel (j*4 + c, 0). Replaces the old
-// `uniform mat4 u_jointMatrices[MAX_JOINTS]` array: the joint count is bounded by MAX_TEXTURE_SIZE, so
-// there is no `#define MAX_JOINTS` cap and no CPU fallback above a uniform-budget capacity. Vertex-only —
-// never added to a fragment source (the `in` attributes are illegal there).
+// `uniform mat4 u_jointMatrices[MAX_JOINTS]` array. The palette wraps into multiple rows when it
+// exceeds MAX_TEXTURE_SIZE, so the practical limit is MAX_TEXTURE_SIZE² — no per-context capacity cap
+// and no CPU fallback. Vertex-only — never added to a fragment source (the `in` attributes are
+// illegal there).
 export const GL_SKIN_VERTEX_DECLARATIONS_GLSL = `
 layout(location = 6) in vec4 a_joints0;
 layout(location = 7) in vec4 a_weights0;
@@ -378,11 +379,12 @@ uniform highp sampler2D u_jointNormalTexture;
 
 mat4 fetchJointMatrix(int joint) {
   int x = joint * 4;
+  int w = textureSize(u_jointTexture, 0).x;
   return mat4(
-    texelFetch(u_jointTexture, ivec2(x, 0), 0),
-    texelFetch(u_jointTexture, ivec2(x + 1, 0), 0),
-    texelFetch(u_jointTexture, ivec2(x + 2, 0), 0),
-    texelFetch(u_jointTexture, ivec2(x + 3, 0), 0)
+    texelFetch(u_jointTexture, ivec2(x % w, x / w), 0),
+    texelFetch(u_jointTexture, ivec2((x + 1) % w, (x + 1) / w), 0),
+    texelFetch(u_jointTexture, ivec2((x + 2) % w, (x + 2) / w), 0),
+    texelFetch(u_jointTexture, ivec2((x + 3) % w, (x + 3) / w), 0)
   );
 }
 
@@ -402,10 +404,11 @@ mat4 skinMatrix() {
 // Three texels per joint, one per padded vec4 column; the fourth component of each is unused.
 mat3 fetchJointNormalMatrix(int joint) {
   int x = joint * 3;
+  int w = textureSize(u_jointNormalTexture, 0).x;
   return mat3(
-    texelFetch(u_jointNormalTexture, ivec2(x, 0), 0).xyz,
-    texelFetch(u_jointNormalTexture, ivec2(x + 1, 0), 0).xyz,
-    texelFetch(u_jointNormalTexture, ivec2(x + 2, 0), 0).xyz
+    texelFetch(u_jointNormalTexture, ivec2(x % w, x / w), 0).xyz,
+    texelFetch(u_jointNormalTexture, ivec2((x + 1) % w, (x + 1) / w), 0).xyz,
+    texelFetch(u_jointNormalTexture, ivec2((x + 2) % w, (x + 2) / w), 0).xyz
   );
 }
 
@@ -432,16 +435,19 @@ uniform highp sampler2D u_instanceColorPalette;
 // One linear RGBA texel per instance. A batch carrying no per-instance colours uploads opaque white, so
 // this is an identity multiply there and the families need no second program variant for the tinted case.
 vec4 instanceColor() {
-  return texelFetch(u_instanceColorPalette, ivec2(gl_InstanceID, 0), 0);
+  int id = gl_InstanceID;
+  int w = textureSize(u_instanceColorPalette, 0).x;
+  return texelFetch(u_instanceColorPalette, ivec2(id % w, id / w), 0);
 }
 
 mat4 instanceModelMatrix() {
   int x = gl_InstanceID * 4;
+  int w = textureSize(u_instancePalette, 0).x;
   return mat4(
-    texelFetch(u_instancePalette, ivec2(x, 0), 0),
-    texelFetch(u_instancePalette, ivec2(x + 1, 0), 0),
-    texelFetch(u_instancePalette, ivec2(x + 2, 0), 0),
-    texelFetch(u_instancePalette, ivec2(x + 3, 0), 0)
+    texelFetch(u_instancePalette, ivec2(x % w, x / w), 0),
+    texelFetch(u_instancePalette, ivec2((x + 1) % w, (x + 1) / w), 0),
+    texelFetch(u_instancePalette, ivec2((x + 2) % w, (x + 2) / w), 0),
+    texelFetch(u_instancePalette, ivec2((x + 3) % w, (x + 3) / w), 0)
   );
 }
 `;
