@@ -208,7 +208,7 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 24; i++) await Promise.resolve();
 }
 
-// The merged MenuBackend is gone; these tests exercise the three slots that replaced it. This helper
+// The merged menu provider is gone; these tests exercise the three slots that replaced it. This helper
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: TauriApi): {
   destroy?: () => void;

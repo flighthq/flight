@@ -45,183 +45,12 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
   profile: Profile,
 ): TauriTrayCapabilitiesFor<Profile> {
   const records = new Map<TrayIcon, TrayRecord>();
-
-  const lifecycle = (() => {
-    const out = allocateEntity<HostTrayLifecycleProvider>();
-    out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
-      if (options.signal?.aborted) return { outcome: 'cancelled' as const };
-      const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
-      const menuSelectionEvents = createSignal<(event: Readonly<TrayMenuSelectionEvent>) => void>();
-      const nativeOptions: TauriTrayIconOptions = {
-        action: (event) => emitInteraction(interactionEvents, event),
-        icon: options.icon,
-      };
-      if (profile === 'linux' || profile === 'macos') nativeOptions.title = options.title;
-      if (profile === 'windows' || profile === 'macos') nativeOptions.tooltip = options.tooltip;
-      if (profile === 'macos') nativeOptions.iconAsTemplate = options.iconTemplate;
-      let icon: TauriTrayIcon;
-      try {
-        icon = await tauri.tray.TrayIcon.new(nativeOptions);
-      } catch (error) {
-        return { error, outcome: 'tray-create-failed' as const };
-      }
-      if (options.signal?.aborted) {
-        try {
-          await icon.close();
-          return { outcome: 'cancelled' as const };
-        } catch (error) {
-          return { error, outcome: 'tray-create-failed' as const };
-        }
-      }
-      records.set(tray, {
-        destroying: false,
-        icon,
-        interactionEvents,
-        menuGeneration: 0,
-        menus: [],
-        menuSelectionEvents,
-        nativePending: true,
-        pendingMenuOperations: new Set(),
-        title: options.title ?? '',
-        tooltip: options.tooltip ?? '',
-      });
-      return { outcome: 'created' as const };
-    };
-    out.destroy = async (tray: TrayIcon) => {
-      const record = records.get(tray);
-      if (record === undefined) return { outcome: 'destroyed' as const };
-      record.destroying = true;
-      record.menuGeneration++;
-      await Promise.all([...record.pendingMenuOperations]);
-      const failures: Array<{ error?: unknown; step: 'native-resource' }> = [];
-      for (let index = record.menus.length - 1; index >= 0; index--) {
-        let closed = false;
-        try {
-          await record.menus[index]!.close();
-          closed = true;
-        } catch (error) {
-          failures.push({ error, step: 'native-resource' });
-        }
-        if (closed) record.menus.splice(index, 1);
-      }
-      if (record.nativePending) {
-        try {
-          await record.icon.close();
-          record.nativePending = false;
-        } catch (error) {
-          failures.push({ error, step: 'native-resource' });
-        }
-      }
-      if (failures.length > 0) return { failures, outcome: 'tray-destroy-failed' as const };
-      records.delete(tray);
-      return { outcome: 'destroyed' as const };
-    };
-    out.isDestroyed = (tray: TrayIcon) => records.get(tray)?.destroying ?? true;
-    out.list = () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray);
-    return finishEntity(out);
-  })();
-
-  const image = (() => {
-    const out = allocateEntity<HostTrayImageProvider>();
-    out.set = async (tray: TrayIcon, icon: string) => {
-      return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
-    };
-    return finishEntity(out);
-  })();
-
-  const menu = (() => {
-    const out = allocateEntity<HostTrayMenuProvider>();
-    out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
-      const record = activeRecord(records, tray);
-      if (record === null) return { outcome: 'tray-destroyed' as const };
-      let finishOperation!: () => void;
-      const pendingOperation = new Promise<void>((resolve) => {
-        finishOperation = resolve;
-      });
-      record.pendingMenuOperations.add(pendingOperation);
-      try {
-        const generation = ++record.menuGeneration;
-        let built: TauriMenu;
-        try {
-          const handles = await buildTrayItems(tauri.menu, items, (id) =>
-            emitSignal(record.menuSelectionEvents, { id }),
-          );
-          built = await tauri.menu.Menu.new({ items: handles });
-        } catch (error) {
-          return { error, outcome: 'menu-build-failed' as const };
-        }
-        if (record.destroying || generation !== record.menuGeneration) {
-          await closeStaleMenu(record, built);
-          return record.destroying
-            ? ({ outcome: 'tray-destroyed' as const } as const)
-            : ({
-                error: new Error('A newer Tray menu superseded this build'),
-                outcome: 'menu-install-failed' as const,
-              } as const);
-        }
-        try {
-          await record.icon.setMenu(built);
-        } catch (error) {
-          await closeStaleMenu(record, built);
-          return { error, outcome: 'menu-install-failed' as const };
-        }
-        if (record.destroying || generation !== record.menuGeneration) {
-          await closeStaleMenu(record, built);
-          return record.destroying
-            ? ({ outcome: 'tray-destroyed' as const } as const)
-            : ({
-                error: new Error('A newer Tray menu superseded this install'),
-                outcome: 'menu-install-failed' as const,
-              } as const);
-        }
-        const previous = record.menus.slice();
-        record.menus.push(built);
-        const failures: unknown[] = [];
-        for (const oldMenu of previous) {
-          try {
-            await oldMenu.close();
-            record.menus.splice(record.menus.indexOf(oldMenu), 1);
-          } catch (error) {
-            failures.push(error);
-          }
-        }
-        return failures.length === 0
-          ? ({ outcome: 'updated' as const } as const)
-          : ({ error: failures, outcome: 'menu-install-failed' as const } as const);
-      } finally {
-        record.pendingMenuOperations.delete(pendingOperation);
-        finishOperation();
-      }
-    };
-    return finishEntity(out);
-  })();
-
   const common = {
-    image,
-    lifecycle,
-    menu,
-    menuSelectionEvents: (() => {
-      const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
-      out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
-      return finishEntity(out);
-    })(),
+    image: createTrayImage(records),
+    lifecycle: createTrayLifecycle(tauri, profile, records),
+    menu: createTrayMenu(tauri, records),
+    menuSelectionEvents: createTrayMenuSelectionEvents(records),
   };
-
-  const title = (() => {
-    const out = allocateEntity<HostTrayTitleProvider>();
-    out.get = async (tray: TrayIcon) => {
-      const record = activeRecord(records, tray);
-      return record === null
-        ? ({ outcome: 'tray-destroyed' as const } as const)
-        : ({ outcome: 'available' as const, title: record.title } as const);
-    };
-    out.set = async (tray: TrayIcon, value: string) => {
-      const result = await update(records, tray, 'title-update-failed', async (record) => record.icon.setTitle(value));
-      if (result.outcome === 'updated') records.get(tray)!.title = value;
-      return result;
-    };
-    return finishEntity(out);
-  })();
 
   if (profile === 'linux') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
@@ -234,34 +63,14 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
       common.menu,
       common.menuSelectionEvents,
       null,
-      title,
+      createTrayTitle(records),
       null,
     );
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
 
-  const interactionEvents = (() => {
-    const out = allocateEntity<HostTrayInteractionEventsProvider>();
-    out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
-    return finishEntity(out);
-  })();
-  const tooltip = (() => {
-    const out = allocateEntity<HostTrayTooltipProvider>();
-    out.get = async (tray: TrayIcon) => {
-      const record = activeRecord(records, tray);
-      return record === null
-        ? ({ outcome: 'tray-destroyed' as const } as const)
-        : ({ outcome: 'available' as const, tooltip: record.tooltip } as const);
-    };
-    out.set = async (tray: TrayIcon, value: string) => {
-      const result = await update(records, tray, 'tooltip-update-failed', async (record) =>
-        record.icon.setTooltip(value),
-      );
-      if (result.outcome === 'updated') records.get(tray)!.tooltip = value;
-      return result;
-    };
-    return finishEntity(out);
-  })();
+  const interactionEvents = createTrayInteractionEvents(records);
+  const tooltip = createTrayTooltip(records);
 
   if (profile === 'windows') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
@@ -279,13 +88,6 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
     );
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  const templateImageEntity = allocateEntity<HostTrayTemplateImageProvider>();
-  templateImageEntity.set = async (tray: TrayIcon, isTemplate: boolean) => {
-    return update(records, tray, 'template-image-update-failed', async (record) =>
-      record.icon.setIconAsTemplate(isTemplate),
-    );
-  };
-  const templateImage = finishEntity(templateImageEntity);
   // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
   const out = allocateEntity<Entity>();
   configureTray(
@@ -295,8 +97,8 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
     common.lifecycle,
     common.menu,
     common.menuSelectionEvents,
-    templateImage,
-    title,
+    createTrayTemplateImage(records),
+    createTrayTitle(records),
     tooltip,
   );
   return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
@@ -306,47 +108,269 @@ export function tauriHostTrayImage<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
 ): HostTrayImageProvider {
-  return tauriHostTray(tauri, profile).image;
+  void tauri;
+  void profile;
+  return createTrayImage(new Map());
 }
 
 export function tauriHostTrayInteractionEvents(
   tauri: TauriApi,
   profile: 'macos' | 'windows',
 ): HostTrayInteractionEventsProvider {
-  return tauriHostTray(tauri, profile).interactionEvents;
+  void tauri;
+  void profile;
+  return createTrayInteractionEvents(new Map());
 }
 
 export function tauriHostTrayLifecycle<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
 ): HostTrayLifecycleProvider {
-  return tauriHostTray(tauri, profile).lifecycle;
+  return createTrayLifecycle(tauri, profile, new Map());
 }
 
 export function tauriHostTrayMenu<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
 ): HostTrayMenuProvider {
-  return tauriHostTray(tauri, profile).menu;
+  void profile;
+  return createTrayMenu(tauri, new Map());
 }
 
 export function tauriHostTrayMenuSelectionEvents<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
 ): HostTrayMenuSelectionEventsProvider {
-  return tauriHostTray(tauri, profile).menuSelectionEvents;
+  void tauri;
+  void profile;
+  return createTrayMenuSelectionEvents(new Map());
 }
 
 export function tauriHostTrayTemplateImage(tauri: TauriApi): HostTrayTemplateImageProvider {
-  return tauriHostTray(tauri, 'macos').templateImage;
+  void tauri;
+  return createTrayTemplateImage(new Map());
 }
 
 export function tauriHostTrayTitle(tauri: TauriApi, profile: 'linux' | 'macos'): HostTrayTitleProvider {
-  return tauriHostTray(tauri, profile).title;
+  void tauri;
+  void profile;
+  return createTrayTitle(new Map());
 }
 
 export function tauriHostTrayTooltip(tauri: TauriApi, profile: 'macos' | 'windows'): HostTrayTooltipProvider {
-  return tauriHostTray(tauri, profile).tooltip;
+  void tauri;
+  void profile;
+  return createTrayTooltip(new Map());
+}
+
+function createTrayLifecycle(
+  tauri: TauriApi,
+  profile: DesktopOsProfile,
+  records: Map<TrayIcon, TrayRecord>,
+): HostTrayLifecycleProvider {
+  const out = allocateEntity<HostTrayLifecycleProvider>();
+  out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
+    if (options.signal?.aborted) return { outcome: 'cancelled' as const };
+    const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
+    const menuSelectionEvents = createSignal<(event: Readonly<TrayMenuSelectionEvent>) => void>();
+    const nativeOptions: TauriTrayIconOptions = {
+      action: (event) => emitInteraction(interactionEvents, event),
+      icon: options.icon,
+    };
+    if (profile === 'linux' || profile === 'macos') nativeOptions.title = options.title;
+    if (profile === 'windows' || profile === 'macos') nativeOptions.tooltip = options.tooltip;
+    if (profile === 'macos') nativeOptions.iconAsTemplate = options.iconTemplate;
+    let icon: TauriTrayIcon;
+    try {
+      icon = await tauri.tray.TrayIcon.new(nativeOptions);
+    } catch (error) {
+      return { error, outcome: 'tray-create-failed' as const };
+    }
+    if (options.signal?.aborted) {
+      try {
+        await icon.close();
+        return { outcome: 'cancelled' as const };
+      } catch (error) {
+        return { error, outcome: 'tray-create-failed' as const };
+      }
+    }
+    records.set(tray, {
+      destroying: false,
+      icon,
+      interactionEvents,
+      menuGeneration: 0,
+      menus: [],
+      menuSelectionEvents,
+      nativePending: true,
+      pendingMenuOperations: new Set(),
+      title: options.title ?? '',
+      tooltip: options.tooltip ?? '',
+    });
+    return { outcome: 'created' as const };
+  };
+  out.destroy = async (tray: TrayIcon) => {
+    const record = records.get(tray);
+    if (record === undefined) return { outcome: 'destroyed' as const };
+    record.destroying = true;
+    record.menuGeneration++;
+    await Promise.all([...record.pendingMenuOperations]);
+    const failures: Array<{ error?: unknown; step: 'native-resource' }> = [];
+    for (let index = record.menus.length - 1; index >= 0; index--) {
+      let closed = false;
+      try {
+        await record.menus[index]!.close();
+        closed = true;
+      } catch (error) {
+        failures.push({ error, step: 'native-resource' });
+      }
+      if (closed) record.menus.splice(index, 1);
+    }
+    if (record.nativePending) {
+      try {
+        await record.icon.close();
+        record.nativePending = false;
+      } catch (error) {
+        failures.push({ error, step: 'native-resource' });
+      }
+    }
+    if (failures.length > 0) return { failures, outcome: 'tray-destroy-failed' as const };
+    records.delete(tray);
+    return { outcome: 'destroyed' as const };
+  };
+  out.isDestroyed = (tray: TrayIcon) => records.get(tray)?.destroying ?? true;
+  out.list = () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray);
+  return finishEntity(out);
+}
+
+function createTrayImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayImageProvider {
+  const out = allocateEntity<HostTrayImageProvider>();
+  out.set = async (tray: TrayIcon, icon: string) => {
+    return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
+  };
+  return finishEntity(out);
+}
+
+function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayMenuProvider {
+  const out = allocateEntity<HostTrayMenuProvider>();
+  out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
+    const record = activeRecord(records, tray);
+    if (record === null) return { outcome: 'tray-destroyed' as const };
+    let finishOperation!: () => void;
+    const pendingOperation = new Promise<void>((resolve) => {
+      finishOperation = resolve;
+    });
+    record.pendingMenuOperations.add(pendingOperation);
+    try {
+      const generation = ++record.menuGeneration;
+      let built: TauriMenu;
+      try {
+        const handles = await buildTrayItems(tauri.menu, items, (id) => emitSignal(record.menuSelectionEvents, { id }));
+        built = await tauri.menu.Menu.new({ items: handles });
+      } catch (error) {
+        return { error, outcome: 'menu-build-failed' as const };
+      }
+      if (record.destroying || generation !== record.menuGeneration) {
+        await closeStaleMenu(record, built);
+        return record.destroying
+          ? ({ outcome: 'tray-destroyed' as const } as const)
+          : ({
+              error: new Error('A newer Tray menu superseded this build'),
+              outcome: 'menu-install-failed' as const,
+            } as const);
+      }
+      try {
+        await record.icon.setMenu(built);
+      } catch (error) {
+        await closeStaleMenu(record, built);
+        return { error, outcome: 'menu-install-failed' as const };
+      }
+      if (record.destroying || generation !== record.menuGeneration) {
+        await closeStaleMenu(record, built);
+        return record.destroying
+          ? ({ outcome: 'tray-destroyed' as const } as const)
+          : ({
+              error: new Error('A newer Tray menu superseded this install'),
+              outcome: 'menu-install-failed' as const,
+            } as const);
+      }
+      const previous = record.menus.slice();
+      record.menus.push(built);
+      const failures: unknown[] = [];
+      for (const oldMenu of previous) {
+        try {
+          await oldMenu.close();
+          record.menus.splice(record.menus.indexOf(oldMenu), 1);
+        } catch (error) {
+          failures.push(error);
+        }
+      }
+      return failures.length === 0
+        ? ({ outcome: 'updated' as const } as const)
+        : ({ error: failures, outcome: 'menu-install-failed' as const } as const);
+    } finally {
+      record.pendingMenuOperations.delete(pendingOperation);
+      finishOperation();
+    }
+  };
+  return finishEntity(out);
+}
+
+function createTrayMenuSelectionEvents(
+  records: ReadonlyMap<TrayIcon, TrayRecord>,
+): HostTrayMenuSelectionEventsProvider {
+  const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
+  out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
+  return finishEntity(out);
+}
+
+function createTrayInteractionEvents(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayInteractionEventsProvider {
+  const out = allocateEntity<HostTrayInteractionEventsProvider>();
+  out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
+  return finishEntity(out);
+}
+
+function createTrayTemplateImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTemplateImageProvider {
+  const out = allocateEntity<HostTrayTemplateImageProvider>();
+  out.set = async (tray: TrayIcon, isTemplate: boolean) => {
+    return update(records, tray, 'template-image-update-failed', async (record) =>
+      record.icon.setIconAsTemplate(isTemplate),
+    );
+  };
+  return finishEntity(out);
+}
+
+function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTitleProvider {
+  const out = allocateEntity<HostTrayTitleProvider>();
+  out.get = async (tray: TrayIcon) => {
+    const record = activeRecord(records, tray);
+    return record === null
+      ? ({ outcome: 'tray-destroyed' as const } as const)
+      : ({ outcome: 'available' as const, title: record.title } as const);
+  };
+  out.set = async (tray: TrayIcon, value: string) => {
+    const result = await update(records, tray, 'title-update-failed', async (record) => record.icon.setTitle(value));
+    if (result.outcome === 'updated') records.get(tray)!.title = value;
+    return result;
+  };
+  return finishEntity(out);
+}
+
+function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTooltipProvider {
+  const out = allocateEntity<HostTrayTooltipProvider>();
+  out.get = async (tray: TrayIcon) => {
+    const record = activeRecord(records, tray);
+    return record === null
+      ? ({ outcome: 'tray-destroyed' as const } as const)
+      : ({ outcome: 'available' as const, tooltip: record.tooltip } as const);
+  };
+  out.set = async (tray: TrayIcon, value: string) => {
+    const result = await update(records, tray, 'tooltip-update-failed', async (record) =>
+      record.icon.setTooltip(value),
+    );
+    if (result.outcome === 'updated') records.get(tray)!.tooltip = value;
+    return result;
+  };
+  return finishEntity(out);
 }
 
 function configureTray(
