@@ -349,7 +349,7 @@ describe('collectWholeBackendTeardowns member syntax', () => {
 });
 
 describe('explicit Host-provider lifecycle owners', () => {
-  it('derives provider and capability owners and rejects names without the matching Host trait', () => {
+  it('derives direct and legacy provider owners and rejects mismatched legacy names', () => {
     const fixture = join(mkdtempSync(join(tmpdir(), 'backend-lifecycle-host-')), 'ExplicitHostOwnerFixture.ts');
     writeFileSync(
       fixture,
@@ -357,8 +357,13 @@ describe('explicit Host-provider lifecycle owners', () => {
         'interface HasWidgetProvider { widget: { provider: { destroy(): void } } }',
         'interface HasOtherProvider { other: { provider: { destroy(): void } } }',
         'interface HasNoticeLifecycle { notice: { lifecycle: { destroy(): void } } }',
+        'interface HostGadgetProvider { destroy(): void }',
+        'interface HostPairFirstProvider { destroy(): void }',
+        'interface HostPairSecondProvider { destroy(): void }',
         'export function destroyWidget(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
         'export function destroyNoticeCapabilities(host: HasNoticeLifecycle): void { host.notice.lifecycle.destroy(); }',
+        'export function destroyGadget(hostGadget: Readonly<HostGadgetProvider>): void { hostGadget.destroy(); }',
+        'export function destroyPair(hostPairFirst: Readonly<HostPairFirstProvider>, hostPairSecond: Readonly<HostPairSecondProvider>): void { hostPairFirst.destroy(); hostPairSecond.destroy(); }',
         'export function destroyMismatched(host: HasOtherProvider): void { host.other.provider.destroy(); }',
         'export function destroyWrongCapabilities(host: HasOtherProvider): void { host.other.provider.destroy(); }',
         'export function destroyWidgetBackend(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
@@ -367,9 +372,18 @@ describe('explicit Host-provider lifecycle owners', () => {
     );
 
     const owners = collectExplicitHostDestroyOwners([fixture]);
-    expect([...owners.keys()]).toEqual(['WidgetBackend', 'NoticeLifecycleBackend']);
+    expect([...owners.keys()]).toEqual([
+      'WidgetBackend',
+      'NoticeLifecycleBackend',
+      'GadgetBackend',
+      'PairFirstBackend',
+      'PairSecondBackend',
+    ]);
     expect(owners.get('WidgetBackend')?.name).toBe('destroyWidget');
     expect(owners.get('NoticeLifecycleBackend')?.name).toBe('destroyNoticeCapabilities');
+    expect(owners.get('GadgetBackend')?.name).toBe('destroyGadget');
+    expect(owners.get('PairFirstBackend')?.name).toBe('destroyPair');
+    expect(owners.get('PairSecondBackend')?.name).toBe('destroyPair');
 
     const report = createBackendLifecycleReport(
       ['WidgetBackend'],

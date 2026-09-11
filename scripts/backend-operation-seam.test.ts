@@ -18,8 +18,8 @@ import type { BackendOperationSeamReport } from './backend-operation-seam-core';
 import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
 // The ratchet. Membership in the enforced set is DERIVED — a package is migrated because it exports
-// `explain<Name>Operation`, or because its explicit Host trait has equal method coverage in production
-// calls, never because it appears in a list here.
+// `explain<Name>Operation`, or because its exact Readonly Host provider has equal method coverage in
+// production calls, never because it appears in a list here.
 describe('backend operation seam ratchet', () => {
   let report: BackendOperationSeamReport;
   let explicitHostSlots: ReadonlyMap<string, string>;
@@ -83,8 +83,9 @@ describe('backend operation seam ratchet', () => {
   // it does not rewrite the preceding 12 → 13 AudioDevice history.
   // Image then independently adds operation-specific explanation for Bitmap materialization, with sentinel,
   // host, custom-precedence, and consumer-absence coverage. That raises the floor 14 → 15.
-  // The explicit-Host completion ruling then closes a second, equal-coverage migration shape: a Has* trait
-  // owns the exact Host slot and production directly calls every non-lifecycle backend operation through it.
+  // The explicit-Host completion ruling then closes a second, equal-coverage migration shape: the grouped
+  // Host declaration owns the exact provider slot and production directly calls every non-lifecycle
+  // provider operation through a parameter of that type.
   // Deriving that shape adds 23 already-landed explicit Host interfaces without weakening the legacy
   // explain/has predicate, raising the floor 15 → 38. MediaSession and MediaSessionAction are among those
   // completions, and deleting either Host slot or any direct operation call drops this count.

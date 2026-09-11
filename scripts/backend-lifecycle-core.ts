@@ -16,8 +16,8 @@ import { getParsedOxcSource } from './oxc-source';
 // violations would report 39 leaks where there is nothing to free.
 //
 // Most ambient seams are owned by set*Backend replacement. Explicit Host slots instead have a
-// destroyThing(host: HasThingProvider) or destroyThingCapabilities(host: HasThingLifecycle) owner: the
-// Host's constructor/sharer decides the final release.
+// destroyThing(hostThing: Readonly<HostThingProvider>) owner: the Host's constructor/sharer decides the
+// final release.
 // Those are separate, derived lanes so an explicit provider is never disguised as an ambient setter.
 
 export interface BackendLifecycleOwner {
@@ -111,14 +111,12 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
   return teardowns;
 }
 
-// Explicit Host-provider lifecycle owners, keyed by the backend interface they release.
+// Explicit Host-provider lifecycle owners, keyed by the historical backend identity they release.
 //
-// A function is admitted only when all three pieces agree structurally:
-//   destroyThing(host: HasThingProvider) -> ThingBackend,
-//   destroyThing(host: HasThingFacet) -> ThingFacetBackend, or
-//   destroyThingCapabilities(host: HasThingLifecycle) -> ThingLifecycleBackend.
-// This keeps an unrelated destroyThing helper from satisfying the lane, and makes the first-parameter
-// Host trait part of the proof rather than a naming convention described only in prose.
+// The final composition model admits every exact `Readonly<Host*Provider>` parameter of an exported
+// destroy* boundary. Multiple providers are intentional: one boundary may own several independently
+// supplied leaves, and each must remain visible to this census. The legacy Has* shape remains understood
+// for mutation fixtures, but no production declaration depends on it.
 export function collectExplicitHostDestroyOwners(
   sourceFiles: readonly string[],
 ): ReadonlyMap<string, BackendLifecycleOwner> {
@@ -132,17 +130,24 @@ export function collectExplicitHostDestroyOwners(
       if (declaration.id === null || declaration.body === null) continue;
       const name = declaration.id.name;
       if (!name.startsWith('destroy') || name.endsWith('Backend')) continue;
-      // Oxc's declaration.params element type is narrower than its runtime Identifier nodes.
-      const parameter = declaration.params[0] as Node | undefined;
-      if (parameter?.type !== 'Identifier') continue;
-      const annotation = parameter.typeAnnotation?.typeAnnotation;
-      if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
-      const interfaceName = explicitHostDestroyBackendName(name, annotation.typeName.name);
-      if (interfaceName === null) continue;
-      owners.set(interfaceName, {
-        body: text.slice(declaration.body.start + 1, declaration.body.end - 1),
-        name,
-      });
+      const owner = { body: text.slice(declaration.body.start + 1, declaration.body.end - 1), name };
+      for (const rawParameter of declaration.params) {
+        // Oxc's declaration.params element type is narrower than its runtime Identifier nodes.
+        const parameter = rawParameter as Node;
+        if (parameter.type !== 'Identifier') continue;
+        const annotation = parameter.typeAnnotation?.typeAnnotation;
+        if (annotation === undefined) continue;
+        const annotationText = text.slice(annotation.start, annotation.end);
+        const providers =
+          /\bReadonly\s*</u.test(annotationText) && (annotationText.match(/\bHost[A-Z][A-Za-z0-9]+Provider\b/gu) ?? []);
+        if (providers !== false && providers.length > 0) {
+          for (const provider of new Set(providers)) owners.set(legacyBackendName(provider), owner);
+          continue;
+        }
+        if (annotation.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
+        const interfaceName = explicitHostDestroyBackendName(name, annotation.typeName.name);
+        if (interfaceName !== null) owners.set(interfaceName, owner);
+      }
     }
   }
   return owners;
