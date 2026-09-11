@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
-import { initializeWebStorageBackend, webStorageBackend } from './webStorage';
+import { initializeWebStorageBackend, webHostStorage, webHostStorageChange, webStorageBackend } from './webStorage';
 
 function namedError(name: string): Error {
   const error = new Error(name);
@@ -14,73 +14,74 @@ describe('initializeWebStorageBackend', () => {
     expect(typeof initializeWebStorageBackend).toBe('function');
   });
 });
-describe('webStorageBackend', () => {
+describe('webHostStorage providers', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => vi.restoreAllMocks());
 
-  it('is one stable Entity installed in the truthful local and change Host slots', () => {
+  it('decomposes the legacy provider into exact local and change Host leaves', () => {
     expect(EntityRuntimeKey in webStorageBackend).toBe(true);
-    expect(webHost.storage.local).toBe(webStorageBackend);
-    expect(webHost.storage.change).toBe(webStorageBackend);
+    expect(webHost.storage.local).toBe(webHostStorage);
+    expect(webHost.storage.change).toBe(webHostStorageChange);
+    expect(webHostStorage).not.toBe(webHostStorageChange);
   });
 
   it('distinguishes an ordinary miss from an empty stored string', () => {
     localStorage.setItem('empty', '');
-    expect(webStorageBackend.getItem('missing')).toEqual({ reason: 'ok', value: null });
-    expect(webStorageBackend.getItem('empty')).toEqual({ reason: 'ok', value: '' });
+    expect(webHostStorage.getItem('missing')).toEqual({ reason: 'ok', value: null });
+    expect(webHostStorage.getItem('empty')).toEqual({ reason: 'ok', value: '' });
   });
 
   it('distinguishes successful empty keys from a failed query', () => {
-    expect(webStorageBackend.keys()).toEqual({ reason: 'ok', value: [] });
+    expect(webHostStorage.keys()).toEqual({ reason: 'ok', value: [] });
     localStorage.setItem('key', 'value');
     vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
       throw namedError('SecurityError');
     });
-    expect(webStorageBackend.keys()).toEqual({ reason: 'security-denied', value: null });
+    expect(webHostStorage.keys()).toEqual({ reason: 'security-denied', value: null });
   });
 
   it('classifies reliable Web security, quota, and method failures without private-mode inference', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
       throw namedError('SecurityError');
     });
-    expect(webStorageBackend.getItem('key')).toEqual({ reason: 'security-denied', value: null });
+    expect(webHostStorage.getItem('key')).toEqual({ reason: 'security-denied', value: null });
 
     vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
       throw namedError('QuotaExceededError');
     });
-    expect(webStorageBackend.setItem('key', 'value')).toEqual({ reason: 'quota-exceeded' });
+    expect(webHostStorage.setItem('key', 'value')).toEqual({ reason: 'quota-exceeded' });
 
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementationOnce(() => {
       throw new Error('method failed');
     });
-    expect(webStorageBackend.removeItem('key')).toEqual({ reason: 'remove-failed' });
+    expect(webHostStorage.removeItem('key')).toEqual({ reason: 'remove-failed' });
 
     vi.spyOn(Storage.prototype, 'clear').mockImplementationOnce(() => {
       throw new Error('method failed');
     });
-    expect(webStorageBackend.clear()).toEqual({ reason: 'clear-failed' });
+    expect(webHostStorage.clear()).toEqual({ reason: 'clear-failed' });
   });
 
   it('returns runtime-unavailable when the Web runtime is absent', () => {
     vi.stubGlobal('window', undefined);
     try {
-      expect(webStorageBackend.getItem('key')).toEqual({ reason: 'runtime-unavailable', value: null });
-      expect(webStorageBackend.keys()).toEqual({ reason: 'runtime-unavailable', value: null });
-      expect(webStorageBackend.setItem('key', 'value')).toEqual({ reason: 'runtime-unavailable' });
-      expect(webStorageBackend.removeItem('key')).toEqual({ reason: 'runtime-unavailable' });
-      expect(webStorageBackend.clear()).toEqual({ reason: 'runtime-unavailable' });
+      expect(webHostStorage.getItem('key')).toEqual({ reason: 'runtime-unavailable', value: null });
+      expect(webHostStorage.keys()).toEqual({ reason: 'runtime-unavailable', value: null });
+      expect(webHostStorage.setItem('key', 'value')).toEqual({ reason: 'runtime-unavailable' });
+      expect(webHostStorage.removeItem('key')).toEqual({ reason: 'runtime-unavailable' });
+      expect(webHostStorage.clear()).toEqual({ reason: 'runtime-unavailable' });
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
   it('treats removing an absent key as idempotent success', () => {
-    expect(webStorageBackend.removeItem('missing')).toEqual({ reason: 'ok' });
+    expect(webHostStorage.removeItem('missing')).toEqual({ reason: 'ok' });
   });
 
   it('delivers storage events and the returned release detaches the exact listener', () => {
     const changes: unknown[] = [];
-    const release = webStorageBackend.subscribe((change) => changes.push(change));
+    const release = webHostStorageChange.subscribe((change) => changes.push(change));
     expect(release).not.toBeNull();
     window.dispatchEvent(
       new StorageEvent('storage', { key: 'key', newValue: 'new', oldValue: 'old', storageArea: localStorage }),
@@ -93,10 +94,10 @@ describe('webStorageBackend', () => {
 
   it('destroy releases active subscriptions and makes later acquisition fail', () => {
     const remove = vi.spyOn(window, 'removeEventListener');
-    expect(webStorageBackend.subscribe(() => {})).not.toBeNull();
-    webStorageBackend.destroy();
+    expect(webHostStorageChange.subscribe(() => {})).not.toBeNull();
+    webHostStorageChange.destroy();
     expect(remove).toHaveBeenCalledWith('storage', expect.any(Function));
-    expect(webStorageBackend.subscribe(() => {})).toBeNull();
-    expect(() => webStorageBackend.destroy()).not.toThrow();
+    expect(webHostStorageChange.subscribe(() => {})).toBeNull();
+    expect(() => webHostStorageChange.destroy()).not.toThrow();
   });
 });

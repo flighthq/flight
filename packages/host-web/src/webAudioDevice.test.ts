@@ -1,13 +1,13 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { webAudioDeviceBackend } from './webAudioDevice';
+import { webHostAudioDevice } from './webAudioDevice';
 
-describe('webAudioDeviceBackend', () => {
+describe('webHostAudioDevice', () => {
   it('is an Entity', () => {
-    expect(EntityRuntimeKey in webAudioDeviceBackend).toBe(true);
+    expect(EntityRuntimeKey in webHostAudioDevice).toBe(true);
   });
 
   it('is a stable singleton', () => {
-    expect(webAudioDeviceBackend).toBe(webAudioDeviceBackend);
+    expect(webHostAudioDevice).toBe(webHostAudioDevice);
   });
 });

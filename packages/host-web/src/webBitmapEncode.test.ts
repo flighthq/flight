@@ -3,11 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HasGraphicsBitmapEncode } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import {
-  createWebBitmapEncodeBackend,
-  initializeWebBitmapEncodeBackend,
-  webBitmapEncodeBackend,
-} from './webBitmapEncode';
+import { createWebBitmapEncodeBackend, initializeWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
 
 function createTestBitmap(): Bitmap {
   const out = allocateEntity<Bitmap>();
@@ -22,7 +18,7 @@ function createTestBitmap(): Bitmap {
   return finishEntity(out);
 }
 
-function hostWith(backend = webBitmapEncodeBackend): HasGraphicsBitmapEncode {
+function hostWith(backend = webHostBitmapEncode): HasGraphicsBitmapEncode {
   return { graphics: { bitmapEncode: backend } } as HasGraphicsBitmapEncode;
 }
 
@@ -45,14 +41,14 @@ describe('initializeWebBitmapEncodeBackend', () => {
     expect(typeof initializeWebBitmapEncodeBackend).toBe('function');
   });
 });
-describe('webBitmapEncodeBackend', () => {
+describe('webHostBitmapEncode', () => {
   it('does not allocate a canvas or ImageData at import time', () => {
     const createElement = vi.spyOn(document, 'createElement');
     const imageData = globalThis.ImageData;
     const imageDataAccess = vi.fn(() => imageData);
     Object.defineProperty(globalThis, 'ImageData', { configurable: true, get: imageDataAccess });
     try {
-      expect(webBitmapEncodeBackend.supportedFormats).toEqual(['jpeg', 'png']);
+      expect(webHostBitmapEncode.supportedFormats).toEqual(['jpeg', 'png']);
       expect(createElement).not.toHaveBeenCalled();
       expect(imageDataAccess).not.toHaveBeenCalled();
     } finally {

@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  DeviceBackend,
+  HostDeviceProvider,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
@@ -14,8 +14,8 @@ import {
   parseUserAgentOsVersion,
 } from '@flighthq/useragent/contract';
 
-export function createWebDeviceBackend(): DeviceBackend {
-  const out = allocateEntity<DeviceBackend>();
+export function createWebDeviceBackend(): HostDeviceProvider {
+  const out = allocateEntity<HostDeviceProvider>();
   initializeWebDeviceBackend(out);
   return finishEntity(out);
 }
@@ -52,7 +52,7 @@ export function enableWebSafeAreaInsets(): () => void {
   };
 }
 
-export function initializeWebDeviceBackend(out: EntityConstruction<DeviceBackend>): void {
+export function initializeWebDeviceBackend(out: EntityConstruction<HostDeviceProvider>): void {
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
     const nav = typeof navigator !== 'undefined' ? navigator : null;
     // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
@@ -158,7 +158,7 @@ export function initializeWebDeviceBackend(out: EntityConstruction<DeviceBackend
   };
 }
 
-export const webDeviceBackend: DeviceBackend = createWebDeviceBackend();
+export const webHostDevice: HostDeviceProvider = createWebDeviceBackend();
 
 let _safeAreaInsets: SafeAreaInsets | null = null;
 

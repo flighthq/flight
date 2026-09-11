@@ -25,7 +25,7 @@ describe('webScreenHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]);
 
     expect(relativeImports).toEqual(['./webScreen']);
-    expect(source).toMatch(/export const webScreenHost = createHost\(/);
+    expect(source).toMatch(/export const webScreenHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

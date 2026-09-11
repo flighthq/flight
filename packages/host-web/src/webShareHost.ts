@@ -1,8 +1,11 @@
 import { createHost } from '@flighthq/entity/contract';
-import type { HasShareContent, HasShareFiles, Host } from '@flighthq/types/contract';
+import type { HostShareCapabilities } from '@flighthq/types/contract';
 
-import { webShareContentBackend, webShareFilesBackend } from './webShare';
+import { webHostShareContent, webHostShareFiles } from './webShare';
 
-export const webShareHost: Host & HasShareContent & HasShareFiles = createHost({
-  share: { content: webShareContentBackend, files: webShareFilesBackend },
-});
+export const webHostShare = {
+  content: webHostShareContent,
+  files: webHostShareFiles,
+} satisfies HostShareCapabilities;
+
+export const webShareHost = /* @__PURE__ */ createHost({ share: webHostShare });

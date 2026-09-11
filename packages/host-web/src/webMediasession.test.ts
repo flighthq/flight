@@ -8,8 +8,8 @@ import {
   createWebMediaSessionBackend,
   initializeWebMediaSessionActionBackend,
   initializeWebMediaSessionBackend,
-  webMediaSessionActionBackend,
-  webMediaSessionBackend,
+  webHostMediaSessionAction,
+  webHostMediaSession,
 } from './webMediasession';
 
 interface FakeMediaSession {
@@ -436,11 +436,11 @@ describe('web media-session command ownership', () => {
 
 describe('web media-session provider composition', () => {
   it('backs both singleton Host slots and fresh factories with Entities', () => {
-    expect(EntityRuntimeKey in webMediaSessionBackend).toBe(true);
-    expect(EntityRuntimeKey in webMediaSessionActionBackend).toBe(true);
+    expect(EntityRuntimeKey in webHostMediaSession).toBe(true);
+    expect(EntityRuntimeKey in webHostMediaSessionAction).toBe(true);
     expect(EntityRuntimeKey in createWebMediaSessionBackend()).toBe(true);
     expect(EntityRuntimeKey in createWebMediaSessionActionBackend()).toBe(true);
-    expect(webHost.media.session).toBe(webMediaSessionBackend);
-    expect(webHost.media.sessionAction).toBe(webMediaSessionActionBackend);
+    expect(webHost.media.session).toBe(webHostMediaSession);
+    expect(webHost.media.sessionAction).toBe(webHostMediaSessionAction);
   });
 });

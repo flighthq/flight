@@ -1,9 +1,9 @@
 import { packedRgbaToHexColor } from '@flighthq/statusbar/contract';
-import type { StatusBarColorBackend } from '@flighthq/types/contract';
+import type { HostStatusBarColorProvider } from '@flighthq/types/contract';
 
 // Web owns one honest status-bar-adjacent operation: writing the document theme-color hint. It does
 // not claim native status-bar snapshots, foreground style, visibility, overlays, or change events.
-export const webStatusBarColorBackend: StatusBarColorBackend = {
+export const webHostStatusBarColor: HostStatusBarColorProvider = {
   setBackgroundColor(color): void {
     try {
       if (typeof document === 'undefined' || document.head === null) return;

@@ -1,18 +1,16 @@
 import { createHost } from '@flighthq/entity/contract';
-import type {
-  HasConnectivityChange,
-  HasConnectivityReachability,
-  HasConnectivityStatus,
-  Host,
-} from '@flighthq/types/contract';
+import type { HostConnectivityCapabilities } from '@flighthq/types/contract';
 
-import { webConnectivityBackend } from './webConnectivity';
+import {
+  webHostConnectivityChange,
+  webHostConnectivityReachability,
+  webHostConnectivityStatus,
+} from './webConnectivity';
 
-export const webConnectivityHost: Host & HasConnectivityChange & HasConnectivityReachability & HasConnectivityStatus =
-  createHost({
-    connectivity: {
-      change: webConnectivityBackend,
-      reachability: webConnectivityBackend,
-      status: webConnectivityBackend,
-    },
-  });
+export const webHostConnectivity = {
+  change: webHostConnectivityChange,
+  reachability: webHostConnectivityReachability,
+  status: webHostConnectivityStatus,
+} satisfies HostConnectivityCapabilities;
+
+export const webConnectivityHost = /* @__PURE__ */ createHost({ connectivity: webHostConnectivity });

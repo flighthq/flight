@@ -1,7 +1,7 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { NetProgress, NetRequest } from '@flighthq/types/contract';
 
-import { createWebNetBackend, initializeWebNetBackend, webNetBackend } from './webNet';
+import { createWebNetBackend, initializeWebNetBackend, webHostNet } from './webNet';
 
 interface FakeResponseInit {
   status?: number;
@@ -300,9 +300,9 @@ describe('initializeWebNetBackend', () => {
     expect(typeof initializeWebNetBackend).toBe('function');
   });
 });
-describe('webNetBackend', () => {
-  it('is a pre-instantiated NetBackend const', () => {
-    expect(webNetBackend).not.toBeNull();
-    expect(typeof webNetBackend.sendNetRequest).toBe('function');
+describe('webHostNet', () => {
+  it('is a pre-instantiated HostNetProvider const', () => {
+    expect(webHostNet).not.toBeNull();
+    expect(typeof webHostNet.sendNetRequest).toBe('function');
   });
 });

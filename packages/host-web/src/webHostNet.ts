@@ -1,8 +1,9 @@
-import { createHost } from '@flighthq/entity/contract';
+import type { HostNetCapabilities } from '@flighthq/types/contract';
 
-import { webNetBackend } from './webNet';
-import { webSocketBackend } from './webSocket';
+import { webHostNet } from './webNet';
+import { webHostSocket } from './webSocket';
 
-export const webHostNet = createHost({
-  net: { http: webNetBackend, socket: webSocketBackend },
-});
+export const webHostNetGroup = {
+  http: webHostNet,
+  socket: webHostSocket,
+} satisfies HostNetCapabilities;

@@ -1,5 +1,5 @@
 import { createHost } from '@flighthq/entity/contract';
 
-import { webPowerCapabilities } from './webPower';
+import { webHostPower } from './webPower';
 
-export const webPowerHost = createHost({ power: webPowerCapabilities });
+export const webPowerHost = /* @__PURE__ */ createHost({ power: webHostPower });

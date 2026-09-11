@@ -3,8 +3,8 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   initializeWebMenuHighlightBackend,
   initializeWebMenuPopupBackend,
-  webMenuHighlightBackend,
-  webMenuPopupBackend,
+  webHostMenuHighlight,
+  webHostMenuPopup,
 } from './webMenu';
 
 describe('initializeWebMenuHighlightBackend', () => {
@@ -19,14 +19,14 @@ describe('initializeWebMenuPopupBackend', () => {
   });
 });
 
-describe('webMenuHighlightBackend', () => {
+describe('webHostMenuHighlight', () => {
   it('is an Entity provider', () => {
-    expect(EntityRuntimeKey in webMenuHighlightBackend).toBe(true);
+    expect(EntityRuntimeKey in webHostMenuHighlight).toBe(true);
   });
 
   it('delivers to a subscriber and stops on that subscription unsubscribe', () => {
     const seen: string[] = [];
-    const unsubscribe = webMenuHighlightBackend.subscribe((id) => seen.push(id));
+    const unsubscribe = webHostMenuHighlight.subscribe((id) => seen.push(id));
     // No DOM menu is open here, so nothing should have arrived yet.
     expect(seen).toEqual([]);
     unsubscribe();
@@ -37,16 +37,16 @@ describe('webMenuHighlightBackend', () => {
   it('ends only the subscription whose unsubscribe was called', () => {
     const first: string[] = [];
     const second: string[] = [];
-    const unsubscribeFirst = webMenuHighlightBackend.subscribe((id) => first.push(id));
-    const unsubscribeSecond = webMenuHighlightBackend.subscribe((id) => second.push(id));
+    const unsubscribeFirst = webHostMenuHighlight.subscribe((id) => first.push(id));
+    const unsubscribeSecond = webHostMenuHighlight.subscribe((id) => second.push(id));
     unsubscribeFirst();
     // The second subscription is still registered; unsubscribing it is a separate, safe act.
     expect(() => unsubscribeSecond()).not.toThrow();
   });
 });
-describe('webMenuPopupBackend', () => {
+describe('webHostMenuPopup', () => {
   it('is an Entity provider', () => {
-    expect(EntityRuntimeKey in webMenuPopupBackend).toBe(true);
+    expect(EntityRuntimeKey in webHostMenuPopup).toBe(true);
   });
 
   // ★ The web provider must expose popup and highlight ONLY. Its old application/select members were
@@ -54,15 +54,15 @@ describe('webMenuPopupBackend', () => {
   // indistinguishable from a host that really implements them. Deleting them is the point of this slice,
   // so this asserts their ABSENCE rather than any behaviour.
   it('exposes no application or select members to be mistaken for capability', () => {
-    expect('setApplicationMenu' in webMenuPopupBackend).toBe(false);
-    expect('subscribe' in webMenuPopupBackend).toBe(false);
-    expect('popup' in webMenuHighlightBackend).toBe(false);
+    expect('setApplicationMenu' in webHostMenuPopup).toBe(false);
+    expect('subscribe' in webHostMenuPopup).toBe(false);
+    expect('popup' in webHostMenuHighlight).toBe(false);
   });
 });
 
 // Overlay behaviour moved here with the implementation: these exercised showWebContextMenu when it
 // lived in core @flighthq/menu, and they now drive the same DOM through the popup slot.
-describe('webMenuPopupBackend overlay', () => {
+describe('webHostMenuPopup overlay', () => {
   afterEach(() => {
     document.body.replaceChildren();
     vi.restoreAllMocks();
@@ -85,7 +85,7 @@ describe('webMenuPopupBackend overlay', () => {
   }
 
   it('renders separators, checked kinds, accelerators, and disabled items', async () => {
-    const promise = webMenuPopupBackend.popup(
+    const promise = webHostMenuPopup.popup(
       [
         { id: 'checked', label: 'Checked', type: 'checkbox', checked: true },
         { id: 'chosen', label: 'Chosen', type: 'radio', checked: true },
@@ -116,12 +116,12 @@ describe('webMenuPopupBackend overlay', () => {
   });
 
   it('selects enabled items by click and dismisses on outside click', async () => {
-    const selected = webMenuPopupBackend.popup([{ id: 'copy', label: 'Copy' }], 0, 0);
+    const selected = webHostMenuPopup.popup([{ id: 'copy', label: 'Copy' }], 0, 0);
     getRootMenu().querySelector<HTMLElement>('li')!.click();
     await expect(selected).resolves.toBe('copy');
     expect(document.body.querySelector('ul')).toBeNull();
 
-    const dismissed = webMenuPopupBackend.popup([{ id: 'paste', label: 'Paste' }], 0, 0);
+    const dismissed = webHostMenuPopup.popup([{ id: 'paste', label: 'Paste' }], 0, 0);
     getOverlay().click();
     await expect(dismissed).resolves.toBeNull();
   });
@@ -133,13 +133,13 @@ describe('webMenuPopupBackend overlay', () => {
       { id: 'last', label: 'Last' },
     ];
 
-    const enterSelection = webMenuPopupBackend.popup(items, 0, 0);
+    const enterSelection = webHostMenuPopup.popup(items, 0, 0);
     press('ArrowUp');
     expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('last');
     press('Enter');
     await expect(enterSelection).resolves.toBe('last');
 
-    const spaceSelection = webMenuPopupBackend.popup(items, 0, 0);
+    const spaceSelection = webHostMenuPopup.popup(items, 0, 0);
     press('ArrowDown');
     press('ArrowDown');
     press('ArrowDown');
@@ -149,13 +149,13 @@ describe('webMenuPopupBackend overlay', () => {
   });
 
   it('dismisses on Escape', async () => {
-    const promise = webMenuPopupBackend.popup([{ id: 'copy', label: 'Copy' }], 0, 0);
+    const promise = webHostMenuPopup.popup([{ id: 'copy', label: 'Copy' }], 0, 0);
     press('Escape');
     await expect(promise).resolves.toBeNull();
   });
 
   it('opens a submenu on hover and resolves a child selection', async () => {
-    const promise = webMenuPopupBackend.popup(
+    const promise = webHostMenuPopup.popup(
       [{ id: 'file', label: 'File', type: 'submenu', submenu: [{ id: 'open', label: 'Open' }] }],
       0,
       0,
@@ -171,7 +171,7 @@ describe('webMenuPopupBackend overlay', () => {
 
   it('clamps a menu that overflows the viewport', async () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(1900, 1900, 100, 100));
-    const promise = webMenuPopupBackend.popup([{ id: 'copy', label: 'Copy' }], 40, 30);
+    const promise = webHostMenuPopup.popup([{ id: 'copy', label: 'Copy' }], 40, 30);
     expect(getRootMenu().style.left).toBe('0px');
     expect(getRootMenu().style.top).toBe('0px');
     getOverlay().click();

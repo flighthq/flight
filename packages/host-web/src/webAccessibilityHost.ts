@@ -1,8 +1,10 @@
 import { createHost } from '@flighthq/entity/contract';
-import type { HasAccessibilityProvider, Host } from '@flighthq/types/contract';
+import type { HostAccessibilityCapabilities } from '@flighthq/types/contract';
 
-import { webAccessibilityBackend } from './webAccessibility';
+import { webHostAccessibility } from './webAccessibility';
 
-export const webAccessibilityHost: Host & HasAccessibilityProvider = createHost({
-  accessibility: { provider: webAccessibilityBackend },
-});
+export const webHostAccessibilityGroup = {
+  provider: webHostAccessibility,
+} satisfies HostAccessibilityCapabilities;
+
+export const webAccessibilityHost = /* @__PURE__ */ createHost({ accessibility: webHostAccessibilityGroup });

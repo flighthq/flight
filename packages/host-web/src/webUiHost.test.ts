@@ -3,7 +3,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import { webFullscreenBackend, webStatusBarColorBackend, webUiHost } from './index';
+import { webHostFullscreen, webHostStatusBarColor, webUiHost } from './index';
 
 describe('webUiHost', () => {
   it('is an Entity compatible with the exact Web UI capabilities', () => {
@@ -12,8 +12,8 @@ describe('webUiHost', () => {
     expect(host).toBe(webUiHost);
     expect(EntityRuntimeKey in webUiHost).toBe(true);
     expect(Object.keys(webUiHost.ui).sort()).toEqual(['fullscreen', 'statusBarColor']);
-    expect(webUiHost.ui.fullscreen).toBe(webFullscreenBackend);
-    expect(webUiHost.ui.statusBarColor).toBe(webStatusBarColorBackend);
+    expect(webUiHost.ui.fullscreen).toBe(webHostFullscreen);
+    expect(webUiHost.ui.statusBarColor).toBe(webHostStatusBarColor);
   });
 
   it('is created in an isolated UI wrapper module', () => {
@@ -21,7 +21,7 @@ describe('webUiHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]).sort();
 
     expect(relativeImports).toEqual(['./webStatusbar', './webWindow']);
-    expect(source).toMatch(/export const webUiHost = createHost\(/);
+    expect(source).toMatch(/export const webUiHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

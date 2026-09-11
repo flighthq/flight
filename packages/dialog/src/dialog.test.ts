@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityWithoutRuntime, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
+import type { HostMessageDialogProvider } from '@flighthq/types/contract';
 
 import {
   initializeWebMessageDialogBackend,
@@ -11,8 +11,8 @@ import {
   showMessageDialog,
   showPromptDialog,
   showWarningDialog,
-  webMessageDialogBackend,
-  webPromptDialogBackend,
+  webHostMessageDialog,
+  webHostPromptDialog,
 } from './dialog';
 
 function fakeHost() {
@@ -47,7 +47,7 @@ function severityHost(observed: string[]) {
         out.confirm = async () => {
           return true;
         };
-        out.message = async (options: Parameters<MessageDialogBackend['message']>[0]) => {
+        out.message = async (options: Parameters<HostMessageDialogProvider['message']>[0]) => {
           observed.push(options.kind ?? 'none');
           return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
         };
@@ -127,15 +127,15 @@ describe('showPromptDialog', () => {
   });
 
   it('keeps the existing browser message and prompt providers callable', async () => {
-    expect(typeof (await webMessageDialogBackend.confirm({ message: 'sure?' }))).toBe('boolean');
-    expect(webPromptDialogBackend.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
+    expect(typeof (await webHostMessageDialog.confirm({ message: 'sure?' }))).toBe('boolean');
+    expect(webHostPromptDialog.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
   });
 
   it('does not open the synchronous browser prompt when already aborted', async () => {
     const prompt = vi.spyOn(window, 'prompt');
     const controller = new AbortController();
     controller.abort();
-    await expect(webPromptDialogBackend.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
+    await expect(webHostPromptDialog.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
     expect(prompt).not.toHaveBeenCalled();
   });
 });

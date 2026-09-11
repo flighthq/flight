@@ -1,38 +1,22 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HasNetHttp, HasNetSocket, Host } from '@flighthq/types/contract';
+import type { HostNetCapabilities } from '@flighthq/types/contract';
 
-import { webHostNet } from './webHostNet';
+import { webHostNetGroup } from './webHostNet';
+import { webHostNet } from './webNet';
+import { webHostSocket } from './webSocket';
 
-describe('webHostNet', () => {
-  it('is an Entity (carries EntityRuntimeKey)', () => {
-    expect(EntityRuntimeKey in webHostNet).toBe(true);
+describe('webHostNetGroup', () => {
+  it('uses the narrow collision escape while the explicit leaf keeps webHostNet', () => {
+    const group: HostNetCapabilities = webHostNetGroup;
+
+    expect(group).toBe(webHostNetGroup);
+    expect(webHostNetGroup).not.toBe(webHostNet);
+    expect(webHostNetGroup.http).toBe(webHostNet);
+    expect(webHostNetGroup.socket).toBe(webHostSocket);
+    expect(Object.keys(webHostNetGroup).sort()).toEqual(['http', 'socket']);
   });
 
-  it('is a Host (carries every canonical group, not just net)', () => {
-    const host: Host = webHostNet;
-    expect(host.net).toBeDefined();
-    expect(host.app).toBeDefined();
-    expect(host.system).toBeDefined();
-  });
-
-  it('satisfies HasNetHttp with a truthful http backend', () => {
-    const host: HasNetHttp = webHostNet;
-    expect(host.net.http).toBeDefined();
-    expect(typeof host.net.http.sendNetRequest).toBe('function');
-  });
-
-  it('satisfies HasNetSocket with a truthful socket backend', () => {
-    const host: HasNetSocket = webHostNet;
-    expect(host.net.socket).toBeDefined();
-    expect(typeof host.net.socket.openSocket).toBe('function');
-  });
-
-  it('composes exactly http and socket on the net group', () => {
-    expect(Object.keys(webHostNet.net).sort()).toEqual(['http', 'socket']);
-  });
-
-  it('exposes only the single export (import isolation)', async () => {
+  it('exports only the direct group value', async () => {
     const source = await import('./webHostNet');
-    expect(Object.keys(source)).toEqual(['webHostNet']);
+    expect(Object.keys(source)).toEqual(['webHostNetGroup']);
   });
 });

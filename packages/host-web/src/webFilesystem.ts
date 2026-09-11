@@ -1,8 +1,8 @@
-import type { FileEntry, FileSystemHostBackend } from '@flighthq/types/contract';
+import type { FileEntry, HostFileSystemProvider } from '@flighthq/types/contract';
 
 // Stable OPFS provider. Unsupported symlink, permissions, real-path, watch, and well-known-path
 // operations are intentionally absent; @flighthq/filesystem owns those documented absence results.
-export const webFileSystemBackend: FileSystemHostBackend = {
+export const webHostFileSystem: HostFileSystemProvider = {
   async appendTextFile(path, data, signal) {
     signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
@@ -209,7 +209,7 @@ export const webFileSystemBackend: FileSystemHostBackend = {
     return removeFile(path);
   },
   async rename(from, to) {
-    const copied = await webFileSystemBackend.copy?.(from, to);
+    const copied = await webHostFileSystem.copy?.(from, to);
     return copied === true && (await removeFile(from));
   },
   async statFile(path) {

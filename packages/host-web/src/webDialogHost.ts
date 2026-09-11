@@ -1,44 +1,26 @@
 import { createHost } from '@flighthq/entity/contract';
-import type {
-  HasDialogDirectoryOpen,
-  HasDialogFileOpen,
-  HasDialogFileSave,
-  HasDialogImageOpen,
-  HasDialogMessage,
-  HasDialogPhotoCapture,
-  HasDialogPrompt,
-  HasDialogVideoCapture,
-  Host,
-} from '@flighthq/types/contract';
+import type { HostDialogCapabilities } from '@flighthq/types/contract';
 
 import {
-  webDirectoryOpenDialogBackend,
-  webFileOpenDialogBackend,
-  webFileSaveDialogBackend,
-  webImageOpenDialogBackend,
-  webMessageDialogBackend,
-  webPhotoCaptureDialogBackend,
-  webPromptDialogBackend,
-  webVideoCaptureDialogBackend,
+  webHostDirectoryOpenDialog,
+  webHostFileOpenDialog,
+  webHostFileSaveDialog,
+  webHostImageOpenDialog,
+  webHostMessageDialog,
+  webHostPhotoCaptureDialog,
+  webHostPromptDialog,
+  webHostVideoCaptureDialog,
 } from './webDialog';
 
-export const webDialogHost: Host &
-  HasDialogDirectoryOpen &
-  HasDialogFileOpen &
-  HasDialogFileSave &
-  HasDialogImageOpen &
-  HasDialogMessage &
-  HasDialogPhotoCapture &
-  HasDialogPrompt &
-  HasDialogVideoCapture = createHost({
-  dialog: {
-    directoryOpen: webDirectoryOpenDialogBackend,
-    fileOpen: webFileOpenDialogBackend,
-    fileSave: webFileSaveDialogBackend,
-    imageOpen: webImageOpenDialogBackend,
-    message: webMessageDialogBackend,
-    photoCapture: webPhotoCaptureDialogBackend,
-    prompt: webPromptDialogBackend,
-    videoCapture: webVideoCaptureDialogBackend,
-  },
-});
+export const webHostDialog = {
+  directoryOpen: webHostDirectoryOpenDialog,
+  fileOpen: webHostFileOpenDialog,
+  fileSave: webHostFileSaveDialog,
+  imageOpen: webHostImageOpenDialog,
+  message: webHostMessageDialog,
+  photoCapture: webHostPhotoCaptureDialog,
+  prompt: webHostPromptDialog,
+  videoCapture: webHostVideoCaptureDialog,
+} satisfies HostDialogCapabilities;
+
+export const webDialogHost = /* @__PURE__ */ createHost({ dialog: webHostDialog });

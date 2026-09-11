@@ -1,28 +1,16 @@
 import { createHost } from '@flighthq/entity/contract';
+import type { HostStorageCapabilities } from '@flighthq/types/contract';
 
-import { webFileSystemBackend } from './webFilesystem';
-import { webStorageBackend } from './webStorage';
-import { createWebWindowStoragePersistenceCapabilities } from './webStoragePersistence';
+import { webHostFileSystem } from './webFilesystem';
+import { webHostStorage, webHostStorageChange } from './webStorage';
+import { webHostStoragePersistenceQuery, webHostStoragePersistenceRequest } from './webStoragePersistence';
 
-const webStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapabilities({
-  async getPermissionState() {
-    const status = await navigator.permissions.query({ name: 'persistent-storage' as PermissionName });
-    return status.state;
-  },
-  async persist() {
-    return navigator.storage.persist();
-  },
-  async persisted() {
-    return navigator.storage.persisted();
-  },
-});
+export const webHostStorageGroup = {
+  change: webHostStorageChange,
+  fileSystem: webHostFileSystem,
+  local: webHostStorage,
+  persistenceQuery: webHostStoragePersistenceQuery,
+  persistenceRequest: webHostStoragePersistenceRequest,
+} satisfies HostStorageCapabilities;
 
-export const webStorageHost = createHost({
-  storage: {
-    change: webStorageBackend,
-    fileSystem: webFileSystemBackend,
-    local: webStorageBackend,
-    persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
-    persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
-  },
-});
+export const webStorageHost = /* @__PURE__ */ createHost({ storage: webHostStorageGroup });

@@ -3,31 +3,33 @@ import type {
   EntityConstruction,
   HasDialogMessage,
   HasDialogPrompt,
-  MessageDialogBackend,
+  HostMessageDialogProvider,
+  HostPromptDialogProvider,
   MessageDialogOptions,
   MessageDialogResult,
-  PromptDialogBackend,
   PromptDialogOptions,
 } from '@flighthq/types/contract';
 
-// These two providers predate the file-dialog split and remain here until their own domain slices move
-// them into host-web. File-picker providers live exclusively in @flighthq/host-web.
-export const webMessageDialogBackend = createWebMessageDialogBackend();
-export const webPromptDialogBackend = createWebPromptDialogBackend();
+// Message and prompt providers stay with their dialog operations; host-web re-exports these canonical
+// identities alongside the file-picker providers it owns.
+export const webHostMessageDialog = createWebMessageDialogBackend();
+export const webHostPromptDialog = createWebPromptDialogBackend();
+export const webMessageDialogBackend = webHostMessageDialog;
+export const webPromptDialogBackend = webHostPromptDialog;
 
-function createWebMessageDialogBackend(): MessageDialogBackend {
-  const out = allocateEntity<MessageDialogBackend>();
+function createWebMessageDialogBackend(): HostMessageDialogProvider {
+  const out = allocateEntity<HostMessageDialogProvider>();
   initializeWebMessageDialogBackend(out);
   return finishEntity(out);
 }
 
-function createWebPromptDialogBackend(): PromptDialogBackend {
-  const out = allocateEntity<PromptDialogBackend>();
+function createWebPromptDialogBackend(): HostPromptDialogProvider {
+  const out = allocateEntity<HostPromptDialogProvider>();
   initializeWebPromptDialogBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebMessageDialogBackend(out: EntityConstruction<MessageDialogBackend>): void {
+export function initializeWebMessageDialogBackend(out: EntityConstruction<HostMessageDialogProvider>): void {
   out.confirm = async (options) => {
     if (options.signal?.aborted) return false;
     if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
@@ -52,7 +54,7 @@ export function initializeWebMessageDialogBackend(out: EntityConstruction<Messag
   };
 }
 
-export function initializeWebPromptDialogBackend(out: EntityConstruction<PromptDialogBackend>): void {
+export function initializeWebPromptDialogBackend(out: EntityConstruction<HostPromptDialogProvider>): void {
   out.prompt = async (options) => {
     if (options.signal?.aborted) return null;
     if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;

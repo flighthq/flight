@@ -52,7 +52,7 @@ describe('webAppHost', () => {
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]).sort();
 
     expect(relativeImports).toEqual(['./webApp', './webApplicationExit', './webLoop']);
-    expect(source).toMatch(/export const webAppHost = createHost\(/);
+    expect(source).toMatch(/export const webAppHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

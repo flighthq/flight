@@ -8,14 +8,14 @@ import {
   initializeWebImageOpenDialogBackend,
   initializeWebPhotoCaptureDialogBackend,
   initializeWebVideoCaptureDialogBackend,
-  webDirectoryOpenDialogBackend,
-  webFileOpenDialogBackend,
-  webFileSaveDialogBackend,
-  webImageOpenDialogBackend,
-  webMessageDialogBackend,
-  webPhotoCaptureDialogBackend,
-  webPromptDialogBackend,
-  webVideoCaptureDialogBackend,
+  webHostDirectoryOpenDialog,
+  webHostFileOpenDialog,
+  webHostFileSaveDialog,
+  webHostImageOpenDialog,
+  webHostMessageDialog,
+  webHostPhotoCaptureDialog,
+  webHostPromptDialog,
+  webHostVideoCaptureDialog,
 } from './webDialog';
 import { webHost } from './webHost';
 
@@ -29,8 +29,8 @@ afterEach(() => {
 
 describe('existing web message providers', () => {
   it('remain exported from the host package', () => {
-    expect(typeof webMessageDialogBackend.message).toBe('function');
-    expect(typeof webPromptDialogBackend.prompt).toBe('function');
+    expect(typeof webHostMessageDialog.message).toBe('function');
+    expect(typeof webHostPromptDialog.prompt).toBe('function');
   });
 });
 
@@ -119,15 +119,15 @@ function fileSystemHandle(
     },
   };
 }
-describe('webDirectoryOpenDialogBackend', () => {
+describe('webHostDirectoryOpenDialog', () => {
   it('is an Entity installed in the independent directory-open slot', () => {
-    expect(EntityRuntimeKey in webDirectoryOpenDialogBackend).toBe(true);
-    expect(webDirectoryOpenDialogBackend).not.toBe(webFileOpenDialogBackend);
-    expect(webHost.dialog.directoryOpen).toBe(webDirectoryOpenDialogBackend);
+    expect(EntityRuntimeKey in webHostDirectoryOpenDialog).toBe(true);
+    expect(webHostDirectoryOpenDialog).not.toBe(webHostFileOpenDialog);
+    expect(webHost.dialog.directoryOpen).toBe(webHostDirectoryOpenDialog);
   });
 
   it('reports runtime-unavailable when the required API is absent', async () => {
-    expect(await webDirectoryOpenDialogBackend.open()).toEqual({ outcome: 'runtime-unavailable' });
+    expect(await webHostDirectoryOpenDialog.open()).toEqual({ outcome: 'runtime-unavailable' });
   });
 
   it('opens a directory in read mode and returns an Entity only after platform selection', async () => {
@@ -136,7 +136,7 @@ describe('webDirectoryOpenDialogBackend', () => {
       options = value;
       return { kind: 'directory', name: 'docs' };
     };
-    const result = await webDirectoryOpenDialogBackend.open();
+    const result = await webHostDirectoryOpenDialog.open();
     expect(options).toEqual({ mode: 'read' });
     expect(result.outcome).toBe('selected');
     if (result.outcome === 'selected') {
@@ -146,12 +146,12 @@ describe('webDirectoryOpenDialogBackend', () => {
   });
 });
 
-describe('webFileOpenDialogBackend', () => {
+describe('webHostFileOpenDialog', () => {
   it('is an Entity installed in the independent file-open slot', () => {
-    expect(EntityRuntimeKey in webFileOpenDialogBackend).toBe(true);
-    expect(webFileOpenDialogBackend).not.toBe(webDirectoryOpenDialogBackend);
-    expect(webFileOpenDialogBackend).not.toBe(webFileSaveDialogBackend);
-    expect(webHost.dialog.fileOpen).toBe(webFileOpenDialogBackend);
+    expect(EntityRuntimeKey in webHostFileOpenDialog).toBe(true);
+    expect(webHostFileOpenDialog).not.toBe(webHostDirectoryOpenDialog);
+    expect(webHostFileOpenDialog).not.toBe(webHostFileSaveDialog);
+    expect(webHost.dialog.fileOpen).toBe(webHostFileOpenDialog);
   });
 
   it('preserves MIME-extension pairing and multiple selection', async () => {
@@ -160,7 +160,7 @@ describe('webFileOpenDialogBackend', () => {
       options = value;
       return [fileSystemHandle('picked.png', 'image')];
     };
-    const result = await webFileOpenDialogBackend.open({
+    const result = await webHostFileOpenDialog.open({
       filters: [{ accept: { 'image/png': ['png'], 'image/jpeg': ['.jpg', 'jpeg'] }, name: 'Images' }],
       multiple: true,
     });
@@ -185,12 +185,12 @@ describe('webFileOpenDialogBackend', () => {
     (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker = async () => {
       throw Object.assign(new Error(name), { name });
     };
-    expect(await webFileOpenDialogBackend.open({})).toEqual({ outcome });
+    expect(await webHostFileOpenDialog.open({})).toEqual({ outcome });
   });
 
   it('treats a successful but empty platform result as file-open-failed, never selected', async () => {
     (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker = async () => [];
-    expect(await webFileOpenDialogBackend.open({})).toEqual({ outcome: 'file-open-failed' });
+    expect(await webHostFileOpenDialog.open({})).toEqual({ outcome: 'file-open-failed' });
   });
 
   it('retains the legacy selected File in provider-neutral handle operations', async () => {
@@ -207,7 +207,7 @@ describe('webFileOpenDialogBackend', () => {
     Object.defineProperty(input, 'files', { configurable: true, value: [file] });
     vi.spyOn(document, 'createElement').mockReturnValue(input as never);
 
-    const pending = webFileOpenDialogBackend.open({});
+    const pending = webHostFileOpenDialog.open({});
     input.dispatchEvent(new Event('change'));
     const result = await pending;
     expect(result.outcome).toBe('selected');
@@ -227,7 +227,7 @@ describe('webFileOpenDialogBackend', () => {
     vi.spyOn(document, 'createElement').mockReturnValue(input as never);
 
     let settlements = 0;
-    const pending = webFileOpenDialogBackend.open({}).then((result) => {
+    const pending = webHostFileOpenDialog.open({}).then((result) => {
       settlements++;
       return result;
     });
@@ -250,7 +250,7 @@ describe('webFileOpenDialogBackend', () => {
     const removeSignal = vi.spyOn(controller.signal, 'removeEventListener');
     vi.spyOn(document, 'createElement').mockReturnValue(input as never);
 
-    const pending = webFileOpenDialogBackend.open({ signal: controller.signal });
+    const pending = webHostFileOpenDialog.open({ signal: controller.signal });
     controller.abort(new Error('cancel picker'));
 
     await expect(pending).resolves.toEqual({ outcome: 'cancelled' });
@@ -261,15 +261,15 @@ describe('webFileOpenDialogBackend', () => {
   });
 });
 
-describe('webFileSaveDialogBackend', () => {
+describe('webHostFileSaveDialog', () => {
   it('is an Entity installed in the independent file-save slot', () => {
-    expect(EntityRuntimeKey in webFileSaveDialogBackend).toBe(true);
-    expect(webFileSaveDialogBackend).not.toBe(webFileOpenDialogBackend);
-    expect(webHost.dialog.fileSave).toBe(webFileSaveDialogBackend);
+    expect(EntityRuntimeKey in webHostFileSaveDialog).toBe(true);
+    expect(webHostFileSaveDialog).not.toBe(webHostFileOpenDialog);
+    expect(webHost.dialog.fileSave).toBe(webHostFileSaveDialog);
   });
 
   it('reports runtime-unavailable when the required API is absent', async () => {
-    expect(await webFileSaveDialogBackend.save({})).toEqual({ outcome: 'runtime-unavailable' });
+    expect(await webHostFileSaveDialog.save({})).toEqual({ outcome: 'runtime-unavailable' });
   });
 
   it('owns and closes each save writable operation', async () => {
@@ -284,7 +284,7 @@ describe('webFileSaveDialogBackend', () => {
           writes.push(data);
         },
       });
-    const result = await webFileSaveDialogBackend.save({ defaultName: 'out.txt' });
+    const result = await webHostFileSaveDialog.save({ defaultName: 'out.txt' });
     expect(result.outcome).toBe('selected');
     if (result.outcome === 'selected') {
       expect(await getFileDialogHandleOperations(result.handle)?.writeText?.('saved')).toBe(true);
@@ -307,7 +307,7 @@ describe('webFileSaveDialogBackend', () => {
           throw reason;
         },
       });
-    const result = await webFileSaveDialogBackend.save({});
+    const result = await webHostFileSaveDialog.save({});
     expect(result.outcome).toBe('selected');
     if (result.outcome !== 'selected') return;
 
@@ -318,17 +318,17 @@ describe('webFileSaveDialogBackend', () => {
   });
 });
 
-describe('webImageOpenDialogBackend', () => {
+describe('webHostImageOpenDialog', () => {
   it('is a distinct Entity installed in the image-open slot', () => {
-    expect(EntityRuntimeKey in webImageOpenDialogBackend).toBe(true);
-    expect(webImageOpenDialogBackend).not.toBe(webPhotoCaptureDialogBackend);
-    expect(webHost.dialog.imageOpen).toBe(webImageOpenDialogBackend);
+    expect(EntityRuntimeKey in webHostImageOpenDialog).toBe(true);
+    expect(webHostImageOpenDialog).not.toBe(webHostPhotoCaptureDialog);
+    expect(webHost.dialog.imageOpen).toBe(webHostImageOpenDialog);
   });
 
   it('decodes the selected image dimensions instead of returning zero sentinels', async () => {
     const { input } = mockImagePicker(640, 480);
 
-    const pending = webImageOpenDialogBackend.open();
+    const pending = webHostImageOpenDialog.open();
     input.dispatchEvent(new Event('change'));
 
     await expect(pending).resolves.toMatchObject({
@@ -338,17 +338,17 @@ describe('webImageOpenDialogBackend', () => {
   });
 });
 
-describe('webPhotoCaptureDialogBackend', () => {
+describe('webHostPhotoCaptureDialog', () => {
   it('is a distinct Entity installed in the photo-capture slot', () => {
-    expect(EntityRuntimeKey in webPhotoCaptureDialogBackend).toBe(true);
-    expect(webPhotoCaptureDialogBackend).not.toBe(webImageOpenDialogBackend);
-    expect(webHost.dialog.photoCapture).toBe(webPhotoCaptureDialogBackend);
+    expect(EntityRuntimeKey in webHostPhotoCaptureDialog).toBe(true);
+    expect(webHostPhotoCaptureDialog).not.toBe(webHostImageOpenDialog);
+    expect(webHost.dialog.photoCapture).toBe(webHostPhotoCaptureDialog);
   });
 
   it('forwards the requested facing mode and decodes the captured dimensions', async () => {
     const { input } = mockImagePicker(1920, 1080);
 
-    const pending = webPhotoCaptureDialogBackend.capture({ facingMode: 'user' });
+    const pending = webHostPhotoCaptureDialog.capture({ facingMode: 'user' });
     expect(input.capture).toBe('user');
     input.dispatchEvent(new Event('change'));
 
@@ -364,7 +364,7 @@ describe('webPhotoCaptureDialogBackend', () => {
     vi.spyOn(document, 'createElement').mockReturnValue(input as never);
     const controller = new AbortController();
 
-    const pending = webPhotoCaptureDialogBackend.capture({ signal: controller.signal });
+    const pending = webHostPhotoCaptureDialog.capture({ signal: controller.signal });
     controller.abort();
 
     await expect(pending).resolves.toEqual({ outcome: 'cancelled' });
@@ -373,11 +373,11 @@ describe('webPhotoCaptureDialogBackend', () => {
   });
 });
 
-describe('webVideoCaptureDialogBackend', () => {
+describe('webHostVideoCaptureDialog', () => {
   it('is a distinct Entity installed in the video-capture slot', () => {
-    expect(EntityRuntimeKey in webVideoCaptureDialogBackend).toBe(true);
-    expect(webVideoCaptureDialogBackend).not.toBe(webPhotoCaptureDialogBackend);
-    expect(webHost.dialog.videoCapture).toBe(webVideoCaptureDialogBackend);
+    expect(EntityRuntimeKey in webHostVideoCaptureDialog).toBe(true);
+    expect(webHostVideoCaptureDialog).not.toBe(webHostPhotoCaptureDialog);
+    expect(webHost.dialog.videoCapture).toBe(webHostVideoCaptureDialog);
   });
 
   it('decodes the selected video duration instead of returning a zero sentinel', async () => {
@@ -398,7 +398,7 @@ describe('webVideoCaptureDialogBackend', () => {
       return createElement(tag);
     }) as typeof document.createElement);
 
-    const pending = webVideoCaptureDialogBackend.capture();
+    const pending = webHostVideoCaptureDialog.capture();
     input.dispatchEvent(new Event('change'));
 
     await expect(pending).resolves.toMatchObject({

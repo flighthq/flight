@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { webFileSystemBackend } from './webFilesystem';
+import { webHostFileSystem } from './webFilesystem';
 
-describe('webFileSystemBackend', () => {
+describe('webHostFileSystem', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('publishes exactly the genuine OPFS operation family', () => {
-    expect(Object.keys(webFileSystemBackend).sort()).toEqual([
+    expect(Object.keys(webHostFileSystem).sort()).toEqual([
       'appendTextFile',
       'canAccessFile',
       'copy',
@@ -32,8 +32,8 @@ describe('webFileSystemBackend', () => {
   });
 
   it('returns domain sentinels when OPFS is unavailable', async () => {
-    await expect(webFileSystemBackend.readTextFile?.('a')).resolves.toBe(null);
-    await expect(webFileSystemBackend.writeTextFile?.('a', 'b')).resolves.toBe(false);
+    await expect(webHostFileSystem.readTextFile?.('a')).resolves.toBe(null);
+    await expect(webHostFileSystem.writeTextFile?.('a', 'b')).resolves.toBe(false);
   });
 
   it('aborts an in-flight owned writable and releases the signal listener', async () => {
@@ -65,7 +65,7 @@ describe('webFileSystemBackend', () => {
       },
     });
 
-    await expect(webFileSystemBackend.writeTextFile?.('a', 'b', controller.signal)).rejects.toBe(reason);
+    await expect(webHostFileSystem.writeTextFile?.('a', 'b', controller.signal)).rejects.toBe(reason);
     expect(abort).toHaveBeenCalledWith(reason);
     expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
@@ -86,7 +86,7 @@ describe('webFileSystemBackend', () => {
       },
     });
 
-    await expect(webFileSystemBackend.readDirectoryRecursive?.('', { signal: controller.signal })).rejects.toBe(reason);
+    await expect(webHostFileSystem.readDirectoryRecursive?.('', { signal: controller.signal })).rejects.toBe(reason);
   });
 
   it('does not let a late abort rewrite a completed write', async () => {
@@ -109,7 +109,7 @@ describe('webFileSystemBackend', () => {
       },
     });
 
-    await expect(webFileSystemBackend.writeTextFile?.('a', 'b', controller.signal)).resolves.toBe(true);
+    await expect(webHostFileSystem.writeTextFile?.('a', 'b', controller.signal)).resolves.toBe(true);
     controller.abort(new Error('too late'));
     expect(abort).not.toHaveBeenCalled();
   });

@@ -10,7 +10,7 @@ import {
   createWebDeviceBackend,
   enableWebSafeAreaInsets,
   initializeWebDeviceBackend,
-  webDeviceBackend,
+  webHostDevice,
 } from './webDevice';
 
 describe('createWebDeviceBackend', () => {
@@ -117,16 +117,16 @@ describe('initializeWebDeviceBackend', () => {
     expect(typeof initializeWebDeviceBackend).toBe('function');
   });
 });
-describe('webDeviceBackend', () => {
+describe('webHostDevice', () => {
   it('is a pre-constructed singleton', () => {
-    expect(webDeviceBackend).toBeDefined();
-    expect(typeof webDeviceBackend.getInfo).toBe('function');
+    expect(webHostDevice).toBeDefined();
+    expect(typeof webHostDevice.getInfo).toBe('function');
   });
 
   it('fills info identically to a fresh factory instance', () => {
     const a = createDeviceInfo();
     const b = createDeviceInfo();
-    webDeviceBackend.getInfo(a);
+    webHostDevice.getInfo(a);
     createWebDeviceBackend().getInfo(b);
     expect(a).toMatchObject(b);
   });

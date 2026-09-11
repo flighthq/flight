@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createWebVideoCapabilityBackend,
   initializeWebVideoCapabilityBackend,
-  webVideoCapabilityBackend,
+  webHostVideo,
 } from './webVideoCapability';
 
 describe('createWebVideoCapabilityBackend', () => {
@@ -56,14 +56,14 @@ describe('initializeWebVideoCapabilityBackend', () => {
     expect(typeof initializeWebVideoCapabilityBackend).toBe('function');
   });
 });
-describe('webVideoCapabilityBackend', () => {
+describe('webHostVideo', () => {
   it('is an Entity with canPlayType and createVideoElement', () => {
-    expect(EntityRuntimeKey in webVideoCapabilityBackend).toBe(true);
-    expect(webVideoCapabilityBackend.canPlayType).toBeTypeOf('function');
-    expect(webVideoCapabilityBackend.createVideoElement).toBeTypeOf('function');
+    expect(EntityRuntimeKey in webHostVideo).toBe(true);
+    expect(webHostVideo.canPlayType).toBeTypeOf('function');
+    expect(webHostVideo.createVideoElement).toBeTypeOf('function');
   });
 
   it('is a stable singleton', () => {
-    expect(webVideoCapabilityBackend).toBe(webVideoCapabilityBackend);
+    expect(webHostVideo).toBe(webHostVideo);
   });
 });

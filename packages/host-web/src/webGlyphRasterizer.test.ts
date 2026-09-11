@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createWebGlyphRasterizerBackend,
   initializeWebGlyphRasterizerBackend,
-  webGlyphRasterizerBackend,
+  webHostGlyphRasterizer,
 } from './webGlyphRasterizer';
 
 describe('createWebGlyphRasterizerBackend', () => {
@@ -50,14 +50,14 @@ describe('initializeWebGlyphRasterizerBackend', () => {
     expect(typeof initializeWebGlyphRasterizerBackend).toBe('function');
   });
 });
-describe('webGlyphRasterizerBackend', () => {
+describe('webHostGlyphRasterizer', () => {
   it('is an Entity with rasterize and measureMetrics', () => {
-    expect(EntityRuntimeKey in webGlyphRasterizerBackend).toBe(true);
-    expect(webGlyphRasterizerBackend.rasterize).toBeTypeOf('function');
-    expect(webGlyphRasterizerBackend.measureMetrics).toBeTypeOf('function');
+    expect(EntityRuntimeKey in webHostGlyphRasterizer).toBe(true);
+    expect(webHostGlyphRasterizer.rasterize).toBeTypeOf('function');
+    expect(webHostGlyphRasterizer.measureMetrics).toBeTypeOf('function');
   });
 
   it('is a stable singleton', () => {
-    expect(webGlyphRasterizerBackend).toBe(webGlyphRasterizerBackend);
+    expect(webHostGlyphRasterizer).toBe(webHostGlyphRasterizer);
   });
 });

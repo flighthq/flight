@@ -1,12 +1,12 @@
-import type { ApplicationVisibilityBackend, LoopBackend } from '@flighthq/types/contract';
+import type { HostApplicationVisibilityProvider, HostLoopProvider } from '@flighthq/types/contract';
 
-export const webApplicationVisibilityBackend: ApplicationVisibilityBackend = {
+export const webHostApplicationVisibility: HostApplicationVisibilityProvider = {
   isVisible() {
     return typeof document === 'undefined' || !document.hidden;
   },
 };
 
-export const webLoopBackend: LoopBackend = {
+export const webHostLoop: HostLoopProvider = {
   cancelFrame(handle) {
     cancelAnimationFrame(handle as number);
   },

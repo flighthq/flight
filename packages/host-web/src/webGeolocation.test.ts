@@ -1,15 +1,15 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { webGeolocationBackend } from './webGeolocation';
+import { webHostGeolocation } from './webGeolocation';
 
-describe('webGeolocationBackend', () => {
-  it('is a GeolocationBackend entity', () => {
-    expect(Object.hasOwn(webGeolocationBackend, EntityRuntimeKey)).toBe(true);
-    expect(typeof webGeolocationBackend.isAvailable).toBe('function');
-    expect(typeof webGeolocationBackend.getCurrentPosition).toBe('function');
-    expect(typeof webGeolocationBackend.getCurrentPositionResult).toBe('function');
-    expect(typeof webGeolocationBackend.watchPosition).toBe('function');
-    expect(typeof webGeolocationBackend.clearWatch).toBe('function');
-    expect(typeof webGeolocationBackend.promptForAccess).toBe('function');
+describe('webHostGeolocation', () => {
+  it('is a HostGeolocationProvider entity', () => {
+    expect(Object.hasOwn(webHostGeolocation, EntityRuntimeKey)).toBe(true);
+    expect(typeof webHostGeolocation.isAvailable).toBe('function');
+    expect(typeof webHostGeolocation.getCurrentPosition).toBe('function');
+    expect(typeof webHostGeolocation.getCurrentPositionResult).toBe('function');
+    expect(typeof webHostGeolocation.watchPosition).toBe('function');
+    expect(typeof webHostGeolocation.clearWatch).toBe('function');
+    expect(typeof webHostGeolocation.promptForAccess).toBe('function');
   });
 });

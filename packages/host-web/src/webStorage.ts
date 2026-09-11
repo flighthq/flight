@@ -1,20 +1,91 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  StorageBackend,
-  StorageChangeBackend,
+  HostStorageChangeProvider,
+  HostStorageProvider,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
   StorageSetItemFailureReason,
 } from '@flighthq/types/contract';
 
-type WebStorageBackend = StorageBackend & StorageChangeBackend;
-
-const releases = new Set<() => void>();
-let destroyed = false;
+type WebStorageBackend = HostStorageProvider & HostStorageChangeProvider;
 
 export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBackend>): void {
+  initializeWebStorageChangeProvider(out);
+  initializeWebStorageProvider(out);
+}
+
+export const webHostStorage = createWebStorageProvider();
+export const webHostStorageChange = createWebStorageChangeProvider();
+export const webStorageBackend = createWebStorageBackend();
+
+function createWebStorageBackend(): WebStorageBackend {
+  const out = allocateEntity<WebStorageBackend>();
+  initializeWebStorageBackend(out);
+  return finishEntity(out);
+}
+
+function createWebStorageChangeProvider(): HostStorageChangeProvider {
+  const out = allocateEntity<HostStorageChangeProvider>();
+  initializeWebStorageChangeProvider(out);
+  return finishEntity(out);
+}
+
+function createWebStorageProvider(): HostStorageProvider {
+  const out = allocateEntity<HostStorageProvider>();
+  initializeWebStorageProvider(out);
+  return finishEntity(out);
+}
+
+function initializeWebStorageChangeProvider(out: EntityConstruction<HostStorageChangeProvider>): void {
+  const releases = new Set<() => void>();
+  let destroyed = false;
+  out.destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    for (const release of [...releases]) release();
+    releases.clear();
+  };
+  out.subscribe = (listener) => {
+    if (
+      destroyed ||
+      typeof window === 'undefined' ||
+      typeof window.addEventListener !== 'function' ||
+      typeof window.removeEventListener !== 'function'
+    ) {
+      return null;
+    }
+    let storage: Storage;
+    try {
+      const resolved = getWebLocalStorage();
+      if (resolved === null) return null;
+      storage = resolved;
+    } catch {
+      return null;
+    }
+    const handler = (event: StorageEvent) => {
+      if (event.storageArea !== null && event.storageArea !== storage) return;
+      listener({ key: event.key, newValue: event.newValue, oldValue: event.oldValue });
+    };
+    try {
+      window.addEventListener('storage', handler);
+    } catch {
+      return null;
+    }
+    let active = true;
+    const release = () => {
+      if (!active) return;
+      active = false;
+      releases.delete(release);
+      window.removeEventListener('storage', handler);
+    };
+    releases.add(release);
+    return release;
+  };
+}
+
+function initializeWebStorageProvider(out: EntityConstruction<HostStorageProvider>): void {
   out.clear = () => {
     try {
       const storage = getWebLocalStorage();
@@ -24,12 +95,6 @@ export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBa
     } catch (error) {
       return { reason: classifyWebStorageClearFailure(error) };
     }
-  };
-  out.destroy = () => {
-    if (destroyed) return;
-    destroyed = true;
-    for (const release of [...releases]) release();
-    releases.clear();
   };
   out.getItem = (key) => {
     try {
@@ -74,52 +139,7 @@ export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBa
       return { reason: classifyWebStorageSetFailure(error) };
     }
   };
-  out.subscribe = (listener) => {
-    if (
-      destroyed ||
-      typeof window === 'undefined' ||
-      typeof window.addEventListener !== 'function' ||
-      typeof window.removeEventListener !== 'function'
-    ) {
-      return null;
-    }
-    let storage: Storage;
-    try {
-      const resolved = getWebLocalStorage();
-      if (resolved === null) return null;
-      storage = resolved;
-    } catch {
-      return null;
-    }
-    const handler = (event: StorageEvent) => {
-      if (event.storageArea !== null && event.storageArea !== storage) return;
-      listener({ key: event.key, newValue: event.newValue, oldValue: event.oldValue });
-    };
-    try {
-      window.addEventListener('storage', handler);
-    } catch {
-      return null;
-    }
-    let active = true;
-    const release = () => {
-      if (!active) return;
-      active = false;
-      releases.delete(release);
-      window.removeEventListener('storage', handler);
-    };
-    releases.add(release);
-    return release;
-  };
 }
-
-// One stable Entity supplies the two truthful Web Host facets: synchronous local commands and external
-// `storage` events. The command facet remains usable without event listeners; destroy is terminal for
-// event acquisition and releases every exact listener pair retained by the change facet.
-export const webStorageBackend = (() => {
-  const out = allocateEntity<WebStorageBackend>();
-  initializeWebStorageBackend(out);
-  return finishEntity(out);
-})();
 
 function classifyWebStorageClearFailure(error: unknown): StorageClearFailureReason {
   const name = getErrorName(error);

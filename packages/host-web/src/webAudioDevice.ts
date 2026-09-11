@@ -1,3 +1,3 @@
 import { createWebAudioDeviceBackend } from '@flighthq/media/contract';
 
-export const webAudioDeviceBackend = createWebAudioDeviceBackend();
+export const webHostAudioDevice = createWebAudioDeviceBackend();

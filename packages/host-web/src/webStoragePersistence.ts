@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   PermissionState,
-  StoragePersistenceQueryBackend,
-  StoragePersistenceRequestBackend,
+  HostStoragePersistenceQueryProvider,
+  HostStoragePersistenceRequestProvider,
   StoragePersistenceResult,
   WebWindowStoragePersistenceApi,
   WebWindowStoragePersistenceCapabilities,
@@ -14,7 +14,7 @@ import type {
 export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,
 ): WebWindowStoragePersistenceCapabilities {
-  const persistenceRequest = allocateEntity<StoragePersistenceRequestBackend>();
+  const persistenceRequest = allocateEntity<HostStoragePersistenceRequestProvider>();
   persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceResult> => {
     const outcome = await observePersistenceOutcome(() => api.persist());
     const permissionState = await observePermissionState(() => api.getPermissionState());
@@ -45,7 +45,7 @@ export function initializeWebWorkerStoragePersistenceCapabilities(
 }
 
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
-  const backend = allocateEntity<StoragePersistenceQueryBackend>();
+  const backend = allocateEntity<HostStoragePersistenceQueryProvider>();
   backend.getPersistence = async (): Promise<StoragePersistenceResult> => {
     const outcome = await observePersistenceOutcome(() => api.persisted());
     const permissionState = await observePermissionState(() => api.getPermissionState());
@@ -53,6 +53,22 @@ function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistence
   };
   return backend;
 }
+
+const webWindowStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapabilities({
+  async getPermissionState() {
+    const status = await navigator.permissions.query({ name: 'persistent-storage' as PermissionName });
+    return status.state;
+  },
+  async persist() {
+    return navigator.storage.persist();
+  },
+  async persisted() {
+    return navigator.storage.persisted();
+  },
+});
+
+export const webHostStoragePersistenceQuery = webWindowStoragePersistenceCapabilities.persistenceQuery;
+export const webHostStoragePersistenceRequest = webWindowStoragePersistenceCapabilities.persistenceRequest;
 
 async function observePermissionState(getPermissionState: () => Promise<PermissionState>) {
   try {

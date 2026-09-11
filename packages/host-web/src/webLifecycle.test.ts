@@ -1,21 +1,21 @@
 import type { AppLifecycleState } from '@flighthq/types/contract';
 
-import { webLifecycleBackend } from './webLifecycle';
+import { webHostLifecycle } from './webLifecycle';
 
-describe('webLifecycleBackend', () => {
+describe('webHostLifecycle', () => {
   it('is a stable provider value rather than an installed singleton', async () => {
-    const again = (await import('./webLifecycle')).webLifecycleBackend;
-    expect(again).toBe(webLifecycleBackend);
+    const again = (await import('./webLifecycle')).webHostLifecycle;
+    expect(again).toBe(webHostLifecycle);
   });
 
   it('answers a lifecycle state and a launch kind', () => {
-    const state: AppLifecycleState = webLifecycleBackend.getState();
+    const state: AppLifecycleState = webHostLifecycle.getState();
     expect(['active', 'inactive', 'background']).toContain(state);
-    expect(['cold', 'warm']).toContain(webLifecycleBackend.getLaunchKind?.() ?? 'warm');
+    expect(['cold', 'warm']).toContain(webHostLifecycle.getLaunchKind?.() ?? 'warm');
   });
 
   it('returns a working unsubscribe from subscribe', () => {
-    const unsubscribe = webLifecycleBackend.subscribe(() => {});
+    const unsubscribe = webHostLifecycle.subscribe(() => {});
     expect(typeof unsubscribe).toBe('function');
     expect(() => unsubscribe()).not.toThrow();
   });

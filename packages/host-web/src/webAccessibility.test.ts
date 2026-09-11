@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createWebAccessibilityBackend,
   initializeWebAccessibilityBackend,
-  webAccessibilityBackend,
+  webHostAccessibility,
 } from './webAccessibility';
 import { webHost } from './webHost';
 
@@ -209,9 +209,9 @@ function node(
 ): AccessibilityNode {
   return { id, role, ...extras };
 }
-describe('webAccessibilityBackend', () => {
+describe('webHostAccessibility', () => {
   it('is the stable Entity provider published by webHost', () => {
-    expect(EntityRuntimeKey in webAccessibilityBackend).toBe(true);
-    expect(webHost.accessibility.provider).toBe(webAccessibilityBackend);
+    expect(EntityRuntimeKey in webHostAccessibility).toBe(true);
+    expect(webHost.accessibility.provider).toBe(webHostAccessibility);
   });
 });

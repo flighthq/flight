@@ -1,9 +1,9 @@
 import type { Bitmap, HasGraphicsImage } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { createWebImageBackend, initializeWebImageBackend, webImageBackend } from './webImage';
+import { createWebImageBackend, initializeWebImageBackend, webHostImage } from './webImage';
 
-function hostWith(backend = webImageBackend): HasGraphicsImage {
+function hostWith(backend = webHostImage): HasGraphicsImage {
   return { graphics: { image: backend } } as HasGraphicsImage;
 }
 
@@ -35,7 +35,7 @@ function createTestBitmap(): Bitmap {
     width: 1,
   } as Bitmap;
 }
-describe('webImageBackend', () => {
+describe('webHostImage', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -48,6 +48,6 @@ describe('webImageBackend', () => {
   });
 
   it('exposes createImageFromBitmap', () => {
-    expect(webImageBackend.createImageFromBitmap).toBeDefined();
+    expect(webHostImage.createImageFromBitmap).toBeDefined();
   });
 });

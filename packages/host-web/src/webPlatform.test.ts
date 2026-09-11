@@ -1,6 +1,6 @@
 import { createPlatformInfo } from '@flighthq/platform/contract';
 
-import { createWebPlatformBackend, initializeWebPlatformBackend, webPlatformBackend } from './webPlatform';
+import { createWebPlatformBackend, initializeWebPlatformBackend, webHostPlatform } from './webPlatform';
 
 describe('createWebPlatformBackend', () => {
   it('produces a backend that fills the out info', () => {
@@ -306,16 +306,16 @@ describe('web backend UA detection', () => {
     });
   });
 });
-describe('webPlatformBackend', () => {
+describe('webHostPlatform', () => {
   it('is a pre-constructed singleton', () => {
-    expect(webPlatformBackend).toBeDefined();
-    expect(typeof webPlatformBackend.getInfo).toBe('function');
+    expect(webHostPlatform).toBeDefined();
+    expect(typeof webHostPlatform.getInfo).toBe('function');
   });
 
   it('fills info identically to a fresh factory instance', () => {
     const a = createPlatformInfo();
     const b = createPlatformInfo();
-    webPlatformBackend.getInfo(a);
+    webHostPlatform.getInfo(a);
     createWebPlatformBackend().getInfo(b);
     expect(a).toMatchObject(b);
   });

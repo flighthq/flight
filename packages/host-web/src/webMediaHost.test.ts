@@ -1,27 +1,41 @@
-import type { HasMediaSession, HasMediaSessionAction } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import { webMediaHost, webMediaSessionActionBackend, webMediaSessionBackend } from './index';
+import {
+  webHostAudio,
+  webHostAudioDevice,
+  webHostMedia,
+  webHostMediaSession,
+  webHostMediaSessionAction,
+  webHostVideo,
+  webMediaHost,
+} from './index';
 
 describe('webMediaHost', () => {
   it('is an Entity compatible with the exact Web Media capabilities', () => {
-    const host: HasMediaSession & HasMediaSessionAction = webMediaHost;
-
-    expect(host).toBe(webMediaHost);
     expect(EntityRuntimeKey in webMediaHost).toBe(true);
-    expect(Object.keys(webMediaHost.media).sort()).toEqual(['session', 'sessionAction']);
-    expect(webMediaHost.media.session).toBe(webMediaSessionBackend);
-    expect(webMediaHost.media.sessionAction).toBe(webMediaSessionActionBackend);
+    expect(webMediaHost.media).toBe(webHostMedia);
+    expect(Object.keys(webHostMedia).sort()).toEqual([
+      'audioCodec',
+      'audioDevice',
+      'session',
+      'sessionAction',
+      'video',
+    ]);
+    expect(webHostMedia.audioCodec).toBe(webHostAudio);
+    expect(webHostMedia.audioDevice).toBe(webHostAudioDevice);
+    expect(webMediaHost.media.session).toBe(webHostMediaSession);
+    expect(webMediaHost.media.sessionAction).toBe(webHostMediaSessionAction);
+    expect(webHostMedia.video).toBe(webHostVideo);
   });
 
   it('is created in an isolated Media wrapper module', () => {
     const source = readFileSync(resolve(__dirname, 'webMediaHost.ts'), 'utf8');
     const relativeImports = [...source.matchAll(/from '(\.\/[^']+)'/g)].map((match) => match[1]);
 
-    expect(relativeImports).toEqual(['./webMediasession']);
-    expect(source).toMatch(/export const webMediaHost = createHost\(/);
+    expect(relativeImports).toEqual(['./webAudio', './webAudioDevice', './webMediasession', './webVideoCapability']);
+    expect(source).toMatch(/export const webMediaHost = (?:\/\* @__PURE__ \*\/ )?createHost\(/);
     expect(source).not.toContain('./webHost');
   });
 });

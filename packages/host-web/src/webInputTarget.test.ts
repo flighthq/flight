@@ -1,19 +1,19 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { EntityWithoutRuntime, HasInputPointerLock, InputPointerLockBackend } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, HasInputPointerLock, HostInputPointerLockProvider } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
 import {
   createWebInputTargetHandle,
   initializeWebInputTargetHandle,
   resetWebInputTargetBackendForTest,
-  webInputDropFileBackend,
-  webInputFocusBackend,
-  webInputPointerLockBackend,
-  webInputTargetBackend,
-  webRenderContextBackend,
-  webRenderSurfaceBackend,
+  webHostInputDropFile,
+  webHostInputFocus,
+  webHostInputPointerLock,
+  webHostInputTarget,
+  webHostRenderContext,
+  webHostRenderSurface,
 } from './webInputTarget';
 
 afterEach(() => {
@@ -30,7 +30,7 @@ describe('createWebInputTargetHandle', () => {
     const target = createWebInputTargetHandle(element);
 
     expect(EntityRuntimeKey in target).toBe(true);
-    webInputTargetBackend.prepare(target);
+    webHostInputTarget.prepare(target);
     expect(element.style.touchAction).toBe('none');
   });
 });
@@ -47,7 +47,7 @@ describe('resetWebInputTargetBackendForTest', () => {
     const target = createWebInputTargetHandle(element);
 
     resetWebInputTargetBackendForTest();
-    webInputTargetBackend.prepare(target);
+    webHostInputTarget.prepare(target);
 
     expect(element.style.touchAction).not.toBe('none');
   });
@@ -55,7 +55,7 @@ describe('resetWebInputTargetBackendForTest', () => {
   it('releases active event subscriptions before forgetting targets', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    webInputFocusBackend.subscribe(createWebInputTargetHandle(element), listener, vi.fn());
+    webHostInputFocus.subscribe(createWebInputTargetHandle(element), listener, vi.fn());
 
     resetWebInputTargetBackendForTest();
     element.dispatchEvent(new Event('focus'));
@@ -64,11 +64,11 @@ describe('resetWebInputTargetBackendForTest', () => {
   });
 });
 
-describe('webInputDropFileBackend', () => {
+describe('webHostInputDropFile', () => {
   it('forwards every dropped file name and removes the exact listeners', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    const release = webInputDropFileBackend.subscribe(createWebInputTargetHandle(element), listener);
+    const release = webHostInputDropFile.subscribe(createWebInputTargetHandle(element), listener);
     const event = new Event('drop', { cancelable: true });
     Object.defineProperty(event, 'dataTransfer', { value: { files: [{ name: 'a.txt' }, { name: 'b.png' }] } });
 
@@ -84,12 +84,12 @@ describe('webInputDropFileBackend', () => {
   });
 });
 
-describe('webInputFocusBackend', () => {
+describe('webHostInputFocus', () => {
   it('forwards focus and blur and removes both exact listeners', () => {
     const element = document.createElement('div');
     const onFocus = vi.fn();
     const onBlur = vi.fn();
-    const release = webInputFocusBackend.subscribe(createWebInputTargetHandle(element), onFocus, onBlur);
+    const release = webHostInputFocus.subscribe(createWebInputTargetHandle(element), onFocus, onBlur);
 
     element.dispatchEvent(new Event('focus'));
     element.dispatchEvent(new Event('blur'));
@@ -102,7 +102,7 @@ describe('webInputFocusBackend', () => {
   });
 });
 
-describe('webInputPointerLockBackend', () => {
+describe('webHostInputPointerLock', () => {
   it('does not pin the Web provider when the target is unknown', async () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
@@ -125,7 +125,7 @@ describe('webInputPointerLockBackend', () => {
     const element = document.createElement('div');
     Object.defineProperty(element, 'requestPointerLock', { configurable: true, value: undefined });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'api-unavailable',
     });
   });
@@ -154,7 +154,7 @@ describe('webInputPointerLockBackend', () => {
           : () => Promise.reject(error),
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({ reason });
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({ reason });
   });
 
   it('observes a legacy request error and removes both exact listeners', async () => {
@@ -166,7 +166,7 @@ describe('webInputPointerLockBackend', () => {
       value: () => document.dispatchEvent(new Event('pointerlockerror')),
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
 
@@ -193,7 +193,7 @@ describe('webInputPointerLockBackend', () => {
       },
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -212,7 +212,7 @@ describe('webInputPointerLockBackend', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -225,7 +225,7 @@ describe('webInputPointerLockBackend', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
   });
@@ -233,19 +233,19 @@ describe('webInputPointerLockBackend', () => {
   it('reports an already-unlocked exit as ok without requiring the API', async () => {
     Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: null });
 
-    await expect(webInputPointerLockBackend.exit()).resolves.toEqual({ reason: 'ok' });
+    await expect(webHostInputPointerLock.exit()).resolves.toEqual({ reason: 'ok' });
   });
 
   it('reports an active exit as unavailable when the API is missing', async () => {
     Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: document.body });
 
-    await expect(webInputPointerLockBackend.exit()).resolves.toEqual({ reason: 'api-unavailable' });
+    await expect(webHostInputPointerLock.exit()).resolves.toEqual({ reason: 'api-unavailable' });
   });
 
   it('reports exit as unavailable without a document', async () => {
     vi.stubGlobal('document', undefined);
 
-    await expect(webInputPointerLockBackend.exit()).resolves.toEqual({ reason: 'api-unavailable' });
+    await expect(webHostInputPointerLock.exit()).resolves.toEqual({ reason: 'api-unavailable' });
   });
 
   it('reports a synchronous exit failure and removes its exact listener', async () => {
@@ -258,7 +258,7 @@ describe('webInputPointerLockBackend', () => {
       },
     });
 
-    await expect(webInputPointerLockBackend.exit()).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(webHostInputPointerLock.exit()).resolves.toEqual({ reason: 'operation-failed' });
 
     expect(removeEventListener).toHaveBeenCalledWith('pointerlockchange', expect.any(Function));
   });
@@ -278,7 +278,7 @@ describe('webInputPointerLockBackend', () => {
       },
     });
 
-    await expect(webInputPointerLockBackend.exit()).resolves.toEqual({ reason: 'ok' });
+    await expect(webHostInputPointerLock.exit()).resolves.toEqual({ reason: 'ok' });
 
     const changeListener = addEventListener.mock.calls.find(([type]) => type === 'pointerlockchange')?.[1];
     expect(removeEventListener).toHaveBeenCalledWith('pointerlockchange', changeListener);
@@ -297,7 +297,7 @@ describe('webInputPointerLockBackend', () => {
     });
     Object.defineProperty(document, 'exitPointerLock', { configurable: true, value: vi.fn() });
 
-    const outcome = webInputPointerLockBackend.exit();
+    const outcome = webHostInputPointerLock.exit();
     pointerLockElement = nextTarget;
     document.dispatchEvent(new Event('pointerlockchange'));
 
@@ -317,7 +317,7 @@ describe('webInputPointerLockBackend', () => {
       value: () => thenable,
     });
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -327,7 +327,7 @@ describe('webInputPointerLockBackend', () => {
     const request = vi.fn().mockResolvedValue(undefined);
     element.requestPointerLock = request;
 
-    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -338,15 +338,15 @@ describe('webInputPointerLockBackend', () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     resetWebInputTargetBackendForTest();
 
-    await expect(webInputPointerLockBackend.request(target)).resolves.toEqual({ reason: 'target-not-found' });
+    await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
   });
 });
 
-describe('webInputTargetBackend', () => {
+describe('webHostInputTarget', () => {
   it('prepares the bound element without exposing DOM through the neutral contract', () => {
     const element = document.createElement('div');
 
-    webInputTargetBackend.prepare(createWebInputTargetHandle(element));
+    webHostInputTarget.prepare(createWebInputTargetHandle(element));
 
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
@@ -360,43 +360,43 @@ describe('webInputTargetBackend', () => {
     const canvas = document.createElement('canvas');
     const div = document.createElement('div');
 
-    webInputTargetBackend.prepare(createWebInputTargetHandle(canvas));
-    webInputTargetBackend.prepare(createWebInputTargetHandle(div));
+    webHostInputTarget.prepare(createWebInputTargetHandle(canvas));
+    webHostInputTarget.prepare(createWebInputTargetHandle(div));
 
     expect(canvas.style.transform).toBe('translateZ(0)');
     expect(div.style.transform).toBe('');
   });
 
   it('is an Entity provider value', () => {
-    expect(EntityRuntimeKey in webInputTargetBackend).toBe(true);
-    expect(webHost.input.target).toBe(webInputTargetBackend);
+    expect(EntityRuntimeKey in webHostInputTarget).toBe(true);
+    expect(webHost.input.target).toBe(webHostInputTarget);
   });
 
   it('keeps command and event slots separate while every provider remains an Entity', () => {
     const providers = [
-      webInputDropFileBackend,
-      webInputFocusBackend,
-      webInputPointerLockBackend,
-      webRenderContextBackend,
-      webRenderSurfaceBackend,
+      webHostInputDropFile,
+      webHostInputFocus,
+      webHostInputPointerLock,
+      webHostRenderContext,
+      webHostRenderSurface,
     ];
 
     expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
-    expect(webHost.input.dropFile).toBe(webInputDropFileBackend);
-    expect(webHost.input.focus).toBe(webInputFocusBackend);
-    expect(webHost.input.pointerLock).toBe(webInputPointerLockBackend);
-    expect(webHost.graphics.renderContext).toBe(webRenderContextBackend);
-    expect(webHost.graphics.renderSurface).toBe(webRenderSurfaceBackend);
+    expect(webHost.input.dropFile).toBe(webHostInputDropFile);
+    expect(webHost.input.focus).toBe(webHostInputFocus);
+    expect(webHost.input.pointerLock).toBe(webHostInputPointerLock);
+    expect(webHost.graphics.renderContext).toBe(webHostRenderContext);
+    expect(webHost.graphics.renderSurface).toBe(webHostRenderSurface);
     expect(new Set(providers).size).toBe(5);
   });
 });
 
-describe('webRenderContextBackend', () => {
+describe('webHostRenderContext', () => {
   it('forwards context loss/restoration and removes the exact canvas listeners', () => {
     const canvas = document.createElement('canvas');
     const onLost = vi.fn();
     const onRestored = vi.fn();
-    const release = webRenderContextBackend.subscribe(createWebInputTargetHandle(canvas), onLost, onRestored);
+    const release = webHostRenderContext.subscribe(createWebInputTargetHandle(canvas), onLost, onRestored);
     const lost = new Event('webglcontextlost', { cancelable: true });
 
     canvas.dispatchEvent(lost);
@@ -411,7 +411,7 @@ describe('webRenderContextBackend', () => {
 
   it('truthfully leaves a non-canvas target inert', () => {
     const listener = vi.fn();
-    const release = webRenderContextBackend.subscribe(
+    const release = webHostRenderContext.subscribe(
       createWebInputTargetHandle(document.createElement('div')),
       listener,
       listener,
@@ -421,13 +421,13 @@ describe('webRenderContextBackend', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 });
-describe('webRenderSurfaceBackend', () => {
+describe('webHostRenderSurface', () => {
   it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
     const canvas = document.createElement('canvas');
     const div = document.createElement('div');
 
-    webRenderSurfaceBackend.resize(createWebInputTargetHandle(canvas), 640, 480);
-    webRenderSurfaceBackend.resize(createWebInputTargetHandle(div), 1, 1);
+    webHostRenderSurface.resize(createWebInputTargetHandle(canvas), 640, 480);
+    webHostRenderSurface.resize(createWebInputTargetHandle(div), 1, 1);
 
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(480);

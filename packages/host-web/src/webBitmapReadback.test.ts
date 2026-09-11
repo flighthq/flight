@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import {
   createWebBitmapReadbackBackend,
   initializeWebBitmapReadbackBackend,
-  webBitmapReadbackBackend,
+  webHostBitmapReadback,
 } from './webBitmapReadback';
 
 function hostWith(backend: HasGraphicsBitmapReadback['graphics']['bitmapReadback']): HasGraphicsBitmapReadback {
@@ -35,8 +35,8 @@ describe('initializeWebBitmapReadbackBackend', () => {
     expect(typeof initializeWebBitmapReadbackBackend).toBe('function');
   });
 });
-describe('webBitmapReadbackBackend', () => {
-  const host = hostWith(webBitmapReadbackBackend);
+describe('webHostBitmapReadback', () => {
+  const host = hostWith(webHostBitmapReadback);
 
   it('materializes full pixels only for the constructor path', () => {
     const source = document.createElement('canvas');

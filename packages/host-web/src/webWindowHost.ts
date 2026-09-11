@@ -1,5 +1,5 @@
 import { createHost } from '@flighthq/entity/contract';
 
-import { webWindowBackend } from './webWindow';
+import { webHostWindow } from './webWindow';
 
-export const webWindowHost = createHost({ window: webWindowBackend });
+export const webWindowHost = createHost({ window: webHostWindow });

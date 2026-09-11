@@ -1,3 +1,3 @@
-import { webGlyphRasterizerBackend } from '@flighthq/host-web';
+import { webHostGlyphRasterizer } from '@flighthq/host-web';
 
-(globalThis as Record<string, unknown>).__evidence = webGlyphRasterizerBackend;
+(globalThis as Record<string, unknown>).__evidence = webHostGlyphRasterizer;

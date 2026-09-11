@@ -1,9 +1,9 @@
 import { startApplicationLoop } from '@flighthq/application';
-import { createWebCursorBackend, webGlyphRasterizerBackend, webLoopBackend } from '@flighthq/host-web';
+import { createWebCursorBackend, webHostGlyphRasterizer, webHostLoop } from '@flighthq/host-web';
 
 (globalThis as Record<string, unknown>).__evidence = {
   createWebCursorBackend,
-  glyphBackend: webGlyphRasterizerBackend,
   startApplicationLoop,
-  webLoopBackend,
+  webHostGlyphRasterizer,
+  webHostLoop,
 };

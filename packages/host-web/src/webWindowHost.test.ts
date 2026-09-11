@@ -11,7 +11,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import { webWindowBackend, webWindowHost } from './index';
+import { webHostWindow, webWindowHost } from './index';
 
 type WebWindowHost = HasWindowAttach &
   HasWindowCloseSubscription &
@@ -27,7 +27,7 @@ describe('webWindowHost', () => {
 
     expect(host).toBe(webWindowHost);
     expect(EntityRuntimeKey in webWindowHost).toBe(true);
-    expect(webWindowHost.window).toBe(webWindowBackend);
+    expect(webWindowHost.window).toBe(webHostWindow);
     expect(Object.keys(webWindowHost.window).sort()).toEqual([
       'attach',
       'center',

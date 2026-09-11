@@ -1,20 +1,18 @@
 import { createHost } from '@flighthq/entity/contract';
-import type {
-  HasClipboardChange,
-  HasClipboardFormats,
-  HasClipboardImage,
-  HasClipboardText,
-  Host,
-} from '@flighthq/types/contract';
+import type { HostClipboardCapabilities } from '@flighthq/types/contract';
 
-import { webClipboardBackend } from './webClipboard';
+import {
+  webHostClipboardChange,
+  webHostClipboardFormats,
+  webHostClipboardImage,
+  webHostClipboardText,
+} from './webClipboard';
 
-export const webClipboardHost: Host & HasClipboardChange & HasClipboardFormats & HasClipboardImage & HasClipboardText =
-  createHost({
-    clipboard: {
-      change: webClipboardBackend,
-      formats: webClipboardBackend,
-      image: webClipboardBackend,
-      text: webClipboardBackend,
-    },
-  });
+export const webHostClipboard = {
+  change: webHostClipboardChange,
+  formats: webHostClipboardFormats,
+  image: webHostClipboardImage,
+  text: webHostClipboardText,
+} satisfies HostClipboardCapabilities;
+
+export const webClipboardHost = /* @__PURE__ */ createHost({ clipboard: webHostClipboard });
