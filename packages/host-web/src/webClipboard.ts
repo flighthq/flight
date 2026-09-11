@@ -17,8 +17,8 @@ type WebClipboardBackend = HostClipboardFormatsProvider &
 
 export function initializeWebClipboardBackend(out: EntityConstruction<WebClipboardBackend>): void {
   initializeWebClipboardChangeProvider(out);
-  initializeWebClipboardFormatsProvider(out);
-  initializeWebClipboardImageProvider(out);
+  initializeWebClipboardFormatsBackend(out);
+  initializeWebClipboardImageBackend(out);
   initializeWebClipboardTextProvider(out);
 }
 
@@ -42,13 +42,13 @@ function createWebClipboardChangeProvider(): WebClipboardChangeProvider {
 
 function createWebClipboardFormatsProvider(): HostClipboardFormatsProvider {
   const out = allocateEntity<HostClipboardFormatsProvider>();
-  initializeWebClipboardFormatsProvider(out);
+  initializeWebClipboardFormatsBackend(out);
   return finishEntity(out);
 }
 
 function createWebClipboardImageProvider(): HostClipboardImageProvider {
   const out = allocateEntity<HostClipboardImageProvider>();
-  initializeWebClipboardImageProvider(out);
+  initializeWebClipboardImageBackend(out);
   return finishEntity(out);
 }
 
@@ -71,23 +71,67 @@ function initializeWebClipboardChangeProvider(out: EntityConstruction<WebClipboa
   };
 }
 
-function initializeWebClipboardFormatsProvider(out: EntityConstruction<HostClipboardFormatsProvider>): void {
+function initializeWebClipboardFormatsBackend(out: EntityConstruction<HostClipboardFormatsProvider>): void {
+  async function blobFromFormatData(format: string, data: string): Promise<Blob> {
+    if (format.startsWith('image/') && data.startsWith('data:')) {
+      const response = await fetch(data);
+      return response.blob();
+    }
+    return new Blob([data], { type: format });
+  }
+  async function writeFormat(format: string, data: string): Promise<boolean> {
+    const clipboard = getWritableWebClipboard();
+    if (clipboard === null) return false;
+    try {
+      const blob = await blobFromFormatData(format, data);
+      await clipboard.write([new ClipboardItem({ [format]: blob })]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  async function writeItems(
+    items: ReadonlyArray<{ readonly data: string; readonly format: string }>,
+  ): Promise<boolean> {
+    const clipboard = getWritableWebClipboard();
+    if (clipboard === null) return false;
+    try {
+      const entry: Record<string, Blob> = {};
+      for (const item of items) entry[item.format] = await blobFromFormatData(item.format, item.data);
+      await clipboard.write([new ClipboardItem(entry)]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   out.getFormats = getWebClipboardFormats;
   out.hasFormat = async (format: string) => (await getWebClipboardFormats()).includes(format);
   out.readFormat = readWebClipboardFormat;
   out.readHtml = () => readWebClipboardFormat(ClipboardFormatHtml);
   out.readItems = readWebClipboardItems;
   out.readRTF = () => readWebClipboardFormat(ClipboardFormatRtf);
-  out.writeFormat = writeWebClipboardFormat;
-  out.writeHtml = (html: string) => writeWebClipboardFormat(ClipboardFormatHtml, html);
-  out.writeItems = writeWebClipboardItems;
-  out.writeRTF = (rtf: string) => writeWebClipboardFormat(ClipboardFormatRtf, rtf);
+  out.writeFormat = writeFormat;
+  out.writeHtml = (html: string) => writeFormat(ClipboardFormatHtml, html);
+  out.writeItems = writeItems;
+  out.writeRTF = (rtf: string) => writeFormat(ClipboardFormatRtf, rtf);
 }
 
-function initializeWebClipboardImageProvider(out: EntityConstruction<HostClipboardImageProvider>): void {
+function initializeWebClipboardImageBackend(out: EntityConstruction<HostClipboardImageProvider>): void {
   out.hasImage = async () => (await readWebClipboardImage()).length > 0;
   out.readImage = readWebClipboardImage;
-  out.writeImage = writeWebClipboardImage;
+  out.writeImage = async (dataUrl: string): Promise<boolean> => {
+    const clipboard = getWritableWebClipboard();
+    if (clipboard === null) return false;
+    try {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      await clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 }
 
 function initializeWebClipboardTextProvider(out: EntityConstruction<HostClipboardTextProvider>): void {
@@ -95,14 +139,6 @@ function initializeWebClipboardTextProvider(out: EntityConstruction<HostClipboar
   out.hasText = async () => (await readWebClipboardText()).length > 0;
   out.readText = readWebClipboardText;
   out.writeText = writeWebClipboardText;
-}
-
-async function blobFromFormatData(format: string, data: string): Promise<Blob> {
-  if (format.startsWith('image/') && data.startsWith('data:')) {
-    const response = await fetch(data);
-    return response.blob();
-  }
-  return new Blob([data], { type: format });
 }
 
 function getWebClipboard(): Clipboard | null {
@@ -203,46 +239,6 @@ async function readWebClipboardText(): Promise<string> {
     return await clipboard.readText();
   } catch {
     return '';
-  }
-}
-
-async function writeWebClipboardFormat(format: string, data: string): Promise<boolean> {
-  const clipboard = getWritableWebClipboard();
-  if (clipboard === null) return false;
-  try {
-    const blob = await blobFromFormatData(format, data);
-    await clipboard.write([new ClipboardItem({ [format]: blob })]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function writeWebClipboardImage(dataUrl: string): Promise<boolean> {
-  const clipboard = getWritableWebClipboard();
-  if (clipboard === null) return false;
-  try {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    await clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function writeWebClipboardItems(
-  items: ReadonlyArray<{ readonly data: string; readonly format: string }>,
-): Promise<boolean> {
-  const clipboard = getWritableWebClipboard();
-  if (clipboard === null) return false;
-  try {
-    const entry: Record<string, Blob> = {};
-    for (const item of items) entry[item.format] = await blobFromFormatData(item.format, item.data);
-    await clipboard.write([new ClipboardItem(entry)]);
-    return true;
-  } catch {
-    return false;
   }
 }
 

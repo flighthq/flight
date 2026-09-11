@@ -21,7 +21,7 @@ export function createWebConnectivityBackend(): WebConnectivityBackend {
 // provide independently importable and independently owned provider Entities.
 export function initializeWebConnectivityBackend(backend: EntityConstruction<WebConnectivityBackend>): void {
   initializeWebConnectivityChangeProvider(backend);
-  initializeWebConnectivityReachabilityProvider(backend);
+  initializeWebConnectivityReachabilityBackend(backend);
   initializeWebConnectivityStatusProvider(backend);
 }
 
@@ -38,7 +38,7 @@ function createWebConnectivityChangeProvider(): HostConnectivityChangeProvider {
 
 function createWebConnectivityReachabilityProvider(): HostConnectivityReachabilityProvider {
   const out = allocateEntity<HostConnectivityReachabilityProvider>();
-  initializeWebConnectivityReachabilityProvider(out);
+  initializeWebConnectivityReachabilityBackend(out);
   return finishEntity(out);
 }
 
@@ -101,7 +101,7 @@ function initializeWebConnectivityChangeProvider(backend: EntityConstruction<Hos
   };
 }
 
-function initializeWebConnectivityReachabilityProvider(
+function initializeWebConnectivityReachabilityBackend(
   backend: EntityConstruction<HostConnectivityReachabilityProvider>,
 ): void {
   backend.detectReachability = async (options, out) => {
