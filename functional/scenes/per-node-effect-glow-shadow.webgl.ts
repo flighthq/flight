@@ -124,7 +124,6 @@ export function assertRender(frame: Readonly<Bitmap>): void {
 
 function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectPadding>): RenderTexture {
   const descriptor = {
-    clearColors: [0x00000000],
     depth: 'none' as const,
     height: CONTENT_HEIGHT + padding.top + padding.bottom,
     width: CONTENT_WIDTH + padding.left + padding.right,

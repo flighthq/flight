@@ -24,8 +24,6 @@ function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRen
   out.colorFormats = [format];
   out.depth = 'none';
   out.colorSpace = colorSpace;
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.sampleCount = 1;
   out.framebuffer = {} as WebGLFramebuffer;
   out.resolveFramebuffer = null;

@@ -563,6 +563,7 @@ export * from './Renderer';
 export * from './RenderPassPreserve';
 export * from './RenderState';
 export * from './RenderTarget';
+export * from './RenderTargetClear';
 export * from './ResourceLoader';
 export * from './ResourceLoaderItemSignals';
 export * from './ResourceLoaderOptions';

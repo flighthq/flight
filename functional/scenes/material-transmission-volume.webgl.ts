@@ -81,7 +81,7 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   setGlPbrTransmissionSceneColor(state, null);
-  beginGlRenderPass(state, opaqueSceneTarget);
+  beginGlRenderPass(state, opaqueSceneTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   prepareScene3DRender(state, opaqueScene, camera, lights);
   drawGlScene3D(state, opaqueScene, camera, lights);
   endGlRenderPass(state);

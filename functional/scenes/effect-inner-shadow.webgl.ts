@@ -68,7 +68,6 @@ registerGlStandardMaterial(state);
 registerGlInnerShadowEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  backgroundClear: false,
   sampleCount: 1,
 });
 

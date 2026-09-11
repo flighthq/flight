@@ -97,10 +97,9 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
     width: canvas.width,
     height: canvas.height,
     format: 'rgba8',
-    clearColors: [0x000000ff],
   });
   prepareScene2DRender(state, root);
-  beginGlRenderPass(state, target);
+  beginGlRenderPass(state, target, { color: [0, 0, 0, 1] });
   renderGlScene2D(state, root);
   endGlRenderPass(state);
   registerGlBlendEffectBackdrop(state, BACKDROP_KEY, target.texture);

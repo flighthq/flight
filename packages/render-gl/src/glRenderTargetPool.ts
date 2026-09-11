@@ -69,9 +69,7 @@ export function acquireGlRenderTarget(
         depth: requested.depth,
         colorSpace: requested.colorSpace,
       };
-      candidate.clearColors = [...requested.clearColors];
-      candidate.clearDepth = requested.clearDepth;
-      clearGlRenderTarget(state, candidate);
+      clearGlRenderTarget(state, candidate, { color: [0, 0, 0, 0] });
       return candidate;
     }
   }

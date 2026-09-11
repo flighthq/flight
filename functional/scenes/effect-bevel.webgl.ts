@@ -74,7 +74,6 @@ registerGlStandardMaterial(state);
 registerGlBevelEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  backgroundClear: false,
   sampleCount: 1,
 });
 

@@ -47,8 +47,8 @@ const state = createGlRenderState(
     pixelRatio: scale,
   },
 );
+const GREEN: readonly [number, number, number, number] = [24 / 255, 179 / 255, 58 / 255, 1];
 const screenTarget = createGlRenderTarget(state, {
-  clearColors: [0x18b33aff],
   height: canvas.height,
   width: canvas.width,
 });
@@ -59,7 +59,7 @@ const cacheState = createGlCacheState(state, state.contextState, state.pipeline,
   sceneGraphSyncPolicy: state.sceneGraphSyncPolicy,
 });
 
-beginGlRenderPass(state, screenTarget);
+beginGlRenderPass(state, screenTarget, { color: GREEN });
 refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject());
 
 // The cache state is a distinct GlRenderState over the same physical context. Its nested pass must

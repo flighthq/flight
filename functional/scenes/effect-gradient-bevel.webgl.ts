@@ -72,7 +72,6 @@ registerGlStandardMaterial(state);
 registerGlGradientBevelEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  backgroundClear: false,
   sampleCount: 1,
 });
 

@@ -8,8 +8,6 @@ export interface CreateRenderTextureOptions {
   readonly colorSpace?: TextureColorSpace;
   readonly colorAttachments?: number;
   readonly colorFormats?: ReadonlyArray<RenderTargetFormat>;
-  readonly clearColors?: ReadonlyArray<number>;
-  readonly clearDepth?: number;
   readonly depth?: RenderTargetDepth;
   readonly flipX?: boolean;
   readonly flipY?: boolean;

@@ -1,4 +1,3 @@
-import { srgbChannelToLinear } from '@flighthq/color/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   GlContext,
@@ -7,7 +6,7 @@ import type {
   GlScissorRect,
   GlViewportRect,
   Matrix,
-  RenderPassPreserve,
+  RenderTargetClear,
   Viewport,
 } from '@flighthq/types/contract';
 
@@ -45,10 +44,8 @@ type SavedGlStencil = {
 };
 
 // Begins a render pass into `target`: binds it (saving the previous binding for restore, so passes
-// nest), then CLEARS every aspect by default. `preserve` spares aspects — the only per-use decision a
-// pass makes; the clear VALUES are fixed on the target (GlRenderTarget.clearColors / clearDepth). Pair
-// with endGlRenderPass. This is the clear/preserve model, not GL/Vulkan load ops: omit `preserve` and
-// everything starts fresh; name what to keep.
+// nest). Aspects named in `clear` are overwritten to the given values; omitted aspects are preserved.
+// Pair with endGlRenderPass.
 //
 // `viewport` is a device-pixel, top-left-origin region of `target`. It is intersected with target
 // storage, realized as both viewport and scissor, and therefore constrains drawing plus color/depth
@@ -60,25 +57,19 @@ type SavedGlStencil = {
 // restored by the begin/end bracket like the rest of the pass state.
 //
 // Single-attachment (the common no-effects scene / 2D-offscreen path):
-//   beginGlRenderPass(state, target)                       // clear color + depth
+//   beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0 })
 //   drawGlScene3D(state, scene, camera, lights)
-//   endGlRenderPass(state)                                 // restore binding + resolve MSAA
-//   presentGlRenderTarget(state, target)                   // colorSpace-aware encode to the canvas
-//
-// MRT / G-buffer (three color attachments, keep depth for a later lighting pass over the same target):
-//   beginGlRenderPass(state, gbuffer, { preserveColor: [false, false, false], preserveDepth: false })
-//   drawGlScene3D(state, scene, camera, lights)              // fragment shader writes location 0,1,2
 //   endGlRenderPass(state)
-//   // ...lighting pass samples gbuffer.textures[0..2], preserving depth: { preserveDepth: true }
+//   presentGlRenderTarget(state, target)
 //
 // Partial target (clear only the sub-region, then restore the exact enclosing viewport/scissor):
-//   beginGlRenderPass(state, target, undefined, viewport)
+//   beginGlRenderPass(state, target, { color: [0, 0, 0, 0] }, viewport)
 //   drawGlScene3D(state, scene, camera, lights)
 //   endGlRenderPass(state)
 export function beginGlRenderPass(
   state: GlRenderState,
   target: GlRenderTarget,
-  preserve?: Readonly<RenderPassPreserve>,
+  clear?: Readonly<RenderTargetClear>,
   viewport?: Readonly<Viewport>,
 ): void {
   const gl = state.gl;
@@ -138,7 +129,7 @@ export function beginGlRenderPass(
   invalidateGlPassBindingCache(runtime);
   if (previousOwner !== state) invalidateGlPassBindingCache(previousRuntime);
 
-  clearGlRenderPass(state, target, preserve);
+  clearGlRenderPass(state, target, clear);
 }
 
 // Ends the pass opened by beginGlRenderPass: restores the framebuffer binding, exact viewport/scissor,
@@ -205,65 +196,49 @@ export function setGlRenderTransform2D(state: GlRenderState, transform: Readonly
   }
 }
 
-// Clears the bound target's aspects that `preserve` does not spare. Uses per-attachment clearBufferfv so
-// each color attachment can carry its own clear value (the G-buffer case) and preserved attachments are
-// skipped individually — the plain single-attachment case is just the one-iteration loop.
 function clearGlRenderPass(
   state: GlRenderState,
   target: Readonly<GlRenderTarget>,
-  preserve: Readonly<RenderPassPreserve> | undefined,
+  clear: Readonly<RenderTargetClear> | undefined,
 ): void {
-  const gl = state.gl;
-  const preserveColor = preserve?.preserveColor ?? false;
+  if (clear === undefined) return;
 
-  for (let i = 0; i < target.textures.length; i++) {
-    if (isGlColorAttachmentPreserved(preserveColor, i)) continue;
-    resolveGlClearColor(state, target, i, _clearRgba);
-    gl.clearBufferfv(gl.COLOR, i, _clearRgba);
+  const gl = state.gl;
+  const { color, colors, depth, stencil } = clear;
+
+  if (colors !== undefined) {
+    for (let i = 0; i < colors.length; i++) {
+      const rgba = colors[i];
+      if (rgba === undefined) continue;
+      _clearRgba[0] = rgba[0];
+      _clearRgba[1] = rgba[1];
+      _clearRgba[2] = rgba[2];
+      _clearRgba[3] = rgba[3];
+      gl.clearBufferfv(gl.COLOR, i, _clearRgba);
+    }
+  } else if (color !== undefined) {
+    _clearRgba[0] = color[0];
+    _clearRgba[1] = color[1];
+    _clearRgba[2] = color[2];
+    _clearRgba[3] = color[3];
+    for (let i = 0; i < target.textures.length; i++) {
+      gl.clearBufferfv(gl.COLOR, i, _clearRgba);
+    }
   }
 
-  const hasDepth = target.depthStencilRenderbuffer !== null || target.depthTexture !== null;
-  if (hasDepth && preserve?.preserveDepth !== true) {
-    // depthMask must be enabled or the depth clear is silently dropped.
+  if (depth !== undefined && stencil !== undefined) {
     gl.depthMask(true);
-    gl.clearBufferfi(gl.DEPTH_STENCIL, 0, target.clearDepth, 0);
+    gl.clearBufferfi(gl.DEPTH_STENCIL, 0, depth, stencil);
+  } else if (depth !== undefined) {
+    gl.depthMask(true);
+    _clearDepth[0] = depth;
+    gl.clearBufferfv(gl.DEPTH, 0, _clearDepth);
+  } else if (stencil !== undefined) {
+    _clearStencil[0] = stencil;
+    gl.clearBufferiv(gl.STENCIL, 0, _clearStencil);
   }
 
   getGlRenderStateRuntime(state).context.currentBlendSignature = null;
-}
-
-function isGlColorAttachmentPreserved(preserve: boolean | ReadonlyArray<boolean>, index: number): boolean {
-  if (typeof preserve === 'boolean') return preserve;
-  // Per-location; a missing or short entry defaults to clear (false), consistent with default-clear.
-  return preserve[index] === true;
-}
-
-// Writes attachment `index`'s clear color into `out` as linear 0..1 RGBA. The target's packed-RGBA
-// clearColors win when present; otherwise the render state's background color is the fallback.
-function resolveGlClearColor(
-  state: GlRenderState,
-  target: Readonly<GlRenderTarget>,
-  index: number,
-  out: Float32Array,
-): void {
-  const packed = target.clearColors[index];
-  if (packed !== undefined) {
-    out[0] = ((packed >>> 24) & 0xff) / 255;
-    out[1] = ((packed >>> 16) & 0xff) / 255;
-    out[2] = ((packed >>> 8) & 0xff) / 255;
-    out[3] = (packed & 0xff) / 255;
-  } else {
-    const bg = state.backgroundColorRgba;
-    out[0] = bg[0] ?? 0;
-    out[1] = bg[1] ?? 0;
-    out[2] = bg[2] ?? 0;
-    out[3] = bg.length >= 4 ? bg[3] : 0;
-  }
-  if (target.colorSpace === 'linear') {
-    out[0] = srgbChannelToLinear(out[0]);
-    out[1] = srgbChannelToLinear(out[1]);
-    out[2] = srgbChannelToLinear(out[2]);
-  }
 }
 
 function captureGlPassState(state: GlRenderState): SavedGlPassState {
@@ -378,4 +353,6 @@ function clampGlPassEdge(value: number, extent: number): number {
 // A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass
 // bracket by that physical owner keeps cache GlRenderStates sharing a context in the same LIFO scope.
 const _passStack = new WeakMap<GlContext, GlPassStackEntry[]>();
+const _clearDepth = new Float32Array(1);
 const _clearRgba = new Float32Array(4);
+const _clearStencil = new Int32Array(1);

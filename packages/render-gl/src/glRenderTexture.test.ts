@@ -47,7 +47,7 @@ describe('clearGlRenderTexture', () => {
 
     clearGlRenderTexture(state, renderTexture);
 
-    expect(gl.clear).toHaveBeenCalledWith(gl.COLOR_BUFFER_BIT);
+    expect(gl.clearBufferfv).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
     expect(isGlRenderTextureReady(state, renderTexture)).toBe(true);
     expect(renderTexture.version).toBe(1);
   });

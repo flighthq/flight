@@ -55,7 +55,6 @@ const initialHeight = canvas.height >> 1;
 // Park a physically incompatible target whose legacy pool key nevertheless matched only this
 // request's dimensions, primary format, and sample count.
 const singleAttachment = acquireGlRenderTarget(state, pool, {
-  clearColors: [0xd92727ff],
   colorSpace: 'srgb',
   depth: 'none',
   height: initialHeight,
@@ -64,7 +63,6 @@ const singleAttachment = acquireGlRenderTarget(state, pool, {
 releaseGlRenderTarget(pool, singleAttachment);
 
 const target = acquireGlRenderTarget(state, pool, {
-  clearColors: [0xd92727ff, 0x21c45aff],
   colorAttachments: 2,
   colorFormats: ['rgba8', 'rgba16f'],
   colorSpace: 'srgb',
@@ -100,7 +98,14 @@ if (
   throw new Error('[render-target-axes] heterogeneous MRT or sampled depth storage was lost during resize');
 }
 
-beginGlRenderPass(state, target);
+beginGlRenderPass(state, target, {
+  colors: [
+    [217 / 255, 39 / 255, 39 / 255, 1],
+    [33 / 255, 196 / 255, 90 / 255, 1],
+  ],
+  depth: 1.0,
+  stencil: 0,
+});
 endGlRenderPass(state);
 
 // Present attachment 1, not the primary attachment. Its green clear proves that the heterogeneous

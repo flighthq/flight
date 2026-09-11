@@ -63,7 +63,6 @@ slabView.uvScale.y = SPRITE_HEIGHT / 480;
 releaseGlRenderTexture(state, pool, slabView);
 
 const renderTexture = acquireGlRenderTexture(state, pool, {
-  clearColors: [0x00000000],
   height: SPRITE_HEIGHT,
   width: SPRITE_WIDTH,
 });

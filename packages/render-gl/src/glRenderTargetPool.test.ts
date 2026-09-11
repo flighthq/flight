@@ -115,26 +115,20 @@ describe('acquireGlRenderTarget', () => {
     expect(pool.free).toContain(first);
   });
 
-  it('re-stamps clear policy and requested axes on a compatible target', () => {
+  it('re-stamps requested axes on a compatible target', () => {
     const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const first = acquireGlRenderTarget(state, pool, {
       width: 64,
       height: 48,
-      clearColors: [0xff0000ff],
-      clearDepth: 0.25,
     });
     releaseGlRenderTarget(pool, first);
 
     const reused = acquireGlRenderTarget(state, pool, {
       width: 64,
       height: 48,
-      clearColors: [0x00ff00ff],
-      clearDepth: 0.75,
     });
     expect(reused).toBe(first);
-    expect(reused.clearColors).toEqual([0x00ff00ff]);
-    expect(reused.clearDepth).toBe(0.75);
     expect(reused.requestedAxes).toEqual({
       width: 64,
       height: 48,
@@ -176,8 +170,7 @@ describe('acquireGlRenderTarget', () => {
     const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
     releaseGlRenderTarget(pool, first);
 
-    // Only the reuse path clears — spy after the first (fresh) acquire so we measure just the reuse.
-    const clearSpy = vi.spyOn(gl, 'clear');
+    const clearSpy = vi.spyOn(gl, 'clearBufferfv');
     const reused = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
     expect(reused).toBe(first);
     expect(clearSpy).toHaveBeenCalled();

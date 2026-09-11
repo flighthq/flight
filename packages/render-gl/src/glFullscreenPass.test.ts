@@ -33,13 +33,12 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlR
   out.colorFormats = ['rgba8'];
   out.depth = 'none';
   out.colorSpace = 'srgb';
-  out.clearColors = [];
-  out.clearDepth = 1;
   out.sampleCount = 1;
   out.framebuffer = framebuffer;
   out.resolveFramebuffer = null;
-  out.textures = [];
-  out.texture = {} as WebGLTexture;
+  const texture = {} as WebGLTexture;
+  out.textures = [texture];
+  out.texture = texture;
   out.depthTexture = null;
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = null;
@@ -47,17 +46,17 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlR
 }
 
 describe('clearGlRenderTarget', () => {
-  it('binds the target framebuffer and clears it', () => {
+  it('binds the target framebuffer and clears color via clearBufferfv', () => {
     const { state, gl } = createGlState();
     const fb = {} as WebGLFramebuffer;
     const target = makeTarget(fb);
     const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
-    const clearSpy = vi.spyOn(gl, 'clear');
+    const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTarget(state, target);
+    clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
 
     expect(bindSpy).toHaveBeenCalledWith(gl.FRAMEBUFFER, fb);
-    expect(clearSpy).toHaveBeenCalledWith(gl.COLOR_BUFFER_BIT);
+    expect(clearSpy).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
   });
 
   it('sets the viewport and renderTargetViewport to the target size', () => {
@@ -65,19 +64,23 @@ describe('clearGlRenderTarget', () => {
     const target = makeTarget({} as WebGLFramebuffer, 48, 24);
     const viewportSpy = vi.spyOn(gl, 'viewport');
 
-    clearGlRenderTarget(state, target);
+    clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
 
     expect(viewportSpy).toHaveBeenCalledWith(0, 0, 48, 24);
     expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ height: 24, width: 48, x: 0, y: 0 });
   });
 
-  it('clears to fully transparent', () => {
+  it('writes float RGBA values directly to clearBufferfv', () => {
     const { state, gl } = createGlState();
-    const clearColorSpy = vi.spyOn(gl, 'clearColor');
+    const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer));
+    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer), { color: [1, 0, 0.5, 1] });
 
-    expect(clearColorSpy).toHaveBeenCalledWith(0, 0, 0, 0);
+    const rgba = clearSpy.mock.calls[0][2] as Float32Array;
+    expect(rgba[0]).toBeCloseTo(1);
+    expect(rgba[1]).toBeCloseTo(0);
+    expect(rgba[2]).toBeCloseTo(0.5);
+    expect(rgba[3]).toBeCloseTo(1);
   });
 
   it('invalidates cached texture and blend-mode bindings', () => {
@@ -86,7 +89,7 @@ describe('clearGlRenderTarget', () => {
     runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
     runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
 
-    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer));
+    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer), { color: [0, 0, 0, 0] });
 
     expect(runtime.context.currentTextureRealization).toBeNull();
     expect(runtime.context.currentBlendSignature).toBeNull();
@@ -99,7 +102,7 @@ describe('clearGlRenderTarget', () => {
     runtime.currentFramebuffer = fb;
     const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
 
-    clearGlRenderTarget(state, makeTarget(fb));
+    clearGlRenderTarget(state, makeTarget(fb), { color: [0, 0, 0, 0] });
 
     expect(bindSpy).not.toHaveBeenCalled();
   });
