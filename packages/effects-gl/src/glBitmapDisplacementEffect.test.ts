@@ -1,6 +1,6 @@
 import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextFromCanvasElement,
+  createGlContext,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlRenderState,
@@ -173,7 +173,7 @@ describe('isGlBitmapDisplacementEffectResolvable', () => {
 describe('registerGlBitmapDisplacementEffect', () => {
   it('registers both the runner and per-instance map resolver', () => {
     const registeredState = createGlRenderState(
-      createGlContextFromCanvasElement(document.createElement('canvas')),
+      createGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

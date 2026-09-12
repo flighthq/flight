@@ -9,7 +9,7 @@ import {
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContextFromCanvasElement,
+  createGlContext,
   acquireGlRenderTexture,
   createGlRenderState,
   createGlRenderTexturePool,
@@ -247,7 +247,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {

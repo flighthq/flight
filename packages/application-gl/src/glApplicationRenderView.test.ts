@@ -13,7 +13,7 @@ import { createGlApplicationRenderView, destroyGlApplicationRenderView } from '.
 beforeEach(() => {
   vi.spyOn(nodeContract, 'createViewport').mockImplementation((options) => ({ ...options, x: 0, y: 0 }) as never);
 
-  vi.spyOn(renderGlContract, 'createGlContextFromCanvasElement').mockImplementation(
+  vi.spyOn(renderGlContract, 'createGlContext').mockImplementation(
     () => ({ drawingBufferHeight: 0, drawingBufferWidth: 0 }) as never,
   );
   vi.spyOn(renderGlContract, 'createGlRenderState').mockImplementation(((
@@ -69,9 +69,9 @@ describe('createGlApplicationRenderView', () => {
 
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(360);
-    expect(renderGlContract.createGlContextFromCanvasElement).toHaveBeenCalledWith(canvas, { antialias: false });
+    expect(renderGlContract.createGlContext).toHaveBeenCalledWith(canvas, { antialias: false });
     expect(renderGlContract.createGlRenderState).toHaveBeenCalledWith(
-      vi.mocked(renderGlContract.createGlContextFromCanvasElement).mock.results[0].value,
+      vi.mocked(renderGlContract.createGlContext).mock.results[0].value,
       pipeline,
       {
         pixelRatio: 2,
