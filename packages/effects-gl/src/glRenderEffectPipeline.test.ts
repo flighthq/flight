@@ -30,9 +30,9 @@ describe('beginGlRenderEffectPipeline', () => {
     );
     const pipeline = createGlRenderEffectPipeline(state);
 
-    beginGlRenderEffectPipeline(state, pipeline);
+    const pass = beginGlRenderEffectPipeline(state, pipeline);
     const target = pipeline.sceneTarget;
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
     beginGlRenderEffectPipeline(state, pipeline, 'linear');
 
     expect(pipeline.sceneTarget).toBe(target);
@@ -81,16 +81,16 @@ describe('setGlRenderEffectPipelineSkipGuard', () => {
     ];
 
     setGlRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
-    beginGlRenderEffectPipeline(state, pipeline);
-    endGlRenderEffectPipeline(state, pipeline, chain);
+    let pass = beginGlRenderEffectPipeline(state, pipeline);
+    endGlRenderEffectPipeline(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
 
     // Clearing must restore the original silence exactly: the seam is the ONLY path by which a dropped
     // effect is observable, so a stale guard would be the difference between a diagnostic and a leak.
     setGlRenderEffectPipelineSkipGuard(state, null);
-    beginGlRenderEffectPipeline(state, pipeline);
-    endGlRenderEffectPipeline(state, pipeline, chain);
+    pass = beginGlRenderEffectPipeline(state, pipeline);
+    endGlRenderEffectPipeline(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });

@@ -10,7 +10,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
+import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import {
@@ -58,7 +58,8 @@ describe('enableGlScene3DForwardLightSelectionGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      drawGlScene3D(state, scene, camera(), excessLights());
+      const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+      drawGlScene3D(mockPass, scene, camera(), excessLights());
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries).toHaveLength(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('prepareGlScene3DForwardLights');
@@ -79,7 +80,8 @@ describe('enableGlScene3DForwardLightSelectionGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      drawGlScene3D(state, scene, view, lights, selected);
+      const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+      drawGlScene3D(mockPass, scene, view, lights, selected);
       expect(getMemoryLogSinkEntries(sink)).toHaveLength(0);
     } finally {
       removeLogSink(sink.sink);

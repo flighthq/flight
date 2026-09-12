@@ -9,8 +9,8 @@ export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D
   // Plain display objects have no visual geometry of their own.
 }
 
-export function renderGlScene2D(passOrState: GlRenderPass | GlRenderState, source: Node2D): void {
-  const state = 'state' in passOrState ? passOrState.state : passOrState;
+export function renderGlScene2D(pass: GlRenderPass, source: Node2D): void {
+  const state = pass.state;
   const gl = state.gl;
   // The 2D pass establishes the state it draws under rather than depending on a context-lifetime
   // invariant. These were previously taken on trust from createGlRenderState, which runs once per state,

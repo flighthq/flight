@@ -2,7 +2,13 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlContext, GlTextureRenderTarget, Viewport } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlRenderPass,
+  GlRenderTarget,
+  GlTextureRenderTarget,
+  Viewport,
+} from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
@@ -180,10 +186,10 @@ describe('beginGlRenderPass', () => {
     const runtime = getGlRenderStateRuntime(state);
 
     beginGlRenderPass(state, outer);
-    beginGlRenderPass(state, inner);
+    const innerPass = beginGlRenderPass(state, inner);
     expect(runtime.currentRenderTarget).toBe(inner);
 
-    endGlRenderPass(state);
+    endGlRenderPass(innerPass);
     expect(runtime.currentRenderTarget).toBe(outer);
     expect(runtime.renderTargetViewport).toEqual({ height: 48, width: 64, x: 0, y: 0 });
   });
@@ -197,14 +203,14 @@ describe('beginGlRenderPass', () => {
     const outer = makeTarget({ width: 64, height: 48 });
     const inner = makeTarget({ width: 32, height: 24 });
 
-    beginGlRenderPass(outerState, outer);
-    beginGlRenderPass(innerState, inner);
-    endGlRenderPass(innerState);
+    const outerPass = beginGlRenderPass(outerState, outer);
+    const innerPass = beginGlRenderPass(innerState, inner);
+    endGlRenderPass(innerPass);
 
     expect(vi.mocked(gl.bindFramebuffer).mock.calls.at(-1)?.[1]).toBe(outer.framebuffer);
     expect(getGlRenderStateRuntime(outerState).currentRenderTarget).toBe(outer);
     expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeNull();
-    endGlRenderPass(outerState);
+    endGlRenderPass(outerPass);
   });
 
   it('rejects a same-target contour pass across render states sharing one context', () => {
@@ -215,7 +221,7 @@ describe('beginGlRenderPass', () => {
     (innerState as { gl: GlContext }).gl = gl;
     const target = makeTarget({ width: 64, height: 48 });
 
-    beginGlRenderPass(outerState, target);
+    const outerPass = beginGlRenderPass(outerState, target);
     getGlRenderStateRuntime(outerState).currentMaskDepth = 1;
 
     expect(() => beginGlRenderPass(innerState, target)).toThrow(
@@ -223,7 +229,7 @@ describe('beginGlRenderPass', () => {
     );
     expect(getGlRenderStateRuntime(outerState).currentRenderTarget).toBe(target);
     expect(getGlRenderStateRuntime(innerState).currentRenderTarget).toBeNull();
-    endGlRenderPass(outerState);
+    endGlRenderPass(outerPass);
   });
 });
 
@@ -233,8 +239,8 @@ describe('endGlRenderPass', () => {
     const target = makeTarget();
     const bindFramebuffer = vi.spyOn(gl, 'bindFramebuffer');
 
-    beginGlRenderPass(state, target);
-    endGlRenderPass(state);
+    const pass = beginGlRenderPass(state, target);
+    endGlRenderPass(pass);
 
     // The pass began with the canvas default bound (null); ending restores it.
     expect(bindFramebuffer.mock.calls.at(-1)?.[1]).toBe(null);
@@ -244,8 +250,8 @@ describe('endGlRenderPass', () => {
     const { state } = createGlState();
     const target = makeTarget();
 
-    beginGlRenderPass(state, target);
-    endGlRenderPass(state);
+    const pass = beginGlRenderPass(state, target);
+    endGlRenderPass(pass);
 
     expect(getGlRenderStateRuntime(state).renderTargetViewport).toBeNull();
   });
@@ -255,8 +261,8 @@ describe('endGlRenderPass', () => {
     const target = makeTarget({ width: 100, height: 80 });
 
     beginGlRenderPass(state, target, undefined, makeViewport(10, 20, 30, 40));
-    beginGlRenderPass(state, target, undefined, makeViewport(15, 25, 10, 10));
-    endGlRenderPass(state);
+    const innerPass = beginGlRenderPass(state, target, undefined, makeViewport(15, 25, 10, 10));
+    endGlRenderPass(innerPass);
 
     expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
     expect(gl.scissor).toHaveBeenLastCalledWith(10, 20, 30, 40);
@@ -274,12 +280,12 @@ describe('endGlRenderPass', () => {
     runtime.scissorStack!.push(outerClip);
     runtime.clipForms.push('rect');
 
-    beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }));
+    const innerPass = beginGlRenderPass(state, makeTarget({ width: 100, height: 80 }));
     expect(runtime.clipForms).toEqual([]);
     expect(runtime.currentMaskDepth).toBe(0);
 
     // An inner renderGlScene2D.finalize now has no enclosing entry to drain.
-    endGlRenderPass(state);
+    endGlRenderPass(innerPass);
     expect(runtime.currentScissorRect).toBe(outerClip);
     expect(runtime.scissorStack).toEqual([{ height: 40, width: 30, x: 10, y: 20 }, outerClip]);
     expect(runtime.clipForms).toEqual(['rect']);
@@ -295,9 +301,9 @@ describe('endGlRenderPass', () => {
 
     beginGlRenderPass(state, makeTarget(), { color: [0, 0, 0, 0] });
     gl.depthMask(false);
-    beginGlRenderPass(state, makeTarget(), { depth: 1.0, stencil: 0 });
+    const innerPass = beginGlRenderPass(state, makeTarget(), { depth: 1.0, stencil: 0 });
     expect(depthMask).toBe(true);
-    endGlRenderPass(state);
+    endGlRenderPass(innerPass);
 
     expect(depthMask).toBe(false);
   });
@@ -308,12 +314,12 @@ describe('endGlRenderPass', () => {
     runtime.clipForms = ['contour'];
     runtime.currentMaskDepth = 1;
 
-    beginGlRenderPass(state, makeTarget());
+    const pass = beginGlRenderPass(state, makeTarget());
     expect(runtime.clipForms).toEqual([]);
     expect(runtime.currentMaskDepth).toBe(0);
     expect(gl.disable).toHaveBeenCalledWith(gl.STENCIL_TEST);
 
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
     expect(runtime.clipForms).toEqual(['contour']);
     expect(runtime.currentMaskDepth).toBe(1);
     expect(gl.enable).toHaveBeenCalledWith(gl.STENCIL_TEST);
@@ -325,8 +331,8 @@ describe('endGlRenderPass', () => {
   it('disables scissor when the outer partial pass returns to the canvas', () => {
     const { state, gl } = createGlState();
 
-    beginGlRenderPass(state, makeTarget(), undefined, makeViewport(1, 2, 10, 8));
-    endGlRenderPass(state);
+    const pass = beginGlRenderPass(state, makeTarget(), undefined, makeViewport(1, 2, 10, 8));
+    endGlRenderPass(pass);
 
     expect(gl.disable).toHaveBeenCalledWith(gl.SCISSOR_TEST);
     expect(getGlRenderStateRuntime(state).currentScissorRect).toBeNull();
@@ -335,7 +341,8 @@ describe('endGlRenderPass', () => {
 
   it('throws when there is no matching begin', () => {
     const { state } = createGlState();
-    expect(() => endGlRenderPass(state)).toThrow('without a matching beginGlRenderPass');
+    const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+    expect(() => endGlRenderPass(mockPass)).toThrow('without a matching beginGlRenderPass');
   });
 });
 
@@ -355,10 +362,10 @@ describe('offscreen 2D projection basis', () => {
     expect(offscreen.gl).toBe(state.gl);
     expect([state.gl.drawingBufferWidth, state.gl.drawingBufferHeight]).toEqual([200, 100]);
 
-    beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
+    const pass = beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
 
     expect(runtime.renderTargetViewport).toEqual({ height: 32, width: 64, x: 0, y: 0 });
-    endGlRenderPass(offscreen);
+    endGlRenderPass(pass);
   });
 
   it('restores the previous basis when the pass ends', () => {
@@ -368,8 +375,8 @@ describe('offscreen 2D projection basis', () => {
     const offscreen = createGlRenderState(state.gl, state.pipeline);
     const runtime = getGlRenderStateRuntime(offscreen);
 
-    beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
-    endGlRenderPass(offscreen);
+    const pass = beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
+    endGlRenderPass(pass);
 
     expect(runtime.renderTargetViewport).toBe(null);
   });
@@ -410,10 +417,10 @@ describe('setGlRenderTransform2D', () => {
     const cacheTransform = createMatrix();
     cacheTransform.tx = 99;
 
-    beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 });
+    const pass = beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 });
     setGlRenderTransform2D(state, cacheTransform);
     expect(state.renderTransform2D?.tx).toBe(99);
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
 
     expect(state.renderTransform2D).toBe(original);
   });

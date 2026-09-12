@@ -36,7 +36,7 @@ describe('pushGlClipContours', () => {
     const cacheState = createGlCacheState(state, state.pipeline);
     const source = createDisplayObject();
     const target = ensureGlRenderCacheTarget(state, cache, 1, 1);
-    beginGlRenderPass(state, target);
+    const pass = beginGlRenderPass(state, target);
     pushGlClipContours(state, SQUARE, 'nonZero', createMatrix());
     gl.depthMask(false);
     const stencilClearCount = vi.mocked(gl.clear).mock.calls.length;
@@ -47,7 +47,7 @@ describe('pushGlClipContours', () => {
 
     expect(gl.clear).toHaveBeenCalledTimes(stencilClearCount);
     expect(getGlRenderStateRuntime(state).currentMaskDepth).toBe(1);
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
   });
 
   it('restores the outer framebuffer after a shared-context cache refresh into another target', () => {
@@ -66,14 +66,14 @@ describe('pushGlClipContours', () => {
       y: 5,
     });
 
-    beginGlRenderPass(state, outer, undefined, viewport);
+    const pass = beginGlRenderPass(state, outer, undefined, viewport);
     const outerScissor = getGlRenderStateRuntime(state).currentScissorRect;
     refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject());
 
     expect(vi.mocked(gl.bindFramebuffer).mock.calls.at(-1)?.[1]).toBe(outer.framebuffer);
     expect(getGlRenderStateRuntime(state).currentFramebuffer).toBe(outer.framebuffer);
     expect(getGlRenderStateRuntime(state).currentScissorRect).toEqual(outerScissor);
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
   });
 
   it('enables the stencil test and clears the buffer when opening the first clip', () => {
