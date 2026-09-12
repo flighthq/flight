@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -14,8 +14,8 @@ void main() {
   fragColor = texture(u_texture, v_texCoord);
 }`;
 
-function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlRenderTarget {
-  const out = allocateEntity<GlRenderTarget>();
+function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlTextureRenderTarget {
+  const out = allocateEntity<GlTextureRenderTarget>();
   out.requestedAxes = {
     width,
     height,

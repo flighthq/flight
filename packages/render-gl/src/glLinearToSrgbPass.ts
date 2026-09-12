@@ -1,4 +1,10 @@
-import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlFullscreenProgram,
+  GlRenderState,
+  GlRenderTarget,
+  GlTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -16,7 +22,7 @@ import { getGlRenderStateRuntime } from './glRenderState';
 // cannot feed pow() a NaN.
 export function drawGlLinearToSrgbPass(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
   dest: Readonly<GlRenderTarget> | null,
 ): void {
   drawGlFullscreenPass(state, getGlLinearToSrgbProgram(state), [source.texture], dest, NOOP);

@@ -3,18 +3,18 @@ import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
   RenderTargetAxes,
   RenderTargetDescriptor,
   RenderTargetFormatPolicy,
 } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget } from './glFullscreenPass';
-import { createGlRenderTarget, destroyGlRenderTarget, resolveGlRenderTargetAxes } from './glRenderTarget';
+import { createGlTextureRenderTarget, destroyGlTextureRenderTarget, resolveGlRenderTargetAxes } from './glRenderTarget';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
-// brackets: every acquireGlRenderTarget must have a matching releaseGlRenderTarget. A released
+// brackets: every acquireGlTextureRenderTarget must have a matching releaseGlTextureRenderTarget. A released
 // target returns to the free list (its GPU storage is kept) rather than being destroyed.
 //
 // Acquired targets are handed back clean: a reused target is cleared before return so a non-covering
@@ -22,35 +22,35 @@ import { createGlRenderTarget, destroyGlRenderTarget, resolveGlRenderTargetAxes 
 // the GL implementation). Clean surfaces are the default; skipping the clear would be an opt-in
 // optimization for provably-covering consumers, not the baseline behavior.
 
-export function acquireGlRenderTarget(
+export function acquireGlTextureRenderTarget(
   state: GlRenderState,
-  pool: GlRenderTargetPool,
+  pool: GlTextureRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
-): GlRenderTarget;
-export function acquireGlRenderTarget(
+): GlTextureRenderTarget;
+export function acquireGlTextureRenderTarget(
   state: GlRenderState,
-  pool: GlRenderTargetPool,
+  pool: GlTextureRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: 'preferred',
-): GlRenderTarget;
-export function acquireGlRenderTarget(
+): GlTextureRenderTarget;
+export function acquireGlTextureRenderTarget(
   state: GlRenderState,
-  pool: GlRenderTargetPool,
+  pool: GlTextureRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: 'required',
-): GlRenderTarget | null;
-export function acquireGlRenderTarget(
+): GlTextureRenderTarget | null;
+export function acquireGlTextureRenderTarget(
   state: GlRenderState,
-  pool: GlRenderTargetPool,
+  pool: GlTextureRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: RenderTargetFormatPolicy,
-): GlRenderTarget | null;
-export function acquireGlRenderTarget(
+): GlTextureRenderTarget | null;
+export function acquireGlTextureRenderTarget(
   state: GlRenderState,
-  pool: GlRenderTargetPool,
+  pool: GlTextureRenderTargetPool,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: RenderTargetFormatPolicy = 'preferred',
-): GlRenderTarget | null {
+): GlTextureRenderTarget | null {
   const requested = resolveRenderTargetDescriptor(descriptor);
   const effective = resolveGlRenderTargetAxes(state, requested, formatPolicy);
   if (!effective) return null;
@@ -73,29 +73,29 @@ export function acquireGlRenderTarget(
       return candidate;
     }
   }
-  return createGlRenderTarget(state, descriptor, formatPolicy);
+  return createGlTextureRenderTarget(state, descriptor, formatPolicy);
 }
 
-export function createGlRenderTargetPool(): GlRenderTargetPool {
-  const out = allocateEntity<GlRenderTargetPool>();
-  initializeGlRenderTargetPool(out);
+export function createGlTextureRenderTargetPool(): GlTextureRenderTargetPool {
+  const out = allocateEntity<GlTextureRenderTargetPool>();
+  initializeGlTextureRenderTargetPool(out);
   return finishEntity(out);
 }
 
-export function destroyGlRenderTargetPool(state: GlRenderState, pool: GlRenderTargetPool): void {
-  for (const target of pool.free) destroyGlRenderTarget(state, target);
+export function destroyGlTextureRenderTargetPool(state: GlRenderState, pool: GlTextureRenderTargetPool): void {
+  for (const target of pool.free) destroyGlTextureRenderTarget(state, target);
   pool.free.length = 0;
 }
 
-export function initializeGlRenderTargetPool(out: EntityConstruction<GlRenderTargetPool>): void {
+export function initializeGlTextureRenderTargetPool(out: EntityConstruction<GlTextureRenderTargetPool>): void {
   out.free = [];
 }
 
-export function releaseGlRenderTarget(pool: GlRenderTargetPool, target: GlRenderTarget): void {
+export function releaseGlTextureRenderTarget(pool: GlTextureRenderTargetPool, target: GlTextureRenderTarget): void {
   pool.free.push(target);
 }
 
-function matchesGlRenderTargetAxes(target: Readonly<GlRenderTarget>, axes: Readonly<RenderTargetAxes>): boolean {
+function matchesGlRenderTargetAxes(target: Readonly<GlTextureRenderTarget>, axes: Readonly<RenderTargetAxes>): boolean {
   return (
     target.width === axes.width &&
     target.height === axes.height &&
