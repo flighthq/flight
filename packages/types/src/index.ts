@@ -269,7 +269,6 @@ export * from './GlCompressedTextureSupport';
 export * from './GlCompressedTextureUploader';
 export * from './GlContext';
 export * from './GlContextLoss';
-export * from './GlContextState';
 export * from './GlCullFaceKind';
 export * from './GlCubeRenderTarget';
 export * from './GlCustomMaterialShaderSource';
