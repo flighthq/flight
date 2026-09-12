@@ -185,7 +185,7 @@ function ensureParticleInstanceBuffer(state: WgpuRenderState, count: number): vo
   if (runtime.particleInstanceCapacity >= needed && runtime.particleInstanceBuffer !== null) return;
 
   // Defer the old buffer's destruction: another emitter earlier this frame may have recorded a draw
-  // referencing it, and the frame's submit is deferred to submitWgpuRenderPass.
+  // referencing it, and the frame's submit is deferred to submitWgpuFrame.
   if (runtime.particleInstanceBuffer !== null) {
     retireWgpuBuffer(state, runtime.particleInstanceBuffer);
   }

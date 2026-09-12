@@ -8,6 +8,7 @@ import type {
   WgpuScreenSurface,
 } from '@flighthq/types/contract';
 
+import { getWgpuHostBackend } from './wgpuHost';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // Acquires the color view a screen pass attaches to, sizing the target's storage to the surface first.
@@ -101,18 +102,16 @@ export function initializeWgpuScreenRenderTarget(
   surface: WgpuScreenSurface,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): void {
-  const context = surface.getContext('webgpu');
-  if (context === null) throw new Error('createWgpuScreenRenderTarget: the surface has no WebGPU context.');
-
+  // The host owns how a surface yields a presentation context — the web adapter reaches for
+  // getContext('webgpu'), a native host for its own swap chain — so the binding goes through the backend
+  // rather than through a DOM call in the renderer.
   const format = options.format ?? 'bgra8unorm';
-  // COPY_SRC lets the swap-chain texture be read back with copyTextureToBuffer. It is the only reliable
-  // way to read a Wgpu frame in headless/software contexts, and it also backs user-facing screenshots.
-  context.configure({
+  const context = getWgpuHostBackend().attachSurface(surface, {
+    alphaMode: options.alphaMode ?? 'premultiplied',
     device,
     format,
-    alphaMode: options.alphaMode ?? 'premultiplied',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
   });
+  if (context === null) throw new Error('createWgpuScreenRenderTarget: the surface cannot present WebGPU.');
 
   const antialias = options.antialias ?? false;
   const scale = antialias ? WGPU_SCREEN_SUPERSAMPLE_SCALE : 1;

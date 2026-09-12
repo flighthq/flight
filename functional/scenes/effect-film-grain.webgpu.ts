@@ -46,7 +46,7 @@ declareExpectedImageDescription(
 
 // Wgpu parity column for the same film-grain intent as render.webgl.ts: per-pixel noise over a flat
 // mid-gray fill, fixed seed for a deterministic capture. Wgpu render-state init is async; the effect
-// pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+// pipeline runs between beginWgpuRenderPass and submitWgpuFrame.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

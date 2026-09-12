@@ -376,7 +376,7 @@ export function recordWgpuQuadBatchColorScaleBias(
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be
-// called once at the start of each frame's batch work — the screen frame via renderWgpuBackground,
+// called once at the start of each frame's batch work — the screen frame via beginWgpuRenderPass,
 // and the offscreen cache bake via refreshWgpuRenderCache (the bake flushes on its own state).
 export function resetWgpuQuadBatchWriterBufferPool(state: WgpuRenderState): void {
   getWgpuRenderStateRuntime(state).quadBatchWriterBufferCursor = 0;

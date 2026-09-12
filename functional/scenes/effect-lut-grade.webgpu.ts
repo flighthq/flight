@@ -38,8 +38,8 @@ declareExpectedImageDescription(
 // Wgpu parity column for the same full-frame lutGrade grade as render.webgl.ts: applies a baked 32^3
 // warm-tone LUT at full strength. The grade lifts reds (γ=0.8), slightly compresses greens (γ=1.1),
 // and crushes blues (γ=1.5). Wgpu render-state init is async (createWgpuRenderState returns a Promise).
-// The effect pipeline runs between renderWgpuBackground (opens the encoder + canvas pass) and
-// submitWgpuRenderPass (flushes it), grading the rgba8 scene target.
+// The effect pipeline runs between beginWgpuRenderPass (opens the encoder + canvas pass) and
+// submitWgpuFrame (flushes it), grading the rgba8 scene target.
 const warmGradeLut = bakeColorLut(
   [
     (out, r, g, b) => {

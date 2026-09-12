@@ -954,7 +954,7 @@ function overwriteIdentityCache<T extends 'samplers' | 'views'>(
 // mat4x4f + normal mat3x3f padded to std140) into it, records the slot's byte offset on the scene
 // runtime (the draw path passes it as the bind group's dynamic offset), and returns the shared
 // dynamic-offset Draw bind group. Reusing the render-state ring keeps each subset draw to one ring
-// slot, not a fresh buffer; submitWgpuRenderPass uploads the used ring region before submit. Mirrors
+// slot, not a fresh buffer; submitWgpuFrame uploads the used ring region before submit. Mirrors
 // the per-draw model/normal upload in scene-gl's drawGlMeshSubset.
 export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>): GPUBindGroup {
   const scene = getWgpuScene3DRuntime(state);

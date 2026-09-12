@@ -53,7 +53,7 @@ declareExpectedImageDescription(
 // Blinn-Phong) — the reason classic shadow reception was wired.
 //
 // The WebGPU twin uses beginWgpuFrame to open its encoder before the shadow pass, then opens the canvas
-// pass with renderWgpuBackground on that same encoder.
+// pass with beginWgpuRenderPass on that same encoder.
 //
 // createScene3D / drawGlScene3D collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
 // import the Gl 3D ones directly. Pipeline wiring mirrors shadow-directional.

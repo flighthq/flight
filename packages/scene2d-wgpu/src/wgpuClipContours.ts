@@ -56,7 +56,7 @@ export function popWgpuClipContours(state: WgpuRenderState): void {
   }
   if (entry !== undefined) {
     // The erase draw just recorded references these buffers; the frame's submit is deferred to
-    // submitWgpuRenderPass, so defer their destruction until after that submit.
+    // submitWgpuFrame, so defer their destruction until after that submit.
     retireWgpuBuffer(state, entry.vertexBuffer);
     retireWgpuBuffer(state, entry.uniformBuffer);
   }

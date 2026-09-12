@@ -77,13 +77,6 @@ export interface WgpuScreenRenderTarget extends WgpuRenderTarget {
   readonly surface: WgpuPresentationSurface;
 }
 
-// Anything that can hand out a WebGPU canvas context and report its own size: an HTMLCanvasElement, an
-// OffscreenCanvas, or a native host's surface object. Typed structurally so render-wgpu names no DOM
-// type and a native host needs no web shim.
-export interface WgpuScreenSurface extends WgpuPresentationSurface {
-  getContext(contextId: 'webgpu'): GPUCanvasContext | null;
-}
-
 export interface WgpuScreenRenderTargetOptions {
   // Supersample the surface at 2x in each axis, then resolve into the swap chain. Default false.
   readonly antialias?: boolean;

@@ -31,7 +31,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same bloom intent as render.webgl.ts. Wgpu render-state init is
 // async (createWgpuRenderState returns a Promise). The effect pipeline runs between
-// renderWgpuBackground (opens the command encoder + canvas pass) and submitWgpuRenderPass
+// beginWgpuRenderPass (opens the command encoder + canvas pass) and submitWgpuFrame
 // (flushes it); the HDR rgba16f scene target is bright-passed, blurred, and added back.
 declareAntialiasingPolicy('aa');
 

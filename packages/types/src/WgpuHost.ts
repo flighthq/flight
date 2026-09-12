@@ -40,7 +40,26 @@ export interface WgpuHostAcquisitionOptions {
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuProvider extends Entity {
   acquire(canvas: HTMLCanvasElement, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  // Binds a device to a presentation surface and returns its configured swap-chain context, or null when
+  // the surface cannot present. Separate from `acquire` because a device outlives any one surface: a
+  // second window attaches its own surface to the device already in hand, and only the host knows how a
+  // surface yields a context.
+  attachSurface(surface: WgpuScreenSurface, attachment: Readonly<WgpuSurfaceAttachment>): GPUCanvasContext | null;
   isSupported(): boolean;
   release(acquisition: Readonly<WgpuHostAcquisition>): void;
+}
+
+// Anything that can hand out a WebGPU presentation context and report its own live size: an
+// HTMLCanvasElement, an OffscreenCanvas, or a native host's surface object. Typed structurally so the
+// render packages name no DOM type and a native host needs no web shim.
+export interface WgpuScreenSurface extends WgpuPresentationSurface {
+  getContext(contextId: 'webgpu'): GPUCanvasContext | null;
+}
+
+export interface WgpuSurfaceAttachment {
+  // Alpha compositing of the swap-chain texture against the page.
+  readonly alphaMode: GPUCanvasAlphaMode;
+  readonly device: GPUDevice;
+  readonly format: GPUTextureFormat;
 }
 import type { Entity } from './Entity';

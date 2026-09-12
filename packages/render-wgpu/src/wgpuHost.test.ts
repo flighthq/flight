@@ -22,6 +22,7 @@ import { installWgpuMock } from './wgpuTestHelper';
 function fakeBackend(): HostWgpuProvider {
   return entityBackend({
     acquire: vi.fn(),
+    attachSurface: vi.fn(() => null),
     isSupported: vi.fn(() => true),
     release: vi.fn(),
   });
@@ -132,6 +133,7 @@ describe('setWgpuHostBackend', () => {
     acquisition.ownership = 'caller' as const;
     const backend = entityBackend({
       acquire: vi.fn(async () => acquisition),
+      attachSurface: vi.fn(() => null),
       isSupported: vi.fn(() => true),
       release: vi.fn(),
     });
@@ -162,6 +164,7 @@ describe('setWgpuHostBackend', () => {
     const unconfigure = vi.spyOn(acquired.context, 'unconfigure');
     const backend = entityBackend({
       acquire: vi.fn(async () => acquired),
+      attachSurface: vi.fn(() => null),
       isSupported: vi.fn(() => true),
       release: vi.fn((held) => {
         held.context.unconfigure();

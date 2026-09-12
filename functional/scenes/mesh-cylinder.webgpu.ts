@@ -42,9 +42,9 @@ declareExpectedImageDescription(
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same unlit cube as render.webgl.ts. Wgpu state init is async.
-// renderWgpuBackground opens the command encoder + clears; the effect pipeline runs between
+// beginWgpuRenderPass opens the command encoder + clears; the effect pipeline runs between
 // begin/end (the Unlit renderer writes into the rgba16f scene target, depth-tested), and
-// submitWgpuRenderPass flushes. Frame capture is enabled (the software adapter never presents the
+// ending the screen pass flushes. Frame capture is enabled (the software adapter never presents the
 // swapchain headless) so the verifier reads the frame back from the GPU.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
