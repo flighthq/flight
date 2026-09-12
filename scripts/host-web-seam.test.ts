@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -97,6 +98,33 @@ describe('host-web seam closure', () => {
 
     expect(missing).toStrictEqual([]);
   });
+});
+
+// The dimension resolver is one module-scoped slot shared by every test file in a Vitest process, so a
+// file that registers and never clears can satisfy a LATER file's missing registration. That is how
+// canvasTextureView passed in the broad suite while failing on its own: it never declared the dependency
+// and inherited one. Neither the broad suite nor a package-scoped run can catch that class of defect —
+// only a fresh process holding one file can — so this spends a child process to hold the line.
+describe('portable dimension-resolver isolation', () => {
+  const ISOLATED_FILES = [
+    'packages/scene2d-canvas/src/canvasTextureView.test.ts',
+    'packages/scene2d-canvas/src/canvasSprite.test.ts',
+  ];
+
+  for (const file of ISOLATED_FILES) {
+    it(`passes with nothing else loaded: ${file}`, () => {
+      const repositoryRoot = resolve(import.meta.dirname, '..');
+      const run = (): void => {
+        execFileSync('npx', ['vitest', 'run', '--config', 'vitest.config.ts', file], {
+          cwd: repositoryRoot,
+          encoding: 'utf-8',
+          stdio: 'pipe',
+        });
+      };
+
+      expect(run).not.toThrow();
+    }, 120_000);
+  }
 });
 
 // Comments and string literals are prose: a sentence explaining that browser canvas decodes are

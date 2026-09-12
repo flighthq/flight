@@ -1,5 +1,9 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import {
   appendShapeBeginTextureFill,
@@ -61,13 +65,12 @@ function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) 
   });
 }
 
-// The texture fast path compares the fill rectangle against the source's measured size, so the test
-// installs the one-line resolver a browser host would provide for the canvases it wraps.
-registerHostImageDimensionResolver((source, out) => {
-  const sized = source as { height: number; width: number };
-  out.height = sized.height;
-  out.width = sized.width;
-  return true;
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
 });
 
 const host: { readonly graphics: { readonly image: HostImageProvider } } = {
