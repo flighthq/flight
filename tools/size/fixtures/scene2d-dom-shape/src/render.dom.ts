@@ -12,7 +12,6 @@ import {
   createDomRenderState,
   defaultDomShapeRenderer,
   registerDomShapeRasterizer,
-  renderDomBackground,
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
@@ -24,7 +23,10 @@ container.style.height = '300px';
 document.body.style.margin = '0';
 document.body.appendChild(container);
 
-const state = createDomRenderState(container, { backgroundColor: 0x1a1a2eff, pixelRatio: 1 });
+const state = createDomRenderState(container, { pixelRatio: 1 });
+// DOM has no pass and no clear: the background is a CSS property on the element the caller
+// already holds, set once rather than reapplied by a render function every frame.
+container.style.backgroundColor = '#1a1a2e';
 
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
@@ -41,7 +43,6 @@ shape.y = 40;
 addNodeChild(root, shape);
 
 prepareScene2DRender(state, root);
-renderDomBackground(state);
 renderDomScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dDomShape', { root });

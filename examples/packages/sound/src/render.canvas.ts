@@ -1,22 +1,25 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
+  beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderSurface,
-  createCanvasTextureResolvers,
-  scene2DCanvasPipeline,
   createCanvasRenderState,
-  enableFlightDiagnostics,
+  createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureResolvers,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
+  enableFlightDiagnostics,
+  endCanvasRenderPass,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerCanvasSurfaceCreator,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
+  scene2DCanvasPipeline,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -25,19 +28,21 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(
+export const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
     height: canvas.height / pixelRatio,
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
+);
+export const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  {
-    sceneGraphSyncPolicy: 'requiresInvalidation',
-    backgroundColor: 0x1a1a2eff,
-  },
+  { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
@@ -48,6 +53,7 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderCanvasBackground(state);
-  renderCanvasScene2D(state, root);
+  const pass = beginCanvasRenderPass(state, screen, screenClear);
+  renderCanvasScene2D(pass, root);
+  endCanvasRenderPass(pass);
 }

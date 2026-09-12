@@ -1,12 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
-import {
-  createDomRenderState,
-  defaultDomNativeTextRenderer,
-  renderDomBackground,
-  renderDomScene2D,
-} from '@flighthq/scene2d-dom';
+import { createDomRenderState, defaultDomNativeTextRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
 import { createNativeText } from '@flighthq/text';
 import { NativeTextKind } from '@flighthq/types';
 
@@ -16,7 +11,10 @@ container.style.height = '300px';
 document.body.style.margin = '0';
 document.body.appendChild(container);
 
-const state = createDomRenderState(container, { backgroundColor: 0x1a1a2eff, pixelRatio: 1 });
+const state = createDomRenderState(container, { pixelRatio: 1 });
+// DOM has no pass and no clear: the background is a CSS property on the element the caller
+// already holds, set once rather than reapplied by a render function every frame.
+container.style.backgroundColor = '#1a1a2e';
 
 registerRenderer(state, NativeTextKind, defaultDomNativeTextRenderer);
 
@@ -29,7 +27,6 @@ field.y = 40;
 addNodeChild(root, field);
 
 prepareScene2DRender(state, root);
-renderDomBackground(state);
 renderDomScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dDomNativeText', { root });

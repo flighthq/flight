@@ -1,4 +1,4 @@
-import { createWebWgpuRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
@@ -13,7 +13,7 @@ import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 
-const canvas = createWebWgpuRenderSurfaceProvider().createRenderSurface(320, 240, 1);
+const canvas = createWebWgpuCanvasElement(320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU DisplayObject size control requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

@@ -1,4 +1,4 @@
-import { createWebWgpuRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendPathCircle, appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -23,7 +23,7 @@ import {
 } from '@flighthq/shape';
 import { MorphShapeKind } from '@flighthq/types';
 
-const canvas = createWebWgpuRenderSurfaceProvider().createRenderSurface(320, 240, 1);
+const canvas = createWebWgpuCanvasElement(320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU MorphShape size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

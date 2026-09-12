@@ -5,8 +5,6 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Bitmap, RenderEffect, RenderEffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
-  ShapeKind,
-  SpriteKind,
   acquireWgpuRenderTexture,
   addNodeChild,
   appendShapeBeginFill,
@@ -32,6 +30,8 @@ import {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuScene2D,
+  ShapeKind,
+  SpriteKind,
   withWgpuFrameBorrow,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';

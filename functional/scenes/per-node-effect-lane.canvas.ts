@@ -1,13 +1,8 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import {
-  acquireCanvasRenderSurface,
-  isCanvasRenderTextureReady,
-  setCanvasRenderTransform2D,
-} from '@flighthq/scene2d-canvas/contract';
+import { isCanvasRenderTextureReady, setCanvasRenderTransform2D } from '@flighthq/scene2d-canvas/contract';
 import type { Bitmap, RenderEffect, RenderTexture } from '@flighthq/sdk';
 import {
-  ShapeKind,
-  SpriteKind,
   acquireCanvasRenderTexture,
   addNodeChild,
   appendShapeBeginFill,
@@ -33,9 +28,12 @@ import {
   prepareScene2DRender,
   registerBlurEffectPaddingResolver,
   registerCanvasBlurEffect,
+  registerCanvasSurfaceCreator,
   releaseCanvasRenderTexture,
   renderCanvasScene2D,
   renderIntoCanvasRenderTexture,
+  ShapeKind,
+  SpriteKind,
   withCanvasRenderTextures,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
@@ -74,19 +72,15 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'canvas') throw new Error('per-node-effect-lane requires Canvas');
 const { render, state, width } = target;
 
-const offscreenSurface = acquireCanvasRenderSurface(state.surface.creator, {
-  height: 1,
-  pixelRatio: state.pixelRatio,
-  width: 1,
-});
-if (offscreenSurface === null) throw new Error('Failed to acquire the Canvas effect surface.');
+// The state owns no surface any more, so the creator comes from the host directly — the same one the
+// harness registered on the state for its own offscreen work.
 const offscreenState = createCanvasOffscreenRenderState(
-  offscreenSurface,
   state.pipeline,
-  createCanvasTextureResolvers(state.surface.creator),
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio: state.pixelRatio },
 );
-const pool = createCanvasRenderTexturePool(state.surface.creator);
+registerCanvasSurfaceCreator(offscreenState, webCanvasRenderSurfaceCreator);
+const pool = createCanvasRenderTexturePool(webCanvasRenderSurfaceCreator);
 registerCanvasBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
 const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
@@ -208,10 +202,10 @@ function captureSubtree(): {
       [sourceTexture, scratchTexture] = textures;
       const transform = createMatrix();
       computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
-      renderIntoCanvasRenderTexture(state, offscreenState, sourceTexture, (captureState) => {
-        setCanvasRenderTransform2D(captureState, transform);
-        prepareScene2DRender(captureState, source);
-        renderCanvasScene2D(captureState, source);
+      renderIntoCanvasRenderTexture(state, offscreenState, sourceTexture, (capturePass) => {
+        setCanvasRenderTransform2D(capturePass, transform);
+        prepareScene2DRender(offscreenState, source);
+        renderCanvasScene2D(capturePass, source);
       });
       if (
         !applyCanvasRenderEffectsToRenderTexture(

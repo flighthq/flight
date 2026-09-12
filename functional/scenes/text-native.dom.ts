@@ -1,15 +1,14 @@
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  NativeTextKind,
   addNodeChild,
   createDisplayObject,
   createDomRenderState,
   createNativeText,
   defaultDomNativeTextRenderer,
   getBitmapPixelRgb,
+  NativeTextKind,
   prepareScene2DRender,
   registerRenderer,
-  renderDomBackground,
   renderDomScene2D,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -35,7 +34,10 @@ container.style.width = '800px';
 container.style.height = '600px';
 document.body.appendChild(container);
 
-export const state = createDomRenderState(container, { backgroundColor: 0xffffffff });
+export const state = createDomRenderState(container);
+// DOM has no pass and no clear: the background is a CSS property on the element the caller
+// already holds, set once rather than reapplied by a render function every frame.
+container.style.backgroundColor = '#ffffff';
 registerRenderer(state, NativeTextKind, defaultDomNativeTextRenderer);
 export const scale = 1;
 export const width = 800;
@@ -43,7 +45,6 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderDomBackground(state);
   renderDomScene2D(state, root);
 }
 

@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap';
-import { createWebWgpuRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -21,7 +21,7 @@ import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
 import { QuadBatchKind, StandardMaterialKind } from '@flighthq/types';
 
-const canvas = createWebWgpuRenderSurfaceProvider().createRenderSurface(320, 240, 1);
+const canvas = createWebWgpuCanvasElement(320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU QuadBatch size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

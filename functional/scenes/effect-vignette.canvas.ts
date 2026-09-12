@@ -1,31 +1,34 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
+  beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderSurface,
-  createCanvasTextureResolvers,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
   createVignetteEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  registerCanvasVignetteEffect,
   endCanvasRenderEffectPipeline,
+  endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerCanvasSurfaceCreator,
+  registerCanvasVignetteEffect,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -46,16 +49,21 @@ const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(
+export const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
     height: canvas.height / pixelRatio,
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
+);
+export const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio, backgroundColor: 0x101014ff },
+  { pixelRatio },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1] } as const;
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasVignetteEffect(state);
@@ -75,12 +83,13 @@ const VIGNETTE_SOFTNESS = 0.5;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginCanvasRenderEffectPipeline(state, pipeline);
-  renderCanvasBackground(state);
-  renderCanvasScene2D(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [
+  const pass = beginCanvasRenderPass(state, screen, screenClear);
+  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  renderCanvasScene2D(scenePass, root);
+  endCanvasRenderEffectPipeline(scenePass, pipeline, [
     createVignetteEffect({ intensity: 1, radius: VIGNETTE_RADIUS, softness: VIGNETTE_SOFTNESS }),
   ]);
+  endCanvasRenderPass(pass);
 }
 
 // A single full-bleed bright fill covering the whole frame. With a flat, even color the vignette's

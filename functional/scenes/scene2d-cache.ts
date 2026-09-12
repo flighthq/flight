@@ -94,7 +94,6 @@ if (target.kind === 'canvas') {
   const cache = createRenderCache();
   const cacheState = createCanvasCacheState(
     target.state,
-    target.state.surface,
     target.state.pipeline,
     getCanvasRenderStateTextureResolvers(target.state),
     {

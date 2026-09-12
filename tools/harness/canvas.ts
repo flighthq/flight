@@ -2,7 +2,11 @@ import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web'
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
+  beginCanvasRenderPass,
   createCanvasRenderState,
+  createCanvasScreenRenderTarget,
+  endCanvasRenderPass,
+  registerCanvasSurfaceCreator,
   createCanvasRenderSurface,
   createCanvasTextureResolvers,
   createMatrix,
@@ -30,7 +34,6 @@ import {
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
   RichTextKind,
   scene2DCanvasPipeline,
@@ -51,21 +54,31 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createCanvasRenderState(
+  const screen = createCanvasScreenRenderTarget(
     createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
       contextAttributes: options.contextAttributes ?? { alpha: false },
       height,
       pixelRatio,
       width,
     }),
+  );
+  const state = createCanvasRenderState(
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-    {
-      backgroundColor: options.background,
-      pixelRatio,
-      sceneGraphSyncPolicy: options.syncPolicy,
-    },
+    { pixelRatio, sceneGraphSyncPolicy: options.syncPolicy },
   );
+  registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+  // The background is what the frame is cleared to — a per-pass value the render loop below passes in,
+  // rather than a property the state carries for every pass it will ever open.
+  const background = options.background ?? 0x00000000;
+  const screenClear = {
+    color: [
+      ((background >>> 24) & 0xff) / 0xff,
+      ((background >>> 16) & 0xff) / 0xff,
+      ((background >>> 8) & 0xff) / 0xff,
+      (background & 0xff) / 0xff,
+    ] as const,
+  };
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
@@ -110,8 +123,9 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     scale: pixelRatio,
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
-      renderCanvasBackground(state);
-      renderCanvasScene2D(state, root);
+      const pass = beginCanvasRenderPass(state, screen, screenClear);
+      renderCanvasScene2D(pass, root);
+      endCanvasRenderPass(pass);
     },
     benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);

@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
@@ -8,7 +8,6 @@ import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -18,8 +17,7 @@ import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(320, 240, 1);
+const canvas = createWebWgpuCanvasElement(320, 240, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

@@ -20,14 +20,14 @@
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  SpriteKind,
-  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
   createPixelArtSampler,
+  createSprite,
   createTexture,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 

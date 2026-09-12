@@ -1,3 +1,4 @@
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { webCanvasRenderSurfaceCreator, webHostImage, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
@@ -6,7 +7,6 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultCanvasShapeCommands,
@@ -32,7 +32,7 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-export const canvas = createWgpuCanvasElement(CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
+export const canvas = createWebWgpuCanvasElement(CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

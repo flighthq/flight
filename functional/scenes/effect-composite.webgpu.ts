@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Node2D, Bitmap, WgpuTextureRenderTarget } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -12,11 +12,10 @@ import {
   createDisplayObject,
   createShape,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  createWgpuTextureRenderTarget,
   createWgpuScreenRenderTarget,
+  createWgpuTextureRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
@@ -45,8 +44,7 @@ declareExpectedImageDescription(
     'with no gradient or grey fringe.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

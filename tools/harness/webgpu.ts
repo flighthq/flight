@@ -1,23 +1,22 @@
 import {
-  enableHostWebWgpuRenderSurface,
+  createWebWgpuCanvasElement,
   webCanvasRenderSurfaceCreator,
   webHostImage,
   webRaster2DSurfaceProvider,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
+  beginCanvasRenderPass,
+  beginWgpuRenderPass,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createMatrix,
-  beginWgpuRenderPass,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuRenderPass,
-  scene3DWgpuPipeline,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
@@ -31,10 +30,11 @@ import {
   enableFlightDiagnostics,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
-  enableWgpuScreenRenderTargetCapture,
   enableWgpuRenderCache,
   enableWgpuRenderEffectGuards,
+  enableWgpuScreenRenderTargetCapture,
   enableWgpuStrokePathTessellation,
+  endWgpuRenderPass,
   getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
@@ -47,9 +47,10 @@ import {
   registerWgpuShapeCommands,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
-  scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
+  scene2DCanvasPipeline,
+  scene3DWgpuPipeline,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -63,8 +64,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  enableHostWebWgpuRenderSurface();
-  const canvas = createWgpuCanvasElement(width, height, pixelRatio);
+  const canvas = createWebWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
   const acquisition = await createWgpuAcquisition(canvas);
@@ -154,9 +154,14 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  );
+  // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
+  // life of the state — every fill it paints happens inside that bracket.
+  beginCanvasRenderPass(
+    resolverState,
+    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
   );
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
