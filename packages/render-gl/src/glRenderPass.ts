@@ -178,9 +178,7 @@ export function endGlRenderPass(pass: GlRenderPass): void {
 
   const runtime = getGlRenderStateRuntime(state);
   runtime.currentPass = null;
-  // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
-  // target being ended here is always the 2D/MSAA target beginGlRenderPass installed.
-  const ended = runtime.currentRenderTarget as GlTextureRenderTarget | null;
+  const ended = runtime.currentRenderTarget;
   restoreGlPassState(state, saved.ownerState);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, saved.previousState.framebuffer);
@@ -200,7 +198,10 @@ export function endGlRenderPass(pass: GlRenderPass): void {
     invalidateGlPassBindingCache(getGlRenderStateRuntime(saved.previousOwner));
   }
 
-  if (ended !== null) resolveGlTextureRenderTarget(saved.previousOwner, ended);
+  // Screen targets (framebuffer === null) have no MSAA storage to resolve.
+  if (ended != null && ended.framebuffer !== null) {
+    resolveGlTextureRenderTarget(saved.previousOwner, ended as GlTextureRenderTarget);
+  }
 }
 
 export function getGlCurrentRenderPass(state: GlRenderState): GlRenderPass | null {
