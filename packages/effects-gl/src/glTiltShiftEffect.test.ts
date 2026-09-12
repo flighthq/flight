@@ -2,7 +2,7 @@ import { createTiltShiftEffect } from '@flighthq/effects/contract';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
@@ -148,7 +148,7 @@ describe('defaultGlTiltShiftEffectRunner', () => {
 describe('registerGlTiltShiftEffect', () => {
   it('makes the runner resolvable for the TiltShiftEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextFromCanvasElement(document.createElement('canvas')),
+      createGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

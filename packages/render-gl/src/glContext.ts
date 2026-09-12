@@ -2,10 +2,7 @@ import type { GlContext, GlContextOptions } from '@flighthq/types/contract';
 
 // Web-only acquisition constructor. Context-first/native callers do not import this module, keeping
 // HTMLCanvasElement.getContext out of their bundles.
-export function createGlContextFromCanvasElement(
-  canvas: HTMLCanvasElement,
-  options: Readonly<GlContextOptions> = {},
-): GlContext {
+export function createGlContext(canvas: HTMLCanvasElement, options: Readonly<GlContextOptions> = {}): GlContext {
   const contextAttributes: WebGLContextAttributes = {
     alpha: true,
     antialias: options.antialias ?? true,

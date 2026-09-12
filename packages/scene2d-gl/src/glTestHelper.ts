@@ -1,6 +1,6 @@
 import {
   createEmptyGlRegistries,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlPipeline,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
@@ -14,7 +14,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?:
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  const gl = createGlContextFromCanvasElement(canvas);
+  const gl = createGlContext(canvas);
   Object.defineProperties(gl, {
     drawingBufferHeight: { configurable: true, value: canvas.height },
     drawingBufferWidth: { configurable: true, value: canvas.width },

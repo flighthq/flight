@@ -1,7 +1,7 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
 import {
   createEmptyGlRegistries,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlPipeline,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
@@ -16,7 +16,7 @@ function makeState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function mockPass(state: GlRenderState): GlRenderPass {

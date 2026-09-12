@@ -2,7 +2,7 @@ import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
@@ -145,7 +145,7 @@ describe('defaultGlRadialBlurEffectRunner', () => {
 describe('registerGlRadialBlurEffect', () => {
   it('makes the runner resolvable for the RadialBlurEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextFromCanvasElement(document.createElement('canvas')),
+      createGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

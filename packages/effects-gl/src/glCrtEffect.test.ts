@@ -2,7 +2,7 @@ import { createCrtEffect } from '@flighthq/effects/contract';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
@@ -112,10 +112,7 @@ describe('defaultGlCrtEffectRunner', () => {
 describe('registerGlCrtEffect', () => {
   it('makes the runner resolvable for the CrtEffect kind', () => {
     const canvas = document.createElement('canvas');
-    const state = createGlRenderState(
-      createGlContextFromCanvasElement(canvas),
-      createGlPipeline(createEmptyGlRegistries()),
-    );
+    const state = createGlRenderState(createGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
 
     expect(getGlRenderEffectRunner(state, 'CrtEffect')).toBeNull();
     registerGlCrtEffect(state);

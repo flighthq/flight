@@ -1,7 +1,7 @@
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContextFromCanvasElement,
+  createGlContext,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 
@@ -60,11 +60,11 @@ describe('GL effect registration', () => {
     ['WhiteBalanceEffect', 'registerGlWhiteBalanceEffect', 'defaultGlWhiteBalanceEffectRunner'],
   ] as const)('registers the public %s runner on only the supplied state', (kind, registerName, runnerName) => {
     const state = createGlRenderState(
-      createGlContextFromCanvasElement(document.createElement('canvas')),
+      createGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
     const other = createGlRenderState(
-      createGlContextFromCanvasElement(document.createElement('canvas')),
+      createGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 
