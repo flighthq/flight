@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -9,7 +9,6 @@ import {
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
-  createImageResourceFromCanvas,
   createMesh,
   createPerspectiveProjection,
   createQuadMeshGeometry,

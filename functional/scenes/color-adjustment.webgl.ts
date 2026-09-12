@@ -5,12 +5,12 @@
 // The previous shape of this scene asserted a red centre pixel on a sprite it had already made red —
 // an assertion the fold could not fail. The reference rect is what a second opinion looks like when it
 // comes from a different source than the thing it checks.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createSprite,
   createTexture,
   createTextureAtlas,
@@ -74,7 +74,7 @@ function makeAdjustedCanvas(): HTMLCanvasElement {
 
 function addSquare(root: ReturnType<typeof createDisplayObject>, source: HTMLCanvasElement, x: number): void {
   const atlas = createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResource(source) }),
+    texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
   });
   addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
   const sprite = createSprite();

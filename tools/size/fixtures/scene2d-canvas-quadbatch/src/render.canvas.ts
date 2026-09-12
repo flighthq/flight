@@ -1,5 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
-import { createImageResourceFromCanvas } from '@flighthq/image';
+import { createImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { withRegistryTableEntry } from '@flighthq/registry';

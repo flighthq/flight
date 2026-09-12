@@ -5,12 +5,12 @@
 // the recipe every sprite/tilemap/particle feature builds on. The scene includes ordinary red/green
 // regions and a non-square, clockwise-packed region whose upright image is blue over yellow. The latter
 // catches ignored UV rotation, swapped dimensions, wrong atlas denominators, and wrong turn direction.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createSprite,
   createTexture,
   createTextureAtlas,
@@ -85,7 +85,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(makeAtlasCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeAtlasCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION); // region id 0 — red
 addTextureAtlasRegion(atlas, REGION, 0, REGION, REGION, REGION / 2, REGION / 2); // region id 1 — green, center pivot

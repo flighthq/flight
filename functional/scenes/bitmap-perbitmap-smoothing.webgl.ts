@@ -19,13 +19,13 @@
 //
 // WebGPU has the same proof in the sibling .webgpu variant (its own bind-group-variant path); canvas/dom
 // always honored per-bitmap smoothing (covered by the bare bitmap-smoothing / bitmap-downscale-smoothing).
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
   getBitmapPixelRgb,

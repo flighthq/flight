@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
@@ -7,7 +7,6 @@ import {
   beginWgpuRenderEffectPipeline,
   beginWgpuRenderPass,
   createCamera3D,
-  createImageResourceFromCanvas,
   createParticleEmitter3D,
   createPerspectiveProjection,
   createScene3D,

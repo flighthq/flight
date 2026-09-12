@@ -7,12 +7,12 @@
 // all referencing a single solid-blue region. It is visual on purpose: the scene assertion proves each of the four
 // transform entries lands a quad at its expected position (blue), and that the spaces between them stay
 // background — i.e. the batch draws discrete quads at the array's coordinates, not one filled span.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createQuadBatch,
   createRectangle,
   createTexture,
@@ -70,7 +70,7 @@ function makeBlueCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(makeBlueCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeBlueCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, QUAD, QUAD); // region id 0 — blue
 

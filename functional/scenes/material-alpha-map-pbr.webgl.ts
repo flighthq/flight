@@ -1,4 +1,4 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -14,7 +14,6 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createImageResourceFromCanvas,
   createMesh,
   createPerspectiveProjection,
   createQuadMeshGeometry,

@@ -6,6 +6,7 @@
 // (1) tiling — cell centers across more than two 8px periods alternate pure black/white at the 8px
 // pitch (a single un-tiled image could not cover 256px with that pitch) and (2) nearest sampling — a
 // sample on a cell boundary is still pure black or white, with no bilinear blend to gray.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -13,7 +14,6 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createSampler,
   createShape,
   createTexture,

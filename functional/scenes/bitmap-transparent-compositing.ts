@@ -14,13 +14,13 @@
 //
 // This is visual because per-pixel alpha compositing and node-alpha modulation only exist after the source
 // is blended against the actual destination pixels; it cannot be observed without rasterizing the overlay.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createTexture,
   getBitmapPixelRgb,
   invalidateNodeAppearance,

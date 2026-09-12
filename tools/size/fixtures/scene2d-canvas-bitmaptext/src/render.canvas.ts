@@ -1,7 +1,6 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
-import { createImageResourceFromCanvas } from '@flighthq/image';
+import { createImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';

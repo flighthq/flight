@@ -7,13 +7,13 @@
 //
 // This is visual because the difference only exists at the magnified texel edges produced by scaling;
 // it cannot be observed without actually rasterizing the upscaled image.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
   getBitmapPixelRgb,

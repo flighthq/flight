@@ -1,4 +1,4 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type {
@@ -26,7 +26,6 @@ import {
   createGlContextState,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createImageResourceFromCanvas,
   createMesh,
   createMeshGeometry,
   createPerspectiveProjection,

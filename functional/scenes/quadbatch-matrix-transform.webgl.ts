@@ -11,12 +11,12 @@
 // cover a footprint twice as wide/tall as the source region). The scene assertion samples each quad's center, an
 // interior point only reachable if the affine term was applied, and an exterior point that must stay
 // background.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createQuadBatch,
   createRectangle,
   createTexture,
@@ -76,7 +76,7 @@ function makeRedCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(makeRedCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeRedCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, QUAD, QUAD); // region id 0 — red
 

@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/image';
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
