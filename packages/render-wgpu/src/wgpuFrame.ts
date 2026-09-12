@@ -56,13 +56,10 @@ export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): 
 // finishes it here.
 export function submitWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const { renderPass, commandEncoder, uniformBuffer, uniformData, uniformOffset } = runtime;
+  const { commandEncoder, uniformBuffer, uniformData, uniformOffset } = runtime;
   const device = state.device;
 
-  if (renderPass !== null) {
-    renderPass.end();
-    runtime.renderPass = null;
-  }
+  endWgpuFramePasses(state);
 
   const screen = runtime.frameScreenTarget;
   if (commandEncoder !== null) {
@@ -171,6 +168,33 @@ type BorrowerFrameState = Pick<
   | 'renderPass'
   | 'renderTargetViewport'
 >;
+
+// A frame submit closes everything the frame recorded. A pass still open here is a caller that never
+// ended its bracket — the encoder cannot survive into the next frame, so the stack is unwound to the
+// state the outermost begin saved. Those handles are dropped rather than pooled: this is the abnormal
+// path, and returning a handle the caller may still be holding is worse than letting one be collected.
+function endWgpuFramePasses(state: WgpuRenderState): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const stack = runtime.passStack;
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
+  }
+  if (stack.length === 0) return;
+
+  for (let i = stack.length - 1; i >= 0; i--) stack[i].encoder = null;
+  const saved = stack[0].saved;
+  runtime.currentRenderTarget = saved.renderTarget;
+  runtime.currentColorFormat = saved.colorFormat;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
+  runtime.clipForms = saved.clipForms;
+  runtime.currentMaskDepth = saved.currentMaskDepth;
+  runtime.maskWriteMode = saved.maskWriteMode;
+  runtime.currentScissorRect = saved.currentScissorRect;
+  runtime.scissorStack = saved.scissorStack;
+  state.renderTransform2D = saved.renderTransform2D;
+  stack.length = 0;
+}
 
 function captureBorrowerFrameState(runtime: WgpuRenderStateRuntime): BorrowerFrameState {
   return {

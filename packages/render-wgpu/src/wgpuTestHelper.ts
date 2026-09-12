@@ -1,11 +1,14 @@
 import type {
+  RenderTargetClear,
   WgpuRenderOptions,
+  WgpuRenderPass,
   WgpuRenderState,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
 } from '@flighthq/types/contract';
 
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
+import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisitionFromCanvasElement, createWgpuRenderState } from './wgpuRenderState';
 import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
 
@@ -91,6 +94,8 @@ function makeRenderPassEncoder(): GPURenderPassEncoder {
 function makeCommandEncoder(): GPUCommandEncoder {
   return {
     beginRenderPass: () => makeRenderPassEncoder(),
+    copyTextureToBuffer: () => {},
+    copyTextureToTexture: () => {},
     finish: () => ({}) as GPUCommandBuffer,
   } as unknown as GPUCommandEncoder;
 }
@@ -272,6 +277,16 @@ function makeAdapter(): GPUAdapter {
   } as unknown as GPUAdapter;
 }
 
+// Opens a screen pass over a fresh 800x600 test surface — the shape of an ordinary frame, in one line,
+// for the many tests whose subject is what happens INSIDE a pass rather than the bracket itself.
+export function beginWgpuScreenRenderPassForTest(
+  state: WgpuRenderState,
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
+  options: Readonly<WgpuScreenRenderTargetOptions> = {},
+): WgpuRenderPass {
+  return beginWgpuRenderPass(state, createWgpuScreenRenderTargetForTest(state, options), clear);
+}
+
 // JSDOM does not decode image elements, so a bare <img> remains incomplete even when its layout
 // width and height are assigned. Use this fixture when a test needs to exercise a successful external
 // image upload; readiness-failure tests should keep constructing the incomplete element directly.
@@ -337,13 +352,21 @@ export function installWgpuMock(): void {
     options?: unknown,
   ) {
     if (contextId === 'webgpu') {
-      return {
+      // A canvas has ONE WebGPU context: getContext hands back the same object every call. Minting a new
+      // one per call let a test configure a context nothing else would ever see.
+      const existing = _mockCanvasContexts.get(this);
+      if (existing !== undefined) return existing;
+      const context = {
         configure: () => {},
         getCurrentTexture: () => makeTexture(),
         unconfigure: () => {},
       } as unknown as GPUCanvasContext;
+      _mockCanvasContexts.set(this, context);
+      return context;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (origGetContext as any).call(this, contextId, options);
   };
 }
+
+const _mockCanvasContexts = new WeakMap<HTMLCanvasElement, GPUCanvasContext>();

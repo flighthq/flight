@@ -8,10 +8,10 @@ import {
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { submitWgpuFrame } from './wgpuFrame';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { renderIntoWgpuRenderTexture } from './wgpuRenderTexture';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import {
   registerWgpuImageTextureResolver,
   registerWgpuBitmapTextureResolver,
@@ -177,10 +177,10 @@ describe('registerWgpuRenderTextureResolver', () => {
     registerWgpuRenderTextureResolver(state);
     expect(resolveWgpuTexture(state, texture)).toBeNull();
 
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     renderIntoWgpuRenderTexture(state, texture, () => {});
     expect(resolveWgpuTexture(state, texture)).not.toBeNull();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

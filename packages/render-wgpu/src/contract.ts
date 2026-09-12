@@ -28,6 +28,7 @@ export * from './wgpuTextureRenderTarget';
 export * from './wgpuTextureUpload';
 export * from './wgpuTextureResolver';
 export {
+  beginWgpuScreenRenderPassForTest,
   createReadyImageElementForTest,
   createWgpuRenderStateForTest,
   createWgpuScreenRenderTargetForTest,

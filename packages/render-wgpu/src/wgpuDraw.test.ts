@@ -35,10 +35,10 @@ import {
   updateWgpuTextureEntry,
   warmWgpuPipelines,
 } from './wgpuDraw';
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuFrame';
+import { submitWgpuFrame } from './wgpuFrame';
 import { registerWgpuMipmapGeneration } from './wgpuMipmap';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
   installWgpuMock();
@@ -426,7 +426,7 @@ describe('destroyWgpuVideoTexture', () => {
 describe('drawWgpuQuad', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const bitmap = createSprite();
     prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
@@ -435,14 +435,14 @@ describe('drawWgpuQuad', () => {
     canvas.height = 4;
     const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(() => drawWgpuQuad(state, renderProxy, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
 describe('drawWgpuQuadWithTransform', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const bitmap = createSprite();
     prepareScene2DRender(state, bitmap);
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
@@ -452,7 +452,7 @@ describe('drawWgpuQuadWithTransform', () => {
     const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
     expect(() => drawWgpuQuadWithTransform(state, renderProxy, t, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -568,13 +568,13 @@ describe('resolveWgpuSmoothingBindGroup', () => {
 describe('submitWgpuQuadDraw', () => {
   it('does not throw when render pass is open', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
     const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(() => submitWgpuQuadDraw(state, 0, resolveWgpuSmoothingBindGroup(state, entry, null))).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('is a no-op when render pass is null', async () => {
