@@ -7,14 +7,13 @@ import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enab
 import { createGlContextFromCanvasElement } from './glContext';
 import { useGlProgram } from './glDraw';
 import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
-import { createGlContextState, createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
+import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { makeGL } from './glTestHelper';
 
 function createState() {
   const canvas = document.createElement('canvas');
   canvas.getContext = vi.fn().mockReturnValue(makeGL()) as typeof canvas.getContext;
-  const contextState = createGlContextState(createGlContextFromCanvasElement(canvas));
-  return createGlRenderState(contextState, createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 beforeEach(() => clearLogOnceKeys());

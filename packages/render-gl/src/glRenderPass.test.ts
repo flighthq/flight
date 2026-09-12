@@ -5,8 +5,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlContext, GlTextureRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
-import { createGlOffscreenRenderState } from './glRenderState';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 
 function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
@@ -351,7 +350,7 @@ describe('offscreen 2D projection basis', () => {
   // looking plausible, so this asserts the pass actually populates its explicit viewport.
   it('derives the viewport from the target, not from the shared drawing buffer', () => {
     const { state } = createGlState();
-    const offscreen = createGlOffscreenRenderState(state.contextState, state.pipeline);
+    const offscreen = createGlRenderState(state.gl, state.pipeline);
     const runtime = getGlRenderStateRuntime(offscreen);
     expect(offscreen.gl).toBe(state.gl);
     expect([state.gl.drawingBufferWidth, state.gl.drawingBufferHeight]).toEqual([200, 100]);
@@ -366,7 +365,7 @@ describe('offscreen 2D projection basis', () => {
     // Guards the guard: a pass that set the viewport and never restored it would satisfy the test above
     // while leaving every later screen draw projecting into the offscreen target's dimensions.
     const { state } = createGlState();
-    const offscreen = createGlOffscreenRenderState(state.contextState, state.pipeline);
+    const offscreen = createGlRenderState(state.gl, state.pipeline);
     const runtime = getGlRenderStateRuntime(offscreen);
 
     beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
@@ -380,7 +379,7 @@ describe('offscreen 2D projection basis', () => {
     // compensation. Identity is the correct neutral for both, and the two constructors agreeing is what
     // makes an offscreen pass behave like a screen pass until a caller deliberately changes it.
     const { state } = createGlState();
-    const offscreen = createGlOffscreenRenderState(state.contextState, state.pipeline);
+    const offscreen = createGlRenderState(state.gl, state.pipeline);
 
     // Field-by-field, not toEqual: a Matrix is entity-backed and carries runtime identity beyond its
     // public fields, so two structurally identical matrices are not deeply equal.

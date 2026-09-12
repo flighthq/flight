@@ -32,7 +32,6 @@ import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
 import {
   createGlContextState,
-  createGlOffscreenRenderState,
   createGlRenderState,
   createGlRenderStateRuntime,
   destroyGlRenderState,
@@ -63,7 +62,7 @@ function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown
 const testPipeline = createGlPipeline(createEmptyGlRegistries());
 
 function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOptions = {}) {
-  return createGlRenderState(createGlContextState(gl), testPipeline, options);
+  return createGlRenderState(gl, testPipeline, options);
 }
 
 function getPaddingResolver(state: RenderState, kind: string): RenderEffectPaddingResolver | null {
@@ -89,9 +88,8 @@ describe('createGlContextState', () => {
 
   it('returns a state that shares the context tier across derived render states', () => {
     const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const stateA = createGlRenderState(contextState, testPipeline);
-    const stateB = createGlRenderState(contextState, testPipeline);
+    const stateA = createGlRenderState(gl, testPipeline);
+    const stateB = createGlRenderState(gl, testPipeline);
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
@@ -125,11 +123,10 @@ describe('createGlContextState (Entity backing)', () => {
     expect(runtimeA.textureCache).not.toBe(runtimeB.textureCache);
   });
 
-  it('shares the context tier between two render states built from the same Entity state', () => {
+  it('shares the context tier between two render states built from the same GL handle', () => {
     const gl = makeGL();
-    const contextState = createGlContextState(gl);
-    const renderA = createGlRenderState(contextState, testPipeline);
-    const renderB = createGlRenderState(contextState, testPipeline);
+    const renderA = createGlRenderState(gl, testPipeline);
+    const renderB = createGlRenderState(gl, testPipeline);
 
     const runtimeA = getGlRenderStateRuntime(renderA);
     const runtimeB = getGlRenderStateRuntime(renderB);
@@ -141,7 +138,95 @@ describe('createGlContextState (Entity backing)', () => {
   });
 });
 
-describe('createGlOffscreenRenderState', () => {
+describe('createGlRenderState', () => {
+  it('stores the GL context on the returned state', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    expect(state.gl).toBe(gl);
+  });
+
+  it('initializes runtime currentBlendSignature to null', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toBeNull();
+  });
+
+  it('initializes runtime currentShader to null', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    expect(getGlRenderStateRuntime(state).context.currentShader).toBeNull();
+  });
+
+  it('initializes runtime currentTextureRealization to null', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toBeNull();
+  });
+
+  it('enables blending during initialization', () => {
+    const { gl } = makeContext();
+    createTestGlRenderState(gl);
+    expect(gl.enable).toHaveBeenCalledWith((gl as unknown as { BLEND: number }).BLEND);
+  });
+
+  it('disables depth testing during initialization', () => {
+    const { gl } = makeContext();
+    createTestGlRenderState(gl);
+    expect(gl.disable).toHaveBeenCalledWith((gl as unknown as { DEPTH_TEST: number }).DEPTH_TEST);
+  });
+
+  it('sets the default premultiplied-alpha blend function', () => {
+    const { gl } = makeContext();
+    createTestGlRenderState(gl);
+    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+  });
+
+  it('applies the backgroundColor option', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl, { backgroundColor: 0xff0000ff });
+    expect(state.backgroundColor).toBe(0xff0000ff);
+  });
+
+  it('uses the provided pixelRatio option', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl, { pixelRatio: 2 });
+    expect(state.pixelRatio).toBe(2);
+  });
+
+  it('uses imageSmoothingEnabled before the legacy allowSmoothing alias', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl, { allowSmoothing: false, imageSmoothingEnabled: true });
+    expect(state.allowSmoothing).toBe(true);
+  });
+
+  it('defaults roundPixels to false', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    expect(state.roundPixels).toBe(false);
+  });
+
+  it('applies the roundPixels option', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl, { roundPixels: true });
+    expect(state.roundPixels).toBe(true);
+  });
+  it('shares the context tier when two states are built from the same GL handle', () => {
+    const { gl } = makeContext();
+    const stateA = createGlRenderState(gl, testPipeline);
+    const stateB = createGlRenderState(gl, testPipeline);
+    const runtimeA = getGlRenderStateRuntime(stateA);
+    const runtimeB = getGlRenderStateRuntime(stateB);
+
+    runtimeA.context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(runtimeB.context.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
+
+    runtimeB.context.currentBlendSignature = { dst: 4, equation: 5, src: 6 };
+    expect(runtimeA.context.currentBlendSignature).toEqual({ dst: 4, equation: 5, src: 6 });
+  });
+});
+
+describe('createGlRenderState (context sharing)', () => {
   it('shares context resources and persistent registration snapshots through independent aggregates', () => {
     const { gl } = makeContext();
     const screen = createTestGlRenderState(gl);
@@ -186,7 +271,7 @@ describe('createGlOffscreenRenderState', () => {
 
     const screenRuntime = getGlRenderStateRuntime(screen);
     const offscreenPipeline = createGlPipeline(screenRuntime.registries);
-    const offscreen = createGlOffscreenRenderState(screen.contextState, offscreenPipeline);
+    const offscreen = createGlRenderState(screen.gl, offscreenPipeline);
     const offscreenRuntime = getGlRenderStateRuntime(offscreen);
 
     expect(offscreen.gl).toBe(screen.gl);
@@ -267,7 +352,7 @@ describe('createGlOffscreenRenderState', () => {
   it('does not observe registrations added after pipeline construction', () => {
     const { gl } = makeContext();
     const screen = createTestGlRenderState(gl);
-    let offscreen = createGlOffscreenRenderState(screen.contextState, screen.pipeline);
+    let offscreen = createGlRenderState(screen.gl, screen.pipeline);
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
     const resolver = vi.fn(() => null);
@@ -282,10 +367,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     destroyGlRenderState(offscreen);
-    offscreen = createGlOffscreenRenderState(
-      screen.contextState,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
     expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(
       renderer,
     );
@@ -305,10 +387,7 @@ describe('createGlOffscreenRenderState', () => {
       destroyData,
       submit: vi.fn(),
     });
-    const offscreen = createGlOffscreenRenderState(
-      screen.contextState,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
     prepareScene2DRender(offscreen, root);
 
     expect(getRenderStateRuntime(offscreen).renderProxyMap).not.toBe(getRenderStateRuntime(screen).renderProxyMap);
@@ -318,131 +397,6 @@ describe('createGlOffscreenRenderState', () => {
 
     destroyGlRenderState(screen);
     expect(gl.deleteBuffer).toHaveBeenCalled();
-  });
-});
-
-describe('createGlRenderState', () => {
-  it('stores the GL context on the returned state', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl);
-    expect(state.gl).toBe(gl);
-  });
-
-  it('initializes runtime currentBlendSignature to null', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toBeNull();
-  });
-
-  it('initializes runtime currentShader to null', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).context.currentShader).toBeNull();
-  });
-
-  it('initializes runtime currentTextureRealization to null', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toBeNull();
-  });
-
-  it('enables blending during initialization', () => {
-    const { gl } = makeContext();
-    createTestGlRenderState(gl);
-    expect(gl.enable).toHaveBeenCalledWith((gl as unknown as { BLEND: number }).BLEND);
-  });
-
-  it('disables depth testing during initialization', () => {
-    const { gl } = makeContext();
-    createTestGlRenderState(gl);
-    expect(gl.disable).toHaveBeenCalledWith((gl as unknown as { DEPTH_TEST: number }).DEPTH_TEST);
-  });
-
-  it('sets the default premultiplied-alpha blend function', () => {
-    const { gl } = makeContext();
-    createTestGlRenderState(gl);
-    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
-  });
-
-  it('applies the backgroundColor option', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl, { backgroundColor: 0xff0000ff });
-    expect(state.backgroundColor).toBe(0xff0000ff);
-  });
-
-  it('uses the provided pixelRatio option', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl, { pixelRatio: 2 });
-    expect(state.pixelRatio).toBe(2);
-  });
-
-  it('uses imageSmoothingEnabled before the legacy allowSmoothing alias', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl, { allowSmoothing: false, imageSmoothingEnabled: true });
-    expect(state.allowSmoothing).toBe(true);
-  });
-
-  it('defaults roundPixels to false', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl);
-    expect(state.roundPixels).toBe(false);
-  });
-
-  it('applies the roundPixels option', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl, { roundPixels: true });
-    expect(state.roundPixels).toBe(true);
-  });
-  it('shares the context tier when two states are built from the same GlContextState', () => {
-    const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const stateA = createGlRenderState(contextState, testPipeline);
-    const stateB = createGlRenderState(contextState, testPipeline);
-    const runtimeA = getGlRenderStateRuntime(stateA);
-    const runtimeB = getGlRenderStateRuntime(stateB);
-
-    runtimeA.context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(runtimeB.context.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
-
-    runtimeB.context.currentBlendSignature = { dst: 4, equation: 5, src: 6 };
-    expect(runtimeA.context.currentBlendSignature).toEqual({ dst: 4, equation: 5, src: 6 });
-  });
-
-  it('keeps separate context tiers when two states are built from the same raw GL', () => {
-    const { gl } = makeContext();
-    const stateA = createTestGlRenderState(gl);
-    const stateB = createTestGlRenderState(gl);
-    const runtimeA = getGlRenderStateRuntime(stateA);
-    const runtimeB = getGlRenderStateRuntime(stateB);
-
-    runtimeA.context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(runtimeB.context.currentBlendSignature).toBeNull();
-  });
-});
-
-describe('createGlRenderState with an explicit context state', () => {
-  it('shares context-owned binding state between render states using one owner', () => {
-    const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const first = createGlRenderState(contextState, testPipeline);
-    const second = createGlRenderState(contextState, testPipeline);
-
-    getGlRenderStateRuntime(first).context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(getGlRenderStateRuntime(second).context.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
-  });
-
-  it('builds a render state whose context tier is shared with siblings from the same context state', () => {
-    const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const stateA = createGlRenderState(contextState, testPipeline);
-    const stateB = createGlRenderState(contextState, testPipeline);
-    expect(stateA.gl).toBe(gl);
-    expect(stateB.gl).toBe(gl);
-    const runtimeA = getGlRenderStateRuntime(stateA);
-    const runtimeB = getGlRenderStateRuntime(stateB);
-    runtimeA.context.currentBlendSignature = { dst: 7, equation: 8, src: 9 };
-    expect(runtimeB.context.currentBlendSignature).toEqual({ dst: 7, equation: 8, src: 9 });
   });
 });
 
@@ -537,9 +491,8 @@ describe('createGlRenderStateRuntime', () => {
 describe('destroyGlRenderState', () => {
   it('runs registered context teardown once after the final shared owner is destroyed', () => {
     const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const first = createGlRenderState(contextState, testPipeline);
-    const second = createGlRenderState(contextState, testPipeline);
+    const first = createGlRenderState(gl, testPipeline);
+    const second = createGlRenderState(gl, testPipeline);
     const teardown = vi.fn();
     const runtime = getGlRenderStateRuntime(first);
     runtime.context.teardowns.push(teardown);
@@ -596,11 +549,10 @@ describe('destroyGlRenderState', () => {
 
   it('invokes registered teardown callbacks when the last reference is destroyed', () => {
     const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const stateA = createGlRenderState(contextState, testPipeline);
-    const stateB = createGlRenderState(contextState, testPipeline);
+    const stateA = createGlRenderState(gl, testPipeline);
+    const stateB = createGlRenderState(gl, testPipeline);
     const teardown = vi.fn();
-    registerGlContextTeardown(contextState, teardown);
+    registerGlContextTeardown(stateA.contextState, teardown);
 
     destroyGlRenderState(stateA);
     expect(teardown).not.toHaveBeenCalled();
@@ -612,11 +564,10 @@ describe('destroyGlRenderState', () => {
 
   it('does not invoke teardowns when references remain', () => {
     const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const stateA = createGlRenderState(contextState, testPipeline);
-    createGlRenderState(contextState, testPipeline);
+    const stateA = createGlRenderState(gl, testPipeline);
+    createGlRenderState(gl, testPipeline);
     const teardown = vi.fn();
-    registerGlContextTeardown(contextState, teardown);
+    registerGlContextTeardown(stateA.contextState, teardown);
 
     destroyGlRenderState(stateA);
     expect(teardown).not.toHaveBeenCalled();
@@ -635,7 +586,7 @@ describe('enableGlRenderStateGuards', () => {
       prepareScene2DRender(state, createDisplayObject());
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries).toHaveLength(1);
-      expect((entries[0].data as { message: string }).message).toContain('createGlOffscreenRenderState');
+      expect((entries[0].data as { message: string }).message).toContain('createGlRenderState');
     } finally {
       removeLogSink(sink.sink);
     }
@@ -765,7 +716,7 @@ describe('pipeline-backed GL registrations', () => {
   it('requires a rebuilt pipeline to carry late registrations into a new state', () => {
     const { gl } = makeContext();
     const screen = createTestGlRenderState(gl);
-    let offscreen = createGlOffscreenRenderState(screen.contextState, screen.pipeline);
+    let offscreen = createGlRenderState(screen.gl, screen.pipeline);
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const decoder = vi.fn(() => new Uint8ClampedArray(4));
@@ -786,10 +737,7 @@ describe('pipeline-backed GL registrations', () => {
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
     destroyGlRenderState(offscreen);
-    offscreen = createGlOffscreenRenderState(
-      screen.contextState,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
@@ -841,10 +789,9 @@ describe('pipeline-backed GL registrations', () => {
 describe('registerGlContextTeardown', () => {
   it('pushes a callback that fires on context teardown', () => {
     const { gl } = makeContext();
-    const contextState = createGlContextState(gl);
-    const state = createGlRenderState(contextState, testPipeline);
+    const state = createGlRenderState(gl, testPipeline);
     const teardown = vi.fn();
-    registerGlContextTeardown(contextState, teardown);
+    registerGlContextTeardown(state.contextState, teardown);
     destroyGlRenderState(state);
     expect(teardown).toHaveBeenCalledOnce();
     expect(teardown).toHaveBeenCalledWith(gl);

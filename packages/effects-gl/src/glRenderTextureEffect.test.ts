@@ -1,12 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
   acquireGlRenderTexture,
   clearGlRenderTexture,
-  createGlOffscreenRenderState,
   createGlRenderState,
   createGlRenderTexturePool,
   getGlRenderStateRuntime,
@@ -260,10 +258,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(
-    createGlContextState(createGlContextFromCanvasElement(canvas)),
-    createGlPipeline(createEmptyGlRegistries()),
-  );
+  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 describe('offscreen effect registration snapshots', () => {
@@ -272,19 +267,13 @@ describe('offscreen effect registration snapshots', () => {
     const first: GlRenderEffectRunner = vi.fn();
     const later: GlRenderEffectRunner = vi.fn();
     registerGlRenderEffect(screen, 'acme.First', first);
-    const offscreen = createGlOffscreenRenderState(
-      screen.contextState,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
     registerGlRenderEffect(screen, 'acme.Later', later);
 
     expect(getGlRenderEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getGlRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
-    const rebuilt = createGlOffscreenRenderState(
-      screen.contextState,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const rebuilt = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
     expect(getGlRenderEffectRunner(rebuilt, 'acme.Later')).toBe(later);
   });
 });

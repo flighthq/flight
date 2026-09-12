@@ -29,7 +29,7 @@ import { createModifierRegistry } from '@flighthq/shading/contract';
 import { createMarkupTagRegistry } from '@flighthq/text-markup/contract';
 import { JSDOM } from 'jsdom';
 
-import { createGlOffscreenRenderState } from '../packages/render-gl/src/glRenderState';
+import { createGlRenderState } from '../packages/render-gl/src/glRenderState';
 import { createGlState } from '../packages/render-gl/src/glTestHelper';
 import { createWgpuPipeline } from '../packages/render-wgpu/src/wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '../packages/render-wgpu/src/wgpuRenderState';
@@ -831,7 +831,7 @@ async function prepareArgument(
     return rootArgument(
       parameter,
       state,
-      () => createGlOffscreenRenderState(state.contextState, state.pipeline),
+      () => createGlRenderState(state.gl, state.pipeline),
       () => createGlState().state,
     );
   }
