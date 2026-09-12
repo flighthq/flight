@@ -1,3 +1,4 @@
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { CollisionAabb2D, CollisionManifold2D, FlowState, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +12,6 @@ import {
   createCollisionManifold2D,
   createDisplayObject,
   createFlowStack,
-  createImageResource,
   createInputManager,
   createInputState,
   createMatrix,
@@ -99,7 +99,7 @@ playerContext.fillRect(5, 4, PLAYER_WIDTH - 10, 9);
 const playerSprite = createSprite();
 playerSprite.data.texture = createTexture({
   dimension: '2d',
-  source: createImageResource(playerImage),
+  source: createImageResourceFromCanvas(playerImage),
 });
 addNodeChild(worldContainer, playerSprite);
 

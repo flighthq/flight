@@ -6,12 +6,12 @@
 // The inline color-adjustment fold is a Gl/Wgpu material feature. The Canvas 2D display renderers do
 // not implement it, so the right rect draws WHITE here, and the reference beside it is what makes that
 // legible without a second cell to compare against.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createSprite,
   createTexture,
   createTextureAtlas,
@@ -72,7 +72,7 @@ function makeAdjustedCanvas(): HTMLCanvasElement {
 
 function addSquare(root: ReturnType<typeof createDisplayObject>, source: HTMLCanvasElement, x: number): void {
   const atlas = createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResource(source) }),
+    texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
   });
   addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
   const sprite = createSprite();

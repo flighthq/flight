@@ -1,5 +1,4 @@
-import { createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
-import { createImageResourceFromCanvas } from '@flighthq/image';
+import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';

@@ -1,9 +1,9 @@
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   createCamera2D,
   createDisplayObject,
-  createImageResource,
   createMatrix,
   createPixelArtSampler,
   createSprite,
@@ -174,7 +174,7 @@ addNodeChild(root, world);
 const texture = createTexture({
   dimension: '2d',
   sampler: createPixelArtSampler(),
-  source: createImageResource(createTilesetCanvas()),
+  source: createImageResourceFromCanvas(createTilesetCanvas()),
 });
 const atlas = createTextureAtlasFromGrid(
   {
@@ -205,7 +205,7 @@ const cursor = createSprite({
     texture: createTexture({
       dimension: '2d',
       sampler: createPixelArtSampler(),
-      source: createImageResource(createSelectionCanvas()),
+      source: createImageResourceFromCanvas(createSelectionCanvas()),
     }),
   },
 });

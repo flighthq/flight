@@ -1,4 +1,4 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   scene3DGlPipeline,
   createGlContextState,
@@ -10,7 +10,6 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   createHtmlView,
-  createImageResourceFromCanvas,
   createQuadBatch,
   createRectangle,
   createSprite,

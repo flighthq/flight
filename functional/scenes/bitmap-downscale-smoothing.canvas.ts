@@ -22,13 +22,13 @@
 //
 // This is visual because the distinction lives entirely in how the rasterizer resolves many source texels
 // into one output pixel during minification; it cannot be observed without actually downscaling the image.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
   getBitmapPixelRgb,

@@ -10,13 +10,13 @@
 //
 // (Field confirmed in packages/types/src/Bitmap.ts: `sourceRectangle: Rectangle | null`, honored by the
 // canvas, dom, gl, and wgpu bitmap renderers.)
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   SpriteKind,
   createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createPixelArtSampler,
   createTexture,
   getBitmapPixelRgb,

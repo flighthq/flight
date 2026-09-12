@@ -1,5 +1,4 @@
-import { createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
-import { createImageResourceFromCanvas } from '@flighthq/image';
+import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';

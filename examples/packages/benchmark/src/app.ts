@@ -1,8 +1,8 @@
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createQuadBatch,
   createTextLabel,
   createTexture,
@@ -43,7 +43,7 @@ ctx.arc(SHAPE_SIZE / 2, SHAPE_SIZE / 2, SHAPE_SIZE / 2 - 1, 0, Math.PI * 2);
 ctx.fill();
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(shapeCanvas) }),
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(shapeCanvas) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, SHAPE_SIZE, SHAPE_SIZE);
 

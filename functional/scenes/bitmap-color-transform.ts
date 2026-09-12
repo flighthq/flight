@@ -10,6 +10,7 @@
 // registered GL/WGPU material feature. Canvas and DOM do not realize that fold, so this cross-backend
 // fixture instead applies the same ColorScaleBias to source pixels via applyBitmapColorScaleBias before
 // blitting. The dedicated color-adjustment scenes exercise the GPU-batched node path.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -18,7 +19,6 @@ import {
   createSprite,
   createColorScaleBias,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createPixelArtSampler,
   createBitmap,
   createBitmapRegion,

@@ -12,12 +12,12 @@
 // Particle data is set explicitly — no simulation — for a deterministic frame. The texture is a single
 // solid-white region, so each particle's rendered center reads back its own tint. Pixel sampling proves the
 // six particles show six distinct tint colors and the gaps between them stay background.
+import { createImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createDisplayObject,
-  createImageResource,
   createParticleEmitter2D,
   createTexture,
   createTextureAtlas,
@@ -78,7 +78,7 @@ function makeWhiteCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(makeWhiteCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeWhiteCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
