@@ -24,6 +24,11 @@ import * as glQuadBatchWriter from './glQuadBatchWriter';
 beforeEach(() => {
   vi.spyOn(glQuadBatchWriter, 'flushGlQuadBatchWriter').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'beginGlRenderPass').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGl, 'getGlCurrentRenderPass').mockImplementation(((state: GlRenderState) => ({
+    gl: state.gl,
+    state,
+    target: null,
+  })) as never);
   vi.spyOn(renderGl, 'setGlRenderTransform2D').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'createGlTextureRenderTarget').mockImplementation(((
     _state: unknown,
@@ -131,7 +136,7 @@ describe('defaultGlRenderCacheRenderer', () => {
     const target = ensureGlRenderCacheTarget(state, cache, 16, 16);
     defaultGlRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(renderGl.drawGlTextureRenderTargetResult).toHaveBeenCalledWith(
-      state,
+      expect.objectContaining({ state }),
       expect.anything(),
       target,
       expect.anything(),
