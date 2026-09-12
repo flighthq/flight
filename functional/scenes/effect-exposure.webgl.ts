@@ -55,6 +55,10 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,
   format: 'rgba16f',
 });
+// What the effect pipeline's scene target is cleared to. The background is a per-pass value now,
+// and the chain's scene target is the pass the scene draws into — leave it at the pipeline's
+// transparent default and the background never reaches the presented frame.
+const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
 
 export const scale = pixelRatio;
 export const width = 800;
