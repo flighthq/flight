@@ -1,7 +1,7 @@
 import { webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   createGlCanvasElement,
@@ -12,8 +12,6 @@ import {
   enableGlBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
-  registerGlStandardMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -28,7 +26,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0a14ff,
@@ -37,9 +35,6 @@ export const state = createGlRenderState(
   },
 );
 enableFlightDiagnostics(state);
-
-registerStandardGlTextureResolvers(state);
-registerGlStandardMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);

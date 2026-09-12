@@ -1,6 +1,6 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   SpriteKind,
@@ -11,8 +11,6 @@ import {
   defaultGlSpriteRenderer,
   defaultGlTilemapRenderer,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
-  registerGlStandardMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -26,7 +24,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x1a1a2eff,
@@ -34,9 +32,6 @@ export const state = createGlRenderState(
   },
 );
 enableFlightDiagnostics(state);
-
-registerStandardGlTextureResolvers(state);
-registerGlStandardMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
 

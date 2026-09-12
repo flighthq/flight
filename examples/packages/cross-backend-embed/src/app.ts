@@ -1,6 +1,6 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   addNodeChild,
@@ -25,7 +25,6 @@ import {
   QuadBatchKind,
   registerGlImageTextureResolver,
   registerRenderer,
-  registerGlStandardMaterial,
   renderGlBackground,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
@@ -48,14 +47,13 @@ const producerState = createGlRenderState(
       contextAttributes: { alpha: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     backgroundColor: 0x18253dff,
     sceneGraphSyncPolicy: 'requiresInvalidation',
   },
 );
 registerGlImageTextureResolver(producerState);
-registerGlStandardMaterial(producerState);
 registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);
 
 const atlasCanvas = document.createElement('canvas');

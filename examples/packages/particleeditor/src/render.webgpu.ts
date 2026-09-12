@@ -3,15 +3,13 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   enableFlightDiagnostics,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuTextLabelRenderer,
   enableWgpuBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerStandardWgpuTextureResolvers,
-  registerWgpuStandardMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -23,16 +21,13 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x0a0a14ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
 enableFlightDiagnostics(state);
-
-registerStandardWgpuTextureResolvers(state);
-registerWgpuStandardMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 enableWgpuBlendModeSupport(state);

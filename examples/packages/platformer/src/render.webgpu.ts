@@ -6,7 +6,7 @@ import {
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
   defaultWgpuShapeRenderer,
@@ -18,9 +18,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerRenderer,
-  registerStandardWgpuTextureResolvers,
   registerWgpuShapeRasterizer,
-  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   ShapeKind,
@@ -33,15 +31,13 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x87ceebff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
 enableFlightDiagnostics(state);
-
-registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
@@ -56,8 +52,6 @@ registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
-registerStandardWgpuTextureResolvers(state);
-
 export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
