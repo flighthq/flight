@@ -2,7 +2,7 @@ import type {
   DisplacementEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -13,8 +13,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
 export function applyDisplacementEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<DisplacementEffect>,
 ): void {
   const intensity = effect.intensity ?? 8;
@@ -22,7 +22,7 @@ export function applyDisplacementEffectToWgpu(
   const seed = effect.seed ?? 0;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = frequency;
     f32[2] = seed;

@@ -1,10 +1,10 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   LensDirtEffect,
   WgpuDualSourceEffectPipeline,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -18,8 +18,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // into the dark background, reducing this spatial effect to a pointwise highlight boost.
 export function applyLensDirtEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<LensDirtEffect>,
 ): void {
@@ -27,9 +27,9 @@ export function applyLensDirtEffectToWgpu(
   const threshold = effect.threshold ?? 0.55;
   const seed = effect.seed ?? 0;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const bright = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
-  const temp = acquireWgpuRenderTarget(state, pool, descriptor);
+  const bright = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const temp = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const brightPipeline = getWgpuEffectPipeline(
     state,
@@ -37,7 +37,7 @@ export function applyLensDirtEffectToWgpu(
     LENS_DIRT_BRIGHT_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, bright, brightPipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, bright, brightPipeline, (f32) => {
     f32[0] = threshold;
   });
 
@@ -48,9 +48,9 @@ export function applyLensDirtEffectToWgpu(
 
   drawWgpuDualSourceEffectPass(
     state,
-    source as WgpuRenderTarget,
+    source as WgpuTextureRenderTarget,
     blurred,
-    dest as WgpuRenderTarget,
+    dest as WgpuTextureRenderTarget,
     getLensDirtCompositePipeline(state),
     (f32) => {
       f32[0] = intensity;
@@ -58,9 +58,9 @@ export function applyLensDirtEffectToWgpu(
     },
   );
 
-  releaseWgpuRenderTarget(pool, bright);
-  releaseWgpuRenderTarget(pool, blurred);
-  releaseWgpuRenderTarget(pool, temp);
+  releaseWgpuTextureRenderTarget(pool, bright);
+  releaseWgpuTextureRenderTarget(pool, blurred);
+  releaseWgpuTextureRenderTarget(pool, temp);
 }
 
 export const defaultWgpuLensDirtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

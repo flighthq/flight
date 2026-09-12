@@ -9,7 +9,7 @@ import { getWgpuColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-wgp
 import {
   getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
-  getWgpuSurfaceRenderExtent,
+  getWgpuRenderPassViewport,
 } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
@@ -498,7 +498,7 @@ function writeWgpuQuadBatchWriterUniforms(state: WgpuRenderState, straightTextur
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32 } = runtime;
-  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
+  const viewport = getWgpuRenderPassViewport(state);
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
 

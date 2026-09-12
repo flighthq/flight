@@ -1,9 +1,9 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   OuterGlowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -18,17 +18,17 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // multi-pass recipe (tint → box blur → composite), then releases them.
 export function applyOuterGlowEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<OuterGlowEffect>,
 ): void {
-  const src = source as WgpuRenderTarget;
-  const dst = dest as WgpuRenderTarget;
+  const src = source as WgpuTextureRenderTarget;
+  const dst = dest as WgpuTextureRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const mask = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurTemp = acquireWgpuRenderTarget(state, pool, descriptor);
+  const mask = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurTemp = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const color = effect.color ?? 0xff0000ff;
   const alpha = effect.alpha ?? 1;
@@ -57,9 +57,9 @@ export function applyOuterGlowEffectToWgpu(
     applyWgpuEffectBlitPass(state, src, dst);
   }
 
-  releaseWgpuRenderTarget(pool, mask);
-  releaseWgpuRenderTarget(pool, blurred);
-  releaseWgpuRenderTarget(pool, blurTemp);
+  releaseWgpuTextureRenderTarget(pool, mask);
+  releaseWgpuTextureRenderTarget(pool, blurred);
+  releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
 export const defaultWgpuOuterGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

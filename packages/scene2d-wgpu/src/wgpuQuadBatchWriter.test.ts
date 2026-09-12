@@ -1,4 +1,4 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { ColorScaleBias, Material, WgpuTextureEntry } from '@flighthq/types/contract';
@@ -85,14 +85,14 @@ describe('ensureWgpuQuadBatchResources', () => {
 describe('flushWgpuQuadBatchWriter', () => {
   it('does nothing when batch count is zero', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     expect(() => flushWgpuQuadBatchWriter(state)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('resets state after flush', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
 
@@ -104,7 +104,7 @@ describe('flushWgpuQuadBatchWriter', () => {
     expect(runtime.quadBatchWriterTexture).toBeNull();
     expect(runtime.quadBatchWriterBlendMode).toBeNull();
     expect(runtime.quadBatchWriterMaterial).toBeNull();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('records the flush in render stats, from the LIVE draw path', async () => {
@@ -112,7 +112,7 @@ describe('flushWgpuQuadBatchWriter', () => {
     // production path could reach here recording nothing at all and every test still pass. This drives
     // the real flush and asserts the counters moved.
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     resetWgpuRenderStats(state);
 
@@ -126,25 +126,25 @@ describe('flushWgpuQuadBatchWriter', () => {
     // The instance count is the batch size, not one per flush — a caller reading this to size buffers
     // needs the quads, not the draws.
     expect(stats.instanceCount).toBe(3);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('records nothing when the flush issues no draw', async () => {
     // An empty writer returns early without drawing. Counting that would report batches the GPU never
     // saw, which is worse than not counting at all: it makes a frame look busier than it was.
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     resetWgpuRenderStats(state);
     flushWgpuQuadBatchWriter(state);
     expect(getWgpuRenderStats(state).batchFlushCount).toBe(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('claims a distinct buffer per flush so deferred draws never share one', async () => {
     // The canvas pass is submitted once at end of frame; if successive flushes reused one instance
     // buffer, every draw would read the last flush's data and the batch would collapse to one spot.
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex1 = makeTexture();
     const tex2 = makeTexture();
@@ -162,7 +162,7 @@ describe('flushWgpuQuadBatchWriter', () => {
     expect(runtime.quadBatchWriterBufferPool[0].instanceBuffer).not.toBe(
       runtime.quadBatchWriterBufferPool[1].instanceBuffer,
     );
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -231,7 +231,7 @@ describe('prepareWgpuQuadBatchWrite', () => {
 
   it('flushes when texture changes', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex1 = makeTexture();
     const tex2 = makeTexture();
@@ -242,12 +242,12 @@ describe('prepareWgpuQuadBatchWrite', () => {
 
     expect(runtime.quadBatchWriterTexture).toBe(tex2);
     expect(runtime.quadBatchWriterCount).toBe(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('flushes when material changes', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
     const materialA = makeMaterial();
@@ -259,7 +259,7 @@ describe('prepareWgpuQuadBatchWrite', () => {
 
     expect(runtime.quadBatchWriterMaterial).toBe(materialB);
     expect(runtime.quadBatchWriterCount).toBe(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -289,21 +289,21 @@ describe('recordWgpuQuadBatchColorScaleBias', () => {
   it('an untinted batch on flush uses the lean material module (no fold)', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuColorAdjustmentMaterialFeature(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
     prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 1);
     recordWgpuQuadBatchColorScaleBias(state, null, 0);
     runtime.quadBatchWriterCount = 1;
     expect(() => flushWgpuQuadBatchWriter(state)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
 describe('resetWgpuQuadBatchWriterBufferPool', () => {
   it('rewinds the pool cursor so slots are reclaimed next frame', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
 
@@ -314,7 +314,7 @@ describe('resetWgpuQuadBatchWriterBufferPool', () => {
 
     resetWgpuQuadBatchWriterBufferPool(state);
     expect(runtime.quadBatchWriterBufferCursor).toBe(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

@@ -2,7 +2,7 @@ import type {
   ScanlinesEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -12,14 +12,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the darkening.
 export function applyScanlinesEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ScanlinesEffect>,
 ): void {
   const count = effect.count ?? 240;
   const intensity = effect.intensity ?? 0.3;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.scanlines', SCANLINES_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = count;
     f32[1] = intensity;
   });

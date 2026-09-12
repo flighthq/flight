@@ -4,7 +4,7 @@ import type {
   WgpuDualSourceEffectPipeline,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
@@ -16,17 +16,17 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // premultiplied, so one Fa/Fb pair applies to RGB and alpha exactly as compositeOperatorMath specifies.
 export function applyCompositeEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<CompositeEffect>,
 ): void {
   const backdrop = getWgpuBlendEffectBackdrop(state, effect.backdropKey ?? null);
   const hasBackdrop = backdrop !== null;
   drawWgpuDualSourceEffectPass(
     state,
-    source as WgpuRenderTarget,
-    (backdrop ?? source) as WgpuRenderTarget,
-    dest as WgpuRenderTarget,
+    source as WgpuTextureRenderTarget,
+    (backdrop ?? source) as WgpuTextureRenderTarget,
+    dest as WgpuTextureRenderTarget,
     getWgpuCompositeEffectPipeline(state),
     (_f32, i32) => {
       i32[0] = getWgpuCompositeEffectOperatorIndex(effect.operator);

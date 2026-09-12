@@ -1,5 +1,5 @@
 import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
@@ -54,9 +54,9 @@ type BoxBlurEdgeColor = readonly [number, number, number, number];
  */
 export function applyWgpuEffectBoxBlur(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
-  temp: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
+  temp: WgpuTextureRenderTarget,
   options: Readonly<{
     blurX?: number;
     blurY?: number;
@@ -69,8 +69,8 @@ export function applyWgpuEffectBoxBlur(
   const blurY = options.blurY ?? 4;
   const edgeColor = options.edgeColor;
 
-  let read: WgpuRenderTarget = source;
-  let write: WgpuRenderTarget = temp;
+  let read: WgpuTextureRenderTarget = source;
+  let write: WgpuTextureRenderTarget = temp;
 
   for (let pass = 0; pass < passes; pass++) {
     const radiusX = computeBoxBlurPassRadius(blurX, passes, pass);
@@ -94,8 +94,8 @@ export function applyWgpuEffectBoxBlur(
 
 function applyBoxBlurPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
   radius: number,
   dirX: number,
   dirY: number,

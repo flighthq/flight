@@ -3,13 +3,13 @@ import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginWgpuRenderPass,
   createWgpuOffscreenRenderState,
-  createWgpuRenderTarget,
+  createWgpuTextureRenderTarget,
   destroyWgpuRenderState,
-  destroyWgpuRenderTarget,
-  drawWgpuRenderTargetResult,
+  destroyWgpuTextureRenderTarget,
+  drawWgpuTextureRenderTargetResult,
   endWgpuRenderPass,
+  resizeWgpuTextureRenderTarget,
   getWgpuRenderStateRuntime,
-  resizeWgpuRenderTarget,
   registerWgpuRenderStateTeardown,
   setWgpuRenderTransform2D,
   withWgpuFrameBorrow,
@@ -32,10 +32,9 @@ import type {
   Scene2DRenderer,
   WgpuDeviceState,
   WgpuPipeline,
-  WgpuPresentationRenderState,
   WgpuRenderOptions,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { renderWgpuScene2D } from './wgpuNode2D';
@@ -79,19 +78,19 @@ export function ensureWgpuRenderCacheTarget(
   cache: RenderCache,
   width: number,
   height: number,
-): WgpuRenderTarget {
+): WgpuTextureRenderTarget {
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createWgpuRenderTarget(state, width, height);
+    target = createWgpuTextureRenderTarget(state, width, height);
     targets.set(cache, target);
   } else {
-    resizeWgpuRenderTarget(state, target, width, height);
+    resizeWgpuTextureRenderTarget(state, target, width, height);
   }
   return target;
 }
 
-export function getWgpuRenderCacheTarget(state: WgpuRenderState, cache: RenderCache): WgpuRenderTarget | null {
+export function getWgpuRenderCacheTarget(state: WgpuRenderState, cache: RenderCache): WgpuTextureRenderTarget | null {
   return _renderCacheTargets.get(state)?.get(cache) ?? null;
 }
 
@@ -103,7 +102,7 @@ export function getWgpuRenderCacheTarget(state: WgpuRenderState, cache: RenderCa
  * owned target in the owner's frame without acquiring presentation capability itself.
  */
 export function refreshWgpuRenderCache(
-  ownerState: WgpuPresentationRenderState,
+  ownerState: WgpuRenderState,
   cacheState: WgpuRenderState,
   cache: RenderCache,
   source: Node2D,
@@ -128,14 +127,14 @@ export function refreshWgpuRenderCache(
     _yInvert.ty = target.height;
     multiplyMatrix(_bakeTransform, _yInvert, _renderTransform);
 
-    beginWgpuRenderPass(cacheState, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+    const pass = beginWgpuRenderPass(cacheState, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     try {
-      setWgpuRenderTransform2D(cacheState, _bakeTransform);
+      setWgpuRenderTransform2D(pass, _bakeTransform);
       const dirty = prepareScene2DRender(cacheState, source);
-      if (dirty || resized) renderWgpuScene2D(cacheState, source);
+      if (dirty || resized) renderWgpuScene2D(pass, source);
       return dirty || resized;
     } finally {
-      endWgpuRenderPass(cacheState);
+      endWgpuRenderPass(pass);
     }
   });
 }
@@ -145,8 +144,8 @@ export function releaseWgpuRenderCache(state: WgpuRenderState, cache: RenderCach
   if (targets === undefined) return;
   const target = targets.get(cache);
   if (target === undefined) return;
-  // A WgpuRenderTarget owns GPU textures; GC will not free them.
-  destroyWgpuRenderTarget(state, target);
+  // A WgpuTextureRenderTarget owns GPU textures; GC will not free them.
+  destroyWgpuTextureRenderTarget(state, target);
   targets.delete(cache);
 }
 
@@ -162,10 +161,10 @@ function drawWgpuRenderCache(state: WgpuRenderState, renderProxy: RenderProxy2D)
   flushWgpuQuadBatchWriter(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawWgpuRenderTargetResult(state, renderProxy, target, _identity);
+  drawWgpuTextureRenderTargetResult(state, renderProxy, target, _identity);
 }
 
-function getTargets(state: WgpuRenderState): Map<RenderCache, WgpuRenderTarget> {
+function getTargets(state: WgpuRenderState): Map<RenderCache, WgpuTextureRenderTarget> {
   let targets = _renderCacheTargets.get(state);
   if (targets === undefined) {
     targets = new Map();
@@ -178,7 +177,7 @@ function getTargets(state: WgpuRenderState): Map<RenderCache, WgpuRenderTarget> 
 function destroyOwnedWgpuRenderCacheTargets(state: WgpuRenderState): void {
   const targets = _renderCacheTargets.get(state);
   if (targets === undefined) return;
-  for (const target of targets.values()) destroyWgpuRenderTarget(state, target);
+  for (const target of targets.values()) destroyWgpuTextureRenderTarget(state, target);
   targets.clear();
   _renderCacheTargets.delete(state);
 }
@@ -190,7 +189,7 @@ export const defaultWgpuRenderCacheRenderer: Scene2DRenderer = {
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be
 // composited by several states without the handle carrying a backend resource.
-const _renderCacheTargets = new WeakMap<WgpuRenderState, Map<RenderCache, WgpuRenderTarget>>();
+const _renderCacheTargets = new WeakMap<WgpuRenderState, Map<RenderCache, WgpuTextureRenderTarget>>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _bakeTransform = createMatrix() as Matrix;

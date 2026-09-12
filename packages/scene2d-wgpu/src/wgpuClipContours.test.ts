@@ -1,6 +1,10 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  createWgpuRenderStateForTest,
+  getWgpuRenderStateRuntime,
+  installWgpuMock,
+} from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';
@@ -21,8 +25,11 @@ function makePassSpy(): GPURenderPassEncoder {
   } as unknown as GPURenderPassEncoder;
 }
 
+// A real screen pass, with its encoder swapped for a spy: the draw path reads the pass viewport for its
+// projection, so a state with only a fake encoder attached has no coordinate space to draw into.
 async function makeState(): Promise<WgpuRenderState> {
   const state = await createWgpuRenderStateForTest();
+  beginWgpuScreenRenderPassForTest(state);
   getWgpuRenderStateRuntime(state).renderPass = makePassSpy();
   return state;
 }

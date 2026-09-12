@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import {
@@ -16,8 +16,8 @@ function makeState(): WgpuRenderState {
   return {} as WgpuRenderState;
 }
 
-function makeTarget(): WgpuRenderTarget {
-  return {} as WgpuRenderTarget;
+function makeTarget(): WgpuTextureRenderTarget {
+  return {} as WgpuTextureRenderTarget;
 }
 
 describe('applyBlendEffectToWgpu', () => {

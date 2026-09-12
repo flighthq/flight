@@ -1,9 +1,9 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import {
+  beginWgpuScreenRenderPassForTest,
   bindWgpuImageResourceTexture,
   getWgpuRenderStateRuntime,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
@@ -171,19 +171,19 @@ describe('drawWgpuScale9Shape', () => {
   it('returns early when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const shape = createScale9Shape(grid);
     prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9Shape(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('rasterizes and draws a filled shape without throwing', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
@@ -191,7 +191,7 @@ describe('drawWgpuScale9Shape', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9Shape(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -199,13 +199,13 @@ describe('drawWgpuScale9ShapeMask', () => {
   it('delegates to the Scale9 draw path', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const shape = createScale9Shape(grid);
     prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
     expect(() => drawWgpuScale9ShapeMask(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

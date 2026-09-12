@@ -1,11 +1,11 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
+  beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
   registerWgpuCompressedImageTextureResolver,
   registerWgpuImageTextureResolver,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
@@ -37,21 +37,21 @@ describe('defaultWgpuParticleEmitter2DRenderer', () => {
 describe('drawWgpuParticleEmitter2D', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const emitter = createParticleEmitter2D();
     prepareScene2DRender(state, emitter);
     const renderProxy = getRenderProxy2D(state, emitter)!;
 
     expect(() => drawWgpuParticleEmitter2D(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('threads a native compressed atlas straight-alpha flag through the particle uniform', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuCompressedImageTextureResolver(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const before = runtime.uniformOffset;
     const image = {
       compressed: { container: {}, payload: new Uint8Array() },
@@ -111,7 +111,7 @@ describe('drawWgpuParticleEmitter2D', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuImageTextureResolver(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;

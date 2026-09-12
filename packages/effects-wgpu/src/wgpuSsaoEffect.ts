@@ -1,4 +1,9 @@
-import type { SsaoEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  SsaoEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -12,15 +17,15 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // by intensity, sampling neighbors via u_resolution-derived texel steps.
 export function applySsaoEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<SsaoEffect>,
 ): void {
   const radius = effect.radius ?? 1;
   const intensity = effect.intensity ?? 1;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'atmospheric.ssao', SSAO_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = radius;
     f32[1] = intensity;
     f32[2] = resolution.width;

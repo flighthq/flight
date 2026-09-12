@@ -1,5 +1,5 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import {
@@ -46,9 +46,9 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 /** Clips glow against source alpha: output = glow × source.a. */
 export function applyWgpuEffectInnerClipPass(
   state: WgpuRenderState,
-  glow: WgpuRenderTarget,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  glow: WgpuTextureRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
 ): void {
   const pipeline = getWgpuInnerClipShader(state);
   drawWgpuDualSourceEffectPass(state, glow, source, dest, pipeline, () => {});
@@ -57,8 +57,8 @@ export function applyWgpuEffectInnerClipPass(
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
 export function applyWgpuEffectInvertTintPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
   color: number,
   alpha: number,
   strength: number,
@@ -77,8 +77,8 @@ export function applyWgpuEffectInvertTintPass(
 /** Tints the source alpha with color, outputs a premultiplied mask into dest. */
 export function applyWgpuEffectTintPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
   color: number,
   alpha: number,
   strength: number,

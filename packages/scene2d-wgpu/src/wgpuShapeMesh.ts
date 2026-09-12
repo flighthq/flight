@@ -2,7 +2,7 @@ import {
   getWgpuBlendState,
   getWgpuColorAdjustmentMaterialFeature,
   getWgpuRenderStateRuntime,
-  getWgpuSurfaceRenderExtent,
+  getWgpuRenderPassViewport,
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
 import type {
@@ -255,8 +255,7 @@ function ensureShapeMeshVertexBuffer(
 // padded to 4 floats (vec3 -> vec4 std140-style layout). Writes into the shared scratch view; the color
 // (floats 12..15) is filled per mesh by the caller.
 function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D, out: Float32Array): void {
-  const runtime = getWgpuRenderStateRuntime(state);
-  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
+  const viewport = getWgpuRenderPassViewport(state);
   const iw = 2 / (viewport.width || 1);
   const ih = 2 / (viewport.height || 1);
   const t = renderProxy.transform2D;

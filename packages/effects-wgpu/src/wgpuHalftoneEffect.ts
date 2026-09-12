@@ -2,7 +2,7 @@ import type {
   HalftoneEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -13,14 +13,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // classic print/comic screen. `scale` sets the cell size, `angle` rotates the grid.
 export function applyHalftoneEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<HalftoneEffect>,
 ): void {
   const scale = effect.scale ?? 6;
   const angle = ((effect.angle ?? 22.92) * Math.PI) / 180;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.halftone', HALFTONE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, scale);
     f32[1] = angle;
     // u_resolution (vec2f) aligns to slot [2].

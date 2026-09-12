@@ -1,4 +1,9 @@
-import type { FxaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  FxaaEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -8,8 +13,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // recipe. Reads `tex`; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
 export function applyFxaaEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<FxaaEffect>,
 ): void {
   const edgeThreshold = effect.edgeThreshold ?? 0.0312;
@@ -19,7 +24,7 @@ export function applyFxaaEffectToWgpu(
   const width = source.width;
   const height = source.height;
   const pipeline = getWgpuEffectPipeline(state, 'antialiasing.fxaa', FXAA_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = edgeThreshold;

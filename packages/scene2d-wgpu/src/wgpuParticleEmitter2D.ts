@@ -2,7 +2,7 @@ import {
   getWgpuRenderStateRuntime,
   getWgpuRenderStateDeviceResources,
   getWgpuSampler,
-  getWgpuSurfaceRenderExtent,
+  getWgpuRenderPassViewport,
   resolveWgpuApplyBlendMode,
   resolveWgpuTexture,
   retireWgpuBuffer,
@@ -291,7 +291,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32, matrixArray } = runtime;
-  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
+  const viewport = getWgpuRenderPassViewport(state);
   const t = renderProxy.transform2D;
 
   let iw2: number, ih2: number;

@@ -1,4 +1,4 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap } from '@flighthq/tilemap/contract';
@@ -23,7 +23,7 @@ describe('defaultWgpuTilemapRenderer', () => {
 describe('defaultWgpuTilemapRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const tilemap = createTilemap();
     prepareScene2DRender(state, tilemap);
@@ -33,7 +33,7 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
       defaultWgpuTilemapRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('does not throw when renderPass is null', async () => {

@@ -1,10 +1,10 @@
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
 import {
+  beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
@@ -33,7 +33,7 @@ describe('defaultWgpuQuadBatchRenderer', () => {
 describe('defaultWgpuQuadBatchRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const batch = createQuadBatch();
     prepareScene2DRender(state, batch);
@@ -43,12 +43,12 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
       defaultWgpuQuadBatchRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('packs a rotated region with upright geometry and affine UV axes', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
@@ -86,12 +86,12 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     expect(data[9]).toBeCloseTo(40 / 64);
     expect(data[10]).toBeCloseTo(-20 / 64);
     expect(data[11]).toBeCloseTo(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('packs libGDX counterclockwise regions with the opposite affine UV axes', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
@@ -125,7 +125,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     expect(data[7]).toBeCloseTo(40 / 64);
     expect(data[9]).toBeCloseTo(-40 / 64);
     expect(data[10]).toBeCloseTo(20 / 64);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

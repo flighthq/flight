@@ -1,10 +1,10 @@
 import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects/contract';
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   BloomEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
@@ -21,8 +21,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // shared computeBloomThreshold / computeBloomIntensity / computeBloomBlurRadius.
 export function applyBloomEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
@@ -31,12 +31,12 @@ export function applyBloomEffectToWgpu(
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 
-  const bright = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
-  const temp = acquireWgpuRenderTarget(state, pool, descriptor);
+  const bright = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const temp = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const brightPipeline = getWgpuEffectPipeline(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, bright, brightPipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, bright, brightPipeline, (f32) => {
     f32[0] = threshold;
   });
 
@@ -45,18 +45,18 @@ export function applyBloomEffectToWgpu(
   const compositePipeline = getBloomCompositePipeline(state);
   drawWgpuDualSourceEffectPass(
     state,
-    source as WgpuRenderTarget,
+    source as WgpuTextureRenderTarget,
     blurred,
-    dest as WgpuRenderTarget,
+    dest as WgpuTextureRenderTarget,
     compositePipeline,
     (f32) => {
       f32[0] = intensity;
     },
   );
 
-  releaseWgpuRenderTarget(pool, bright);
-  releaseWgpuRenderTarget(pool, blurred);
-  releaseWgpuRenderTarget(pool, temp);
+  releaseWgpuTextureRenderTarget(pool, bright);
+  releaseWgpuTextureRenderTarget(pool, blurred);
+  releaseWgpuTextureRenderTarget(pool, temp);
 }
 
 export const defaultWgpuBloomEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

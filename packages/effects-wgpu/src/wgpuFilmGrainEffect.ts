@@ -2,7 +2,7 @@ import type {
   FilmGrainEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -13,15 +13,15 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // noise can be animated frame to frame.
 export function applyFilmGrainEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<FilmGrainEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.1;
   const size = effect.size ?? 1;
   const seed = effect.seed ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = Math.max(0.0001, size);
     f32[2] = seed;

@@ -38,19 +38,19 @@ function completeEnvironment(): Environment {
 
 describe('drawWgpuEnvironmentSkybox', () => {
   it('is a no-op when the environment has no complete source cube', () => {
-    const { fake, state } = makeWgpuScene3DState();
+    const { fake, pass, state } = makeWgpuScene3DState();
     const before = fake.calls.length;
     expect(() =>
-      drawWgpuEnvironmentSkybox(state, { environment: null, intensity: 1 } as Environment, makeCamera(), 1),
+      drawWgpuEnvironmentSkybox(pass, { environment: null, intensity: 1 } as Environment, makeCamera(), 1),
     ).not.toThrow();
     expect(fake.calls.length).toBe(before);
   });
 
   it('binds the cube + uniform and draws the fullscreen backdrop', () => {
-    const { fake, state } = makeWgpuScene3DState();
+    const { fake, pass, state } = makeWgpuScene3DState();
     const camera = makeCamera();
     camera.inverseViewProjection.m[0] = 42;
-    drawWgpuEnvironmentSkybox(state, completeEnvironment(), camera, 1);
+    drawWgpuEnvironmentSkybox(pass, completeEnvironment(), camera, 1);
 
     expect(camera.inverseViewProjection.m[0]).not.toBe(42);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -59,8 +59,8 @@ describe('drawWgpuEnvironmentSkybox', () => {
   });
 
   it('compiles skybox WGSL that reconstructs the ray from the inverse view-projection', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    drawWgpuEnvironmentSkybox(state, completeEnvironment(), makeCamera(), 1);
+    const { fake, pass, state } = makeWgpuScene3DState();
+    drawWgpuEnvironmentSkybox(pass, completeEnvironment(), makeCamera(), 1);
 
     const shader = fake.calls.find(
       (c) =>

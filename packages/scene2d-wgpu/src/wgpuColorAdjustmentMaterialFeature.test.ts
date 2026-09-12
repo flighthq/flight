@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
@@ -118,7 +118,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
   it('replicates a uniform tint as four bytes per instance on flush', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuColorAdjustmentMaterialFeature(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = {
       [EntityRuntimeKey]: undefined,
@@ -135,7 +135,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 0, 8))).toEqual([
       128, 255, 255, 255, 128, 255, 255, 255,
     ]);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('records compact per-item tint data directly as one storage word', async () => {

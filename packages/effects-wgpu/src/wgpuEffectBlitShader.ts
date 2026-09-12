@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
@@ -59,8 +59,8 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
  */
 export function applyWgpuEffectBlitOffsetPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
   dx: number,
   dy: number,
 ): void {
@@ -74,8 +74,8 @@ export function applyWgpuEffectBlitOffsetPass(
 /** Blits source directly into dest without modification. */
 export function applyWgpuEffectBlitPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
 ): void {
   const pipeline = getWgpuBlitShader(state);
   drawWgpuEffectPass(state, source, dest, pipeline, () => {});
@@ -84,8 +84,8 @@ export function applyWgpuEffectBlitPass(
 /** Erases dest by the source alpha mask, equivalent to destination-out compositing. */
 export function applyWgpuEffectErasePass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
 ): void {
   const pipeline = getWgpuEraseShader(state);
   drawWgpuEffectPass(state, source, dest, pipeline, () => {});

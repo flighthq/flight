@@ -1,7 +1,12 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { BevelEffect, WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types/contract';
+import type {
+  BevelEffect,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+  WgpuRenderTargetPool,
+} from '@flighthq/types/contract';
 
 import { applyBevelEffectToWgpu, defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
@@ -65,7 +70,7 @@ beforeEach(() => {
     recorded.tints.push([color, alpha, strength]);
   }) as never);
 
-  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuTextureRenderTarget').mockImplementation(((
     _state: unknown,
     _pool: unknown,
     descriptor: unknown,
@@ -74,8 +79,10 @@ beforeEach(() => {
     recorded.acquired.push(target);
     return target;
   }) as never);
-  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation(((_pool: unknown, target: unknown) =>
-    recorded.released.push(target)) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuTextureRenderTarget').mockImplementation(((
+    _pool: unknown,
+    target: unknown,
+  ) => recorded.released.push(target)) as never);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -99,7 +106,7 @@ function apply(effect: Readonly<Partial<BevelEffect>> = {}): readonly number[] {
     height: SOURCE_HEIGHT,
     view: {},
     width: SOURCE_WIDTH,
-  } as unknown as WgpuRenderTarget;
+  } as unknown as WgpuTextureRenderTarget;
   applyBevelEffectToWgpu(
     {} as unknown as WgpuRenderState,
     target,
@@ -215,7 +222,7 @@ describe('applyBevelEffectToWgpu', () => {
 describe('defaultWgpuBevelEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     recorded.composites.length = 0;
-    const target = { format: 'rgba8unorm', height: 8, view: {}, width: 8 } as unknown as WgpuRenderTarget;
+    const target = { format: 'rgba8unorm', height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
 
     defaultWgpuBevelEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,

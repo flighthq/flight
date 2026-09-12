@@ -7,28 +7,31 @@ import {
 } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  acquireWgpuRenderTarget,
+  acquireWgpuTextureRenderTarget,
   beginWgpuRenderPass,
-  createWgpuRenderTarget,
+  createWgpuTextureRenderTarget,
   createWgpuRenderTargetPool,
-  destroyWgpuRenderTarget,
+  destroyWgpuTextureRenderTarget,
   destroyWgpuRenderTargetPool,
   endWgpuRenderPass,
+  getWgpuActiveRenderPass,
   getWgpuRenderStateRuntime,
-  getWgpuSurfaceLogicalExtent,
-  releaseWgpuRenderTarget,
-  resizeWgpuRenderTarget,
+  resumeWgpuRenderPass,
+  releaseWgpuTextureRenderTarget,
+  resizeWgpuTextureRenderTarget,
 } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
   RenderEffect,
   RenderEffectPipelineOptions,
+  RenderTargetClear,
   RenderTargetColorSpace,
   WgpuRenderEffectPipeline,
   WgpuRenderEffectPipelineSampleCountGuard,
   WgpuRenderEffectPipelineSkipGuard,
+  WgpuRenderPass,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -38,35 +41,36 @@ import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
-// Opt-in post-process pipeline, the Wgpu mirror of effects-gl's renderEffectPipeline. The caller
-// opens the frame with renderWgpuBackground (creating the command encoder + canvas pass), then:
-//   beginWgpuRenderEffectPipeline → renders the scene into the pipeline's offscreen target
-//   ...draw the scene tree...
-//   endWgpuRenderEffectPipeline(effects) → pops back to the canvas, then runs the agnostic effect
-//     list through the per-state registry ping-ponging pooled targets, and presents to the canvas
-//   submitWgpuRenderPass → submits the encoder
-// The default render loop imports none of this. The effect list is per-frame data; only the scene
-// target and pool are retained. Depth/velocity G-buffers are not yet produced (follow-up); depth- and
+// Opt-in post-process pipeline, the Wgpu mirror of effects-gl's renderEffectPipeline. The caller opens a
+// pass on the screen, then:
+//   beginWgpuRenderEffectPipeline(pass, …) -> opens a pass into the pipeline's offscreen scene target
+//   ...draw the scene tree into the returned pass...
+//   endWgpuRenderEffectPipeline(scenePass, pipeline, effects) -> ends it, runs the agnostic effect list
+//     through the per-state registry ping-ponging pooled targets, and presents into the enclosing pass
+// The default render loop imports none of this. The effect list is per-frame data; only the scene target
+// and pool are retained. Depth/velocity G-buffers are not yet produced (follow-up); depth- and
 // velocity-driven recipes receive null and fall back to their color-only paths.
 
+// `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
+// value, not a property the render state carries around. It defaults to transparent black with the depth
+// buffer reset, which is what an effect chain compositing over the frame beneath it wants.
 export function beginWgpuRenderEffectPipeline(
-  state: WgpuRenderState,
+  pass: WgpuRenderPass,
   pipeline: WgpuRenderEffectPipeline,
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
   colorSpace: RenderTargetColorSpace = 'srgb',
-): void {
-  const { height: h, width: w } = getWgpuSurfaceLogicalExtent(state);
+): WgpuRenderPass {
+  const state = pass.state;
+  const { height: h, width: w } = pass.viewport;
   const format = pipeline.options.format === 'rgba16f' ? 'rgba16float' : state.format;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createWgpuRenderTarget(state, w, h, format, colorSpace, pipeline.options.sampleCount);
+    pipeline.sceneTarget = createWgpuTextureRenderTarget(state, w, h, format, colorSpace, pipeline.options.sampleCount);
   } else {
-    resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h, pipeline.options.sampleCount);
+    resizeWgpuTextureRenderTarget(state, pipeline.sceneTarget, w, h, pipeline.options.sampleCount);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  const rgba = state.backgroundColorRgba;
-  const clearColor: readonly [number, number, number, number] =
-    rgba !== undefined && rgba.length >= 4 ? [rgba[0]!, rgba[1]!, rgba[2]!, rgba[3]!] : [0, 0, 0, 0];
-  beginWgpuRenderPass(state, pipeline.sceneTarget, { color: clearColor, depth: 1.0 });
+  return beginWgpuRenderPass(state, pipeline.sceneTarget, clear);
 }
 
 export function createWgpuRenderEffectPipeline(
@@ -80,7 +84,7 @@ export function createWgpuRenderEffectPipeline(
 
 export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {
   if (pipeline.sceneTarget) {
-    destroyWgpuRenderTarget(state, pipeline.sceneTarget);
+    destroyWgpuTextureRenderTarget(state, pipeline.sceneTarget);
     pipeline.sceneTarget = null;
   }
   destroyWgpuRenderTargetPool(state, pipeline.pool);
@@ -93,21 +97,22 @@ export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline
 }
 
 export function endWgpuRenderEffectPipeline(
-  state: WgpuRenderState,
+  scenePass: WgpuRenderPass,
   pipeline: WgpuRenderEffectPipeline,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
+  const state = scenePass.state;
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
 
-  // Pop the scene render target; restores the canvas pass (loadOp 'load').
-  endWgpuRenderPass(state);
+  // End the scene pass; the enclosing pass resumes with loadOp 'load' and receives the presented result.
+  endWgpuRenderPass(scenePass);
 
   const format = scene.format;
   const descriptor = { width: scene.width, height: scene.height, format, colorSpace: scene.colorSpace };
-  let source: WgpuRenderTarget = scene;
-  let scratchA: WgpuRenderTarget | null = null;
-  let scratchB: WgpuRenderTarget | null = null;
+  let source: WgpuTextureRenderTarget = scene;
+  let scratchA: WgpuTextureRenderTarget | null = null;
+  let scratchB: WgpuTextureRenderTarget | null = null;
   // A maximal run of consecutive pointwise adjustments fuses into ONE pass: all matrix-tier → one 4×5
   // matrix (cheaper applyColorMatrixPass); any LUT-tier member → the whole run (matrices folded in) bakes
   // into one ColorLut (applyColorLutPass). An effect (or the end of the stack) breaks the run and flushes
@@ -115,8 +120,8 @@ export function endWgpuRenderEffectPipeline(
   let pending: Adjustment[] = [];
 
   const ensureScratch = (): void => {
-    if (scratchA === null) scratchA = acquireWgpuRenderTarget(state, pipeline.pool, descriptor);
-    if (scratchB === null) scratchB = acquireWgpuRenderTarget(state, pipeline.pool, descriptor);
+    if (scratchA === null) scratchA = acquireWgpuTextureRenderTarget(state, pipeline.pool, descriptor);
+    if (scratchB === null) scratchB = acquireWgpuTextureRenderTarget(state, pipeline.pool, descriptor);
   };
   const flushAdjustments = (): void => {
     if (pending.length === 0) return;
@@ -168,9 +173,13 @@ export function endWgpuRenderEffectPipeline(
   flushAdjustments();
 
   presentWgpuRenderEffectResult(state, source);
+  // The effect chain recorded its fullscreen passes beside the enclosing pass; hand that pass its
+  // encoder back so the caller's own end closes a live bracket.
+  const enclosing = getWgpuActiveRenderPass(state);
+  if (enclosing !== null && enclosing.encoder === null) resumeWgpuRenderPass(enclosing);
 
-  if (scratchA !== null) releaseWgpuRenderTarget(pipeline.pool, scratchA);
-  if (scratchB !== null) releaseWgpuRenderTarget(pipeline.pool, scratchB);
+  if (scratchA !== null) releaseWgpuTextureRenderTarget(pipeline.pool, scratchA);
+  if (scratchB !== null) releaseWgpuTextureRenderTarget(pipeline.pool, scratchB);
 }
 
 export function initializeWgpuRenderEffectPipeline(
@@ -221,9 +230,9 @@ export function setWgpuRenderEffectVelocityTexture(
   pipeline.velocityTexture = texture;
 }
 
-// Presents the final effect result to the canvas. Draws source into the canvas color attachment
-// (dest null → runtime.canvasTextureView) with replace blend so it overwrites the canvas pixels.
-function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<WgpuRenderTarget>): void {
+// Presents the final effect result into the enclosing pass. Draws source into that pass's color
+// attachment (dest null → the active pass's colorView) with replace blend, overwriting its pixels.
+function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<WgpuTextureRenderTarget>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) return;
   const linear = source.colorSpace === 'linear';
@@ -233,7 +242,7 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
     linear ? LINEAR_PRESENT_FRAGMENT_WGSL : PRESENT_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, null, pipeline, () => {});
 }
 
 const PRESENT_FRAGMENT_WGSL = /* wgsl */ `

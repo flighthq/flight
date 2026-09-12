@@ -1,4 +1,4 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
@@ -19,14 +19,14 @@ describe('drawWgpuTextInputOverlay', () => {
   it('rasterizes a focused editable field without throwing', async () => {
     enableWgpuTextInput();
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const input = createRichText({ data: { height: 40, text: 'hi', width: 100 } });
     enableTextInput(input).focused = true;
     prepareScene2DRender(state, input);
     const renderProxy = getOrCreateRenderProxy2D(state, input);
 
     expect(() => drawWgpuRichText(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

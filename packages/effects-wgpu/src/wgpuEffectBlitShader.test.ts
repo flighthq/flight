@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyWgpuEffectBlitOffsetPass,
@@ -41,8 +41,8 @@ function createState(): WgpuRenderState {
   return {} as unknown as WgpuRenderState;
 }
 
-function createTarget(id: string): WgpuRenderTarget {
-  return { height: SOURCE_HEIGHT, id, width: SOURCE_WIDTH } as unknown as WgpuRenderTarget;
+function createTarget(id: string): WgpuTextureRenderTarget {
+  return { height: SOURCE_HEIGHT, id, width: SOURCE_WIDTH } as unknown as WgpuTextureRenderTarget;
 }
 
 function reset(): void {

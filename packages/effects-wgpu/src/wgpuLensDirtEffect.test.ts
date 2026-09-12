@@ -15,7 +15,7 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuTextureRenderTarget').mockImplementation(((
     _state: never,
     _pool: never,
     descriptor: never,
@@ -24,7 +24,7 @@ beforeEach(() => {
     id: `scratch-${nextTargetId++}`,
     texture: {},
   })) as never);
-  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuTextureRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(wgpuBlurEffectModule, 'applyGaussianBlurToWgpu').mockImplementation((() => {}) as never);
   vi.spyOn(wgpuEffectPassModule, 'createWgpuDualSourceEffectPipeline').mockReturnValue({ pipeline: {} } as never);
   vi.spyOn(wgpuEffectPassModule, 'drawWgpuDualSourceEffectPass').mockImplementation((() => {}) as never);
@@ -59,9 +59,9 @@ describe('applyLensDirtEffectToWgpu', () => {
       }),
     );
 
-    expect(renderWgpuContractModule.acquireWgpuRenderTarget).toHaveBeenCalledTimes(3);
+    expect(renderWgpuContractModule.acquireWgpuTextureRenderTarget).toHaveBeenCalledTimes(3);
     const [bright, blurred, temp] = vi
-      .mocked(renderWgpuContractModule.acquireWgpuRenderTarget)
+      .mocked(renderWgpuContractModule.acquireWgpuTextureRenderTarget)
       .mock.results.map((result) => result.value!);
     expect(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).toHaveBeenCalledWith(
       state,
@@ -93,9 +93,9 @@ describe('applyLensDirtEffectToWgpu', () => {
       expect.anything(),
       expect.any(Function),
     );
-    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
-    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
-    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
+    expect(renderWgpuContractModule.releaseWgpuTextureRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
+    expect(renderWgpuContractModule.releaseWgpuTextureRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
+    expect(renderWgpuContractModule.releaseWgpuTextureRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
 
     const brightUniforms = new Float32Array(4);
     vi.mocked(wgpuEffectPassModule.drawWgpuEffectPass).mock.calls[0]![4](

@@ -1,7 +1,7 @@
 import type {
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WhiteBalanceEffect,
 } from '@flighthq/types/contract';
 
@@ -12,14 +12,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // White balance: warm/cool temperature and magenta/green tint channel shift.
 export function applyWhiteBalanceEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<WhiteBalanceEffect>,
 ): void {
   const temperature = effect.temperature ?? 0;
   const tint = effect.tint ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.whiteBalance', WHITE_BALANCE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = temperature;
     f32[1] = tint;
   });

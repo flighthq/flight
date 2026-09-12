@@ -2,7 +2,7 @@ import type {
   LensDistortionEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -13,14 +13,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
 export function applyLensDistortionEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<LensDistortionEffect>,
 ): void {
   const amount = effect.amount ?? 0.2;
   const scale = effect.scale ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = amount;
     f32[1] = scale;
   });

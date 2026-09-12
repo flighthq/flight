@@ -1,12 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getWgpuRenderStateRuntime, getWgpuSurfaceRenderExtent } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuActiveRenderPass,
+  getWgpuRenderPassViewport,
+  getWgpuRenderStateRuntime,
+  suspendWgpuRenderPass,
+} from '@flighthq/render-wgpu/contract';
 import type {
   EntityConstruction,
   WgpuDualSourceEffectPipeline,
   WgpuEffectBlendMode,
   WgpuEffectPipeline,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
@@ -175,26 +180,30 @@ function writeUniformSlot(
 
 function beginEffectPass(
   state: WgpuRenderState,
-  dest: WgpuRenderTarget | null,
+  dest: WgpuTextureRenderTarget | null,
   loadOp: GPULoadOp,
 ): GPURenderPassEncoder {
   const runtime = getWgpuRenderStateRuntime(state);
-  if (runtime.commandEncoder === null) throw new Error('No active command encoder — call renderWgpuBackground first');
-  if (runtime.renderPass !== null) {
-    runtime.renderPass.end();
-    runtime.renderPass = null;
+  if (runtime.commandEncoder === null) {
+    throw new Error('No active command encoder — open a frame with beginWgpuRenderPass first');
   }
-  const view = dest !== null ? dest.view : runtime.canvasTextureView!;
+  // A fullscreen effect pass is recorded alongside the caller's pass rather than inside it, so the
+  // caller's pass steps aside; endWgpuRenderEffectPipeline resumes it once the chain has presented.
+  const enclosing = getWgpuActiveRenderPass(state);
+  if (enclosing !== null) suspendWgpuRenderPass(enclosing);
+
+  // A null destination means "where the enclosing pass is drawing" — the screen, ordinarily. The view
+  // comes from that pass rather than from a canvas view on the state, because the state does not know
+  // which surface a frame is landing on.
+  const view = dest !== null ? dest.view : enclosing!.colorView;
   const pass = runtime.commandEncoder.beginRenderPass({
     colorAttachments: [{ view, loadOp, storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } }],
   });
   if (dest !== null) {
     pass.setViewport(0, 0, dest.width, dest.height, 0, 1);
   } else {
-    const extent = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
-    const w = extent.width;
-    const h = extent.height;
-    pass.setViewport(0, 0, w, h, 0, 1);
+    const extent = getWgpuRenderPassViewport(state);
+    pass.setViewport(0, 0, extent.width, extent.height, 0, 1);
   }
   return pass;
 }
@@ -205,7 +214,7 @@ function beginEffectPass(
 function resolveEffectPipeline(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuEffectPipeline>,
-  dest: WgpuRenderTarget | null,
+  dest: WgpuTextureRenderTarget | null,
 ): GPURenderPipeline {
   const canvasFormat = getOrCreateEffectPassState(state).format;
   const targetFormat = dest !== null ? dest.format : canvasFormat;
@@ -221,7 +230,7 @@ function resolveEffectPipeline(
 }
 
 /** Clears a render target to fully transparent. Ends any active render pass. */
-export function clearWgpuEffectTarget(state: WgpuRenderState, target: WgpuRenderTarget): void {
+export function clearWgpuEffectTarget(state: WgpuRenderState, target: WgpuTextureRenderTarget): void {
   const pass = beginEffectPass(state, target, 'clear');
   pass.end();
 }
@@ -252,9 +261,9 @@ export function createWgpuEffectPipeline(
  */
 export function drawWgpuDualSourceEffectPass(
   state: WgpuRenderState,
-  source0: WgpuRenderTarget,
-  source1: WgpuRenderTarget,
-  dest: WgpuRenderTarget | null,
+  source0: WgpuTextureRenderTarget,
+  source1: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget | null,
   pipeline: WgpuDualSourceEffectPipeline,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
 ): void {
@@ -284,8 +293,8 @@ export function drawWgpuDualSourceEffectPass(
  */
 export function drawWgpuEffectPass(
   state: WgpuRenderState,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget | null,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget | null,
   pipeline: WgpuEffectPipeline,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
 ): void {
@@ -322,7 +331,7 @@ export function getWgpuEffectPassState(state: WgpuRenderState): {
   sampler: GPUSampler;
   acquireSlot: () => number;
   writeSlot: (offset: number, fn: (f32: Float32Array, i32: Int32Array) => void) => void;
-  beginPass: (dest: WgpuRenderTarget | null, loadOp: GPULoadOp) => GPURenderPassEncoder;
+  beginPass: (dest: WgpuTextureRenderTarget | null, loadOp: GPULoadOp) => GPURenderPassEncoder;
 } {
   const fs = getOrCreateEffectPassState(state);
   return {

@@ -2,7 +2,7 @@ import type {
   MotionBlurEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
@@ -21,8 +21,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
 export function applyMotionBlurEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   velocityTexture: GPUTexture | null,
   effect: Readonly<MotionBlurEffect>,
 ): void {
@@ -35,9 +35,9 @@ export function applyMotionBlurEffectToWgpu(
     // satisfied, and u_hasVelocity=0 makes the fragment a passthrough copy.
     drawWgpuDualSourceEffectPass(
       state,
-      source as WgpuRenderTarget,
-      source as WgpuRenderTarget,
-      dest as WgpuRenderTarget,
+      source as WgpuTextureRenderTarget,
+      source as WgpuTextureRenderTarget,
+      dest as WgpuTextureRenderTarget,
       pipeline,
       (f32) => {
         f32[0] = intensity;
@@ -51,12 +51,12 @@ export function applyMotionBlurEffectToWgpu(
   }
   // Wrap the raw velocity GPUTexture as a minimal second source: drawWgpuDualSourceEffectPass reads only the
   // `.view`, so a view over the velocity texture is all that is required for the @group(2) binding.
-  const velocitySource = { view: velocityTexture.createView() } as WgpuRenderTarget;
+  const velocitySource = { view: velocityTexture.createView() } as WgpuTextureRenderTarget;
   drawWgpuDualSourceEffectPass(
     state,
-    source as WgpuRenderTarget,
+    source as WgpuTextureRenderTarget,
     velocitySource,
-    dest as WgpuRenderTarget,
+    dest as WgpuTextureRenderTarget,
     pipeline,
     (f32) => {
       f32[0] = intensity;

@@ -14,10 +14,9 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuMaterialRenderer,
-  WgpuPresentationRenderState,
   WgpuRenderState,
   RenderRootGuard,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
@@ -35,7 +34,7 @@ import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter';
 
 // The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
 // ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested without a
-// real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite, batch-flush
+// real GPU pipeline: createWgpuTextureRenderTarget returns a plain descriptor, and the composite, batch-flush
 // and subtree-render calls become spies for the call and ordering assertions below.
 beforeEach(() => {
   vi.spyOn(wgpuQuadBatchWriter, 'flushWgpuQuadBatchWriter').mockImplementation((() => {}) as never);
@@ -43,9 +42,7 @@ beforeEach(() => {
   const beginWgpuFrameSpy = vi.spyOn(renderWgpu, 'beginWgpuFrame').mockImplementation(((state: WgpuRenderState) => {
     renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
   }) as never);
-  const submitWgpuRenderPassSpy = vi.spyOn(renderWgpu, 'submitWgpuRenderPass').mockImplementation(((
-    state: WgpuRenderState,
-  ) => {
+  const submitWgpuFrameSpy = vi.spyOn(renderWgpu, 'submitWgpuFrame').mockImplementation(((state: WgpuRenderState) => {
     renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = null;
   }) as never);
   vi.spyOn(renderWgpu, 'beginWgpuRenderPass').mockImplementation((() => {}) as never);
@@ -88,10 +85,12 @@ beforeEach(() => {
     return state;
   }) as never);
   vi.spyOn(renderWgpu, 'setWgpuRenderTransform2D').mockImplementation((() => {}) as never);
-  vi.spyOn(renderWgpu, 'createWgpuRenderTarget').mockImplementation(
-    ((_state: unknown, width: number, height: number): WgpuRenderTarget => ({
+  vi.spyOn(renderWgpu, 'createWgpuTextureRenderTarget').mockImplementation(
+    ((_state: unknown, width: number, height: number): WgpuTextureRenderTarget => ({
       [EntityRuntimeKey]: undefined,
       bindings: new Map(),
+      colorAttachments: 1,
+      context: null,
       mipLevelCount: 1,
       colorSpace: 'srgb',
       depthStencilTexture: {} as GPUTexture,
@@ -104,12 +103,12 @@ beforeEach(() => {
       height,
     })) as never,
   );
-  vi.spyOn(renderWgpu, 'destroyWgpuRenderTarget').mockImplementation((() => {}) as never);
-  vi.spyOn(renderWgpu, 'drawWgpuRenderTargetResult').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'destroyWgpuTextureRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'drawWgpuTextureRenderTargetResult').mockImplementation((() => {}) as never);
   vi.spyOn(renderWgpu, 'endWgpuRenderPass').mockImplementation((() => {}) as never);
-  vi.spyOn(renderWgpu, 'resizeWgpuRenderTarget').mockImplementation(((
+  vi.spyOn(renderWgpu, 'resizeWgpuTextureRenderTarget').mockImplementation(((
     _state: unknown,
-    target: WgpuRenderTarget,
+    target: WgpuTextureRenderTarget,
     width: number,
     height: number,
   ) => {
@@ -117,7 +116,7 @@ beforeEach(() => {
     target.height = height;
   }) as never);
   vi.spyOn(renderWgpu, 'withWgpuFrameBorrow').mockImplementation(((
-    owner: WgpuPresentationRenderState,
+    owner: WgpuRenderState,
     borrower: WgpuRenderState,
     callback: () => unknown,
   ) => {
@@ -130,7 +129,7 @@ beforeEach(() => {
       return callback();
     } finally {
       borrowerRuntime.commandEncoder = null;
-      if (ownsFrame) submitWgpuRenderPassSpy(owner);
+      if (ownsFrame) submitWgpuFrameSpy(owner);
     }
   }) as never);
   vi.spyOn(wgpuNode2D, 'renderWgpuScene2D').mockImplementation((() => {}) as never);
@@ -138,8 +137,8 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-function fakeScreen(options = {}): WgpuPresentationRenderState {
-  const state = createRenderState(options) as unknown as WgpuPresentationRenderState;
+function fakeScreen(options = {}): WgpuRenderState {
+  const state = createRenderState(options) as unknown as WgpuRenderState;
   const device = {} as GPUDevice;
   const deviceState = renderWgpu.createWgpuDeviceState(device);
   const pipeline = renderWgpu.createWgpuPipeline(renderWgpu.createEmptyWgpuRegistries());
@@ -158,7 +157,7 @@ function fakeScreen(options = {}): WgpuPresentationRenderState {
   return state;
 }
 
-function createCacheState(screen: WgpuPresentationRenderState): WgpuRenderState {
+function createCacheState(screen: WgpuRenderState): WgpuRenderState {
   return createWgpuCacheState(
     screen,
     screen.deviceState,
@@ -346,7 +345,7 @@ describe('defaultWgpuRenderCacheRenderer', () => {
   it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
     defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(renderWgpu.drawWgpuRenderTargetResult).not.toHaveBeenCalled();
+    expect(renderWgpu.drawWgpuTextureRenderTargetResult).not.toHaveBeenCalled();
   });
 
   it('composites the cache target attached to the source node', () => {
@@ -356,7 +355,7 @@ describe('defaultWgpuRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     const target = ensureWgpuRenderCacheTarget(state, cache, 16, 16);
     defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(renderWgpu.drawWgpuRenderTargetResult).toHaveBeenCalledWith(
+    expect(renderWgpu.drawWgpuTextureRenderTargetResult).toHaveBeenCalledWith(
       state,
       expect.anything(),
       target,
@@ -376,7 +375,7 @@ describe('defaultWgpuRenderCacheRenderer', () => {
     // instance buffer and bind-group state and corrupts it.
     expect(wgpuQuadBatchWriter.flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
     expect((wgpuQuadBatchWriter.flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
-      (renderWgpu.drawWgpuRenderTargetResult as any).mock.invocationCallOrder[0],
+      (renderWgpu.drawWgpuTextureRenderTargetResult as any).mock.invocationCallOrder[0],
     );
   });
 });
@@ -427,8 +426,8 @@ describe('ensureWgpuRenderCacheTarget', () => {
 
     renderWgpu.destroyWgpuRenderState(state);
 
-    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, first);
-    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, second);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, first);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, second);
     expect(getWgpuRenderCacheTarget(state, firstCache)).toBeNull();
     expect(getWgpuRenderCacheTarget(state, secondCache)).toBeNull();
   });
@@ -453,7 +452,7 @@ describe('refreshWgpuRenderCache', () => {
     const cacheState = createCacheState(screen);
     refreshWgpuRenderCache(screen, cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
     expect(renderWgpu.beginWgpuFrame).toHaveBeenCalledWith(screen);
-    expect(renderWgpu.submitWgpuRenderPass).toHaveBeenCalledWith(screen);
+    expect(renderWgpu.submitWgpuFrame).toHaveBeenCalledWith(screen);
     expect(renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
   });
 
@@ -463,10 +462,10 @@ describe('refreshWgpuRenderCache', () => {
     renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder = encoder;
     const cacheState = createCacheState(screen);
     vi.mocked(renderWgpu.beginWgpuFrame).mockClear();
-    vi.mocked(renderWgpu.submitWgpuRenderPass).mockClear();
+    vi.mocked(renderWgpu.submitWgpuFrame).mockClear();
     refreshWgpuRenderCache(screen, cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
     expect(renderWgpu.beginWgpuFrame).not.toHaveBeenCalled();
-    expect(renderWgpu.submitWgpuRenderPass).not.toHaveBeenCalled();
+    expect(renderWgpu.submitWgpuFrame).not.toHaveBeenCalled();
     expect(renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder).toBe(encoder);
   });
 
@@ -499,7 +498,7 @@ describe('releaseWgpuRenderCache', () => {
     const cache = createRenderCache();
     const target = ensureWgpuRenderCacheTarget(state, cache, 8, 8);
     releaseWgpuRenderCache(state, cache);
-    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, target);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, target);
     expect(getWgpuRenderCacheTarget(state, cache)).toBeNull();
   });
 });

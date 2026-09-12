@@ -2,7 +2,7 @@ import type {
   RadialBlurEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -14,8 +14,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // effects-gl's applyRadialBlurEffectToGl.
 export function applyRadialBlurEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<RadialBlurEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
@@ -26,7 +26,7 @@ export function applyRadialBlurEffectToWgpu(
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
   const pipeline = getWgpuEffectPipeline(state, 'motion.radialBlur', RADIAL_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = centerX;
     f32[1] = centerY;
     f32[2] = strength;

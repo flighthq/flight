@@ -1,4 +1,9 @@
-import type { SketchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  SketchEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -8,13 +13,13 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // scales how dark the strokes get.
 export function applySketchEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<SketchEffect>,
 ): void {
   const strength = effect.strength ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.sketch', SKETCH_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = strength;
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;

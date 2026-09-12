@@ -9,7 +9,7 @@ import type {
   WgpuEffectPipeline,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { ImageChannel } from '@flighthq/types/contract';
 
@@ -19,8 +19,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 export function applyBitmapDisplacementEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<BitmapDisplacementEffect>,
 ): void {
   const map = effect.map;
@@ -28,8 +28,8 @@ export function applyBitmapDisplacementEffectToWgpu(
   if (mapEntry === null) {
     drawWgpuEffectPass(
       state,
-      source as WgpuRenderTarget,
-      dest as WgpuRenderTarget,
+      source as WgpuTextureRenderTarget,
+      dest as WgpuTextureRenderTarget,
       getWgpuEffectPipeline(
         state,
         'spatial.bitmapDisplacement.passthrough',
@@ -69,7 +69,7 @@ export function applyBitmapDisplacementEffectToWgpu(
     i32[6] = effect.edgeMode === 'clamp' ? 0 : 1;
   });
 
-  const pass = fs.beginPass(dest as WgpuRenderTarget, 'load');
+  const pass = fs.beginPass(dest as WgpuTextureRenderTarget, 'load');
   pass.setPipeline(getBitmapDisplacementPipeline(state, dest.format).pipeline);
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, sourceBindGroup);

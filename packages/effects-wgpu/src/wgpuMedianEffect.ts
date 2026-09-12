@@ -1,4 +1,9 @@
-import type { MedianEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  MedianEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -14,17 +19,23 @@ const MAX_SAMPLES = (MAX_MEDIAN_EFFECT_WGPU_RADIUS * 2 + 1) * (MAX_MEDIAN_EFFECT
 // Preserves edges while removing salt-and-pepper noise. A single GPU pass — no scratch targets.
 export function applyMedianEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<MedianEffect>,
 ): void {
   const radius = Math.min(MAX_MEDIAN_EFFECT_WGPU_RADIUS, Math.max(0, Math.round(effect.radius ?? 1)));
   const pipeline = getWgpuEffectPipeline(state, 'stylization.median', MEDIAN_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32, i32) => {
-    f32[0] = 1 / source.width;
-    f32[1] = 1 / source.height;
-    i32[2] = radius;
-  });
+  drawWgpuEffectPass(
+    state,
+    source as WgpuTextureRenderTarget,
+    dest as WgpuTextureRenderTarget,
+    pipeline,
+    (f32, i32) => {
+      f32[0] = 1 / source.width;
+      f32[1] = 1 / source.height;
+      i32[2] = radius;
+    },
+  );
 }
 
 export const defaultWgpuMedianEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

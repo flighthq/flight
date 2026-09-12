@@ -2,7 +2,7 @@ import type {
   GodRaysEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -16,8 +16,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // distinct sample count compiles once.
 export function applyGodRaysEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
@@ -37,7 +37,7 @@ export function applyGodRaysEffectToWgpu(
     buildGodRaysFragment(samples),
     'replace',
   );
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = centerX;
     f32[1] = centerY;
     f32[2] = density;

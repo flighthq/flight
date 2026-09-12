@@ -1,4 +1,9 @@
-import type { DitherEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  DitherEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -9,14 +14,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // banded-but-textured look.
 export function applyDitherEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<DitherEffect>,
 ): void {
   const levels = effect.levels ?? 4;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.dither', DITHER_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(2, levels);
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = resolution.width;

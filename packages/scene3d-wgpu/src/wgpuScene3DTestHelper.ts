@@ -1,3 +1,4 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createEmptyWgpuRegistries,
   createWgpuDeviceState,
@@ -5,7 +6,13 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { WgpuPipeline, WgpuPresentationRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import type {
+  WgpuPipeline,
+  WgpuRenderPass,
+  WgpuRenderState,
+  WgpuRenderStateRuntime,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
@@ -57,7 +64,7 @@ function installWgpuConstants(): void {
 // runtime is created lazily on first getWgpuScene3DRuntime, exactly as in production.
 export function makeWgpuScene3DState(
   pipeline: Readonly<WgpuPipeline> = createWgpuPipeline(createEmptyWgpuRegistries()),
-): { fake: FakeWgpu; state: WgpuPresentationRenderState } {
+): { fake: FakeWgpu; pass: WgpuRenderPass; state: WgpuRenderState } {
   installWgpuConstants();
   const calls: { name: string; args: unknown[] }[] = [];
   const record =
@@ -154,24 +161,21 @@ export function makeWgpuScene3DState(
     },
   } as unknown as GPUDevice;
 
-  const canvas = { width: 256, height: 256 } as HTMLCanvasElement;
-  const state = createRenderState({
-    allowSmoothing: true,
-    backgroundColorRgba: [0, 0, 0, 0],
-  }) as WgpuPresentationRenderState;
+  const state = createRenderState({ allowSmoothing: true }) as WgpuRenderState;
 
   const deviceState = createWgpuDeviceState(device);
 
   Object.assign(state, {
     applyBlendMode: null,
-    canvas,
-    context: {} as GPUCanvasContext,
     device,
     deviceState,
     format: 'bgra8unorm',
     pipeline,
-    surface: { height: canvas.height, width: canvas.width },
   });
+
+  // The target the fake pass is bound to: a 256x256 texture target, which is what the recorded draws are
+  // projected into.
+  const target = { colorAttachments: 1, context: null, height: 256, width: 256 } as WgpuTextureRenderTarget;
 
   const runtime = createWgpuRenderStateRuntime(deviceState, pipeline);
   Object.assign(runtime, {
@@ -189,8 +193,10 @@ export function makeWgpuScene3DState(
     nearestSampler: {} as GPUSampler,
     samplerCache: new Map(),
     textureCache: new WeakMap(),
+    currentRenderTarget: target,
     renderPass,
-    renderTargetViewport: null,
+    // The fake stands in for a pass over a 256x256 surface: every draw reads this for its projection.
+    renderTargetViewport: { height: 256, width: 256 },
     uniformBuffer: { destroy: () => {} } as unknown as GPUBuffer,
     uniformBindGroupLayout: {} as GPUBindGroupLayout,
     uniformData: new Float32Array(256 * 64),
@@ -200,7 +206,28 @@ export function makeWgpuScene3DState(
   } satisfies Partial<WgpuRenderStateRuntime>);
   state[EntityRuntimeKey] = runtime;
 
-  return { fake: { calls }, state };
+  // The fake pass the draw entry points take. It is bound to the same fake encoder the runtime carries,
+  // so a test can assert on recorded calls exactly as before while the API says where the draw lands.
+  const pass = allocateEntity<WgpuRenderPass>();
+  pass.colorView = {} as GPUTextureView;
+  pass.encoder = renderPass;
+  pass.ownsFrame = false;
+  pass.saved = {
+    clipForms: [],
+    colorFormat: 'bgra8unorm',
+    currentMaskDepth: 0,
+    currentScissorRect: null,
+    maskWriteMode: false,
+    renderTarget: null,
+    renderTargetViewport: null,
+    renderTransform2D: null,
+    scissorStack: [],
+  };
+  pass.state = state;
+  pass.target = target;
+  pass.viewport = { height: 256, width: 256 };
+
+  return { fake: { calls }, pass: finishEntity(pass), state };
 }
 
 export function makeWgpuSkinningAdapter(): WgpuSkinningAdapter {

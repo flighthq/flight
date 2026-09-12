@@ -3,7 +3,7 @@ import type {
   ConvolutionEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -18,8 +18,8 @@ export const MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE = 49;
 // neighborhood, normalized by `divisor` (defaults to the matrix sum) and offset by `bias`.
 export function applyConvolutionEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ConvolutionEffect>,
 ): void {
   const { matrix, matrixX, matrixY } = effect;
@@ -35,28 +35,34 @@ export function applyConvolutionEffectToWgpu(
   const divisor = effect.divisor ?? getAutoDivisor(matrix, matrixX * matrixY);
 
   const pipeline = getWgpuEffectPipeline(state, 'stylization.convolution', CONVOLUTION_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32, i32) => {
-    // texelSize at offset 0 (f32[0], f32[1])
-    f32[0] = 1 / source.width;
-    f32[1] = 1 / source.height;
-    // matrixX, matrixY at offset 8, 12 (i32[2], i32[3])
-    i32[2] = matrixX;
-    i32[3] = matrixY;
-    // divisor, bias at offset 16, 20 (f32[4], f32[5])
-    f32[4] = divisor;
-    f32[5] = bias;
-    // clampEdge, preserveAlpha at offset 24, 28 (i32[6], i32[7])
-    i32[6] = clampEdge ? 1 : 0;
-    i32[7] = preserveAlpha ? 1 : 0;
-    // edgeColor at offset 32 (f32[8..11])
-    unpackColorRgba(scratchEdgeColor, edgeColor);
-    f32[8] = scratchEdgeColor[0];
-    f32[9] = scratchEdgeColor[1];
-    f32[10] = scratchEdgeColor[2];
-    f32[11] = scratchEdgeColor[3];
-    // matrix at offset 48 (f32[12..60])
-    for (let i = 0; i < matrixX * matrixY; i++) f32[12 + i] = matrix[i];
-  });
+  drawWgpuEffectPass(
+    state,
+    source as WgpuTextureRenderTarget,
+    dest as WgpuTextureRenderTarget,
+    pipeline,
+    (f32, i32) => {
+      // texelSize at offset 0 (f32[0], f32[1])
+      f32[0] = 1 / source.width;
+      f32[1] = 1 / source.height;
+      // matrixX, matrixY at offset 8, 12 (i32[2], i32[3])
+      i32[2] = matrixX;
+      i32[3] = matrixY;
+      // divisor, bias at offset 16, 20 (f32[4], f32[5])
+      f32[4] = divisor;
+      f32[5] = bias;
+      // clampEdge, preserveAlpha at offset 24, 28 (i32[6], i32[7])
+      i32[6] = clampEdge ? 1 : 0;
+      i32[7] = preserveAlpha ? 1 : 0;
+      // edgeColor at offset 32 (f32[8..11])
+      unpackColorRgba(scratchEdgeColor, edgeColor);
+      f32[8] = scratchEdgeColor[0];
+      f32[9] = scratchEdgeColor[1];
+      f32[10] = scratchEdgeColor[2];
+      f32[11] = scratchEdgeColor[3];
+      // matrix at offset 48 (f32[12..60])
+      for (let i = 0; i < matrixX * matrixY; i++) f32[12 + i] = matrix[i];
+    },
+  );
 }
 
 export const defaultWgpuConvolutionEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

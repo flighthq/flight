@@ -2,7 +2,7 @@ import type {
   OutlineEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -13,8 +13,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.
 export function applyOutlineEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<OutlineEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.2;
@@ -25,7 +25,7 @@ export function applyOutlineEffectToWgpu(
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.outline', OUTLINE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = thickness;
     // u_resolution (vec2f) aligns to slot [2].

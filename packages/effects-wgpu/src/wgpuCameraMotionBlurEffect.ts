@@ -2,7 +2,7 @@ import type {
   CameraMotionBlurEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -16,14 +16,14 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // motion blur reading ctx.sceneVelocityTexture (per-node prev-transform delta).
 export function applyCameraMotionBlurEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<CameraMotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
   const samples = effect.samples ?? 16;
   const pipeline = getWgpuEffectPipeline(state, 'motion.cameraMotionBlur', CAMERA_MOTION_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = samples;
   });

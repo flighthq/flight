@@ -3,7 +3,7 @@ import type {
   ContactShadowsEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
@@ -13,8 +13,8 @@ import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
 // remains independently replaceable when the WGPU effect context gains a sampleable depth target.
 export function applyContactShadowsEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ContactShadowsEffect>,
 ): void {
   applySsaoEffectToWgpu(

@@ -13,7 +13,8 @@ import {
   createSsaoEffect,
   createTiltShiftEffect,
 } from '@flighthq/effects/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
@@ -72,12 +73,16 @@ import { applyTiltShiftEffectToWgpu } from './wgpuTiltShiftEffect';
 
 type ApplyEffect = (
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
 ) => void;
 
-const state = { surface: { height: 600, width: 800 } } as unknown as WgpuRenderState;
-const nativeTarget = { height: 600, sampleCount: 1, view: {}, width: 800 } as unknown as WgpuRenderTarget;
+// The logical extent an effect measures its descriptor distances against is the open pass's viewport, so
+// the stand-in state carries a runtime with that viewport rather than a surface.
+const state = {
+  [EntityRuntimeKey]: { passStack: [{ viewport: { height: 600, width: 800 } }] },
+} as unknown as WgpuRenderState;
+const nativeTarget = { height: 600, sampleCount: 1, view: {}, width: 800 } as unknown as WgpuTextureRenderTarget;
 // Pool scratch targets preserve supersampled dimensions but have sampleCount 1; this is the discriminator
 // that prevents a tempting sampleCount-derived implementation from silently returning the wrong scale.
 const supersampledScratchTarget = {
@@ -85,7 +90,7 @@ const supersampledScratchTarget = {
   sampleCount: 1,
   view: {},
   width: 1600,
-} as unknown as WgpuRenderTarget;
+} as unknown as WgpuTextureRenderTarget;
 
 const logicalEffects: ReadonlyArray<{
   readonly apply: ApplyEffect;
@@ -175,7 +180,7 @@ const physicalEffects: ReadonlyArray<{ readonly apply: ApplyEffect; readonly nam
   },
 ];
 
-function uploadedBy(apply: ApplyEffect, target: WgpuRenderTarget): readonly number[] {
+function uploadedBy(apply: ApplyEffect, target: WgpuTextureRenderTarget): readonly number[] {
   recorded.uniforms.length = 0;
   apply(state, target, target);
   return recorded.uniforms[0]!;

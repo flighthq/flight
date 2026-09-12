@@ -1,11 +1,11 @@
 import {
+  beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
   installWgpuMock,
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
@@ -57,16 +57,16 @@ describe('defaultWgpuSpriteRenderer', () => {
 describe('drawWgpuSprite', () => {
   it('accepts an unbound sprite', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const sprite = createSprite();
     prepareScene2DRender(state, sprite);
     expect(() => drawWgpuSprite(state, getOrCreateRenderProxy2D(state, sprite))).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('records a tint against the instance the flush uploads when a new texture breaks the batch', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
@@ -79,12 +79,12 @@ describe('drawWgpuSprite', () => {
 
     expect(runtime.quadBatchWriterCount).toBe(1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('uses the physical slab once and preserves a top-origin render-target sub-view', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
@@ -102,12 +102,12 @@ describe('drawWgpuSprite', () => {
     expect(data[7]).toBeCloseTo(160 / 480);
     expect(data[8]).toBeCloseTo(100 / 720);
     expect(data[11]).toBeCloseTo(80 / 480);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('packs a quarter-turned Texture view as affine UV axes', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 50, width: 100 });
@@ -131,6 +131,6 @@ describe('drawWgpuSprite', () => {
     expect(data[9]).toBeCloseTo(-0.3);
     expect(data[10]).toBeCloseTo(0.2);
     expect(data[11]).toBeCloseTo(0);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });

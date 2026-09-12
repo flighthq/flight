@@ -1,6 +1,10 @@
 import * as flightNode from '@flighthq/node/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createWgpuRenderStateForTest, installWgpuMock, renderWgpuBackground } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  createWgpuRenderStateForTest,
+  getWgpuRenderStateRuntime,
+  installWgpuMock,
+} from '@flighthq/render-wgpu/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
@@ -95,7 +99,7 @@ describe('defaultWgpuMeshShapeRenderer', () => {
 
   it('never rasterizes, even with a rasterizer registered and a fill that cannot tessellate', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const rasterizer = vi.fn();
     registerWgpuShapeRasterizer(state, rasterizer);
@@ -110,7 +114,7 @@ describe('defaultWgpuMeshShapeRenderer', () => {
 
   it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     enableRenderRegistryGuards(state);
 
@@ -129,7 +133,7 @@ describe('defaultWgpuMeshShapeRenderer', () => {
 describe('drawWgpuMeshShape', () => {
   it('draws a solid fill as a GPU mesh and reports that it drew', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
@@ -143,7 +147,7 @@ describe('drawWgpuMeshShape', () => {
 
   it('reports false for a fill with no tessellated form, which is the hybrid fall-through signal', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     expect(drawWgpuMeshShape(state, makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }))).toBe(
       false,
@@ -152,7 +156,7 @@ describe('drawWgpuMeshShape', () => {
 
   it('reports false with no render pass, an empty command list, or absent renderer data', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const shape = createShape();
     appendShapeBeginFill(shape, 0x00cc00ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);

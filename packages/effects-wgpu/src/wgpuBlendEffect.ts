@@ -4,7 +4,7 @@ import type {
   WgpuDualSourceEffectPipeline,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
@@ -17,8 +17,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // gate reduces the operation to passthrough.
 export function applyBlendEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<BlendEffect>,
 ): void {
   const backdrop = getWgpuBlendEffectBackdrop(state, effect.backdropKey ?? null);
@@ -27,9 +27,9 @@ export function applyBlendEffectToWgpu(
   const hasBackdrop = backdrop !== null;
   drawWgpuDualSourceEffectPass(
     state,
-    source as WgpuRenderTarget,
-    (backdrop ?? source) as WgpuRenderTarget,
-    dest as WgpuRenderTarget,
+    source as WgpuTextureRenderTarget,
+    (backdrop ?? source) as WgpuTextureRenderTarget,
+    dest as WgpuTextureRenderTarget,
     pipeline,
     (f32, i32) => {
       i32[0] = modeIndex;
@@ -47,7 +47,7 @@ export const defaultWgpuBlendEffectRunner: WgpuRenderEffectRunner = (context, ef
 export function getWgpuBlendEffectBackdrop(
   state: WgpuRenderState,
   backdropKey: string | null,
-): WgpuRenderTarget | null {
+): WgpuTextureRenderTarget | null {
   if (backdropKey === null) return null;
   return backdrops.get(state)?.get(backdropKey) ?? null;
 }
@@ -67,7 +67,7 @@ export function registerWgpuBlendEffect(state: WgpuRenderState): void {
 export function registerWgpuBlendEffectBackdrop(
   state: WgpuRenderState,
   backdropKey: string,
-  target: WgpuRenderTarget,
+  target: WgpuTextureRenderTarget,
 ): void {
   let registry = backdrops.get(state);
   if (registry === undefined) {
@@ -107,7 +107,7 @@ const BLEND_MODE_INDEX: Readonly<Record<string, number>> = {
   [AdvancedBlendModeValues.Lighten]: 12,
 };
 
-const backdrops = new WeakMap<WgpuRenderState, Map<string, WgpuRenderTarget>>();
+const backdrops = new WeakMap<WgpuRenderState, Map<string, WgpuTextureRenderTarget>>();
 const pipelines = new WeakMap<WgpuRenderState, WgpuDualSourceEffectPipeline>();
 
 // Layer and backdrop are premultiplied textures. Blend math operates on straight RGB, follows the W3C

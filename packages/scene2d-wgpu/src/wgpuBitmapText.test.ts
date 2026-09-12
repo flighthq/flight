@@ -1,5 +1,5 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
@@ -20,7 +20,7 @@ describe('defaultWgpuBitmapTextRenderer', () => {
 describe('defaultWgpuBitmapTextRenderer.submit', () => {
   it('does not throw for a text node with no bound glyph pages', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const text = createBitmapText(null, { text: 'AB' });
     updateBitmapText(text);
@@ -31,6 +31,6 @@ describe('defaultWgpuBitmapTextRenderer.submit', () => {
       defaultWgpuBitmapTextRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as never);
     }).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });

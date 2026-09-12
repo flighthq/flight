@@ -6,8 +6,13 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuTextureRenderTarget,
+  getWgpuActiveRenderPass,
+  getWgpuRenderStateRuntime,
+  resumeWgpuRenderPass,
+  suspendWgpuRenderPass,
+} from '@flighthq/render-wgpu/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   Kind,
@@ -19,7 +24,7 @@ import type {
   Velocity2D,
   VelocityField,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuVelocityContext,
   WgpuVelocityWriter,
 } from '@flighthq/types/contract';
@@ -39,8 +44,12 @@ import { getVelocity } from '@flighthq/velocity/contract';
 // top-left origin, y-down; drawWgpuVelocityQuad maps a rect into clip space, flipping y.
 
 /** Allocates an rgba16float render target sized to hold a signed, sub-pixel screen-space velocity buffer. */
-export function createWgpuVelocityTarget(state: WgpuRenderState, width: number, height: number): WgpuRenderTarget {
-  return createWgpuRenderTarget(state, width, height, 'rgba16float');
+export function createWgpuVelocityTarget(
+  state: WgpuRenderState,
+  width: number,
+  height: number,
+): WgpuTextureRenderTarget {
+  return createWgpuTextureRenderTarget(state, width, height, 'rgba16float');
 }
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
@@ -284,16 +293,16 @@ export function renderWgpuVelocity<Traits extends object>(
   state: WgpuRenderState,
   root: Readonly<Transform2DNode<Traits>>,
   field: VelocityField,
-  target: Readonly<WgpuRenderTarget>,
+  target: Readonly<WgpuTextureRenderTarget>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) {
-    throw new Error('No active command encoder — call renderWgpuBackground before renderWgpuVelocity.');
+    throw new Error('No active command encoder — open a frame with beginWgpuRenderPass before renderWgpuVelocity.');
   }
-  if (runtime.renderPass !== null) {
-    runtime.renderPass.end();
-    runtime.renderPass = null;
-  }
+  // The velocity buffer is written in its own pass over its own target, so the caller's pass steps aside
+  // for the duration and is resumed with its pixels intact.
+  const suspended = getWgpuActiveRenderPass(state);
+  if (suspended !== null) suspendWgpuRenderPass(suspended);
 
   const pipeline = ensureWgpuVelocityPipeline(state);
   pipeline.cursor = 0;
@@ -318,6 +327,7 @@ export function renderWgpuVelocity<Traits extends object>(
 
   pass.end();
   _activeVelocityPasses.delete(state);
+  if (suspended !== null) resumeWgpuRenderPass(suspended);
 }
 
 function ensureWgpuVelocityPipeline(state: WgpuRenderState): WgpuVelocityPipeline {

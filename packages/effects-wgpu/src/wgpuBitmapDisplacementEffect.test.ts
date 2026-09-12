@@ -1,7 +1,12 @@
 import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { BitmapDisplacementEffect, Texture2D, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  BitmapDisplacementEffect,
+  Texture2D,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 import { ImageChannel } from '@flighthq/types/contract';
 
 import {
@@ -24,8 +29,8 @@ const source = {
   height: 64,
   view: sourceView,
   width: 128,
-} as WgpuRenderTarget;
-const dest = { ...source, view: {} as GPUTextureView } as WgpuRenderTarget;
+} as WgpuTextureRenderTarget;
+const dest = { ...source, view: {} as GPUTextureView } as WgpuTextureRenderTarget;
 const map = {
   colorSpace: 'linear',
   dimension: '2d',

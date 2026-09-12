@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
@@ -32,7 +32,7 @@ afterEach(() => vi.restoreAllMocks());
 function packed(matrix: ReadonlyArray<number>): readonly number[] {
   uniformState.uploads.length = 0;
   vi.mocked(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).mockClear();
-  const target = {} as unknown as WgpuRenderTarget;
+  const target = {} as unknown as WgpuTextureRenderTarget;
   applyColorMatrixPassToWgpu({} as unknown as WgpuRenderState, target, target, matrix);
   return uniformState.uploads[0]!;
 }

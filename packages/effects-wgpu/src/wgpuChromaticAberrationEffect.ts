@@ -2,7 +2,7 @@ import type {
   ChromaticAberrationEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -14,8 +14,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // otherwise it is a uniform horizontal split.
 export function applyChromaticAberrationEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ChromaticAberrationEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.005;
@@ -26,7 +26,7 @@ export function applyChromaticAberrationEffectToWgpu(
     CHROMATIC_ABERRATION_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radial ? 1 : 0;
   });
