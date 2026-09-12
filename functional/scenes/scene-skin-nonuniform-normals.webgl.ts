@@ -88,6 +88,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+
 // Specular is black and shininess minimal so sampled luminance tracks the diffuse term monotonically —
 // the scene assertion compares an ORDER, which only survives if a highlight cannot outrank the Lambert result.
 const material = createBlinnPhongMaterial({ diffuse: 0xc8ccd4ff, shininess: 1, specular: 0x000000ff });
@@ -165,7 +167,7 @@ const lights = {
 
 prepareScene3DSkinning(scene);
 prepareScene3DRender(state, scene, camera, lights);
-const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

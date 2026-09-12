@@ -77,6 +77,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+
 const material = createBlinnPhongMaterial({ diffuse: 0xb0b4bcff, shininess: 12, specular: 0x101010ff });
 const scene = createScene3D().root;
 addNodeChild(scene, createMesh(createPlaneMeshGeometry(8, 8), [material]));
@@ -164,7 +166,7 @@ configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

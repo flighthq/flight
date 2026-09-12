@@ -96,6 +96,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+
 // Quad centres in world X, and the screen fractions they project to under the camera below. Kept as
 // constants so the assertion samples where the geometry actually is rather than at guessed thirds.
 const QUAD_OFFSET_X = 2.2;
@@ -104,7 +106,7 @@ const SAMPLE_FRACTION_CENTRE = 0.5;
 const SAMPLE_FRACTION_RIGHT = 0.832;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

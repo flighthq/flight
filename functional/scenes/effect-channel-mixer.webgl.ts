@@ -56,9 +56,11 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 1.0 } as const;
+
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [
     createChannelMixerAdjustment({
