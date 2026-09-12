@@ -108,7 +108,7 @@ export function refreshGlRenderCache(
   // Preserve on begin — the bake below clears and redraws only when dirty; clearing here would wipe the
   // retained cache content on the not-dirty path. The cache's local-space transform is set explicitly,
   // since a pass no longer carries one.
-  beginGlRenderPass(cacheState, target);
+  const pass = beginGlRenderPass(cacheState, target);
   let dirty = false;
   try {
     setGlRenderTransform2D(cacheState, _renderTransform);
@@ -116,10 +116,10 @@ export function refreshGlRenderCache(
     if (dirty || resized) {
       cacheState.gl.clearColor(0, 0, 0, 0);
       cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
-      renderGlScene2D(cacheState, source);
+      renderGlScene2D(pass, source);
     }
   } finally {
-    endGlRenderPass(cacheState);
+    endGlRenderPass(pass);
   }
 
   return dirty || resized;

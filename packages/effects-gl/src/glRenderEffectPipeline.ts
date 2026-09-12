@@ -23,6 +23,7 @@ import type {
   Adjustment,
   GlRenderEffectPipeline,
   GlRenderEffectPipelineSkipGuard,
+  GlRenderPass,
   GlRenderState,
   GlTextureRenderTarget,
   RenderEffect,
@@ -44,7 +45,7 @@ export function beginGlRenderEffectPipeline(
   state: GlRenderState,
   pipeline: GlRenderEffectPipeline,
   colorSpace: RenderTargetColorSpace = 'srgb',
-): void {
+): GlRenderPass {
   const w = state.gl.drawingBufferWidth;
   const h = state.gl.drawingBufferHeight;
   const { sampleCount, format, depth } = pipeline.options;
@@ -63,7 +64,7 @@ export function beginGlRenderEffectPipeline(
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
   clearGlRenderTarget(state, pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
-  beginGlRenderPass(state, pipeline.sceneTarget);
+  return beginGlRenderPass(state, pipeline.sceneTarget);
 }
 
 export function createGlRenderEffectPipeline(

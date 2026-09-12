@@ -20,7 +20,14 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { Camera3D, GlTextureRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  GlRenderPass,
+  GlRenderState,
+  GlRenderTarget,
+  GlTextureRenderTarget,
+  Scene3DLightsLike,
+} from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
@@ -43,6 +50,10 @@ const LIGHTS: Scene3DLightsLike = {
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };
 
+function mockPass(state: GlRenderState): GlRenderPass {
+  return { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+}
+
 describe('drawGlScene3D', () => {
   it('uploads one shared geometry once across a primary and derived state on the same context', () => {
     const { state, gl } = makeGlScene3DState();
@@ -53,8 +64,8 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, createMesh(geometry, [createStandardPbrMaterial()]));
     const uploadsBefore = gl.calls.filter((call) => call.name === 'createVertexArray').length;
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
-    drawGlScene3D(derived, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(derived), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.filter((call) => call.name === 'createVertexArray')).toHaveLength(uploadsBefore + 1);
   });
@@ -70,7 +81,7 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, meshA);
     addNodeChild(scene, meshB);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     // Same material across both meshes: bound once, drawn twice.
     expect(gl.calls.filter((c) => c.name === 'useProgram').length).toBe(1);
@@ -91,7 +102,7 @@ describe('drawGlScene3D', () => {
     const runtime = getGlRenderStateRuntime(state);
     runtime.context.currentShader = { locations: null, program: {} as WebGLProgram };
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(runtime.context.currentShader).toBeNull();
   });
@@ -106,7 +117,7 @@ describe('drawGlScene3D', () => {
     const target = { colorSpace: 'srgb' } as GlTextureRenderTarget;
     runtime.currentRenderTarget = target;
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(target.colorSpace).toBe('linear');
   });
@@ -120,7 +131,7 @@ describe('drawGlScene3D', () => {
     mesh.enabled = false;
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
 
@@ -132,7 +143,7 @@ describe('drawGlScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
@@ -148,7 +159,7 @@ describe('drawGlScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     const enableCalls = gl.calls.filter((c) => c.name === 'enable');
     const disableCalls = gl.calls.filter((c) => c.name === 'disable');
@@ -169,7 +180,7 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [firstMaterial]));
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [secondMaterial]));
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.filter((c) => c.name === 'useProgram')).toHaveLength(2);
     expect(gl.calls.filter((c) => c.name === 'depthMask').map((c) => c.args[0])).toEqual([false, false, true]);
@@ -184,7 +195,7 @@ describe('drawGlScene3D', () => {
     const material = createStandardPbrMaterial({ alphaMode: 'blend', blendMode: BlendMode.Add });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(
       gl.calls.some((call) => call.name === 'blendFunc' && call.args[0] === gl.ONE && call.args[1] === gl.ONE),
@@ -202,7 +213,7 @@ describe('drawGlScene3D', () => {
     const material = createStandardPbrMaterial({ alphaMode: 'blend' });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(
       gl.calls.some(
@@ -227,7 +238,7 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, blendedMesh);
     addNodeChild(scene, opaqueMesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     // Both meshes drawn.
     expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
@@ -243,7 +254,7 @@ describe('drawGlScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     // No blended subsets: GL_BLEND should not be enabled.
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(false);
@@ -261,7 +272,7 @@ describe('drawGlScene3D', () => {
     mesh.alpha = 0.5;
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
@@ -282,12 +293,12 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, blended);
 
     const camera = makeCamera();
-    drawGlScene3D(state, scene, camera, LIGHTS);
+    drawGlScene3D(mockPass(state), scene, camera, LIGHTS);
     const runtime = getGlScene3DRuntime(state);
     const opaqueEntry = runtime.opaqueDrawList[0];
     const blendedEntry = runtime.blendedDrawList[0];
 
-    drawGlScene3D(state, scene, camera, LIGHTS);
+    drawGlScene3D(mockPass(state), scene, camera, LIGHTS);
 
     expect(runtime.opaqueDrawList[0]).toBe(opaqueEntry);
     expect(runtime.blendedDrawList[0]).toBe(blendedEntry);
@@ -304,7 +315,7 @@ describe('drawGlScene3D', () => {
     mesh.alpha = 1;
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(false);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
@@ -317,7 +328,7 @@ describe('drawGlScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
 
@@ -341,7 +352,7 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, nearMesh);
     addNodeChild(scene, farMesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(getGlScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([farMesh, nearMesh]);
   });
@@ -368,7 +379,7 @@ describe('drawGlScene3D', () => {
     });
     setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
 
-    drawGlScene3D(state, scene, camera, LIGHTS);
+    drawGlScene3D(mockPass(state), scene, camera, LIGHTS);
 
     expect(getGlScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([farMesh, nearMesh]);
   });
@@ -393,7 +404,7 @@ describe('drawGlScene3D', () => {
     }
     addNodeChild(scene, emitter);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(true);
   });
@@ -405,7 +416,7 @@ describe('drawGlScene3D', () => {
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
   });
@@ -424,7 +435,7 @@ describe('drawGlScene3D', () => {
     setInstancedMeshInstanceColor(mesh, 0, 0xff0000ff);
     addNodeChild(scene, mesh);
 
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     // Two instances at one texel each; the matrix palette uploads eight, so select by width.
     const upload = gl.calls

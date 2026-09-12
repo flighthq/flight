@@ -28,11 +28,11 @@ export function presentGlScene3D(
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
 ): void {
-  beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+  const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   try {
-    drawGlScene3D(state, scene, camera, lights);
+    drawGlScene3D(pass, scene, camera, lights);
   } finally {
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
   }
   presentGlRenderTarget(state, target);
 }

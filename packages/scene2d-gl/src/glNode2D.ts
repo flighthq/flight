@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { Node2D, Scene2DRenderer, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
+import type { GlRenderPass, GlRenderState, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
@@ -9,7 +9,8 @@ export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D
   // Plain display objects have no visual geometry of their own.
 }
 
-export function renderGlScene2D(state: GlRenderState, source: Node2D): void {
+export function renderGlScene2D(pass: GlRenderPass, source: Node2D): void {
+  const state = pass.state;
   const gl = state.gl;
   // The 2D pass establishes the state it draws under rather than depending on a context-lifetime
   // invariant. These were previously taken on trust from createGlRenderState, which runs once per state,
