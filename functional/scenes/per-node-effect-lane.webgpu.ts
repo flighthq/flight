@@ -201,11 +201,16 @@ function captureSubtree(): {
   const transform = createMatrix();
   computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
   withWgpuFrameBorrow(state, offscreenState, () => {
-    renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (capturePass) => {
-      setWgpuRenderTransform2D(capturePass, transform);
-      prepareScene2DRender(offscreenState, source);
-      renderWgpuScene2D(capturePass, source);
-    });
+    renderIntoWgpuRenderTexture(
+      offscreenState,
+      sourceTexture,
+      (capturePass) => {
+        setWgpuRenderTransform2D(capturePass, transform);
+        prepareScene2DRender(offscreenState, source);
+        renderWgpuScene2D(capturePass, source);
+      },
+      { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+    );
     if (
       !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)
     ) {

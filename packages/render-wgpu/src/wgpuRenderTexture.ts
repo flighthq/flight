@@ -81,14 +81,13 @@ export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: 
 /**
  * Clears and populates a render texture's hidden WebGPU target. The callback receives the pass bound to
  * that target — the same handle every other draw entry point takes — and the enclosing pass is restored
- * even when the callback throws. `clear` is what the target starts from; it defaults to transparent black
- * with depth and stencil reset, which is what a texture composited over a scene wants.
+ * even when the callback throws. `clear` is what the target starts from.
  */
 export function renderIntoWgpuRenderTexture(
   state: WgpuRenderState,
   renderTexture: RenderTexture,
   callback: (pass: WgpuRenderPass) => void,
-  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+  clear: Readonly<RenderTargetClear>,
 ): void {
   writeWgpuRenderTextureTarget(state, renderTexture, (target) => {
     const pass = beginWgpuRenderPass(state, target, clear);

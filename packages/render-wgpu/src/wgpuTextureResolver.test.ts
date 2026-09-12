@@ -178,7 +178,7 @@ describe('registerWgpuRenderTextureResolver', () => {
     expect(resolveWgpuTexture(state, texture)).toBeNull();
 
     beginWgpuScreenRenderPassForTest(state);
-    renderIntoWgpuRenderTexture(state, texture, () => {});
+    renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     expect(resolveWgpuTexture(state, texture)).not.toBeNull();
     submitWgpuFrame(state);
   });

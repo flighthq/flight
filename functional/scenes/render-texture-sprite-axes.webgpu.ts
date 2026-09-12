@@ -84,11 +84,16 @@ addRect(producer, 50, 40, 50, 40, 0xf2ca52ff);
 // The producer runs in its own frame, submitted here: whoever opens a frame explicitly closes it, and
 // the harness's own render loop opens (and submits) the frame that samples the finished texture.
 beginWgpuFrame(state);
-renderIntoWgpuRenderTexture(state, renderTexture, (capturePass) => {
-  setWgpuRenderTransform2D(capturePass, createMatrix());
-  prepareScene2DRender(state, producer);
-  renderWgpuScene2D(capturePass, producer);
-});
+renderIntoWgpuRenderTexture(
+  state,
+  renderTexture,
+  (capturePass) => {
+    setWgpuRenderTransform2D(capturePass, createMatrix());
+    prepareScene2DRender(state, producer);
+    renderWgpuScene2D(capturePass, producer);
+  },
+  { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+);
 submitWgpuFrame(state);
 
 const root = createDisplayObject();

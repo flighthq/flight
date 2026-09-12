@@ -83,11 +83,16 @@ addRect(producer, 0, 0, 50, 40, 0xf04a4aff);
 addRect(producer, 50, 0, 50, 40, 0x42d681ff);
 addRect(producer, 0, 40, 50, 40, 0x3d72e8ff);
 addRect(producer, 50, 40, 50, 40, 0xf2ca52ff);
-renderIntoGlRenderTexture(state, renderTexture, (pass) => {
-  setGlRenderTransform2D(pass.state, createMatrix());
-  prepareScene2DRender(pass.state, producer);
-  renderGlScene2D(pass, producer);
-});
+renderIntoGlRenderTexture(
+  state,
+  renderTexture,
+  (pass) => {
+    setGlRenderTransform2D(pass.state, createMatrix());
+    prepareScene2DRender(pass.state, producer);
+    renderGlScene2D(pass, producer);
+  },
+  { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+);
 
 const root = createDisplayObject();
 addRect(root, SPRITE_X - 15, SPRITE_Y - 15, SPRITE_WIDTH + 30, SPRITE_HEIGHT + 30, BACKING);

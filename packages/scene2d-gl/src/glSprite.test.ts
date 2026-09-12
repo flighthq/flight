@@ -86,7 +86,7 @@ describe('drawGlSprite', () => {
     registerGlStandardMaterial(state);
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
     setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     const sprite = { data: { texture: renderTexture } } as Sprite;
 
     drawGlSprite(state, makeRenderProxy(sprite));

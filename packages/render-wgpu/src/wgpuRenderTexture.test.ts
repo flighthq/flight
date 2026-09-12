@@ -1,4 +1,4 @@
-import type { RenderTexture } from '@flighthq/types/contract';
+import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { submitWgpuFrame } from './wgpuFrame';
@@ -49,7 +49,7 @@ describe('bindWgpuRenderTexture', () => {
     expect(bindWgpuRenderTexture(state, renderTexture)).toBeNull();
 
     beginWgpuScreenRenderPassForTest(state);
-    renderIntoWgpuRenderTexture(state, renderTexture, () => {});
+    renderIntoWgpuRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     expect(bindWgpuRenderTexture(state, renderTexture)).not.toBeNull();
     submitWgpuFrame(state);
   });
@@ -60,7 +60,7 @@ describe('destroyWgpuRenderTexture', () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();
     beginWgpuScreenRenderPassForTest(state);
-    renderIntoWgpuRenderTexture(state, renderTexture, () => {});
+    renderIntoWgpuRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     const entry = getWgpuRenderStateRuntime(state).context.wgpuRenderTextureCache!.get(renderTexture)!;
     const destroy = vi.spyOn(entry.target.texture, 'destroy');
 
@@ -110,7 +110,7 @@ describe('isWgpuRenderTextureReady', () => {
     const renderTexture = texture();
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(false);
     beginWgpuScreenRenderPassForTest(state);
-    renderIntoWgpuRenderTexture(state, renderTexture, () => {});
+    renderIntoWgpuRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(true);
     submitWgpuFrame(state);
   });
@@ -123,7 +123,7 @@ describe('renderIntoWgpuRenderTexture', () => {
     beginWgpuScreenRenderPassForTest(state);
     const enclosingPass = getWgpuRenderStateRuntime(state).renderPass;
 
-    renderIntoWgpuRenderTexture(state, renderTexture, () => {});
+    renderIntoWgpuRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
 
     expect(renderTexture.version).toBe(1);
     expect(renderTexture.colorSpace).toBe('linear');
@@ -176,3 +176,5 @@ describe('writeWgpuRenderTextureTarget', () => {
     expect(target.sampleCount).toBe(4);
   });
 });
+
+const TRANSPARENT_CLEAR: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 };

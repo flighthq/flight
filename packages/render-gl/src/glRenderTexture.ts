@@ -119,7 +119,7 @@ export function renderIntoGlRenderTexture(
   state: GlRenderState,
   renderTexture: RenderTexture,
   callback: (pass: GlRenderPass) => void,
-  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+  clear: Readonly<RenderTargetClear>,
 ): void {
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);

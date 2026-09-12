@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { RenderTexture } from '@flighthq/types/contract';
+import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
@@ -23,7 +23,7 @@ describe('bindGlRenderTexture', () => {
   it('binds the existing target texture without uploading pixels', () => {
     const { state, gl } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
 
     const texture = bindGlRenderTexture(state, renderTexture);
@@ -57,7 +57,7 @@ describe('destroyGlRenderTexture', () => {
   it('deletes the hidden target and returns the source to unrendered state', () => {
     const { state, gl } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
 
     destroyGlRenderTexture(state, renderTexture);
 
@@ -76,9 +76,14 @@ describe('enableGlRenderTextureGuards', () => {
     enableGlRenderTextureGuards(state);
     try {
       bindGlRenderTexture(state, unrendered);
-      renderIntoGlRenderTexture(state, writing, () => {
-        bindGlRenderTexture(state, writing);
-      });
+      renderIntoGlRenderTexture(
+        state,
+        writing,
+        () => {
+          bindGlRenderTexture(state, writing);
+        },
+        TRANSPARENT_CLEAR,
+      );
 
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries).toHaveLength(2);
@@ -108,7 +113,7 @@ describe('getGlRenderTextureColorSpace', () => {
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
 
     expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     expect(getGlRenderTextureColorSpace(state, renderTexture)).toBe('linear');
   });
 });
@@ -145,7 +150,7 @@ describe('isGlRenderTextureReady', () => {
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
 
     expect(isGlRenderTextureReady(state, renderTexture)).toBe(false);
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
     expect(isGlRenderTextureReady(state, renderTexture)).toBe(true);
   });
 });
@@ -166,7 +171,7 @@ describe('renderIntoGlRenderTexture', () => {
     });
     expect(renderTexture.version).toBe(0);
 
-    renderIntoGlRenderTexture(state, renderTexture, callback);
+    renderIntoGlRenderTexture(state, renderTexture, callback, TRANSPARENT_CLEAR);
 
     expect(callback).toHaveBeenCalledOnce();
     expect(renderTexture.version).toBe(1);
@@ -183,9 +188,14 @@ describe('renderIntoGlRenderTexture', () => {
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
 
     expect(() =>
-      renderIntoGlRenderTexture(state, renderTexture, () => {
-        throw new Error('producer failed');
-      }),
+      renderIntoGlRenderTexture(
+        state,
+        renderTexture,
+        () => {
+          throw new Error('producer failed');
+        },
+        TRANSPARENT_CLEAR,
+      ),
     ).toThrow('producer failed');
 
     expect(explainGlRenderTexture(state, renderTexture).status).toBe('unrendered');
@@ -195,12 +205,17 @@ describe('renderIntoGlRenderTexture', () => {
   it('invalidates a previously-ready target when a replacement render throws', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
 
     expect(() =>
-      renderIntoGlRenderTexture(state, renderTexture, () => {
-        throw new Error('replacement failed');
-      }),
+      renderIntoGlRenderTexture(
+        state,
+        renderTexture,
+        () => {
+          throw new Error('replacement failed');
+        },
+        TRANSPARENT_CLEAR,
+      ),
     ).toThrow('replacement failed');
 
     expect(explainGlRenderTexture(state, renderTexture).status).toBe('unrendered');
@@ -211,14 +226,19 @@ describe('renderIntoGlRenderTexture', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
 
-    renderIntoGlRenderTexture(state, renderTexture, () => {
-      getGlRenderStateRuntime(state).currentMaskDepth = 1;
+    renderIntoGlRenderTexture(
+      state,
+      renderTexture,
+      () => {
+        getGlRenderStateRuntime(state).currentMaskDepth = 1;
 
-      expect(() => renderIntoGlRenderTexture(state, renderTexture, () => {})).toThrow(
-        'cannot nest the active framebuffer while a contour clip is live',
-      );
-      expect(explainGlRenderTexture(state, renderTexture).status).toBe('writing');
-    });
+        expect(() => renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR)).toThrow(
+          'cannot nest the active framebuffer while a contour clip is live',
+        );
+        expect(explainGlRenderTexture(state, renderTexture).status).toBe('writing');
+      },
+      TRANSPARENT_CLEAR,
+    );
 
     expect(explainGlRenderTexture(state, renderTexture).status).toBe('ready');
   });
@@ -226,11 +246,11 @@ describe('renderIntoGlRenderTexture', () => {
   it('resizes the retained target when the source dimensions change', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ height: 16, width: 32 });
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
 
     renderTexture.source.width = 12;
     renderTexture.source.height = 10;
-    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    renderIntoGlRenderTexture(state, renderTexture, () => {}, TRANSPARENT_CLEAR);
 
     expect(explainGlRenderTexture(state, renderTexture)).toEqual({
       height: 10,
@@ -244,9 +264,14 @@ describe('renderIntoGlRenderTexture', () => {
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
     let whileWriting: WebGLTexture | null = {} as WebGLTexture;
 
-    renderIntoGlRenderTexture(state, renderTexture, () => {
-      whileWriting = bindGlRenderTexture(state, renderTexture);
-    });
+    renderIntoGlRenderTexture(
+      state,
+      renderTexture,
+      () => {
+        whileWriting = bindGlRenderTexture(state, renderTexture);
+      },
+      TRANSPARENT_CLEAR,
+    );
 
     expect(whileWriting).toBeNull();
     expect(bindGlRenderTexture(state, renderTexture)).not.toBeNull();
@@ -324,3 +349,5 @@ function createRenderTexture(options: { depth?: boolean; height: number; width: 
     version: 0,
   } as unknown as RenderTexture;
 }
+
+const TRANSPARENT_CLEAR: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 };

@@ -36,7 +36,7 @@ async function drawSpriteOverNewTexture(
   colorScaleBias: unknown,
 ): Promise<void> {
   const texture = createRenderTexture({ height: size, width: size });
-  renderIntoWgpuRenderTexture(state, texture, () => {});
+  renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   const sprite = createSprite({ data: { texture } });
   prepareScene2DRender(state, sprite);
   const proxy = getOrCreateRenderProxy2D(state, sprite);
@@ -89,7 +89,7 @@ describe('drawWgpuSprite', () => {
     registerWgpuStandardMaterial(state);
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
     setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
-    renderIntoWgpuRenderTexture(state, renderTexture, () => {});
+    renderIntoWgpuRenderTexture(state, renderTexture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     const sprite = createSprite({ data: { texture: renderTexture } });
     prepareScene2DRender(state, sprite);
 
@@ -111,7 +111,7 @@ describe('drawWgpuSprite', () => {
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 50, width: 100 });
-    renderIntoWgpuRenderTexture(state, texture, () => {});
+    renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     texture.uvOffset.x = 0.1;
     texture.uvOffset.y = 0.4;
     texture.uvScale.x = 0.3;

@@ -87,10 +87,15 @@ setCamera3DViewMatrix4FromLookAt(
 );
 
 const renderMap = createRenderTexture({ depth: 'depth-stencil', height: 256, width: 256 });
-renderIntoGlRenderTexture(state, renderMap, (pass) => {
-  prepareScene3DRender(pass.state, producerScene, producerCamera, lights);
-  drawGlScene3D(pass, producerScene, producerCamera, lights);
-});
+renderIntoGlRenderTexture(
+  state,
+  renderMap,
+  (pass) => {
+    prepareScene3DRender(pass.state, producerScene, producerCamera, lights);
+    drawGlScene3D(pass, producerScene, producerCamera, lights);
+  },
+  { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+);
 
 // Consumer scene B: the finished attachment becomes an UnlitMaterial map on an ordinary cube.
 const consumerScene = createScene3D().root;
