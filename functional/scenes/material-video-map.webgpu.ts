@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
@@ -17,7 +17,6 @@ import {
   createVideoResource,
   createVideoTexture,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
@@ -36,8 +35,7 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');

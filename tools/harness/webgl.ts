@@ -6,14 +6,15 @@ import {
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
-  scene3DGlPipeline,
-  createGlContextState,
-  createGlContextFromCanvasElement,
+  beginCanvasRenderPass,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createGlCanvasElement,
+  createGlContextFromCanvasElement,
+  createGlContextState,
   createGlRenderState,
   createMatrix,
   defaultGlParticleEmitter2DRenderer,
@@ -44,9 +45,10 @@ import {
   registerGlShapeRasterizer,
   registerRenderer,
   renderGlScene2D,
-  scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
+  scene2DCanvasPipeline,
+  scene3DGlPipeline,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -137,9 +139,14 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  );
+  // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
+  // life of the state — every fill it paints happens inside that bracket.
+  beginCanvasRenderPass(
+    resolverState,
+    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
   );
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));

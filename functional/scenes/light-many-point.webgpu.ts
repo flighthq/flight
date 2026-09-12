@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
@@ -17,7 +17,6 @@ import {
   createSpotLight,
   createVector3,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -60,8 +59,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of light-many-point.webgl. Four finite-range decoys come first; only per-mesh
 // contribution selection can choose the twelve nearby lights and illuminate the field.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');

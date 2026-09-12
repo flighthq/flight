@@ -1,11 +1,10 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -17,8 +16,7 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { defaultWgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(400, 300, 1);
+const canvas = createWebWgpuCanvasElement(400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

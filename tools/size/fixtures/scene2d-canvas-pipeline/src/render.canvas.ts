@@ -4,13 +4,16 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import {
+  beginCanvasRenderPass,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
+  endCanvasRenderPass,
   getCanvasPipelineRegistries,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
-  renderCanvasBackground,
+  registerCanvasSurfaceCreator,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas';
@@ -23,12 +26,17 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const state = createCanvasRenderState(
+const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
+);
+const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
+  { pixelRatio: 1 },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = getCanvasPipelineRegistries(scene2DCanvasPipeline);
 for (const [kind, entry] of registries.renderers.entries) {
@@ -50,7 +58,8 @@ sprite.y = 40;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
-renderCanvasBackground(state);
-renderCanvasScene2D(state, root);
+const pass = beginCanvasRenderPass(state, screen, screenClear);
+renderCanvasScene2D(pass, root);
 
 Reflect.set(globalThis, '__flightScene2dCanvasPipeline', { registries, root });
+endCanvasRenderPass(pass);

@@ -1,12 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createHtmlView } from '@flighthq/scene2d';
-import {
-  createDomRenderState,
-  defaultDomHtmlViewRenderer,
-  renderDomBackground,
-  renderDomScene2D,
-} from '@flighthq/scene2d-dom';
+import { createDomRenderState, defaultDomHtmlViewRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
 import { HtmlViewKind } from '@flighthq/types';
 
 const container = document.createElement('div');
@@ -15,7 +10,10 @@ container.style.height = '300px';
 document.body.style.margin = '0';
 document.body.appendChild(container);
 
-const state = createDomRenderState(container, { backgroundColor: 0x1a1a2eff, pixelRatio: 1 });
+const state = createDomRenderState(container, { pixelRatio: 1 });
+// DOM has no pass and no clear: the background is a CSS property on the element the caller
+// already holds, set once rather than reapplied by a render function every frame.
+container.style.backgroundColor = '#1a1a2e';
 
 registerRenderer(state, HtmlViewKind, defaultDomHtmlViewRenderer);
 
@@ -33,7 +31,6 @@ view.y = 40;
 addNodeChild(root, view);
 
 prepareScene2DRender(state, root);
-renderDomBackground(state);
 renderDomScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dDomHtmlView', { root });

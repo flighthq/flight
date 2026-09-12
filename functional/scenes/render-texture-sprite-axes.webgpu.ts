@@ -1,8 +1,6 @@
 import { setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
 import type { Bitmap } from '@flighthq/sdk';
 import {
-  ShapeKind,
-  SpriteKind,
   acquireWgpuRenderTexture,
   addNodeChild,
   appendShapeBeginFill,
@@ -20,6 +18,8 @@ import {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuScene2D,
+  ShapeKind,
+  SpriteKind,
   submitWgpuFrame,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';

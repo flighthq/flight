@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +11,6 @@ import {
   createDisplayObject,
   createShape,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -39,8 +38,7 @@ declareExpectedImageDescription(
 // 2x per axis and resolved down, so the edges are antialiased as they are on Gl. The bloom runs over the
 // HDR rgba16f scene, so this column verifies the resolve and the effect compose together.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

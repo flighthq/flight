@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +11,6 @@ import {
   createLensFlareEffect,
   createShape,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -45,8 +44,7 @@ declareExpectedImageDescription(
 // Wgpu parity column for the same lens-flare intent as render.webgl.ts, also using the HDR
 // (rgba16f) scene target so bright spots seed ghosts and the halo.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

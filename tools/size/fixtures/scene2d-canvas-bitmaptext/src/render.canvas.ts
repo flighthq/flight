@@ -7,16 +7,19 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
+  beginCanvasRenderPass,
   createCanvasPipeline,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createEmptyCanvasRegistries,
   defaultCanvasBitmapTextRenderer,
+  endCanvasRenderPass,
   getCanvasPipelineRegistries,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
-  renderCanvasBackground,
+  registerCanvasSurfaceCreator,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
@@ -52,12 +55,15 @@ const pipeline = createCanvasPipeline({
   renderers: withRegistryTableEntry(emptyRegistries.renderers, BitmapTextKind, defaultCanvasBitmapTextRenderer),
 });
 
-const state = createCanvasRenderState(
+const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-  pipeline,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
 );
+const state = createCanvasRenderState(pipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+  pixelRatio: 1,
+});
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = getCanvasPipelineRegistries(pipeline);
 for (const [kind, entry] of registries.renderers.entries) {
@@ -112,7 +118,8 @@ updateBitmapText(label);
 addNodeChild(root, label);
 
 prepareScene2DRender(state, root);
-renderCanvasBackground(state);
-renderCanvasScene2D(state, root);
+const pass = beginCanvasRenderPass(state, screen, screenClear);
+renderCanvasScene2D(pass, root);
 
 Reflect.set(globalThis, '__flightScene2dCanvasBitmapText', { registries, root });
+endCanvasRenderPass(pass);

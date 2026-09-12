@@ -2,8 +2,8 @@ import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web/
 import type { Node2D } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
-  createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   createDomRenderState,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
@@ -15,7 +15,6 @@ import {
   registerCanvasShapeCommands,
   registerDomShapeRasterizer,
   registerRenderer,
-  renderDomBackground,
   renderDomScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -26,10 +25,10 @@ container.style.width = '600px';
 container.style.height = '400px';
 document.body.appendChild(container);
 
-export const state = createDomRenderState(container, {
-  backgroundColor: 0xf5f5f5ff,
-  sceneGraphSyncPolicy: 'requiresInvalidation',
-});
+export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 'requiresInvalidation' });
+// DOM has no pass and no clear: the background is a CSS property on the element the caller
+// already holds, set once rather than reapplied by a render function every frame.
+container.style.backgroundColor = '#f5f5f5';
 enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
@@ -51,6 +50,5 @@ export const scale = 1;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderDomBackground(state);
   renderDomScene2D(state, root);
 }

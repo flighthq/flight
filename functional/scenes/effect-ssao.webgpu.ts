@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +11,6 @@ import {
   createShape,
   createSsaoEffect,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -43,8 +42,7 @@ declareExpectedImageDescription(
 // Wgpu ssao: depth-driven, but no depth buffer is bound here, so this is a color-only fallback —
 // no ambient-occlusion darkening is computed.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

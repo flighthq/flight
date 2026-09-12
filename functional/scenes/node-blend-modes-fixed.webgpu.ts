@@ -4,17 +4,17 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  SpriteKind,
   BlendMode,
-  createSprite,
   createDisplayObject,
   createImageResourceFromCanvas,
   createShape,
+  createSprite,
   createTexture,
   getBitmapPixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ShapeKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 

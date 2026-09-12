@@ -10,31 +10,34 @@ import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 //
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
+  beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderSurface,
-  createCanvasTextureResolvers,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createFilmGrainEffect,
   createShape,
-  getBitmapPixelRgb,
-  registerCanvasFilmGrainEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
+  endCanvasRenderPass,
+  getBitmapPixelRgb,
   prepareScene2DRender,
+  registerCanvasFilmGrainEffect,
   registerCanvasShapeCommands,
+  registerCanvasSurfaceCreator,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -55,16 +58,21 @@ const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(
+export const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
     height: canvas.height / pixelRatio,
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
+);
+export const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio, backgroundColor: 0x808080ff },
+  { pixelRatio },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x80 / 0xff, 0x80 / 0xff, 0x80 / 0xff, 1] } as const;
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasFilmGrainEffect(state);
@@ -77,10 +85,11 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginCanvasRenderEffectPipeline(state, pipeline);
-  renderCanvasBackground(state);
-  renderCanvasScene2D(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
+  const pass = beginCanvasRenderPass(state, screen, screenClear);
+  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  renderCanvasScene2D(scenePass, root);
+  endCanvasRenderEffectPipeline(scenePass, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
+  endCanvasRenderPass(pass);
 }
 
 // A flat mid-gray fill covering the whole frame. The even tone is the ideal backdrop for film grain:

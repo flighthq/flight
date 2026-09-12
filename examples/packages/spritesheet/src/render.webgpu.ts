@@ -1,8 +1,8 @@
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   beginWgpuRenderPass,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuSpriteRenderer,
@@ -16,7 +16,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+export const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const acquisition = await createWgpuAcquisition(canvas);

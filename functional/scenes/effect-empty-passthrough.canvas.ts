@@ -1,29 +1,32 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
+  beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderSurface,
-  createCanvasTextureResolvers,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
-  getBitmapPixelRgb,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
+  endCanvasRenderPass,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerCanvasSurfaceCreator,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -47,16 +50,28 @@ const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(
+export const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
     height: canvas.height / pixelRatio,
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
+);
+export const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio, backgroundColor: BACKGROUND_COLOR },
+  { pixelRatio },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = {
+  color: [
+    ((BACKGROUND_COLOR >>> 24) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 16) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 8) & 0xff) / 0xff,
+    (BACKGROUND_COLOR & 0xff) / 0xff,
+  ] as const,
+};
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
@@ -68,10 +83,11 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginCanvasRenderEffectPipeline(state, pipeline);
-  renderCanvasBackground(state);
-  renderCanvasScene2D(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, []);
+  const pass = beginCanvasRenderPass(state, screen, screenClear);
+  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  renderCanvasScene2D(scenePass, root);
+  endCanvasRenderEffectPipeline(scenePass, pipeline, []);
+  endCanvasRenderPass(pass);
 }
 
 // Simple shapes on a neutral field. With an empty effect pipeline, the presented frame must match a

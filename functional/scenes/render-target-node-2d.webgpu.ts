@@ -26,10 +26,10 @@ import {
   prepareScene3DRender,
   registerWgpuPhongMaterial,
   renderIntoWgpuRenderTexture,
-  submitWgpuFrame,
   setCamera3DViewMatrix4FromLookAt,
   ShapeKind,
   SpriteKind,
+  submitWgpuFrame,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 

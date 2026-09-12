@@ -12,11 +12,14 @@ import {
   createRenderState,
 } from '@flighthq/render/contract';
 import {
+  beginCanvasRenderPass,
   createCanvasPipeline,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
+  registerCanvasSurfaceCreator,
   scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
@@ -1167,11 +1170,13 @@ function packageSourceFiles(packageName: string): string[] {
 function createCanvasProbeState(pipeline = scene2DCanvasPipeline) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
-  return createCanvasRenderState(
-    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
-    pipeline,
-    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  const state = createCanvasRenderState(pipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));
+  registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+  beginCanvasRenderPass(
+    state,
+    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
   );
+  return state;
 }
 
 function createCanvasTextureResolversForProbe() {

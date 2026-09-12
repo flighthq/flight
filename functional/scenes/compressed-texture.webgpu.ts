@@ -1,4 +1,4 @@
-import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createCompressedImageResource } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
@@ -9,7 +9,6 @@ import {
   createSprite,
   createTexture,
   createWgpuAcquisition,
-  createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuScene2DRenderer,
@@ -60,8 +59,7 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebWgpuRenderSurface();
-const canvas = createWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
+const canvas = createWebWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
