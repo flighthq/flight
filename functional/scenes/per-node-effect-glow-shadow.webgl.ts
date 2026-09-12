@@ -12,7 +12,7 @@ import {
   computeRenderEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
-  createGlOffscreenRenderState,
+  createGlRenderState,
   createGlRenderTexturePool,
   createMatrix,
   createOuterGlowEffect,
@@ -67,7 +67,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgl') throw new Error('per-node-effect-glow-shadow requires WebGL');
 const { render, state, width } = target;
 
-const offscreenState = createGlOffscreenRenderState(state.contextState, state.pipeline);
+const offscreenState = createGlRenderState(state.gl, state.pipeline);
 const pool = createGlRenderTexturePool();
 registerGlOuterGlowEffect(offscreenState);
 registerGlDropShadowEffect(offscreenState);

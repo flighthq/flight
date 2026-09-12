@@ -107,7 +107,7 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgl') {
   const cache = createRenderCache();
-  const cacheState = createGlCacheState(target.state, target.state.contextState, target.state.pipeline, {
+  const cacheState = createGlCacheState(target.state, target.state.pipeline, {
     allowSmoothing: target.state.allowSmoothing,
     pixelRatio: target.state.pixelRatio,
     roundPixels: target.state.roundPixels,
