@@ -13,7 +13,7 @@ import {
   createMatrix,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
@@ -40,10 +40,8 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerRenderer,
-  registerStandardWgpuTextureResolvers,
   registerWgpuShapeCommands,
   registerWgpuShapeRasterizer,
-  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   scene2DCanvasPipeline,
@@ -67,7 +65,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+  const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
     pixelRatio,
     backgroundColor: options.background,
     raster2DSurfaceProvider: webRaster2DSurfaceProvider,
@@ -81,8 +79,6 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   // effect guards are wired here so a requested sample count outside WGPU's supported 1/4 values is
   // reported together with the applied substitution.
   enableWgpuRenderEffectGuards(state);
-  registerStandardWgpuTextureResolvers(state);
-  registerWgpuStandardMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuFrameCapture(state);

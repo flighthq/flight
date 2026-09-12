@@ -6,7 +6,7 @@ import {
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   createCanvasRenderState,
@@ -42,9 +42,7 @@ import {
   registerCanvasRenderTextureResolver,
   registerGlShapeCommands,
   registerGlShapeRasterizer,
-  registerGlStandardMaterial,
   registerRenderer,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   scene2DCanvasPipeline,
@@ -73,7 +71,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
         contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
       }),
     ),
-    scene2DGlPipeline,
+    scene3DGlPipeline,
     {
       pixelRatio,
       backgroundColor: options.background,
@@ -88,8 +86,6 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 
   enableFlightDiagnostics(state);
   enableGlRenderEffectGuards(state);
-  registerStandardGlTextureResolvers(state);
-  registerGlStandardMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
