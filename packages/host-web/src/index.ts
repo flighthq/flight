@@ -141,5 +141,5 @@ export {
   webHostFullscreen,
   webHostWindow,
 } from './webWindow';
-export { createWebWgpuRenderSurfaceProvider, enableHostWebWgpuRenderSurface } from './webWgpuRenderSurface';
+export { createWebWgpuCanvasElement } from './webWgpuCanvasElement';
 export { webHostSocket } from './webSocket';

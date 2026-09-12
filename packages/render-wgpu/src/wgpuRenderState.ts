@@ -20,6 +20,7 @@ import type {
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
+  WgpuScreenSurface,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
@@ -37,11 +38,11 @@ const RING_SLOT_COUNT = 4096;
 // destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
-  canvas: HTMLCanvasElement,
+  surface: WgpuScreenSurface,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
   try {
-    const acquired = await getWgpuHostBackend().acquire(canvas, options);
+    const acquired = await getWgpuHostBackend().acquire(surface, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);

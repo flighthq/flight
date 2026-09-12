@@ -5,8 +5,6 @@ export {
   bindWgpuRenderTexture,
   createBitmapFromWgpuScreenRenderTarget,
   createExternalWgpuTexture,
-  createWgpuCanvasElement,
-  createWgpuRenderSurface,
   createWgpuOffscreenRenderState,
   createWgpuPipeline,
   createWgpuAcquisition,

@@ -4,7 +4,6 @@ export * from './wgpuCompressedTexture';
 export * from './wgpuDeviceLoss';
 export * from './wgpuDraw';
 export * from './wgpuExternalTexture';
-export * from './wgpuElement';
 export * from './enableWgpuTextureResolverGuards';
 export * from './explainWgpuTextureResolution';
 export * from './wgpuFullscreenPass';

@@ -14,7 +14,7 @@ export function getWgpuHostBackend(): HostWgpuProvider {
 }
 
 export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuProvider>): void {
-  out.acquire = async (canvas, options): Promise<WgpuHostAcquisition> => {
+  out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
 
@@ -39,14 +39,14 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuPro
 
     try {
       const format = options.format ?? gpu.getPreferredCanvasFormat();
-      const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
+      const context = surface.getContext('webgpu');
       if (context === null) throw new Error('Failed to get WebGPU canvas context.');
       const acquisition = allocateEntity<WgpuHostAcquisition>();
       acquisition.context = context;
       acquisition.device = device;
       acquisition.format = format;
       acquisition.ownership = 'flight';
-      acquisition.surface = canvas;
+      acquisition.surface = surface;
       return finishEntity(acquisition);
     } catch (error) {
       device.destroy();
