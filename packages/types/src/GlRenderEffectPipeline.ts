@@ -2,7 +2,7 @@ import type { ColorLutCache } from './ColorLutCache';
 import type { Entity } from './Entity';
 import type { GlColorLutTextureCache } from './GlColorLutTextureCache';
 import type { GlRenderState } from './GlRenderState';
-import type { GlRenderTarget, GlRenderTargetPool } from './GlRenderTarget';
+import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget';
 import type { RenderEffect } from './RenderEffect';
 import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
 
@@ -15,9 +15,9 @@ import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
 // scene pass; velocity from per-node current-vs-previous transform deltas.
 export interface GlRenderEffectContext {
   readonly state: GlRenderState;
-  readonly source: Readonly<GlRenderTarget>;
-  readonly dest: Readonly<GlRenderTarget>;
-  readonly pool: GlRenderTargetPool;
+  readonly source: Readonly<GlTextureRenderTarget>;
+  readonly dest: Readonly<GlTextureRenderTarget>;
+  readonly pool: GlTextureRenderTargetPool;
   readonly sceneDepthTexture: WebGLTexture | null;
   readonly sceneVelocityTexture: WebGLTexture | null;
 }
@@ -126,8 +126,8 @@ export interface RenderEffectPipelineOptions {
 // endGlRenderEffectPipeline, not retained here.
 export interface GlRenderEffectPipeline extends Entity {
   readonly options: Readonly<RenderEffectPipelineOptions>;
-  sceneTarget: GlRenderTarget | null;
-  readonly pool: GlRenderTargetPool;
+  sceneTarget: GlTextureRenderTarget | null;
+  readonly pool: GlTextureRenderTargetPool;
   // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
   // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
   // owns a GPU texture destroyed by destroyGlRenderEffectPipeline.
