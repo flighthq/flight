@@ -1,7 +1,11 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getWgpuEffectLogicalResolution, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
+import {
+  getWgpuEffectLogicalResolution,
+  getWgpuEffectLogicalWidth,
+  getWgpuRenderTargetTexelScale,
+} from './wgpuEffectTexelScale';
 
 describe('getWgpuEffectLogicalResolution', () => {
   // Logical pixels are the open pass's viewport: a scratch target twice that wide holds two texels per
@@ -32,6 +36,23 @@ describe('getWgpuEffectLogicalResolution', () => {
         } as never,
       ),
     ).toEqual({ width: 800, height: 600, texelsPerLogicalPixel: 2 });
+  });
+});
+
+describe('getWgpuEffectLogicalWidth', () => {
+  it('measures against the open pass viewport while a chain runs inside a frame', () => {
+    const state = { [EntityRuntimeKey]: { passStack: [{ viewport: { height: 600, width: 800 } }] } };
+
+    expect(getWgpuEffectLogicalWidth(state as never, { width: 1600 } as never)).toBe(800);
+  });
+
+  // The render-texture path applies effects with no enclosing pass: there the target IS the logical
+  // space, and measuring against a canvas that is not being drawn into would scale every distance by an
+  // unrelated ratio.
+  it('falls back to the target itself when no pass is open', () => {
+    const state = { [EntityRuntimeKey]: { passStack: [] } };
+
+    expect(getWgpuEffectLogicalWidth(state as never, { width: 16 } as never)).toBe(16);
   });
 });
 
