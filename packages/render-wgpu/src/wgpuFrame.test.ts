@@ -55,6 +55,21 @@ describe('submitWgpuFrame', () => {
     expect(runtime.currentRenderTarget).toBeNull();
     expect(runtime.renderTargetViewport).toBeNull();
   });
+  // A frame that only drew into texture targets has no screen to resolve or capture. Skipping that work
+  // is not an optimization: the capture texture still holds the LAST VISIBLE frame, so encoding a copy
+  // here would overwrite the readback buffer with a stale picture that a caller would read as current.
+  it('resolves and captures nothing when the frame never touched a screen target', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    beginWgpuFrame(state);
+    const encoder = runtime.commandEncoder!;
+    const copyToBuffer = vi.spyOn(encoder, 'copyTextureToBuffer');
+
+    expect(runtime.frameScreenTarget).toBeNull();
+    submitWgpuFrame(state);
+
+    expect(copyToBuffer).not.toHaveBeenCalled();
+  });
 });
 
 describe('withWgpuFrameBorrow', () => {

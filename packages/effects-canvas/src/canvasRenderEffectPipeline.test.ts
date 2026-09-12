@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
+import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
@@ -56,6 +56,24 @@ describe('destroyCanvasRenderEffectPipeline', () => {
 describe('endCanvasRenderEffectPipeline', () => {
   it('is a function', () => {
     expect(typeof endCanvasRenderEffectPipeline).toBe('function');
+  });
+
+  // Ending the scene pass restores whatever was installed before it, which is nothing when the chain ran
+  // outside any pass. Presenting there used to reach through the state and draw into a null context; the
+  // pipeline names the mistake instead.
+  it('refuses to present when no enclosing pass is open', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const state = createCanvasRenderState(canvas);
+    const pipeline = createCanvasRenderEffectPipeline(state);
+    const screenPass = getCanvasActiveRenderPass(state)!;
+    // Closing the screen pass before the chain opens leaves the scene pass alone on the stack, so ending
+    // it inside endCanvasRenderEffectPipeline leaves nothing to present into.
+    endCanvasRenderPass(screenPass);
+    const scenePass = beginCanvasRenderEffectPipeline(screenPass, pipeline);
+
+    expect(() => endCanvasRenderEffectPipeline(scenePass, pipeline, [])).toThrow(/no enclosing pass/u);
   });
 
   it('writes an unregistered effect destination before chaining and presenting it', () => {

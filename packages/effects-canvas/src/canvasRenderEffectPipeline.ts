@@ -10,6 +10,7 @@ import {
   beginCanvasRenderPass,
   createCanvasTextureRenderTarget,
   endCanvasRenderPass,
+  getCanvasActiveRenderPass,
   getCanvasSurfaceCreator,
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
@@ -200,16 +201,23 @@ export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: 
   pool.free.push(target);
 }
 
-// Blits the final effect result to the main canvas. Clears first so a transparent scene composites
-// correctly, then draws the offscreen source 1:1.
+// Blits the final effect result into the pass that enclosed the chain — the screen, ordinarily. The
+// enclosing pass is what the finished chain composites onto, so it is read from the pass stack rather
+// than from the state's current handles: ending the scene pass restores whatever was installed before it,
+// which is nothing at all when a caller ran a chain outside any pass. Presenting there would draw through
+// a null context, so the pipeline says so instead.
 function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
-  const context = state.context;
+  const pass = getCanvasActiveRenderPass(state);
+  if (pass === null) {
+    throw new Error('endCanvasRenderEffectPipeline: no enclosing pass is open to present the result into');
+  }
+  const context = pass.context;
   context.save();
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.globalCompositeOperation = 'source-over';
   context.globalAlpha = 1;
   context.filter = 'none';
-  context.clearRect(0, 0, state.canvas.width, state.canvas.height);
+  context.clearRect(0, 0, pass.target.width, pass.target.height);
   context.drawImage(source.canvas, 0, 0);
   context.restore();
 }
