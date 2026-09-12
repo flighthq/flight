@@ -67,7 +67,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 
 export const height = 600;
 
-const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+const screenClear = { color: [0x08 / 0xff, 0x10 / 0xff, 0x20 / 0xff, 1], depth: 1.0 } as const;
 export const scale = pixelRatio;
 export const width = 800;
 

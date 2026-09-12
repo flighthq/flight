@@ -96,7 +96,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 // Quad centres in world X, and the screen fractions they project to under the camera below. Kept as
 // constants so the assertion samples where the geometry actually is rather than at guessed thirds.

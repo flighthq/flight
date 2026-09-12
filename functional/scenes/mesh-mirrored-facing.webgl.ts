@@ -61,7 +61,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
