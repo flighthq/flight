@@ -25,7 +25,7 @@ export function createWgpuTextureRenderTarget(
   return finishEntity(out);
 }
 
-export function destroyWgpuTextureRenderTarget(_state: WgpuRenderState, target: WgpuTextureRenderTarget): void {
+export function destroyWgpuTextureRenderTarget(target: WgpuTextureRenderTarget): void {
   target.texture.destroy();
   target.depthStencilTexture.destroy();
 }

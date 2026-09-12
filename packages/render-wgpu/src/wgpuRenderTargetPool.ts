@@ -59,8 +59,8 @@ export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
   return finishEntity(out);
 }
 
-export function destroyWgpuRenderTargetPool(state: WgpuRenderState, pool: WgpuRenderTargetPool): void {
-  for (const target of pool.free) destroyWgpuTextureRenderTarget(state, target);
+export function destroyWgpuRenderTargetPool(pool: WgpuRenderTargetPool): void {
+  for (const target of pool.free) destroyWgpuTextureRenderTarget(target);
   pool.free.length = 0;
 }
 

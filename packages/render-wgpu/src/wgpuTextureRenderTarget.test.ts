@@ -58,7 +58,7 @@ describe('destroyWgpuTextureRenderTarget', () => {
     const target = createWgpuTextureRenderTarget(state, 64, 64);
     const destroyTexture = vi.spyOn(target.texture, 'destroy');
     const destroyDepth = vi.spyOn(target.depthStencilTexture, 'destroy');
-    destroyWgpuTextureRenderTarget(state, target);
+    destroyWgpuTextureRenderTarget(target);
     expect(destroyTexture).toHaveBeenCalled();
     expect(destroyDepth).toHaveBeenCalled();
   });

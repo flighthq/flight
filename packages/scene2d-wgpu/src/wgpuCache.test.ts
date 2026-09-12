@@ -426,8 +426,8 @@ describe('ensureWgpuRenderCacheTarget', () => {
 
     renderWgpu.destroyWgpuRenderState(state);
 
-    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, first);
-    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, second);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(first);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(second);
     expect(getWgpuRenderCacheTarget(state, firstCache)).toBeNull();
     expect(getWgpuRenderCacheTarget(state, secondCache)).toBeNull();
   });
@@ -498,7 +498,7 @@ describe('releaseWgpuRenderCache', () => {
     const cache = createRenderCache();
     const target = ensureWgpuRenderCacheTarget(state, cache, 8, 8);
     releaseWgpuRenderCache(state, cache);
-    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(state, target);
+    expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(target);
     expect(getWgpuRenderCacheTarget(state, cache)).toBeNull();
   });
 });
