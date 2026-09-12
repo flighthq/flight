@@ -63,7 +63,7 @@ export function beginGlRenderEffectPipeline(
     resizeGlTextureRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  clearGlRenderTarget(state, pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
+  clearGlRenderTarget(pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
   return beginGlRenderPass(state, pipeline.sceneTarget);
 }
 
@@ -78,10 +78,10 @@ export function createGlRenderEffectPipeline(
 
 export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
   if (pipeline.sceneTarget) {
-    destroyGlTextureRenderTarget(state, pipeline.sceneTarget);
+    destroyGlTextureRenderTarget(pipeline.sceneTarget);
     pipeline.sceneTarget = null;
   }
-  destroyGlTextureRenderTargetPool(state, pipeline.pool);
+  destroyGlTextureRenderTargetPool(pipeline.pool);
   if (pipeline.lutTexture.texture !== null) {
     state.gl.deleteTexture(pipeline.lutTexture.texture);
     pipeline.lutTexture.texture = null;
@@ -126,7 +126,7 @@ export function endGlRenderEffectPipeline(
     if (pending.length === 0) return;
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    clearGlRenderTarget(state, dest, { color: [0, 0, 0, 0] });
+    clearGlRenderTarget(dest, { color: [0, 0, 0, 0] });
     if (pending.some(isColorLutAdjustment)) {
       applyColorLutPassToGl(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
@@ -154,7 +154,7 @@ export function endGlRenderEffectPipeline(
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    clearGlRenderTarget(state, dest, { color: [0, 0, 0, 0] });
+    clearGlRenderTarget(dest, { color: [0, 0, 0, 0] });
     // Depth/velocity always come from the original scene target, not the ping-ponged `source`.
     runner(
       {

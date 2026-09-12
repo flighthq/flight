@@ -14,6 +14,7 @@ import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
 import type { GlPipeline } from './GlPipeline';
 import type { GlRenderEffectRegistration } from './GlRenderEffectPipeline';
+import type { GlRenderPass } from './GlRenderPass';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
@@ -181,6 +182,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   currentMaskDepth?: number;
   currentScissorRect?: GlScissorRect | null;
   currentFramebuffer: WebGLFramebuffer | null;
+  currentPass: GlRenderPass | null;
   currentRenderTarget?: GlCubeRenderTarget | GlRenderTarget | null;
   renderTargetViewport: GlViewportRect | null;
   glRenderTextureGuard?: GlRenderTextureGuard | null;

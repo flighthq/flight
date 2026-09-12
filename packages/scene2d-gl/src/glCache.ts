@@ -8,6 +8,7 @@ import {
   destroyGlTextureRenderTarget,
   drawGlTextureRenderTargetResult,
   endGlRenderPass,
+  getGlCurrentRenderPass,
   resizeGlTextureRenderTarget,
   registerGlRenderStateTeardown,
   setGlRenderTransform2D,
@@ -131,7 +132,7 @@ export function releaseGlRenderCache(ownerState: GlRenderState, cache: RenderCac
   const target = targets.get(cache);
   if (target === undefined) return;
   // A GlTextureRenderTarget owns a framebuffer and texture; GC will not free them.
-  destroyGlTextureRenderTarget(ownerState, target);
+  destroyGlTextureRenderTarget(target);
   targets.delete(cache);
 }
 
@@ -147,7 +148,7 @@ function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): vo
   flushGlQuadBatchWriter(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawGlTextureRenderTargetResult(state, renderProxy, target, _identity);
+  drawGlTextureRenderTargetResult(getGlCurrentRenderPass(state)!, renderProxy, target, _identity);
 }
 
 function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlTextureRenderTarget> {
@@ -163,7 +164,7 @@ function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlTextureRen
 function destroyOwnedGlRenderCacheTargets(ownerState: GlRenderState): void {
   const targets = _renderCacheTargets.get(ownerState);
   if (targets === undefined) return;
-  for (const target of targets.values()) destroyGlTextureRenderTarget(ownerState, target);
+  for (const target of targets.values()) destroyGlTextureRenderTarget(target);
   targets.clear();
   _renderCacheTargets.delete(ownerState);
 }

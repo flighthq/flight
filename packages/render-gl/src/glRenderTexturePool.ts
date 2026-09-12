@@ -42,7 +42,7 @@ export function destroyGlRenderTexturePool(state: GlRenderState, pool: GlRenderT
   for (const renderTexture of textures) destroyGlRenderTexture(state, renderTexture);
   pool.free.length = 0;
   pool.leased.clear();
-  destroyGlTextureRenderTargetPool(state, pool.effectTargets);
+  destroyGlTextureRenderTargetPool(pool.effectTargets);
   pool.destroyed = true;
 }
 

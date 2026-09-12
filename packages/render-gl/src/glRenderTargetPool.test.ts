@@ -194,7 +194,7 @@ describe('destroyGlTextureRenderTargetPool', () => {
     releaseGlTextureRenderTarget(pool, b);
 
     const deleteSpy = vi.spyOn(gl, 'deleteFramebuffer');
-    destroyGlTextureRenderTargetPool(state, pool);
+    destroyGlTextureRenderTargetPool(pool);
 
     expect(deleteSpy).toHaveBeenCalledWith(a.framebuffer);
     expect(deleteSpy).toHaveBeenCalledWith(b.framebuffer);
@@ -204,7 +204,7 @@ describe('destroyGlTextureRenderTargetPool', () => {
   it('is a no-op on an empty pool', () => {
     const { state } = createGlState();
     const pool = createGlTextureRenderTargetPool();
-    expect(() => destroyGlTextureRenderTargetPool(state, pool)).not.toThrow();
+    expect(() => destroyGlTextureRenderTargetPool(pool)).not.toThrow();
   });
 });
 

@@ -1,4 +1,5 @@
 import type { Entity } from './Entity';
+import type { GlContext } from './GlContext';
 import type {
   RenderTargetAxes,
   RenderTargetColorSpace,
@@ -12,6 +13,7 @@ import type {
 // texture targets. Pass functions accept this base; sampling/present functions accept only
 // GlTextureRenderTarget — the type split makes sampling a compile-time constraint.
 export interface GlRenderTarget extends Entity, RenderTargetDimensions {
+  readonly gl: GlContext;
   framebuffer: WebGLFramebuffer | null;
   width: number;
   height: number;

@@ -1,6 +1,7 @@
 import type {
   GlContext,
   GlFullscreenProgram,
+  GlRenderPass,
   GlRenderState,
   GlRenderTarget,
   RectangleLike,
@@ -28,14 +29,12 @@ void main() {
 // Clears a render target using `color` (broadcast to every color attachment) plus optional depth
 // and stencil. Color values are float RGBA written directly to the framebuffer — no conversion.
 // Self-contained: temporarily disables scissor and enables depth writes so the clear covers the
-// full target regardless of inherited GL state. Both are restored before returning.
-export function clearGlRenderTarget(
-  state: GlRenderState,
-  target: GlRenderTarget,
-  clear: Readonly<RenderTargetClear>,
-): void {
-  const gl = state.gl;
-  bindGlRenderTarget(state, target);
+// full target regardless of inherited GL state. Both are restored before returning. Does not
+// update render state tracking — the caller (pass bracket or pipeline) owns that.
+export function clearGlRenderTarget(target: GlRenderTarget, clear: Readonly<RenderTargetClear>): void {
+  const gl = target.gl;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
+  gl.viewport(0, 0, target.width, target.height);
 
   const { color, depth, stencil } = clear;
 
@@ -55,21 +54,14 @@ export function clearGlRenderTarget(
   clearGlDepthStencil(gl, depth, stencil, true);
 
   if (scissorWas) gl.enable(gl.SCISSOR_TEST);
-
-  const runtime = getGlRenderStateRuntime(state);
-  runtime.context.currentTextureRealization = null;
-  runtime.context.currentBlendSignature = null;
 }
 
 // Per-attachment clear for MRT targets. Each entry in `colors` is a float RGBA tuple or undefined
 // (preserve that attachment). Self-contained like clearGlRenderTarget.
-export function clearGlRenderTargetAttachments(
-  state: GlRenderState,
-  target: GlRenderTarget,
-  clear: Readonly<RenderTargetClear>,
-): void {
-  const gl = state.gl;
-  bindGlRenderTarget(state, target);
+export function clearGlRenderTargetAttachments(target: GlRenderTarget, clear: Readonly<RenderTargetClear>): void {
+  const gl = target.gl;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
+  gl.viewport(0, 0, target.width, target.height);
 
   const { colors, depth, stencil } = clear;
 
@@ -91,10 +83,6 @@ export function clearGlRenderTargetAttachments(
   clearGlDepthStencil(gl, depth, stencil, true);
 
   if (scissorWas) gl.enable(gl.SCISSOR_TEST);
-
-  const runtime = getGlRenderStateRuntime(state);
-  runtime.context.currentTextureRealization = null;
-  runtime.context.currentBlendSignature = null;
 }
 
 export function compileGlFullscreenProgram(gl: GlContext, fragmentSource: string): GlFullscreenProgram {
@@ -207,9 +195,10 @@ export function drawGlFullscreenPass(
 // Draws a solid-color rectangle into the currently bound framebuffer. A rendering primitive — unlike
 // clear, this is a draw call that participates in the current blend mode and scissor state. When
 // `rect` is omitted the fill covers the full viewport. Color is a packed sRGB RGBA integer.
-export function fillGlRect(state: GlRenderState, color: number, rect?: Readonly<RectangleLike>): void {
+export function fillGlRect(pass: GlRenderPass, color: number, rect?: Readonly<RectangleLike>): void {
+  const state = pass.state;
   const runtime = getGlRenderStateRuntime(state);
-  const gl = state.gl;
+  const gl = pass.gl;
 
   let program = _fillPrograms.get(gl);
   if (program === undefined) {

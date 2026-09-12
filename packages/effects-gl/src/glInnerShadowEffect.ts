@@ -91,16 +91,16 @@ export function applyInnerShadowEffectToGl(
 
   // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the offset blit doesn't blend on top of it.
-  clearGlRenderTarget(state, s0, { color: [0, 0, 0, 0] });
+  clearGlRenderTarget(s0, { color: [0, 0, 0, 0] });
   applyGlEffectBlitOffsetPass(state, s1, s0, dx, dy);
 
   // Pass 4: clip offset shadow (s0) to source alpha → s1.
   // s1 still holds pass-2 blur content; clear it before the clip blit.
-  clearGlRenderTarget(state, s1, { color: [0, 0, 0, 0] });
+  clearGlRenderTarget(s1, { color: [0, 0, 0, 0] });
   applyGlInnerClipPass(state, s0, src, s1);
 
   // Final composite: source first, unless hidden, then clipped shadow on top.
-  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
+  clearGlRenderTarget(dst, { color: [0, 0, 0, 0] });
   if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }

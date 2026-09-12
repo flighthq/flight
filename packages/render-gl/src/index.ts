@@ -39,6 +39,7 @@ export {
   explainGlTextureRenderTarget,
   explainGlRenderTexture,
   explainGlTextureResolution,
+  getGlCurrentRenderPass,
   getGlPipelineRegistries,
   isGlRenderTargetFormatSupported,
   popGlRenderState,

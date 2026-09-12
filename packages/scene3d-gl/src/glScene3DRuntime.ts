@@ -56,7 +56,7 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
   destroyGlEnvironmentSkybox(state);
 
   if (scene.shadowTarget !== null) {
-    destroyGlTextureRenderTarget(state, scene.shadowTarget);
+    destroyGlTextureRenderTarget(scene.shadowTarget);
     scene.shadowTarget = null;
   }
   scene.shadow = null;
