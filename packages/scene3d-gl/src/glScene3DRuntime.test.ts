@@ -63,6 +63,7 @@ describe('destroyGlScene3DRuntime', () => {
     scene.environmentSourceTextureVersion = 1;
     const depthTexture = {} as WebGLTexture;
     scene.shadowTarget = {
+      gl: state.gl,
       colorRenderbuffers: [],
       depthStencilRenderbuffer: null,
       depthTexture,
