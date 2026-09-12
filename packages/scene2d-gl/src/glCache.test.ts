@@ -79,7 +79,7 @@ const testPipeline = renderGl.createGlPipeline(renderGl.createEmptyGlRegistries(
 
 function fakeScreen(options = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;
-  return renderGl.createGlRenderState(renderGl.createGlContextState(gl), testPipeline, options);
+  return renderGl.createGlRenderState(gl, testPipeline, options);
 }
 
 function makeCacheNode(source: unknown): any {
@@ -92,7 +92,6 @@ describe('createGlCacheState', () => {
     enableGlRenderCache(screen);
     const cacheState = createGlCacheState(
       screen,
-      screen.contextState,
       renderGl.createGlPipeline(renderGl.getGlRenderStateRuntime(screen).registries),
     );
     expect(renderGl.getGlRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
@@ -110,7 +109,7 @@ describe('createGlCacheState', () => {
     const teardown = vi.fn();
     renderGl.getGlRenderStateRuntime(screen).context.teardowns.push(teardown);
 
-    createGlCacheState(screen, screen.contextState, screen.pipeline);
+    createGlCacheState(screen, screen.pipeline);
     renderGl.destroyGlRenderState(screen);
 
     expect(teardown).toHaveBeenCalledOnce();
@@ -207,7 +206,7 @@ describe('getGlRenderCacheTarget', () => {
 describe('refreshGlRenderCache', () => {
   it('bakes on the first call and allocates the target on the screen state', () => {
     const screen = fakeScreen();
-    const cacheState = createGlCacheState(screen, screen.contextState, screen.pipeline);
+    const cacheState = createGlCacheState(screen, screen.pipeline);
     const cache = createRenderCache();
     const obj = createDisplayObject();
     const rebaked = refreshGlRenderCache(screen, cacheState, cache, obj, { padding: 5 });
@@ -220,7 +219,7 @@ describe('refreshGlRenderCache', () => {
 
   it('skips the bake under requiresInvalidation when nothing changed', () => {
     const screen = fakeScreen({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const cacheState = createGlCacheState(screen, screen.contextState, screen.pipeline, {
+    const cacheState = createGlCacheState(screen, screen.pipeline, {
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
     const cache = createRenderCache();

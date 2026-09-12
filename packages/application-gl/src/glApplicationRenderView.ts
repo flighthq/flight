@@ -2,7 +2,6 @@ import { createApplicationRenderView, detachApplicationRenderView } from '@fligh
 import { createViewport } from '@flighthq/node/contract';
 import {
   createGlContextFromCanvasElement,
-  createGlContextState,
   createGlRenderState,
   createGlTextureRenderTarget,
   destroyGlRenderState,
@@ -32,8 +31,7 @@ export function createGlApplicationRenderView(
   synchronizeGlCanvasBackingStore(canvas, width, height);
 
   const context = createGlContextFromCanvasElement(canvas, options.context);
-  const contextState = createGlContextState(context);
-  const renderState = createGlRenderState(contextState, options.pipeline, {
+  const renderState = createGlRenderState(context, options.pipeline, {
     ...options.render,
     pixelRatio: window.devicePixelRatio,
   });

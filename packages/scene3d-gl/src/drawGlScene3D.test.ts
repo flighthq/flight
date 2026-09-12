@@ -10,7 +10,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import { createGlOffscreenRenderState, createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlRenderState, createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import {
   createInstancedMesh,
   createMesh,
@@ -47,10 +47,7 @@ describe('drawGlScene3D', () => {
   it('uploads one shared geometry once across a primary and derived state on the same context', () => {
     const { state, gl } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
-    const derived = createGlOffscreenRenderState(
-      state.contextState,
-      createGlPipeline(getGlRenderStateRuntime(state).registries),
-    );
+    const derived = createGlRenderState(state.gl, createGlPipeline(getGlRenderStateRuntime(state).registries));
     const geometry = createBoxMeshGeometry();
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(geometry, [createStandardPbrMaterial()]));

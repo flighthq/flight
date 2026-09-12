@@ -26,64 +26,17 @@ export function createGlContextState(gl: GlContext): GlContextState {
   return finishEntity(state);
 }
 
-export function createGlOffscreenRenderState(
-  contextState: Readonly<GlContextState>,
-  pipeline: Readonly<GlPipeline>,
-  options: GlRenderOptions = {},
-): GlRenderState {
-  return createGlRenderState(contextState, pipeline, options);
-}
-
 export function createGlRenderState(
-  contextState: Readonly<GlContextState>,
+  gl: GlContext,
   pipeline: Readonly<GlPipeline>,
   options: GlRenderOptions = {},
 ): GlRenderState {
-  const gl = contextState.gl;
-
-  const state = _createRenderState({
-    allowSmoothing: options.imageSmoothingEnabled ?? options.allowSmoothing ?? true,
-    pixelRatio: options.pixelRatio ?? 1,
-    raster2DSurfaceProvider: options.raster2DSurfaceProvider ?? null,
-    renderTransform2D: createMatrix(),
-    roundPixels: options.roundPixels ?? false,
-    sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
-  }) as GlRenderState;
-
-  state.applyBlendMode = null;
-  Object.assign(state, { contextState, gl, pipeline });
-
-  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
-
-  const runtime = createGlRenderStateRuntime(contextState, pipeline);
-  state[EntityRuntimeKey] = runtime;
-  runtime.currentFramebuffer = null;
-  runtime.currentMaskDepth = 0;
-  runtime.currentScissorRect = null;
-  runtime.flushPendingDraws = null;
-  runtime.renderTargetViewport = null;
-  runtime.defaultBitmapShader = null;
-  runtime.quadBatchWriterBlendMode = null;
-  runtime.quadBatchWriterMaterial = null;
-  runtime.quadBatchWriterMaterialRenderer = null;
-  runtime.quadBatchWriterMaterialFloats = 0;
-  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
-  runtime.quadBatchWriterCount = 0;
-  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
-  runtime.quadBatchWriterTexture = null;
-  runtime.quadBatchWriterSampler = null;
-  runtime.quadBatchWriterStraightAlpha = false;
-  runtime.quadBatchWriterSmoothing = null;
-  runtime.quadVertexData = new Float32Array(16);
-  runtime.matrixArray = new Float32Array(9);
-  runtime.scissorStack = [];
-  runtime.clipForms = [];
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  gl.disable(gl.DEPTH_TEST);
-
-  return finishEntity(state);
+  let contextState = _contextStateByGl.get(gl);
+  if (contextState === undefined) {
+    contextState = createGlContextState(gl);
+    _contextStateByGl.set(gl, contextState);
+  }
+  return _createGlRenderStateFromContext(contextState, pipeline, options);
 }
 
 export function createGlRenderStateRuntime(
@@ -248,4 +201,57 @@ export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (s
   getGlRenderStateRuntime(state).teardowns.push(teardown);
 }
 
+function _createGlRenderStateFromContext(
+  contextState: Readonly<GlContextState>,
+  pipeline: Readonly<GlPipeline>,
+  options: GlRenderOptions,
+): GlRenderState {
+  const gl = contextState.gl;
+
+  const state = _createRenderState({
+    allowSmoothing: options.imageSmoothingEnabled ?? options.allowSmoothing ?? true,
+    pixelRatio: options.pixelRatio ?? 1,
+    raster2DSurfaceProvider: options.raster2DSurfaceProvider ?? null,
+    renderTransform2D: createMatrix(),
+    roundPixels: options.roundPixels ?? false,
+    sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
+  }) as GlRenderState;
+
+  state.applyBlendMode = null;
+  Object.assign(state, { contextState, gl, pipeline });
+
+  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
+
+  const runtime = createGlRenderStateRuntime(contextState, pipeline);
+  state[EntityRuntimeKey] = runtime;
+  runtime.currentFramebuffer = null;
+  runtime.currentMaskDepth = 0;
+  runtime.currentScissorRect = null;
+  runtime.flushPendingDraws = null;
+  runtime.renderTargetViewport = null;
+  runtime.defaultBitmapShader = null;
+  runtime.quadBatchWriterBlendMode = null;
+  runtime.quadBatchWriterMaterial = null;
+  runtime.quadBatchWriterMaterialRenderer = null;
+  runtime.quadBatchWriterMaterialFloats = 0;
+  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
+  runtime.quadBatchWriterCount = 0;
+  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
+  runtime.quadBatchWriterTexture = null;
+  runtime.quadBatchWriterSampler = null;
+  runtime.quadBatchWriterStraightAlpha = false;
+  runtime.quadBatchWriterSmoothing = null;
+  runtime.quadVertexData = new Float32Array(16);
+  runtime.matrixArray = new Float32Array(9);
+  runtime.scissorStack = [];
+  runtime.clipForms = [];
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.disable(gl.DEPTH_TEST);
+
+  return finishEntity(state);
+}
+
+const _contextStateByGl = new WeakMap<GlContext, GlContextState>();
 const _destroyedStates = new WeakSet<GlRenderState>();

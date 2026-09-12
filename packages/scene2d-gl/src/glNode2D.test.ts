@@ -2,7 +2,6 @@
 import {
   createEmptyGlRegistries,
   createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
@@ -17,8 +16,7 @@ function makeState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  const contextState = createGlContextState(createGlContextFromCanvasElement(canvas));
-  return createGlRenderState(contextState, createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function makeRenderer() {

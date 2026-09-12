@@ -5,6 +5,7 @@ import type {
   EntityConstruction,
   GlContext,
   GlRenderState,
+  GlScreenRenderTarget,
   GlTextureRenderTarget,
   Matrix,
   RenderProxy2D,
@@ -28,6 +29,16 @@ interface GlTextureRenderTargetStorage extends RenderTargetAxes {
   depthTexture: WebGLTexture | null;
   colorRenderbuffers: WebGLRenderbuffer[];
   depthStencilRenderbuffer: WebGLRenderbuffer | null;
+}
+
+export function createGlScreenRenderTarget(gl: GlContext): GlScreenRenderTarget {
+  const target = allocateEntity<GlScreenRenderTarget>();
+  target.framebuffer = null;
+  target.width = gl.drawingBufferWidth;
+  target.height = gl.drawingBufferHeight;
+  target.colorAttachments = 1;
+  target.colorSpace = 'srgb';
+  return finishEntity(target);
 }
 
 /**

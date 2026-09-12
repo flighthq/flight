@@ -13,7 +13,7 @@ export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
 
 // Installs the GL pipeline-policy guard. A render state derives proxy transforms relative to one root;
 // preparing another root on that state can reuse stale relative transforms. Give each independently
-// rendered root its own createGlOffscreenRenderState-derived state.
+// rendered root its own createGlRenderState(gl, pipeline) state.
 export function enableGlRenderStateGuards(state: GlRenderState): void {
   const runtime = getRenderStateRuntime(state);
   const table = runtime.registries.renderRootGuard ?? createSlotTable('RenderRootGuard', 'Disabled');
@@ -66,7 +66,7 @@ function warnOnSecondRenderRoot(state: RenderState, root: Renderable): void {
     {
       firstRoot: previous,
       message:
-        'prepareScene2DRender: one GlRenderState was used for multiple roots — create a dedicated state with createGlOffscreenRenderState(contextState, pipeline)',
+        'prepareScene2DRender: one GlRenderState was used for multiple roots — create a dedicated state with createGlRenderState(gl, pipeline)',
       root,
       state,
     },

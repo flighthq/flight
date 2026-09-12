@@ -2,7 +2,7 @@ import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginGlRenderPass,
-  createGlOffscreenRenderState,
+  createGlRenderState,
   createGlTextureRenderTarget,
   destroyGlRenderState,
   destroyGlTextureRenderTarget,
@@ -25,7 +25,6 @@ import type {
   Node2D,
   Scene2DRenderer,
   GlRenderState,
-  GlContextState,
   GlPipeline,
   GlRenderOptions,
   GlTextureRenderTarget,
@@ -38,22 +37,12 @@ import type {
 import { renderGlScene2D } from './glNode2D';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
-/**
- * Creates an offscreen render state for baking render caches consumed by `screenState`.
- *
- * Gl textures and framebuffers cannot cross GL contexts, so — unlike the canvas backend —
- * this offscreen state must share the screen state's GL context and every context-bound
- * resource (shaders, buffers, the uploaded-texture cache). What it keeps separate is the
- * scene-graph bookkeeping: its own render node map, adapter map, and frame counter, so baking
- * neither substitutes a cache into itself nor disturbs the screen state's nodes.
- */
 export function createGlCacheState(
   ownerState: GlRenderState,
-  contextState: Readonly<GlContextState>,
   pipeline: Readonly<GlPipeline>,
   options: GlRenderOptions = {},
 ): GlRenderState {
-  const cacheState = createGlOffscreenRenderState(contextState, pipeline, options);
+  const cacheState = createGlRenderState(ownerState.gl, pipeline, options);
   registerGlRenderStateTeardown(ownerState, () => destroyGlRenderState(cacheState));
   return cacheState;
 }

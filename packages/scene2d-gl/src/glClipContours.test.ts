@@ -33,7 +33,7 @@ describe('pushGlClipContours', () => {
   it('rejects a shared-context cache refresh into the contour target before it can clear coverage', () => {
     const { state, gl } = createGlState();
     const cache = createRenderCache();
-    const cacheState = createGlCacheState(state, state.contextState, state.pipeline);
+    const cacheState = createGlCacheState(state, state.pipeline);
     const source = createDisplayObject();
     const target = ensureGlRenderCacheTarget(state, cache, 1, 1);
     beginGlRenderPass(state, target);
@@ -52,7 +52,7 @@ describe('pushGlClipContours', () => {
 
   it('restores the outer framebuffer after a shared-context cache refresh into another target', () => {
     const { state, gl } = createGlState();
-    const cacheState = createGlCacheState(state, state.contextState, state.pipeline);
+    const cacheState = createGlCacheState(state, state.pipeline);
     const outer = createGlTextureRenderTarget(state, {
       depth: 'depth-stencil',
       height: 64,
