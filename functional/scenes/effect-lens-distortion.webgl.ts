@@ -54,6 +54,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { s
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
+const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
 
 // The distortion amount the effect is given AND the value the assertion reasons about. One constant so
 // the descriptor and the oracle cannot drift apart.
@@ -61,7 +62,7 @@ const LENS_AMOUNT = 0.35;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }

@@ -37,6 +37,15 @@ declareExpectedImageDescription(
     'The very dark background is visible between and around all four.',
 );
 const BACKGROUND_COLOR = 0x101014ff;
+const screenClear = {
+  color: [
+    ((BACKGROUND_COLOR >>> 24) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 16) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 8) & 0xff) / 0xff,
+    (BACKGROUND_COLOR & 0xff) / 0xff,
+  ] as const,
+  depth: 1.0,
+};
 
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebGlRenderSurface();
@@ -61,7 +70,7 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, []);
 }

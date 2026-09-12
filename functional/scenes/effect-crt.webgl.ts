@@ -60,10 +60,11 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { s
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [
     createCrtEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
