@@ -53,6 +53,9 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -80,6 +83,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       sceneGraphSyncPolicy: options.syncPolicy,
     },
   );
+  const screenTarget = createGlScreenRenderTarget(state.gl);
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
@@ -124,7 +128,9 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     scale: pixelRatio,
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
-      renderGlScene2D(state, root);
+      const pass = beginGlRenderPass(state, screenTarget);
+      renderGlScene2D(pass, root);
+      endGlRenderPass(pass);
     },
     benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);

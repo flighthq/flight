@@ -94,9 +94,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // A few solid shapes spread across the frame. Velocity is contributed in render.webgl.ts (one static

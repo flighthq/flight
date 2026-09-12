@@ -94,18 +94,18 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
     format: 'rgba8',
   });
   prepareScene2DRender(state, root);
-  beginGlRenderPass(state, target, { color: [0, 0, 0, 1] });
-  renderGlScene2D(state, root);
-  endGlRenderPass(state);
+  const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 1] });
+  renderGlScene2D(pass, root);
+  endGlRenderPass(pass);
   registerGlBlendEffectBackdrop(state, BACKDROP_KEY, target.texture);
   return target;
 }
 
 export function render(layerRoot: Node2D): void {
   if (!prepareScene2DRender(state, layerRoot)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, layerRoot);
-  endGlRenderEffectPipeline(state, pipeline, [
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, layerRoot);
+  endGlRenderEffectPipeline(pass, pipeline, [
     createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),
   ]);
 }

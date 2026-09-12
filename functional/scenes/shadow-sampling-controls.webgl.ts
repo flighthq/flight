@@ -117,12 +117,12 @@ shadowCamera.projection = createOrthographicProjection({ halfHeight: 40, halfWid
 
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-beginGlRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-drawGlScene3D(state, scene, camera, lights);
-endGlRenderEffectPipeline(state, pipeline, []);
+drawGlScene3D(pass, scene, camera, lights);
+endGlRenderEffectPipeline(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const x = Math.floor(bitmap.width / 2);

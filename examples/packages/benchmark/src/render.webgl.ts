@@ -14,6 +14,9 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -32,6 +35,7 @@ export const state = createGlRenderState(
     raster2DSurfaceProvider: webRaster2DSurfaceProvider,
   },
 );
+const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
@@ -40,5 +44,7 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderGlScene2D(state, root);
+  const pass = beginGlRenderPass(state, screenTarget);
+  renderGlScene2D(pass, root);
+  endGlRenderPass(pass);
 }

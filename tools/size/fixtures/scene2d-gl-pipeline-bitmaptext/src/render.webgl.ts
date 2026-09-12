@@ -13,6 +13,9 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlBitmapTextRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -37,6 +40,7 @@ const state = createGlRenderState(
   pipeline,
   { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
 );
+const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(pipeline);
 for (const [kind, entry] of registries.renderers.entries) {
@@ -76,6 +80,8 @@ updateBitmapText(bitmapText);
 addNodeChild(root, bitmapText);
 
 prepareScene2DRender(state, root);
-renderGlScene2D(state, root);
+const pass = beginGlRenderPass(state, screenTarget);
+renderGlScene2D(pass, root);
+endGlRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineBitmapText', { bitmapText, registries, root });

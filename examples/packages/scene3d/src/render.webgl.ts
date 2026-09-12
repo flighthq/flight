@@ -46,11 +46,11 @@ export function render(
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
-  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawGlScene3D(pass, scene, camera, lights);
+  endGlRenderEffectPipeline(pass, pipeline, []);
 }

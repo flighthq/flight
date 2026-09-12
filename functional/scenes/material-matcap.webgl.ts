@@ -73,15 +73,15 @@ export const width = 800;
 export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawGlScene3D(pass, scene, camera, lights);
+  endGlRenderEffectPipeline(pass, pipeline, []);
 }
 
 // material-matcap — proves a MatcapMaterial mesh renders as a FLAT, UNSHADED surface on the Gl and Wgpu

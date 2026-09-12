@@ -78,10 +78,10 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   setGlPbrTransmissionSceneColor(state, null);
-  beginGlRenderPass(state, opaqueSceneTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+  const opaquePass = beginGlRenderPass(state, opaqueSceneTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   prepareScene3DRender(state, opaqueScene, camera, lights);
-  drawGlScene3D(state, opaqueScene, camera, lights);
-  endGlRenderPass(state);
+  drawGlScene3D(opaquePass, opaqueScene, camera, lights);
+  endGlRenderPass(opaquePass);
 
   const gl = state.gl;
   gl.bindTexture(gl.TEXTURE_2D, opaqueSceneTarget.texture);
@@ -94,14 +94,14 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
     width: opaqueSceneTarget.width,
   });
 
-  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawGlScene3D(pass, scene, camera, lights);
+  endGlRenderEffectPipeline(pass, pipeline, []);
 }
 
 // material-transmission-volume proves explicit opaque capture/resolve, projected refraction,

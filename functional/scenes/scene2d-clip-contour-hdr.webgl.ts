@@ -78,9 +78,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
 }
 
 // A bright square masked by a TRIANGULAR (non-rectangular) contour clip, rendered through an HDR

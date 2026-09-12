@@ -66,9 +66,9 @@ const LENS_AMOUNT = 0.35;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }
 
 // Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away

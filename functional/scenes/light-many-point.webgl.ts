@@ -161,14 +161,14 @@ const lights = createScene3DLights({
   spot: spotLights,
 });
 
-beginGlRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
-drawGlScene3D(state, scene, camera, lights, forwardLights);
-endGlRenderEffectPipeline(state, pipeline, []);
+drawGlScene3D(pass, scene, camera, lights, forwardLights);
+endGlRenderEffectPipeline(pass, pipeline, []);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all
 // twelve centers; the tolerance leaves room for small cross-driver float differences without accepting

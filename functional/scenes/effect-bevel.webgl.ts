@@ -91,9 +91,9 @@ export function render(root: Node2D): void {
   // The background is drawn OUTSIDE the effect pipeline on purpose. A drop shadow works on the source
   // SILHOUETTE, and drawing an opaque background into the pipeline first makes the silhouette the whole
   // frame — the offset shadow then lands underneath opaque pixels and nothing is visible anywhere.
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [
     createBevelEffect({
       angle: BEVEL_ANGLE,
       blurX: 8,

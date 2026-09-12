@@ -90,13 +90,13 @@ export function render(
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
-  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawGlScene3D(pass, scene, camera, lights);
+  endGlRenderEffectPipeline(pass, pipeline, []);
 }
 
 // shadow-directional — proves the directional shadow recipe on the Gl backend: a sphere hovering over a

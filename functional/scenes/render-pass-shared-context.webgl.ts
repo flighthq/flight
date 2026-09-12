@@ -57,7 +57,7 @@ const cacheState = createGlCacheState(state, state.pipeline, {
   sceneGraphSyncPolicy: state.sceneGraphSyncPolicy,
 });
 
-beginGlRenderPass(state, screenTarget, { color: GREEN });
+const pass = beginGlRenderPass(state, screenTarget, { color: GREEN });
 refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject());
 
 // The cache state is a distinct GlRenderState over the same physical context. Its nested pass must
@@ -65,7 +65,7 @@ refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject
 // control; red proves this clear landed back on screenTarget instead of leaking to the default canvas.
 state.gl.clearColor(0.9, 0.08, 0.08, 1);
 state.gl.clear(state.gl.COLOR_BUFFER_BIT);
-endGlRenderPass(state);
+endGlRenderPass(pass);
 presentGlRenderTarget(state, screenTarget);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

@@ -62,9 +62,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLensDirtEffect({ intensity: 1.5, threshold: 0.45, seed: 4 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createLensDirtEffect({ intensity: 1.5, threshold: 0.45, seed: 4 })]);
 }
 
 // Bright shapes on a dark field — lens dirt catches the light: the procedural smudge blobs only brighten

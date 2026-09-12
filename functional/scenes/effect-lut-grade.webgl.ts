@@ -71,9 +71,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

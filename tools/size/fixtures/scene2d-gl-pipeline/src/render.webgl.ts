@@ -8,6 +8,9 @@ import {
   enableGlBlendModeSupport,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, scene2DGlPipeline } from '@flighthq/scene2d-gl';
@@ -24,6 +27,7 @@ const state = createGlRenderState(
   scene2DGlPipeline,
   { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
 );
+const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(scene2DGlPipeline);
 for (const [kind, entry] of registries.renderers.entries) {
@@ -40,6 +44,8 @@ sprite.y = 40;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
-renderGlScene2D(state, root);
+const pass = beginGlRenderPass(state, screenTarget);
+renderGlScene2D(pass, root);
+endGlRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene2dGlPipeline', { registries, root });

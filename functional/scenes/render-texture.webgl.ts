@@ -122,10 +122,10 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   format: 'rgba16f',
   sampleCount: 1,
 });
-beginGlRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
-drawGlScene3D(state, consumerScene, consumerCamera, lights);
-endGlRenderEffectPipeline(state, pipeline, []);
+drawGlScene3D(pass, consumerScene, consumerCamera, lights);
+endGlRenderEffectPipeline(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const topSample = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42));
