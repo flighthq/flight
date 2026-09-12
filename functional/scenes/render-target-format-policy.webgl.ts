@@ -5,14 +5,14 @@ import {
   beginGlRenderPass,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   endGlRenderPass,
-  explainGlRenderTarget,
+  explainGlTextureRenderTarget,
   isGlRenderTargetFormatSupported,
   presentGlRenderTarget,
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
-import { scene3DGlPipeline } from '@flighthq/scene2d-gl/contract';
+import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -59,13 +59,13 @@ const descriptor = {
 };
 
 const floatSupported = isGlRenderTargetFormatSupported(state, 'rgba32f');
-const requiredTarget = createGlRenderTarget(state, descriptor, 'required');
+const requiredTarget = createGlTextureRenderTarget(state, descriptor, 'required');
 if ((requiredTarget !== null) !== floatSupported) {
   throw new Error('[render-target-format-policy] capability query and required allocation disagreed');
 }
 
-const target = requiredTarget ?? createGlRenderTarget(state, descriptor, 'preferred');
-const explanation = explainGlRenderTarget(target);
+const target = requiredTarget ?? createGlTextureRenderTarget(state, descriptor, 'preferred');
+const explanation = explainGlTextureRenderTarget(target);
 if (floatSupported) {
   if (target.format !== 'rgba32f' || target.colorFormats[0] !== 'rgba32f' || explanation.differences.length !== 0) {
     throw new Error('[render-target-format-policy] supported rgba32f storage was substituted');

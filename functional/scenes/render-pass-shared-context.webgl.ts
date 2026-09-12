@@ -6,13 +6,14 @@ import {
   beginGlRenderPass,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   endGlRenderPass,
   presentGlRenderTarget,
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { scene3DGlPipeline, createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
+import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
+import { scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,7 +49,7 @@ const state = createGlRenderState(
   },
 );
 const GREEN: readonly [number, number, number, number] = [24 / 255, 179 / 255, 58 / 255, 1];
-const screenTarget = createGlRenderTarget(state, {
+const screenTarget = createGlTextureRenderTarget(state, {
   height: canvas.height,
   width: canvas.width,
 });
