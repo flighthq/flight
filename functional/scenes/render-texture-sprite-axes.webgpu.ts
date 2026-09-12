@@ -20,6 +20,7 @@ import {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuScene2D,
+  submitWgpuFrame,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
@@ -80,12 +81,15 @@ addRect(producer, 0, 0, 50, 40, 0xf04a4aff);
 addRect(producer, 50, 0, 50, 40, 0x42d681ff);
 addRect(producer, 0, 40, 50, 40, 0x3d72e8ff);
 addRect(producer, 50, 40, 50, 40, 0xf2ca52ff);
+// The producer runs in its own frame, submitted here: whoever opens a frame explicitly closes it, and
+// the harness's own render loop opens (and submits) the frame that samples the finished texture.
 beginWgpuFrame(state);
 renderIntoWgpuRenderTexture(state, renderTexture, (capturePass) => {
   setWgpuRenderTransform2D(capturePass, createMatrix());
   prepareScene2DRender(state, producer);
   renderWgpuScene2D(capturePass, producer);
 });
+submitWgpuFrame(state);
 
 const root = createDisplayObject();
 addRect(root, SPRITE_X - 15, SPRITE_Y - 15, SPRITE_WIDTH + 30, SPRITE_HEIGHT + 30, BACKING);

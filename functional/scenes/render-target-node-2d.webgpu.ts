@@ -26,6 +26,7 @@ import {
   prepareScene3DRender,
   registerWgpuPhongMaterial,
   renderIntoWgpuRenderTexture,
+  submitWgpuFrame,
   setCamera3DViewMatrix4FromLookAt,
   ShapeKind,
   SpriteKind,
@@ -113,6 +114,8 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
+// The 3D content runs in its own frame, submitted below: whoever opens a frame explicitly closes it, and
+// the harness's own render loop opens (and submits) the frame that samples the finished texture.
 beginWgpuFrame(state);
 // The opaque backdrop the 3D content is composited over: a clear the pass is given, rather than a colour
 // stored on the render texture's descriptor.
@@ -125,6 +128,7 @@ renderIntoWgpuRenderTexture(
   },
   { color: [0x05 / 0xff, 0x07 / 0xff, 0x0d / 0xff, 1], depth: 1.0, stencil: 0 },
 );
+submitWgpuFrame(state);
 render(root);
 
 export function assertRender(frame: Readonly<Bitmap>): void {
