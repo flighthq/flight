@@ -10,7 +10,14 @@ import type {
   Viewport,
 } from '@flighthq/types/contract';
 
-import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
+import {
+  acquireGlRenderPassHandle,
+  beginGlRenderPass,
+  endGlRenderPass,
+  getGlCurrentRenderPass,
+  releaseGlRenderPassHandle,
+  setGlRenderTransform2D,
+} from './glRenderPass';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 
@@ -45,6 +52,30 @@ function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRender
   Object.assign(out, overrides);
   return finishEntity(out);
 }
+
+describe('acquireGlRenderPassHandle', () => {
+  it('returns a pass with the given gl, state, and target', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget();
+
+    const handle = acquireGlRenderPassHandle(gl, state, target);
+
+    expect(handle.gl).toBe(gl);
+    expect(handle.state).toBe(state);
+    expect(handle.target).toBe(target);
+  });
+
+  it('reuses a previously released handle from the same context', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget();
+
+    const first = acquireGlRenderPassHandle(gl, state, target);
+    releaseGlRenderPassHandle(gl, first);
+    const second = acquireGlRenderPassHandle(gl, state, target);
+
+    expect(second).toBe(first);
+  });
+});
 
 describe('beginGlRenderPass', () => {
   it('clears color and depth when clear descriptor specifies both', () => {
@@ -350,6 +381,34 @@ function makeViewport(x: number, y: number, width: number, height: number): View
   return { devicePixelRatio: 1, height, width, x, y } as Viewport;
 }
 
+describe('getGlCurrentRenderPass', () => {
+  it('returns null when no pass is active', () => {
+    const { state } = createGlState();
+
+    expect(getGlCurrentRenderPass(state)).toBeNull();
+  });
+
+  it('returns the active pass during a render pass', () => {
+    const { state } = createGlState();
+    const target = makeTarget();
+
+    const pass = beginGlRenderPass(state, target);
+
+    expect(getGlCurrentRenderPass(state)).toBe(pass);
+    endGlRenderPass(pass);
+  });
+
+  it('returns null after the pass ends', () => {
+    const { state } = createGlState();
+    const target = makeTarget();
+
+    const pass = beginGlRenderPass(state, target);
+    endGlRenderPass(pass);
+
+    expect(getGlCurrentRenderPass(state)).toBeNull();
+  });
+});
+
 describe('offscreen 2D projection basis', () => {
   // Pins the property a downstream report claimed was broken: that an offscreen state's 2D pass projects
   // into the BOUND TARGET's dimensions rather than the shared context's drawing buffer. Reading the
@@ -394,6 +453,30 @@ describe('offscreen 2D projection basis', () => {
     expect([transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty]).toEqual([
       1, 0, 0, 1, 0, 0,
     ]);
+  });
+});
+
+describe('releaseGlRenderPassHandle', () => {
+  it('returns a handle to the pool for reuse', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget();
+
+    const handle = acquireGlRenderPassHandle(gl, state, target);
+    releaseGlRenderPassHandle(gl, handle);
+    const reused = acquireGlRenderPassHandle(gl, state, target);
+
+    expect(reused).toBe(handle);
+  });
+
+  it('creates the pool lazily on first release', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget();
+    const handle = acquireGlRenderPassHandle(gl, state, target);
+
+    releaseGlRenderPassHandle(gl, handle);
+
+    const second = acquireGlRenderPassHandle(gl, state, target);
+    expect(second).toBe(handle);
   });
 });
 
