@@ -293,7 +293,7 @@ describe('explainGlTextureRenderTarget', () => {
 });
 
 describe('initializeGlTextureRenderTarget', () => {
-  it('is the construction initializer of createGlRenderTarget', () => {
+  it('is the construction initializer of createGlTextureRenderTarget', () => {
     expect(typeof initializeGlTextureRenderTarget).toBe('function');
   });
 });

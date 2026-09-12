@@ -2,7 +2,6 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   AdvancedBlendMode,
   ShapeKind,
   addNodeChild,
@@ -16,7 +15,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   createShape,
   registerGlBlendEffect,
   defaultGlShapeRenderer,
@@ -62,11 +61,9 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio,
@@ -91,7 +88,7 @@ const BACKDROP_KEY = 'scene';
 // The target's lifetime spans the whole scene (the effect samples it during end()), so it is retained on
 // the module rather than released. Cleared to opaque black so the "backdrop-only" quadrant reads as black.
 function renderBackdrop(root: Node2D): GlRenderTarget {
-  const target = createGlRenderTarget(state, {
+  const target = createGlTextureRenderTarget(state, {
     width: canvas.width,
     height: canvas.height,
     format: 'rgba8',
