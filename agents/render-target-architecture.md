@@ -49,35 +49,33 @@ Same structure for WGPU: `WgpuRenderTarget` (base), `WgpuScreenRenderTarget`, `W
 
 **Clear loop fix:** the broadcast-color clear path currently iterates `target.textures.length`. With the base type, it iterates `target.colorAttachments` — the declared count, not the storage array length. This is correct for both screen (1 color attachment, no textures array) and offscreen (colorAttachments === textures.length).
 
-### 2. Screen render target takes the driver handle directly
+### 2. Screen target and render state are independent — both take the driver handle
 
-Context state is an internal detail. The user passes the driver handle they already have — `GlContext` (aliased to `WebGL2RenderingContext` on web, EGL/WGL/GLX in C++) or `GPUDevice` — and the creation function builds context state internally:
+The screen render target and render state are conceptually independent. Neither is derived from the other. Both take the driver handle directly:
 
 ```typescript
-// GL — takes the driver handle, not a DOM element
-const gl = canvas.getContext('webgl2');  // user's responsibility — web-specific
-const screen = createGlScreenRenderTarget(gl);
+// GL
+const gl = canvas.getContext('webgl2');
+const screen = createGlScreenRenderTarget(gl);    // "which screen" — holds gl for identity
+const state = createGlRenderState(gl, pipeline);  // "how to talk to the GPU" — holds gl for operations
 
 // WGPU
-const adapter = await navigator.gpu.requestAdapter();
 const device = await adapter.requestDevice();
-const screen = createWgpuScreenRenderTarget(device, canvas);
+const screen = createWgpuScreenRenderTarget(device, canvas);  // holds GPUCanvasContext
+const state = createWgpuRenderState(device, pipeline);
 
 // Canvas 2D — inherently web-only, no portability suffix needed
-const screen = createCanvasScreenRenderTarget(canvas);
+const screen = createCanvasScreenRenderTarget(canvas);  // holds CanvasRenderingContext2D
+const state = createCanvasRenderState(pipeline);
 ```
 
-Context acquisition (`canvas.getContext(...)`, `navigator.gpu.requestAdapter()`) is the caller's one-liner, not an SDK function. This keeps the SDK entry point portable: `createGlScreenRenderTarget(gl: GlContext)` has a direct C++ equivalent taking the native GL context handle, while a function taking `HTMLCanvasElement` would not.
+Context acquisition (`canvas.getContext(...)`, `navigator.gpu.requestAdapter()`) is the caller's one-liner, not an SDK function. This keeps the SDK entry point portable: `createGlScreenRenderTarget(gl: GlContext)` has a direct C++ equivalent taking the native GL context handle, while a function taking `HTMLCanvasElement` would not. Canvas methods use the `Canvas` prefix, which already declares web-only — no `FromCanvasElement` suffix.
 
-Canvas methods use the `Canvas` prefix, which already declares web-only — no `FromCanvasElement` suffix.
+**Why the screen target holds the driver handle:** in a multiwindow scenario, each screen target must identify *which* default framebuffer / swap chain surface to bind. For GL, `gl` IS the default framebuffer identity (one context = one default framebuffer). For WGPU, `GPUCanvasContext` identifies the swap chain surface (one `GPUDevice` can target multiple canvases). For Canvas 2D, `CanvasRenderingContext2D` identifies the canvas. The handle is the screen's identity across all backends.
 
-Internally, the creation function builds context state (`GlContextState`, `GlContextRuntime`) from the driver handle. The user never sees these. The render state is then created from the screen target:
+**Why the render state also holds the driver handle:** the state needs the driver handle for GPU operations that happen outside any pass — shader compilation, texture upload, renderer registration. The state does not hold or reference a render target; the target flows in at `beginRenderPass` time.
 
-```typescript
-const state = createGlRenderState(screen, pipeline);
-```
-
-`createGlRenderState` extracts the context from the screen target internally. One fewer noun for the user: no `createGlContextState`, no `createGlContextFromCanvasElement`.
+Context state (`GlContextState`, `GlContextRuntime`) is built internally by `createGlRenderState` — the user never sees or creates it.
 
 ### 3. Render pass as a pooled handle
 
@@ -101,7 +99,7 @@ The pass handle carries the state, the active target, the viewport, and the save
 
 ```typescript
 // Before
-const state = createGlRenderState(contextState, pipeline, { backgroundColor: 0x1a1a2eff });
+const state = createGlRenderState(gl, pipeline, { backgroundColor: 0x1a1a2eff });
 renderGlBackground(state);
 
 // After
@@ -128,10 +126,10 @@ Canvas 2D has a structural difference from GL/WGPU: each canvas element has its 
 
 Two separate types, both kept internally:
 
-- **Context** (`GlContext`, `GPUDevice`) — the driver handle from the platform. Not an Entity. The user passes this in.
+- **Context** (`GlContext`, `GPUDevice`) — the driver handle from the platform. Not an Entity. The user passes this to both `createGl*RenderTarget` and `createGlRenderState`.
 - **Context state** (`GlContextState` → `GlContextRuntime`) — Flight's bookkeeping: binding shadow, shared GPU buffers, texture caches. An Entity with a runtime.
 
-`createGlContextState(gl)` still exists as an internal function — it takes the driver handle and builds the tracking around it. But the user never calls it: `createGlScreenRenderTarget(gl)` calls it internally, and the render state extracts the context state from the screen target. The driver handle is the only GPU-layer input the user provides.
+`createGlContextState(gl)` still exists as an internal function — `createGlRenderState(gl, pipeline)` calls it to build the tracking layer. The user never sees or creates context state directly. The driver handle is the only GPU-layer input the user provides — it goes to both the screen target (for identity) and the render state (for operations).
 
 ## Resulting render loop
 
@@ -141,17 +139,17 @@ Two separate types, both kept internally:
 // GL (web)
 const gl = canvas.getContext('webgl2');
 const screen = createGlScreenRenderTarget(gl);
-const state = createGlRenderState(screen, pipeline);
+const state = createGlRenderState(gl, pipeline);
 // ...register renderers, texture resolvers, blend support...
 
 // WGPU (web)
 const device = await adapter.requestDevice();
 const screen = createWgpuScreenRenderTarget(device, canvas);
-const state = createWgpuRenderState(screen, pipeline);
+const state = createWgpuRenderState(device, pipeline);
 
 // Canvas 2D (web-only)
 const screen = createCanvasScreenRenderTarget(canvas);
-const state = createCanvasRenderState(screen, pipeline);
+const state = createCanvasRenderState(pipeline);
 
 // DOM (web-only, no target/pass model)
 const state = createDomRenderState(element, pipeline);
