@@ -1,6 +1,12 @@
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { CanvasRenderState, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type {
+  CanvasRenderPass,
+  CanvasRenderState,
+  Node2D,
+  RenderProxy2D,
+  Scene2DRenderer,
+} from '@flighthq/types/contract';
 
 import { resolveCanvasCssFilter } from './canvasCSSFilterBinding';
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -14,7 +20,10 @@ export const defaultCanvasScene2DRenderer: Scene2DRenderer = {
   submit: drawCanvasScene2D,
 };
 
-export function renderCanvasScene2D(state: CanvasRenderState, source: Node2D): void {
+// Draws `source`'s subtree into the pass. The pass names the target, so the same scene renders to the
+// screen or into an offscreen canvas with no argument but this one changing.
+export function renderCanvasScene2D(pass: CanvasRenderPass, source: Node2D): void {
+  const state = pass.state;
   const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 

@@ -62,7 +62,6 @@ export {
   registerCanvasTextureResolver,
   renderIntoCanvasRenderTexture,
   releaseCanvasRenderTexture,
-  renderCanvasBackground,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
   acquireCanvasRenderSurface,

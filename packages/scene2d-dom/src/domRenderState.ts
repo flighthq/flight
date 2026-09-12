@@ -1,9 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import {
-  createRenderState as _createRenderState,
-  createRenderStateRuntime,
-  setRenderStateBackgroundColor,
-} from '@flighthq/render/contract';
+import { createRenderState as _createRenderState, createRenderStateRuntime } from '@flighthq/render/contract';
 import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -14,8 +10,6 @@ export function createDomRenderState(element: HTMLElement, options: Partial<DomR
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as DomRenderState;
-
-  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.applyBlendMode = null;
   state.domCssFilterResolver = null;

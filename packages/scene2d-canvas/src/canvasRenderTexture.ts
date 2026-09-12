@@ -1,19 +1,20 @@
 import type {
+  CanvasRenderPass,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTextureEntry,
   CanvasRenderTextureExplanation,
   RenderTexture,
 } from '@flighthq/types/contract';
 
+import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
 import { registerCanvasRenderStateTeardown } from './canvasRenderState';
+import { getCanvasSurfaceCreator } from './canvasRenderSurface';
 import {
-  beginCanvasRenderPass,
-  createCanvasRenderTarget,
-  destroyCanvasRenderTarget,
-  endCanvasRenderPass,
-  resizeCanvasRenderTarget,
-} from './canvasRenderTarget';
+  createCanvasTextureRenderTarget,
+  destroyCanvasTextureRenderTarget,
+  resizeCanvasTextureRenderTarget,
+} from './canvasTextureRenderTarget';
 
 // Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(
@@ -28,7 +29,7 @@ export function destroyCanvasRenderTexture(state: CanvasRenderState, renderTextu
   const targets = _targetsByState.get(state);
   const entry = targets?.get(renderTexture);
   if (entry === undefined) return;
-  destroyCanvasRenderTarget(entry.target);
+  destroyCanvasTextureRenderTarget(entry.target);
   targets!.delete(renderTexture);
 }
 
@@ -49,7 +50,7 @@ export function explainCanvasRenderTexture(
 export function getCanvasRenderTextureTarget(
   state: CanvasRenderState,
   renderTexture: Readonly<RenderTexture>,
-): Readonly<CanvasRenderTarget> | null {
+): Readonly<CanvasTextureRenderTarget> | null {
   const entry = getEntry(state, renderTexture);
   return entry?.status === 'ready' ? entry.target : null;
 }
@@ -68,21 +69,22 @@ export function isCanvasRenderTextureReady(state: CanvasRenderState, renderTextu
 }
 
 /**
- * Clears and populates a render texture's hidden Canvas target. The callback is synchronous and
- * draws through the supplied state's redirected offscreen context.
+ * Clears and populates a render texture's hidden Canvas target. The callback receives the pass bound to
+ * that target — the same handle every other draw entry point takes — and the enclosing pass is restored
+ * even when the callback throws.
  */
 export function renderIntoCanvasRenderTexture(
   ownerState: CanvasRenderState,
   renderState: CanvasRenderState,
   renderTexture: RenderTexture,
-  callback: (state: CanvasRenderState) => void,
+  callback: (pass: CanvasRenderPass) => void,
 ): void {
   writeCanvasRenderTextureTarget(ownerState, renderTexture, (target) => {
-    beginCanvasRenderPass(renderState, target, { color: [0, 0, 0, 0] });
+    const pass = beginCanvasRenderPass(renderState, target, { color: [0, 0, 0, 0] });
     try {
-      callback(renderState);
+      callback(pass);
     } finally {
-      endCanvasRenderPass(renderState);
+      endCanvasRenderPass(pass);
     }
   });
 }
@@ -92,7 +94,7 @@ export function renderIntoCanvasRenderTexture(
 export function writeCanvasRenderTextureTarget<T>(
   state: CanvasRenderState,
   renderTexture: RenderTexture,
-  callback: (target: CanvasRenderTarget) => T,
+  callback: (target: CanvasTextureRenderTarget) => T,
 ): T {
   const entry = ensureEntry(state, renderTexture);
   const previousStatus = entry.status;
@@ -115,11 +117,11 @@ function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<RenderTex
   if (entry === undefined) {
     entry = {
       status: 'unrendered',
-      target: createCanvasRenderTarget(state.surface.creator, descriptor.width, descriptor.height),
+      target: createCanvasTextureRenderTarget(getCanvasSurfaceCreator(state), descriptor.width, descriptor.height),
     };
     targets.set(renderTexture, entry);
   } else {
-    resizeCanvasRenderTarget(entry.target, descriptor.width, descriptor.height);
+    resizeCanvasTextureRenderTarget(entry.target, descriptor.width, descriptor.height);
   }
   return entry;
 }
@@ -144,7 +146,7 @@ function getEntry(
 function destroyOwnedCanvasRenderTextures(state: CanvasRenderState): void {
   const targets = _targetsByState.get(state);
   if (targets === undefined) return;
-  for (const entry of targets.values()) destroyCanvasRenderTarget(entry.target);
+  for (const entry of targets.values()) destroyCanvasTextureRenderTarget(entry.target);
   targets.clear();
   _targetsByState.delete(state);
 }

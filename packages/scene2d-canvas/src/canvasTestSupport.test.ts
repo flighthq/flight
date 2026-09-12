@@ -1,7 +1,7 @@
 import {
   acquireTestCanvasRenderSurface,
   createCanvasRenderState,
-  createCanvasRenderTarget,
+  createCanvasTextureRenderTarget,
   createCanvasTextureResolvers,
   initializeCanvasRenderSurfaceCreator,
 } from './canvasTestSupport';
@@ -23,9 +23,9 @@ describe('createCanvasRenderState', () => {
   });
 });
 
-describe('createCanvasRenderTarget', () => {
+describe('createCanvasTextureRenderTarget', () => {
   it('creates a sized test target', () => {
-    const target = createCanvasRenderTarget(12, 8);
+    const target = createCanvasTextureRenderTarget(12, 8);
 
     expect(target.width).toBe(12);
     expect(target.height).toBe(8);

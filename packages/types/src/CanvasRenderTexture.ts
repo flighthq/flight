@@ -1,6 +1,6 @@
 import type { CanvasRenderTargetPool } from './CanvasRenderEffectPipeline';
 import type { CanvasRenderState } from './CanvasRenderState';
-import type { CanvasRenderTarget } from './CanvasRenderTarget';
+import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { Entity } from './Entity';
 import type { RenderTexture } from './RenderTexture';
 
@@ -14,7 +14,7 @@ export interface CanvasRenderTextureExplanation {
 
 export interface CanvasRenderTextureEntry {
   status: CanvasRenderTextureStatus;
-  target: CanvasRenderTarget;
+  target: CanvasTextureRenderTarget;
 }
 
 // App-level lease pool. Canvas render-texture realizations belong to one screen state; its derived

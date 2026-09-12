@@ -1,11 +1,11 @@
 import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render/contract';
 import {
-  createCanvasRenderTarget,
-  destroyCanvasRenderTarget,
-  resizeCanvasRenderTarget,
+  createCanvasTextureRenderTarget,
+  destroyCanvasTextureRenderTarget,
+  resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderSurfaceCreator,
   Scene2DRenderer,
   DomRenderState,
@@ -34,20 +34,20 @@ export function ensureDomRenderCacheTarget(
   cache: RenderCache,
   width: number,
   height: number,
-): CanvasRenderTarget {
+): CanvasTextureRenderTarget {
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createCanvasRenderTarget(creator, width, height);
+    target = createCanvasTextureRenderTarget(creator, width, height);
     prepareDomElement(target.canvas);
     targets.set(cache, target);
   } else {
-    resizeCanvasRenderTarget(target, width, height);
+    resizeCanvasTextureRenderTarget(target, width, height);
   }
   return target;
 }
 
-export function getDomRenderCacheTarget(state: DomRenderState, cache: RenderCache): CanvasRenderTarget | null {
+export function getDomRenderCacheTarget(state: DomRenderState, cache: RenderCache): CanvasTextureRenderTarget | null {
   return getTargets(state).get(cache) ?? null;
 }
 
@@ -56,7 +56,7 @@ export function releaseDomRenderCache(state: DomRenderState, cache: RenderCache)
   const target = targets.get(cache);
   if (target === undefined) return;
   targets.delete(cache);
-  destroyCanvasRenderTarget(target);
+  destroyCanvasTextureRenderTarget(target);
 }
 
 function drawDomRenderCache(state: RenderState, data: RenderProxy2D): void {
@@ -74,7 +74,7 @@ function drawDomRenderCache(state: RenderState, data: RenderProxy2D): void {
   setDomRendererElement(domState, canvas);
 }
 
-function getTargets(state: DomRenderState): Map<RenderCache, CanvasRenderTarget> {
+function getTargets(state: DomRenderState): Map<RenderCache, CanvasTextureRenderTarget> {
   let targets = _renderCacheTargets.get(state);
   if (targets === undefined) {
     targets = new Map();
@@ -89,4 +89,4 @@ export const defaultDomRenderCacheRenderer: Scene2DRenderer = {
 };
 
 // The screen state owns each cache's target canvas, keyed by the handle.
-const _renderCacheTargets = new WeakMap<DomRenderState, Map<RenderCache, CanvasRenderTarget>>();
+const _renderCacheTargets = new WeakMap<DomRenderState, Map<RenderCache, CanvasTextureRenderTarget>>();

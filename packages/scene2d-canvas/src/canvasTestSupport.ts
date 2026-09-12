@@ -3,21 +3,32 @@ import type {
   CanvasRenderOptions,
   CanvasRenderState,
   CanvasRenderSurface,
+  CanvasRenderPass,
   CanvasRenderSurfaceCreator,
-  CanvasRenderTarget,
+  CanvasScreenRenderTarget,
+  CanvasTextureRenderTarget,
+  RenderTargetClear,
   CanvasTextureResolvers,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { beginCanvasRenderPass } from './canvasRenderPass';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
-import { acquireCanvasRenderSurface, createCanvasRenderSurface } from './canvasRenderSurface';
-import { createCanvasRenderTarget as createExplicitCanvasRenderTarget } from './canvasRenderTarget';
+import {
+  acquireCanvasRenderSurface,
+  createCanvasRenderSurface,
+  registerCanvasSurfaceCreator,
+} from './canvasRenderSurface';
+import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
+import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
 import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
 
 export * from './canvasRenderState';
-export * from './canvasRenderTarget';
+export * from './canvasRenderPass';
+export * from './canvasScreenRenderTarget';
+export * from './canvasTextureRenderTarget';
 export * from './canvasTextureResolver';
 
 export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = (() => {
@@ -47,19 +58,44 @@ export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRen
   return surface;
 }
 
+// Opens a screen pass over `canvas` — the shape of an ordinary frame, in one line, for the many tests
+// whose subject is what happens INSIDE a pass rather than the bracket itself.
+export function beginCanvasScreenRenderPassForTest(
+  state: CanvasRenderState,
+  canvas: HTMLCanvasElement,
+  clear?: Readonly<RenderTargetClear>,
+): CanvasRenderPass {
+  return beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas), clear);
+}
+
+// The whole test rig in one call: a state with the test surface creator registered, and a screen pass
+// already open over `canvas`. The open pass is the point — drawing happens inside one, so a unit test
+// whose subject is a draw should start where a draw starts. Tests whose subject IS the bracket use
+// createCanvasScreenRenderTargetForTest and open their own.
 export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  return createExplicitCanvasRenderState(
-    createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
-    scene2DCanvasPipeline,
-    createCanvasTextureResolvers(),
-    options,
-  );
+  const state = createExplicitCanvasRenderState(scene2DCanvasPipeline, createCanvasTextureResolvers(), options);
+  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
+  return state;
 }
 
-export function createCanvasRenderTarget(width: number, height: number): CanvasRenderTarget {
+// A state with no pass open, for tests about construction or about what a state carries before it draws.
+export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
+  const state = createExplicitCanvasRenderState(scene2DCanvasPipeline, createCanvasTextureResolvers(), options);
+  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  return state;
+}
+
+// The screen half. A state and a screen target are independent, so a test whose subject is neither the
+// bracket nor the surface takes the state alone.
+export function createCanvasScreenRenderTargetForTest(canvas: HTMLCanvasElement): CanvasScreenRenderTarget {
+  return createExplicitCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas));
+}
+
+export function createCanvasTextureRenderTarget(width: number, height: number): CanvasTextureRenderTarget {
   return createExplicitCanvasRenderTarget(canvasTestSurfaceCreator, width, height);
 }
 

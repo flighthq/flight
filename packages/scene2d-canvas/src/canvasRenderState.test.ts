@@ -9,6 +9,7 @@ import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolv
 import {
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
+  createCanvasRenderStateWithoutPass,
   createCanvasTextureResolvers,
   destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
@@ -107,13 +108,21 @@ let canvas: HTMLCanvasElement;
 beforeEach(() => {
   // Mock canvas and context for testing
   canvas = document.createElement('canvas');
+  // The compositing members a pass resets on begin are part of the fake, not incidental: without them
+  // opening a pass throws, and a fake that cannot be reset would let these assertions pass while the
+  // real reset was broken.
   const mockContext = {
+    clearRect: vi.fn(),
+    fillRect: vi.fn(),
     getContextAttributes: vi.fn().mockReturnValue({
       alpha: true,
       desynchronized: false,
     }),
+    globalAlpha: 1,
+    globalCompositeOperation: 'source-over',
     imageSmoothingEnabled: true,
     imageSmoothingQuality: 'high',
+    setTransform: vi.fn(),
   } as unknown as CanvasRenderingContext2D;
   canvas.getContext = vi.fn().mockReturnValue(mockContext);
 });
@@ -125,11 +134,6 @@ it('should be instantiated with default options', () => {
   expect(renderer.canvas).toBe(canvas);
   expect(renderer.context.imageSmoothingEnabled).toBe(true);
   expect(renderer.context.imageSmoothingQuality).toBe('high');
-  expect(renderer.contextAttributes).toEqual({
-    alpha: true,
-    desynchronized: false,
-  });
-  expect(renderer.backgroundColor).toBe(0);
   expect(renderer.pixelRatio).toBe(1);
   expect(renderer.roundPixels).toBe(false);
   expect(renderer.renderTransform2D).not.toBeNull();
@@ -137,7 +141,6 @@ it('should be instantiated with default options', () => {
 
 it('should use provided options', () => {
   const options: CanvasRenderOptions = {
-    backgroundColor: 0xffffff,
     pixelRatio: 2,
     roundPixels: true,
     renderTransform: createMatrix(),
@@ -147,7 +150,6 @@ it('should use provided options', () => {
 
   const renderer = createCanvasRenderState(canvas, options);
 
-  expect(renderer.backgroundColor).toBe(0xffffff);
   expect(renderer.pixelRatio).toBe(2);
   expect(renderer.roundPixels).toBe(true);
   expect(renderer.renderTransform2D).not.toBeNull();
@@ -171,15 +173,6 @@ it('should default imageSmoothingQuality to "high"', () => {
   const renderer = createCanvasRenderState(canvas);
 
   expect(renderer.context.imageSmoothingQuality).toBe('high');
-});
-
-it('should correctly handle backgroundColor option', () => {
-  const options: CanvasRenderOptions = {
-    backgroundColor: 0xff0000, // Red
-  };
-
-  const renderer = createCanvasRenderState(canvas, options);
-  expect(renderer.backgroundColor).toBe(0xff0000);
 });
 
 it('should use default pixelRatio if not provided', () => {
@@ -223,16 +216,6 @@ it('should handle worldTransform option correctly', () => {
 it('should fall back to default Matrix if worldTransform is not provided', () => {
   const renderer = createCanvasRenderState(canvas);
   expect(renderer.renderTransform2D).not.toBeNull();
-});
-
-// Check if contextAttributes are passed and correctly retrieved
-it('should retrieve contextAttributes from the context', () => {
-  const renderer = createCanvasRenderState(canvas);
-
-  expect(renderer.contextAttributes).toEqual({
-    alpha: true,
-    desynchronized: false,
-  });
 });
 
 // Ensure options with missing properties are handled gracefully

@@ -1,11 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  CanvasRenderState,
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
   CanvasRenderSurfaceOptions,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 export function acquireCanvasRenderSurface(
   creator: Readonly<CanvasRenderSurfaceCreator>,
@@ -39,6 +42,17 @@ export function destroyCanvasRenderSurface(surface: CanvasRenderSurface): void {
   creator.destroyRenderSurface(surface.canvas);
 }
 
+// The creator this state allocates offscreen canvases through: render-cache targets and render textures
+// both ask for one, and neither can invent it — a canvas element comes from the host. Registered once,
+// read by name, and absent until then so a screen-only state carries nothing.
+export function getCanvasSurfaceCreator(state: CanvasRenderState): Readonly<CanvasRenderSurfaceCreator> {
+  const creator = getCanvasRenderStateRuntime(state).canvasSurfaceCreator;
+  if (creator === undefined) {
+    throw new Error('This CanvasRenderState has no surface creator — call registerCanvasSurfaceCreator first');
+  }
+  return creator;
+}
+
 export function initializeCanvasRenderSurface(
   out: EntityConstruction<CanvasRenderSurface>,
   creator: Readonly<CanvasRenderSurfaceCreator>,
@@ -57,6 +71,13 @@ export function initializeCanvasRenderSurface(
     width: options.width ?? canvas.width,
   });
   out[EntityRuntimeKey] = { binding: null };
+}
+
+export function registerCanvasSurfaceCreator(
+  state: CanvasRenderState,
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+): void {
+  getCanvasRenderStateRuntime(state).canvasSurfaceCreator = creator;
 }
 
 function finishCanvasRenderSurface(

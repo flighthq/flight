@@ -2,8 +2,9 @@ import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasPipeline } from './CanvasPipeline';
 import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
-import type { CanvasRenderSurface } from './CanvasRenderSurface';
-import type { CanvasRenderTarget } from './CanvasRenderTarget';
+import type { CanvasRenderPass } from './CanvasRenderPass';
+import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
+import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { Entity } from './Entity';
 import type { KeyedTable } from './RegistryTable';
@@ -15,11 +16,14 @@ export interface CanvasRenderState extends RenderState {
   // Optional CSS-filter resolver. Installed by enableCanvasCssFilter; null (and tree-shaken)
   // until then, keeping the binding lookup and its module out of filter-free bundles.
   canvasCssFilterResolver: ((state: CanvasRenderState, renderProxy: RenderProxy2D) => string | null) | null;
-  readonly canvas: HTMLCanvasElement;
-  readonly context: CanvasRenderingContext2D;
-  readonly contextAttributes: CanvasRenderingContext2DSettings;
+  // The canvas and context of the pass currently open, installed by beginCanvasRenderPass and restored
+  // by its end. They are NOT construction inputs: a state is "how to draw", a target is "where", and on
+  // this backend "where" is literally a different context object, which is why binding a target swaps
+  // them. Mutable for that reason, and typed non-null because every draw runs inside a pass — drawing
+  // outside one is API misuse, exactly as it is on GL and WGPU.
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
   readonly pipeline: Readonly<CanvasPipeline>;
-  readonly surface: CanvasRenderSurface;
 }
 
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
@@ -43,6 +47,11 @@ export interface CanvasRenderRegistries extends Entity, RenderRegistries {
 // layer — so out-of-package custom renderers can reach the same state.
 export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   registries: CanvasRenderRegistries;
+  // Open passes, innermost last. A pass is pushed by beginCanvasRenderPass and popped by
+  // endCanvasRenderPass, which restores the canvas and context the enclosing one was drawing through.
+  passStack: CanvasRenderPass[];
+  // The target bound by the innermost open pass; null outside any pass.
+  currentRenderTarget: CanvasRenderTarget | null;
   // Active alpha tracked to avoid redundant globalAlpha changes. NaN forces a write on the first draw.
   currentAlpha: number;
   // Active compositing mode tracked to avoid redundant globalCompositeOperation changes. Internal —
@@ -51,11 +60,16 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // The state's own texture-resolution set, created with the state and wired to its miss emitter. It is
   // a separate primitive so a shape rasterizer on another backend can share it — see CanvasTextureResolvers.
   canvasTextureResolvers: CanvasTextureResolvers;
+  // The host seam this state allocates offscreen canvases through — render-cache targets, render
+  // textures — installed by registerCanvasSurfaceCreator. The state owns no surface of its own, so the
+  // one thing offscreen work needs from the host is named once rather than passed on every call.
+  // Absent until registered, so a state that only ever draws to the screen carries no creator.
+  canvasSurfaceCreator?: Readonly<CanvasRenderSurfaceCreator>;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
   teardowns: ((state: CanvasRenderState) => void)[];
   // Backdrop targets a BlendEffect can name through its `backdropKey`, so the advanced-blend recipe can
   // read a layer it did not produce. The registry holds the target only and never owns or frees it.
   // Absent until a backdrop is registered, so a scene using no advanced blend carries no map.
-  canvasBlendEffectBackdrops?: Map<string, CanvasRenderTarget>;
+  canvasBlendEffectBackdrops?: Map<string, CanvasTextureRenderTarget>;
 }

@@ -20,7 +20,6 @@ export {
   registerDomBitmapTextureResolver,
   registerDomImageTextureResolver,
   registerDomTextureResolver,
-  renderDomBackground,
   renderDomScene2D,
   setDomCssFilter,
 } from './contract';

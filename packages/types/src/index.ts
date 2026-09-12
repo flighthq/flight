@@ -133,6 +133,7 @@ export * from './CanvasRenderEffectPipeline';
 export * from './CanvasRenderEffectSupport';
 export * from './CanvasRenderOptions';
 export * from './CanvasRenderSurface';
+export * from './CanvasRenderPass';
 export * from './CanvasRenderState';
 export * from './CanvasTextureResolver';
 export * from './CanvasImageSourceKind';

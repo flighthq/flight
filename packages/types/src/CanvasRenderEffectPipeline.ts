@@ -1,6 +1,6 @@
 import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
-import type { CanvasRenderTarget } from './CanvasRenderTarget';
+import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
 import type { Entity } from './Entity';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
@@ -15,8 +15,8 @@ import type { RenderEffect } from './RenderEffect';
 // `dest.context`; multi-pass recipes acquire and release additional canvases from `pool`.
 export interface CanvasRenderEffectContext {
   readonly state: CanvasRenderState;
-  readonly source: Readonly<CanvasRenderTarget>;
-  readonly dest: Readonly<CanvasRenderTarget>;
+  readonly source: Readonly<CanvasTextureRenderTarget>;
+  readonly dest: Readonly<CanvasTextureRenderTarget>;
   readonly pool: CanvasRenderTargetPool;
 }
 
@@ -35,8 +35,8 @@ export type CanvasRenderEffectRunner = (
 // a release so the canvas can be reused next frame without reallocating.
 export interface CanvasRenderTargetPool extends Entity {
   readonly creator: Readonly<CanvasRenderSurfaceCreator>;
-  free: CanvasRenderTarget[];
-  inUse: CanvasRenderTarget[];
+  free: CanvasTextureRenderTarget[];
+  inUse: CanvasTextureRenderTarget[];
 }
 
 // Retains the offscreen canvases an effect pass needs across frames: the scene target the pipeline
@@ -45,7 +45,7 @@ export interface CanvasRenderTargetPool extends Entity {
 // accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
 export interface CanvasRenderEffectPipeline extends Entity {
   readonly options: Readonly<RenderEffectPipelineOptions>;
-  sceneTarget: CanvasRenderTarget | null;
+  sceneTarget: CanvasTextureRenderTarget | null;
   readonly pool: CanvasRenderTargetPool;
   // Bake memo for the fused LUT-tier adjustment run, so a static grade does not re-bake its size³ cells
   // every frame. GC-managed; Canvas has no GPU upload (its per-pixel CPU lookup is inherent).

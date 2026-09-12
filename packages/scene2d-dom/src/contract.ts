@@ -1,4 +1,3 @@
-export * from './domBackground';
 export * from './domBitmapTextureResolver';
 export * from './domSprite';
 export * from './domCache';
