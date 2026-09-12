@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createImageResourceFromCanvas, createImageResourceFromImageElement } from '@flighthq/image/contract';
 import type { Entity, HostImageProvider, ImageResource, EntityConstruction } from '@flighthq/types/contract';
+
+import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './webImageResource';
 
 export function createWebImageBackend(): HostImageProvider & Entity {
   const out = allocateEntity<HostImageProvider>();

@@ -9,6 +9,23 @@ import {
   invalidateImageResource,
   isImageResourceEmpty,
 } from './imageResource';
+import { registerHostImageDimensionResolver, unregisterHostImageDimensionResolver } from './imageSourceDimensions';
+
+// Measuring a borrowed handle is the host's job, so these tests install the structural reader a browser
+// host provides. Without one a resource keeps whatever size it was constructed with, which is the
+// behavior imageSourceDimensions.test.ts covers.
+beforeEach(() => {
+  registerHostImageDimensionResolver((source, out) => {
+    const sized = source as unknown as { height: number; width: number };
+    out.height = sized.height;
+    out.width = sized.width;
+    return true;
+  });
+});
+
+afterEach(() => {
+  unregisterHostImageDimensionResolver();
+});
 
 function makeCompressed(): CompressedImageData {
   return {

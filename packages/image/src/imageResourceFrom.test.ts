@@ -5,18 +5,22 @@ import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contr
 import { createImageResource } from './imageResource';
 import {
   createImageResourceFromBitmap,
-  createImageResourceFromCanvas,
-  createImageResourceFromImageBitmap,
-  createImageResourceFromImageElement,
-  initializeImageResourceFromCanvas,
-  initializeImageResourceFromImageBitmap,
-  initializeImageResourceFromImageElement,
   isImageUrlSameOrigin,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from './imageResourceFrom';
+import { registerHostImageDimensionResolver } from './imageSourceDimensions';
+
+// This fake host measures its own canvases and <img> elements, which is exactly the seam a real host
+// fills; registering it here keeps the test's resources sized without importing a platform package.
+registerHostImageDimensionResolver((source, out) => {
+  const sized = source as { height: number; width: number };
+  out.height = sized.height;
+  out.width = sized.width;
+  return true;
+});
 
 function webHost(): { readonly graphics: { readonly image: HostImageProvider } } {
   return {
@@ -30,7 +34,7 @@ function webHost(): { readonly graphics: { readonly image: HostImageProvider } }
           const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
           domImageData.data.set(bitmap.data);
           canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-          return createImageResourceFromCanvas(canvas);
+          return createImageResource(canvas);
         },
         async loadImageFromUrl(
           url: string,
@@ -59,7 +63,7 @@ function webHost(): { readonly graphics: { readonly image: HostImageProvider } }
           } else {
             await img.decode();
           }
-          return createImageResourceFromImageElement(img);
+          return createImageResource(img);
         },
       },
     },
@@ -137,92 +141,6 @@ function createTestBitmap(width: number, height: number): Bitmap {
   out.width = width;
   return finishEntity(out);
 }
-
-describe('createImageResourceFromCanvas', () => {
-  it('wraps a canvas with correct dimensions', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 320;
-    canvas.height = 240;
-    const resource = createImageResourceFromCanvas(canvas);
-
-    expect(resource.source).toBe(canvas);
-    expect(resource.width).toBe(320);
-    expect(resource.height).toBe(240);
-  });
-
-  it('reflects the canvas dimensions at wrap time', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 0;
-    canvas.height = 0;
-    const resource = createImageResourceFromCanvas(canvas);
-
-    expect(resource.width).toBe(0);
-    expect(resource.height).toBe(0);
-  });
-
-  it('returns a new object each call', () => {
-    const canvas = document.createElement('canvas');
-    expect(createImageResourceFromCanvas(canvas)).not.toBe(createImageResourceFromCanvas(canvas));
-  });
-});
-
-describe('createImageResourceFromImageBitmap', () => {
-  it('wraps an ImageBitmap with correct dimensions', () => {
-    const bitmap = { width: 64, height: 128, close: () => {} } as ImageBitmap;
-    const resource = createImageResourceFromImageBitmap(bitmap);
-
-    expect(resource.source).toBe(bitmap);
-    expect(resource.width).toBe(64);
-    expect(resource.height).toBe(128);
-  });
-
-  it('returns a new object each call', () => {
-    const bitmap = { width: 1, height: 1, close: () => {} } as ImageBitmap;
-    expect(createImageResourceFromImageBitmap(bitmap)).not.toBe(createImageResourceFromImageBitmap(bitmap));
-  });
-});
-
-describe('createImageResourceFromImageElement', () => {
-  it('wraps an HTMLImageElement with correct dimensions', () => {
-    const img = { width: 200, height: 100 } as HTMLImageElement;
-    const resource = createImageResourceFromImageElement(img);
-
-    expect(resource.source).toBe(img);
-    expect(resource.width).toBe(200);
-    expect(resource.height).toBe(100);
-  });
-
-  it('reflects zero dimensions for an unloaded image element', () => {
-    const img = document.createElement('img');
-    const resource = createImageResourceFromImageElement(img);
-
-    expect(resource.width).toBe(0);
-    expect(resource.height).toBe(0);
-  });
-
-  it('returns a new object each call', () => {
-    const img = document.createElement('img');
-    expect(createImageResourceFromImageElement(img)).not.toBe(createImageResourceFromImageElement(img));
-  });
-});
-
-describe('initializeImageResourceFromCanvas', () => {
-  it('is the construction initializer of createImageResourceFromCanvas', () => {
-    expect(typeof initializeImageResourceFromCanvas).toBe('function');
-  });
-});
-
-describe('initializeImageResourceFromImageBitmap', () => {
-  it('is the construction initializer of createImageResourceFromImageBitmap', () => {
-    expect(typeof initializeImageResourceFromImageBitmap).toBe('function');
-  });
-});
-
-describe('initializeImageResourceFromImageElement', () => {
-  it('is the construction initializer of createImageResourceFromImageElement', () => {
-    expect(typeof initializeImageResourceFromImageElement).toBe('function');
-  });
-});
 
 describe('isImageUrlSameOrigin', () => {
   it('returns true for data: URLs', () => {

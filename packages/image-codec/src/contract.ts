@@ -4,7 +4,4 @@ export * from './encodeImage';
 export * from './explainImageDecodeFailure';
 export * from './explainImageEncodeFailure';
 export * from './imageDecoderRegistry';
-export * from './imageBitmapComposerRegistry';
 export * from './imageEncoderRegistry';
-export * from './registerWebImageDecoders';
-export * from './registerWebImageEncoders';

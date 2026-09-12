@@ -345,6 +345,7 @@ export * from './HitTestFunction';
 export * from './HitTestResult';
 export * from './HtmlView';
 export * from './Host';
+export * from './HostImageDimensions';
 export * from './HostImageSource';
 export * from './ApplicationExitBackend';
 export * from './ApplicationVisibilityBackend';

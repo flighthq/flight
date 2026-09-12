@@ -1,8 +1,8 @@
+import { clearImageEncoders, getImageEncoder, hasImageEncoder } from '@flighthq/image-codec/contract';
 import type { DecodedImage } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { clearImageEncoders, getImageEncoder, hasImageEncoder } from './imageEncoderRegistry';
-import { registerWebImageEncoders } from './registerWebImageEncoders';
+import { registerWebImageEncoders } from './webImageEncoders';
 
 // node lacks OffscreenCanvas + ImageData; these stand-ins record the convertToBlob call and hand back
 // fixed bytes so the encoder's byte extraction can be verified.

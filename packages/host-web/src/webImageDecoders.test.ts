@@ -1,7 +1,7 @@
+import { clearImageDecoders, getImageDecoder, hasImageDecoder } from '@flighthq/image-codec/contract';
 import { vi } from 'vitest';
 
-import { clearImageDecoders, getImageDecoder, hasImageDecoder } from './imageDecoderRegistry';
-import { registerWebImageDecoders } from './registerWebImageDecoders';
+import { registerWebImageDecoders } from './webImageDecoders';
 
 // jsdom / node lack createImageBitmap + OffscreenCanvas + Blob; these minimal stand-ins let the
 // canvas decoder run. getImageData always returns straight (non-premultiplied) RGBA, matching the browser.
