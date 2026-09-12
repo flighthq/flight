@@ -2,13 +2,9 @@ import type { Raster2DSurfaceProvider } from './Raster2DSurface';
 import type { Scene3DGraphSyncPolicy } from './RenderState';
 
 export interface WgpuRenderOptions {
-  // Supersample the main surface at 2× in each axis, then resolve it into the canvas. Default: false.
-  antialias?: boolean;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), split into clear-color channels by renderColor.
-  backgroundColor?: number;
-  // Device-only states have no acquisition from which to derive a default render-target format.
-  // Presentation creation always supplies the acquired format; direct offscreen creation defaults to
-  // bgra8unorm unless the caller selects another immutable state format here.
+  // The state's immutable render-target format: the format its scene pipelines compile against and the
+  // default for targets it allocates. Defaults to 'bgra8unorm'; pass the screen target's format when
+  // the state renders to a screen whose swap chain uses another one.
   format?: GPUTextureFormat;
   imageSmoothingEnabled?: boolean;
   pixelRatio?: number;

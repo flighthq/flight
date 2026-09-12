@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
+import { getWgpuRenderPassViewport } from './wgpuRenderPass';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // ---- WGSL source ----
@@ -360,7 +360,7 @@ export function writeWgpuQuadUniforms(
   const floatBase = byteOffset >> 2; // divide by 4
   const { uniformData, uniformDataU32, matrixArray } = runtime;
 
-  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
+  const viewport = getWgpuRenderPassViewport(state);
   setWgpuMatrixFromTransform(matrixArray, renderProxy.transform2D, viewport);
 
   // mat3x3 columns with per-column padding (4 floats each = 16 bytes):

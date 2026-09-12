@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
-import { getWgpuSurfaceRenderScale } from './wgpuAntialias';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget';
 
 // Applies the current scissor rectangle to the active render pass. No-op when there is no active
 // scissor or no open render pass. Call after each draw call or once per pass when the active
@@ -40,16 +40,19 @@ export function pushWgpuScissorRect(state: WgpuRenderState, rect: Readonly<WgpuS
   runtime.currentScissorRect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
 
-// Converts a logical main-surface scissor to the physical supersample surface. Offscreen render-target
-// scissors pass through unchanged because their viewport and texture already share one coordinate space.
+// Converts a logical scissor rect to the target's physical extent. Logical is the space every 2D
+// coordinate is in — the pass viewport, the projection, and these rects — so a supersampled target
+// (a screen with antialias, or an effect target at sampleCount 4) scales them by the same factor its
+// storage was grown by, and a target with no supersample scales by 1.
 export function setWgpuRenderPassScissorRect(
-  state: Readonly<WgpuRenderState>,
+  state: WgpuRenderState,
   pass: GPURenderPassEncoder,
   x: number,
   y: number,
   width: number,
   height: number,
 ): void {
-  const scale = getWgpuSurfaceRenderScale(state);
+  const target = getWgpuRenderStateRuntime(state).currentRenderTarget;
+  const scale = target === null ? 1 : getWgpuRenderTargetSupersampleScale(target);
   pass.setScissorRect(x * scale, y * scale, width * scale, height * scale);
 }

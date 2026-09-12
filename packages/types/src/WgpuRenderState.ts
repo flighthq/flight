@@ -4,7 +4,6 @@ import type { Entity } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
-import type { Matrix } from './Matrix';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
@@ -18,7 +17,6 @@ import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploa
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
 import type { WgpuDeviceState } from './WgpuDeviceState';
-import type { WgpuPresentationSurface } from './WgpuHost';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
@@ -26,7 +24,8 @@ import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuPipeline } from './WgpuPipeline';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuRenderEffectRegistration } from './WgpuRenderEffectPipeline';
-import type { WgpuRenderTarget } from './WgpuRenderTarget';
+import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass';
+import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
 import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter';
@@ -39,15 +38,6 @@ export interface WgpuRenderState extends RenderState {
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
   readonly pipeline: Readonly<WgpuPipeline>;
-}
-
-// Presentation is an explicit capability. Device-only offscreen states deliberately cannot be passed
-// to frame/surface APIs, while every draw and render-target API continues to accept the base state.
-export interface WgpuPresentationRenderState extends WgpuRenderState {
-  readonly context: GPUCanvasContext;
-  // The presentation surface's live size. Not an HTMLCanvasElement: nothing on this path reads a DOM
-  // member, so a native host supplies its own size provider and the web path passes its canvas directly.
-  readonly surface: WgpuPresentationSurface;
 }
 
 /**
@@ -296,42 +286,15 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   commandEncoder: GPUCommandEncoder | null;
   renderPass: GPURenderPassEncoder | null;
 
-  // Canvas surface — cached per frame to avoid calling getCurrentTexture twice
-  canvasTextureView: GPUTextureView | null;
-  canvasViewCleared: boolean;
+  // The screen target whose swap-chain texture this frame presents into, set when a screen pass opens
+  // and read by the submit that resolves supersampling and encodes capture. Null for a frame that only
+  // rendered into texture targets.
+  frameScreenTarget: WgpuScreenRenderTarget | null;
 
-  // Optional 2× supersampled main surface. The scene renders into surfaceAntialiasTexture; immediately
-  // before submit, one fullscreen linear-sampling pass resolves it into surfacePresentationView (the
-  // swapchain view, or frameCaptureTexture when readback is enabled). All scene pipelines remain
-  // single-sampled and unchanged: this is deliberately a surface seam rather than a pipeline variant.
-  surfaceAntialiasEnabled: boolean;
-  surfaceAntialiasTexture: GPUTexture | null;
-  surfaceAntialiasView: GPUTextureView | null;
-  surfaceAntialiasWidth: number;
-  surfaceAntialiasHeight: number;
+  // Device-tier resolve pipeline for a supersampled screen target. One per device, shared by every
+  // screen target on it; the per-target texture, view, and bind group live on the target itself.
   surfaceAntialiasResolveBindGroupLayout: GPUBindGroupLayout | null;
   surfaceAntialiasResolvePipeline: GPURenderPipeline | null;
-  surfaceAntialiasResolveBindGroup: GPUBindGroup | null;
-  surfacePresentationView: GPUTextureView | null;
-
-  // Opt-in frame capture (enableWgpuFrameCapture → createBitmapFromWgpuRenderState). When enabled,
-  // the frame is rendered into frameCaptureTexture (an offscreen COPY_SRC target) instead of the
-  // swapchain — software/headless adapters do not present the swapchain and its texture reads back as
-  // zeros. submitWgpuRenderPass copies that texture into frameCaptureBuffer *within the render frame*
-  // (GPU work queued in a later task is dropped on these adapters); createBitmapFromWgpuRenderState
-  // only maps the buffer on the CPU afterward.
-  frameCaptureEnabled: boolean;
-  frameCaptureTexture: GPUTexture | null;
-  frameCaptureBuffer: GPUBuffer | null;
-  frameCaptureBytesPerRow: number;
-  frameCaptureWidth: number;
-  frameCaptureHeight: number;
-
-  // Depth-stencil for the main canvas (re-created when canvas size changes)
-  depthStencilTexture: GPUTexture | null;
-  depthStencilView: GPUTextureView | null;
-  depthStencilWidth: number;
-  depthStencilHeight: number;
 
   // Clip state. Masks were retired into clips (a mask is a path ClipRegion). `clipForms` is the
   // per-clip unwind stack (scissor vs stencil contour).
@@ -368,19 +331,21 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   scissorStack: WgpuScissorRect[];
   currentScissorRect: WgpuScissorRect | null;
 
-  // Render target viewport override (null = use canvas dimensions)
-  renderTargetViewport: { width: number; height: number } | null;
+  // Logical extent of the active pass — the target's extent divided by its supersample scale. Null
+  // outside any pass.
+  renderTargetViewport: WgpuRenderPassViewport | null;
 
-  // Color format of the render target currently being drawn into (the canvas format outside a pushed
-  // target, the target's format inside one). A Wgpu render pipeline bakes its color attachment format,
-  // so scene pipelines key their compiled variant on this to draw into HDR (rgba16float) effect targets.
+  // Color format of the render target currently being drawn into. A Wgpu render pipeline bakes its
+  // color attachment format, so scene pipelines key their compiled variant on this to draw into HDR
+  // (rgba16float) effect targets.
   currentColorFormat?: GPUTextureFormat;
-  // The target currently bound through beginWgpuRenderPass. Producers stamp its content color space;
-  // null means the canvas, where no adapting target present follows the draw.
+  // The target bound by the innermost open pass. Producers stamp its content color space. Null only
+  // outside any pass — the screen is a target like any other now.
   currentRenderTarget: WgpuRenderTarget | null;
 
-  // Saved render pass state for render target push/pop
-  renderTargetStack: WgpuSavedPassState[];
+  // Open passes, innermost last. A pass is pushed by beginWgpuRenderPass and popped by
+  // endWgpuRenderPass, which resumes the one beneath it.
+  passStack: WgpuRenderPass[];
 }
 
 // A bound Wgpu bitmap shader: a render pipeline plus a bind hook that writes its per-draw uniforms.
@@ -413,18 +378,6 @@ export interface WgpuClipContourPipelines {
   write: GPURenderPipeline;
   erase: GPURenderPipeline;
   bindGroupLayout: GPUBindGroupLayout;
-}
-
-// The render-pass state saved when pushing a render target, restored on pop. Lives on the
-// WgpuRenderState runtime's renderTargetStack.
-export interface WgpuSavedPassState {
-  canvasTextureView: GPUTextureView | null;
-  canvasViewCleared: boolean;
-  depthStencilView: GPUTextureView | null;
-  renderTargetViewport: { width: number; height: number } | null;
-  renderTransform2D: Matrix | null;
-  colorFormat: GPUTextureFormat | undefined;
-  renderTarget: WgpuRenderTarget | null;
 }
 
 // A pixel-space scissor rectangle pushed onto the WgpuRenderState runtime's scissor stack for

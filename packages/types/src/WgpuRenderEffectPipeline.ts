@@ -4,7 +4,7 @@ import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
 import type { WgpuRenderState } from './WgpuRenderState';
-import type { WgpuRenderTarget, WgpuRenderTargetPool } from './WgpuRenderTarget';
+import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget';
 
 // What a Wgpu effect runner is handed: the state, the input it reads, the output it writes, the pool
 // it borrows intermediate targets from, and the scene G-buffer attachments. `source` and `dest` are
@@ -14,8 +14,8 @@ import type { WgpuRenderTarget, WgpuRenderTargetPool } from './WgpuRenderTarget'
 // path when null. The Wgpu mirror of GlRenderEffectContext.
 export interface WgpuRenderEffectContext {
   readonly state: WgpuRenderState;
-  readonly source: Readonly<WgpuRenderTarget>;
-  readonly dest: Readonly<WgpuRenderTarget>;
+  readonly source: Readonly<WgpuTextureRenderTarget>;
+  readonly dest: Readonly<WgpuTextureRenderTarget>;
   readonly pool: WgpuRenderTargetPool;
   readonly sceneDepthTexture: GPUTexture | null;
   readonly sceneVelocityTexture: GPUTexture | null;
@@ -39,7 +39,7 @@ export interface WgpuRenderEffectRegistration {
 // RenderEffectPipelineOptions with the Gl pipeline.
 export interface WgpuRenderEffectPipeline extends Entity {
   readonly options: Readonly<RenderEffectPipelineOptions>;
-  sceneTarget: WgpuRenderTarget | null;
+  sceneTarget: WgpuTextureRenderTarget | null;
   readonly pool: WgpuRenderTargetPool;
   // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
   // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`

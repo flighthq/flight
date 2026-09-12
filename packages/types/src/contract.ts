@@ -882,6 +882,7 @@ export * from './WgpuEffectBlendMode';
 export * from './WgpuEffectPipeline';
 export * from './WgpuDeviceRuntime';
 export * from './WgpuDeviceState';
+export * from './WgpuRenderPass';
 export * from './WgpuRenderState';
 export * from './WgpuRenderTexture';
 export * from './WgpuTextureResolver';

@@ -1,45 +1,18 @@
-import type { WgpuPresentationRenderState, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 
-import {
-  acquireWgpuSurfaceAntialiasView,
-  clearWgpuSurfacePresentation,
-  encodeWgpuSurfaceAntialiasResolve,
-} from './wgpuAntialias';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { acquireWgpuFrameCaptureTexture, encodeWgpuFrameCapture } from './wgpuSurface';
-
-function ensureWgpuDepthStencil(state: WgpuRenderState, width: number, height: number): void {
-  const runtime = getWgpuRenderStateRuntime(state);
-  if (
-    runtime.depthStencilTexture !== null &&
-    runtime.depthStencilWidth === width &&
-    runtime.depthStencilHeight === height
-  ) {
-    return;
-  }
-
-  runtime.depthStencilTexture?.destroy();
-
-  const texture = state.device.createTexture({
-    size: [Math.max(1, width), Math.max(1, height), 1],
-    format: 'depth24plus-stencil8',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-
-  runtime.depthStencilTexture = texture;
-  runtime.depthStencilView = texture.createView();
-  runtime.depthStencilWidth = width;
-  runtime.depthStencilHeight = height;
-}
+import { encodeWgpuScreenRenderTargetCapture } from './wgpuScreenCapture';
+import { encodeWgpuScreenRenderTargetResolve, endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget';
 
 /**
- * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
+ * Opens the command encoder a frame records into, without opening any render pass.
  *
- * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
- * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
- * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
+ * beginWgpuRenderPass calls this itself, and the pass that opened the frame submits it at end — so an
+ * ordinary render loop never names either function. Call it explicitly when several passes must land in
+ * ONE submit (a shadow depth pass before the screen pass): the frame is then yours, and you finish it
+ * with submitWgpuFrame.
  */
-export function beginWgpuFrame(state: WgpuPresentationRenderState): void {
+export function beginWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder !== null) return;
 
@@ -50,75 +23,7 @@ export function beginWgpuFrame(state: WgpuPresentationRenderState): void {
   runtime.quadBatchWriterBufferCursor = 0;
   runtime.meshInstanceBufferCursor = 0;
   runtime.currentBlendMode = null;
-  runtime.currentRenderTarget = null;
-  runtime.currentMaskDepth = 0;
-  runtime.maskWriteMode = false;
-  runtime.currentScissorRect = null;
-  runtime.scissorStack = [];
-}
-
-export function renderWgpuBackground(state: WgpuPresentationRenderState): void {
-  const runtime = getWgpuRenderStateRuntime(state);
-
-  // End any previous open pass (safety guard).
-  if (runtime.renderPass !== null) {
-    runtime.renderPass.end();
-    runtime.renderPass = null;
-  }
-
-  // Preserve prerequisite work and its uniform-ring allocations when a recipe opened the frame
-  // explicitly. The common path still creates and resets the frame here.
-  beginWgpuFrame(state);
-
-  const surface = state.surface;
-  const context = state.context;
-  const width = surface.width;
-  const height = surface.height;
-
-  // With frame capture on, render into an offscreen COPY_SRC texture instead of the swapchain: software/
-  // headless adapters never present the swapchain and its texture reads back as zeros, so the readable
-  // copy must be the render target itself.
-  const presentationTexture = acquireWgpuFrameCaptureTexture(state) ?? context.getCurrentTexture();
-  const presentationView = presentationTexture.createView();
-  const antialiasView = acquireWgpuSurfaceAntialiasView(state, presentationView);
-  const renderWidth = antialiasView === null ? width : width * 2;
-  const renderHeight = antialiasView === null ? height : height * 2;
-
-  ensureWgpuDepthStencil(state, renderWidth, renderHeight);
-
-  const canvasView = antialiasView ?? presentationView;
-  runtime.canvasTextureView = canvasView;
-  runtime.canvasViewCleared = true;
-  // The canvas (and the capture texture, when capture is on) is the canvas format; scene pipelines key on this.
-  runtime.currentColorFormat = state.format;
-  runtime.renderTargetViewport = null;
-
-  const rgba = state.backgroundColorRgba;
-  const clearValue: GPUColor =
-    rgba.length >= 4 && rgba[3] > 0 ? { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] } : { r: 0, g: 0, b: 0, a: 0 };
-
-  const renderPass = runtime.commandEncoder!.beginRenderPass({
-    colorAttachments: [
-      {
-        view: canvasView,
-        clearValue,
-        loadOp: 'clear',
-        storeOp: 'store',
-      },
-    ],
-    depthStencilAttachment: {
-      view: runtime.depthStencilView!,
-      depthClearValue: 1.0,
-      depthLoadOp: 'clear',
-      depthStoreOp: 'discard',
-      stencilClearValue: 0,
-      stencilLoadOp: 'clear',
-      stencilStoreOp: 'discard',
-    },
-  });
-
-  renderPass.setViewport(0, 0, renderWidth, renderHeight, 0, 1);
-  runtime.renderPass = renderPass;
+  runtime.frameScreenTarget = null;
 }
 
 // Hands a buffer to the post-submit retirement list instead of destroying it now — the buffer sibling of
@@ -145,7 +50,11 @@ export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): 
   (runtime.retiredTextures ?? (runtime.retiredTextures = [])).push(texture);
 }
 
-export function submitWgpuRenderPass(state: WgpuPresentationRenderState): void {
+// Finishes the frame: uploads the used part of the uniform ring, resolves a supersampled screen target,
+// encodes its capture copy, and submits the command buffer. The pass that opened the frame calls this at
+// its end, so an ordinary render loop never names it; a caller that opened the frame with beginWgpuFrame
+// finishes it here.
+export function submitWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const { renderPass, commandEncoder, uniformBuffer, uniformData, uniformOffset } = runtime;
   const device = state.device;
@@ -155,19 +64,22 @@ export function submitWgpuRenderPass(state: WgpuPresentationRenderState): void {
     runtime.renderPass = null;
   }
 
+  const screen = runtime.frameScreenTarget;
   if (commandEncoder !== null) {
     // Upload used portion of the uniform ring buffer before submission.
     // writeBuffer is a queue operation that completes before the subsequent submit.
     if (uniformOffset > 0) {
       device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer, 0, uniformOffset);
     }
-    // Resolve the optional 2× main surface into the presentation target before capture reads it back.
-    encodeWgpuSurfaceAntialiasResolve(state, commandEncoder);
-    // Copy the offscreen capture texture into the readback buffer within this frame's encoder; on the
-    // adapters capture exists for, GPU work queued in a later task does not land.
-    // A standalone offscreen frame (for example a render-cache bake) has no canvas view and must not
+    // A frame that only drew into texture targets has no screen to resolve or capture, and must not
     // overwrite the capture buffer with the previous visible frame's retained capture texture.
-    if (runtime.canvasTextureView !== null) encodeWgpuFrameCapture(state, commandEncoder);
+    if (screen !== null) {
+      // Resolve the optional 2x supersample into the presentation view before capture reads it back.
+      encodeWgpuScreenRenderTargetResolve(state, screen, commandEncoder);
+      // Copy the capture texture into the readback buffer within this frame's encoder; on the adapters
+      // capture exists for, GPU work queued in a later task does not land.
+      encodeWgpuScreenRenderTargetCapture(screen, commandEncoder);
+    }
     device.queue.submit([commandEncoder.finish()]);
     runtime.commandEncoder = null;
 
@@ -185,18 +97,20 @@ export function submitWgpuRenderPass(state: WgpuPresentationRenderState): void {
     }
   }
 
-  runtime.canvasTextureView = null;
-  runtime.canvasViewCleared = false;
-  clearWgpuSurfacePresentation(state);
+  if (screen !== null) endWgpuScreenRenderTargetFrame(screen);
+  runtime.frameScreenTarget = null;
 }
 
 /**
- * Temporarily records an offscreen state's work into a presentation state's live command encoder.
+ * Temporarily records an offscreen state's work into another state's live command encoder.
  * The borrower keeps its own uniform ring, batch buffers, traversal counters, and GPU resources; only
  * the frame encoder/pass boundary is borrowed, and this callback bracket always returns it.
+ *
+ * The open pass stack is borrowed by reference, so a pass the borrower opens suspends and resumes the
+ * owner's innermost pass exactly as one opened on the owner would.
  */
 export function withWgpuFrameBorrow<T>(
-  ownerState: WgpuPresentationRenderState,
+  ownerState: WgpuRenderState,
   borrowerState: WgpuRenderState,
   callback: () => T,
 ): T {
@@ -212,16 +126,12 @@ export function withWgpuFrameBorrow<T>(
   const saved = captureBorrowerFrameState(borrower);
   borrower.commandEncoder = owner.commandEncoder;
   borrower.renderPass = owner.renderPass;
-  borrower.canvasTextureView = owner.canvasTextureView;
-  borrower.canvasViewCleared = owner.canvasViewCleared;
-  borrower.depthStencilTexture = owner.depthStencilTexture;
-  borrower.depthStencilView = owner.depthStencilView;
-  borrower.depthStencilWidth = owner.depthStencilWidth;
-  borrower.depthStencilHeight = owner.depthStencilHeight;
+  borrower.frameScreenTarget = owner.frameScreenTarget;
+  borrower.passStack = owner.passStack;
   borrower.currentColorFormat = owner.currentColorFormat;
   borrower.currentRenderTarget = owner.currentRenderTarget;
   borrower.renderTargetViewport = owner.renderTargetViewport;
-  borrower.borrowedSurfaceExtent = { height: ownerState.surface.height, width: ownerState.surface.width };
+  borrower.borrowedSurfaceExtent = owner.renderTargetViewport;
   borrower.uniformOffset = 0;
   borrower.quadBatchWriterBufferCursor = 0;
   borrower.meshInstanceBufferCursor = 0;
@@ -240,49 +150,36 @@ export function withWgpuFrameBorrow<T>(
     }
     owner.commandEncoder = borrower.commandEncoder;
     owner.renderPass = borrower.renderPass;
-    owner.canvasTextureView = borrower.canvasTextureView;
-    owner.canvasViewCleared = borrower.canvasViewCleared;
-    owner.depthStencilTexture = borrower.depthStencilTexture;
-    owner.depthStencilView = borrower.depthStencilView;
-    owner.depthStencilWidth = borrower.depthStencilWidth;
-    owner.depthStencilHeight = borrower.depthStencilHeight;
+    owner.frameScreenTarget = borrower.frameScreenTarget;
     owner.currentColorFormat = borrower.currentColorFormat;
     owner.currentRenderTarget = borrower.currentRenderTarget;
     owner.renderTargetViewport = borrower.renderTargetViewport;
     transferRetiredWgpuResources(borrower, owner);
     restoreBorrowerFrameState(borrower, saved);
-    if (ownsFrame) submitWgpuRenderPass(ownerState);
+    if (ownsFrame) submitWgpuFrame(ownerState);
   }
 }
 
 type BorrowerFrameState = Pick<
   WgpuRenderStateRuntime,
-  | 'canvasTextureView'
-  | 'canvasViewCleared'
   | 'borrowedSurfaceExtent'
   | 'commandEncoder'
   | 'currentColorFormat'
   | 'currentRenderTarget'
-  | 'depthStencilHeight'
-  | 'depthStencilTexture'
-  | 'depthStencilView'
-  | 'depthStencilWidth'
+  | 'frameScreenTarget'
+  | 'passStack'
   | 'renderPass'
   | 'renderTargetViewport'
 >;
 
 function captureBorrowerFrameState(runtime: WgpuRenderStateRuntime): BorrowerFrameState {
   return {
-    canvasTextureView: runtime.canvasTextureView,
-    canvasViewCleared: runtime.canvasViewCleared,
     borrowedSurfaceExtent: runtime.borrowedSurfaceExtent,
     commandEncoder: runtime.commandEncoder,
     currentColorFormat: runtime.currentColorFormat,
     currentRenderTarget: runtime.currentRenderTarget,
-    depthStencilHeight: runtime.depthStencilHeight,
-    depthStencilTexture: runtime.depthStencilTexture,
-    depthStencilView: runtime.depthStencilView,
-    depthStencilWidth: runtime.depthStencilWidth,
+    frameScreenTarget: runtime.frameScreenTarget,
+    passStack: runtime.passStack,
     renderPass: runtime.renderPass,
     renderTargetViewport: runtime.renderTargetViewport,
   };

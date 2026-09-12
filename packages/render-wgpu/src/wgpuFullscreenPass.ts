@@ -3,7 +3,7 @@ import type {
   EntityConstruction,
   WgpuFullscreenPipeline,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -31,12 +31,11 @@ export function destroyWgpuFullscreenPipeline(_state: WgpuRenderState, _pipeline
 // @group(1+i) @binding(0), calls `setUniforms` for per-pass uploads (pass null if the shader
 // declares no uniforms), then draws 3 vertices.
 //
-// Requires an open render pass (renderWgpuBackground or beginWgpuRenderPass must have been
-// called first). The destination is fixed when the caller opens the render pass.
+// Requires an open render pass: beginWgpuRenderPass fixes the destination, and this draws into it.
 export function drawWgpuFullscreenPass(
   state: WgpuRenderState,
   wgpuPipeline: Readonly<WgpuFullscreenPipeline>,
-  inputs: ReadonlyArray<Readonly<WgpuRenderTarget>>,
+  inputs: ReadonlyArray<Readonly<WgpuTextureRenderTarget>>,
   setUniforms: ((state: WgpuRenderState, uniformBindGroupLayout: GPUBindGroupLayout) => GPUBindGroup) | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);

@@ -9,14 +9,13 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
-  beginWgpuRenderPass,
-  createWgpuRenderTarget,
-  destroyWgpuRenderTarget,
-  endWgpuRenderPass,
-  resizeWgpuRenderTarget,
-} from './wgpuRenderTarget';
+  createWgpuTextureRenderTarget,
+  destroyWgpuTextureRenderTarget,
+  resizeWgpuTextureRenderTarget,
+} from './wgpuTextureRenderTarget';
 
 // Returns a populated render texture's state-owned allocation without copying pixels through the
 // CPU. An unrendered or currently-written Texture returns null.
@@ -34,7 +33,7 @@ export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: 
   const runtime = getWgpuRenderStateRuntime(state);
   const entry = runtime.context.wgpuRenderTextureCache?.get(renderTexture);
   if (entry === undefined) return;
-  destroyWgpuRenderTarget(state, entry.target);
+  destroyWgpuTextureRenderTarget(state, entry.target);
   runtime.context.wgpuRenderTextureCache!.delete(renderTexture);
 }
 
@@ -87,11 +86,11 @@ export function renderIntoWgpuRenderTexture(
   callback: (state: WgpuRenderState) => void,
 ): void {
   writeWgpuRenderTextureTarget(state, renderTexture, (target) => {
-    beginWgpuRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+    const pass = beginWgpuRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     try {
       callback(state);
     } finally {
-      endWgpuRenderPass(state);
+      endWgpuRenderPass(pass);
     }
   });
 }
@@ -136,7 +135,7 @@ function ensureWgpuRenderTextureEntry(
   const entries = (runtime.context.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);
   if (entry === undefined) {
-    const target = createWgpuRenderTarget(
+    const target = createWgpuTextureRenderTarget(
       state,
       requested.width,
       requested.height,
@@ -148,8 +147,8 @@ function ensureWgpuRenderTextureEntry(
     entries.set(renderTexture, entry);
   } else {
     if (entry.target.format !== format) {
-      destroyWgpuRenderTarget(state, entry.target);
-      entry.target = createWgpuRenderTarget(
+      destroyWgpuTextureRenderTarget(state, entry.target);
+      entry.target = createWgpuTextureRenderTarget(
         state,
         requested.width,
         requested.height,
@@ -159,7 +158,7 @@ function ensureWgpuRenderTextureEntry(
       );
       entry.status = 'unrendered';
     } else {
-      resizeWgpuRenderTarget(state, entry.target, requested.width, requested.height, requested.sampleCount);
+      resizeWgpuTextureRenderTarget(state, entry.target, requested.width, requested.height, requested.sampleCount);
       entry.target.colorSpace = colorSpace;
     }
   }
