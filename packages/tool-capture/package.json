@@ -54,5 +54,8 @@
     "typescript": "^5.3.0"
   },
   "description": "Turn-key Flight capture, visual verification, parity, and benchmark CLI and API",
+  "flight": {
+    "environment": "node"
+  },
   "sideEffects": false
 }
