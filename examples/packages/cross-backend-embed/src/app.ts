@@ -1,8 +1,7 @@
 import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   scene3DGlPipeline,
-  createGlContextState,
-  createGlContextFromCanvasElement,
+  createGlContext,
   addNodeChild,
   addTextureAtlasRegion,
   appendQuadBatchInstance,
@@ -40,14 +39,11 @@ const INSTANCE_COUNT = 24;
 enableHostWebGlRenderSurface();
 const producerCanvas = createGlCanvasElement(PRODUCER_WIDTH, PRODUCER_HEIGHT);
 const producerState = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(producerCanvas, {
-      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createGlContext(producerCanvas, {
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
-    backgroundColor: 0x18253dff,
     sceneGraphSyncPolicy: 'requiresInvalidation',
   },
 );
