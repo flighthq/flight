@@ -6,6 +6,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import {
+  createGlScreenRenderTarget,
   createGlTextureRenderTarget,
   declareGlRenderTargetColorSpace,
   destroyGlTextureRenderTarget,
@@ -17,7 +18,7 @@ import {
   resolveGlTextureRenderTarget,
   resolveGlRenderTargetAxes,
 } from './glRenderTarget';
-import { createGlState } from './glTestHelper';
+import { createGlState, makeGL } from './glTestHelper';
 
 function makeState() {
   const { state: _state, gl: _gl } = createGlState();
@@ -43,6 +44,34 @@ function makeState() {
 
   return { state, gl };
 }
+
+describe('createGlScreenRenderTarget', () => {
+  it('returns a target with framebuffer null', () => {
+    const gl = makeGL(320, 240);
+    const target = createGlScreenRenderTarget(gl);
+    expect(target.framebuffer).toBeNull();
+  });
+
+  it('reads dimensions from drawingBufferWidth and drawingBufferHeight', () => {
+    const gl = makeGL(320, 240);
+    const target = createGlScreenRenderTarget(gl);
+    expect(target.width).toBe(320);
+    expect(target.height).toBe(240);
+  });
+
+  it('returns an Entity-backed target', () => {
+    const gl = makeGL();
+    const target = createGlScreenRenderTarget(gl);
+    expect(Object.hasOwn(target, EntityRuntimeKey)).toBe(true);
+  });
+
+  it('sets colorAttachments to 1 and colorSpace to srgb', () => {
+    const gl = makeGL();
+    const target = createGlScreenRenderTarget(gl);
+    expect(target.colorAttachments).toBe(1);
+    expect(target.colorSpace).toBe('srgb');
+  });
+});
 
 describe('createGlTextureRenderTarget', () => {
   it('returns a render target with the requested dimensions', () => {
