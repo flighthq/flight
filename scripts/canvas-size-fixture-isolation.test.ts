@@ -224,7 +224,9 @@ describe('size-only control fixture', () => {
     for (const fixture of CONTROL_FIXTURES) {
       const source = fixtureSource(fixture);
       expect(source, `${fixture} must run the update pass`).toMatch(/\bprepareScene2DRender\s*\(/u);
-      expect(source, `${fixture} must draw the background`).toMatch(/\brenderCanvasBackground\s*\(/u);
+      // The background is the pass's clear now, so what proves the fixture actually paints a frame is
+      // that it opens a pass on a screen target — the call renderCanvasBackground used to stand for.
+      expect(source, `${fixture} must open a screen pass`).toMatch(/\bbeginCanvasRenderPass\s*\(/u);
     }
   });
 

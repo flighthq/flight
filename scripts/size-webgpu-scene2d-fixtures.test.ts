@@ -39,7 +39,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
     describe(name, () => {
       it('uses only the leaf WebGPU pipeline and host surface', () => {
         const source = readFileSync(resolve(directory, 'src', 'render.webgpu.ts'), 'utf8');
-        expect(source).toContain('createWebWgpuRenderSurfaceProvider');
+        expect(source).toContain('createWebWgpuCanvasElement');
         expect(source).toContain('createEmptyWgpuRegistries');
         expect(source).toContain('createWgpuPipeline(');
         expect(source).toContain('createWgpuAcquisition(');
