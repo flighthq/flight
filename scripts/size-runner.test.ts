@@ -65,10 +65,14 @@ function extractImportSpecifiers(filePath: string): string[] {
 }
 
 describe('dom fixture import structure', () => {
+  // host-web is allowed here for exactly one reason, the same one that lets dom-shape import it: the web
+  // image factory lives in the web host, and a DOM sprite must wrap a canvas to have anything to draw.
+  // What must stay out is the aggregate — importing webHost pulls every capability provider in with it.
   test('dom-sprite imports no aggregate webHost or unrelated renderer packages', () => {
-    const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-sprite/src/render.dom.ts'));
+    const path = resolve(fixturesDirectory, 'scene2d-dom-sprite/src/render.dom.ts');
+    const specifiers = extractImportSpecifiers(path);
     expect(specifiers).not.toContain('@flighthq/sdk');
-    expect(specifiers.filter((s) => s === '@flighthq/host-web')).toHaveLength(0);
+    expect(readFileSync(path, 'utf-8')).not.toContain('webHost');
     expect(specifiers).not.toContain('@flighthq/scene2d-canvas');
     expect(specifiers).not.toContain('@flighthq/scene2d-gl');
     expect(specifiers).not.toContain('@flighthq/scene2d-wgpu');
