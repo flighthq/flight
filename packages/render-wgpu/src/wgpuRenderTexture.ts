@@ -1,6 +1,8 @@
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
+  RenderTargetClear,
   RenderTexture,
+  WgpuRenderPass,
   RenderTargetFormat,
   WgpuRenderState,
   WgpuRenderTextureEntry,
@@ -77,18 +79,21 @@ export function isWgpuRenderTextureReady(state: WgpuRenderState, renderTexture: 
 }
 
 /**
- * Clears and populates a render texture's hidden WebGPU target. The caller must have opened the
- * frame command encoder; the enclosing render pass is restored even when the callback throws.
+ * Clears and populates a render texture's hidden WebGPU target. The callback receives the pass bound to
+ * that target — the same handle every other draw entry point takes — and the enclosing pass is restored
+ * even when the callback throws. `clear` is what the target starts from; it defaults to transparent black
+ * with depth and stencil reset, which is what a texture composited over a scene wants.
  */
 export function renderIntoWgpuRenderTexture(
   state: WgpuRenderState,
   renderTexture: RenderTexture,
-  callback: (state: WgpuRenderState) => void,
+  callback: (pass: WgpuRenderPass) => void,
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
 ): void {
   writeWgpuRenderTextureTarget(state, renderTexture, (target) => {
-    const pass = beginWgpuRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+    const pass = beginWgpuRenderPass(state, target, clear);
     try {
-      callback(state);
+      callback(pass);
     } finally {
       endWgpuRenderPass(pass);
     }

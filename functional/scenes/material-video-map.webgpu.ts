@@ -5,6 +5,7 @@ import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceVideoTexture,
+  beginWgpuRenderPass,
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
@@ -12,17 +13,18 @@ import {
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createUnlitMaterial,
+  createVector3,
   createVideoResource,
   createVideoTexture,
-  createVector3,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
+  endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  renderWgpuBackground,
+  scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
-  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -37,14 +39,19 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x000000ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 const frame = document.createElement('canvas');
 frame.width = 2;
@@ -81,10 +88,10 @@ const lights = {
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, 0), intensity: 0 }),
 };
 
-renderWgpuBackground(state);
+const pass = beginWgpuRenderPass(state, screen, screenClear);
 prepareScene3DRender(state, scene, camera, lights);
-drawWgpuScene3D(state, scene, camera, lights);
-submitWgpuRenderPass(state);
+drawWgpuScene3D(pass, scene, camera, lights);
+endWgpuRenderPass(pass);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const sample = (x: number): number =>

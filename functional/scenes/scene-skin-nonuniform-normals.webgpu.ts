@@ -3,10 +3,11 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
 import {
-  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginWgpuFrame,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
@@ -17,20 +18,22 @@ import {
   createOrthographicProjection,
   createSkeleton3D,
   createVector3,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   prepareScene3DSkinning,
-  renderWgpuBackground,
+  scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   skinVertices,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -63,10 +66,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x0a0c10ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
@@ -76,7 +84,7 @@ const pipeline = createWgpuRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // Specular is black and shininess minimal so sampled luminance tracks the diffuse term monotonically —
 // the scene assertion compares an ORDER, which only survives if a highlight cannot outrank the Lambert result.
@@ -156,11 +164,12 @@ const lights = {
 prepareScene3DSkinning(scene);
 prepareScene3DRender(state, scene, camera, lights);
 beginWgpuFrame(state);
-renderWgpuBackground(state);
-beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-drawWgpuScene3D(state, scene, camera, lights);
-endWgpuRenderEffectPipeline(state, pipeline, []);
-submitWgpuRenderPass(state);
+const pass = beginWgpuRenderPass(state, screen, screenClear);
+const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+drawWgpuScene3D(scenePass, scene, camera, lights);
+endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+endWgpuRenderPass(pass);
+submitWgpuFrame(state);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const correct = predictFacetDiffuse(skeleton.normalMatrices);

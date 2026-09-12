@@ -1,17 +1,18 @@
 import { prepareScene3DRender } from '@flighthq/render';
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
+import { beginWgpuRenderPass, endWgpuRenderPass } from '@flighthq/render-wgpu';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import { installCaptureTarget } from '@flighthq/tool-capture/browser';
 
-import { camera, lights, scene, state } from './render.webgpu';
+import { camera, lights, scene, screen, screenClear, state } from './render.webgpu';
 
 await installCaptureTarget({
   renderer: 'webgpu',
+  screen,
   state,
   render() {
-    renderWgpuBackground(state);
+    const pass = beginWgpuRenderPass(state, screen, screenClear);
     prepareScene3DRender(state, scene, camera, lights);
-    drawWgpuScene3D(state, scene, camera, lights);
-    submitWgpuRenderPass(state);
+    drawWgpuScene3D(pass, scene, camera, lights);
+    endWgpuRenderPass(pass);
   },
 });

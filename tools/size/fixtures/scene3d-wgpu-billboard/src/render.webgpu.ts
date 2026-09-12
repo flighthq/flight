@@ -8,11 +8,13 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
+  beginWgpuRenderPass,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
+  endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
@@ -33,11 +35,12 @@ const pipeline = createWgpuPipeline({
     unlitWgpuMeshMaterialRenderer,
   ),
 });
-const state = await createWgpuRenderStateFromCanvasElement(canvas, pipeline, {
-  antialias: false,
-  backgroundColor: 0x101522ff,
-  pixelRatio: 1,
-});
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 
 const geometry = createMeshGeometry({
   layout: CANONICAL_MESH_GEOMETRY_LAYOUT,
@@ -56,12 +59,12 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 const lights = createScene3DLights();
 
-export { camera, lights, scene, state };
+export { camera, lights, scene };
 
-renderWgpuBackground(state);
+const pass = beginWgpuRenderPass(state, screen, screenClear);
 orientScene3DBillboardsToCamera(scene, camera);
 prepareScene3DRender(state, scene, camera, lights);
-drawWgpuScene3D(state, scene, camera, lights);
-submitWgpuRenderPass(state);
+drawWgpuScene3D(pass, scene, camera, lights);
+endWgpuRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dWgpuBillboard', { scene, state });

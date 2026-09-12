@@ -1,27 +1,29 @@
 import { webCanvasRenderSurfaceCreator, webHostImage, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
+  beginWgpuRenderPass,
   connectCanvasTextureResolverMisses,
-  createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   enableFlightDiagnostics,
+  endWgpuRenderPass,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerRenderer,
   registerWgpuShapeRasterizer,
-  renderWgpuBackground,
   renderWgpuScene2D,
+  scene3DWgpuPipeline,
   ShapeKind,
-  submitWgpuRenderPass,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -30,12 +32,17 @@ export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
-  backgroundColor: 0x101827ff,
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x18 / 0xff, 0x27 / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 
@@ -55,7 +62,7 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  renderWgpuScene2D(state, root);
-  submitWgpuRenderPass(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  renderWgpuScene2D(pass, root);
+  endWgpuRenderPass(pass);
 }

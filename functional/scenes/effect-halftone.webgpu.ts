@@ -1,28 +1,30 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createDisplayObject,
   createHalftoneEffect,
   createShape,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
-  registerWgpuHalftoneEffect,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
-  renderWgpuBackground,
+  registerWgpuHalftoneEffect,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
-  getBitmapPixelRgb,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -40,10 +42,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x101014ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuHalftoneEffect(state);
 
@@ -55,14 +62,14 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createHalftoneEffect({ scale: 4, angle: 22.92 })]);
-  submitWgpuRenderPass(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [createHalftoneEffect({ scale: 4, angle: 22.92 })]);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // Many small, rotated, overlapping shapes pack the frame with fine detail and diagonal edges, giving
 // the halftone effect dense high-frequency content (edges, quantizable color, sample neighborhoods)

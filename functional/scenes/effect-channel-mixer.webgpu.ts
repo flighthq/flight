@@ -1,27 +1,29 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createChannelMixerAdjustment,
   createDisplayObject,
   createShape,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
-  renderWgpuBackground,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -45,10 +47,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x202830ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
@@ -58,18 +65,18 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [
     createChannelMixerAdjustment({
       matrix: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
     }),
   ]);
-  submitWgpuRenderPass(state);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:
 // rotates the RGB channels (R<-B, G<-R, B<-G) via a 3x4 row-major mix matrix.

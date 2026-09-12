@@ -11,8 +11,12 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createMatrix,
+  beginWgpuRenderPass,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
-  createWgpuRenderStateFromCanvasElement,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
+  endWgpuRenderPass,
   scene3DWgpuPipeline,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
@@ -27,7 +31,7 @@ import {
   enableFlightDiagnostics,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
-  enableWgpuFrameCapture,
+  enableWgpuScreenRenderTargetCapture,
   enableWgpuRenderCache,
   enableWgpuRenderEffectGuards,
   enableWgpuStrokePathTessellation,
@@ -42,14 +46,12 @@ import {
   registerRenderer,
   registerWgpuShapeCommands,
   registerWgpuShapeRasterizer,
-  renderWgpuBackground,
   renderWgpuScene2D,
   scene2DCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
-  submitWgpuRenderPass,
   TextLabelKind,
   TilemapKind,
 } from '@flighthq/sdk';
@@ -65,12 +67,27 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+  const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+  if (acquisition === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
+  const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+  const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+    format: acquisition.format,
     pixelRatio,
-    backgroundColor: options.background,
     raster2DSurfaceProvider: webRaster2DSurfaceProvider,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
+  // The background is what the frame is cleared to — a per-pass value the render loop below passes in,
+  // rather than a property the state carries for every pass it will ever open.
+  const background = options.background ?? 0x00000000;
+  const screenClear = {
+    color: [
+      ((background >>> 24) & 0xff) / 0xff,
+      ((background >>> 16) & 0xff) / 0xff,
+      ((background >>> 8) & 0xff) / 0xff,
+      (background & 0xff) / 0xff,
+    ] as const,
+    depth: 1.0,
+  };
 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
@@ -81,7 +98,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   enableWgpuRenderEffectGuards(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
-  enableWgpuFrameCapture(state);
+  enableWgpuScreenRenderTargetCapture(screen);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
@@ -113,15 +130,16 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   return registerFunctionalTarget({
     kind: 'webgpu',
+    screen,
     state,
     width,
     height,
     scale: pixelRatio,
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
-      renderWgpuBackground(state);
-      renderWgpuScene2D(state, root);
-      submitWgpuRenderPass(state);
+      const pass = beginWgpuRenderPass(state, screen, screenClear);
+      renderWgpuScene2D(pass, root);
+      endWgpuRenderPass(pass);
     },
     benchmark(root: Node2D): void {
       invalidateNodeLocalTransform(root);

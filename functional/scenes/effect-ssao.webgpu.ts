@@ -1,28 +1,30 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createDisplayObject,
   createShape,
   createSsaoEffect,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  registerWgpuSsaoEffect,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
-  renderWgpuBackground,
+  registerWgpuSsaoEffect,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -45,10 +47,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x05060aff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuSsaoEffect(state);
 
@@ -60,16 +67,16 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [
     createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 }),
   ]);
-  submitWgpuRenderPass(state);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // A normal scene of bright, saturated shapes on a near-black field. ssao is depth-driven: these tests
 // have no depth buffer, so the recipe is a color-only fallback (the scene passes through unoccluded),

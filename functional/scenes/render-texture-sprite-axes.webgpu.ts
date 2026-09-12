@@ -60,7 +60,6 @@ slabView.uvScale.y = SPRITE_HEIGHT / 480;
 releaseWgpuRenderTexture(state, pool, slabView);
 
 const renderTexture = acquireWgpuRenderTexture(state, pool, {
-  clearColors: [0x00000000],
   height: SPRITE_HEIGHT,
   width: SPRITE_WIDTH,
 });
@@ -82,10 +81,10 @@ addRect(producer, 50, 0, 50, 40, 0x42d681ff);
 addRect(producer, 0, 40, 50, 40, 0x3d72e8ff);
 addRect(producer, 50, 40, 50, 40, 0xf2ca52ff);
 beginWgpuFrame(state);
-renderIntoWgpuRenderTexture(state, renderTexture, (captureState) => {
-  setWgpuRenderTransform2D(captureState, createMatrix());
-  prepareScene2DRender(captureState, producer);
-  renderWgpuScene2D(captureState, producer);
+renderIntoWgpuRenderTexture(state, renderTexture, (capturePass) => {
+  setWgpuRenderTransform2D(capturePass, createMatrix());
+  prepareScene2DRender(state, producer);
+  renderWgpuScene2D(capturePass, producer);
 });
 
 const root = createDisplayObject();

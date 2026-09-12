@@ -7,14 +7,18 @@ import {
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
 import { enableWgpuRenderEffectGuards } from '@flighthq/effects-wgpu/contract';
-import { createBitmapFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu/contract';
+import {
+  createBitmapFromWgpuScreenRenderTarget,
+  enableWgpuScreenRenderTargetCapture,
+} from '@flighthq/render-wgpu/contract';
 import type {
   CanvasRenderState,
   Node2D,
   DomRenderState,
   GlRenderState,
   Bitmap,
-  WgpuPresentationRenderState,
+  WgpuRenderState,
+  WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';
 
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
@@ -88,7 +92,10 @@ export type FunctionalVerification = CaptureVerification;
 
 export interface FunctionalWgpuTarget {
   kind: 'webgpu';
-  state: WgpuPresentationRenderState;
+  // The state draws and the screen target presents: two independent handles now, and the capture needs
+  // the screen one, since that is what owns the readable frame.
+  screen: WgpuScreenRenderTarget;
+  state: WgpuRenderState;
   width: number;
   height: number;
   scale: number;
@@ -169,8 +176,8 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
   return target;
 }
 
-export function registerWgpuFunctionalTarget(state: WgpuPresentationRenderState, scale = 1): void {
-  enableWgpuFrameCapture(state);
+export function registerWgpuFunctionalTarget(state: WgpuRenderState, screen: WgpuScreenRenderTarget, scale = 1): void {
+  enableWgpuScreenRenderTargetCapture(screen);
   // Every functional WGPU scene passes through here, INCLUDING the ~100 that build their own render
   // state instead of going through the harness — which is where the sampleCount requests live. Without
   // this, `createWgpuRenderEffectPipeline` downgrades a requested sampleCount of 4 to 1 in silence, and
@@ -178,9 +185,10 @@ export function registerWgpuFunctionalTarget(state: WgpuPresentationRenderState,
   enableWgpuRenderEffectGuards(state);
   registerFunctionalTarget({
     kind: 'webgpu',
+    screen,
     state,
-    width: state.surface.width,
-    height: state.surface.height,
+    width: screen.surface.width,
+    height: screen.surface.height,
     scale,
     render: () => {},
   });
@@ -270,7 +278,7 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
   if (target?.kind === 'webgpu') {
-    return createBitmapFromWgpuRenderState(target.state, getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE));
+    return createBitmapFromWgpuScreenRenderTarget(target.screen, getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE));
   }
   if (target?.kind === 'webgl') return createBitmapFromGlRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();

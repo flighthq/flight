@@ -1,39 +1,41 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginVelocityFrame,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   contributeVelocity,
   createDisplayObject,
   createMotionBlurEffect,
   createShape,
   createVelocityField,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   createWgpuVelocityTarget,
   defaultWgpuNode2DVelocityWriter,
-  registerDefaultShapeBoundsCommands,
-  registerWgpuMotionBlurEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelRgb,
   getNodeChildAt,
   getNodeChildCount,
   prepareScene2DRender,
+  registerDefaultShapeBoundsCommands,
   registerRenderer,
+  registerWgpuMotionBlurEffect,
   registerWgpuVelocityWriter,
-  renderWgpuBackground,
   renderWgpuScene2D,
   renderWgpuVelocity,
+  scene3DWgpuPipeline,
   setWgpuRenderEffectVelocityTexture,
-  submitWgpuRenderPass,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -54,10 +56,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x101014ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
@@ -86,17 +93,17 @@ export function render(root: Node2D): void {
     if (child !== null) contributeVelocity(velocityField, child, 40, 0);
   }
 
-  renderWgpuBackground(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
-  submitWgpuRenderPass(state);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // A few solid shapes spread across the frame. Velocity is contributed in render.webgl.ts (one static
 // frame has no transform delta to derive motion from), so the scene here is just the geometry to smear.

@@ -1,29 +1,36 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  SpriteKind,
-  TilemapKind,
+  beginWgpuRenderPass,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
-  enableFlightDiagnostics,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultWgpuSpriteRenderer,
   defaultWgpuTilemapRenderer,
+  enableFlightDiagnostics,
+  endWgpuRenderPass,
   prepareScene2DRender,
   registerRenderer,
-  renderWgpuBackground,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  SpriteKind,
+  TilemapKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
@@ -32,7 +39,7 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  renderWgpuScene2D(state, root);
-  submitWgpuRenderPass(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  renderWgpuScene2D(pass, root);
+  endWgpuRenderPass(pass);
 }

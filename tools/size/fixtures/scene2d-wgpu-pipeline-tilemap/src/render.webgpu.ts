@@ -4,11 +4,13 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
+  beginWgpuRenderPass,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuPipeline,
-  createWgpuRenderStateFromCanvasElement,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
+  endWgpuRenderPass,
   registerWgpuBitmapTextureResolver,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
@@ -34,11 +36,12 @@ const pipeline = createWgpuPipeline({
   ),
   renderers: withRegistryTableEntry(registries.renderers, TilemapKind, defaultWgpuTilemapRenderer),
 });
-const state = await createWgpuRenderStateFromCanvasElement(canvas, pipeline, {
-  antialias: false,
-  backgroundColor: 0x101522ff,
-  pixelRatio: 1,
-});
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 registerWgpuBitmapTextureResolver(state);
 
 const atlas = createTextureAtlas({
@@ -60,11 +63,11 @@ tilemap.x = 60;
 tilemap.y = 60;
 addNodeChild(root, tilemap);
 
-export { root, state };
+export { root };
 
 prepareScene2DRender(state, root);
-renderWgpuBackground(state);
-renderWgpuScene2D(state, root);
-submitWgpuRenderPass(state);
+const pass = beginWgpuRenderPass(state, screen, screenClear);
+renderWgpuScene2D(pass, root);
+endWgpuRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene2dWgpuTilemap', { root, state, tilemap });
