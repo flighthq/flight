@@ -103,7 +103,7 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     const constantSource = Uint8Array.from([64, 32, 16, 128]);
     let destinationPixel: Uint8Array = new Uint8Array(4);
     let clearObserved = false;
-    vi.mocked(state.gl.clear).mockImplementation(() => {
+    vi.mocked(state.gl.clearBufferfv).mockImplementation(() => {
       clearObserved = true;
     });
     registerGlRenderEffect(state, 'test.constant-frame', () => {
