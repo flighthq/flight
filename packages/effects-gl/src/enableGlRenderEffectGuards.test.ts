@@ -7,7 +7,6 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -248,10 +247,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(
-    createGlContextState(createGlContextFromCanvasElement(canvas)),
-    createGlPipeline(createEmptyGlRegistries()),
-  );
+  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {

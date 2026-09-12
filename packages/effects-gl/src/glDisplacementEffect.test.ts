@@ -1,6 +1,5 @@
 import { createDisplacementEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -133,7 +132,7 @@ describe('defaultGlDisplacementEffectRunner', () => {
 describe('registerGlDisplacementEffect', () => {
   it('makes the runner resolvable for the DisplacementEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

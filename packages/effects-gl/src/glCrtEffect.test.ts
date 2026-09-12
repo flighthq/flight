@@ -1,6 +1,5 @@
 import { createCrtEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -114,7 +113,7 @@ describe('registerGlCrtEffect', () => {
   it('makes the runner resolvable for the CrtEffect kind', () => {
     const canvas = document.createElement('canvas');
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(canvas)),
+      createGlContextFromCanvasElement(canvas),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

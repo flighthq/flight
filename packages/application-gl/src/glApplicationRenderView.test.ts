@@ -16,14 +16,12 @@ beforeEach(() => {
   vi.spyOn(renderGlContract, 'createGlContextFromCanvasElement').mockImplementation(
     () => ({ drawingBufferHeight: 0, drawingBufferWidth: 0 }) as never,
   );
-  vi.spyOn(renderGlContract, 'createGlContextState').mockImplementation(((gl: never) => ({ gl })) as never);
   vi.spyOn(renderGlContract, 'createGlRenderState').mockImplementation(((
-    contextState: never,
+    gl: never,
     _pipeline: never,
     options: { pixelRatio: number },
   ) => ({
-    contextState,
-    gl: (contextState as { gl: unknown }).gl,
+    gl,
     pixelRatio: options.pixelRatio,
     renderTransform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   })) as never);
@@ -72,11 +70,8 @@ describe('createGlApplicationRenderView', () => {
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(360);
     expect(renderGlContract.createGlContextFromCanvasElement).toHaveBeenCalledWith(canvas, { antialias: false });
-    expect(renderGlContract.createGlContextState).toHaveBeenCalledWith(
-      vi.mocked(renderGlContract.createGlContextFromCanvasElement).mock.results[0].value,
-    );
     expect(renderGlContract.createGlRenderState).toHaveBeenCalledWith(
-      vi.mocked(renderGlContract.createGlContextState).mock.results[0].value,
+      vi.mocked(renderGlContract.createGlContextFromCanvasElement).mock.results[0].value,
       pipeline,
       {
         pixelRatio: 2,

@@ -1,6 +1,5 @@
 import { createScanlinesEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -111,7 +110,7 @@ describe('defaultGlScanlinesEffectRunner', () => {
 describe('registerGlScanlinesEffect', () => {
   it('makes the runner resolvable for the ScanlinesEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

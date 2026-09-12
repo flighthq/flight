@@ -1,6 +1,5 @@
 import { createGlitchEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -146,7 +145,7 @@ describe('defaultGlGlitchEffectRunner', () => {
 describe('registerGlGlitchEffect', () => {
   it('makes the runner resolvable for the GlitchEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

@@ -1,5 +1,4 @@
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -98,10 +97,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
   canvas.height = 16;
-  return createGlRenderState(
-    createGlContextState(createGlContextFromCanvasElement(canvas)),
-    createGlPipeline(createEmptyGlRegistries()),
-  );
+  return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function effect(kind: string, extra: Readonly<Record<string, unknown>> = {}): Readonly<RenderEffect> {

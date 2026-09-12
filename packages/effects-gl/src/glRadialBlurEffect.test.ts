@@ -1,6 +1,5 @@
 import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -146,7 +145,7 @@ describe('defaultGlRadialBlurEffectRunner', () => {
 describe('registerGlRadialBlurEffect', () => {
   it('makes the runner resolvable for the RadialBlurEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

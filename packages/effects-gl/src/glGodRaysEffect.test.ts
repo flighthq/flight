@@ -1,6 +1,5 @@
 import { createGodRaysEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -127,7 +126,7 @@ describe('defaultGlGodRaysEffectRunner', () => {
 describe('registerGlGodRaysEffect', () => {
   it('makes the runner resolvable for the GodRaysEffect kind', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 
