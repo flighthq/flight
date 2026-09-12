@@ -95,9 +95,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // Per-particle motion blur: eight particles arranged in a ring, each given a velocity pointing radially

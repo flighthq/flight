@@ -79,9 +79,9 @@ const LIGHT_CENTER_Y = 0.4;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [
     createGodRaysEffect({
       centerX: 0.5,
       centerY: LIGHT_CENTER_Y,

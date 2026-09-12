@@ -20,6 +20,9 @@ import {
   registerRenderer,
   renderGlScene2D,
   ShapeKind,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -37,6 +40,7 @@ export const state = createGlRenderState(
     sceneGraphSyncPolicy: 'requiresInvalidation',
   },
 );
+const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
@@ -53,5 +57,7 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderGlScene2D(state, root);
+  const pass = beginGlRenderPass(state, screenTarget);
+  renderGlScene2D(pass, root);
+  endGlRenderPass(pass);
 }

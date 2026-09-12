@@ -25,7 +25,7 @@ import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import type { Bitmap, GlRenderState, Viewport } from '@flighthq/types';
+import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 declareAntialiasingPolicy('no-aa');
@@ -76,36 +76,37 @@ const NAVY: readonly [number, number, number, number] = [16 / 255, 23 / 255, 37 
 const solid = createSolidProgram(state);
 
 // Establish the untouched target background.
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 });
-endGlRenderPass(state);
+let pass: GlRenderPass;
+pass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 });
+endGlRenderPass(pass);
 
 // Partial color/depth preservation. The first pass writes green + depth across the panel. The small
 // second pass preserves color but clears depth. A later blue quad behind the green passes only in the
 // depth-cleared sub-region, proving that both color and depth clears were scissor-constrained.
 const depthPanel = viewport(40, 40, 300, 220);
 const depthHole = viewport(140, 100, 100, 100);
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, depthPanel);
+pass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, depthPanel);
 drawSolidQuad(state, solid, -1, -1, 1, 1, 0, [0.12, 0.78, 0.3, 1], true);
-endGlRenderPass(state);
-beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 }, depthHole);
-endGlRenderPass(state);
-beginGlRenderPass(state, target, undefined, depthPanel);
+endGlRenderPass(pass);
+pass = beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 }, depthHole);
+endGlRenderPass(pass);
+pass = beginGlRenderPass(state, target, undefined, depthPanel);
 drawSolidQuad(state, solid, -1, -1, 1, 1, 0.5, [0.12, 0.3, 0.9, 1], true);
-endGlRenderPass(state);
+endGlRenderPass(pass);
 
 // Nested restoration. A full-target nested pass is clipped to its enclosing panel, then a smaller
 // yellow nested pass runs. After both return, a cyan quad is drawn in OUTER clip coordinates; its
 // location proves the exact outer viewport was restored before an actual draw.
 const nestedPanel = viewport(420, 40, 320, 220);
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, nestedPanel);
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 });
+const outerPass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, nestedPanel);
+pass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 });
 drawSolidQuad(state, solid, -1, -1, 1, 1, 0, [0.72, 0.12, 0.62, 1], false);
-endGlRenderPass(state);
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, viewport(500, 100, 100, 80));
+endGlRenderPass(pass);
+pass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, viewport(500, 100, 100, 80));
 drawSolidQuad(state, solid, -1, -1, 1, 1, 0, [0.95, 0.75, 0.08, 1], false);
-endGlRenderPass(state);
+endGlRenderPass(pass);
 drawSolidQuad(state, solid, 0.1, -0.8, 0.88, 0.8, 0, [0.05, 0.8, 0.86, 1], false);
-endGlRenderPass(state);
+endGlRenderPass(outerPass);
 invalidateGlRenderStateCache(state);
 
 // 2D projection + clip under an edge-clamped region. Requested x=-30,width=300 intersects the target
@@ -121,9 +122,9 @@ appendShapeEndFill(clippedShape);
 setNode2DClip(clippedShape, createClipRegionFromRectangle({ height: 120, width: 160, x: 40, y: 40 }));
 addNodeChild(root2D, clippedShape);
 prepareScene2DRender(state, root2D);
-beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, viewport(-30, 340, 300, 220));
-renderGlScene2D(state, root2D);
-endGlRenderPass(state);
+pass = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, viewport(-30, 340, 300, 220));
+renderGlScene2D(pass, root2D);
+endGlRenderPass(pass);
 invalidateGlRenderStateCache(state);
 
 // One untouched camera, two aspect ratios, two viewports on the same target. The draw path derives
@@ -171,11 +172,11 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
 }
 
 function renderCameraViewport(region: Viewport): void {
-  beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, region);
-  drawGlScene3D(state, scene3D, camera, lights);
+  const p = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, region);
+  drawGlScene3D(p, scene3D, camera, lights);
   // This mixed-subject proof presents as already encoded; keep the target-wide declaration stable.
   declareGlRenderTargetColorSpace(state, 'srgb');
-  endGlRenderPass(state);
+  endGlRenderPass(p);
 }
 
 interface SolidProgram {

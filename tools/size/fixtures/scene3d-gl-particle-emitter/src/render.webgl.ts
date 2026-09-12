@@ -12,6 +12,9 @@ import {
   createGlContextState,
   createGlPipeline,
   createGlRenderState,
+  beginGlRenderPass,
+  endGlRenderPass,
+  createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
@@ -46,6 +49,9 @@ const lights = createScene3DLights();
 
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 prepareScene3DRender(state, scene, camera, lights);
-drawGlScene3D(state, scene, camera, lights);
+const screenTarget = createGlScreenRenderTarget(state.gl);
+const pass = beginGlRenderPass(state, screenTarget);
+drawGlScene3D(pass, scene, camera, lights);
+endGlRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dGlParticleEmitter', { emitter, state });

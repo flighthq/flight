@@ -97,13 +97,13 @@ export function render(
   drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
-  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  drawGlScene3D(pass, scene, camera, lights);
+  endGlRenderEffectPipeline(pass, pipeline, []);
 }
 
 const logicalWidth = width / scale;

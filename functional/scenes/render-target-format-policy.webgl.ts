@@ -87,8 +87,8 @@ if (floatSupported) {
   }
 }
 
-beginGlRenderPass(state, target, { color: GREEN });
-endGlRenderPass(state);
+const pass = beginGlRenderPass(state, target, { color: GREEN });
+endGlRenderPass(pass);
 presentGlRenderTarget(state, target);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

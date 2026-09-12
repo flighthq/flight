@@ -65,9 +65,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
 }
 
 // FXAA antialiases the whole frame. Rotated, high-contrast rectangles present jagged diagonal edges

@@ -98,7 +98,7 @@ if (
   throw new Error('[render-target-axes] heterogeneous MRT or sampled depth storage was lost during resize');
 }
 
-beginGlRenderPass(state, target, {
+const pass = beginGlRenderPass(state, target, {
   colors: [
     [217 / 255, 39 / 255, 39 / 255, 1],
     [33 / 255, 196 / 255, 90 / 255, 1],
@@ -106,7 +106,7 @@ beginGlRenderPass(state, target, {
   depth: 1.0,
   stencil: 0,
 });
-endGlRenderPass(state);
+endGlRenderPass(pass);
 
 // Present attachment 1, not the primary attachment. Its green clear proves that the heterogeneous
 // second attachment remained independently addressable after resize.

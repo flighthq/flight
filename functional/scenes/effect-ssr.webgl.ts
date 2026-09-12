@@ -70,9 +70,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createSsrEffect({ maxDistance: 0.8, resolution: 0.5, steps: 24 })]);
+  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  renderGlScene2D(pass, root);
+  endGlRenderEffectPipeline(pass, pipeline, [createSsrEffect({ maxDistance: 0.8, resolution: 0.5, steps: 24 })]);
 }
 
 // Bright, saturated shapes retain the shared scene intent while the missing backend capability stays

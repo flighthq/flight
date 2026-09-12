@@ -22,6 +22,9 @@ import {
   getBitmapPixelRgb,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
+  beginGlRenderPass,
+  createGlScreenRenderTarget,
+  endGlRenderPass,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -86,7 +89,10 @@ const lights = {
 };
 
 prepareScene3DRender(state, scene, camera, lights);
-drawGlScene3D(state, scene, camera, lights);
+const screenTarget = createGlScreenRenderTarget(state.gl);
+const pass = beginGlRenderPass(state, screenTarget);
+drawGlScene3D(pass, scene, camera, lights);
+endGlRenderPass(pass);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const sample = (x: number): number =>
