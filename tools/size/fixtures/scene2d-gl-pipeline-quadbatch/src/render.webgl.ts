@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -58,7 +58,7 @@ sourceContext.fillStyle = '#5b8cff';
 sourceContext.fillRect(0, 0, source.width, source.height);
 quadBatch.data.atlas = createTextureAtlas({
   regions: [createTextureAtlasRegion({ height: 64, id: 0, width: 64 })],
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
 });
 appendQuadBatchInstance(quadBatch, 0, 80, 70);
 addNodeChild(root, quadBatch);

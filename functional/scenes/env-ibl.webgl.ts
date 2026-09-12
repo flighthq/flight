@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -118,7 +118,7 @@ const logicalHeight = height / scale;
 const FACE_COLORS: readonly string[] = ['#ff3030', '#30ff30', '#f0f0f0', '#505060', '#3030ff', '#ffe030'];
 const cube = createCubeTexture();
 for (let face = 0; face < 6; face++) {
-  setCubeTextureFace(cube, face, createImageResourceFromCanvas(solidFaceCanvas(FACE_COLORS[face])));
+  setCubeTextureFace(cube, face, createWebImageResourceFromCanvas(solidFaceCanvas(FACE_COLORS[face])));
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 

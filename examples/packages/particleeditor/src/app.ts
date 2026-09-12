@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { ParticleEmitterConfig, ParticleForce } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -54,7 +54,7 @@ pCtx.fillStyle = grad;
 pCtx.fillRect(0, 0, 16, 16);
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(particleCanvas) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(particleCanvas) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 

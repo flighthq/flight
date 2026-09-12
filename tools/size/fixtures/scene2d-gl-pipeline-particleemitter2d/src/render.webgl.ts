@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -59,7 +59,7 @@ sourceContext.fillStyle = '#ffd95b';
 sourceContext.fillRect(0, 0, source.width, source.height);
 const atlas = createTextureAtlas({
   regions: [createTextureAtlasRegion({ height: 32, id: 0, width: 32 })],
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
 });
 
 const root = createDisplayObject();

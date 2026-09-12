@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -87,7 +87,7 @@ function addMultiplyBitmap(): void {
   const bitmap = createSprite();
   bitmap.data.texture = createTexture({
     dimension: '2d',
-    source: createImageResourceFromCanvas(source),
+    source: createWebImageResourceFromCanvas(source),
   });
   bitmap.blendMode = BlendMode.Multiply;
   bitmap.x = BITMAP_X;

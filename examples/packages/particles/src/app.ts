@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { ParticleForce } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -53,7 +53,7 @@ sparkCtx.fillStyle = sparkGrad;
 sparkCtx.fillRect(0, 0, 16, 16);
 
 const fireAtlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(sparkCanvas) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(sparkCanvas) }),
 });
 addTextureAtlasRegion(fireAtlas, 0, 0, 16, 16);
 
@@ -71,7 +71,7 @@ snowCtx.fillStyle = snowGrad;
 snowCtx.fillRect(0, 0, 12, 12);
 
 const snowAtlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(snowCanvas) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(snowCanvas) }),
 });
 addTextureAtlasRegion(snowAtlas, 0, 0, 12, 12);
 

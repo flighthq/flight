@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -112,7 +112,7 @@ const material = createBlinnPhongMaterial({
   alphaMap: createTexture({
     colorSpace: 'linear',
     dimension: '2d',
-    source: createImageResourceFromCanvas(alphaSplitCanvas()),
+    source: createWebImageResourceFromCanvas(alphaSplitCanvas()),
   }),
   alphaMode: 'mask',
   diffuse: 0xcc5522ff,

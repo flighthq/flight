@@ -24,7 +24,7 @@
 //
 // The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
 // returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -89,7 +89,7 @@ const diagnostics: ImportDiagnostic[] = [];
 const imported = createScene2DFromSvgDocument(SVG_SOURCE, diagnostics, {
   resolveImageResource: (href) => {
     resolvedHref = href;
-    return createImageResourceFromCanvas(buildQuadrantCanvas());
+    return createWebImageResourceFromCanvas(buildQuadrantCanvas());
   },
 });
 if (diagnostics.length > 0) {

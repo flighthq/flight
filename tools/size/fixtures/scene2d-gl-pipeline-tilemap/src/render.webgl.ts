@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -61,7 +61,7 @@ const atlas = createTextureAtlas({
     createTextureAtlasRegion({ height: 32, id: 0, width: 32 }),
     createTextureAtlasRegion({ height: 32, id: 1, width: 32, x: 32 }),
   ],
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
 });
 
 const root = createDisplayObject();

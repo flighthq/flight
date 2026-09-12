@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
-import { createImageResourceFromCanvas } from './webImageResource';
+import { createWebImageResourceFromCanvas } from './webImageResource';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
   const out = allocateEntity<Raster2DSurfaceProvider>();
@@ -42,7 +42,7 @@ export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Ras
       configurable: true,
     });
     surface.context = context;
-    surface.image = createImageResourceFromCanvas(canvas);
+    surface.image = createWebImageResourceFromCanvas(canvas);
     return finishEntity(surface);
   };
   out.destroyRaster2DSurface = (surface) => {

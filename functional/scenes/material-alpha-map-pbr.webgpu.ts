@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -111,14 +111,14 @@ const geometry = createQuadMeshGeometry(3.4, 2.6);
 
 const baseColorMap = createTexture({
   dimension: '2d',
-  source: createImageResourceFromCanvas(baseColorCanvas()),
+  source: createWebImageResourceFromCanvas(baseColorCanvas()),
 });
 baseColorMap.sampler.wrapU = 'repeat';
 setTextureUvScale(baseColorMap, 3, 1);
 const alphaMap = createTexture({
   colorSpace: 'linear',
   dimension: '2d',
-  source: createImageResourceFromCanvas(alphaGradientCanvas()),
+  source: createWebImageResourceFromCanvas(alphaGradientCanvas()),
 });
 alphaMap.sampler.wrapU = 'clamp-to-edge';
 const material = createStandardPbrMaterial({

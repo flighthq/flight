@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Sprite, Node2D, Spritesheet, SpritesheetPlayer } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -210,10 +210,10 @@ function createSpriteStrip(): HTMLCanvasElement {
 // Build the spritesheet from the procedural sprite strip.
 
 const stripCanvas = createSpriteStrip();
-const imageResource = createImageResourceFromCanvas(stripCanvas);
+const imageResource = createWebImageResourceFromCanvas(stripCanvas);
 
 const presentationCanvas = createPresentationCanvas();
-const presentationResource = createImageResourceFromCanvas(presentationCanvas);
+const presentationResource = createWebImageResourceFromCanvas(presentationCanvas);
 const presentation = createSprite();
 presentation.data.texture = createTexture({ dimension: '2d', source: presentationResource });
 addNodeChild(root, presentation);

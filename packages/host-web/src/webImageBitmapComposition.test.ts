@@ -6,14 +6,14 @@ import { BitmapTextureSourceKind, ImageResourceFailureKind, ResourceResolutionSt
 import { vi } from 'vitest';
 
 import {
-  clearImageBitmapComposers,
-  disableImageBitmapComposition,
-  enableImageBitmapComposition,
-  getImageBitmapComposer,
-  getImageBitmapComposerKinds,
-  hasImageBitmapComposer,
-  registerImageBitmapComposer,
-  unregisterImageBitmapComposer,
+  clearWebImageBitmapComposers,
+  disableWebImageBitmapComposition,
+  enableWebImageBitmapComposition,
+  getWebImageBitmapComposer,
+  getWebImageBitmapComposerKinds,
+  hasWebImageBitmapComposer,
+  registerWebImageBitmapComposer,
+  unregisterWebImageBitmapComposer,
 } from './webImageBitmapComposition';
 
 const composer: ImageBitmapComposer = () => null;
@@ -30,8 +30,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  disableImageBitmapComposition();
-  clearImageBitmapComposers();
+  disableWebImageBitmapComposition();
+  clearWebImageBitmapComposers();
   clearImageDecoders();
 });
 
@@ -48,21 +48,21 @@ function createTestBitmap(alphaType: 'straight' | 'opaque'): Bitmap {
   return finishEntity(out);
 }
 
-describe('clearImageBitmapComposers', () => {
+describe('clearWebImageBitmapComposers', () => {
   it('removes every registered composer', () => {
-    registerImageBitmapComposer('acme/raw-raster', composer);
-    clearImageBitmapComposers();
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
+    clearWebImageBitmapComposers();
 
-    expect(hasImageBitmapComposer('acme/raw-raster')).toBe(false);
+    expect(hasWebImageBitmapComposer('acme/raw-raster')).toBe(false);
   });
 });
 
-describe('disableImageBitmapComposition', () => {
+describe('disableWebImageBitmapComposition', () => {
   it('restores the ordinary decoder path for a reference that carries composition data', async () => {
     const composer = vi.fn().mockReturnValue(createTestBitmap('straight'));
-    registerImageBitmapComposer('acme/alpha-plane', composer);
-    enableImageBitmapComposition();
-    disableImageBitmapComposition();
+    registerWebImageBitmapComposer('acme/alpha-plane', composer);
+    enableWebImageBitmapComposition();
+    disableWebImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
@@ -74,12 +74,12 @@ describe('disableImageBitmapComposition', () => {
   });
 });
 
-describe('enableImageBitmapComposition', () => {
+describe('enableWebImageBitmapComposition', () => {
   it('installs the registered decoded-pixel composition route', async () => {
     const bitmap = createTestBitmap('straight');
     const composer = vi.fn().mockReturnValue(bitmap);
-    registerImageBitmapComposer('acme/alpha-plane', composer);
-    enableImageBitmapComposition();
+    registerWebImageBitmapComposer('acme/alpha-plane', composer);
+    enableWebImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
@@ -91,8 +91,8 @@ describe('enableImageBitmapComposition', () => {
     const payload = new Uint8Array([7, 8, 9]);
     const bitmap = createTestBitmap('straight');
     const composer = vi.fn().mockReturnValue(bitmap);
-    registerImageBitmapComposer('acme/alpha-plane', composer);
-    enableImageBitmapComposition();
+    registerWebImageBitmapComposer('acme/alpha-plane', composer);
+    enableWebImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png', 'premultiplied');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload };
 
@@ -109,8 +109,8 @@ describe('enableImageBitmapComposition', () => {
   it('lets a registered raw-pixel producer return a Bitmap when no MIME decoder recognizes the bytes', async () => {
     const bitmap = createTestBitmap('opaque');
     const composer = vi.fn().mockReturnValue(bitmap);
-    registerImageBitmapComposer('acme/raw-raster', composer);
-    enableImageBitmapComposition();
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
+    enableWebImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/raw-raster', payload: ref.bytes };
 
@@ -121,7 +121,7 @@ describe('enableImageBitmapComposition', () => {
   });
 
   it('reports an unavailable resource when its declared Bitmap composer is not registered', async () => {
-    enableImageBitmapComposition();
+    enableWebImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/missing', payload: ref.bytes };
 
@@ -132,49 +132,49 @@ describe('enableImageBitmapComposition', () => {
   });
 });
 
-describe('getImageBitmapComposer', () => {
+describe('getWebImageBitmapComposer', () => {
   it('returns the registered composer or null for a missing kind', () => {
-    expect(getImageBitmapComposer('acme/raw-raster')).toBeNull();
-    registerImageBitmapComposer('acme/raw-raster', composer);
+    expect(getWebImageBitmapComposer('acme/raw-raster')).toBeNull();
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
 
-    expect(getImageBitmapComposer('acme/raw-raster')).toBe(composer);
+    expect(getWebImageBitmapComposer('acme/raw-raster')).toBe(composer);
   });
 });
 
-describe('getImageBitmapComposerKinds', () => {
+describe('getWebImageBitmapComposerKinds', () => {
   it('returns an insertion-ordered enumeration detached from registry state', () => {
-    registerImageBitmapComposer('acme/raw-raster', composer);
-    expect(getImageBitmapComposerKinds()).toEqual(['acme/raw-raster']);
-    (getImageBitmapComposerKinds() as string[]).length = 0;
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
+    expect(getWebImageBitmapComposerKinds()).toEqual(['acme/raw-raster']);
+    (getWebImageBitmapComposerKinds() as string[]).length = 0;
 
-    expect(getImageBitmapComposerKinds()).toEqual(['acme/raw-raster']);
+    expect(getWebImageBitmapComposerKinds()).toEqual(['acme/raw-raster']);
   });
 });
 
-describe('hasImageBitmapComposer', () => {
+describe('hasWebImageBitmapComposer', () => {
   it('reports whether a kind is registered', () => {
-    expect(hasImageBitmapComposer('acme/raw-raster')).toBe(false);
-    registerImageBitmapComposer('acme/raw-raster', composer);
+    expect(hasWebImageBitmapComposer('acme/raw-raster')).toBe(false);
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
 
-    expect(hasImageBitmapComposer('acme/raw-raster')).toBe(true);
+    expect(hasWebImageBitmapComposer('acme/raw-raster')).toBe(true);
   });
 });
 
-describe('registerImageBitmapComposer', () => {
+describe('registerWebImageBitmapComposer', () => {
   it('uses the final registration for a kind', () => {
     const replacement: ImageBitmapComposer = () => null;
-    registerImageBitmapComposer('acme/raw-raster', composer);
-    registerImageBitmapComposer('acme/raw-raster', replacement);
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
+    registerWebImageBitmapComposer('acme/raw-raster', replacement);
 
-    expect(getImageBitmapComposer('acme/raw-raster')).toBe(replacement);
+    expect(getWebImageBitmapComposer('acme/raw-raster')).toBe(replacement);
   });
 });
 
-describe('unregisterImageBitmapComposer', () => {
+describe('unregisterWebImageBitmapComposer', () => {
   it('removes one registered kind', () => {
-    registerImageBitmapComposer('acme/raw-raster', composer);
-    unregisterImageBitmapComposer('acme/raw-raster');
+    registerWebImageBitmapComposer('acme/raw-raster', composer);
+    unregisterWebImageBitmapComposer('acme/raw-raster');
 
-    expect(getImageBitmapComposer('acme/raw-raster')).toBeNull();
+    expect(getWebImageBitmapComposer('acme/raw-raster')).toBeNull();
   });
 });

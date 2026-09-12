@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -27,8 +28,36 @@ const BROWSER_TYPES = [
 // The functions and registries the approved tranche moved into host-web. None may reappear on a portable
 // package's lanes, under any spelling — a re-export is the compatibility shim the tranche forbade.
 const MOVED_TO_HOST_WEB = [
-  'clearImageBitmapComposers',
+  'clearWebImageBitmapComposers',
   'createBitmapFromCanvas',
+  'createWebImageResourceFromCanvas',
+  'createWebImageResourceFromImageBitmap',
+  'createWebImageResourceFromImageElement',
+  'createWebTextureAtlasFromCanvas',
+  'createWebTextureAtlasFromImageBitmap',
+  'createWebTextureAtlasFromImageElement',
+  'disableWebImageBitmapComposition',
+  'drawBitmap',
+  'enableWebImageBitmapComposition',
+  'getWebImageBitmapComposer',
+  'getWebImageBitmapComposerKinds',
+  'hasWebImageBitmapComposer',
+  'initializeBitmapFromCanvas',
+  'initializeWebImageResourceFromCanvas',
+  'initializeWebImageResourceFromImageBitmap',
+  'initializeWebImageResourceFromImageElement',
+  'registerWebImageBitmapComposer',
+  'registerWebImageDecoders',
+  'registerWebImageEncoders',
+  'unregisterWebImageBitmapComposer',
+];
+
+// The names these replaced. A host-owned function that reads as portable is the mistake the web prefix
+// corrects, so the old spellings must not come back anywhere — not as an alias, not as a re-export, not
+// in a caller that a search-and-replace missed. agents/ is excluded: it is documentation of record and
+// read-only to builders, and its prose legitimately recalls what the functions used to be called.
+const RETIRED_NAMES = [
+  'clearImageBitmapComposers',
   'createImageResourceFromCanvas',
   'createImageResourceFromImageBitmap',
   'createImageResourceFromImageElement',
@@ -36,18 +65,14 @@ const MOVED_TO_HOST_WEB = [
   'createTextureAtlasFromImageBitmap',
   'createTextureAtlasFromImageElement',
   'disableImageBitmapComposition',
-  'drawBitmap',
   'enableImageBitmapComposition',
   'getImageBitmapComposer',
   'getImageBitmapComposerKinds',
   'hasImageBitmapComposer',
-  'initializeBitmapFromCanvas',
   'initializeImageResourceFromCanvas',
   'initializeImageResourceFromImageBitmap',
   'initializeImageResourceFromImageElement',
   'registerImageBitmapComposer',
-  'registerWebImageDecoders',
-  'registerWebImageEncoders',
   'unregisterImageBitmapComposer',
 ];
 
@@ -82,6 +107,18 @@ describe('host-web seam closure', () => {
         }
       }
     }
+
+    expect(found).toStrictEqual([]);
+  });
+
+  // getImageBitmapComposer is a prefix of getWebImageBitmapComposer only in the other direction, so a
+  // bare substring search would be satisfied by the new name; the word-boundary match is what keeps this
+  // from passing vacuously the moment the rename lands.
+  it('leaves no retired unprefixed name anywhere in the repository', () => {
+    const found = RETIRED_NAMES.flatMap((retired) => {
+      const hits = searchRepository(retired);
+      return hits.map((hit) => `${hit}: ${retired}`);
+    });
 
     expect(found).toStrictEqual([]);
   });
@@ -190,4 +227,19 @@ function readPackageTests(packageName: string): [string, string][] {
   return readdirSync(directory)
     .filter((file) => file.endsWith('.test.ts'))
     .map((file) => [file, readFileSync(resolve(directory, file), 'utf-8')]);
+}
+
+// Searches tracked files for a whole-word identifier, skipping agents/ documentation and this file, which
+// necessarily names every retired spelling in order to forbid it.
+function searchRepository(name: string): string[] {
+  const result = spawnSync('git', ['grep', '-lw', name], {
+    cwd: resolve(import.meta.dirname, '..'),
+    encoding: 'utf-8',
+  });
+  // git grep exits 1 with no output when nothing matches, which is the answer this wants, not an error.
+  if (result.status !== 0 && result.stdout === '') return [];
+  return result.stdout
+    .split('\n')
+    .filter((line) => line !== '')
+    .filter((line) => !line.startsWith('agents/') && !line.endsWith('scripts/host-web-seam.test.ts'));
 }

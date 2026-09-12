@@ -6,7 +6,7 @@
 // side. The scene assertion samples the center of each bitmap and verifies the expected solid color. This is
 // inherently visual — it exercises per-frame atlas region selection and bitmap source-rect rendering
 // that jsdom cannot confirm.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -56,7 +56,7 @@ for (let i = 0; i < FRAME_COUNT; i++) {
   ctx.fillRect(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE);
 }
 
-const imageResource = createImageResourceFromCanvas(stripCanvas);
+const imageResource = createWebImageResourceFromCanvas(stripCanvas);
 const atlasTexture = createTexture({ dimension: '2d', source: imageResource });
 const spritesheet = createSpritesheetFromGrid({
   columns: FRAME_COUNT,

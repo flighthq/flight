@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type {
   Bitmap,
   Camera3D,
@@ -88,7 +88,7 @@ function createParticleAtlas(size: number, colors: readonly [string, string, str
   context.fillStyle = gradient;
   context.fillRect(0, 0, size, size);
   const atlas = createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(surface) }),
+    texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(surface) }),
   });
   addTextureAtlasRegion(atlas, 0, 0, size, size);
   return atlas;

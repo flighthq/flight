@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
 // committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
@@ -121,7 +121,7 @@ function makeGlowCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeGlowCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(makeGlowCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 

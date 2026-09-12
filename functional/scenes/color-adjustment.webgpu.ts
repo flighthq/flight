@@ -1,7 +1,7 @@
 // color-adjustment — render-verifies the inline color-adjustment fold on WebGPU, against a reference
 // baked into the same picture: a true red rect on the left, drawn red, and a WHITE source on the right
 // carrying a red color-adjustment tint. They agree only if the fold ran.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -70,7 +70,7 @@ function makeAdjustedCanvas(): HTMLCanvasElement {
 
 function addSquare(root: ReturnType<typeof createDisplayObject>, source: HTMLCanvasElement, x: number): void {
   const atlas = createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+    texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
   });
   addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
   const sprite = createSprite();
