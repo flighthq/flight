@@ -654,6 +654,10 @@
       "registrar": "registerImageBitmapCompositionResolver"
     },
     {
+      "packageName": "image",
+      "registrar": "registerTestImageDimensionResolver"
+    },
+    {
       "packageName": "image-codec",
       "registrar": "registerImageDecoder"
     },
