@@ -61,9 +61,6 @@ export function getRenderStateRuntime(state: RenderState): RenderStateRuntime {
 
 export function initializeRenderState(state: EntityConstruction<RenderState>, obj?: Partial<RenderState>): void {
   state.allowSmoothing = obj?.allowSmoothing ?? true;
-  state.backgroundColor = obj?.backgroundColor ?? 0;
-  state.backgroundColorRgba = obj?.backgroundColorRgba ?? [];
-  state.backgroundColorString = obj?.backgroundColorString ?? '';
   state.currentClipDepth = obj?.currentClipDepth ?? 0;
   state.displayObjectClipHooks = obj?.displayObjectClipHooks ?? null;
   state.pixelRatio = obj?.pixelRatio ?? 1;

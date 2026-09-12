@@ -20,7 +20,6 @@ export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?:
     drawingBufferWidth: { configurable: true, value: canvas.width },
   });
   const state = createGlRenderState(gl, createGlPipeline(createEmptyGlRegistries()), {
-    backgroundColor: 0x00000000,
     imageSmoothingEnabled: options?.allowSmoothing ?? true,
     pixelRatio: options?.pixelRatio,
   });

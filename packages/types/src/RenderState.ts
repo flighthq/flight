@@ -27,9 +27,6 @@ export type Scene3DGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidati
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
-  readonly backgroundColor: number;
-  readonly backgroundColorRgba: number[];
-  readonly backgroundColorString: string;
   // Active clip nesting depth (rect + path). Masks were retired into clips, so the mask pass / renderer
   // map / currentMaskDepth are gone. Backends additionally keep their own per-form unwind stack.
   currentClipDepth: number;

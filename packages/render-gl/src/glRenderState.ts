@@ -4,7 +4,6 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
-  setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
@@ -222,8 +221,6 @@ function _createGlRenderStateFromContext(
 
   state.applyBlendMode = null;
   Object.assign(state, { contextState, gl, pipeline });
-
-  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   const runtime = createGlRenderStateRuntime(contextState, pipeline);
   state[EntityRuntimeKey] = runtime;
