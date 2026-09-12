@@ -1,7 +1,7 @@
 import type { GlMeshProgram } from './GlMeshProgram';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
 import type { GlRenderState } from './GlRenderState';
-import type { GlRenderTarget } from './GlRenderTarget';
+import type { GlTextureRenderTarget } from './GlRenderTarget';
 import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
 import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
@@ -128,7 +128,7 @@ export interface GlScene3DRuntime {
   pbrTransmissionSceneColor: GlPbrTransmissionSceneColor | null;
   programCache: Map<string, GlMeshProgram>;
   shadow: GlScene3DShadow | null;
-  shadowTarget: GlRenderTarget | null;
+  shadowTarget: GlTextureRenderTarget | null;
   // The per-state GPU skin bone-palette data texture (RGBA32F), created lazily by ensureGlSkinPalette on
   // the first skinned draw and grown to the largest skeleton seen. Every skinned mesh reuses this one
   // texture: the palette is re-uploaded per draw, so no per-mesh texture is retained. null until first use.

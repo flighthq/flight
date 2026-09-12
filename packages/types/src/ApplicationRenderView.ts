@@ -4,7 +4,7 @@ import type { GlContextOptions } from './GlContext';
 import type { GlPipeline } from './GlPipeline';
 import type { GlRenderOptions } from './GlRenderOptions';
 import type { GlRenderState } from './GlRenderState';
-import type { GlRenderTarget } from './GlRenderTarget';
+import type { GlTextureRenderTarget } from './GlRenderTarget';
 import type { RenderState } from './RenderState';
 import type { RenderTargetDescriptor, RenderTargetDimensions } from './RenderTarget';
 import type { Viewport } from './Viewport';
@@ -38,4 +38,4 @@ export interface GlApplicationRenderViewOptions {
   readonly target?: Readonly<ApplicationRenderViewTargetOptions>;
 }
 
-export type GlApplicationRenderView = ApplicationRenderView<GlRenderState, GlRenderTarget>;
+export type GlApplicationRenderView = ApplicationRenderView<GlRenderState, GlTextureRenderTarget>;
