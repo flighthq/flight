@@ -22,6 +22,7 @@ export * from './webDialogHost';
 export * from './webFilesystem';
 export * from './webFontLoading';
 export * from './webGeolocation';
+export * from './webGlContext';
 export * from './webGlRenderSurface';
 export * from './webGlyphRasterizer';
 export * from './webGraphicsHost';

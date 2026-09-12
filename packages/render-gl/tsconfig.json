@@ -9,16 +9,36 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../scene2d" },
-    { "path": "../geometry" },
-    { "path": "../log" },
-    { "path": "../render" },
-    { "path": "../registry" },
-    { "path": "../signals" },
-    { "path": "../texture" },
-    { "path": "../types" }
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

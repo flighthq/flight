@@ -1,10 +1,6 @@
 import { createScreenSpaceFogEffect } from '@flighthq/effects/contract';
-import {
-  createEmptyGlRegistries,
-  createGlPipeline,
-  createGlContext,
-  createGlRenderState,
-} from '@flighthq/render-gl/contract';
+import { createWebGlContext } from '@flighthq/host-web/contract';
+import { createEmptyGlRegistries, createGlPipeline, createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
@@ -182,7 +178,7 @@ describe('defaultGlScreenSpaceFogEffectRunner', () => {
 describe('registerGlScreenSpaceFogEffect', () => {
   it('makes the runner resolvable for the ScreenSpaceFogEffect kind', () => {
     const state = createGlRenderState(
-      createGlContext(document.createElement('canvas')),
+      createWebGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
 

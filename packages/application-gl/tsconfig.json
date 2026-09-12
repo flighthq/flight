@@ -9,11 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../application" },
-    { "path": "../node" },
-    { "path": "../render-gl" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    {
+      "path": "../application"
+    },
+    {
+      "path": "../host-web"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

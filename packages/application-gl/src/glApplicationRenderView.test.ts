@@ -3,6 +3,7 @@ import {
   createApplicationWindow,
   synchronizeApplicationRenderView,
 } from '@flighthq/application/contract';
+import * as hostWebContract from '@flighthq/host-web/contract';
 import * as nodeContract from '@flighthq/node/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import { emitSignal } from '@flighthq/signals/contract';
@@ -13,7 +14,7 @@ import { createGlApplicationRenderView, destroyGlApplicationRenderView } from '.
 beforeEach(() => {
   vi.spyOn(nodeContract, 'createViewport').mockImplementation((options) => ({ ...options, x: 0, y: 0 }) as never);
 
-  vi.spyOn(renderGlContract, 'createGlContext').mockImplementation(
+  vi.spyOn(hostWebContract, 'createWebGlContext').mockImplementation(
     () => ({ drawingBufferHeight: 0, drawingBufferWidth: 0 }) as never,
   );
   vi.spyOn(renderGlContract, 'createGlRenderState').mockImplementation(((
@@ -69,9 +70,9 @@ describe('createGlApplicationRenderView', () => {
 
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(360);
-    expect(renderGlContract.createGlContext).toHaveBeenCalledWith(canvas, { antialias: false });
+    expect(hostWebContract.createWebGlContext).toHaveBeenCalledWith(canvas, { antialias: false });
     expect(renderGlContract.createGlRenderState).toHaveBeenCalledWith(
-      vi.mocked(renderGlContract.createGlContext).mock.results[0].value,
+      vi.mocked(hostWebContract.createWebGlContext).mock.results[0].value,
       pipeline,
       {
         pixelRatio: 2,

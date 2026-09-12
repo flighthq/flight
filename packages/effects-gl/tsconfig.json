@@ -9,15 +9,36 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
-    { "path": "../color" },
-    { "path": "../effects" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../log" },
-    { "path": "../render-gl" },
-    { "path": "../registry" },
-    { "path": "../types" }
+    {
+      "path": "../adjustments"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../effects"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../host-web"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

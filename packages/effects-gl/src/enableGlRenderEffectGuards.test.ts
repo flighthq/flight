@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
   addLogSink,
   clearLogOnceKeys,
@@ -9,7 +10,6 @@ import {
 import {
   createEmptyGlRegistries,
   createGlPipeline,
-  createGlContext,
   acquireGlRenderTexture,
   createGlRenderState,
   createGlRenderTexturePool,
@@ -247,7 +247,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createWebGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {

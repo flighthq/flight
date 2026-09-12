@@ -1,8 +1,7 @@
-import { webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
+import { createWebGlContext, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContext,
   createGlCanvasElement,
   createGlRenderState,
   enableFlightDiagnostics,
@@ -24,7 +23,7 @@ export const canvas = createGlCanvasElement(800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene3DGlPipeline,
   {
     pixelRatio,

@@ -41,7 +41,8 @@
     "@flighthq/application": "*",
     "@flighthq/node": "*",
     "@flighthq/render-gl": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/host-web": "*"
   },
   "devDependencies": {
     "@flighthq/signals": "*",

@@ -1,7 +1,7 @@
+import { createWebGlContext } from '@flighthq/host-web/contract';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContext,
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -17,7 +17,7 @@ export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene3DGlPipeline,
   {
     pixelRatio,
