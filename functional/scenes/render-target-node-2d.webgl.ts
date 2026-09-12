@@ -112,9 +112,9 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
-renderIntoGlRenderTexture(state, renderTexture, (glState) => {
-  prepareScene3DRender(glState, scene, camera, lights);
-  drawGlScene3D(glState, scene, camera, lights);
+renderIntoGlRenderTexture(state, renderTexture, (pass) => {
+  prepareScene3DRender(pass.state, scene, camera, lights);
+  drawGlScene3D(pass, scene, camera, lights);
 });
 render(root);
 

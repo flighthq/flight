@@ -154,8 +154,8 @@ describe('renderIntoGlRenderTexture', () => {
   it('lazily creates a target and marks it ready after the callback completes', () => {
     const { state } = createRenderTextureState();
     const renderTexture = createRenderTexture({ depth: true, height: 24, width: 32 });
-    const callback = vi.fn((callbackState) => {
-      expect(callbackState).toBe(state);
+    const callback = vi.fn((pass) => {
+      expect(pass.state).toBe(state);
       expect(explainGlRenderTexture(state, renderTexture).status).toBe('writing');
     });
 
