@@ -74,6 +74,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
+
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   setGlPbrTransmissionSceneColor(state, null);
   const opaquePass = beginGlRenderPass(state, opaqueSceneTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
@@ -92,7 +94,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
     width: opaqueSceneTarget.width,
   });
 
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);

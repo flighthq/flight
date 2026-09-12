@@ -80,6 +80,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
+
 const BACKDROP_KEY = 'scene';
 
 // Renders `root` into a fresh standalone target and registers its resolved texture as the blend backdrop.
@@ -101,7 +103,7 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
 
 export function render(layerRoot: Node2D): void {
   if (!prepareScene2DRender(state, layerRoot)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, layerRoot);
   endGlRenderEffectPipeline(pass, pipeline, [
     createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),

@@ -59,6 +59,8 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
+
 // The vignette parameters the effect is given AND the shape the assertion checks. One set of constants
 // so the descriptor and the oracle cannot drift apart: an assertion holding its own copy of 0.7 keeps
 // passing after the scene changes. `radius` and `softness` are in the Gl recipe's normalized distance,
@@ -68,7 +70,7 @@ const VIGNETTE_SOFTNESS = 0.5;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [
     createVignetteEffect({ intensity: 1, radius: VIGNETTE_RADIUS, softness: VIGNETTE_SOFTNESS }),
