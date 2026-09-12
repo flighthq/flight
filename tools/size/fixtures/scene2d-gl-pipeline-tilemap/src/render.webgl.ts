@@ -11,7 +11,6 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlTilemapRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -78,7 +77,6 @@ tilemap.y = 70;
 addNodeChild(root, tilemap);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineTilemap', { registries, root, tilemap });

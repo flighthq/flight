@@ -14,7 +14,6 @@ import {
   createGlContextState,
   createGlPipeline,
   createGlRenderState,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
@@ -61,7 +60,6 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 const lights = createScene3DLights();
 
-renderGlBackground(state);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3D(state, scene, camera, lights);

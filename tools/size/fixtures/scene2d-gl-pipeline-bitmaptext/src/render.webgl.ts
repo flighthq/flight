@@ -13,7 +13,6 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlBitmapTextRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -77,7 +76,6 @@ updateBitmapText(bitmapText);
 addNodeChild(root, bitmapText);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineBitmapText', { bitmapText, registries, root });

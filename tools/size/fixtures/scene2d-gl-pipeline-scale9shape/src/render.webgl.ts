@@ -14,7 +14,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createCanvasShapeRasterizer, createCanvasTextureResolvers } from '@flighthq/scene2d-canvas';
@@ -68,7 +67,6 @@ scale9Shape.scaleY = 1.4;
 addNodeChild(root, scale9Shape);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineScale9Shape', { registries, root, scale9Shape });

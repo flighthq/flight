@@ -12,7 +12,6 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlQuadBatchRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -62,7 +61,6 @@ appendQuadBatchInstance(quadBatch, 0, 80, 70);
 addNodeChild(root, quadBatch);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineQuadBatch', { quadBatch, registries, root });

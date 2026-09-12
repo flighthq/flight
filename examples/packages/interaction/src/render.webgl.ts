@@ -20,7 +20,6 @@ import {
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   ShapeKind,
   TextLabelKind,
@@ -61,6 +60,5 @@ export const scale = pixelRatio;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderGlBackground(state);
   renderGlScene2D(state, root);
 }

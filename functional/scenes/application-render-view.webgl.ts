@@ -8,7 +8,7 @@ import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
-import { beginGlRenderPass, endGlRenderPass, renderGlBackground } from '@flighthq/render-gl';
+import { beginGlRenderPass, endGlRenderPass } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
@@ -93,7 +93,6 @@ const lights = {
 };
 
 beginGlRenderPass(view.renderState, view.renderTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
-renderGlBackground(view.renderState);
 prepareScene3DRender(view.renderState, scene, camera, lights);
 drawGlScene3D(view.renderState, scene, camera, lights);
 endGlRenderPass(view.renderState);

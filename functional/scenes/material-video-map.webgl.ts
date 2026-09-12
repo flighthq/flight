@@ -21,7 +21,6 @@ import {
   createVector3,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
@@ -86,7 +85,6 @@ const lights = {
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, 0), intensity: 0 }),
 };
 
-renderGlBackground(state);
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3D(state, scene, camera, lights);
 

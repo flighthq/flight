@@ -9,7 +9,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -49,7 +48,6 @@ shape.y = 70;
 addNodeChild(root, shape);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineShape', { registries, root, shape });

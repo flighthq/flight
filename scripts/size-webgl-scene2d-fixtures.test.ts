@@ -291,7 +291,6 @@ describe('WebGL Scene2D size fixtures', () => {
           'createGlPipeline',
           'createGlRenderState',
           'prepareScene2DRender',
-          'renderGlBackground',
           'renderGlScene2D',
         ]) {
           expect(source).toContain(`${call}(`);

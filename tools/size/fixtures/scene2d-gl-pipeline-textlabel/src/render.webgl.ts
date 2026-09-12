@@ -9,7 +9,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlTextLabelRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -54,7 +53,6 @@ textLabel.y = 80;
 addNodeChild(root, textLabel);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineTextLabel', { registries, root, textLabel });
