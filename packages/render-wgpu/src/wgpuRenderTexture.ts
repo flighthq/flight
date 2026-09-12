@@ -35,7 +35,7 @@ export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: 
   const runtime = getWgpuRenderStateRuntime(state);
   const entry = runtime.context.wgpuRenderTextureCache?.get(renderTexture);
   if (entry === undefined) return;
-  destroyWgpuTextureRenderTarget(state, entry.target);
+  destroyWgpuTextureRenderTarget(entry.target);
   runtime.context.wgpuRenderTextureCache!.delete(renderTexture);
 }
 
@@ -152,7 +152,7 @@ function ensureWgpuRenderTextureEntry(
     entries.set(renderTexture, entry);
   } else {
     if (entry.target.format !== format) {
-      destroyWgpuTextureRenderTarget(state, entry.target);
+      destroyWgpuTextureRenderTarget(entry.target);
       entry.target = createWgpuTextureRenderTarget(
         state,
         requested.width,

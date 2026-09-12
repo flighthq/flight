@@ -84,10 +84,10 @@ export function createWgpuRenderEffectPipeline(
 
 export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {
   if (pipeline.sceneTarget) {
-    destroyWgpuTextureRenderTarget(state, pipeline.sceneTarget);
+    destroyWgpuTextureRenderTarget(pipeline.sceneTarget);
     pipeline.sceneTarget = null;
   }
-  destroyWgpuRenderTargetPool(state, pipeline.pool);
+  destroyWgpuRenderTargetPool(pipeline.pool);
   pipeline.lutTexture.texture?.destroy();
   pipeline.lutTexture.texture = null;
   pipeline.lutTexture.size = 0;

@@ -145,7 +145,7 @@ export function releaseWgpuRenderCache(state: WgpuRenderState, cache: RenderCach
   const target = targets.get(cache);
   if (target === undefined) return;
   // A WgpuTextureRenderTarget owns GPU textures; GC will not free them.
-  destroyWgpuTextureRenderTarget(state, target);
+  destroyWgpuTextureRenderTarget(target);
   targets.delete(cache);
 }
 
@@ -177,7 +177,7 @@ function getTargets(state: WgpuRenderState): Map<RenderCache, WgpuTextureRenderT
 function destroyOwnedWgpuRenderCacheTargets(state: WgpuRenderState): void {
   const targets = _renderCacheTargets.get(state);
   if (targets === undefined) return;
-  for (const target of targets.values()) destroyWgpuTextureRenderTarget(state, target);
+  for (const target of targets.values()) destroyWgpuTextureRenderTarget(target);
   targets.clear();
   _renderCacheTargets.delete(state);
 }

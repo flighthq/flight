@@ -70,7 +70,7 @@ describe('destroyWgpuRenderTargetPool', () => {
     const state = await createWgpuRenderStateForTest();
     const pool = createWgpuRenderTargetPool();
     releaseWgpuTextureRenderTarget(pool, acquireWgpuTextureRenderTarget(state, pool, { width: 32, height: 32 }));
-    destroyWgpuRenderTargetPool(state, pool);
+    destroyWgpuRenderTargetPool(pool);
     expect(pool.free.length).toBe(0);
   });
 });

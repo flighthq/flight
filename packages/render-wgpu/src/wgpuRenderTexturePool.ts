@@ -42,7 +42,7 @@ export function destroyWgpuRenderTexturePool(state: WgpuRenderState, pool: WgpuR
   for (const renderTexture of textures) destroyWgpuRenderTexture(state, renderTexture);
   pool.free.length = 0;
   pool.leased.clear();
-  destroyWgpuRenderTargetPool(state, pool.effectTargets);
+  destroyWgpuRenderTargetPool(pool.effectTargets);
   pool.destroyed = true;
 }
 
