@@ -26,32 +26,51 @@ npm install @flighthq/sdk
 Create a display-object scene, register the renderer kinds you use, update the render graph, then draw:
 
 ```ts
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import {
   addNodeChild,
+  beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createSprite,
   createTexture,
   defaultCanvasSpriteRenderer,
+  endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
+  scene2DCanvasPipeline,
   SpriteKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(550, 400, pixelRatio);
+const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  sceneGraphSyncPolicy: 'requiresInvalidation',
-});
+// Where the frame lands is a render target; how it is drawn is the render state. They are separate
+// values, joined for the duration of a pass.
+const screen = createCanvasScreenRenderTarget(
+  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    height: canvas.height / pixelRatio,
+    pixelRatio,
+    width: canvas.width / pixelRatio,
+  }),
+);
+const state = createCanvasRenderState(
+  scene2DCanvasPipeline,
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  { sceneGraphSyncPolicy: 'requiresInvalidation' },
+);
+// The background is what the pass clears to — a per-pass colour in linear float RGBA, not a field the
+// render state carries around.
+const screenClear = { color: [0xee / 0xff, 0xdd / 0xff, 0xcc / 0xff, 1] } as const;
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
@@ -67,8 +86,9 @@ addNodeChild(root, sprite);
 
 function enterFrame(): void {
   if (prepareScene2DRender(state, root)) {
-    renderCanvasBackground(state);
-    renderCanvasScene2D(state, root);
+    const pass = beginCanvasRenderPass(state, screen, screenClear);
+    renderCanvasScene2D(pass, root);
+    endCanvasRenderPass(pass);
   }
 
   requestAnimationFrame(enterFrame);
@@ -109,8 +129,9 @@ const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
   if (prepareScene2DRender(state, root)) {
-    renderCanvasBackground(state);
-    renderCanvasScene2D(state, root);
+    const pass = beginCanvasRenderPass(state, screen, screenClear);
+    renderCanvasScene2D(pass, root);
+    endCanvasRenderPass(pass);
   }
 });
 
