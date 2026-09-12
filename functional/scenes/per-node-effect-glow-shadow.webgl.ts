@@ -135,10 +135,10 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
   appendShapeBeginFill(source, 0x43dce8ff, 1);
   appendShapeRectangle(source, padding.left, padding.top, CONTENT_WIDTH, CONTENT_HEIGHT);
   appendShapeEndFill(source);
-  renderIntoGlRenderTexture(offscreenState, sourceTexture, (captureState) => {
-    setGlRenderTransform2D(captureState, createMatrix());
-    prepareScene2DRender(captureState, source);
-    renderGlScene2D(captureState, source);
+  renderIntoGlRenderTexture(offscreenState, sourceTexture, (pass) => {
+    setGlRenderTransform2D(pass.state, createMatrix());
+    prepareScene2DRender(pass.state, source);
+    renderGlScene2D(pass, source);
   });
   if (
     !applyGlRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])

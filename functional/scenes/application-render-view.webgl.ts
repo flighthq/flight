@@ -92,10 +92,10 @@ const lights = {
   directional: null,
 };
 
-beginGlRenderPass(view.renderState, view.renderTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+const pass = beginGlRenderPass(view.renderState, view.renderTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
 prepareScene3DRender(view.renderState, scene, camera, lights);
-drawGlScene3D(view.renderState, scene, camera, lights);
-endGlRenderPass(view.renderState);
+drawGlScene3D(pass, scene, camera, lights);
+endGlRenderPass(pass);
 presentGlRenderTarget(view.renderState, view.renderTarget);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

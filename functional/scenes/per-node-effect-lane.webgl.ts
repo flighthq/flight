@@ -197,10 +197,10 @@ function captureSubtree(): {
   const scratchTexture = acquireGlRenderTexture(state, pool, descriptor);
   const transform = createMatrix();
   computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
-  renderIntoGlRenderTexture(offscreenState, sourceTexture, (captureState) => {
-    setGlRenderTransform2D(captureState, transform);
-    prepareScene2DRender(captureState, source);
-    renderGlScene2D(captureState, source);
+  renderIntoGlRenderTexture(offscreenState, sourceTexture, (pass) => {
+    setGlRenderTransform2D(pass.state, transform);
+    prepareScene2DRender(pass.state, source);
+    renderGlScene2D(pass, source);
   });
   if (!applyGlRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)) {
     throw new Error('[per-node-effect-lane] the registered blur effect did not run');

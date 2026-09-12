@@ -1,5 +1,6 @@
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
+  GlRenderPass,
   GlRenderState,
   GlRenderTextureEntry,
   GlRenderTextureExplanation,
@@ -116,14 +117,14 @@ export function isGlRenderTextureReady(state: GlRenderState, renderTexture: Read
 export function renderIntoGlRenderTexture(
   state: GlRenderState,
   renderTexture: RenderTexture,
-  callback: (state: GlRenderState) => void,
+  callback: (pass: GlRenderPass) => void,
 ): void {
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
       const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
       try {
-        callback(state);
+        callback(pass);
       } finally {
         endGlRenderPass(pass);
       }
