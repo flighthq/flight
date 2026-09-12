@@ -13,6 +13,7 @@
   "references": [
     { "path": "../capture" },
     { "path": "../effects-wgpu" },
+    { "path": "../host-web" },
     { "path": "../render-wgpu" },
     { "path": "../bitmap" },
     { "path": "../types" }

@@ -1,12 +1,12 @@
 import {
   createBitmap,
   createBitmapFingerprint,
-  createBitmapFromCanvas,
   formatBitmapFingerprint,
   getBitmapCoverage,
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
 import { enableWgpuRenderEffectGuards } from '@flighthq/effects-wgpu/contract';
+import { createBitmapFromCanvas } from '@flighthq/host-web/contract';
 import {
   createBitmapFromWgpuScreenRenderTarget,
   enableWgpuScreenRenderTargetCapture,

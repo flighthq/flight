@@ -1,7 +1,6 @@
-import { createBitmap } from './bitmap';
-import { extractBitmapPixels } from './bitmapComposite';
-import { drawBitmap } from './bitmapDraw';
-import { setBitmapPixel } from './bitmapPixel';
+import { createBitmap, extractBitmapPixels, setBitmapPixel } from '@flighthq/bitmap/contract';
+
+import { drawBitmap } from './webBitmapDraw';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };
