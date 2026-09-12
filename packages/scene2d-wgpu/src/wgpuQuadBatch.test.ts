@@ -52,7 +52,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
-    renderIntoWgpuRenderTexture(state, texture, () => {});
+    renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     const batch = createQuadBatch({
       data: {
         atlas: createTextureAtlas({
@@ -95,7 +95,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
-    renderIntoWgpuRenderTexture(state, texture, () => {});
+    renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     const batch = createQuadBatch({
       data: {
         atlas: createTextureAtlas({

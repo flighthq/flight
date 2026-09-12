@@ -96,7 +96,7 @@ describe('drawWgpuScale9Sprite', () => {
 
 function createResolvedRenderTexture(state: Parameters<typeof renderIntoWgpuRenderTexture>[0]): Texture2D {
   const texture = createRenderTexture({ height: 60, width: 90 });
-  renderIntoWgpuRenderTexture(state, texture, () => {});
+  renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   return texture;
 }
 

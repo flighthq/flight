@@ -206,7 +206,11 @@ describe('registerGlRenderTextureResolver', () => {
       return previous?.(parameter);
     });
     const texture = textureWithTarget();
-    renderIntoGlRenderTexture(state, texture as RenderTexture, () => {});
+    renderIntoGlRenderTexture(state, texture as RenderTexture, () => {}, {
+      color: [0, 0, 0, 0],
+      depth: 1.0,
+      stencil: 0,
+    });
     registerGlRenderTextureResolver(state);
     const uploads = vi.mocked(gl.texImage2D).mock.calls.length;
 

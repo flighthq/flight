@@ -146,11 +146,16 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
   appendShapeRectangle(source, padding.left, padding.top, CONTENT_WIDTH, CONTENT_HEIGHT);
   appendShapeEndFill(source);
   withWgpuFrameBorrow(state, offscreenState, () => {
-    renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (capturePass) => {
-      setWgpuRenderTransform2D(capturePass, createMatrix());
-      prepareScene2DRender(offscreenState, source);
-      renderWgpuScene2D(capturePass, source);
-    });
+    renderIntoWgpuRenderTexture(
+      offscreenState,
+      sourceTexture,
+      (capturePass) => {
+        setWgpuRenderTransform2D(capturePass, createMatrix());
+        prepareScene2DRender(offscreenState, source);
+        renderWgpuScene2D(capturePass, source);
+      },
+      { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
+    );
     if (
       !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])
     ) {
