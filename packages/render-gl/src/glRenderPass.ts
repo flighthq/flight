@@ -4,6 +4,7 @@ import type {
   GlRenderState,
   GlRenderTarget,
   GlScissorRect,
+  GlTextureRenderTarget,
   GlViewportRect,
   Matrix,
   RenderTargetClear,
@@ -11,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
-import { resolveGlRenderTarget } from './glRenderTarget';
+import { resolveGlTextureRenderTarget } from './glRenderTarget';
 
 type SavedGlPassState = {
   clipForms: ('rect' | 'contour')[];
@@ -154,7 +155,7 @@ export function endGlRenderPass(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
   // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
   // target being ended here is always the 2D/MSAA target beginGlRenderPass installed.
-  const ended = runtime.currentRenderTarget as GlRenderTarget | null;
+  const ended = runtime.currentRenderTarget as GlTextureRenderTarget | null;
   restoreGlPassState(state, saved.ownerState);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, saved.previousState.framebuffer);
@@ -174,7 +175,7 @@ export function endGlRenderPass(state: GlRenderState): void {
     invalidateGlPassBindingCache(getGlRenderStateRuntime(saved.previousOwner));
   }
 
-  if (ended !== null) resolveGlRenderTarget(saved.previousOwner, ended);
+  if (ended !== null) resolveGlTextureRenderTarget(saved.previousOwner, ended);
 }
 
 // Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
@@ -221,7 +222,7 @@ function clearGlRenderPass(
     _clearRgba[1] = color[1];
     _clearRgba[2] = color[2];
     _clearRgba[3] = color[3];
-    for (let i = 0; i < target.textures.length; i++) {
+    for (let i = 0; i < target.colorAttachments; i++) {
       gl.clearBufferfv(gl.COLOR, i, _clearRgba);
     }
   }

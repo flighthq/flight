@@ -1,4 +1,4 @@
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -6,14 +6,14 @@ import { getGlRenderStateRuntime } from './glRenderState';
 // framebuffer (or the draw framebuffer for single-sample targets) for reading, then calls
 // readPixels. Returns false when the framebuffer is incomplete or the target has no texture.
 //
-// For MSAA targets, call resolveGlRenderTarget before readGlRenderTargetPixels so the
+// For MSAA targets, call resolveGlTextureRenderTarget before readGlRenderTargetPixels so the
 // multisample data is blitted to the resolve texture first.
 //
 // `out` must be a Uint8Array for rgba8 targets or a Float32Array for rgba16f/rgba32f targets.
 // The pixel rectangle must lie within the target dimensions; out-of-bounds reads return zeros.
 export function readGlRenderTargetPixels(
   state: GlRenderState,
-  target: Readonly<GlRenderTarget>,
+  target: Readonly<GlTextureRenderTarget>,
   x: number,
   y: number,
   width: number,

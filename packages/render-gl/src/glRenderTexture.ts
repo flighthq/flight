@@ -14,7 +14,11 @@ import { clearGlRenderTarget } from './glFullscreenPass';
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket';
-import { createGlRenderTarget, destroyGlRenderTarget, resizeGlRenderTarget } from './glRenderTarget';
+import {
+  createGlTextureRenderTarget,
+  destroyGlTextureRenderTarget,
+  resizeGlTextureRenderTarget,
+} from './glRenderTarget';
 
 // Binds a populated render texture's resolved color attachment directly. No pixels cross the CPU and
 // no upload occurs. An unrendered or currently-written texture binds the null sentinel and returns
@@ -54,7 +58,7 @@ export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Read
   const entries = getGlRenderStateRuntime(state).context.glRenderTextureCache;
   const entry = entries?.get(renderTexture);
   if (entry === undefined) return;
-  destroyGlRenderTarget(state, entry.target);
+  destroyGlTextureRenderTarget(state, entry.target);
   entries!.delete(renderTexture);
 }
 
@@ -164,13 +168,13 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture
   if (entry === undefined) {
     entry = {
       status: 'unrendered',
-      target: createGlRenderTarget(state, descriptor),
+      target: createGlTextureRenderTarget(state, descriptor),
     };
     entries.set(renderTexture, entry);
   } else {
     const requested = resolveRenderTargetDescriptor(descriptor);
     if (matchesGlRenderTextureAllocation(entry.target, requested)) {
-      resizeGlRenderTarget(state, entry.target, descriptor.width, descriptor.height);
+      resizeGlTextureRenderTarget(state, entry.target, descriptor.width, descriptor.height);
       entry.target.requestedAxes = {
         width: requested.width,
         height: requested.height,
@@ -182,8 +186,8 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture
         colorSpace: requested.colorSpace,
       };
     } else {
-      destroyGlRenderTarget(state, entry.target);
-      entry.target = createGlRenderTarget(state, descriptor);
+      destroyGlTextureRenderTarget(state, entry.target);
+      entry.target = createGlTextureRenderTarget(state, descriptor);
       entry.status = 'unrendered';
     }
   }

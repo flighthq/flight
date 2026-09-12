@@ -9,7 +9,7 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { createGlRenderTargetPool, destroyGlRenderTargetPool } from './glRenderTargetPool';
+import { createGlTextureRenderTargetPool, destroyGlTextureRenderTargetPool } from './glRenderTargetPool';
 import { destroyGlRenderTexture, invalidateGlRenderTexture } from './glRenderTexture';
 
 export function acquireGlRenderTexture(
@@ -42,14 +42,14 @@ export function destroyGlRenderTexturePool(state: GlRenderState, pool: GlRenderT
   for (const renderTexture of textures) destroyGlRenderTexture(state, renderTexture);
   pool.free.length = 0;
   pool.leased.clear();
-  destroyGlRenderTargetPool(state, pool.effectTargets);
+  destroyGlTextureRenderTargetPool(state, pool.effectTargets);
   pool.destroyed = true;
 }
 
 export function initializeGlRenderTexturePool(out: EntityConstruction<GlRenderTexturePool>): void {
   out.context = null;
   out.destroyed = false;
-  out.effectTargets = createGlRenderTargetPool();
+  out.effectTargets = createGlTextureRenderTargetPool();
   out.free = [];
   out.leased = new Set();
 }

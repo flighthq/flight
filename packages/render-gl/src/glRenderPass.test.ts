@@ -2,16 +2,16 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlContext, GlRenderTarget, Viewport } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
 import { createGlOffscreenRenderState } from './glRenderState';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 
-function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
+function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;
-  const out = allocateEntity<GlRenderTarget>();
+  const out = allocateEntity<GlTextureRenderTarget>();
   out.requestedAxes = {
     width: 32,
     height: 16,

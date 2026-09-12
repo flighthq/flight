@@ -5,7 +5,7 @@ import type {
   EntityConstruction,
   GlContext,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   Matrix,
   RenderProxy2D,
   RenderTargetAxes,
@@ -21,7 +21,7 @@ import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader';
 
-interface GlRenderTargetStorage extends RenderTargetAxes {
+interface GlTextureRenderTargetStorage extends RenderTargetAxes {
   framebuffer: WebGLFramebuffer;
   resolveFramebuffer: WebGLFramebuffer | null;
   textures: WebGLTexture[];
@@ -35,37 +35,37 @@ interface GlRenderTargetStorage extends RenderTargetAxes {
  * colorAttachments, depth). The framebuffer is bound during creation but the previous binding is
  * restored before returning.
  */
-export function createGlRenderTarget(
+export function createGlTextureRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
-): GlRenderTarget;
-export function createGlRenderTarget(
+): GlTextureRenderTarget;
+export function createGlTextureRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: 'preferred',
-): GlRenderTarget;
-export function createGlRenderTarget(
+): GlTextureRenderTarget;
+export function createGlTextureRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: 'required',
-): GlRenderTarget | null;
-export function createGlRenderTarget(
+): GlTextureRenderTarget | null;
+export function createGlTextureRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: RenderTargetFormatPolicy,
-): GlRenderTarget | null;
-export function createGlRenderTarget(
+): GlTextureRenderTarget | null;
+export function createGlTextureRenderTarget(
   state: GlRenderState,
   descriptor: Readonly<RenderTargetDescriptor>,
   formatPolicy: RenderTargetFormatPolicy = 'preferred',
-): GlRenderTarget | null {
+): GlTextureRenderTarget | null {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const requested = resolveRenderTargetDescriptor(descriptor);
   const effective = resolveEffectiveGlRenderTargetAxes(gl, requested, formatPolicy);
   if (effective === null) return null;
 
-  const storage: GlRenderTargetStorage = {
+  const storage: GlTextureRenderTargetStorage = {
     width: effective.width,
     height: effective.height,
     format: effective.format,
@@ -82,9 +82,9 @@ export function createGlRenderTarget(
     depthStencilRenderbuffer: null,
   };
 
-  const texture = allocateGlRenderTargetStorage(state, storage);
-  const target = allocateEntity<GlRenderTarget>();
-  initializeGlRenderTarget(target, requested, storage, texture);
+  const texture = allocateGlTextureRenderTargetStorage(state, storage);
+  const target = allocateEntity<GlTextureRenderTarget>();
+  initializeGlTextureRenderTarget(target, requested, storage, texture);
   finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
@@ -101,12 +101,17 @@ export function declareGlRenderTargetColorSpace(state: GlRenderState, colorSpace
   const target = getGlRenderStateRuntime(state).currentRenderTarget;
   if (target == null) return false;
   target.colorSpace = colorSpace;
-  if ('requestedAxes' in target) target.requestedAxes = { ...target.requestedAxes, colorSpace };
+  if ('requestedAxes' in target) {
+    (target as GlTextureRenderTarget).requestedAxes = {
+      ...(target as GlTextureRenderTarget).requestedAxes,
+      colorSpace,
+    };
+  }
   return true;
 }
 
 /** Deletes the GL resources owned by `target`. The target object must not be used after this call. */
-export function destroyGlRenderTarget(state: GlRenderState, target: GlRenderTarget): void {
+export function destroyGlTextureRenderTarget(state: GlRenderState, target: GlTextureRenderTarget): void {
   const gl = state.gl;
   gl.deleteFramebuffer(target.framebuffer);
   if (target.resolveFramebuffer) gl.deleteFramebuffer(target.resolveFramebuffer);
@@ -124,10 +129,10 @@ export function destroyGlRenderTarget(state: GlRenderState, target: GlRenderTarg
  * Render-target textures are stored with GL's bottom-left origin, so the quad's V coordinates are
  * flipped (`v0=1, v1=0`) so the result composites upright.
  */
-export function drawGlRenderTargetResult(
+export function drawGlTextureRenderTargetResult(
   state: GlRenderState,
   renderProxy: RenderProxy2D,
-  target: Readonly<GlRenderTarget>,
+  target: Readonly<GlTextureRenderTarget>,
   transform: Readonly<Matrix>,
 ): void {
   if (target.width <= 0 || target.height <= 0) return;
@@ -158,9 +163,9 @@ export function drawGlRenderTargetResult(
   drawGlQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);
 }
 
-export function explainGlRenderTarget(target: Readonly<GlRenderTarget>): RenderTargetExplanation {
+export function explainGlTextureRenderTarget(target: Readonly<GlTextureRenderTarget>): RenderTargetExplanation {
   const requested = copyRenderTargetAxes(target.requestedAxes);
-  const effective = getGlRenderTargetAxes(target);
+  const effective = getGlTextureRenderTargetAxes(target);
   return {
     differences: explainRenderTargetAxes(requested, effective),
     effective,
@@ -168,10 +173,10 @@ export function explainGlRenderTarget(target: Readonly<GlRenderTarget>): RenderT
   };
 }
 
-export function initializeGlRenderTarget(
-  target: EntityConstruction<GlRenderTarget>,
+export function initializeGlTextureRenderTarget(
+  target: EntityConstruction<GlTextureRenderTarget>,
   requested: Readonly<ResolvedRenderTargetDescriptor>,
-  storage: Readonly<GlRenderTargetStorage>,
+  storage: Readonly<GlTextureRenderTargetStorage>,
   texture: WebGLTexture,
 ): void {
   target.requestedAxes = copyRenderTargetAxes(requested);
@@ -197,9 +202,9 @@ export function isGlRenderTargetFormatSupported(state: GlRenderState, format: Re
 }
 
 /** Reallocates the storage backing `target` to the new pixel dimensions, preserving its axes. */
-export function resizeGlRenderTarget(
+export function resizeGlTextureRenderTarget(
   state: GlRenderState,
-  target: GlRenderTarget,
+  target: GlTextureRenderTarget,
   width: number,
   height: number,
 ): void {
@@ -225,9 +230,9 @@ export function resizeGlRenderTarget(
   target.depthStencilRenderbuffer = null;
   target.resolveFramebuffer = null;
   target.requestedAxes = copyRenderTargetAxes(requested);
-  setGlRenderTargetAxes(target, effective);
+  setGlTextureRenderTargetAxes(target, effective);
 
-  target.texture = allocateGlRenderTargetStorage(state, target);
+  target.texture = allocateGlTextureRenderTargetStorage(state, target);
   const runtime = getGlRenderStateRuntime(state);
   // Storage allocation binds the target while attaching its new textures/renderbuffers. Match the
   // creation contract by restoring the caller's tracked framebuffer before returning; otherwise a
@@ -236,12 +241,39 @@ export function resizeGlRenderTarget(
   bindGlTextureRealization(state, null);
 }
 
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+): RenderTargetAxes;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'preferred',
+): RenderTargetAxes;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: 'required',
+): RenderTargetAxes | null;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy,
+): RenderTargetAxes | null;
+export function resolveGlRenderTargetAxes(
+  state: GlRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+  formatPolicy: RenderTargetFormatPolicy = 'preferred',
+): RenderTargetAxes | null {
+  return resolveEffectiveGlRenderTargetAxes(state.gl, resolveRenderTargetDescriptor(descriptor), formatPolicy);
+}
+
 /**
  * Resolves an MSAA target's multisample framebuffer into its single-sample resolve texture(s) via
  * blitFramebuffer. No-op when sampleCount === 1. Call after the scene is drawn into the target and
  * before sampling `target.texture`/`target.textures`.
  */
-export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarget): void {
+export function resolveGlTextureRenderTarget(state: GlRenderState, target: GlTextureRenderTarget): void {
   if (target.sampleCount <= 1 || target.resolveFramebuffer === null) return;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -287,36 +319,12 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
   gl.flush();
 }
 
-export function resolveGlRenderTargetAxes(
-  state: GlRenderState,
-  descriptor: Readonly<RenderTargetDescriptor>,
-): RenderTargetAxes;
-export function resolveGlRenderTargetAxes(
-  state: GlRenderState,
-  descriptor: Readonly<RenderTargetDescriptor>,
-  formatPolicy: 'preferred',
-): RenderTargetAxes;
-export function resolveGlRenderTargetAxes(
-  state: GlRenderState,
-  descriptor: Readonly<RenderTargetDescriptor>,
-  formatPolicy: 'required',
-): RenderTargetAxes | null;
-export function resolveGlRenderTargetAxes(
-  state: GlRenderState,
-  descriptor: Readonly<RenderTargetDescriptor>,
-  formatPolicy: RenderTargetFormatPolicy,
-): RenderTargetAxes | null;
-export function resolveGlRenderTargetAxes(
-  state: GlRenderState,
-  descriptor: Readonly<RenderTargetDescriptor>,
-  formatPolicy: RenderTargetFormatPolicy = 'preferred',
-): RenderTargetAxes | null {
-  return resolveEffectiveGlRenderTargetAxes(state.gl, resolveRenderTargetDescriptor(descriptor), formatPolicy);
-}
-
 // Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the
 // already-created `target.framebuffer`. Shared by create and resize.
-function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTargetStorage): WebGLTexture {
+function allocateGlTextureRenderTargetStorage(
+  state: GlRenderState,
+  target: GlTextureRenderTargetStorage,
+): WebGLTexture {
   const gl = state.gl;
   const { width: w, height: h, sampleCount, colorAttachments: attachments, colorFormats, depth } = target;
   const multisampled = sampleCount > 1;
@@ -423,7 +431,7 @@ function copyRenderTargetAxes(axes: Readonly<RenderTargetAxes>): RenderTargetAxe
   };
 }
 
-function getGlRenderTargetAxes(target: Readonly<GlRenderTarget>): RenderTargetAxes {
+function getGlTextureRenderTargetAxes(target: Readonly<GlTextureRenderTarget>): RenderTargetAxes {
   return {
     width: target.width,
     height: target.height,
@@ -466,7 +474,7 @@ function resolveEffectiveGlRenderTargetAxes(
   };
 }
 
-function setGlRenderTargetAxes(target: GlRenderTarget, axes: Readonly<RenderTargetAxes>): void {
+function setGlTextureRenderTargetAxes(target: GlTextureRenderTarget, axes: Readonly<RenderTargetAxes>): void {
   target.width = axes.width;
   target.height = axes.height;
   target.format = axes.format;

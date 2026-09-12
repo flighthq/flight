@@ -47,7 +47,7 @@ export function clearGlRenderTarget(
     _clearRgba[1] = color[1];
     _clearRgba[2] = color[2];
     _clearRgba[3] = color[3];
-    for (let i = 0; i < target.textures.length; i++) {
+    for (let i = 0; i < target.colorAttachments; i++) {
       gl.clearBufferfv(gl.COLOR, i, _clearRgba);
     }
   }

@@ -1,9 +1,9 @@
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { readGlRenderTargetPixels } from './glReadback';
 import { createGlState } from './glTestHelper';
 
-function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
+function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
   return {
     requestedAxes: {
       width: 4,
@@ -31,7 +31,7 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
     colorRenderbuffers: [],
     depthStencilRenderbuffer: null,
     ...overrides,
-  } as GlRenderTarget;
+  } as GlTextureRenderTarget;
 }
 
 describe('readGlRenderTargetPixels', () => {

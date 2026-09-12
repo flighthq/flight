@@ -1,11 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass';
 import { createGlState } from './glTestHelper';
 
-function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width = 32, height = 16): GlRenderTarget {
-  const out = allocateEntity<GlRenderTarget>();
+function makeTarget(
+  framebuffer: WebGLFramebuffer,
+  texture: WebGLTexture,
+  width = 32,
+  height = 16,
+): GlTextureRenderTarget {
+  const out = allocateEntity<GlTextureRenderTarget>();
   out.requestedAxes = {
     width,
     height,

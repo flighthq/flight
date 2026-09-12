@@ -1,4 +1,10 @@
-import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlFullscreenProgram,
+  GlRenderState,
+  GlRenderTarget,
+  GlTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';
@@ -12,7 +18,7 @@ import { getGlRenderStateRuntime } from './glRenderState';
 // Assumes MSAA is already resolved (endGlRenderPass does that); present only encodes or copies.
 export function presentGlRenderTarget(
   state: GlRenderState,
-  target: Readonly<GlRenderTarget>,
+  target: Readonly<GlTextureRenderTarget>,
   dest: Readonly<GlRenderTarget> | null = null,
 ): void {
   if (target.colorSpace === 'linear') {
