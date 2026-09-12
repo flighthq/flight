@@ -76,6 +76,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { s
 const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
@@ -89,7 +90,7 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
