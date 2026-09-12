@@ -5,32 +5,34 @@ import type { Bitmap, Camera3D, Node3D, Scene3DLights, Texture } from '@flighthq
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createAmbientLight,
   createBitmap,
   createBlinnPhongMaterial,
-  createQuadMeshGeometry,
   createCamera3D,
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
+  createQuadMeshGeometry,
   createSampler,
   createScene3DLights,
   createTexture,
   createVector3,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  renderWgpuBackground,
   scene3DWgpuPipeline,
   setBitmapPixel,
   setCamera3DViewMatrix4FromLookAt,
-  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { declareAntialiasingPolicy, declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -51,10 +53,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
-  backgroundColor: 0x080b12ff,
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
@@ -62,7 +69,7 @@ const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 1,
 });
 
-registerWgpuFunctionalTarget(state, pixelRatio);
+registerWgpuFunctionalTarget(state, screen, pixelRatio);
 
 function createStripTexture(left: number, right: number, linear: boolean = false): Texture {
   const bitmap = createBitmap(2, 1);
@@ -133,12 +140,12 @@ const lights = createScene3DLights({
 });
 
 function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
-  submitWgpuRenderPass(state);
+  drawWgpuScene3D(scenePass, scene, camera, lights);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuRenderPass(pass);
 }
 
 render(scene, camera, lights);

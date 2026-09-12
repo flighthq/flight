@@ -5,6 +5,7 @@ import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createAmbientLight,
   createBlinnPhongMaterial,
   createBoxMeshGeometry,
@@ -15,19 +16,20 @@ import {
   createScene3DLights,
   createSpotLight,
   createVector3,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   endWgpuRenderEffectPipeline,
-  getBitmapPixelRgb,
+  endWgpuRenderPass,
   getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderWgpuBackground,
+  scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
-  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -61,10 +63,15 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x080a10ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x08 / 0xff, 0x0a / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
@@ -73,7 +80,7 @@ const pipeline = createWgpuRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 const material = createBlinnPhongMaterial({ diffuse: 0x707884ff, shininess: 24, specular: 0x282828ff });
 const scene = createScene3D().root;
@@ -136,13 +143,13 @@ const lights = createScene3DLights({
   spot: spotLights,
 });
 
-renderWgpuBackground(state);
-beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+const pass = beginWgpuRenderPass(state, screen, screenClear);
+const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareWgpuScene3DForwardLights(state, renderList, lights);
-drawWgpuScene3D(state, scene, camera, lights, forwardLights);
-endWgpuRenderEffectPipeline(state, pipeline, []);
-submitWgpuRenderPass(state);
+drawWgpuScene3D(scenePass, scene, camera, lights, forwardLights);
+endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+endWgpuRenderPass(pass);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all
 // twelve centers; the tolerance leaves room for small cross-driver float differences without accepting

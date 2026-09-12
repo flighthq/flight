@@ -1,26 +1,28 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createDisplayObject,
   createShape,
-  getBitmapPixelRgb,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
-  renderWgpuBackground,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -46,10 +48,23 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: BACKGROUND_COLOR,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = {
+  color: [
+    ((BACKGROUND_COLOR >>> 24) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 16) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 8) & 0xff) / 0xff,
+    (BACKGROUND_COLOR & 0xff) / 0xff,
+  ] as const,
+  depth: 1.0,
+};
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
@@ -57,15 +72,15 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
-  submitWgpuRenderPass(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuRenderPass(pass);
 }
 
 // Simple shapes on a neutral field. With an empty effect pipeline, the presented frame must match a

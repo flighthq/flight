@@ -9,11 +9,11 @@ import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 //
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
-  ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
   beginVelocityFrame,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
   createImageResource,
   createMotionBlurEffect,
   createParticleEmitter2D,
@@ -21,27 +21,29 @@ import {
   createTexture,
   createTextureAtlas,
   createVelocityField,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   createWgpuVelocityTarget,
-  registerWgpuMotionBlurEffect,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
+  getBitmapPixelRgb,
   invalidateNodeLocalTransform,
+  ParticleEmitter2DKind,
   prepareScene2DRender,
   registerRenderer,
   registerWgpuImageTextureResolver,
+  registerWgpuMotionBlurEffect,
   registerWgpuVelocityWriter,
-  renderWgpuBackground,
   renderWgpuScene2D,
   renderWgpuVelocity,
   reserveParticleEmitter2D,
+  scene3DWgpuPipeline,
   setWgpuRenderEffectVelocityTexture,
-  submitWgpuRenderPass,
-  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -64,10 +66,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x101014ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerWgpuImageTextureResolver(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerWgpuMotionBlurEffect(state);
@@ -85,17 +92,17 @@ export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
 
   beginVelocityFrame(velocityField);
-  renderWgpuBackground(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
-  submitWgpuRenderPass(state);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, root);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // Per-particle motion blur: eight particles arranged in a ring, each given a velocity pointing radially
 // outward, so the velocity G-buffer + motion-blur effect must smear every particle along its OWN vector

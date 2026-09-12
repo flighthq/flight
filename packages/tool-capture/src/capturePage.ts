@@ -8,7 +8,8 @@ import type {
   DomRenderState,
   GlRenderState,
   WgpuPresentationSurface,
-  WgpuPresentationRenderState,
+  WgpuRenderState,
+  WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';
 
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
@@ -18,7 +19,9 @@ import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerifi
 
 export interface CapturePageTargetOptions {
   renderer: 'canvas' | 'dom' | 'webgl' | 'webgpu';
-  state: CanvasRenderState | DomRenderState | GlRenderState | WgpuPresentationRenderState;
+  state: CanvasRenderState | DomRenderState | GlRenderState | WgpuRenderState;
+  /** The WGPU screen target the frame lands on. Required for, and only used by, the 'webgpu' renderer. */
+  screen?: WgpuScreenRenderTarget;
   /** Draw work to perform after registration. May be omitted when the page already rendered. */
   render?: () => void | Promise<void>;
   assertRender?: FunctionalRenderOracle;
@@ -97,7 +100,10 @@ export async function installCaptureTarget(
 ): Promise<CaptureVerification | null> {
   const scale = options.scale ?? 1;
   if (options.renderer === 'webgpu') {
-    registerWgpuFunctionalTarget(options.state as WgpuPresentationRenderState, scale);
+    if (options.screen === undefined) {
+      throw new Error("installCaptureTarget: renderer 'webgpu' requires the screen render target to capture from");
+    }
+    registerWgpuFunctionalTarget(options.state as WgpuRenderState, options.screen, scale);
   } else {
     registerFunctionalTarget(createFunctionalTarget(options, scale));
   }
@@ -139,10 +145,10 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   const state = options.state;
   const canvas = 'canvas' in state ? state.canvas : null;
   const element = 'element' in state ? state.element : null;
-  // A WGPU state carries no canvas — it sizes from its presentation surface — so this fallback has to read
-  // the surface too, or a webgpu target with no explicit width silently falls through to zero.
-  const surface =
-    options.renderer === 'webgpu' && 'surface' in state ? (state.surface as WgpuPresentationSurface) : null;
+  // A WGPU state carries no canvas and no surface — the screen render target owns the presentation
+  // surface — so this fallback reads it there, or a webgpu target with no explicit width silently falls
+  // through to zero.
+  const surface: WgpuPresentationSurface | null = options.screen?.surface ?? null;
   const gl = options.renderer === 'webgl' ? (state as GlRenderState).gl : null;
   const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? surface?.width ?? element?.clientWidth ?? 0;
   const height =
@@ -161,7 +167,7 @@ async function synchronizeCaptureTarget(
   if (renderer === 'webgl') {
     (state as GlRenderState).gl.finish();
   } else if (renderer === 'webgpu') {
-    await (state as WgpuPresentationRenderState).device.queue.onSubmittedWorkDone();
+    await (state as WgpuRenderState).device.queue.onSubmittedWorkDone();
   } else if (renderer === 'dom') {
     (state as DomRenderState).element.getBoundingClientRect();
   }

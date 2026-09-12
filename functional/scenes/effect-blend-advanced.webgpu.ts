@@ -1,9 +1,8 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
-import type { Node2D, Bitmap, WgpuRenderTarget } from '@flighthq/sdk';
+import type { Node2D, Bitmap, WgpuTextureRenderTarget } from '@flighthq/sdk';
 import {
-  AdvancedBlendMode,
-  ShapeKind,
   addNodeChild,
+  AdvancedBlendMode,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -12,22 +11,23 @@ import {
   createBlendEffect,
   createDisplayObject,
   createShape,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
-  createWgpuRenderTarget,
-  registerWgpuBlendEffect,
+  createWgpuRenderState,
+  createWgpuTextureRenderTarget,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
+  registerWgpuBlendEffect,
   registerWgpuBlendEffectBackdrop,
-  renderWgpuBackground,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -49,10 +49,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x000000ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuBlendEffect(state);
 
@@ -66,35 +71,36 @@ export const width = 800;
 export const height = 600;
 
 const BACKDROP_KEY = 'scene';
-const backdropTarget: WgpuRenderTarget = createWgpuRenderTarget(
+const backdropTarget: WgpuTextureRenderTarget = createWgpuTextureRenderTarget(
   state,
-  state.surface.width,
-  state.surface.height,
+  screen.width,
+  screen.height,
   state.format,
 );
-backdropTarget.clearColors = [0x000000ff];
+// Opaque black behind the backdrop layer: a per-pass clear now, not a value stored on the target.
+const backdropClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
 
 export function render(backdropRoot: Node2D, layerRoot: Node2D): void {
-  renderWgpuBackground(state);
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
 
   if (prepareScene2DRender(state, backdropRoot)) {
-    beginWgpuRenderPass(state, backdropTarget);
-    renderWgpuScene2D(state, backdropRoot);
-    endWgpuRenderPass(state);
+    const backdropPass = beginWgpuRenderPass(state, backdropTarget, backdropClear);
+    renderWgpuScene2D(backdropPass, backdropRoot);
+    endWgpuRenderPass(backdropPass);
   }
   registerWgpuBlendEffectBackdrop(state, BACKDROP_KEY, backdropTarget);
 
   if (prepareScene2DRender(state, layerRoot)) {
-    beginWgpuRenderEffectPipeline(state, pipeline);
-    renderWgpuScene2D(state, layerRoot);
-    endWgpuRenderEffectPipeline(state, pipeline, [
+    const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+    renderWgpuScene2D(scenePass, layerRoot);
+    endWgpuRenderEffectPipeline(scenePass, pipeline, [
       createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),
     ]);
   }
-  submitWgpuRenderPass(state);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;

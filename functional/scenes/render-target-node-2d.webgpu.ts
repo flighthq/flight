@@ -97,7 +97,6 @@ appendShapeEndFill(backing);
 addNodeChild(root, backing);
 
 const renderTexture = createRenderTexture({
-  clearColors: [0x05070dff],
   depth: 'depth-stencil',
   height: NODE_HEIGHT,
   width: NODE_WIDTH,
@@ -115,10 +114,17 @@ appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
 beginWgpuFrame(state);
-renderIntoWgpuRenderTexture(state, renderTexture, (wgpuState) => {
-  prepareScene3DRender(wgpuState, scene, camera, lights);
-  drawWgpuScene3D(wgpuState, scene, camera, lights);
-});
+// The opaque backdrop the 3D content is composited over: a clear the pass is given, rather than a colour
+// stored on the render texture's descriptor.
+renderIntoWgpuRenderTexture(
+  state,
+  renderTexture,
+  (texturePass) => {
+    prepareScene3DRender(state, scene, camera, lights);
+    drawWgpuScene3D(texturePass, scene, camera, lights);
+  },
+  { color: [0x05 / 0xff, 0x07 / 0xff, 0x0d / 0xff, 1], depth: 1.0, stencil: 0 },
+);
 render(root);
 
 export function assertRender(frame: Readonly<Bitmap>): void {

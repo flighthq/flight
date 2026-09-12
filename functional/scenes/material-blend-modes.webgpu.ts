@@ -4,30 +4,32 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
-  createScene3DLights,
   addNodeChild,
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
+  BlendMode,
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
   createMesh,
   createOrthographicProjection,
   createQuadMeshGeometry,
+  createScene3DLights,
   createUnlitMaterial,
   createVector3,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   getBitmapPixelChannel,
   ImageChannel,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  renderWgpuBackground,
+  scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
-  submitWgpuRenderPass,
-  BlendMode,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -72,10 +74,15 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x101014ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 1,
@@ -88,15 +95,15 @@ export const width = 800;
 export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
-  submitWgpuRenderPass(state);
+  drawWgpuScene3D(scenePass, scene, camera, lights);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuRenderPass(pass);
 }
 
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 // material-blend-modes — the SurfaceMaterial `blendMode` path on the 3D forward renderers, which had no
 // functional coverage at all (the existing node-blend-modes scenes are the 2D node property, a different

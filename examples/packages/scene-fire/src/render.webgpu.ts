@@ -1,18 +1,20 @@
 import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
+  beginWgpuRenderPass,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
   enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
+  endWgpuRenderPass,
   prepareScene3DRender,
   registerWgpuBloomEffect,
   registerWgpuToneMapEffect,
   registerWgpuVignetteEffect,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
 } from '@flighthq/sdk';
 import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
 
@@ -22,10 +24,15 @@ export const height = 600;
 export const canvas = createWgpuCanvasElement(width, height, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x09070aff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x09 / 0xff, 0x07 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
 registerWgpuBloomEffect(state);
 registerWgpuToneMapEffect(state);
@@ -45,10 +52,10 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   effects: readonly RenderEffect[],
 ): void {
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginWgpuRenderPass(state, screen, screenClear);
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, effects);
-  submitWgpuRenderPass(state);
+  drawWgpuScene3D(scenePass, scene, camera, lights);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, effects);
+  endWgpuRenderPass(pass);
 }

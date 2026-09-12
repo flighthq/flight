@@ -1,23 +1,22 @@
 import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
-import type { Node2D, Bitmap, WgpuRenderTarget } from '@flighthq/sdk';
+import type { Node2D, Bitmap, WgpuTextureRenderTarget } from '@flighthq/sdk';
 import {
-  CompositeOperator,
-  ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   beginWgpuRenderPass,
+  CompositeOperator,
   createCompositeEffect,
   createDisplayObject,
   createShape,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderStateFromCanvasElement,
-  scene3DWgpuPipeline,
-  createWgpuRenderTarget,
-  registerWgpuCompositeEffect,
+  createWgpuRenderState,
+  createWgpuTextureRenderTarget,
+  createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   endWgpuRenderPass,
@@ -25,9 +24,10 @@ import {
   prepareScene2DRender,
   registerRenderer,
   registerWgpuBlendEffectBackdrop,
-  renderWgpuBackground,
+  registerWgpuCompositeEffect,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  scene3DWgpuPipeline,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -49,26 +49,32 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
+const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  format: acquisition.format,
   pixelRatio,
-  backgroundColor: 0x000000ff,
 });
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuCompositeEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba8' });
-const backdropTarget: WgpuRenderTarget = createWgpuRenderTarget(
+const backdropTarget: WgpuTextureRenderTarget = createWgpuTextureRenderTarget(
   state,
-  state.surface.width,
-  state.surface.height,
+  screen.width,
+  screen.height,
   state.format,
 );
-backdropTarget.clearColors = [0x00000000];
+// Transparent black behind the backdrop layer: a per-pass clear now, not a value stored on the target.
+const backdropClear = { color: [0, 0, 0, 0], depth: 1.0 } as const;
 
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-registerWgpuFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, screen, scale);
 
 function fillRectangle(x: number, y: number, width: number, height: number): Node2D {
   const shape = createShape();
@@ -92,22 +98,22 @@ layerRoot.scaleX = scale;
 layerRoot.scaleY = scale;
 addNodeChild(layerRoot, fillRectangle(0, 0, logicalWidth, logicalHeight * 0.5));
 
-renderWgpuBackground(state);
+const pass = beginWgpuRenderPass(state, screen, screenClear);
 if (prepareScene2DRender(state, backdropRoot)) {
-  beginWgpuRenderPass(state, backdropTarget);
-  renderWgpuScene2D(state, backdropRoot);
-  endWgpuRenderPass(state);
+  const backdropPass = beginWgpuRenderPass(state, backdropTarget, backdropClear);
+  renderWgpuScene2D(backdropPass, backdropRoot);
+  endWgpuRenderPass(backdropPass);
 }
 registerWgpuBlendEffectBackdrop(state, 'scene', backdropTarget);
 
 if (prepareScene2DRender(state, layerRoot)) {
-  beginWgpuRenderEffectPipeline(state, pipeline);
-  renderWgpuScene2D(state, layerRoot);
-  endWgpuRenderEffectPipeline(state, pipeline, [
+  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  renderWgpuScene2D(scenePass, layerRoot);
+  endWgpuRenderEffectPipeline(scenePass, pipeline, [
     createCompositeEffect(CompositeOperator.SourceIn, { backdropKey: 'scene' }),
   ]);
 }
-submitWgpuRenderPass(state);
+endWgpuRenderPass(pass);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const near = (rgb: number, expected: number): boolean => {
