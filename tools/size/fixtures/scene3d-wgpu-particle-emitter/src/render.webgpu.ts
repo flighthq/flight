@@ -7,7 +7,7 @@ import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@fligh
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuCanvasElement,
   createWgpuPipeline,
   createWgpuRenderState,
@@ -23,7 +23,7 @@ const canvas = createWgpuCanvasElement(320, 240, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
 export const state = createWgpuRenderState(acquisition.device, createWgpuPipeline(createEmptyWgpuRegistries()), {

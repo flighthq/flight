@@ -9,7 +9,7 @@ export {
   createWgpuRenderSurface,
   createWgpuOffscreenRenderState,
   createWgpuPipeline,
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuRenderState,
   disposeWgpuDeviceSignals,

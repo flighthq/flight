@@ -9,7 +9,7 @@ import type {
 
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
-import { createWgpuAcquisitionFromCanvasElement, createWgpuRenderState } from './wgpuRenderState';
+import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
 import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
 
@@ -309,7 +309,7 @@ export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = 
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
-  const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+  const acquisition = await createWgpuAcquisition(canvas);
   if (acquisition === null) throw new Error('createWgpuRenderStateForTest: the mock adapter refused a device');
   return createWgpuRenderState(acquisition.device, _testWgpuPipeline, { format: acquisition.format, ...options });
 }
