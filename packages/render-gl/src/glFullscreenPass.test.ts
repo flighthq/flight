@@ -1,7 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
+import {
+  clearGlRenderTarget,
+  clearGlRenderTargetAttachments,
+  compileGlFullscreenProgram,
+  drawGlFullscreenPass,
+  fillGlRect,
+} from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState, makeGL } from './glTestHelper';
 
@@ -105,6 +111,63 @@ describe('clearGlRenderTarget', () => {
     clearGlRenderTarget(state, makeTarget(fb), { color: [0, 0, 0, 0] });
 
     expect(bindSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('clearGlRenderTargetAttachments', () => {
+  it('clears individual color attachments via clearBufferfv', () => {
+    const { state, gl } = createGlState();
+    const fb = {} as WebGLFramebuffer;
+    const target = makeTarget(fb);
+    const clearSpy = vi.spyOn(gl, 'clearBufferfv');
+
+    clearGlRenderTargetAttachments(state, target, {
+      colors: [
+        [1, 0, 0, 1],
+        [0, 1, 0, 1],
+      ],
+    });
+
+    expect(clearSpy).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
+    expect(clearSpy).toHaveBeenCalledWith(gl.COLOR, 1, expect.anything());
+  });
+
+  it('skips undefined entries in colors', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget({} as WebGLFramebuffer);
+    const clearSpy = vi.spyOn(gl, 'clearBufferfv');
+
+    clearGlRenderTargetAttachments(state, target, {
+      colors: [undefined, [0, 0, 1, 1]],
+    });
+
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(clearSpy).toHaveBeenCalledWith(gl.COLOR, 1, expect.anything());
+  });
+
+  it('disables scissor test during clear and restores it', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget({} as WebGLFramebuffer);
+    gl.enable(gl.SCISSOR_TEST);
+    const disableSpy = vi.spyOn(gl, 'disable');
+    const enableSpy = vi.spyOn(gl, 'enable');
+
+    clearGlRenderTargetAttachments(state, target, { colors: [[0, 0, 0, 0]] });
+
+    expect(disableSpy).toHaveBeenCalledWith(gl.SCISSOR_TEST);
+    expect(enableSpy).toHaveBeenCalledWith(gl.SCISSOR_TEST);
+  });
+
+  it('invalidates cached texture and blend-mode bindings', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
+    runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
+
+    clearGlRenderTargetAttachments(state, makeTarget({} as WebGLFramebuffer), { colors: [[0, 0, 0, 0]] });
+
+    expect(runtime.context.currentTextureRealization).toBeNull();
+    expect(runtime.context.currentBlendSignature).toBeNull();
   });
 });
 
@@ -355,5 +418,66 @@ describe('drawGlFullscreenPass', () => {
       equation: gl.FUNC_ADD,
       src: gl.ONE,
     });
+  });
+});
+
+describe('fillGlRect', () => {
+  it('unpacks a packed RGBA integer into float uniform values', () => {
+    const { state, gl } = createGlState();
+    const uniform4fSpy = vi.spyOn(gl, 'uniform4f');
+
+    fillGlRect(state, 0xff8040ff);
+
+    const call = uniform4fSpy.mock.calls.find((c) => typeof c[1] === 'number' && c[1] === 1);
+    expect(call).toBeDefined();
+    expect(call![2]).toBeCloseTo(0x80 / 255);
+    expect(call![3]).toBeCloseTo(0x40 / 255);
+    expect(call![4]).toBeCloseTo(1);
+  });
+
+  it('draws with blending enabled and depth test off', () => {
+    const { state, gl } = createGlState();
+    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+    let blendAtDraw: boolean | null = null;
+    let depthAtDraw: boolean | null = null;
+    vi.spyOn(gl, 'drawElements').mockImplementation(() => {
+      blendAtDraw = gl.isEnabled(gl.BLEND);
+      depthAtDraw = gl.isEnabled(gl.DEPTH_TEST);
+    });
+
+    fillGlRect(state, 0x000000ff);
+
+    expect(blendAtDraw).toBe(true);
+    expect(depthAtDraw).toBe(false);
+  });
+
+  it('restores depth and blend state after drawing', () => {
+    const { state, gl } = createGlState();
+    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+
+    fillGlRect(state, 0x000000ff);
+
+    expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(true);
+    expect(gl.isEnabled(gl.BLEND)).toBe(false);
+  });
+
+  it('enables scissor test when rect is provided', () => {
+    const { state, gl } = createGlState();
+    const scissorSpy = vi.spyOn(gl, 'scissor');
+
+    fillGlRect(state, 0xff0000ff, { x: 10, y: 20, width: 30, height: 40 });
+
+    expect(scissorSpy).toHaveBeenCalledWith(10, 20, 30, 40);
+  });
+
+  it('restores scissor state when rect is provided and scissor was off', () => {
+    const { state, gl } = createGlState();
+    gl.disable(gl.SCISSOR_TEST);
+
+    fillGlRect(state, 0xff0000ff, { x: 0, y: 0, width: 10, height: 10 });
+
+    expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(false);
   });
 });
