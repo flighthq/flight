@@ -36,7 +36,7 @@ describe('pushGlClipContours', () => {
     const cacheState = createGlCacheState(state, state.contextState, state.pipeline);
     const source = createDisplayObject();
     const target = ensureGlRenderCacheTarget(state, cache, 1, 1);
-    beginGlRenderPass(state, target, { preserveDepth: true });
+    beginGlRenderPass(state, target);
     pushGlClipContours(state, SQUARE, 'nonZero', createMatrix());
     gl.depthMask(false);
     const stencilClearCount = vi.mocked(gl.clear).mock.calls.length;
@@ -66,7 +66,7 @@ describe('pushGlClipContours', () => {
       y: 5,
     });
 
-    beginGlRenderPass(state, outer, { preserveDepth: true }, viewport);
+    beginGlRenderPass(state, outer, undefined, viewport);
     const outerScissor = getGlRenderStateRuntime(state).currentScissorRect;
     refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject());
 
