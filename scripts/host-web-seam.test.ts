@@ -9,6 +9,17 @@ import { resolve } from 'node:path';
 
 const packagesDirectory = resolve(import.meta.dirname, '../packages');
 
+// A detector has to name what it forbids, and a negative test has to contain the very shape it proves is
+// caught. The p5 host-bypass gate is both: it still recognizes drawBitmap inside
+// packages/bitmap/src/bitmapDraw.ts so a reintroduction there is reported rather than ignored, and its
+// test feeds it fixtures spelled the same way. This file is the third, since it must list every retired
+// name in order to forbid it.
+//
+// The exemption is per file and by name on purpose. Skipping a directory — scripts/, or anything under
+// test — would take real production coverage with it; these three paths are the only ones whose JOB is to
+// carry a retired spelling.
+const DETECTOR_FILES = ['scripts/host-web-seam.test.ts', 'scripts/p5-host-bypass.test.ts', 'scripts/p5-host-bypass.ts'];
+
 // Packages that must name no browser type. Each was a source of one before the cleanup.
 const PORTABLE_PACKAGES = ['bitmap', 'image', 'image-codec', 'textureatlas'];
 
@@ -266,5 +277,6 @@ function searchRepository(names: readonly string[]): string[] {
   return result.stdout
     .split('\n')
     .filter((line) => line !== '')
-    .filter((line) => !line.startsWith('agents/') && !line.endsWith('scripts/host-web-seam.test.ts'));
+    .filter((line) => !line.startsWith('agents/'))
+    .filter((line) => !DETECTOR_FILES.some((detector) => line.endsWith(detector)));
 }
