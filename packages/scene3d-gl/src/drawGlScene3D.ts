@@ -72,13 +72,13 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 // states never share allocation (module-level singletons would interleave if two states drew in the
 // same tick, even though JS is single-threaded today).
 export function drawGlScene3D(
-  passOrState: GlRenderPass | GlRenderState,
+  pass: GlRenderPass,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
   forwardLights?: Readonly<GlScene3DForwardLightList>,
 ): void {
-  const state = 'state' in passOrState ? passOrState.state : passOrState;
+  const state = pass.state;
   const list = prepareScene3DRender(state, scene, camera, lights, getGlScene3DViewportAspect(state));
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;

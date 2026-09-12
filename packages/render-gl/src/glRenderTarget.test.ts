@@ -214,11 +214,11 @@ describe('declareGlRenderTargetColorSpace', () => {
     const { state } = makeState();
     const target = createGlTextureRenderTarget(state, { width: 64, height: 48 });
     expect(target.colorSpace).toBe('srgb');
-    beginGlRenderPass(state, target);
+    const pass = beginGlRenderPass(state, target);
     expect(declareGlRenderTargetColorSpace(state, 'linear')).toBe(true);
     expect(target.colorSpace).toBe('linear');
     expect(target.requestedAxes.colorSpace).toBe('linear');
-    endGlRenderPass(state);
+    endGlRenderPass(pass);
   });
 
   it('returns false when no target is bound (rendering to the canvas)', () => {
@@ -230,15 +230,15 @@ describe('declareGlRenderTargetColorSpace', () => {
     const { state } = makeState();
     const outer = createGlTextureRenderTarget(state, { width: 64, height: 48 });
     const inner = createGlTextureRenderTarget(state, { width: 32, height: 32 });
-    beginGlRenderPass(state, outer);
-    beginGlRenderPass(state, inner);
+    const outerPass = beginGlRenderPass(state, outer);
+    const innerPass = beginGlRenderPass(state, inner);
     declareGlRenderTargetColorSpace(state, 'linear');
     expect(inner.colorSpace).toBe('linear');
-    endGlRenderPass(state);
+    endGlRenderPass(innerPass);
     // Back on `outer`: a declare now stamps it, not the popped inner target.
     declareGlRenderTargetColorSpace(state, 'linear');
     expect(outer.colorSpace).toBe('linear');
-    endGlRenderPass(state);
+    endGlRenderPass(outerPass);
   });
 });
 

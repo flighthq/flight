@@ -121,11 +121,11 @@ export function renderIntoGlRenderTexture(
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
-      beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+      const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
       try {
         callback(state);
       } finally {
-        endGlRenderPass(state);
+        endGlRenderPass(pass);
       }
     } finally {
       popGlRenderState(state);

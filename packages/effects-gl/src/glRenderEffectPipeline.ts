@@ -92,14 +92,15 @@ export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: Gl
 }
 
 export function endGlRenderEffectPipeline(
-  state: GlRenderState,
+  pass: GlRenderPass,
   pipeline: GlRenderEffectPipeline,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
+  const state = pass.state;
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
 
-  endGlRenderPass(state);
+  endGlRenderPass(pass);
 
   const format = pipeline.options.format ?? 'rgba8';
   // Intermediate ping-pong targets carry the scene's declared color space, so after the last effect the

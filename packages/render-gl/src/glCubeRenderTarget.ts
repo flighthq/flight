@@ -3,11 +3,14 @@ import type {
   EntityConstruction,
   GlCubeRenderTarget,
   GlCubeRenderTargetOptions,
+  GlRenderPass,
   GlRenderState,
   GlRenderStateRuntime,
+  GlRenderTarget,
   GlViewportRect,
 } from '@flighthq/types/contract';
 
+import { acquireGlRenderPassHandle, releaseGlRenderPassHandle } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 
 interface SavedGlCubeFaceState {
@@ -29,7 +32,7 @@ interface SavedGlCubeFaceState {
 // Binds one cubemap face as the current color attachment, establishes a full-face viewport, and
 // clears color plus the optional depth-stencil attachment. Pair with endGlCubeRenderFace. Face order
 // is +X, -X, +Y, -Y, +Z, -Z, matching WebGL's consecutive cubemap-face targets.
-export function beginGlCubeRenderFace(state: GlRenderState, target: GlCubeRenderTarget, face: number): void {
+export function beginGlCubeRenderFace(state: GlRenderState, target: GlCubeRenderTarget, face: number): GlRenderPass {
   if (!Number.isInteger(face) || face < 0 || face >= 6) {
     throw new RangeError('beginGlCubeRenderFace face must be an integer from 0 through 5');
   }
@@ -86,6 +89,10 @@ export function beginGlCubeRenderFace(state: GlRenderState, target: GlCubeRender
     gl.depthMask(true);
     gl.clearBufferfi(gl.DEPTH_STENCIL, 0, 1, 0);
   }
+
+  // GlCubeRenderTarget extends Entity directly, not GlRenderTarget; the shared fields suffice for
+  // the pass handle, which is a value carrier.
+  return acquireGlRenderPassHandle(gl, state, target as unknown as GlRenderTarget);
 }
 
 // Allocates one RGBA16F cubemap texture plus a reusable face framebuffer. A depth-stencil attachment
@@ -157,11 +164,13 @@ export function destroyGlCubeRenderTarget(state: GlRenderState, target: GlCubeRe
 
 // Restores the exact framebuffer, viewport, scissor/stencil gate, depth mask, and tracked render-target
 // state captured by beginGlCubeRenderFace. A missing begin is a programmer error.
-export function endGlCubeRenderFace(state: GlRenderState): void {
+export function endGlCubeRenderFace(pass: GlRenderPass): void {
+  const state = pass.state;
   const stack = glCubeFaceStacks.get(state);
   const saved = stack?.pop();
   if (saved === undefined) throw new Error('endGlCubeRenderFace called without a matching beginGlCubeRenderFace');
   if (stack!.length === 0) glCubeFaceStacks.delete(state);
+  releaseGlRenderPassHandle(state.gl, pass);
 
   const gl = state.gl;
   gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);

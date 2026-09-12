@@ -46,12 +46,12 @@ export function renderGlEnvironmentCapture(
   try {
     for (let face = 0; face < 6; face++) {
       getCubeCaptureFaceCamera3D(camera, position, face);
-      beginGlCubeRenderFace(state, cubeTarget, face);
+      const pass = beginGlCubeRenderFace(state, cubeTarget, face);
       try {
         if (environment) drawGlEnvironmentSkybox(state, environment, camera, 1);
-        drawGlScene3D(state, scene, camera, lights);
+        drawGlScene3D(pass, scene, camera, lights);
       } finally {
-        endGlCubeRenderFace(state);
+        endGlCubeRenderFace(pass);
       }
     }
   } finally {

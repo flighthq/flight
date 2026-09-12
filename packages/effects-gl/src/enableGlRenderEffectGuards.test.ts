@@ -158,8 +158,8 @@ describe('enableGlRenderEffectGuards', () => {
     const pipeline = createGlRenderEffectPipeline(state);
 
     const entries = captureLog(() => {
-      beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(state, pipeline, [
+      const pass = beginGlRenderEffectPipeline(state, pipeline);
+      endGlRenderEffectPipeline(pass, pipeline, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
@@ -175,8 +175,8 @@ describe('enableGlRenderEffectGuards', () => {
     // Once per KIND, not once per frame: a chain missing the same effect every frame is one
     // observation, and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
-      beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(state, pipeline, [
+      const pass = beginGlRenderEffectPipeline(state, pipeline);
+      endGlRenderEffectPipeline(pass, pipeline, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';

@@ -20,7 +20,7 @@ import {
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';
-import type { Camera3D, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
+import type { Camera3D, GlRenderPass, GlRenderTarget, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
 import { beforeEach } from 'vitest';
 
 import { drawGlScene3D } from './drawGlScene3D';
@@ -71,10 +71,11 @@ function skinnedMesh() {
 function drawWithGuard(scene: ReturnType<typeof createNode3D>): number {
   const { state } = makeGlScene3DState();
   enableGlScene3DDeformGuards(state);
+  const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
   const sink = createMemoryLogSink(8);
   addLogSink(sink.sink);
   try {
-    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+    drawGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
     return getMemoryLogSinkEntries(sink).length;
   } finally {
     removeLogSink(sink.sink);

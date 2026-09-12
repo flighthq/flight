@@ -10,7 +10,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
+import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import {
@@ -56,7 +56,8 @@ describe('enableGlScene3DColorSpaceGuards', () => {
     try {
       enableGlScene3DColorSpaceGuards(state);
       // No beginGlRenderPass: currentRenderTarget is null, so the scene draws straight to the canvas.
-      drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+      const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+      drawGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('drawGlScene3D');

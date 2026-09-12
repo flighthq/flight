@@ -46,6 +46,22 @@ type SavedGlStencil = {
   writeMask: number;
 };
 
+export function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, target: GlRenderTarget): GlRenderPass {
+  let pool = _passHandlePool.get(gl);
+  if (pool !== undefined && pool.length > 0) {
+    const handle = pool.pop()! as { gl: GlContext; state: GlRenderState; target: GlRenderTarget };
+    handle.gl = gl;
+    handle.state = state;
+    handle.target = target;
+    return handle as GlRenderPass;
+  }
+  const handle = allocateEntity<GlRenderPass>();
+  (handle as { gl: GlContext }).gl = gl;
+  (handle as { state: GlRenderState }).state = state;
+  (handle as { target: GlRenderTarget }).target = target;
+  return finishEntity(handle);
+}
+
 // Begins a render pass into `target`: binds it (saving the previous binding for restore, so passes
 // nest). Aspects named in `clear` are overwritten to the given values; omitted aspects are preserved.
 // Pair with endGlRenderPass.
@@ -60,15 +76,15 @@ type SavedGlStencil = {
 // restored by the begin/end bracket like the rest of the pass state.
 //
 // Single-attachment (the common no-effects scene / 2D-offscreen path):
-//   beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0 })
-//   drawGlScene3D(state, scene, camera, lights)
-//   endGlRenderPass(state)
+//   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0 })
+//   drawGlScene3D(pass, scene, camera, lights)
+//   endGlRenderPass(pass)
 //   presentGlRenderTarget(state, target)
 //
 // Partial target (clear only the sub-region, then restore the exact enclosing viewport/scissor):
-//   beginGlRenderPass(state, target, { color: [0, 0, 0, 0] }, viewport)
-//   drawGlScene3D(state, scene, camera, lights)
-//   endGlRenderPass(state)
+//   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0] }, viewport)
+//   drawGlScene3D(pass, scene, camera, lights)
+//   endGlRenderPass(pass)
 export function beginGlRenderPass(
   state: GlRenderState,
   target: GlRenderTarget,
@@ -143,8 +159,8 @@ export function beginGlRenderPass(
 // single-sample result — ready for present, effects, or sampling. A call with no matching begin throws:
 // an unbalanced pass is a programmer error, and silently accepting it hides a leaked prior pass. The
 // target is read from runtime rather than passed, so end mirrors the other backend brackets.
-export function endGlRenderPass(passOrState: GlRenderPass | GlRenderState): void {
-  const state = isGlRenderPass(passOrState) ? passOrState.state : passOrState;
+export function endGlRenderPass(pass: GlRenderPass): void {
+  const state = pass.state;
   const gl = state.gl;
   const stack = _passStack.get(gl);
   if (stack === undefined) {
@@ -156,7 +172,7 @@ export function endGlRenderPass(passOrState: GlRenderPass | GlRenderState): void
   }
   stack.pop();
   if (stack.length === 0) _passStack.delete(gl);
-  if (isGlRenderPass(passOrState)) releaseGlRenderPassHandle(gl, passOrState);
+  releaseGlRenderPassHandle(gl, pass);
 
   const runtime = getGlRenderStateRuntime(state);
   // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
@@ -182,25 +198,6 @@ export function endGlRenderPass(passOrState: GlRenderPass | GlRenderState): void
   }
 
   if (ended !== null) resolveGlTextureRenderTarget(saved.previousOwner, ended);
-}
-
-// Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
-// place nodes with no scene parent. Call after beginGlRenderPass when a 2D pass renders into a target
-// with its own coordinate system (the render cache); the value is restored by the matching
-// endGlRenderPass. A fresh matrix is allocated rather than mutating in place, because the begin/end
-// bracket saved the previous reference and restores it — mutating the shared object would corrupt that.
-export function setGlRenderTransform2D(state: GlRenderState, transform: Readonly<Matrix>): void {
-  const next = createMatrix();
-  copyMatrix(next, transform);
-  state.renderTransform2D = next;
-  // The root device transform is an input to every prepared proxy transform, but it is state policy,
-  // not a node revision. Mark the state-local proxies stale so a repeated offscreen capture with new
-  // bounds/padding cannot reuse transforms prepared for the previous target dimensions.
-  const runtime = getGlRenderStateRuntime(state);
-  for (const source of runtime.renderProxySources) {
-    const proxy = runtime.renderProxyMap.get(source);
-    if (proxy !== undefined) proxy.lastLocalTransformId = -1;
-  }
 }
 
 function clearGlRenderPass(
@@ -357,33 +354,32 @@ function clampGlPassEdge(value: number, extent: number): number {
   return Math.min(extent, Math.max(0, value));
 }
 
-function isGlRenderPass(value: GlRenderPass | GlRenderState): value is GlRenderPass {
-  return 'state' in value && 'target' in value;
-}
-
-function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, target: GlRenderTarget): GlRenderPass {
-  let pool = _passHandlePool.get(gl);
-  if (pool !== undefined && pool.length > 0) {
-    const handle = pool.pop()! as { gl: GlContext; state: GlRenderState; target: GlRenderTarget };
-    handle.gl = gl;
-    handle.state = state;
-    handle.target = target;
-    return handle as GlRenderPass;
-  }
-  const handle = allocateEntity<GlRenderPass>();
-  (handle as { gl: GlContext }).gl = gl;
-  (handle as { state: GlRenderState }).state = state;
-  (handle as { target: GlRenderTarget }).target = target;
-  return finishEntity(handle);
-}
-
-function releaseGlRenderPassHandle(gl: GlContext, handle: GlRenderPass): void {
+export function releaseGlRenderPassHandle(gl: GlContext, handle: GlRenderPass): void {
   let pool = _passHandlePool.get(gl);
   if (pool === undefined) {
     pool = [];
     _passHandlePool.set(gl, pool);
   }
   pool.push(handle);
+}
+
+// Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
+// place nodes with no scene parent. Call after beginGlRenderPass when a 2D pass renders into a target
+// with its own coordinate system (the render cache); the value is restored by the matching
+// endGlRenderPass. A fresh matrix is allocated rather than mutating in place, because the begin/end
+// bracket saved the previous reference and restores it — mutating the shared object would corrupt that.
+export function setGlRenderTransform2D(state: GlRenderState, transform: Readonly<Matrix>): void {
+  const next = createMatrix();
+  copyMatrix(next, transform);
+  state.renderTransform2D = next;
+  // The root device transform is an input to every prepared proxy transform, but it is state policy,
+  // not a node revision. Mark the state-local proxies stale so a repeated offscreen capture with new
+  // bounds/padding cannot reuse transforms prepared for the previous target dimensions.
+  const runtime = getGlRenderStateRuntime(state);
+  for (const source of runtime.renderProxySources) {
+    const proxy = runtime.renderProxyMap.get(source);
+    if (proxy !== undefined) proxy.lastLocalTransformId = -1;
+  }
 }
 
 // A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass

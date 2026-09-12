@@ -1,3 +1,4 @@
+import type { GlRenderPass, GlRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -96,7 +97,7 @@ describe('beginGlCubeRenderFace', () => {
     const target = createGlCubeRenderTarget(state, 32);
     vi.clearAllMocks();
 
-    beginGlCubeRenderFace(state, target, 4);
+    const pass = beginGlCubeRenderFace(state, target, 4);
     expect(declareGlRenderTargetColorSpace(state, 'srgb')).toBe(true);
 
     expect(gl.bindFramebuffer).toHaveBeenCalledWith(gl.FRAMEBUFFER, framebuffer);
@@ -111,7 +112,7 @@ describe('beginGlCubeRenderFace', () => {
     expect(gl.clearBufferfv).toHaveBeenCalledWith(gl.COLOR, 0, new Float32Array([0.25, 0.5, 0.75, 1]));
     expect(gl.clearBufferfi).toHaveBeenCalledWith(gl.DEPTH_STENCIL, 0, 1, 0);
     expect(target.colorSpace).toBe('srgb');
-    endGlCubeRenderFace(state);
+    endGlCubeRenderFace(pass);
   });
 
   it('rejects a face outside the six-face cube range', () => {
@@ -187,9 +188,9 @@ describe('endGlCubeRenderFace', () => {
     runtime.renderTargetViewport = { height: 60, width: 50, x: 3, y: 4 };
     vi.clearAllMocks();
 
-    beginGlCubeRenderFace(state, target, 0);
+    const pass = beginGlCubeRenderFace(state, target, 0);
     expect(runtime.currentRenderTarget).toBe(target);
-    endGlCubeRenderFace(state);
+    endGlCubeRenderFace(pass);
 
     expect(vi.mocked(gl.bindFramebuffer).mock.lastCall).toEqual([gl.FRAMEBUFFER, previousFramebuffer]);
     expect(vi.mocked(gl.viewport).mock.lastCall).toEqual([3, 4, 50, 60]);
@@ -201,7 +202,8 @@ describe('endGlCubeRenderFace', () => {
 
   it('rejects an unmatched end', () => {
     const { state } = makeState();
-    expect(() => endGlCubeRenderFace(state)).toThrow('without a matching beginGlCubeRenderFace');
+    const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
+    expect(() => endGlCubeRenderFace(mockPass)).toThrow('without a matching beginGlCubeRenderFace');
   });
 });
 
