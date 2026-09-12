@@ -17,7 +17,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlTextureRenderTarget,
+  createGlRenderTarget,
   createMesh,
   createPerspectiveProjection,
   createSphereMeshGeometry,
@@ -66,7 +66,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   format: 'rgba16f',
   depth: 'depth-stencil',
 });
-const opaqueSceneTarget = createGlTextureRenderTarget(state, {
+const opaqueSceneTarget = createGlRenderTarget(state, {
   colorSpace: 'linear',
   depth: 'depth-stencil',
   format: 'rgba8',
