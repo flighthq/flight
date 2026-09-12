@@ -13,12 +13,11 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerWgpuStandardMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -42,13 +41,11 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x202830ff,
 });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-registerWgpuStandardMaterial(state);
-
 // WebGPU effect targets are single-sample and the pipeline rejects multisample requests rather than
 // discarding that axis. Its WebGL companion independently requests the backend's supported 4x target.
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });

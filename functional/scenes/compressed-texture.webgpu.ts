@@ -9,7 +9,7 @@ import {
   createTexture,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   getBitmapPixelRgb,
   SpriteKind,
   defaultWgpuScene2DRenderer,
@@ -18,7 +18,6 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerRenderer,
-  registerWgpuStandardMaterial,
   registerWgpuCompressedImageTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
@@ -62,7 +61,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x000000ff,
 });
@@ -72,7 +71,6 @@ if (!state.device.features.has('texture-compression-bc')) {
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
-registerWgpuStandardMaterial(state);
 registerWgpuImageTextureResolver(state);
 registerWgpuCompressedImageTextureResolver(state);
 registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);

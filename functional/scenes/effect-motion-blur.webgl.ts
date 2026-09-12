@@ -1,7 +1,7 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, GlRenderTarget, Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   ShapeKind,
   addNodeChild,
@@ -28,7 +28,6 @@ import {
   getNodeChildAt,
   getNodeChildCount,
   prepareScene2DRender,
-  registerGlStandardMaterial,
   registerGlVelocityWriter,
   registerRenderer,
   renderGlScene2D,
@@ -59,14 +58,13 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x101014ff,
   },
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlStandardMaterial(state);
 registerGlMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.

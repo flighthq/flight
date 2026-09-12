@@ -9,7 +9,7 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 //
 import type { Bitmap, Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   ParticleEmitter2DKind,
   addNodeChild,
@@ -33,7 +33,6 @@ import {
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
   registerGlVelocityWriter,
   registerRenderer,
   renderGlScene2D,
@@ -69,13 +68,12 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x101014ff,
   },
 );
-registerStandardGlTextureResolvers(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
