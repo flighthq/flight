@@ -53,6 +53,19 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuPro
       throw error;
     }
   };
+  out.attachSurface = (surface, attachment): GPUCanvasContext | null => {
+    const context = surface.getContext('webgpu');
+    if (context === null) return null;
+    // COPY_SRC lets the swap-chain texture be read back with copyTextureToBuffer. It is the only reliable
+    // way to read a Wgpu frame in headless/software contexts, and it also backs user-facing screenshots.
+    context.configure({
+      device: attachment.device,
+      format: attachment.format,
+      alphaMode: attachment.alphaMode,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+    });
+    return context;
+  };
   out.isSupported = (): boolean => {
     return getWebWgpu() !== null;
   };

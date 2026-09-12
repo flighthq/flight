@@ -142,6 +142,7 @@ describe('createWgpuAcquisitionFromCanvasElement', () => {
         acquire: vi.fn(async () => {
           throw new Error('no adapter');
         }),
+        attachSurface: vi.fn(() => null),
         isSupported: vi.fn(() => false),
         release: vi.fn(),
       }),
@@ -890,6 +891,7 @@ describe('releaseWgpuAcquisition', () => {
     setWgpuHostBackend(
       entityHostBackend({
         acquire: vi.fn(async () => acquisition),
+        attachSurface: vi.fn(() => null),
         isSupported: vi.fn(() => true),
         release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
       }),

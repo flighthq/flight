@@ -43,7 +43,7 @@ declareExpectedImageDescription(
 // Wgpu parity column for the same tone-map intent as render.webgl.ts. Unlike Canvas (passthrough),
 // tone mapping is real on Wgpu: bright HDR content rendered into an rgba16f target is compressed
 // back to displayable range by the ACES operator. Wgpu render-state init is async; the effect
-// pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+// pipeline runs between beginWgpuRenderPass and submitWgpuFrame.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

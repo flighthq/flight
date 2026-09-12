@@ -287,7 +287,7 @@ export function registerWgpuVelocityWriter(state: WgpuRenderState, kind: Kind, w
  * Walks `root`'s subtree and writes every moving renderable's velocity into `target`, dispatching the
  * registered WgpuVelocityWriter for each node's kind. Nodes whose kind has no writer are skipped; the
  * cleared (0,0,0,0) background means zero velocity. Runs inside the frame's command encoder (open one with
- * renderWgpuBackground first), as its own render pass; ends any pass currently open and leaves none open.
+ * a pass or beginWgpuFrame first), as its own render pass; the caller's pass is suspended and resumed.
  */
 export function renderWgpuVelocity<Traits extends object>(
   state: WgpuRenderState,

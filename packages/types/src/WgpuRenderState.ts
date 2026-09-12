@@ -312,7 +312,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   clipContourStack: WgpuClipContourEntry[];
   // GPU buffers replaced/retired mid-frame (a clip pop's per-clip buffers, a grown particle instance
   // buffer) but still referenced by recorded draws in the open command encoder; destroyed only after
-  // submitWgpuRenderPass submits, since the frame's submit is deferred and destroying them earlier
+  // submitWgpuFrame submits, since the frame's submit is deferred and destroying them earlier
   // invalidates the command buffer.
   retiredBuffers?: GPUBuffer[];
   // The same deferral for TEXTURES replaced mid-frame (a grown skin-palette arena). A texture the open

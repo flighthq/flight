@@ -36,7 +36,7 @@ declareExpectedImageDescription(
 
 // Wgpu parity column for the same full-frame hueSaturation grade as render.webgl.ts: rotates hue 90 degrees and boosts saturation.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline
-// runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass
+// runs between beginWgpuRenderPass (opens the encoder + canvas pass) and submitWgpuFrame
 // (flushes it), grading the rgba8 scene target.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();

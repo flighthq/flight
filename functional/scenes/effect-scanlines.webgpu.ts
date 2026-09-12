@@ -42,7 +42,7 @@ declareExpectedImageDescription(
 );
 
 // Wgpu parity column for the same scanlines intent as render.webgl.ts. Wgpu render-state init is
-// async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+// async; the full-frame effect pipeline runs between beginWgpuRenderPass and submitWgpuFrame.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

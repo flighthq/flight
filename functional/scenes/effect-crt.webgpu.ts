@@ -30,7 +30,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same crt intent as render.webgl.ts. Wgpu render-state init is
-// async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+// async; the full-frame effect pipeline runs between beginWgpuRenderPass and submitWgpuFrame.
 declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(

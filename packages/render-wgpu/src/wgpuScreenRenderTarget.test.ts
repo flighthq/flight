@@ -80,11 +80,11 @@ describe('createWgpuScreenRenderTarget', () => {
     expect(screen.height).toBe(600);
   });
 
-  it('reports a surface with no WebGPU context rather than returning a target that cannot bind', async () => {
+  it('reports a surface the host cannot present rather than returning a target that cannot bind', async () => {
     const state = await createWgpuRenderStateForTest();
     const surface = { getContext: () => null, height: 100, width: 100 };
 
-    expect(() => createWgpuScreenRenderTarget(state.device, surface)).toThrow(/no WebGPU context/);
+    expect(() => createWgpuScreenRenderTarget(state.device, surface)).toThrow(/cannot present WebGPU/);
   });
 });
 

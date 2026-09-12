@@ -46,7 +46,7 @@ declareExpectedImageDescription(
 // Wgpu parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
 // (passthrough), chromatic aberration is a real effect on Wgpu: the R/G/B channels are sampled
 // with a growing radial offset. Wgpu render-state init is async; the effect pipeline runs between
-// renderWgpuBackground and submitWgpuRenderPass.
+// beginWgpuRenderPass and submitWgpuFrame.
 const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

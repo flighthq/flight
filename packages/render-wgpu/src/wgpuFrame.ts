@@ -43,7 +43,7 @@ export function retireWgpuBuffer(state: WgpuRenderState, buffer: GPUBuffer): voi
 // submit, and the symptom is an ENTIRELY BLANK FRAME with a console warning naming a texture rather than
 // a call site — a cost-to-diagnose far out of proportion to the one line that causes it. Callers that
 // replace a texture during recording (a grown palette arena, a resized rasterization cache, a cache entry
-// rewritten on a payload version bump) retire it here; submitWgpuRenderPass frees it once the frame is
+// rewritten on a payload version bump) retire it here; submitWgpuFrame frees it once the frame is
 // safely on the queue.
 export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): void {
   const runtime = getWgpuRenderStateRuntime(state);
