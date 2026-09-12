@@ -1,5 +1,5 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
-import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
+import type { Node2D, GlRenderEffectPipeline, GlTextureRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   createGlContextState,
@@ -16,7 +16,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   createShape,
   registerGlBlendEffect,
   defaultGlShapeRenderer,
@@ -90,8 +90,8 @@ const BACKDROP_KEY = 'scene';
 // Renders `root` into a fresh standalone target and registers its resolved texture as the blend backdrop.
 // The target's lifetime spans the whole scene (the effect samples it during end()), so it is retained on
 // the module rather than released. Cleared to opaque black so the "backdrop-only" quadrant reads as black.
-function renderBackdrop(root: Node2D): GlRenderTarget {
-  const target = createGlRenderTarget(state, {
+function renderBackdrop(root: Node2D): GlTextureRenderTarget {
+  const target = createGlTextureRenderTarget(state, {
     width: canvas.width,
     height: canvas.height,
     format: 'rgba8',
