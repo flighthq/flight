@@ -891,6 +891,10 @@
     },
     {
       "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasSurfaceCreator"
+    },
+    {
+      "packageName": "scene2d-canvas",
       "registrar": "registerCanvasTextInputOverlay"
     },
     {
