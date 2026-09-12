@@ -65,7 +65,7 @@ export function beginGlRenderEffectPipeline(
     resizeGlTextureRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  return beginGlRenderPass(state, pipeline.sceneTarget, clear);
+  return beginGlRenderPass(state, pipeline.sceneTarget, colorSpace === 'linear' ? linearizeClear(clear) : clear);
 }
 
 export function createGlRenderEffectPipeline(
@@ -210,6 +210,31 @@ export function setGlRenderEffectVelocityTexture(pipeline: GlRenderEffectPipelin
 
 function reportGlRenderEffectPipelineSkip(state: GlRenderState, kind: string): void {
   _skipGuards.get(state)?.(state, kind);
+}
+
+// sRGB → linear conversion matching the inverse of the linear→sRGB present pass. Callers specify
+// clear colors as screen-appearance (sRGB) values; a linear scene target must store the linearized
+// form so the present pass's gamma encoding reconstructs the intended screen color.
+function srgbComponentToLinear(v: number): number {
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function linearizeClear(clear: Readonly<RenderTargetClear>): RenderTargetClear {
+  const out: RenderTargetClear = {};
+  if (clear.color !== undefined) {
+    const [r, g, b, a] = clear.color;
+    out.color = [srgbComponentToLinear(r), srgbComponentToLinear(g), srgbComponentToLinear(b), a];
+  }
+  if (clear.colors !== undefined) {
+    out.colors = clear.colors.map((c) =>
+      c === undefined
+        ? undefined
+        : [srgbComponentToLinear(c[0]), srgbComponentToLinear(c[1]), srgbComponentToLinear(c[2]), c[3]],
+    );
+  }
+  if (clear.depth !== undefined) out.depth = clear.depth;
+  if (clear.stencil !== undefined) out.stencil = clear.stencil;
+  return out;
 }
 
 const _skipGuards = new WeakMap<GlRenderState, GlRenderEffectPipelineSkipGuard>();
