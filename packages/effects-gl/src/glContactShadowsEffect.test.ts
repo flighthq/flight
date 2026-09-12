@@ -1,6 +1,5 @@
 import { createContactShadowsEffect } from '@flighthq/effects/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -59,7 +58,7 @@ describe('defaultGlContactShadowsEffectRunner', () => {
 describe('registerGlContactShadowsEffect', () => {
   it('installs the contact-shadows runner on the supplied state', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
     registerGlContactShadowsEffect(state);

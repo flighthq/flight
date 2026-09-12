@@ -23,7 +23,9 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 export function createGlContextState(gl: GlContext): GlContextState {
   const state = allocateEntity<GlContextState>();
   initializeGlContextState(state, gl);
-  return finishEntity(state);
+  const result = finishEntity(state);
+  _contextStateByGl.set(gl, result);
+  return result;
 }
 
 export function createGlRenderState(

@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  createGlContextState,
   createEmptyGlRegistries,
   createGlPipeline,
   createGlContextFromCanvasElement,
@@ -26,7 +25,7 @@ describe('beginGlRenderEffectPipeline', () => {
 
   it('redeclares the explicit color space on a reused scene target', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
     const pipeline = createGlRenderEffectPipeline(state);
@@ -68,7 +67,7 @@ describe('initializeGlRenderEffectPipeline', () => {
 describe('setGlRenderEffectPipelineSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
     const state = createGlRenderState(
-      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlContextFromCanvasElement(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
     const pipeline = createGlRenderEffectPipeline(state);
