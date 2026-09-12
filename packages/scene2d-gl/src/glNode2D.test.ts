@@ -7,7 +7,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { defaultGlScene2DRenderer, drawGlScene2D, renderGlScene2D } from './glNode2D';
@@ -17,6 +17,10 @@ function makeState(): GlRenderState {
   canvas.width = 200;
   canvas.height = 100;
   return createGlRenderState(createGlContextFromCanvasElement(canvas), createGlPipeline(createEmptyGlRegistries()));
+}
+
+function mockPass(state: GlRenderState): GlRenderPass {
+  return { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
 }
 
 function makeRenderer() {
@@ -44,18 +48,12 @@ describe('renderGlScene2D', () => {
   it('establishes its own cull, depth, and blend state rather than inheriting it from a previous 3D pass', () => {
     const state = makeState();
     const gl = state.gl;
-    // Real WebGL2 confirms the consequence this guards: Flight's 2D quad is wound (x0,y0)(x1,y0)(x1,y1)
-    // in a y-down space that the projection flips, so it is a BACK face under the CCW default. Drawing
-    // it with CULL_FACE left enabled by the 3D mesh path erases 2D content entirely — 2304 lit pixels
-    // become 0. Depth testing is the same class: a stale 3D depth buffer rejects 2D fragments.
-    // Seeded to the exact hostile state a prior 3D pass leaves: cull and depth on, blend off. Starting
-    // from the API default would make "sets what it needs" indistinguishable from "changed nothing".
     const enabled = new Set<number>([gl.CULL_FACE, gl.DEPTH_TEST]);
     (gl.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.has(cap));
     (gl.enable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.add(cap));
     (gl.disable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.delete(cap));
 
-    renderGlScene2D(state, createDisplayObject());
+    renderGlScene2D(mockPass(state), createDisplayObject());
 
     expect(enabled.has(gl.CULL_FACE)).toBe(false);
     expect(enabled.has(gl.DEPTH_TEST)).toBe(false);
@@ -66,7 +64,7 @@ describe('renderGlScene2D', () => {
     const state = makeState();
     const obj = createDisplayObject();
     prepareScene2DRender(state, obj);
-    expect(() => renderGlScene2D(state, obj)).not.toThrow();
+    expect(() => renderGlScene2D(mockPass(state), obj)).not.toThrow();
   });
 
   it('calls renderer.submit for a visible object with a renderer', () => {
@@ -77,7 +75,7 @@ describe('renderGlScene2D', () => {
     const data = getOrCreateRenderProxy2D(state, obj);
     prepareScene2DRender(state, obj);
 
-    renderGlScene2D(state, obj);
+    renderGlScene2D(mockPass(state), obj);
 
     expect(renderer.submit).toHaveBeenCalledWith(state, data);
   });
@@ -90,7 +88,7 @@ describe('renderGlScene2D', () => {
     obj.alpha = 0;
     prepareScene2DRender(state, obj);
 
-    renderGlScene2D(state, obj);
+    renderGlScene2D(mockPass(state), obj);
 
     expect(renderer.submit).not.toHaveBeenCalled();
   });
@@ -104,7 +102,7 @@ describe('renderGlScene2D', () => {
     addNodeChild(parent, child);
     prepareScene2DRender(state, parent);
 
-    renderGlScene2D(state, parent);
+    renderGlScene2D(mockPass(state), parent);
 
     expect(renderer.submit).toHaveBeenCalledTimes(2);
   });
