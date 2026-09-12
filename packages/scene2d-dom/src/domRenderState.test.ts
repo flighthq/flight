@@ -46,16 +46,19 @@ describe('createDomRenderState', () => {
     expect(runtime.domNextOrderList).toEqual([]);
   });
 
-  it('defaults backgroundColor to 0', () => {
+  // ★ DOM HAS NO BACKGROUND OPTION, AND NEEDS NONE. The background of a DOM scene is a CSS property on
+  // the element the caller already holds — `element.style.backgroundColor = '#1a1a2e'` — so carrying it
+  // through a render option and a renderDomBackground call was a whole seam for one assignment.
+  // The background of a DOM scene is a CSS property on the element the caller already holds —
+  // `element.style.backgroundColor = '#1a1a2e'` — so carrying it through a render option and a
+  // renderDomBackground call was a whole seam for one assignment. The option is gone; passing one is a
+  // type error, which is why this test asserts only what remains: the element the state was given.
+  it('keeps the element the caller passed, and takes no background option', () => {
     const div = document.createElement('div');
-    const state = createDomRenderState(div);
-    expect(state.backgroundColor).toBe(0);
-  });
 
-  it('sets backgroundColor from options', () => {
-    const div = document.createElement('div');
-    const state = createDomRenderState(div, { backgroundColor: 0xff0000ff });
-    expect(state.backgroundColor).toBe(0xff0000ff);
+    const state = createDomRenderState(div);
+
+    expect(state.element).toBe(div);
   });
 
   it('sets pixelRatio from options', () => {
