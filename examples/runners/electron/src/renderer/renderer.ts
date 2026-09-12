@@ -4,9 +4,11 @@ import {
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeRectangle,
+  beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
   createCanvasRenderSurface,
+  createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
@@ -14,9 +16,10 @@ import {
   defaultCanvasShapeRenderer,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
+  endCanvasRenderPass,
   registerCanvasShapeCommands,
+  registerCanvasSurfaceCreator,
   registerRenderer,
-  renderCanvasBackground,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
   ShapeKind,
@@ -35,16 +38,20 @@ const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 1024, 560, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = createCanvasRenderState(
+const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
     height: canvas.height / pixelRatio,
     pixelRatio,
     width: canvas.width / pixelRatio,
   }),
+);
+const state = createCanvasRenderState(
   scene2DCanvasPipeline,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { backgroundColor: 0x1d1f23ff },
 );
+registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1d / 0xff, 0x1f / 0xff, 0x23 / 0xff, 1] } as const;
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
@@ -69,8 +76,9 @@ invalidateNodeLocalTransform(dot);
 addNodeChild(root, dot);
 
 if (prepareScene2DRender(state, root)) {
-  renderCanvasBackground(state);
-  renderCanvasScene2D(state, root);
+  const pass = beginCanvasRenderPass(state, screen, screenClear);
+  renderCanvasScene2D(pass, root);
+  endCanvasRenderPass(pass);
 }
 
 // ── OS-capability buttons (routed to the main process via the preload bridge) ──
