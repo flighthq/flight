@@ -5,6 +5,7 @@ import type {
   GlRenderTextureEntry,
   GlRenderTextureExplanation,
   GlRenderTextureGuard,
+  RenderTargetClear,
   RenderTexture,
   SamplerLike,
   TextureColorSpace,
@@ -118,11 +119,12 @@ export function renderIntoGlRenderTexture(
   state: GlRenderState,
   renderTexture: RenderTexture,
   callback: (pass: GlRenderPass) => void,
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
 ): void {
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
-      const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
+      const pass = beginGlRenderPass(state, target, clear);
       try {
         callback(pass);
       } finally {
