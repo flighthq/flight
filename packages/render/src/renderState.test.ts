@@ -21,9 +21,6 @@ describe('createRenderState', () => {
 
   it('initializes default values', () => {
     expect(state.allowSmoothing).toStrictEqual(true);
-    expect(state.backgroundColor).toStrictEqual(0);
-    expect(state.backgroundColorRgba).toStrictEqual([]);
-    expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentClipDepth).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
     expect(state.renderAlpha).toStrictEqual(1);
@@ -49,9 +46,6 @@ describe('createRenderState', () => {
   it('allows pre-defined values', () => {
     const base = {
       allowSmoothing: false,
-      backgroundColor: 0xff,
-      backgroundColorRgba: [1, 0, 0, 0],
-      backgroundColorString: '#FF000000',
       pixelRatio: 5,
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
@@ -60,9 +54,6 @@ describe('createRenderState', () => {
     };
     const obj = createRenderState(base);
     expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
-    expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);
-    expect(obj.backgroundColorRgba).toStrictEqual(base.backgroundColorRgba);
-    expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);

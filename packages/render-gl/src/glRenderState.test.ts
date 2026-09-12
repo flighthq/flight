@@ -182,12 +182,6 @@ describe('createGlRenderState', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
-  it('applies the backgroundColor option', () => {
-    const { gl } = makeContext();
-    const state = createTestGlRenderState(gl, { backgroundColor: 0xff0000ff });
-    expect(state.backgroundColor).toBe(0xff0000ff);
-  });
-
   it('uses the provided pixelRatio option', () => {
     const { gl } = makeContext();
     const state = createTestGlRenderState(gl, { pixelRatio: 2 });

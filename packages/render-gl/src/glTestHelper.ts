@@ -7,7 +7,7 @@ import type { GlShaderLocations } from '@flighthq/types/contract';
 import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
 
-export function createGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
+export function createGlState(options?: { allowSmoothing?: boolean }): {
   state: GlRenderState;
   gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
@@ -22,7 +22,6 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
   const shaderLoc = makeShaderLoc();
   const state = createRenderState({
     allowSmoothing: options?.allowSmoothing ?? true,
-    backgroundColorRgba: options?.backgroundColorRgba ?? [0, 0, 0, 0],
   }) as GlRenderState;
 
   // Entity fields live directly on the state.

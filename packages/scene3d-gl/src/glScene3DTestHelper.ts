@@ -353,7 +353,6 @@ export function makeGlScene3DState(
   const canvas = { width: 256, height: 256 } as HTMLCanvasElement;
   const state = createRenderState({
     allowSmoothing: true,
-    backgroundColorRgba: [0, 0, 0, 0],
   }) as GlRenderState;
 
   const contextState = createGlContextState(context as GlContext);
