@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/image/contract';
+import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
@@ -12,6 +12,15 @@ import {
   drawDomScale9Sprite,
   initializeDomScale9SpriteData,
 } from './domScale9Sprite';
+
+// The canvases these tests wrap are measured by the host, so the test registers the one-line resolver a
+// browser host would install rather than pulling the whole web host into a renderer package's tests.
+registerHostImageDimensionResolver((source, out) => {
+  const sized = source as { height: number; width: number };
+  out.height = sized.height;
+  out.width = sized.width;
+  return true;
+});
 
 describe('createDomScale9SpriteData', () => {
   it('creates renderer data', () => {
@@ -37,7 +46,7 @@ describe('drawDomScale9Sprite', () => {
     const sprite = createScale9Sprite(
       { x: 20, y: 20, width: 60, height: 60 },
       {
-        data: { texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(canvas) }) },
+        data: { texture: createTexture({ dimension: '2d', source: createImageResource(canvas) }) },
         scaleX: 2,
         scaleY: 2,
       },
