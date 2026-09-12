@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -8,7 +8,6 @@ import {
   createGlTextureRenderTarget,
   endGlRenderPass,
   presentGlRenderTarget,
-  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
@@ -36,7 +35,7 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
+  createWebGlContext(canvas, {
     antialias: false,
     contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   }),

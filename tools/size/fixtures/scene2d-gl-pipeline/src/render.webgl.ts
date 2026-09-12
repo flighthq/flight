@@ -1,9 +1,8 @@
+import { createWebGlContext } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlRenderState,
   enableGlBlendModeSupport,
   getGlPipelineRegistries,
@@ -21,11 +20,9 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene2DGlPipeline,
-  { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
+  { pixelRatio: 1 },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

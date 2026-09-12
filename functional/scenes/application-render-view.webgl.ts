@@ -48,9 +48,7 @@ const view = createGlApplicationRenderView(applicationWindow, canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   },
   pipeline: scene3DGlPipeline,
-  render: {
-    backgroundColor: 0x101522ff,
-  },
+  render: {},
   target: {
     colorSpace: 'srgb',
     depth: 'depth-stencil',

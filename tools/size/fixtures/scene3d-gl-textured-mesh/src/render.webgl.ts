@@ -1,7 +1,7 @@
 import { createBitmap } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -11,8 +11,6 @@ import { prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   registerGlBitmapTextureResolver,
@@ -40,13 +38,11 @@ const pipeline = createGlPipeline({
   ),
 });
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   pipeline,
-  { backgroundColor: 0x101522ff, pixelRatio: 1 },
+  { pixelRatio: 1 },
 );
 registerGlBitmapTextureResolver(state);
 

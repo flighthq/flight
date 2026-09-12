@@ -1,7 +1,6 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
-  createGlContextState,
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
   createGlCanvasElement,
@@ -12,7 +11,6 @@ import {
   presentGlRenderTarget,
   releaseGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
-  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
@@ -37,12 +35,10 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      antialias: false,
-      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    antialias: false,
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio: scale,

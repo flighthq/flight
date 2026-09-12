@@ -1,10 +1,9 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
@@ -26,7 +25,6 @@ import {
   prepareScene3DRender,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
-  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,14 +46,11 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
-    backgroundColor: 0x080b12ff,
     pixelRatio,
   },
 );

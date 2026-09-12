@@ -1,11 +1,9 @@
-import { createWebGlRenderSurfaceProvider, webRaster2DSurfaceProvider } from '@flighthq/host-web';
+import { createWebGlContext, createWebGlRenderSurfaceProvider, webRaster2DSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
@@ -29,11 +27,9 @@ const pipeline = createGlPipeline({
   renderers: withRegistryTableEntry(emptyRegistries.renderers, RichTextKind, defaultGlRichTextRenderer),
 });
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   pipeline,
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
+  { pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

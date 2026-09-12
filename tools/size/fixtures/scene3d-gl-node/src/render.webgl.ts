@@ -1,13 +1,11 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   beginGlRenderPass,
@@ -23,13 +21,11 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   createGlPipeline(createEmptyGlRegistries()),
-  { backgroundColor: 0x101522ff, pixelRatio: 1 },
+  { pixelRatio: 1 },
 );
 const scene = createNode3D(Node3DKind);
 const camera = createCamera3D({
