@@ -49,23 +49,29 @@ Same structure for WGPU: `WgpuRenderTarget` (base), `WgpuScreenRenderTarget`, `W
 
 **Clear loop fix:** the broadcast-color clear path currently iterates `target.textures.length`. With the base type, it iterates `target.colorAttachments` — the declared count, not the storage array length. This is correct for both screen (1 color attachment, no textures array) and offscreen (colorAttachments === textures.length).
 
-### 2. Screen render target — lazy accessor, context state internal
+### 2. Screen render target takes the driver handle directly
 
-The screen render target is created via a lazy accessor. Context state is an internal detail, not user-facing.
+Context state is an internal detail. The user passes the driver handle they already have — `GlContext` (aliased to `WebGL2RenderingContext` on web, EGL/WGL/GLX in C++) or `GPUDevice` — and the creation function builds context state internally:
 
 ```typescript
-// GL — web entry point (names the web type honestly)
-const screen = createGlScreenRenderTargetFromCanvasElement(canvas, {
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-});
+// GL — takes the driver handle, not a DOM element
+const gl = canvas.getContext('webgl2');  // user's responsibility — web-specific
+const screen = createGlScreenRenderTarget(gl);
 
 // WGPU
-const screen = createWgpuScreenRenderTargetFromCanvasElement(canvas);
+const adapter = await navigator.gpu.requestAdapter();
+const device = await adapter.requestDevice();
+const screen = createWgpuScreenRenderTarget(device, canvas);
+
+// Canvas 2D — inherently web-only, no portability suffix needed
+const screen = createCanvasScreenRenderTarget(canvas);
 ```
 
-The `FromCanvasElement` suffix marks these as web-specific. `HTMLCanvasElement` is a web type; a portable `createGlScreenRenderTarget` would take a native surface handle, not a DOM element. The naming reserves that space for the C++ port.
+Context acquisition (`canvas.getContext(...)`, `navigator.gpu.requestAdapter()`) is the caller's one-liner, not an SDK function. This keeps the SDK entry point portable: `createGlScreenRenderTarget(gl: GlContext)` has a direct C++ equivalent taking the native GL context handle, while a function taking `HTMLCanvasElement` would not.
 
-Internally, the creation function acquires the GL/WGPU context and creates the context state (`GlContextState`, `GlContextRuntime`). The user never sees these — they are implementation details of the target. The render state is then created from the screen target:
+Canvas methods use the `Canvas` prefix, which already declares web-only — no `FromCanvasElement` suffix.
+
+Internally, the creation function builds context state (`GlContextState`, `GlContextRuntime`) from the driver handle. The user never sees these. The render state is then created from the screen target:
 
 ```typescript
 const state = createGlRenderState(screen, pipeline);
@@ -120,14 +126,12 @@ Canvas 2D has a structural difference from GL/WGPU: each canvas element has its 
 
 ### 7. Context vs. context state
 
-Two separate types, both kept:
+Two separate types, both kept internally:
 
-- **Context** (`GlContext`, `GPUDevice`) — the driver handle from the platform. Not an Entity.
+- **Context** (`GlContext`, `GPUDevice`) — the driver handle from the platform. Not an Entity. The user passes this in.
 - **Context state** (`GlContextState` → `GlContextRuntime`) — Flight's bookkeeping: binding shadow, shared GPU buffers, texture caches. An Entity with a runtime.
 
-`createGlContext*` cannot return an Entity-with-runtime because the name reads as "create a WebGL context." The wrapper earns its name precisely because it is not the context: `createGlContextState(gl)` says "take this context and build the state tracking around it."
-
-Context state is internal to the screen render target creation. The user does not create or reference it directly.
+`createGlContextState(gl)` still exists as an internal function — it takes the driver handle and builds the tracking around it. But the user never calls it: `createGlScreenRenderTarget(gl)` calls it internally, and the render state extracts the context state from the screen target. The driver handle is the only GPU-layer input the user provides.
 
 ## Resulting render loop
 
@@ -135,13 +139,19 @@ Context state is internal to the screen render target creation. The user does no
 // ─── Construction: backend-specific, honestly different ───
 
 // GL (web)
-const screen = createGlScreenRenderTargetFromCanvasElement(canvas, { ... });
+const gl = canvas.getContext('webgl2');
+const screen = createGlScreenRenderTarget(gl);
 const state = createGlRenderState(screen, pipeline);
 // ...register renderers, texture resolvers, blend support...
 
 // WGPU (web)
-const screen = createWgpuScreenRenderTargetFromCanvasElement(canvas);
+const device = await adapter.requestDevice();
+const screen = createWgpuScreenRenderTarget(device, canvas);
 const state = createWgpuRenderState(screen, pipeline);
+
+// Canvas 2D (web-only)
+const screen = createCanvasScreenRenderTarget(canvas);
+const state = createCanvasRenderState(screen, pipeline);
 
 // DOM (web-only, no target/pass model)
 const state = createDomRenderState(element, pipeline);
@@ -180,7 +190,7 @@ renderDomScene2D(state, root);
 | Rename `WgpuRenderTarget` → `WgpuTextureRenderTarget` | All files referencing the type (types, render-wgpu, scene2d-wgpu, effects-wgpu, tests) |
 | New `GlRenderTarget` base type | types |
 | New `GlScreenRenderTarget` / `WgpuScreenRenderTarget` | types, render-gl, render-wgpu |
-| Screen target creation functions | render-gl, render-wgpu, scene2d-canvas |
+| Screen target creation (takes driver handle directly) | render-gl, render-wgpu, scene2d-canvas |
 | Pass handle type + pooling | render-gl, render-wgpu, scene2d-canvas |
 | Draw functions take pass instead of state | scene2d-gl, scene2d-wgpu, scene2d-canvas, scene3d-gl, scene3d-wgpu, effects-* |
 | Remove `backgroundColor` from RenderState | types, render (base), all backends, all examples/tools |
