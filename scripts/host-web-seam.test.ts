@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { TEST_RUN_COMPLETENESS_ENV } from './testRunCompleteness';
+
 // The host-web seam cleanup moved every browser-typed image, bitmap and atlas convenience out of the
 // portable packages. Its success condition is an ABSENCE, which is exactly the kind of property that
 // decays silently: re-adding one HTMLCanvasElement parameter to @flighthq/image breaks no test and fails
@@ -114,10 +116,15 @@ describe('portable dimension-resolver isolation', () => {
   for (const file of ISOLATED_FILES) {
     it(`passes with nothing else loaded: ${file}`, () => {
       const repositoryRoot = resolve(import.meta.dirname, '..');
+      // The completeness reporter writes to one file named by an environment variable. Inheriting it
+      // would point this child at the parent run's report — the child would overwrite it and delete the
+      // directory on the way out, failing the whole outer run with no failing test to explain it.
+      const { [TEST_RUN_COMPLETENESS_ENV]: _parentReport, ...childEnvironment } = process.env;
       const run = (): void => {
         execFileSync('npx', ['vitest', 'run', '--config', 'vitest.config.ts', file], {
           cwd: repositoryRoot,
           encoding: 'utf-8',
+          env: childEnvironment,
           stdio: 'pipe',
         });
       };
