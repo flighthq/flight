@@ -1,7 +1,7 @@
 import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   connectCanvasTextureResolverMisses,
@@ -17,9 +17,7 @@ import {
   registerCanvasImageTextureResolver,
   registerGlShapeCommands,
   registerGlShapeRasterizer,
-  registerGlStandardMaterial,
   registerRenderer,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
@@ -33,7 +31,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x1a1a2eff,
@@ -41,9 +39,6 @@ export const state = createGlRenderState(
   },
 );
 enableFlightDiagnostics(state);
-
-registerStandardGlTextureResolvers(state);
-registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set

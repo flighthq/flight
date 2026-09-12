@@ -1,7 +1,7 @@
 import { webCanvasRenderSurfaceCreator, webHostImage, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   connectCanvasTextureResolverMisses,
@@ -20,9 +20,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerGlStandardMaterial,
   registerRenderer,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -38,7 +36,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0xffffffff,
@@ -47,9 +45,6 @@ export const state = createGlRenderState(
   },
 );
 enableFlightDiagnostics(state);
-
-registerStandardGlTextureResolvers(state);
-registerGlStandardMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 

@@ -1,7 +1,7 @@
 import { webCanvasRenderSurfaceCreator, webHostImage, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   createGlContextFromCanvasElement,
   connectCanvasTextureResolverMisses,
@@ -19,9 +19,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerGlStandardMaterial,
   registerRenderer,
-  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
@@ -37,7 +35,7 @@ export const state = createGlRenderState(
   createGlContextState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     backgroundColor: 0x101827ff,
     pixelRatio,
@@ -46,9 +44,6 @@ export const state = createGlRenderState(
   },
 );
 enableFlightDiagnostics(state);
-
-registerStandardGlTextureResolvers(state);
-registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill

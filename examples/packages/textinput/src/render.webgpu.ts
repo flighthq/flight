@@ -6,7 +6,7 @@ import {
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
   defaultWgpuRichTextRenderer,
@@ -20,7 +20,6 @@ import {
   registerCanvasShapeCommands,
   registerRenderer,
   registerWgpuShapeRasterizer,
-  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   RichTextKind,
@@ -34,15 +33,13 @@ export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0xd0d0d0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
 enableFlightDiagnostics(state);
-
-registerWgpuStandardMaterial(state);
 registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 

@@ -6,7 +6,7 @@ import {
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderStateFromCanvasElement,
-  scene2DWgpuPipeline,
+  scene3DWgpuPipeline,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   enableFlightDiagnostics,
@@ -16,7 +16,6 @@ import {
   registerRenderer,
   registerWgpuShapeCommands,
   registerWgpuShapeRasterizer,
-  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   ShapeKind,
@@ -27,14 +26,12 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2DWgpuPipeline, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene3DWgpuPipeline, {
   pixelRatio,
   backgroundColor: 0x1a1a2eff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 enableFlightDiagnostics(state);
-
-registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
