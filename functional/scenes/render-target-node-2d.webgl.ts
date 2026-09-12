@@ -112,10 +112,15 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
-renderIntoGlRenderTexture(state, renderTexture, (pass) => {
-  prepareScene3DRender(pass.state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
-});
+renderIntoGlRenderTexture(
+  state,
+  renderTexture,
+  (pass) => {
+    prepareScene3DRender(pass.state, scene, camera, lights);
+    drawGlScene3D(pass, scene, camera, lights);
+  },
+  { color: [0x05 / 0xff, 0x07 / 0xff, 0x0d / 0xff, 1], depth: 1.0, stencil: 0 },
+);
 render(root);
 
 export function assertRender(frame: Readonly<Bitmap>): void {
