@@ -55,5 +55,8 @@
     "typescript": "^5.3.0"
   },
   "description": "Dependency-injected Capacitor Host providers over a minimal CapacitorApi",
+  "flight": {
+    "environment": "capacitor"
+  },
   "sideEffects": false
 }

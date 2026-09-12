@@ -47,5 +47,8 @@
     "typescript": "^5.3.0"
   },
   "description": "Command-line access to registry inventory without choosing generated source policy",
+  "flight": {
+    "environment": "node"
+  },
   "sideEffects": false
 }
