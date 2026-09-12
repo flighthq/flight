@@ -630,8 +630,28 @@
       "registrar": "registerWgpuWhiteBalanceEffect"
     },
     {
-      "packageName": "image-codec",
+      "packageName": "host-web",
       "registrar": "registerImageBitmapComposer"
+    },
+    {
+      "packageName": "host-web",
+      "registrar": "registerWebImageDecoders"
+    },
+    {
+      "packageName": "host-web",
+      "registrar": "registerWebImageDimensionResolver"
+    },
+    {
+      "packageName": "host-web",
+      "registrar": "registerWebImageEncoders"
+    },
+    {
+      "packageName": "image",
+      "registrar": "registerHostImageDimensionResolver"
+    },
+    {
+      "packageName": "image",
+      "registrar": "registerImageBitmapCompositionResolver"
     },
     {
       "packageName": "image-codec",
@@ -640,14 +660,6 @@
     {
       "packageName": "image-codec",
       "registrar": "registerImageEncoder"
-    },
-    {
-      "packageName": "image-codec",
-      "registrar": "registerWebImageDecoders"
-    },
-    {
-      "packageName": "image-codec",
-      "registrar": "registerWebImageEncoders"
     },
     {
       "packageName": "interaction",
