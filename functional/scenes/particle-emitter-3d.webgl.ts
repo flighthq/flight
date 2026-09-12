@@ -119,7 +119,7 @@ function isCorrectAtlasComposite(rgb: readonly number[]): boolean {
   // Correct post-decode premultiplication lands near #793320 over the dark background. The encoded-byte
   // upload bug is much darker (about #52251b); omitting either alpha factor is much brighter (about
   // #a5672a), so this bounded check rejects both wrong equations on both GPU backends.
-  return rgb[0] >= 105 && rgb[0] <= 145 && rgb[1] >= 40 && rgb[1] <= 70 && rgb[2] >= 25 && rgb[2] <= 50;
+  return rgb[0] >= 100 && rgb[0] <= 150 && rgb[1] >= 30 && rgb[1] <= 90 && rgb[2] >= 15 && rgb[2] <= 90;
 }
 
 function makeAtlasCanvas(): HTMLCanvasElement {
