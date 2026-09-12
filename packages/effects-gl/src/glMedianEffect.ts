@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, MedianEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  MedianEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -14,8 +19,8 @@ const MAX_SAMPLES = (MAX_MEDIAN_EFFECT_GL_RADIUS * 2 + 1) * (MAX_MEDIAN_EFFECT_G
 // Preserves edges while removing salt-and-pepper noise. A single GPU pass — no scratch targets.
 export function applyMedianEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<MedianEffect>,
 ): void {
   const radius = Math.min(MAX_MEDIAN_EFFECT_GL_RADIUS, Math.max(0, Math.round(effect.radius ?? 1)));

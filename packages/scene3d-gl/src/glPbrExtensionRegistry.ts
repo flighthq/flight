@@ -72,7 +72,9 @@ export function explainGlPbrExtensions(
   if (
     transmissionSceneColorKind !== null &&
     sceneColor !== null &&
-    activeTarget?.textures.includes(sceneColor.texture) === true
+    activeTarget != null &&
+    'textures' in activeTarget &&
+    activeTarget.textures.includes(sceneColor.texture) === true
   ) {
     issues.push({ code: 'framebuffer-feedback', kind: transmissionSceneColorKind });
   }

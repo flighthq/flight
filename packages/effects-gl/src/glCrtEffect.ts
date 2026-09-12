@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { CrtEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { CrtEffect, GlRenderEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -8,8 +8,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // the channels outward (chromatic aberration) for a tube-monitor look.
 export function applyCrtEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<CrtEffect>,
 ): void {
   const curvature = effect.curvature ?? 0.1;

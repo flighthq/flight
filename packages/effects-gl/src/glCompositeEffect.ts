@@ -4,7 +4,7 @@ import type {
   CompositeOperator,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
@@ -25,8 +25,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // erroring.
 export function applyCompositeEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<CompositeEffect>,
 ): void {
   const backdrop = getGlBlendEffectBackdrop(state, effect.backdropKey ?? null);

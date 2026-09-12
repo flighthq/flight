@@ -1,8 +1,8 @@
 import {
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   drawGlFullscreenPass,
   getGlRenderTextureTarget,
-  releaseGlRenderTarget,
+  releaseGlTextureRenderTarget,
   withGlRenderState,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
@@ -10,7 +10,7 @@ import type {
   BlurEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   RenderTexture,
 } from '@flighthq/types/contract';
 
@@ -27,9 +27,9 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // distinct ping-pong `temp` target is cleared by this entry point.
 export function applyBlurEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  temp: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  temp: Readonly<GlTextureRenderTarget>,
   effect: Readonly<BlurEffect>,
 ): void {
   applyGaussianBlurToGl(state, source, dest, temp, { blurX: effect.blurX, blurY: effect.blurY });
@@ -53,9 +53,9 @@ export function applyBlurEffectToGlRenderTextures(
 // scratch distinct from both.
 export function applyGaussianBlurToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  temp: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  temp: Readonly<GlTextureRenderTarget>,
   options: Readonly<{ blurX?: number; blurY?: number }>,
 ): void {
   const sigmaX = options.blurX ?? 4;
@@ -93,9 +93,9 @@ export function applyGaussianBlurToGlRenderTextures(
 
 export const defaultGlBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
-  const temp = acquireGlRenderTarget(ctx.state, ctx.pool, descriptor);
+  const temp = acquireGlTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToGl(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
-  releaseGlRenderTarget(ctx.pool, temp);
+  releaseGlTextureRenderTarget(ctx.pool, temp);
 };
 
 export function registerGlBlurEffect(state: GlRenderState): void {
@@ -104,8 +104,8 @@ export function registerGlBlurEffect(state: GlRenderState): void {
 
 function applyGlGaussianBlurPass(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   sigma: number,
   radius: number,
   dirX: number,

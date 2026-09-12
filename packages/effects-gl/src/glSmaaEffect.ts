@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SmaaEffect } from '@flighthq/types/contract';
+import type { GlRenderEffectRunner, GlRenderState, GlTextureRenderTarget, SmaaEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -9,8 +9,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // softens detected edges only and is acceptable until the multi-pass recipe lands.
 export function applySmaaEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<SmaaEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.1;

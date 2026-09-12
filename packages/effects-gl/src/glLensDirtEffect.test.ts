@@ -1,6 +1,6 @@
 import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as glBlurEffect from './glBlurEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -10,7 +10,7 @@ let nextTargetId = 0;
 
 beforeEach(() => {
   nextTargetId = 0;
-  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGlContract, 'acquireGlTextureRenderTarget').mockImplementation(((
     _state: never,
     _pool: never,
     descriptor: never,
@@ -20,7 +20,7 @@ beforeEach(() => {
     texture: {},
   })) as never);
   vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlTextureRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(glBlurEffect, 'applyGaussianBlurToGl').mockImplementation((() => {}) as never);
   vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((_state: never, key: never) => ({
     program: key,
@@ -54,10 +54,14 @@ describe('applyLensDirtEffectToGl', () => {
       }),
     );
 
-    expect(renderGlContract.acquireGlRenderTarget).toHaveBeenCalledTimes(3);
+    expect(renderGlContract.acquireGlTextureRenderTarget).toHaveBeenCalledTimes(3);
     const [bright, blurred, temp] = vi
-      .mocked(renderGlContract.acquireGlRenderTarget)
-      .mock.results.map((result) => result.value!) as [GlRenderTarget, GlRenderTarget, GlRenderTarget];
+      .mocked(renderGlContract.acquireGlTextureRenderTarget)
+      .mock.results.map((result) => result.value!) as [
+      GlTextureRenderTarget,
+      GlTextureRenderTarget,
+      GlTextureRenderTarget,
+    ];
     expect(glEffectProgramCache.getGlEffectProgram).toHaveBeenNthCalledWith(
       1,
       state,
@@ -90,9 +94,9 @@ describe('applyLensDirtEffectToGl', () => {
       dest,
       expect.any(Function),
     );
-    expect(renderGlContract.releaseGlRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
-    expect(renderGlContract.releaseGlRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
-    expect(renderGlContract.releaseGlRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
+    expect(renderGlContract.releaseGlTextureRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
+    expect(renderGlContract.releaseGlTextureRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
+    expect(renderGlContract.releaseGlTextureRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
 
     const uniform1f = vi.fn();
     const gl = { getUniformLocation: vi.fn((_program, name) => name), uniform1f };
@@ -123,8 +127,8 @@ function createState(): never {
   return { gl: {} } as never;
 }
 
-function createTarget(id: string): GlRenderTarget {
-  return { format: 'rgba8', height: 16, id, texture: {}, width: 32 } as unknown as GlRenderTarget;
+function createTarget(id: string): GlTextureRenderTarget {
+  return { format: 'rgba8', height: 16, id, texture: {}, width: 32 } as unknown as GlTextureRenderTarget;
 }
 
 describe('registerGlLensDirtEffect', () => {

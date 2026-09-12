@@ -1,5 +1,11 @@
 import { beginGlRenderPass, endGlRenderPass, presentGlRenderTarget } from '@flighthq/render-gl/contract';
-import type { Camera3D, GlRenderState, GlRenderTarget, Scene3DLightsLike, Node3D } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  GlRenderState,
+  GlTextureRenderTarget,
+  Scene3DLightsLike,
+  Node3D,
+} from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 
@@ -12,12 +18,12 @@ import { drawGlScene3D } from './drawGlScene3D';
 // Note the asymmetry with the old version is gone: there is no presentGlNode2D twin, because
 // `presentGlRenderTarget` is subject-agnostic — a 2D-offscreen path presents through the very same call.
 //
-// `target` is the caller-owned linear intermediate: create once via createGlRenderTarget({ width,
+// `target` is the caller-owned linear intermediate: create once via createGlTextureRenderTarget({ width,
 // height, format: 'rgba16f', depth: 'depth-stencil', colorSpace: 'linear' }) and resize it to the canvas
 // each frame before calling.
 export function presentGlScene3D(
   state: GlRenderState,
-  target: GlRenderTarget,
+  target: GlTextureRenderTarget,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,

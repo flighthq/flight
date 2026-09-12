@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 
@@ -10,8 +10,8 @@ import { getGlEffectProgram } from './glEffectProgramCache';
 // RGB result is clamped, matching the per-op color passes this replaces.
 export function applyColorMatrixPassToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   matrix: ReadonlyArray<number>,
 ): void {
   const m = new Float32Array(20);

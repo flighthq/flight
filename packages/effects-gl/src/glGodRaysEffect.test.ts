@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { applyGodRaysEffectToGl, defaultGlGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
@@ -46,7 +46,7 @@ function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): void {
   vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
-  const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
+  const target = { height: 64, texture: {}, width: 64 } as unknown as GlTextureRenderTarget;
   applyGodRaysEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createGodRaysEffect(effect));
 }
 
@@ -113,7 +113,7 @@ describe('defaultGlGodRaysEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
     glMock.uniform2f.mockClear();
-    const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlGodRaysEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,

@@ -2,7 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   ScreenSpaceFogEffect,
 } from '@flighthq/types/contract';
 
@@ -17,8 +17,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // ctx.sceneDepthTexture seam: real depth path when present, sentinel proxy when null.
 export function applyScreenSpaceFogEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   depthTexture: WebGLTexture | null,
   effect: Readonly<ScreenSpaceFogEffect>,
 ): void {

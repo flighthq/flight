@@ -3,7 +3,7 @@ import type {
   CameraMotionBlurEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -15,8 +15,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // velocity), and per-object motion blur reading ctx.sceneVelocityTexture (per-node prev-transform delta).
 export function applyCameraMotionBlurEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<CameraMotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;

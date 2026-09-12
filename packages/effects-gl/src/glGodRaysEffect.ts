@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  GodRaysEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -9,8 +14,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // decay and weight, then scales by exposure. A true single-pass recipe — no depth needed.
 export function applyGodRaysEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;

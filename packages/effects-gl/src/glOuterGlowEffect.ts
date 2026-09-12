@@ -1,10 +1,14 @@
-import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
+import {
+  acquireGlTextureRenderTarget,
+  clearGlRenderTarget,
+  releaseGlTextureRenderTarget,
+} from '@flighthq/render-gl/contract';
 import type {
   OuterGlowEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
@@ -20,18 +24,18 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // only, and 'knockout' composites glow then erases the source silhouette.
 export function applyOuterGlowEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<OuterGlowEffect>,
 ): void {
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireGlRenderTarget(state, pool, descriptor);
-  const s1 = acquireGlRenderTarget(state, pool, descriptor);
-  const s2 = acquireGlRenderTarget(state, pool, descriptor);
+  const s0 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireGlTextureRenderTarget(state, pool, descriptor);
 
-  const src = source as GlRenderTarget;
-  const dst = dest as GlRenderTarget;
+  const src = source as GlTextureRenderTarget;
+  const dst = dest as GlTextureRenderTarget;
 
   const color = effect.color ?? 0xff0000ff;
   const alpha = effect.alpha ?? 1;
@@ -62,9 +66,9 @@ export function applyOuterGlowEffectToGl(
     applyGlEffectBlitPass(state, src, dst);
   }
 
-  releaseGlRenderTarget(pool, s0);
-  releaseGlRenderTarget(pool, s1);
-  releaseGlRenderTarget(pool, s2);
+  releaseGlTextureRenderTarget(pool, s0);
+  releaseGlTextureRenderTarget(pool, s1);
+  releaseGlTextureRenderTarget(pool, s2);
 }
 
 export const defaultGlOuterGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {

@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
-  const target = { height: 60, texture: {}, width: 80 } as unknown as GlRenderTarget;
+  const target = { height: 60, texture: {}, width: 80 } as unknown as GlTextureRenderTarget;
   applyScanlinesEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createScanlinesEffect(effect));
 }
 
@@ -97,7 +97,7 @@ describe('applyScanlinesEffectToGl', () => {
 
 describe('defaultGlScanlinesEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
-    const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlScanlinesEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,

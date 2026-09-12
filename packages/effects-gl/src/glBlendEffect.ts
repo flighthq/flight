@@ -4,7 +4,7 @@ import type {
   BlendEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
@@ -23,8 +23,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // transparent backdrop, which reduces to source-over passthrough rather than erroring.
 export function applyBlendEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<BlendEffect>,
 ): void {
   const backdrop = getGlBlendEffectBackdrop(state, effect.backdropKey ?? null);

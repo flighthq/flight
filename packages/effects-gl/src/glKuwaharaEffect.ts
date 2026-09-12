@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, KuwaharaEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  KuwaharaEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -9,8 +14,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // regions while keeping edges crisp. `radius` gates the sampled extent.
 export function applyKuwaharaEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<KuwaharaEffect>,
 ): void {
   const radius = effect.radius ?? 3;

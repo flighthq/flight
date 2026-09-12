@@ -1,5 +1,5 @@
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 // Blits a tinted texture at a UV offset. Out-of-bounds samples produce transparent output.
@@ -53,8 +53,8 @@ const eraseShaders = new WeakMap<GlContext, GlFullscreenProgram>();
  */
 export function applyGlEffectBlitOffsetPass(
   state: GlRenderState,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
   dx: number,
   dy: number,
 ): void {
@@ -65,13 +65,21 @@ export function applyGlEffectBlitOffsetPass(
 }
 
 /** Blits source directly into dest without modification. */
-export function applyGlEffectBlitPass(state: GlRenderState, source: GlRenderTarget, dest: GlRenderTarget): void {
+export function applyGlEffectBlitPass(
+  state: GlRenderState,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
+): void {
   const loc = getGlBlitShader(state);
   drawGlFullscreenPass(state, loc, [source.texture], dest, () => {});
 }
 
 /** Erases dest by the source alpha mask, equivalent to destination-out compositing. */
-export function applyGlEffectErasePass(state: GlRenderState, source: GlRenderTarget, dest: GlRenderTarget): void {
+export function applyGlEffectErasePass(
+  state: GlRenderState,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
+): void {
   const loc = getGlEraseShader(state);
   drawGlFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);

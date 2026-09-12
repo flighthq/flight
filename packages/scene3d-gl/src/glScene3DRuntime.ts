@@ -1,6 +1,6 @@
 import {
   createGlSkinPaletteTexture,
-  destroyGlRenderTarget,
+  destroyGlTextureRenderTarget,
   destroyGlSkinPaletteTexture,
 } from '@flighthq/render-gl/contract';
 import type {
@@ -56,7 +56,7 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
   destroyGlEnvironmentSkybox(state);
 
   if (scene.shadowTarget !== null) {
-    destroyGlRenderTarget(state, scene.shadowTarget);
+    destroyGlTextureRenderTarget(state, scene.shadowTarget);
     scene.shadowTarget = null;
   }
   scene.shadow = null;

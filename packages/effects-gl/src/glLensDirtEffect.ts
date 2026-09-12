@@ -1,9 +1,13 @@
-import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
+import {
+  acquireGlTextureRenderTarget,
+  drawGlFullscreenPass,
+  releaseGlTextureRenderTarget,
+} from '@flighthq/render-gl/contract';
 import type {
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
   LensDirtEffect,
 } from '@flighthq/types/contract';
 
@@ -16,18 +20,18 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // into the dark background, reducing this spatial effect to a pointwise highlight boost.
 export function applyLensDirtEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<LensDirtEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
   const threshold = effect.threshold ?? 0.55;
   const seed = effect.seed ?? 0;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const bright = acquireGlRenderTarget(state, pool, descriptor);
-  const blurred = acquireGlRenderTarget(state, pool, descriptor);
-  const temp = acquireGlRenderTarget(state, pool, descriptor);
+  const bright = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const temp = acquireGlTextureRenderTarget(state, pool, descriptor);
 
   const brightProgram = getGlEffectProgram(state, 'lens.lensDirt.bright', LENS_DIRT_BRIGHT_FRAGMENT_SRC);
   drawGlFullscreenPass(state, brightProgram, [source.texture], bright, (gl, p) => {
@@ -45,9 +49,9 @@ export function applyLensDirtEffectToGl(
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_seed'), seed);
   });
 
-  releaseGlRenderTarget(pool, bright);
-  releaseGlRenderTarget(pool, blurred);
-  releaseGlRenderTarget(pool, temp);
+  releaseGlTextureRenderTarget(pool, bright);
+  releaseGlTextureRenderTarget(pool, blurred);
+  releaseGlTextureRenderTarget(pool, temp);
 }
 
 export const defaultGlLensDirtEffectRunner: GlRenderEffectRunner = (ctx, effect) => {

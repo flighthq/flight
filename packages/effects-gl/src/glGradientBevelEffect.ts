@@ -1,9 +1,9 @@
 import {
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   clearGlRenderTarget,
   compileGlFullscreenProgram,
   drawGlFullscreenPass,
-  releaseGlRenderTarget,
+  releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
@@ -11,8 +11,8 @@ import type {
   GlFullscreenProgram,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
@@ -71,18 +71,18 @@ const applyShaders = new WeakMap<GlContext, BevelApplyLocations>();
 // highlight edge) to colors, building a temporary `WebGLTexture` per call.
 export function applyGradientBevelEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<GradientBevelEffect>,
 ): void {
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireGlRenderTarget(state, pool, descriptor);
-  const s1 = acquireGlRenderTarget(state, pool, descriptor);
-  const s2 = acquireGlRenderTarget(state, pool, descriptor);
+  const s0 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireGlTextureRenderTarget(state, pool, descriptor);
 
-  const src = source as GlRenderTarget;
-  const dst = dest as GlRenderTarget;
+  const src = source as GlTextureRenderTarget;
+  const dst = dest as GlTextureRenderTarget;
 
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
@@ -117,9 +117,9 @@ export function applyGradientBevelEffectToGl(
     applyGlEffectErasePass(state, src, dst);
   }
 
-  releaseGlRenderTarget(pool, s0);
-  releaseGlRenderTarget(pool, s1);
-  releaseGlRenderTarget(pool, s2);
+  releaseGlTextureRenderTarget(pool, s0);
+  releaseGlTextureRenderTarget(pool, s1);
+  releaseGlTextureRenderTarget(pool, s2);
 }
 
 export const defaultGlGradientBevelEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
@@ -132,10 +132,10 @@ export function registerGlGradientBevelEffect(state: GlRenderState): void {
 
 function applyBevelApplyPass(
   state: GlRenderState,
-  encoded: GlRenderTarget,
+  encoded: GlTextureRenderTarget,
   ramp: WebGLTexture,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
 ): void {
   const loc = getApplyShader(state);
   drawGlFullscreenPass(state, loc, [encoded.texture], dest, (gl) => {
@@ -152,8 +152,8 @@ function applyBevelApplyPass(
 
 function applyBevelEncodePass(
   state: GlRenderState,
-  blurred: GlRenderTarget,
-  dest: GlRenderTarget,
+  blurred: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
   dx: number,
   dy: number,
 ): void {

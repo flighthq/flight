@@ -15,7 +15,7 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGlContract, 'acquireGlTextureRenderTarget').mockImplementation(((
     _state: never,
     _pool: never,
     descriptor: never,
@@ -27,7 +27,7 @@ beforeEach(() => {
     vao: {},
   })) as never);
   vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlTextureRenderTarget').mockImplementation((() => {}) as never);
 
   vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitOffsetPass').mockImplementation((() => {}) as never);
   vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);

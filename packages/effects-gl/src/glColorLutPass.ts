@@ -4,7 +4,7 @@ import type {
   ColorLut,
   GlColorLutTextureCache,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -20,8 +20,8 @@ import { getGlEffectProgram } from './glEffectProgramCache';
 // uploads once. The caller owns `cache.texture` and destroys it on teardown.
 export function applyColorLutPassToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   lut: Readonly<ColorLut>,
   cache: GlColorLutTextureCache,
 ): void {

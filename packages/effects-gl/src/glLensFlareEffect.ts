@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, LensFlareEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  LensFlareEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -11,8 +16,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // buffer.
 export function applyLensFlareEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<LensFlareEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;

@@ -1,10 +1,10 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
 import {
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   clearGlRenderTarget,
   compileGlFullscreenProgram,
   drawGlFullscreenPass,
-  releaseGlRenderTarget,
+  releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
@@ -12,8 +12,8 @@ import type {
   GlFullscreenProgram,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
@@ -56,18 +56,18 @@ const clipShaders = new WeakMap<GlContext, InnerClipLocations>();
 //   4. Composite: source (unless sourceMode is 'hide') + clipped glow.
 export function applyInnerGlowEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<InnerGlowEffect>,
 ): void {
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireGlRenderTarget(state, pool, descriptor);
-  const s1 = acquireGlRenderTarget(state, pool, descriptor);
-  const s2 = acquireGlRenderTarget(state, pool, descriptor);
+  const s0 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireGlTextureRenderTarget(state, pool, descriptor);
 
-  const src = source as GlRenderTarget;
-  const dst = dest as GlRenderTarget;
+  const src = source as GlTextureRenderTarget;
+  const dst = dest as GlTextureRenderTarget;
 
   const color = effect.color ?? 0xff0000ff;
   const alpha = effect.alpha ?? 1;
@@ -98,9 +98,9 @@ export function applyInnerGlowEffectToGl(
   }
   applyGlEffectBlitPass(state, s0, dst);
 
-  releaseGlRenderTarget(pool, s0);
-  releaseGlRenderTarget(pool, s1);
-  releaseGlRenderTarget(pool, s2);
+  releaseGlTextureRenderTarget(pool, s0);
+  releaseGlTextureRenderTarget(pool, s1);
+  releaseGlTextureRenderTarget(pool, s2);
 }
 
 export const defaultGlInnerGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
@@ -113,9 +113,9 @@ export function registerGlInnerGlowEffect(state: GlRenderState): void {
 
 function applyGlInnerClipPass(
   state: GlRenderState,
-  glow: GlRenderTarget,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  glow: GlTextureRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
 ): void {
   const loc = getClipShader(state);
   drawGlFullscreenPass(state, loc, [glow.texture, source.texture], dest, (gl) => {

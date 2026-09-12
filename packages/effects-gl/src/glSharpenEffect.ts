@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SharpenEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  SharpenEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -7,8 +12,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
 export function applySharpenEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<SharpenEffect>,
 ): void {
   const amount = effect.amount ?? 0.5;

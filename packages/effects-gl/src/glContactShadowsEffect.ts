@@ -3,7 +3,7 @@ import type {
   ContactShadowsEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -14,8 +14,8 @@ import { applySsaoEffectToGl } from './glSsaoEffect';
 // descriptor a real, replaceable runner without pulling an all-effects registrar into the bundle.
 export function applyContactShadowsEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<ContactShadowsEffect>,
 ): void {
   applySsaoEffectToGl(

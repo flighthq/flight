@@ -4,18 +4,18 @@ import {
   createGlContextFromCanvasElement,
   createGlContextState,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   destroyGlRenderState,
-  destroyGlRenderTarget,
+  destroyGlTextureRenderTarget,
   invalidateGlRenderStateCache,
-  resizeGlRenderTarget,
+  resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
   ApplicationWindow,
   GlApplicationRenderView,
   GlApplicationRenderViewOptions,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 // Allocates the GL realization of an ApplicationRenderView. Creation does not attach the resize signal;
@@ -37,7 +37,7 @@ export function createGlApplicationRenderView(
     ...options.render,
     pixelRatio: window.devicePixelRatio,
   });
-  const renderTarget = createGlRenderTarget(renderState, {
+  const renderTarget = createGlTextureRenderTarget(renderState, {
     ...options.target,
     height,
     width,
@@ -61,14 +61,14 @@ export function createGlApplicationRenderView(
 // createGlApplicationRenderView. The canvas and ApplicationWindow remain caller-owned.
 export function destroyGlApplicationRenderView(view: GlApplicationRenderView): void {
   detachApplicationRenderView(view);
-  destroyGlRenderTarget(view.renderState, view.renderTarget);
+  destroyGlTextureRenderTarget(view.renderState, view.renderTarget);
   destroyGlRenderState(view.renderState);
 }
 
 function resizeGlApplicationRenderView(
   canvas: HTMLCanvasElement,
   renderState: GlRenderState,
-  renderTarget: GlRenderTarget,
+  renderTarget: GlTextureRenderTarget,
   width: number,
   height: number,
 ): void {
@@ -78,7 +78,7 @@ function resizeGlApplicationRenderView(
   const storageWidth = Math.max(1, Math.ceil(width));
   const storageHeight = Math.max(1, Math.ceil(height));
   if (renderTarget.width !== storageWidth || renderTarget.height !== storageHeight) {
-    resizeGlRenderTarget(renderState, renderTarget, width, height);
+    resizeGlTextureRenderTarget(renderState, renderTarget, width, height);
   }
 }
 

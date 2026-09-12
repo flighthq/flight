@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { DisplacementEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  DisplacementEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -7,8 +12,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
 export function applyDisplacementEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<DisplacementEffect>,
 ): void {
   const intensity = effect.intensity ?? 8;

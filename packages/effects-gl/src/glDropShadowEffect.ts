@@ -1,10 +1,14 @@
-import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
+import {
+  acquireGlTextureRenderTarget,
+  clearGlRenderTarget,
+  releaseGlTextureRenderTarget,
+} from '@flighthq/render-gl/contract';
 import type {
   DropShadowEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
@@ -20,18 +24,18 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // shadow only, and 'knockout' composites shadow then erases the un-offset source silhouette.
 export function applyDropShadowEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<DropShadowEffect>,
 ): void {
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireGlRenderTarget(state, pool, descriptor);
-  const s1 = acquireGlRenderTarget(state, pool, descriptor);
-  const s2 = acquireGlRenderTarget(state, pool, descriptor);
+  const s0 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireGlTextureRenderTarget(state, pool, descriptor);
 
-  const src = source as GlRenderTarget;
-  const dst = dest as GlRenderTarget;
+  const src = source as GlTextureRenderTarget;
+  const dst = dest as GlTextureRenderTarget;
 
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
@@ -68,9 +72,9 @@ export function applyDropShadowEffectToGl(
     applyGlEffectBlitPass(state, src, dst);
   }
 
-  releaseGlRenderTarget(pool, s0);
-  releaseGlRenderTarget(pool, s1);
-  releaseGlRenderTarget(pool, s2);
+  releaseGlTextureRenderTarget(pool, s0);
+  releaseGlTextureRenderTarget(pool, s1);
+  releaseGlTextureRenderTarget(pool, s2);
 }
 
 export const defaultGlDropShadowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {

@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlitchEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { applyGlitchEffectToGl, defaultGlGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
@@ -54,7 +54,7 @@ function apply(effect: Readonly<Partial<GlitchEffect>> = {}): void {
   vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
-  const target = { height: FRAME_ROWS, texture: {}, width: 200 } as unknown as GlRenderTarget;
+  const target = { height: FRAME_ROWS, texture: {}, width: 200 } as unknown as GlTextureRenderTarget;
   applyGlitchEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createGlitchEffect(effect));
 }
 
@@ -132,7 +132,7 @@ describe('applyGlitchEffectToGl', () => {
 describe('defaultGlGlitchEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
-    const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlGlitchEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,

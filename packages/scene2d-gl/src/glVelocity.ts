@@ -8,12 +8,12 @@ import {
 } from '@flighthq/node/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createGlRenderTarget } from '@flighthq/render-gl/contract';
+import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
   GlContext,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   GlVelocityContext,
   GlVelocityWriter,
   Kind,
@@ -41,8 +41,8 @@ import { getVelocity } from '@flighthq/velocity/contract';
 // top-left origin, y-down; drawGlVelocityQuad maps a rect into clip space, flipping y.
 
 /** Allocates an rgba16f render target sized to hold a signed, sub-pixel screen-space velocity buffer. */
-export function createGlVelocityTarget(state: GlRenderState, width: number, height: number): GlRenderTarget {
-  return createGlRenderTarget(state, { width, height, format: 'rgba16f' });
+export function createGlVelocityTarget(state: GlRenderState, width: number, height: number): GlTextureRenderTarget {
+  return createGlTextureRenderTarget(state, { width, height, format: 'rgba16f' });
 }
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
@@ -281,7 +281,7 @@ export function renderGlVelocity<Traits extends object>(
   state: GlRenderState,
   root: Readonly<Transform2DNode<Traits>>,
   field: VelocityField,
-  target: Readonly<GlRenderTarget>,
+  target: Readonly<GlTextureRenderTarget>,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;

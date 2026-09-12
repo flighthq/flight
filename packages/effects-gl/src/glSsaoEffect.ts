@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SsaoEffect } from '@flighthq/types/contract';
+import type { GlRenderEffectRunner, GlRenderState, GlTextureRenderTarget, SsaoEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -11,8 +11,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // by intensity, sampling neighbors via u_resolution-derived texel steps.
 export function applySsaoEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<SsaoEffect>,
 ): void {
   const radius = effect.radius ?? 1;

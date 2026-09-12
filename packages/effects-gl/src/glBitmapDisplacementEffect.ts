@@ -3,7 +3,7 @@ import type {
   BitmapDisplacementEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   RenderEffect,
 } from '@flighthq/types/contract';
 import { ImageChannel, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
@@ -16,8 +16,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // Y means down in image space, so the GL target's bottom-left texcoord subtracts that component.
 export function applyBitmapDisplacementEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<BitmapDisplacementEffect>,
 ): void {
   const map = effect.map;

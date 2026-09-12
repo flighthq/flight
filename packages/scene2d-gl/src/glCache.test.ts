@@ -3,7 +3,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderGl from '@flighthq/render-gl/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   createGlCacheState,
@@ -19,16 +19,16 @@ import * as glQuadBatchWriter from './glQuadBatchWriter';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
 // ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested without a real
-// GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite, batch-flush and
+// GL pipeline: createGlTextureRenderTarget returns a plain descriptor, and the composite, batch-flush and
 // subtree-render calls become spies for the call and ordering assertions below.
 beforeEach(() => {
   vi.spyOn(glQuadBatchWriter, 'flushGlQuadBatchWriter').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'beginGlRenderPass').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'setGlRenderTransform2D').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGl, 'createGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGl, 'createGlTextureRenderTarget').mockImplementation(((
     _state: unknown,
     descriptor: { width: number; height: number },
-  ): GlRenderTarget => {
+  ): GlTextureRenderTarget => {
     const texture = {} as WebGLTexture;
     const out = allocateEntity<any>();
     out.requestedAxes = {
@@ -58,12 +58,12 @@ beforeEach(() => {
     out.height = descriptor.height;
     return finishEntity(out);
   }) as never);
-  vi.spyOn(renderGl, 'destroyGlRenderTarget').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGl, 'drawGlRenderTargetResult').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGl, 'destroyGlTextureRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGl, 'drawGlTextureRenderTargetResult').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'endGlRenderPass').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGl, 'resizeGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGl, 'resizeGlTextureRenderTarget').mockImplementation(((
     _state: unknown,
-    target: GlRenderTarget,
+    target: GlTextureRenderTarget,
     width: number,
     height: number,
   ) => {
@@ -121,7 +121,7 @@ describe('defaultGlRenderCacheRenderer', () => {
   it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
     defaultGlRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(renderGl.drawGlRenderTargetResult).not.toHaveBeenCalled();
+    expect(renderGl.drawGlTextureRenderTargetResult).not.toHaveBeenCalled();
   });
 
   it('composites the cache target attached to the source node', () => {
@@ -131,7 +131,12 @@ describe('defaultGlRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     const target = ensureGlRenderCacheTarget(state, cache, 16, 16);
     defaultGlRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(renderGl.drawGlRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
+    expect(renderGl.drawGlTextureRenderTargetResult).toHaveBeenCalledWith(
+      state,
+      expect.anything(),
+      target,
+      expect.anything(),
+    );
   });
 
   it('flushes pending batched geometry before the immediate composite', () => {
@@ -145,7 +150,7 @@ describe('defaultGlRenderCacheRenderer', () => {
     // the walk must be drained first, or it replays after the cache result (a doubled image).
     expect(glQuadBatchWriter.flushGlQuadBatchWriter).toHaveBeenCalledWith(state);
     expect((glQuadBatchWriter.flushGlQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
-      (renderGl.drawGlRenderTargetResult as any).mock.invocationCallOrder[0],
+      (renderGl.drawGlTextureRenderTargetResult as any).mock.invocationCallOrder[0],
     );
   });
 });
@@ -231,7 +236,7 @@ describe('releaseGlRenderCache', () => {
     const cache = createRenderCache();
     const target = ensureGlRenderCacheTarget(state, cache, 8, 8);
     releaseGlRenderCache(state, cache);
-    expect(renderGl.destroyGlRenderTarget).toHaveBeenCalledWith(state, target);
+    expect(renderGl.destroyGlTextureRenderTarget).toHaveBeenCalledWith(state, target);
     expect(getGlRenderCacheTarget(state, cache)).toBeNull();
   });
 
@@ -239,10 +244,10 @@ describe('releaseGlRenderCache', () => {
     const state = fakeScreen();
     ensureGlRenderCacheTarget(state, createRenderCache(), 8, 8);
     ensureGlRenderCacheTarget(state, createRenderCache(), 16, 16);
-    vi.mocked(renderGl.destroyGlRenderTarget).mockClear();
+    vi.mocked(renderGl.destroyGlTextureRenderTarget).mockClear();
 
     renderGl.destroyGlRenderState(state);
 
-    expect(renderGl.destroyGlRenderTarget).toHaveBeenCalledTimes(2);
+    expect(renderGl.destroyGlTextureRenderTarget).toHaveBeenCalledTimes(2);
   });
 });

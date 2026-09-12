@@ -3,12 +3,12 @@ import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginGlRenderPass,
   createGlOffscreenRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   destroyGlRenderState,
-  destroyGlRenderTarget,
-  drawGlRenderTargetResult,
+  destroyGlTextureRenderTarget,
+  drawGlTextureRenderTargetResult,
   endGlRenderPass,
-  resizeGlRenderTarget,
+  resizeGlTextureRenderTarget,
   registerGlRenderStateTeardown,
   setGlRenderTransform2D,
 } from '@flighthq/render-gl/contract';
@@ -28,7 +28,7 @@ import type {
   GlContextState,
   GlPipeline,
   GlRenderOptions,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
@@ -72,19 +72,19 @@ export function ensureGlRenderCacheTarget(
   cache: RenderCache,
   width: number,
   height: number,
-): GlRenderTarget {
+): GlTextureRenderTarget {
   const targets = ensureTargets(ownerState);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createGlRenderTarget(ownerState, { width, height });
+    target = createGlTextureRenderTarget(ownerState, { width, height });
     targets.set(cache, target);
   } else {
-    resizeGlRenderTarget(ownerState, target, width, height);
+    resizeGlTextureRenderTarget(ownerState, target, width, height);
   }
   return target;
 }
 
-export function getGlRenderCacheTarget(ownerState: GlRenderState, cache: RenderCache): GlRenderTarget | null {
+export function getGlRenderCacheTarget(ownerState: GlRenderState, cache: RenderCache): GlTextureRenderTarget | null {
   return _renderCacheTargets.get(ownerState)?.get(cache) ?? null;
 }
 
@@ -141,8 +141,8 @@ export function releaseGlRenderCache(ownerState: GlRenderState, cache: RenderCac
   if (targets === undefined) return;
   const target = targets.get(cache);
   if (target === undefined) return;
-  // A GlRenderTarget owns a framebuffer and texture; GC will not free them.
-  destroyGlRenderTarget(ownerState, target);
+  // A GlTextureRenderTarget owns a framebuffer and texture; GC will not free them.
+  destroyGlTextureRenderTarget(ownerState, target);
   targets.delete(cache);
 }
 
@@ -158,10 +158,10 @@ function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): vo
   flushGlQuadBatchWriter(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawGlRenderTargetResult(state, renderProxy, target, _identity);
+  drawGlTextureRenderTargetResult(state, renderProxy, target, _identity);
 }
 
-function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlRenderTarget> {
+function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlTextureRenderTarget> {
   let targets = _renderCacheTargets.get(ownerState);
   if (targets === undefined) {
     targets = new Map();
@@ -174,7 +174,7 @@ function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlRenderTarg
 function destroyOwnedGlRenderCacheTargets(ownerState: GlRenderState): void {
   const targets = _renderCacheTargets.get(ownerState);
   if (targets === undefined) return;
-  for (const target of targets.values()) destroyGlRenderTarget(ownerState, target);
+  for (const target of targets.values()) destroyGlTextureRenderTarget(ownerState, target);
   targets.clear();
   _renderCacheTargets.delete(ownerState);
 }
@@ -186,7 +186,7 @@ export const defaultGlRenderCacheRenderer: Scene2DRenderer = {
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be
 // composited by several states without the handle carrying a backend resource.
-const _renderCacheTargets = new WeakMap<GlRenderState, Map<RenderCache, GlRenderTarget>>();
+const _renderCacheTargets = new WeakMap<GlRenderState, Map<RenderCache, GlTextureRenderTarget>>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _identity = createMatrix() as Matrix;

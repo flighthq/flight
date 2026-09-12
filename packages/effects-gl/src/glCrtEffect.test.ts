@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -38,7 +38,7 @@ const HALF_SCANLINE_BELOW_TOP = 1 - 0.5 / RESOLUTION_ROWS;
 
 function scanlineExpression(): string {
   programMock.getGlEffectProgram.mockClear();
-  const target = { height: RESOLUTION_ROWS, texture: {}, width: 4 } as unknown as GlRenderTarget;
+  const target = { height: RESOLUTION_ROWS, texture: {}, width: 4 } as unknown as GlTextureRenderTarget;
   applyCrtEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createCrtEffect());
   const source = programMock.getGlEffectProgram.mock.calls[0]![2] as string;
   return extractGlslExpression(source, /float line = ([^;]+);/);
@@ -99,7 +99,7 @@ describe('applyCrtEffectToGl', () => {
 describe('defaultGlCrtEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     programMock.getGlEffectProgram.mockClear();
-    const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlCrtEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,

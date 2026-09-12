@@ -3,7 +3,7 @@ import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { createGlPipeline, getGlRenderStateRuntime, registerGlTextureResolver } from '@flighthq/render-gl/contract';
 import { createTexture, getTextureUvMatrix } from '@flighthq/texture/contract';
-import type { GlPbrExtensionRegistration, GlRenderTarget, TextureSource } from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration, GlTextureRenderTarget, TextureSource } from '@flighthq/types/contract';
 
 import {
   bindGlPbrExtensions,
@@ -133,7 +133,7 @@ describe('explainGlPbrExtensions', () => {
     };
     getGlRenderStateRuntime(state).currentRenderTarget = {
       textures: [sceneColorTexture],
-    } as GlRenderTarget;
+    } as GlTextureRenderTarget;
 
     expect(explainGlPbrExtensions(state, [extension])).toEqual([
       { code: 'framebuffer-feedback', kind: 'AnisotropyPbrExtension' },
