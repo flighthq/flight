@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createImageResource } from '@flighthq/image/contract';
 import type { EntityConstruction, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+
+import { createImageResourceFromCanvas } from './webImageResource';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
   const out = allocateEntity<Raster2DSurfaceProvider>();
@@ -22,6 +23,9 @@ export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Ras
       },
       set(value: number) {
         canvas.width = value;
+        // The resource borrows this canvas, so a resize here IS its new size. Writing it through keeps
+        // the pair correct without the resource having to measure the element back through a host.
+        surface.image.width = value;
       },
       enumerable: true,
       configurable: true,
@@ -32,12 +36,13 @@ export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Ras
       },
       set(value: number) {
         canvas.height = value;
+        surface.image.height = value;
       },
       enumerable: true,
       configurable: true,
     });
     surface.context = context;
-    surface.image = createImageResource(canvas);
+    surface.image = createImageResourceFromCanvas(canvas);
     return finishEntity(surface);
   };
   out.destroyRaster2DSurface = (surface) => {
