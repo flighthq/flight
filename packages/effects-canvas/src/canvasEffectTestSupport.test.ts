@@ -1,6 +1,9 @@
+import { getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
+
 import {
   acquireTestCanvasRenderSurface,
   createCanvasRenderState,
+  createCanvasRenderStateWithoutPass,
   createCanvasTextureRenderTarget,
 } from './canvasEffectTestSupport';
 
@@ -18,6 +21,14 @@ describe('createCanvasRenderState', () => {
     const canvas = document.createElement('canvas');
 
     expect(createCanvasRenderState(canvas).canvas).toBe(canvas);
+  });
+});
+
+describe('createCanvasRenderStateWithoutPass', () => {
+  it('leaves the state with no pass open, for tests whose subject is registration', () => {
+    const state = createCanvasRenderStateWithoutPass();
+
+    expect(getCanvasActiveRenderPass(state)).toBeNull();
   });
 });
 

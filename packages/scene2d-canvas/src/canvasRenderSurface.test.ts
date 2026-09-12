@@ -1,12 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { createCanvasRenderState } from './canvasRenderState';
 import {
   acquireCanvasRenderSurface,
   createCanvasRenderSurface,
   destroyCanvasRenderSurface,
+  getCanvasSurfaceCreator,
   initializeCanvasRenderSurface,
+  registerCanvasSurfaceCreator,
 } from './canvasRenderSurface';
+import { canvasTestSurfaceCreator, createCanvasTextureResolvers } from './canvasTestSupport';
+import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
 
 function makeCreator(createRenderSurface = () => document.createElement('canvas')) {
   const destroyRenderSurface = vi.fn((canvas: HTMLCanvasElement) => {
@@ -79,8 +84,36 @@ describe('destroyCanvasRenderSurface', () => {
     expect(destroyRenderSurface).toHaveBeenCalledWith(surface.canvas);
   });
 });
+describe('getCanvasSurfaceCreator', () => {
+  // ★ THE STATE OWNS NO SURFACE, SO IT CANNOT INVENT A CANVAS. Offscreen work — cache targets, render
+  // textures — needs one, and the only honest answer to "where from" is the creator the host registered.
+  // Throwing names the missing call; returning null would surface later as a null canvas somewhere else.
+  it('throws until a creator is registered, then returns exactly that one', () => {
+    // The bare factory, not the test rig: the rig registers a creator for convenience, which is exactly
+    // what this test must not start from.
+    const state = createCanvasRenderState(scene2DCanvasPipeline, createCanvasTextureResolvers());
+    expect(() => getCanvasSurfaceCreator(state)).toThrow(/registerCanvasSurfaceCreator/);
+
+    registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+
+    expect(getCanvasSurfaceCreator(state)).toBe(canvasTestSurfaceCreator);
+  });
+});
+
 describe('initializeCanvasRenderSurface', () => {
   it('is the construction initializer of createCanvasRenderSurface', () => {
     expect(typeof initializeCanvasRenderSurface).toBe('function');
+  });
+});
+
+describe('registerCanvasSurfaceCreator', () => {
+  it('replaces the creator a state allocates through', () => {
+    const state = createCanvasRenderState(scene2DCanvasPipeline, createCanvasTextureResolvers());
+    const { creator } = makeCreator();
+
+    registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+    registerCanvasSurfaceCreator(state, creator);
+
+    expect(getCanvasSurfaceCreator(state)).toBe(creator);
   });
 });
