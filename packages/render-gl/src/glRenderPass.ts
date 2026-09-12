@@ -1,6 +1,8 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   GlContext,
+  GlRenderPass,
   GlRenderState,
   GlRenderTarget,
   GlScissorRect,
@@ -72,7 +74,7 @@ export function beginGlRenderPass(
   target: GlRenderTarget,
   clear?: Readonly<RenderTargetClear>,
   viewport?: Readonly<Viewport>,
-): void {
+): GlRenderPass {
   const gl = state.gl;
   let stack = _passStack.get(gl);
 
@@ -131,6 +133,8 @@ export function beginGlRenderPass(
   if (previousOwner !== state) invalidateGlPassBindingCache(previousRuntime);
 
   clearGlRenderPass(state, target, clear);
+
+  return acquireGlRenderPassHandle(gl, state, target);
 }
 
 // Ends the pass opened by beginGlRenderPass: restores the framebuffer binding, exact viewport/scissor,
@@ -139,7 +143,8 @@ export function beginGlRenderPass(
 // single-sample result — ready for present, effects, or sampling. A call with no matching begin throws:
 // an unbalanced pass is a programmer error, and silently accepting it hides a leaked prior pass. The
 // target is read from runtime rather than passed, so end mirrors the other backend brackets.
-export function endGlRenderPass(state: GlRenderState): void {
+export function endGlRenderPass(passOrState: GlRenderPass | GlRenderState): void {
+  const state = isGlRenderPass(passOrState) ? passOrState.state : passOrState;
   const gl = state.gl;
   const stack = _passStack.get(gl);
   if (stack === undefined) {
@@ -151,6 +156,7 @@ export function endGlRenderPass(state: GlRenderState): void {
   }
   stack.pop();
   if (stack.length === 0) _passStack.delete(gl);
+  if (isGlRenderPass(passOrState)) releaseGlRenderPassHandle(gl, passOrState);
 
   const runtime = getGlRenderStateRuntime(state);
   // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
@@ -351,9 +357,39 @@ function clampGlPassEdge(value: number, extent: number): number {
   return Math.min(extent, Math.max(0, value));
 }
 
+function isGlRenderPass(value: GlRenderPass | GlRenderState): value is GlRenderPass {
+  return 'state' in value && 'target' in value;
+}
+
+function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, target: GlRenderTarget): GlRenderPass {
+  let pool = _passHandlePool.get(gl);
+  if (pool !== undefined && pool.length > 0) {
+    const handle = pool.pop()! as { gl: GlContext; state: GlRenderState; target: GlRenderTarget };
+    handle.gl = gl;
+    handle.state = state;
+    handle.target = target;
+    return handle as GlRenderPass;
+  }
+  const handle = allocateEntity<GlRenderPass>();
+  (handle as { gl: GlContext }).gl = gl;
+  (handle as { state: GlRenderState }).state = state;
+  (handle as { target: GlRenderTarget }).target = target;
+  return finishEntity(handle);
+}
+
+function releaseGlRenderPassHandle(gl: GlContext, handle: GlRenderPass): void {
+  let pool = _passHandlePool.get(gl);
+  if (pool === undefined) {
+    pool = [];
+    _passHandlePool.set(gl, pool);
+  }
+  pool.push(handle);
+}
+
 // A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass
 // bracket by that physical owner keeps cache GlRenderStates sharing a context in the same LIFO scope.
 const _passStack = new WeakMap<GlContext, GlPassStackEntry[]>();
+const _passHandlePool = new WeakMap<GlContext, GlRenderPass[]>();
 const _clearDepth = new Float32Array(1);
 const _clearRgba = new Float32Array(4);
 const _clearStencil = new Int32Array(1);

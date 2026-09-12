@@ -290,6 +290,7 @@ export * from './GlPbrProgram';
 export * from './GlPipeline';
 export * from './GlRenderEffectPipeline';
 export * from './GlRenderOptions';
+export * from './GlRenderPass';
 export * from './GlRenderState';
 export * from './GlRichTextOverlay';
 export * from './GlRenderStats';
