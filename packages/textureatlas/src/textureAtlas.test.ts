@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
@@ -9,6 +13,16 @@ import {
   getTextureAtlasByteSize,
   initializeTextureAtlas,
 } from './textureAtlas';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function createTextureAtlasRegionForTest(): TextureAtlasRegion {
   return {

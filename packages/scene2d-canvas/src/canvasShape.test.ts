@@ -1,5 +1,9 @@
 ﻿import { createMatrix } from '@flighthq/geometry/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import {
   enableRenderRegistryGuards,
@@ -38,6 +42,16 @@ import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from '.
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasRenderState } from './canvasTestSupport';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 // Commands are registered per render state, so each target here carries its own set — there is no
 // global to fall back on, and a state built without this helper draws nothing.

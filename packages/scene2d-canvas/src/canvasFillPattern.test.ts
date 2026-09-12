@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
 import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -7,6 +11,16 @@ import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolv
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeContext(): CanvasRenderingContext2D {
   const canvas = document.createElement('canvas');

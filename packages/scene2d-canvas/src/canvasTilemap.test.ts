@@ -1,4 +1,8 @@
-﻿import { createImageResource } from '@flighthq/image/contract';
+﻿import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { addTextureAtlasRegion, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
 import { createTilemap, setTilemapTile } from '@flighthq/tilemap/contract';
@@ -7,6 +11,16 @@ import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
 import { drawCanvasTilemap } from './canvasTilemap';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeState() {
   const canvas = document.createElement('canvas');

@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
@@ -26,6 +30,16 @@ import { defaultGlRasterShapeRenderer, drawGlRasterShape } from './glRasterShape
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
   const canvas = document.createElement('canvas');

@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
@@ -9,6 +13,16 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { defaultGlTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 // @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
 beforeEach(() => {
