@@ -1,6 +1,11 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { ConvolutionEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  ConvolutionEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -13,8 +18,8 @@ export const MAX_CONVOLUTION_EFFECT_GL_KERNEL_SIZE = 49;
 // neighborhood, normalized by `divisor` (defaults to the matrix sum) and offset by `bias`.
 export function applyConvolutionEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<ConvolutionEffect>,
 ): void {
   const { matrix, matrixX, matrixY } = effect;

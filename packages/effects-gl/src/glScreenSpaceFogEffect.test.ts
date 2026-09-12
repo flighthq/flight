@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
@@ -54,7 +54,7 @@ function apply(effect: Readonly<Partial<ScreenSpaceFogEffect>> = {}, depthTextur
   glMock.uniform1f.mockClear();
   glMock.uniform3f.mockClear();
   drawCalls.inputs.length = 0;
-  const target = { height: 64, texture: { id: 'scene' }, width: 64 } as unknown as GlRenderTarget;
+  const target = { height: 64, texture: { id: 'scene' }, width: 64 } as unknown as GlTextureRenderTarget;
   applyScreenSpaceFogEffectToGl(
     { gl: {} } as unknown as GlRenderState,
     target,
@@ -162,7 +162,7 @@ describe('defaultGlScreenSpaceFogEffectRunner', () => {
     drawCalls.inputs.length = 0;
     glMock.uniform1f.mockClear();
     const depth = { id: 'ctxDepth' } as unknown as WebGLTexture;
-    const target = { height: 8, texture: { id: 'scene' }, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: { id: 'scene' }, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlScreenSpaceFogEffectRunner(
       {

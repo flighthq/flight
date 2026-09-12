@@ -3,7 +3,7 @@ import type {
   DirectionalBlurEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -15,8 +15,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // the GL fullscreen-pass UV-Y-up direction.
 export function applyDirectionalBlurEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
   const angle = ((effect.angle ?? 0) * Math.PI) / 180;

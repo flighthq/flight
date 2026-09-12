@@ -1,9 +1,9 @@
 import {
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   clearGlRenderTarget,
   compileGlFullscreenProgram,
   drawGlFullscreenPass,
-  releaseGlRenderTarget,
+  releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
@@ -11,8 +11,8 @@ import type {
   GlFullscreenProgram,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
@@ -48,18 +48,18 @@ const lookupShaders = new WeakMap<GlContext, GradientLookupLocations>();
 // Compositing order follows `sourceMode`: gradient glow, then source draw/hide/knockout treatment.
 export function applyGradientGlowEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<GradientGlowEffect>,
 ): void {
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireGlRenderTarget(state, pool, descriptor);
-  const s1 = acquireGlRenderTarget(state, pool, descriptor);
-  const s2 = acquireGlRenderTarget(state, pool, descriptor);
+  const s0 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireGlTextureRenderTarget(state, pool, descriptor);
 
-  const src = source as GlRenderTarget;
-  const dst = dest as GlRenderTarget;
+  const src = source as GlTextureRenderTarget;
+  const dst = dest as GlTextureRenderTarget;
 
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const strength = effect.strength ?? 1;
@@ -84,9 +84,9 @@ export function applyGradientGlowEffectToGl(
     applyGlEffectBlitPass(state, src, dst);
   }
 
-  releaseGlRenderTarget(pool, s0);
-  releaseGlRenderTarget(pool, s1);
-  releaseGlRenderTarget(pool, s2);
+  releaseGlTextureRenderTarget(pool, s0);
+  releaseGlTextureRenderTarget(pool, s1);
+  releaseGlTextureRenderTarget(pool, s2);
 }
 
 export const defaultGlGradientGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
@@ -99,9 +99,9 @@ export function registerGlGradientGlowEffect(state: GlRenderState): void {
 
 function applyGradientLookupPass(
   state: GlRenderState,
-  blurred: GlRenderTarget,
+  blurred: GlTextureRenderTarget,
   ramp: WebGLTexture,
-  dest: GlRenderTarget,
+  dest: GlTextureRenderTarget,
 ): void {
   const loc = getLookupShader(state);
   drawGlFullscreenPass(state, loc, [blurred.texture], dest, (gl) => {

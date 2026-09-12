@@ -3,7 +3,7 @@ import type {
   BokehDepthOfFieldEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -15,8 +15,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // of radius maxBlur. The second real consumer of the depth seam, alongside screen-space fog.
 export function applyBokehDepthOfFieldEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   depthTexture: WebGLTexture | null,
   effect: Readonly<BokehDepthOfFieldEffect>,
 ): void {

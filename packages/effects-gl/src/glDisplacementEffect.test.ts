@@ -7,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { DisplacementEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { DisplacementEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyDisplacementEffectToGl,
@@ -54,7 +54,7 @@ afterEach(() => {
 });
 
 function apply(effect: Readonly<Partial<DisplacementEffect>> = {}): void {
-  const target = { height: SOURCE_HEIGHT, texture: {}, width: SOURCE_WIDTH } as unknown as GlRenderTarget;
+  const target = { height: SOURCE_HEIGHT, texture: {}, width: SOURCE_WIDTH } as unknown as GlTextureRenderTarget;
   applyDisplacementEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createDisplacementEffect(effect));
 }
 
@@ -119,7 +119,7 @@ describe('applyDisplacementEffectToGl', () => {
 
 describe('defaultGlDisplacementEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
-    const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+    const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
     defaultGlDisplacementEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,

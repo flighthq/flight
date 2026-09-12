@@ -1,5 +1,5 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { ColorLut, GlColorLutTextureCache, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { ColorLut, GlColorLutTextureCache, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -120,7 +120,7 @@ function apply(
   lut: Readonly<ColorLut>,
   cache: GlColorLutTextureCache,
 ): void {
-  const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+  const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
   applyColorLutPassToGl(harness.state, target, target, lut, cache);
 }
 

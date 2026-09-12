@@ -2,7 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import { createViewport } from '@flighthq/node/contract';
 import {
   beginGlRenderPass,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   endGlRenderPass,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
@@ -53,7 +53,7 @@ describe('pushGlClipContours', () => {
   it('restores the outer framebuffer after a shared-context cache refresh into another target', () => {
     const { state, gl } = createGlState();
     const cacheState = createGlCacheState(state, state.contextState, state.pipeline);
-    const outer = createGlRenderTarget(state, {
+    const outer = createGlTextureRenderTarget(state, {
       depth: 'depth-stencil',
       height: 64,
       width: 64,

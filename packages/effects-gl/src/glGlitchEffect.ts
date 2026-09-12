@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlitchEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlitchEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -8,8 +13,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
 export function applyGlitchEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<GlitchEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;

@@ -1,5 +1,5 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -33,7 +33,7 @@ afterEach(() => {
 function apply(matrix: ReadonlyArray<number>): void {
   programMock.getGlEffectProgram.mockClear();
   glMock.uniform1fv.mockClear();
-  const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
+  const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
   applyColorMatrixPassToGl({ gl: {} } as unknown as GlRenderState, target, target, matrix);
 }
 

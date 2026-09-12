@@ -1,11 +1,15 @@
 import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects/contract';
-import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
+import {
+  acquireGlTextureRenderTarget,
+  drawGlFullscreenPass,
+  releaseGlTextureRenderTarget,
+} from '@flighthq/render-gl/contract';
 import type {
   BloomEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { applyGaussianBlurToGl } from './glBlurEffect';
@@ -17,9 +21,9 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // the pool and releases them, branches, and reuses the blur primitive, which is what makes it an effect.
 export function applyBloomEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
-  pool: GlRenderTargetPool,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
+  pool: GlTextureRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
   const threshold = computeBloomThreshold(effect);
@@ -27,9 +31,9 @@ export function applyBloomEffectToGl(
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 
-  const bright = acquireGlRenderTarget(state, pool, descriptor);
-  const blurred = acquireGlRenderTarget(state, pool, descriptor);
-  const temp = acquireGlRenderTarget(state, pool, descriptor);
+  const bright = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireGlTextureRenderTarget(state, pool, descriptor);
+  const temp = acquireGlTextureRenderTarget(state, pool, descriptor);
 
   const brightProgram = getGlEffectProgram(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_SRC);
   drawGlFullscreenPass(state, brightProgram, [source.texture], bright, (gl, program) => {
@@ -43,9 +47,9 @@ export function applyBloomEffectToGl(
     gl.uniform1f(gl.getUniformLocation(program.program, 'u_intensity'), intensity);
   });
 
-  releaseGlRenderTarget(pool, bright);
-  releaseGlRenderTarget(pool, blurred);
-  releaseGlRenderTarget(pool, temp);
+  releaseGlTextureRenderTarget(pool, bright);
+  releaseGlTextureRenderTarget(pool, blurred);
+  releaseGlTextureRenderTarget(pool, temp);
 }
 
 export const defaultGlBloomEffectRunner: GlRenderEffectRunner = (ctx, effect) => {

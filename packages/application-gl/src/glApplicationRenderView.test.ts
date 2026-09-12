@@ -6,7 +6,7 @@ import {
 import * as nodeContract from '@flighthq/node/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { GlPipeline, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlPipeline, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { createGlApplicationRenderView, destroyGlApplicationRenderView } from './glApplicationRenderView';
 
@@ -27,7 +27,7 @@ beforeEach(() => {
     pixelRatio: options.pixelRatio,
     renderTransform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   })) as never);
-  vi.spyOn(renderGlContract, 'createGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGlContract, 'createGlTextureRenderTarget').mockImplementation(((
     _state: GlRenderState,
     descriptor: { height: number; width: number },
   ) => ({
@@ -35,11 +35,11 @@ beforeEach(() => {
     width: Math.max(1, descriptor.width),
   })) as never);
   vi.spyOn(renderGlContract, 'destroyGlRenderState').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGlContract, 'destroyGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'destroyGlTextureRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(renderGlContract, 'invalidateGlRenderStateCache').mockImplementation((() => {}) as never);
-  vi.spyOn(renderGlContract, 'resizeGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGlContract, 'resizeGlTextureRenderTarget').mockImplementation(((
     _state: GlRenderState,
-    target: GlRenderTarget,
+    target: GlTextureRenderTarget,
     width: number,
     height: number,
   ) => {
@@ -83,7 +83,7 @@ describe('createGlApplicationRenderView', () => {
         roundPixels: true,
       },
     );
-    expect(renderGlContract.createGlRenderTarget).toHaveBeenCalledWith(view.renderState, {
+    expect(renderGlContract.createGlTextureRenderTarget).toHaveBeenCalledWith(view.renderState, {
       colorSpace: 'linear',
       depth: 'depth-stencil',
       height: 360,
@@ -99,17 +99,22 @@ describe('createGlApplicationRenderView', () => {
     const canvas = document.createElement('canvas');
     const view = createGlApplicationRenderView(window, canvas, { pipeline });
     vi.mocked(renderGlContract.invalidateGlRenderStateCache).mockClear();
-    vi.mocked(renderGlContract.resizeGlRenderTarget).mockClear();
+    vi.mocked(renderGlContract.resizeGlTextureRenderTarget).mockClear();
 
     synchronizeApplicationRenderView(view);
     expect(renderGlContract.invalidateGlRenderStateCache).not.toHaveBeenCalled();
-    expect(renderGlContract.resizeGlRenderTarget).not.toHaveBeenCalled();
+    expect(renderGlContract.resizeGlTextureRenderTarget).not.toHaveBeenCalled();
 
     window.width = 30;
     synchronizeApplicationRenderView(view);
     expect(canvas.width).toBe(30);
     expect(renderGlContract.invalidateGlRenderStateCache).toHaveBeenCalledWith(view.renderState);
-    expect(renderGlContract.resizeGlRenderTarget).toHaveBeenCalledWith(view.renderState, view.renderTarget, 30, 10);
+    expect(renderGlContract.resizeGlTextureRenderTarget).toHaveBeenCalledWith(
+      view.renderState,
+      view.renderTarget,
+      30,
+      10,
+    );
   });
 });
 
@@ -120,14 +125,14 @@ describe('destroyGlApplicationRenderView', () => {
     window.height = 10;
     const view = createGlApplicationRenderView(window, document.createElement('canvas'), { pipeline });
     attachApplicationRenderView(view);
-    vi.mocked(renderGlContract.resizeGlRenderTarget).mockClear();
+    vi.mocked(renderGlContract.resizeGlTextureRenderTarget).mockClear();
 
     destroyGlApplicationRenderView(view);
     window.width = 30;
     emitSignal(window.onResize);
 
-    expect(renderGlContract.resizeGlRenderTarget).not.toHaveBeenCalled();
-    expect(renderGlContract.destroyGlRenderTarget).toHaveBeenCalledWith(view.renderState, view.renderTarget);
+    expect(renderGlContract.resizeGlTextureRenderTarget).not.toHaveBeenCalled();
+    expect(renderGlContract.destroyGlTextureRenderTarget).toHaveBeenCalledWith(view.renderState, view.renderTarget);
     expect(renderGlContract.destroyGlRenderState).toHaveBeenCalledWith(view.renderState);
   });
 });

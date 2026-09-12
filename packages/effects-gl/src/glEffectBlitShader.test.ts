@@ -1,5 +1,5 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 
@@ -50,13 +50,13 @@ function createState(): GlRenderState {
   } as unknown as GlRenderState;
 }
 
-function createTarget(id: string): GlRenderTarget {
+function createTarget(id: string): GlTextureRenderTarget {
   return {
     height: SOURCE_HEIGHT,
     id,
     texture: { id: `${id}-texture` },
     width: SOURCE_WIDTH,
-  } as unknown as GlRenderTarget;
+  } as unknown as GlTextureRenderTarget;
 }
 
 function offsetFor(dx: number, dy: number): readonly number[] {

@@ -1,6 +1,6 @@
 import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
@@ -54,9 +54,9 @@ const boxBlurShaders = new WeakMap<GlContext, BoxBlurShaderLocations>();
  */
 export function applyGlEffectBoxBlur(
   state: GlRenderState,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
-  temp: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
+  temp: GlTextureRenderTarget,
   options: Readonly<{
     blurX?: number;
     blurY?: number;
@@ -70,8 +70,8 @@ export function applyGlEffectBoxBlur(
   const edgeColor = options.edgeColor;
 
   const loc = getBoxBlurShader(state);
-  let read: GlRenderTarget = source;
-  let write: GlRenderTarget = temp;
+  let read: GlTextureRenderTarget = source;
+  let write: GlTextureRenderTarget = temp;
 
   // Each pass may use a different radius per axis so the box widths converge on the target sigma;
   // zero-radius passes are skipped. If nothing is written, the tail blit copies source to dest.
@@ -95,7 +95,7 @@ export function applyGlEffectBoxBlur(
   }
 }
 
-function applyBlurBlit(state: GlRenderState, source: GlRenderTarget, dest: GlRenderTarget): void {
+function applyBlurBlit(state: GlRenderState, source: GlTextureRenderTarget, dest: GlTextureRenderTarget): void {
   const loc = getBoxBlurShader(state);
   drawGlFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 0, 0);
@@ -109,8 +109,8 @@ function applyBlurBlit(state: GlRenderState, source: GlRenderTarget, dest: GlRen
 
 function applyBoxBlurPass(
   state: GlRenderState,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
   loc: BoxBlurShaderLocations,
   radius: number,
   dirX: number,

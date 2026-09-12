@@ -3,7 +3,7 @@ import type {
   ChromaticAberrationEffect,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -14,8 +14,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // otherwise it is a uniform horizontal split.
 export function applyChromaticAberrationEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<ChromaticAberrationEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.005;

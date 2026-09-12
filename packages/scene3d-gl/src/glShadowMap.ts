@@ -2,7 +2,7 @@ import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } 
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
+import { createGlTextureRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
   Camera3D,
@@ -52,7 +52,7 @@ export function drawGlScene3DShadowMap(
     throw new Error('drawGlScene3DShadowMap requires an orthographic shadow camera');
   }
   if (runtime.shadowTarget === null) {
-    runtime.shadowTarget = createGlRenderTarget(state, {
+    runtime.shadowTarget = createGlTextureRenderTarget(state, {
       depth: 'depth-stencil-sampled',
       height: DIRECTIONAL_SHADOW_MAP_SIZE,
       width: DIRECTIONAL_SHADOW_MAP_SIZE,

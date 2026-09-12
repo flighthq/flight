@@ -3,7 +3,7 @@ import type {
   Bitmap,
   Environment,
   GlRenderStateRuntime,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   Matrix4,
   GlMeshProgram,
   GlScene3DIbl,
@@ -69,7 +69,7 @@ describe('destroyGlScene3DRuntime', () => {
       framebuffer: {} as WebGLFramebuffer,
       resolveFramebuffer: null,
       textures: [],
-    } as unknown as GlRenderTarget;
+    } as unknown as GlTextureRenderTarget;
     scene.shadow = {
       enabled: true,
       matrix: {} as Matrix4,

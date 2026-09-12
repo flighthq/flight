@@ -7,7 +7,12 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { BitmapDisplacementEffect, GlRenderState, GlRenderTarget, Texture2D } from '@flighthq/types/contract';
+import type {
+  BitmapDisplacementEffect,
+  GlRenderState,
+  GlTextureRenderTarget,
+  Texture2D,
+} from '@flighthq/types/contract';
 import { ImageChannel } from '@flighthq/types/contract';
 
 import {
@@ -27,8 +32,8 @@ const source = {
   height: 64,
   texture: sourceTexture,
   width: 128,
-} as GlRenderTarget;
-const dest = { ...source, texture: {} as WebGLTexture } as GlRenderTarget;
+} as GlTextureRenderTarget;
+const dest = { ...source, texture: {} as WebGLTexture } as GlTextureRenderTarget;
 const map = {
   colorSpace: 'linear',
   dimension: '2d',

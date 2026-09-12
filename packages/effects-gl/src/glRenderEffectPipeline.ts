@@ -7,24 +7,24 @@ import {
 } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   beginGlRenderPass,
   clearGlRenderTarget,
-  createGlRenderTarget,
-  createGlRenderTargetPool,
-  destroyGlRenderTarget,
-  destroyGlRenderTargetPool,
+  createGlTextureRenderTarget,
+  createGlTextureRenderTargetPool,
+  destroyGlTextureRenderTarget,
+  destroyGlTextureRenderTargetPool,
   endGlRenderPass,
   presentGlRenderTarget,
-  releaseGlRenderTarget,
-  resizeGlRenderTarget,
+  releaseGlTextureRenderTarget,
+  resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
   Adjustment,
   GlRenderEffectPipeline,
   GlRenderEffectPipelineSkipGuard,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   RenderEffect,
   RenderEffectPipelineOptions,
   RenderTargetColorSpace,
@@ -50,7 +50,7 @@ export function beginGlRenderEffectPipeline(
   const { sampleCount, format, depth } = pipeline.options;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createGlRenderTarget(state, {
+    pipeline.sceneTarget = createGlTextureRenderTarget(state, {
       width: w,
       height: h,
       sampleCount,
@@ -59,7 +59,7 @@ export function beginGlRenderEffectPipeline(
       colorSpace,
     });
   } else {
-    resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
+    resizeGlTextureRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
   clearGlRenderTarget(state, pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
@@ -77,10 +77,10 @@ export function createGlRenderEffectPipeline(
 
 export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
   if (pipeline.sceneTarget) {
-    destroyGlRenderTarget(state, pipeline.sceneTarget);
+    destroyGlTextureRenderTarget(state, pipeline.sceneTarget);
     pipeline.sceneTarget = null;
   }
-  destroyGlRenderTargetPool(state, pipeline.pool);
+  destroyGlTextureRenderTargetPool(state, pipeline.pool);
   if (pipeline.lutTexture.texture !== null) {
     state.gl.deleteTexture(pipeline.lutTexture.texture);
     pipeline.lutTexture.texture = null;
@@ -104,9 +104,9 @@ export function endGlRenderEffectPipeline(
   // Intermediate ping-pong targets carry the scene's declared color space, so after the last effect the
   // final `source` still reports whether its content is linear (encode at present) or sRGB (plain copy).
   const descriptor = { width: scene.width, height: scene.height, format, colorSpace: scene.colorSpace };
-  let source: GlRenderTarget = scene;
-  let scratchA: GlRenderTarget | null = null;
-  let scratchB: GlRenderTarget | null = null;
+  let source: GlTextureRenderTarget = scene;
+  let scratchA: GlTextureRenderTarget | null = null;
+  let scratchB: GlTextureRenderTarget | null = null;
   // A maximal run of consecutive pointwise adjustments fuses into ONE pass: all matrix-tier → one 4×5
   // matrix (cheaper applyColorMatrixPass); any LUT-tier member → the whole run (matrices folded in) bakes
   // into one ColorLut (applyColorLutPass). An effect (or the end of the stack) breaks the run and flushes
@@ -114,8 +114,8 @@ export function endGlRenderEffectPipeline(
   let pending: Adjustment[] = [];
 
   const ensureScratch = (): void => {
-    if (scratchA === null) scratchA = acquireGlRenderTarget(state, pipeline.pool, descriptor);
-    if (scratchB === null) scratchB = acquireGlRenderTarget(state, pipeline.pool, descriptor);
+    if (scratchA === null) scratchA = acquireGlTextureRenderTarget(state, pipeline.pool, descriptor);
+    if (scratchB === null) scratchB = acquireGlTextureRenderTarget(state, pipeline.pool, descriptor);
   };
   // Hand every pass a clean destination. scratchA/scratchB ping-pong across the chain, so a target
   // reused two passes later still holds an earlier pass's output; clearing means a non-covering effect
@@ -171,8 +171,8 @@ export function endGlRenderEffectPipeline(
 
   presentGlRenderTarget(state, source);
 
-  if (scratchA !== null) releaseGlRenderTarget(pipeline.pool, scratchA);
-  if (scratchB !== null) releaseGlRenderTarget(pipeline.pool, scratchB);
+  if (scratchA !== null) releaseGlTextureRenderTarget(pipeline.pool, scratchA);
+  if (scratchB !== null) releaseGlTextureRenderTarget(pipeline.pool, scratchB);
 }
 
 export function initializeGlRenderEffectPipeline(
@@ -182,7 +182,7 @@ export function initializeGlRenderEffectPipeline(
 ): void {
   out.options = { ...options };
   out.sceneTarget = null;
-  out.pool = createGlRenderTargetPool();
+  out.pool = createGlTextureRenderTargetPool();
   out.lutCache = createColorLutCache();
   out.lutTexture = { texture: null, lut: null };
   out.velocityTexture = null;

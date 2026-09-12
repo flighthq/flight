@@ -28,7 +28,7 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+  vi.spyOn(renderGlContract, 'acquireGlTextureRenderTarget').mockImplementation(((
     _state: unknown,
     _pool: unknown,
     descriptor: unknown,
@@ -52,7 +52,7 @@ beforeEach(() => {
   ) => {
     setUniforms(glMock as never, {} as never);
   }) as never);
-  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlTextureRenderTarget').mockImplementation((() => {}) as never);
 
   vi.spyOn(glEffectBlitShaderMod, 'applyGlEffectBlitOffsetPass').mockImplementation((() => {}) as never);
   vi.spyOn(glEffectBlitShaderMod, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);

@@ -5,7 +5,7 @@ import type {
   GlCustomShaderSourceGuard,
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   RenderEffect,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
@@ -21,8 +21,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // rather than a blank or a GL error.
 export function applyCustomShaderEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<CustomShaderEffect>,
 ): void {
   const fragmentSource = getGlCustomShaderSource(state, effect.shaderKey);

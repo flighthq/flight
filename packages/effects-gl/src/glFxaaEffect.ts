@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { FxaaEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { FxaaEffect, GlRenderEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -8,8 +8,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // recipe. Reads u_texture0; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
 export function applyFxaaEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<FxaaEffect>,
 ): void {
   const edgeThreshold = effect.edgeThreshold ?? 0.0312;

@@ -2,7 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   GlRenderEffectRunner,
   GlRenderState,
-  GlRenderTarget,
+  GlTextureRenderTarget,
   LensDistortionEffect,
 } from '@flighthq/types/contract';
 
@@ -13,8 +13,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
 export function applyLensDistortionEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   effect: Readonly<LensDistortionEffect>,
 ): void {
   const amount = effect.amount ?? 0.2;

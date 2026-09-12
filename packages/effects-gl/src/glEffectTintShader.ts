@@ -1,6 +1,6 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 // Extracts the source alpha, tints it with a solid color, and outputs a
@@ -45,8 +45,8 @@ const invertTintShaders = new WeakMap<GlContext, TintShaderLocations>();
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
 export function applyGlEffectInvertTintPass(
   state: GlRenderState,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
   color: number,
   alpha: number,
   strength: number,
@@ -64,8 +64,8 @@ export function applyGlEffectInvertTintPass(
 /** Tints the source alpha with color, outputs a premultiplied mask into dest. */
 export function applyGlEffectTintPass(
   state: GlRenderState,
-  source: GlRenderTarget,
-  dest: GlRenderTarget,
+  source: GlTextureRenderTarget,
+  dest: GlTextureRenderTarget,
   color: number,
   alpha: number,
   strength: number,

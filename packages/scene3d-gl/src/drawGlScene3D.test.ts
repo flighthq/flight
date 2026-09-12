@@ -20,7 +20,7 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
+import type { Camera3D, GlTextureRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
@@ -106,7 +106,7 @@ describe('drawGlScene3D', () => {
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     const runtime = getGlRenderStateRuntime(state);
-    const target = { colorSpace: 'srgb' } as GlRenderTarget;
+    const target = { colorSpace: 'srgb' } as GlTextureRenderTarget;
     runtime.currentRenderTarget = target;
 
     drawGlScene3D(state, scene, makeCamera(), LIGHTS);

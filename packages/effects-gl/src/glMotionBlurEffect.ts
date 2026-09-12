@@ -1,5 +1,10 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, MotionBlurEffect } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlTextureRenderTarget,
+  MotionBlurEffect,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -13,8 +18,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // the ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
 export function applyMotionBlurEffectToGl(
   state: GlRenderState,
-  source: Readonly<GlRenderTarget>,
-  dest: Readonly<GlRenderTarget>,
+  source: Readonly<GlTextureRenderTarget>,
+  dest: Readonly<GlTextureRenderTarget>,
   velocityTexture: WebGLTexture | null,
   effect: Readonly<MotionBlurEffect>,
 ): void {
