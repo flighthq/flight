@@ -63,6 +63,18 @@ export const state = createGlRenderState(
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+// What the effect pipeline's scene target is cleared to, derived from the one background constant this
+// scene already asserts against. The background is a per-pass value now: leave the chain's scene
+// target at the pipeline's transparent default and the field never reaches the presented frame.
+const screenClear = {
+  color: [
+    ((BACKGROUND_COLOR >>> 24) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 16) & 0xff) / 0xff,
+    ((BACKGROUND_COLOR >>> 8) & 0xff) / 0xff,
+    (BACKGROUND_COLOR & 0xff) / 0xff,
+  ],
+  depth: 1.0,
+} as const;
 
 export const scale = pixelRatio;
 export const width = 800;
