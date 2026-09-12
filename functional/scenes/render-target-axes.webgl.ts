@@ -2,19 +2,19 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   createGlContextState,
-  acquireGlRenderTarget,
+  acquireGlTextureRenderTarget,
   beginGlRenderPass,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTargetPool,
+  createGlTextureRenderTargetPool,
   endGlRenderPass,
-  explainGlRenderTarget,
+  explainGlTextureRenderTarget,
   presentGlRenderTarget,
-  releaseGlRenderTarget,
-  resizeGlRenderTarget,
+  releaseGlTextureRenderTarget,
+  resizeGlTextureRenderTarget,
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
-import { scene3DGlPipeline } from '@flighthq/scene2d-gl/contract';
+import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,21 +48,21 @@ const state = createGlRenderState(
     pixelRatio: scale,
   },
 );
-const pool = createGlRenderTargetPool();
+const pool = createGlTextureRenderTargetPool();
 const initialWidth = canvas.width >> 1;
 const initialHeight = canvas.height >> 1;
 
 // Park a physically incompatible target whose legacy pool key nevertheless matched only this
 // request's dimensions, primary format, and sample count.
-const singleAttachment = acquireGlRenderTarget(state, pool, {
+const singleAttachment = acquireGlTextureRenderTarget(state, pool, {
   colorSpace: 'srgb',
   depth: 'none',
   height: initialHeight,
   width: initialWidth,
 });
-releaseGlRenderTarget(pool, singleAttachment);
+releaseGlTextureRenderTarget(pool, singleAttachment);
 
-const target = acquireGlRenderTarget(state, pool, {
+const target = acquireGlTextureRenderTarget(state, pool, {
   colorAttachments: 2,
   colorFormats: ['rgba8', 'rgba16f'],
   colorSpace: 'srgb',
@@ -74,7 +74,7 @@ if (target === singleAttachment) {
   throw new Error('[render-target-axes] the pool reused an incompatible single-attachment target');
 }
 
-const explanation = explainGlRenderTarget(target);
+const explanation = explainGlTextureRenderTarget(target);
 if (
   explanation.requested.colorAttachments !== 2 ||
   explanation.requested.colorFormats[1] !== 'rgba16f' ||
@@ -86,7 +86,7 @@ if (
 
 const formatsBeforeResize = [...target.colorFormats];
 const depthTextureBeforeResize = target.depthTexture;
-resizeGlRenderTarget(state, target, canvas.width, canvas.height);
+resizeGlTextureRenderTarget(state, target, canvas.width, canvas.height);
 if (
   target.colorAttachments !== 2 ||
   target.colorFormats.length !== formatsBeforeResize.length ||
