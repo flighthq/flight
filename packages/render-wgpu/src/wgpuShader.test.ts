@@ -1,6 +1,5 @@
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   UNIFORM_BYTE_SIZE,
@@ -14,7 +13,7 @@ import {
   writeWgpuMatrixOnlyUniforms,
   writeWgpuQuadUniforms,
 } from './wgpuShader';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
   installWgpuMock();
@@ -164,7 +163,7 @@ describe('writeWgpuMatrixOnlyUniforms', () => {
   it('advances uniformOffset', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const before = runtime.uniformOffset;
     const fakeNode = { alpha: 1, useColorScaleBias: false, colorScaleBias: null };
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
@@ -176,7 +175,7 @@ describe('writeWgpuQuadUniforms', () => {
   it('advances uniformOffset by uniformStride', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const before = runtime.uniformOffset;
     const fakeNode = {
       alpha: 1,
@@ -191,7 +190,7 @@ describe('writeWgpuQuadUniforms', () => {
   it('writes quad coordinates into uniform data at float offset 24', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const fakeNode = {
       alpha: 0.5,
       useColorScaleBias: false,
@@ -211,7 +210,7 @@ describe('writeWgpuQuadUniforms', () => {
   it('writes the native straight-alpha texture flag at u32 offset 14', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const fakeNode = {
       alpha: 1,
       useColorScaleBias: false,

@@ -1,14 +1,7 @@
-import {
-  beginWgpuFrame,
-  renderWgpuBackground,
-  retireWgpuBuffer,
-  retireWgpuTexture,
-  submitWgpuRenderPass,
-  withWgpuFrameBorrow,
-} from './wgpuBackground';
+import { beginWgpuFrame, retireWgpuBuffer, retireWgpuTexture, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 import { createWgpuPipeline } from './wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => installWgpuMock());
 
@@ -19,15 +12,6 @@ describe('beginWgpuFrame', () => {
     const encoder = getWgpuRenderStateRuntime(state).commandEncoder;
     beginWgpuFrame(state);
     expect(getWgpuRenderStateRuntime(state).commandEncoder).toBe(encoder);
-  });
-});
-
-describe('renderWgpuBackground', () => {
-  it('opens the presentation pass on the current surface', async () => {
-    const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
-    expect(getWgpuRenderStateRuntime(state).renderPass).not.toBeNull();
-    submitWgpuRenderPass(state);
   });
 });
 
@@ -49,12 +33,27 @@ describe('retireWgpuTexture', () => {
   });
 });
 
-describe('submitWgpuRenderPass', () => {
+describe('submitWgpuFrame', () => {
   it('submits and closes the active frame', async () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuFrame(state);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
     expect(getWgpuRenderStateRuntime(state).commandEncoder).toBeNull();
+  });
+
+  it('closes a pass the caller left open rather than carrying its encoder into the next frame', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuFrame(state);
+    beginWgpuScreenRenderPassForTest(state);
+    expect(getWgpuRenderStateRuntime(state).renderPass).not.toBeNull();
+
+    submitWgpuFrame(state);
+
+    const runtime = getWgpuRenderStateRuntime(state);
+    expect(runtime.renderPass).toBeNull();
+    expect(runtime.passStack).toEqual([]);
+    expect(runtime.currentRenderTarget).toBeNull();
+    expect(runtime.renderTargetViewport).toBeNull();
   });
 });
 

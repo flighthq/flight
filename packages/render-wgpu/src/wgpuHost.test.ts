@@ -12,9 +12,10 @@ import {
 } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuRenderState,
-  createWgpuRenderStateFromCanvasElement,
   destroyWgpuRenderState,
+  releaseWgpuAcquisition,
 } from './wgpuRenderState';
 import { installWgpuMock } from './wgpuTestHelper';
 
@@ -126,11 +127,9 @@ describe('setWgpuHostBackend', () => {
   it('routes acquisition and release through the same selected backend', async () => {
     const web = createWebWgpuHostBackend();
     const acquired = await web.acquire(document.createElement('canvas'), {});
-    // Flight-owned: the state acquired these, so destroying it releases them. The caller-owned case is the
-    // opposite assertion and lives in its own test below.
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
-    acquisition.ownership = 'flight' as const;
+    acquisition.ownership = 'caller' as const;
     const backend = entityBackend({
       acquire: vi.fn(async () => acquisition),
       isSupported: vi.fn(() => true),
@@ -139,59 +138,30 @@ describe('setWgpuHostBackend', () => {
     const canvas = document.createElement('canvas');
     setWgpuHostBackend(backend);
 
-    const state = await createWgpuRenderStateFromCanvasElement(canvas, _pipeline);
-    expect(backend.acquire).toHaveBeenCalledWith(canvas, { format: undefined, powerPreference: undefined });
-    expect(state.context).toBe(acquisition.context);
-    expect(state.device).toBe(acquisition.device);
-    expect(state.format).toBe(acquisition.format);
-    destroyWgpuRenderState(state);
+    const routed = await createWgpuAcquisitionFromCanvasElement(canvas);
+    expect(backend.acquire).toHaveBeenCalledWith(canvas, {});
+    expect(routed?.device).toBe(acquisition.device);
+    expect(routed?.format).toBe(acquisition.format);
+
+    releaseWgpuAcquisition(acquisition);
     expect(backend.release).toHaveBeenCalledOnce();
     expect(backend.release).toHaveBeenCalledWith(acquisition);
 
     web.release(acquired);
   });
 
-  it('releases flight-owned handles through the selected backend when initialization fails', async () => {
+  // ★ A RENDER STATE OWNS NO HOST HANDLES AT ALL. It used to be built from an acquisition and had to
+  // decide, on every path including a failed construction, whether to release handles the caller might
+  // still be using — a decision no state is in a position to make correctly. It now takes the device
+  // alone, so there is nothing to get wrong: destroying a state cannot reach a context or a device, and
+  // the caller's handles outlive it by construction rather than by policy.
+  it('never releases host handles when a state built on the device is destroyed', async () => {
     const web = createWebWgpuHostBackend();
     const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<WgpuHostAcquisition>();
-    Object.assign(acquisition, acquired);
-    acquisition.ownership = 'flight' as const;
-    const configure = vi.spyOn(acquisition.context, 'configure').mockImplementationOnce(() => {
-      throw new Error('configure failed');
-    });
+    const destroy = vi.spyOn(acquired.device, 'destroy');
+    const unconfigure = vi.spyOn(acquired.context, 'unconfigure');
     const backend = entityBackend({
-      acquire: vi.fn(async () => acquisition),
-      isSupported: vi.fn(() => true),
-      release: vi.fn(),
-    });
-    setWgpuHostBackend(backend);
-
-    expect(() => createWgpuRenderState(acquisition, _pipeline)).toThrow('configure failed');
-    expect(backend.release).toHaveBeenCalledOnce();
-    expect(backend.release).toHaveBeenCalledWith(acquisition);
-
-    configure.mockRestore();
-    web.release(acquired);
-  });
-
-  // ★ O2. The previous shape of this test used a CALLER-owned acquisition and asserted release WAS called,
-  // with a `vi.fn()` release that could not destroy anything — so it passed whether or not ownership was
-  // honoured. Flight now refuses to release borrowed handles even while unwinding a failure, and the
-  // backend here is deliberately one that would destroy them if asked.
-  it('O2: never releases caller-owned handles when initialization fails, whatever the backend does', async () => {
-    const web = createWebWgpuHostBackend();
-    const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<WgpuHostAcquisition>();
-    Object.assign(acquisition, acquired);
-    acquisition.ownership = 'caller' as const;
-    const configure = vi.spyOn(acquisition.context, 'configure').mockImplementationOnce(() => {
-      throw new Error('configure failed');
-    });
-    const destroy = vi.spyOn(acquisition.device, 'destroy');
-    const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
-    const backend = entityBackend({
-      acquire: vi.fn(async () => acquisition),
+      acquire: vi.fn(async () => acquired),
       isSupported: vi.fn(() => true),
       release: vi.fn((held) => {
         held.context.unconfigure();
@@ -200,43 +170,16 @@ describe('setWgpuHostBackend', () => {
     });
     setWgpuHostBackend(backend);
 
-    expect(() => createWgpuRenderState(acquisition, _pipeline)).toThrow('configure failed');
+    destroyWgpuRenderState(createWgpuRenderState(acquired.device, _pipeline));
+
     expect(backend.release).not.toHaveBeenCalled();
     expect(destroy).not.toHaveBeenCalled();
     expect(unconfigure).not.toHaveBeenCalled();
+    // The handles are still usable, which is the property the caller actually cares about.
+    expect(acquired.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST }).size).toBe(4);
 
-    configure.mockRestore();
     destroy.mockRestore();
     unconfigure.mockRestore();
-    web.release(acquired);
-  });
-
-  // ★ O1. The destroy path, against a backend whose release really destroys.
-  it('O1: never releases caller-owned handles when the state is destroyed', async () => {
-    const web = createWebWgpuHostBackend();
-    const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<WgpuHostAcquisition>();
-    Object.assign(acquisition, acquired);
-    acquisition.ownership = 'caller' as const;
-    const destroy = vi.spyOn(acquisition.device, 'destroy');
-    const backend = entityBackend({
-      acquire: vi.fn(async () => acquisition),
-      isSupported: vi.fn(() => true),
-      release: vi.fn((held) => {
-        held.device.destroy();
-      }),
-    });
-    setWgpuHostBackend(backend);
-
-    const state = createWgpuRenderState(acquisition, _pipeline);
-    destroyWgpuRenderState(state);
-
-    expect(backend.release).not.toHaveBeenCalled();
-    expect(destroy).not.toHaveBeenCalled();
-    // The handles are still usable, which is the property the caller actually cares about.
-    expect(acquisition.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST }).size).toBe(4);
-
-    destroy.mockRestore();
     web.release(acquired);
   });
 

@@ -1,7 +1,7 @@
 import type { RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { submitWgpuFrame } from './wgpuFrame';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   bindWgpuRenderTexture,
@@ -14,7 +14,7 @@ import {
   setWgpuRenderTextureGuard,
   writeWgpuRenderTextureTarget,
 } from './wgpuRenderTexture';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
   installWgpuMock();
@@ -48,10 +48,10 @@ describe('bindWgpuRenderTexture', () => {
     const renderTexture = texture();
     expect(bindWgpuRenderTexture(state, renderTexture)).toBeNull();
 
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});
     expect(bindWgpuRenderTexture(state, renderTexture)).not.toBeNull();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -59,7 +59,7 @@ describe('destroyWgpuRenderTexture', () => {
   it('destroys and removes the hidden target', async () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});
     const entry = getWgpuRenderStateRuntime(state).context.wgpuRenderTextureCache!.get(renderTexture)!;
     const destroy = vi.spyOn(entry.target.texture, 'destroy');
@@ -67,7 +67,7 @@ describe('destroyWgpuRenderTexture', () => {
     destroyWgpuRenderTexture(state, renderTexture);
     expect(destroy).toHaveBeenCalled();
     expect(bindWgpuRenderTexture(state, renderTexture)).toBeNull();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -109,10 +109,10 @@ describe('isWgpuRenderTextureReady', () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(false);
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(true);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -120,7 +120,7 @@ describe('renderIntoWgpuRenderTexture', () => {
   it('restores the enclosing pass and bumps version after success', async () => {
     const state = await createWgpuRenderStateForTest();
     const renderTexture = texture();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const enclosingPass = getWgpuRenderStateRuntime(state).renderPass;
 
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});
@@ -129,7 +129,7 @@ describe('renderIntoWgpuRenderTexture', () => {
     expect(renderTexture.colorSpace).toBe('linear');
     expect(getWgpuRenderStateRuntime(state).renderPass).not.toBeNull();
     expect(getWgpuRenderStateRuntime(state).renderPass).not.toBe(enclosingPass);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

@@ -24,16 +24,13 @@ import type {
   WgpuHostAcquisition,
   HostWgpuProvider,
   WgpuPipeline,
-  WgpuPresentationRenderState,
-  WgpuPresentationSurface,
   WgpuRenderOptions,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
-import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuBackground';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
+import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 import { setWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
@@ -42,7 +39,6 @@ import {
   createWgpuDeviceState,
   createWgpuOffscreenRenderState as createDeviceOnlyWgpuRenderState,
   createWgpuRenderState as createWgpuRenderStateWithPipeline,
-  createWgpuRenderStateFromCanvasElement as createWgpuRenderStateFromCanvasElementWithPipeline,
   createWgpuRenderStateRuntime as createWgpuRenderStateRuntimeWithPipeline,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
@@ -77,15 +73,8 @@ beforeAll(() => {
 
 const _testPipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
-function createWgpuRenderState(acquisition: Readonly<WgpuHostAcquisition>, options: Readonly<WgpuRenderOptions> = {}) {
-  return createWgpuRenderStateWithPipeline(acquisition, _testPipeline, options);
-}
-
-function createWgpuRenderStateFromCanvasElement(
-  canvas: HTMLCanvasElement,
-  options: Readonly<WgpuRenderOptions & { powerPreference?: GPUPowerPreference }> = {},
-) {
-  return createWgpuRenderStateFromCanvasElementWithPipeline(canvas, _testPipeline, options);
+function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
+  return createWgpuRenderStateWithPipeline(device, _testPipeline, options);
 }
 
 function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuDeviceState>) {
@@ -103,7 +92,6 @@ function entityHostBackend(fields: Omit<HostWgpuProvider, keyof Entity>): HostWg
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
   const pipeline: WgpuPipeline = createWgpuPipeline(getWgpuRenderStateRuntime(source).registries);
   const state = createDeviceOnlyWgpuRenderState(source.deviceState, pipeline, {
-    backgroundColor: source.backgroundColor,
     format: source.format,
     imageSmoothingEnabled: source.allowSmoothing,
     pixelRatio: source.pixelRatio,
@@ -195,14 +183,6 @@ describe('createWgpuDeviceState', () => {
 });
 
 describe('createWgpuOffscreenRenderState', () => {
-  it('rejects a device-only state at presentation boundaries', () => {
-    const deviceOnlyState = null as WgpuRenderState | null;
-    if (deviceOnlyState === null) return;
-
-    // @ts-expect-error — a device-only state has no presentation surface or canvas context.
-    beginWgpuFrame(deviceOnlyState);
-  });
-
   it('resolves late screen blend-mode wiring explicitly until locally overridden', async () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
@@ -382,7 +362,6 @@ describe('createWgpuOffscreenRenderState', () => {
 
     withWgpuFrameBorrow(screen, offscreen, () => {
       expect(offscreenRuntime.commandEncoder).toBe(encoder);
-      expect(getWgpuSurfaceRenderExtent(offscreen)).toEqual({ height: 600, width: 800 });
       offscreenRuntime.uniformOffset = offscreenRuntime.uniformStride;
     });
 
@@ -403,7 +382,6 @@ describe('createWgpuOffscreenRenderState', () => {
       expect.anything(),
     );
     expect(submit).not.toHaveBeenCalled();
-    expect(() => getWgpuSurfaceRenderExtent(offscreen)).toThrow(/outside an explicit frame borrow/);
   });
 
   it('submits a standalone borrow and restores both states when the callback throws', async () => {
@@ -421,7 +399,6 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(submit).toHaveBeenCalledOnce();
     expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
     expect(getWgpuRenderStateRuntime(offscreen).commandEncoder).toBeNull();
-    expect(() => getWgpuSurfaceRenderExtent(offscreen)).toThrow(/outside an explicit frame borrow/);
   });
 
   it('rejects nested borrowing by the same offscreen state', async () => {
@@ -474,73 +451,20 @@ describe('createWgpuOffscreenRenderState', () => {
 });
 
 describe('createWgpuRenderState', () => {
-  it('keeps exact caller-owned handles usable through every shared-state teardown', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const canvas = document.createElement('canvas');
-    const _acqOut = allocateEntity<WgpuHostAcquisition>();
-    _acqOut.context = owner.context;
-    _acqOut.device = owner.device;
-    _acqOut.format = owner.format;
-    _acqOut.ownership = 'caller' as const;
-    _acqOut.surface = owner.surface;
-    const acquisition = finishEntity(_acqOut);
-    let contextUsable = true;
-    let deviceUsable = true;
-    const originalCreateBuffer = acquisition.device.createBuffer.bind(acquisition.device);
-    const originalGetCurrentTexture = acquisition.context.getCurrentTexture.bind(acquisition.context);
-    const createBuffer = vi.spyOn(acquisition.device, 'createBuffer').mockImplementation((descriptor) => {
-      if (!deviceUsable) throw new Error('caller device was destroyed');
-      return originalCreateBuffer(descriptor);
-    });
-    const getCurrentTexture = vi.spyOn(acquisition.context, 'getCurrentTexture').mockImplementation(() => {
-      if (!contextUsable) throw new Error('caller context was unconfigured');
-      return originalGetCurrentTexture();
-    });
-    const unconfigure = vi.spyOn(acquisition.context, 'unconfigure').mockImplementation(() => {
-      contextUsable = false;
-    });
-    const destroy = vi.spyOn(acquisition.device, 'destroy').mockImplementation(() => {
-      deviceUsable = false;
-    });
-    Object.defineProperty(globalThis.navigator, 'gpu', {
-      configurable: true,
-      get(): never {
-        throw new Error('host getter failed');
-      },
-    });
+  it('takes the device alone: no surface, no context, nothing that belongs to a screen', async () => {
+    // The state is "how to talk to the GPU" and the screen target is "which surface a frame lands on".
+    // Keeping them apart is what lets one state render to several windows, and lets an offscreen state
+    // exist without inventing a canvas for it.
+    const acquisition = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+    const state = createWgpuRenderState(acquisition!.device, { format: acquisition!.format });
 
-    try {
-      const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
-      expect(state.context).toBe(acquisition.context);
-      expect(state.device).toBe(acquisition.device);
-      expect(state.format).toBe(acquisition.format);
-      expect('context' in offscreen).toBe(false);
-      expect(offscreen.device).toBe(acquisition.device);
-      expect(offscreen.format).toBe(acquisition.format);
-      const createBufferCallsBeforeTeardown = createBuffer.mock.calls.length;
-      const getCurrentTextureCallsBeforeTeardown = getCurrentTexture.mock.calls.length;
-      destroyWgpuRenderState(state);
-      destroyWgpuRenderState(offscreen);
-      expect(unconfigure).not.toHaveBeenCalled();
-      expect(destroy).not.toHaveBeenCalled();
+    expect(state.device).toBe(acquisition!.device);
+    expect(state.format).toBe(acquisition!.format);
+    expect('context' in state).toBe(false);
+    expect('surface' in state).toBe(false);
 
-      const buffer = acquisition.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST });
-      expect(buffer.size).toBe(4);
-      expect(acquisition.context.getCurrentTexture().createView()).toBeDefined();
-      expect(createBuffer).toHaveBeenCalledTimes(createBufferCallsBeforeTeardown + 1);
-      expect(getCurrentTexture).toHaveBeenCalledTimes(getCurrentTextureCallsBeforeTeardown + 1);
-      buffer.destroy();
-    } finally {
-      installWgpuMock();
-      destroyWgpuRenderState(owner);
-    }
-  });
-
-  it('returns a render state with device and context', async () => {
-    const state = await createWgpuRenderStateForTest();
-    expect(state.device).toBeDefined();
-    expect(state.context).toBeDefined();
+    destroyWgpuRenderState(state);
+    releaseWgpuAcquisition(acquisition!);
   });
 
   it('sets allowSmoothing to true by default', async () => {
@@ -556,60 +480,13 @@ describe('createWgpuRenderState', () => {
     expect(runtime.uniformOffset).toBe(0);
   });
 
-  // C5: the state exposes the surface as SIZE ONLY. Asserting `instanceof HTMLCanvasElement` here would
-  // re-impose the DOM dependency the surface type exists to remove — that the web backend's surface happens
-  // to be a canvas is a property of that backend, pinned in wgpuHost.test.ts, not of the state contract.
-  it('exposes the presentation surface as live size, carrying no DOM member', async () => {
-    const state = await createWgpuRenderStateForTest();
-    expect(typeof state.surface.width).toBe('number');
-    expect(typeof state.surface.height).toBe('number');
-    expect(Object.keys(state.surface as object).filter((key) => key !== 'width' && key !== 'height')).toEqual([]);
-  });
-
-  it('starts with null renderPass and commandEncoder', async () => {
+  it('starts with no open frame, pass, or target', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     expect(runtime.renderPass).toBeNull();
     expect(runtime.commandEncoder).toBeNull();
-  });
-});
-
-describe('createWgpuRenderStateFromCanvasElement', () => {
-  it('acquires flight-owned handles and releases them when the state is destroyed', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
-    const released: Readonly<WgpuHostAcquisition>[] = [];
-    setWgpuHostBackend(
-      entityHostBackend({
-        acquire: vi.fn(async () => acquisition),
-        isSupported: vi.fn(() => true),
-        release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
-      }),
-    );
-
-    const state = await createWgpuRenderStateFromCanvasElement(document.createElement('canvas'));
-    destroyWgpuRenderState(state);
-
-    expect(released).toEqual([acquisition]);
-    setWgpuHostBackend(null);
-    destroyWgpuRenderState(owner);
-  });
-
-  it('forwards the acquisition options, which the render options no longer carry', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const acquire = vi.fn(async () => ({ ...ownerAcquisition(owner), ownership: 'flight' }) as const);
-    setWgpuHostBackend(entityHostBackend({ acquire, isSupported: vi.fn(() => true), release: vi.fn() }));
-    const canvas = document.createElement('canvas');
-
-    const state = await createWgpuRenderStateFromCanvasElement(canvas, {
-      format: 'rgba8unorm',
-      powerPreference: 'low-power',
-    });
-
-    expect(acquire).toHaveBeenCalledWith(canvas, { format: 'rgba8unorm', powerPreference: 'low-power' });
-    destroyWgpuRenderState(state);
-    setWgpuHostBackend(null);
-    destroyWgpuRenderState(owner);
+    expect(runtime.passStack).toEqual([]);
+    expect(runtime.currentRenderTarget).toBeNull();
   });
 });
 
@@ -704,21 +581,18 @@ describe('createWgpuRenderStateRuntime', () => {
 });
 
 describe('destroyWgpuRenderState', () => {
-  it('releases a Flight-owned acquisition once after its last derived state', async () => {
+  it('never destroys the device, however many of its states are torn down', async () => {
+    // The device came from the caller and outlives every state built on it — including the last one.
     const state = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(state);
-    const unconfigure = vi.spyOn(state.context, 'unconfigure');
     const destroy = vi.spyOn(state.device, 'destroy');
 
     destroyWgpuRenderState(state);
     destroyWgpuRenderState(state);
-    expect(unconfigure).not.toHaveBeenCalled();
-    expect(destroy).not.toHaveBeenCalled();
+    destroyWgpuRenderState(offscreen);
+    destroyWgpuRenderState(offscreen);
 
-    destroyWgpuRenderState(offscreen);
-    destroyWgpuRenderState(offscreen);
-    expect(unconfigure).toHaveBeenCalledOnce();
-    expect(destroy).toHaveBeenCalledOnce();
+    expect(destroy).not.toHaveBeenCalled();
   });
 
   it('destroys the state-owned uniform buffer', async () => {
@@ -992,15 +866,6 @@ describe('registerWgpuDeviceTeardown', () => {
   });
 });
 
-function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  const out = allocateEntity<any>();
-  out.context = owner.context;
-  out.device = owner.device;
-  out.format = owner.format;
-  out.surface = owner.surface;
-  return finishEntity(out);
-}
-
 describe('registerWgpuRenderStateTeardown', () => {
   it('runs a state-owned callback exactly once on teardown', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -1019,8 +884,8 @@ describe('releaseWgpuAcquisition', () => {
   // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
   // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
   it('releases caller-owned handles, which Flight itself never does', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const acquisition = { ...ownerAcquisition(owner), ownership: 'caller' } as const;
+    const acquired = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+    const acquisition = acquired!;
     const released: Readonly<WgpuHostAcquisition>[] = [];
     setWgpuHostBackend(
       entityHostBackend({
@@ -1034,113 +899,15 @@ describe('releaseWgpuAcquisition', () => {
 
     expect(released).toEqual([acquisition]);
     setWgpuHostBackend(null);
-    destroyWgpuRenderState(owner);
   });
 });
+
 describe('resolveWgpuApplyBlendMode', () => {
   it('returns a hook installed directly on the state', async () => {
     const state = await createWgpuRenderStateForTest();
     const hook = vi.fn();
     state.applyBlendMode = hook;
     expect(resolveWgpuApplyBlendMode(state)).toBe(hook);
-  });
-});
-
-// ★ OWNERSHIP LIFECYCLE. Flight decides whether an acquisition is released; the backend only carries out
-// the teardown. Each backend here would really destroy the handles if asked, so "not released" is a fact
-// about Flight's decision rather than about a spy that could not have destroyed anything.
-describe('wgpu acquisition lifecycle', () => {
-  const destroyingBackend = (
-    acquisition: Readonly<WgpuHostAcquisition>,
-  ): { backend: HostWgpuProvider; released: Readonly<WgpuHostAcquisition>[] } => {
-    const released: Readonly<WgpuHostAcquisition>[] = [];
-    return {
-      backend: entityHostBackend({
-        acquire: vi.fn(async () => acquisition),
-        isSupported: vi.fn(() => true),
-        release: vi.fn((held: Readonly<WgpuHostAcquisition>) => {
-          released.push(held);
-          held.device.destroy();
-        }),
-      }),
-      released,
-    };
-  };
-
-  it('L1: releases a flight-owned acquisition exactly once, after the last sharer, in either order', async () => {
-    for (const destroyOffscreenFirst of [false, true]) {
-      const owner = await createWgpuRenderStateForTest();
-      const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
-      const { backend, released } = destroyingBackend(acquisition);
-      setWgpuHostBackend(backend);
-
-      const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
-      const first = destroyOffscreenFirst ? offscreen : state;
-      const second = destroyOffscreenFirst ? state : offscreen;
-
-      destroyWgpuRenderState(first);
-      expect(released, 'released before the last sharer was destroyed').toEqual([]);
-      destroyWgpuRenderState(second);
-      expect(released).toEqual([acquisition]);
-
-      setWgpuHostBackend(null);
-      destroyWgpuRenderState(owner);
-    }
-  });
-
-  it('L2: never releases a caller-owned acquisition, in either destroy order', async () => {
-    for (const destroyOffscreenFirst of [false, true]) {
-      const owner = await createWgpuRenderStateForTest();
-      const acquisition = { ...ownerAcquisition(owner), ownership: 'caller' } as const;
-      const { backend, released } = destroyingBackend(acquisition);
-      setWgpuHostBackend(backend);
-
-      const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
-      destroyWgpuRenderState(destroyOffscreenFirst ? offscreen : state);
-      destroyWgpuRenderState(destroyOffscreenFirst ? state : offscreen);
-
-      expect(released).toEqual([]);
-      // L5: the handles still work, which is what the caller actually depends on.
-      expect(acquisition.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST }).size).toBe(4);
-
-      setWgpuHostBackend(null);
-      destroyWgpuRenderState(owner);
-    }
-  });
-
-  it('L3: destroying the same state twice releases once', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
-    const { backend, released } = destroyingBackend(acquisition);
-    setWgpuHostBackend(backend);
-
-    const state = createWgpuRenderState(acquisition);
-    destroyWgpuRenderState(state);
-    destroyWgpuRenderState(state);
-
-    expect(released).toEqual([acquisition]);
-    setWgpuHostBackend(null);
-    destroyWgpuRenderState(owner);
-  });
-
-  it('L4: routes release to the backend that acquired, not whichever is installed at destroy time', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
-    const acquiring = destroyingBackend(acquisition);
-    const replacement = destroyingBackend(acquisition);
-    setWgpuHostBackend(acquiring.backend);
-
-    const state = createWgpuRenderState(acquisition);
-    setWgpuHostBackend(replacement.backend);
-    destroyWgpuRenderState(state);
-
-    expect(acquiring.released).toEqual([acquisition]);
-    expect(replacement.released, 'released through the backend installed later').toEqual([]);
-
-    setWgpuHostBackend(null);
-    destroyWgpuRenderState(owner);
   });
 });
 
@@ -1205,51 +972,3 @@ describe('WgpuPipeline snapshots', () => {
 // would satisfy every construction-time assertion in this repo and fail only on a resize, so liveness is
 // tested here through a NON-DOM provider whose values change behind getters — which also proves the second
 // half of the contract, that nothing on the path reads a DOM member.
-describe('WgpuPresentationSurface', () => {
-  it('C1/C2: drives every size consumer from a live, non-DOM, size-only provider', async () => {
-    const owner = await createWgpuRenderStateForTest();
-    let width = 800;
-    let height = 600;
-    const surface: WgpuPresentationSurface = {
-      get height() {
-        return height;
-      },
-      get width() {
-        return width;
-      },
-    };
-    const acquisition = (() => {
-      const out = allocateEntity<any>();
-      out.context = owner.context;
-      out.device = owner.device;
-      out.format = owner.format;
-      out.ownership = 'caller' as const;
-      out.surface = surface;
-      return finishEntity(out);
-    })();
-    const canvas = document.createElement('canvas');
-
-    const state = createWgpuRenderState(acquisition);
-    expect(getWgpuSurfaceRenderExtent(state)).toEqual({ width: 800, height: 600 });
-
-    width = 320;
-    height = 240;
-
-    // Every consumer re-reads: a captured `{ width, height }` would still answer 800x600 here.
-    expect(state.surface.width).toBe(320);
-    expect(state.surface.height).toBe(240);
-    expect(getWgpuSurfaceRenderExtent(state)).toEqual({ width: 320, height: 240 });
-
-    destroyWgpuRenderState(state);
-    destroyWgpuRenderState(owner);
-  });
-
-  it('C4: accepts an HTMLCanvasElement structurally, so the web path needs no wrapper', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 64;
-    const surface: WgpuPresentationSurface = canvas;
-    expect(surface.width).toBe(128);
-    expect(surface.height).toBe(64);
-  });
-});

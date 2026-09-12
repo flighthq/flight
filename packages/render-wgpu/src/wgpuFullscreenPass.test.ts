@@ -1,12 +1,12 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { submitWgpuFrame } from './wgpuFrame';
 import {
   createWgpuFullscreenPipeline,
   destroyWgpuFullscreenPipeline,
   drawWgpuFullscreenPass,
   initializeWgpuFullscreenPipeline,
 } from './wgpuFullscreenPass';
-import { createWgpuRenderTarget } from './wgpuRenderTarget';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
 
 beforeAll(() => {
   installWgpuMock();
@@ -49,17 +49,17 @@ describe('destroyWgpuFullscreenPipeline', () => {
 describe('drawWgpuFullscreenPass', () => {
   it('does not throw when render pass is open and no uniforms', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const pipeline = createWgpuFullscreenPipeline(state, SIMPLE_FRAGMENT_WGSL, 1);
-    const target = createWgpuRenderTarget(state, 64, 64);
+    const target = createWgpuTextureRenderTarget(state, 64, 64);
     expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('is a no-op when render pass is not open', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuFullscreenPipeline(state, SIMPLE_FRAGMENT_WGSL, 1);
-    const target = createWgpuRenderTarget(state, 64, 64);
+    const target = createWgpuTextureRenderTarget(state, 64, 64);
     expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null)).not.toThrow();
   });
 });
