@@ -2,8 +2,7 @@ import { webCanvasRenderSurfaceCreator, webHostImage, webRaster2DSurfaceProvider
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
-  createGlContextFromCanvasElement,
+  createGlContext,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
@@ -37,13 +36,10 @@ export const canvas = createGlCanvasElement(CANVAS_WIDTH, CANVAS_HEIGHT, pixelRa
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene3DGlPipeline,
   {
     pixelRatio,
-    backgroundColor: 0x1a1a2eff,
     sceneGraphSyncPolicy: 'requiresInvalidation',
     raster2DSurfaceProvider: webRaster2DSurfaceProvider,
   },

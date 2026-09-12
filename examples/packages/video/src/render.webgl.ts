@@ -1,8 +1,7 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
-  createGlContextFromCanvasElement,
+  createGlContext,
   SpriteKind,
   createGlCanvasElement,
   createGlRenderState,
@@ -21,13 +20,10 @@ export const canvas = createGlCanvasElement(800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene3DGlPipeline,
   {
     pixelRatio,
-    backgroundColor: 0x1a1a2eff,
     sceneGraphSyncPolicy: 'requiresInvalidation',
   },
 );
