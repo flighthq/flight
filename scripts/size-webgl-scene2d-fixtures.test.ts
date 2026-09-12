@@ -13,7 +13,6 @@ const profiles = [
       '@flighthq/bitmapfont',
       '@flighthq/bitmaptext',
       '@flighthq/host-web',
-      '@flighthq/image',
       '@flighthq/node',
       '@flighthq/registry',
       '@flighthq/render',
@@ -69,7 +68,6 @@ const profiles = [
     constructors: ['createDisplayObject', 'createParticleEmitter2D'],
     imports: [
       '@flighthq/host-web',
-      '@flighthq/image',
       '@flighthq/node',
       '@flighthq/particleemitter',
       '@flighthq/registry',
@@ -146,7 +144,6 @@ const profiles = [
     constructors: ['createDisplayObject', 'createTilemap'],
     imports: [
       '@flighthq/host-web',
-      '@flighthq/image',
       '@flighthq/node',
       '@flighthq/registry',
       '@flighthq/render',
@@ -167,7 +164,6 @@ const profiles = [
     constructors: ['createDisplayObject', 'createSprite'],
     imports: [
       '@flighthq/host-web',
-      '@flighthq/image',
       '@flighthq/node',
       '@flighthq/registry',
       '@flighthq/render',
@@ -204,7 +200,6 @@ const profiles = [
     constructors: ['createDisplayObject', 'createQuadBatch'],
     imports: [
       '@flighthq/host-web',
-      '@flighthq/image',
       '@flighthq/node',
       '@flighthq/quadbatch',
       '@flighthq/registry',
