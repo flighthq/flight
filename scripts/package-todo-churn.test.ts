@@ -12,7 +12,7 @@ const temporaryDirectories: string[] = [];
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
-    rmSync(directory, { force: true, maxRetries: 3, recursive: true });
+    rmSync(directory, { force: true, maxRetries: 3, retryDelay: 100, recursive: true });
   }
 });
 
