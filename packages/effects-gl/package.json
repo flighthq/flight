@@ -49,7 +49,8 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "@flighthq/host-web": "*"
   },
   "description": "WebGL shader recipes for render effects (MSAA-aware post-process pipeline)",
   "sideEffects": false

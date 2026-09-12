@@ -57,6 +57,7 @@ export { webHostDialog } from './webDialogHost';
 export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 export { webHostGeolocation } from './webGeolocation';
+export { createWebGlContext } from './webGlContext';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostGraphics } from './webGraphicsHost';

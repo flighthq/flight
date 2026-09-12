@@ -281,8 +281,7 @@ describe('WebGL Scene2D size fixtures', () => {
       it('threads the feature through the complete rendering call chain', () => {
         const source = readFileSync(resolve(directory, 'src', 'render.webgl.ts'), 'utf8');
         for (const call of [
-          'createGlContextFromCanvasElement',
-          'createGlContextState',
+          'createWebGlContext',
           'createGlPipeline',
           'createGlRenderState',
           'prepareScene2DRender',

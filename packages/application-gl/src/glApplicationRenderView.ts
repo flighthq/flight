@@ -1,7 +1,7 @@
 import { createApplicationRenderView, detachApplicationRenderView } from '@flighthq/application/contract';
+import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createViewport } from '@flighthq/node/contract';
 import {
-  createGlContext,
   createGlRenderState,
   createGlTextureRenderTarget,
   destroyGlRenderState,
@@ -30,7 +30,7 @@ export function createGlApplicationRenderView(
   const height = Math.max(0, Math.round(window.height * window.devicePixelRatio));
   synchronizeGlCanvasBackingStore(canvas, width, height);
 
-  const context = createGlContext(canvas, options.context);
+  const context = createWebGlContext(canvas, options.context);
   const renderState = createGlRenderState(context, options.pipeline, {
     ...options.render,
     pixelRatio: window.devicePixelRatio,

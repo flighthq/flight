@@ -1,9 +1,4 @@
-import {
-  createEmptyGlRegistries,
-  createGlContext,
-  createGlPipeline,
-  createGlRenderState,
-} from '@flighthq/render-gl/contract';
+import { createEmptyGlRegistries, createGlPipeline, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
@@ -14,7 +9,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?:
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  const gl = createGlContext(canvas);
+  const gl = canvas.getContext('webgl2')!;
   Object.defineProperties(gl, {
     drawingBufferHeight: { configurable: true, value: canvas.height },
     drawingBufferWidth: { configurable: true, value: canvas.width },

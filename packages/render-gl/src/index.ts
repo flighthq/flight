@@ -12,7 +12,6 @@ export {
   createGlCanvasElement,
   createGlRenderSurface,
   createExternalGlTexture,
-  createGlContext,
   createEmptyGlRegistries,
   createGlCubeRenderTarget,
   createGlPipeline,
