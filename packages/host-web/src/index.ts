@@ -63,28 +63,28 @@ export { webHostGraphics } from './webGraphicsHost';
 export { webHostHaptics } from './webHaptics';
 export { createWebImageBackend, webHostImage } from './webImage';
 export {
-  clearImageBitmapComposers,
-  disableImageBitmapComposition,
-  enableImageBitmapComposition,
-  getImageBitmapComposer,
-  getImageBitmapComposerKinds,
-  hasImageBitmapComposer,
-  registerImageBitmapComposer,
-  unregisterImageBitmapComposer,
+  clearWebImageBitmapComposers,
+  disableWebImageBitmapComposition,
+  enableWebImageBitmapComposition,
+  getWebImageBitmapComposer,
+  getWebImageBitmapComposerKinds,
+  hasWebImageBitmapComposer,
+  registerWebImageBitmapComposer,
+  unregisterWebImageBitmapComposer,
 } from './webImageBitmapComposition';
 export { registerWebImageDecoders } from './webImageDecoders';
 export { registerWebImageEncoders } from './webImageEncoders';
 export {
-  createImageResourceFromCanvas,
-  createImageResourceFromImageBitmap,
-  createImageResourceFromImageElement,
+  createWebImageResourceFromCanvas,
+  createWebImageResourceFromImageBitmap,
+  createWebImageResourceFromImageElement,
   registerWebImageDimensionResolver,
   webImageDimensionResolver,
 } from './webImageResource';
 export {
-  createTextureAtlasFromCanvas,
-  createTextureAtlasFromImageBitmap,
-  createTextureAtlasFromImageElement,
+  createWebTextureAtlasFromCanvas,
+  createWebTextureAtlasFromImageBitmap,
+  createWebTextureAtlasFromImageElement,
 } from './webTextureAtlas';
 export {
   createWebInputTargetHandle,

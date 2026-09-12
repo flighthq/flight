@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, HostImageProvider, ImageResource, EntityConstruction } from '@flighthq/types/contract';
 
-import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './webImageResource';
+import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
 
 export function createWebImageBackend(): HostImageProvider & Entity {
   const out = allocateEntity<HostImageProvider>();
@@ -17,7 +17,7 @@ export function initializeWebImageBackend(out: EntityConstruction<HostImageProvi
     const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
     domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
     canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-    return createImageResourceFromCanvas(canvas);
+    return createWebImageResourceFromCanvas(canvas);
   };
   out.loadImageFromUrl = async (url, crossOrigin, signal): Promise<ImageResource> => {
     signal?.throwIfAborted();
@@ -42,7 +42,7 @@ export function initializeWebImageBackend(out: EntityConstruction<HostImageProvi
     } else {
       await img.decode();
     }
-    return createImageResourceFromImageElement(img);
+    return createWebImageResourceFromImageElement(img);
   };
 }
 

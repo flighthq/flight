@@ -14,7 +14,7 @@
 //
 // This is visual because per-pixel alpha compositing and node-alpha modulation only exist after the source
 // is blended against the actual destination pixels; it cannot be observed without rasterizing the overlay.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -81,7 +81,7 @@ function placeRamp(x: number, y: number, alpha: number): void {
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     dimension: '2d',
-    source: createImageResourceFromCanvas(buildAlphaRampCanvas()),
+    source: createWebImageResourceFromCanvas(buildAlphaRampCanvas()),
   });
   bmp.x = x;
   bmp.y = y;

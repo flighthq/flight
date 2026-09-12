@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, setWgpuScene3DTime } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -94,7 +94,7 @@ const material = createShadedMaterial({
       map: createTexture({
         colorSpace: 'linear',
         dimension: '2d',
-        source: createImageResourceFromCanvas(oceanNormalCanvas()),
+        source: createWebImageResourceFromCanvas(oceanNormalCanvas()),
       }),
       scroll: createVector2(0.05, 0.02),
       strength: 0.6,
@@ -105,7 +105,7 @@ const material = createShadedMaterial({
       mask: createTexture({
         colorSpace: 'linear',
         dimension: '2d',
-        source: createImageResourceFromCanvas(cityLightsCanvas()),
+        source: createWebImageResourceFromCanvas(cityLightsCanvas()),
       }),
       facing: EmissiveModifierFacing.AwayFromLight,
       facingSoftness: 0.25,

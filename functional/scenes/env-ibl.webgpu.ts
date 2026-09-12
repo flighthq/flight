@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -93,7 +93,7 @@ registerWgpuFunctionalTarget(state, screen, scale);
 const colors = ['#ff3030', '#30ff30', '#f0f0f0', '#505060', '#3030ff', '#ffe030'];
 const cube = createCubeTexture();
 for (let face = 0; face < colors.length; face++) {
-  setCubeTextureFace(cube, face, createImageResourceFromCanvas(solidFaceCanvas(colors[face])));
+  setCubeTextureFace(cube, face, createWebImageResourceFromCanvas(solidFaceCanvas(colors[face])));
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 const scene = createScene3D().root;

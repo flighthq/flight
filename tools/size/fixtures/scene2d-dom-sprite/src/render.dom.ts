@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
@@ -33,7 +33,7 @@ source.height = 32;
 const sourceContext = source.getContext('2d')!;
 sourceContext.fillStyle = '#ff4d67';
 sourceContext.fillRect(0, 0, source.width, source.height);
-sprite.data.texture = createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) });
+sprite.data.texture = createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) });
 sprite.x = 60;
 sprite.y = 40;
 addNodeChild(root, sprite);

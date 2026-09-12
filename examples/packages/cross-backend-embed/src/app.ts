@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   scene3DGlPipeline,
   createGlContext,
@@ -62,7 +62,7 @@ for (let i = 0; i < 3; i++) {
 const atlas = createTextureAtlas({
   texture: createTexture({
     dimension: '2d',
-    source: createImageResourceFromCanvas(atlasCanvas),
+    source: createWebImageResourceFromCanvas(atlasCanvas),
   }),
 });
 for (let i = 0; i < 3; i++) addTextureAtlasRegion(atlas, i * QUAD_SIZE, 0, QUAD_SIZE, QUAD_SIZE);
@@ -77,7 +77,7 @@ addNodeChild(producerRoot, batch);
 // The consumer is an ordinary DOM scene. Both nodes below reference the same producer canvas, but
 // their ownership contracts differ: Sprite borrows its pixels; HtmlView mounts the element itself.
 const root = createDisplayObject();
-const producerImage = createImageResourceFromCanvas(producerCanvas);
+const producerImage = createWebImageResourceFromCanvas(producerCanvas);
 const portableSprite = createSprite();
 portableSprite.data.texture = createTexture({ dimension: '2d', source: producerImage });
 portableSprite.x = 24;

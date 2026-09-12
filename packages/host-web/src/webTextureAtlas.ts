@@ -3,29 +3,29 @@ import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
 import {
-  createImageResourceFromCanvas,
-  createImageResourceFromImageBitmap,
-  createImageResourceFromImageElement,
+  createWebImageResourceFromCanvas,
+  createWebImageResourceFromImageBitmap,
+  createWebImageResourceFromImageElement,
 } from './webImageResource';
 
 // One-step atlases over the three web drawables. The portable half —
 // createTextureAtlasFromImageResource and the loaders — stays in @flighthq/textureatlas; only these,
 // which name a browser type in their signature, belong to the web host.
 
-export function createTextureAtlasFromCanvas(canvas: HTMLCanvasElement): TextureAtlas {
+export function createWebTextureAtlasFromCanvas(canvas: HTMLCanvasElement): TextureAtlas {
   return createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(canvas) }),
+    texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(canvas) }),
   });
 }
 
-export function createTextureAtlasFromImageBitmap(bitmap: ImageBitmap): TextureAtlas {
+export function createWebTextureAtlasFromImageBitmap(bitmap: ImageBitmap): TextureAtlas {
   return createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResourceFromImageBitmap(bitmap) }),
+    texture: createTexture({ dimension: '2d', source: createWebImageResourceFromImageBitmap(bitmap) }),
   });
 }
 
-export function createTextureAtlasFromImageElement(img: HTMLImageElement): TextureAtlas {
+export function createWebTextureAtlasFromImageElement(img: HTMLImageElement): TextureAtlas {
   return createTextureAtlas({
-    texture: createTexture({ dimension: '2d', source: createImageResourceFromImageElement(img) }),
+    texture: createTexture({ dimension: '2d', source: createWebImageResourceFromImageElement(img) }),
   });
 }

@@ -1,6 +1,6 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
-import { createImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -66,7 +66,7 @@ const font = createBitmapFont({
   metrics: { ascent: 36, descent: 4, lineGap: 4 },
   pages: [
     createTextureAtlas({
-      texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+      texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
     }),
   ],
 });

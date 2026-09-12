@@ -10,7 +10,7 @@
 //
 // (Field confirmed in packages/types/src/Bitmap.ts: `sourceRectangle: Rectangle | null`, honored by the
 // canvas, dom, gl, and wgpu bitmap renderers.)
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -77,7 +77,7 @@ const full = createSprite();
 full.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   dimension: '2d',
-  source: createImageResourceFromCanvas(buildQuadrantCanvas()),
+  source: createWebImageResourceFromCanvas(buildQuadrantCanvas()),
 });
 full.x = FULL_X;
 full.y = FULL_Y;
@@ -89,7 +89,7 @@ const crop = createSprite();
 crop.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   dimension: '2d',
-  source: createImageResourceFromCanvas(buildQuadrantCanvas()),
+  source: createWebImageResourceFromCanvas(buildQuadrantCanvas()),
 });
 setTextureUvFromPixelRect(crop.data.texture, QUAD, 0, QUAD, QUAD);
 crop.x = CROP_X;

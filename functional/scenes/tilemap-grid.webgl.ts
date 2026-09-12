@@ -8,7 +8,7 @@
 // carries the color of the tile id it was assigned: tile 0 cells are red, tile 1 cells are green. This is
 // inherently visual — it exercises per-tile source-rect selection and destination placement that jsdom
 // cannot confirm.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -74,7 +74,7 @@ const atlas = createTextureAtlasFromGrid(
     imageWidth: TILE_W * 2,
     rows: 1,
   },
-  createTexture({ dimension: '2d', source: createImageResourceFromCanvas(atlasCanvas) }),
+  createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(atlasCanvas) }),
 );
 
 const root = createDisplayObject();

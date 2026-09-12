@@ -2,12 +2,12 @@ import { invalidateImageResource, unregisterHostImageDimensionResolver } from '@
 import { afterEach } from 'vitest';
 
 import {
-  createImageResourceFromCanvas,
-  createImageResourceFromImageBitmap,
-  createImageResourceFromImageElement,
-  initializeImageResourceFromCanvas,
-  initializeImageResourceFromImageBitmap,
-  initializeImageResourceFromImageElement,
+  createWebImageResourceFromCanvas,
+  createWebImageResourceFromImageBitmap,
+  createWebImageResourceFromImageElement,
+  initializeWebImageResourceFromCanvas,
+  initializeWebImageResourceFromImageBitmap,
+  initializeWebImageResourceFromImageElement,
   registerWebImageDimensionResolver,
   webImageDimensionResolver,
 } from './webImageResource';
@@ -18,12 +18,12 @@ afterEach(() => {
   unregisterHostImageDimensionResolver();
 });
 
-describe('createImageResourceFromCanvas', () => {
+describe('createWebImageResourceFromCanvas', () => {
   it('wraps a canvas with correct dimensions', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;
-    const resource = createImageResourceFromCanvas(canvas);
+    const resource = createWebImageResourceFromCanvas(canvas);
 
     expect(resource.source).toBe(canvas);
     expect(resource.width).toBe(320);
@@ -34,7 +34,7 @@ describe('createImageResourceFromCanvas', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 0;
     canvas.height = 0;
-    const resource = createImageResourceFromCanvas(canvas);
+    const resource = createWebImageResourceFromCanvas(canvas);
 
     expect(resource.width).toBe(0);
     expect(resource.height).toBe(0);
@@ -42,14 +42,14 @@ describe('createImageResourceFromCanvas', () => {
 
   it('returns a new object each call', () => {
     const canvas = document.createElement('canvas');
-    expect(createImageResourceFromCanvas(canvas)).not.toBe(createImageResourceFromCanvas(canvas));
+    expect(createWebImageResourceFromCanvas(canvas)).not.toBe(createWebImageResourceFromCanvas(canvas));
   });
 });
 
-describe('createImageResourceFromImageBitmap', () => {
+describe('createWebImageResourceFromImageBitmap', () => {
   it('wraps an ImageBitmap with correct dimensions', () => {
     const bitmap = { width: 64, height: 128, close: () => {} } as ImageBitmap;
-    const resource = createImageResourceFromImageBitmap(bitmap);
+    const resource = createWebImageResourceFromImageBitmap(bitmap);
 
     expect(resource.source).toBe(bitmap);
     expect(resource.width).toBe(64);
@@ -58,14 +58,14 @@ describe('createImageResourceFromImageBitmap', () => {
 
   it('returns a new object each call', () => {
     const bitmap = { width: 1, height: 1, close: () => {} } as ImageBitmap;
-    expect(createImageResourceFromImageBitmap(bitmap)).not.toBe(createImageResourceFromImageBitmap(bitmap));
+    expect(createWebImageResourceFromImageBitmap(bitmap)).not.toBe(createWebImageResourceFromImageBitmap(bitmap));
   });
 });
 
-describe('createImageResourceFromImageElement', () => {
+describe('createWebImageResourceFromImageElement', () => {
   it('wraps an HTMLImageElement with correct dimensions', () => {
     const img = { width: 200, height: 100 } as HTMLImageElement;
-    const resource = createImageResourceFromImageElement(img);
+    const resource = createWebImageResourceFromImageElement(img);
 
     expect(resource.source).toBe(img);
     expect(resource.width).toBe(200);
@@ -74,7 +74,7 @@ describe('createImageResourceFromImageElement', () => {
 
   it('reflects zero dimensions for an unloaded image element', () => {
     const img = document.createElement('img');
-    const resource = createImageResourceFromImageElement(img);
+    const resource = createWebImageResourceFromImageElement(img);
 
     expect(resource.width).toBe(0);
     expect(resource.height).toBe(0);
@@ -82,25 +82,25 @@ describe('createImageResourceFromImageElement', () => {
 
   it('returns a new object each call', () => {
     const img = document.createElement('img');
-    expect(createImageResourceFromImageElement(img)).not.toBe(createImageResourceFromImageElement(img));
+    expect(createWebImageResourceFromImageElement(img)).not.toBe(createWebImageResourceFromImageElement(img));
   });
 });
 
-describe('initializeImageResourceFromCanvas', () => {
-  it('is the construction initializer of createImageResourceFromCanvas', () => {
-    expect(typeof initializeImageResourceFromCanvas).toBe('function');
+describe('initializeWebImageResourceFromCanvas', () => {
+  it('is the construction initializer of createWebImageResourceFromCanvas', () => {
+    expect(typeof initializeWebImageResourceFromCanvas).toBe('function');
   });
 });
 
-describe('initializeImageResourceFromImageBitmap', () => {
-  it('is the construction initializer of createImageResourceFromImageBitmap', () => {
-    expect(typeof initializeImageResourceFromImageBitmap).toBe('function');
+describe('initializeWebImageResourceFromImageBitmap', () => {
+  it('is the construction initializer of createWebImageResourceFromImageBitmap', () => {
+    expect(typeof initializeWebImageResourceFromImageBitmap).toBe('function');
   });
 });
 
-describe('initializeImageResourceFromImageElement', () => {
-  it('is the construction initializer of createImageResourceFromImageElement', () => {
-    expect(typeof initializeImageResourceFromImageElement).toBe('function');
+describe('initializeWebImageResourceFromImageElement', () => {
+  it('is the construction initializer of createWebImageResourceFromImageElement', () => {
+    expect(typeof initializeWebImageResourceFromImageElement).toBe('function');
   });
 });
 
@@ -110,7 +110,7 @@ describe('registerWebImageDimensionResolver', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 8;
     canvas.height = 4;
-    const resource = createImageResourceFromCanvas(canvas);
+    const resource = createWebImageResourceFromCanvas(canvas);
     canvas.width = 16;
     canvas.height = 32;
     invalidateImageResource(resource);
@@ -124,7 +124,7 @@ describe('registerWebImageDimensionResolver', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 8;
     canvas.height = 4;
-    const resource = createImageResourceFromCanvas(canvas);
+    const resource = createWebImageResourceFromCanvas(canvas);
     unregisterHostImageDimensionResolver();
     canvas.width = 64;
     invalidateImageResource(resource);

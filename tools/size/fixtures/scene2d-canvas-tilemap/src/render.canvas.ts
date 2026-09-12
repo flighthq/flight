@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -75,7 +75,7 @@ tilesetContext.fillStyle = '#4d9fff';
 tilesetContext.fillRect(32, 0, 32, 32);
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(tileset) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(tileset) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 addTextureAtlasRegion(atlas, 32, 0, 32, 32);

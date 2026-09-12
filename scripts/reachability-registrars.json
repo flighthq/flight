@@ -631,7 +631,7 @@
     },
     {
       "packageName": "host-web",
-      "registrar": "registerImageBitmapComposer"
+      "registrar": "registerWebImageBitmapComposer"
     },
     {
       "packageName": "host-web",

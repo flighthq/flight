@@ -1,6 +1,6 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
-import { createImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -80,7 +80,7 @@ for (let index = 0; index < 4; index += 1) {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(page) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(page) }),
 });
 for (let index = 0; index < 4; index += 1) {
   addTextureAtlasRegion(atlas, index * 16, 0, 16, 16);

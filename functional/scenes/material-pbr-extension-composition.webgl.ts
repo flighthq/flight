@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type {
@@ -142,21 +142,21 @@ const nearestRepeat = createSampler({
 const mapScale = createVector2(2, 1);
 const mapOffset = createVector2(0.125, 0);
 const sheenColorMap = createTexture({
-  source: createImageResourceFromCanvas(twoColorCanvas('#ff1838', '#10d8ff')),
+  source: createWebImageResourceFromCanvas(twoColorCanvas('#ff1838', '#10d8ff')),
   sampler: nearestRepeat,
   uvOffset: mapOffset,
   uvScale: mapScale,
 });
 const sheenRoughnessMap = createTexture({
   colorSpace: 'linear',
-  source: createImageResourceFromCanvas(twoColorCanvas('rgba(255,255,255,0.12)', 'rgba(255,255,255,1)')),
+  source: createWebImageResourceFromCanvas(twoColorCanvas('rgba(255,255,255,0.12)', 'rgba(255,255,255,1)')),
   sampler: nearestRepeat,
   uvOffset: createVector2(0.375, 0),
   uvScale: mapScale,
 });
 const clearcoatNormalMap = createTexture({
   colorSpace: 'linear',
-  source: createImageResourceFromCanvas(twoColorCanvas('rgb(214,128,224)', 'rgb(42,128,224)')),
+  source: createWebImageResourceFromCanvas(twoColorCanvas('rgb(214,128,224)', 'rgb(42,128,224)')),
   sampler: nearestRepeat,
   uvOffset: createVector2(0.0625, 0),
   uvScale: createVector2(4, 1),
@@ -203,7 +203,7 @@ const lights = createScene3DLights({
 
 const cube = createCubeTexture();
 for (let face = 0; face < 6; face++) {
-  setCubeTextureFace(cube, face, createImageResourceFromCanvas(solidCanvas('#3658ff')));
+  setCubeTextureFace(cube, face, createWebImageResourceFromCanvas(solidCanvas('#3658ff')));
 }
 const environment = createEnvironment({ environment: cube, intensity: 0.65 });
 

@@ -7,39 +7,39 @@ import type { Bitmap, EmbeddedImageResourceReference, ImageBitmapComposer } from
 // registration wins so an application can replace a built-in producer deliberately without embedding
 // executable state in a scene.
 
-export function clearImageBitmapComposers(): void {
+export function clearWebImageBitmapComposers(): void {
   composers.clear();
 }
 
 // Takes the join back out of the image lane, restoring the plain straight-decode path.
-export function disableImageBitmapComposition(): void {
+export function disableWebImageBitmapComposition(): void {
   registerImageBitmapCompositionResolver(null);
 }
 
 // Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain its
 // registry lookup or straight-decode branch. A format package calls this beside its composer
 // registrations; until then the image lane's nullable slot keeps the hot path tree-shakable.
-export function enableImageBitmapComposition(): void {
+export function enableWebImageBitmapComposition(): void {
   registerImageBitmapCompositionResolver(resolveImageBitmapComposition);
 }
 
-export function getImageBitmapComposer(kind: string): ImageBitmapComposer | null {
+export function getWebImageBitmapComposer(kind: string): ImageBitmapComposer | null {
   return composers.get(kind) ?? null;
 }
 
-export function getImageBitmapComposerKinds(): readonly string[] {
+export function getWebImageBitmapComposerKinds(): readonly string[] {
   return Array.from(composers.keys());
 }
 
-export function hasImageBitmapComposer(kind: string): boolean {
+export function hasWebImageBitmapComposer(kind: string): boolean {
   return composers.has(kind);
 }
 
-export function registerImageBitmapComposer(kind: string, composer: ImageBitmapComposer): void {
+export function registerWebImageBitmapComposer(kind: string, composer: ImageBitmapComposer): void {
   composers.set(kind, composer);
 }
 
-export function unregisterImageBitmapComposer(kind: string): void {
+export function unregisterWebImageBitmapComposer(kind: string): void {
   composers.delete(kind);
 }
 
@@ -49,7 +49,7 @@ async function resolveImageBitmapComposition(
 ): Promise<Bitmap | null> {
   signal.throwIfAborted();
   const composition = ref.bitmapComposition!;
-  const composer = getImageBitmapComposer(composition.kind);
+  const composer = getWebImageBitmapComposer(composition.kind);
   if (composer === null) return null;
   // A composer always receives straight decoded pixels. It may also own a raw raster with no MIME
   // decoder, in which case decoded is null and its plain payload is the complete input.

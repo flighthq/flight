@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -97,7 +97,7 @@ const material = createShadedMaterial({
   normalMap: createTexture({
     colorSpace: 'linear',
     dimension: '2d',
-    source: createImageResourceFromCanvas(normalSource),
+    source: createWebImageResourceFromCanvas(normalSource),
   }),
   normalScale: 1,
   modifiers: [

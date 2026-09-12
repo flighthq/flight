@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -72,7 +72,7 @@ sourceContext.fillStyle = '#ff4d67';
 sourceContext.fillRect(0, 0, source.width, source.height);
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(source) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 

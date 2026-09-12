@@ -7,7 +7,7 @@
 //
 // This is visual because the difference only exists at the magnified texel edges produced by scaling;
 // it cannot be observed without actually rasterizing the upscaled image.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -72,7 +72,7 @@ function placeChecker(x: number, y: number, smoothing: boolean): void {
   bmp.data.texture = createTexture({
     sampler: smoothing ? undefined : createPixelArtSampler(),
     dimension: '2d',
-    source: createImageResourceFromCanvas(buildCheckerCanvas()),
+    source: createWebImageResourceFromCanvas(buildCheckerCanvas()),
   });
   bmp.x = x;
   bmp.y = y;

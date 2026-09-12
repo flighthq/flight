@@ -134,7 +134,7 @@ export function initializeExternalImageResourceReference(
 
 // The slot the optional decoded-pixel join installs into, so an ordinary embedded-image consumer keeps
 // neither a composer registry nor a second decode branch. Whoever owns the composers — the web host
-// today, through enableImageBitmapComposition — puts its resolver here and passes null to take it back;
+// today, through enableWebImageBitmapComposition — puts its resolver here and passes null to take it back;
 // until something does, the nullable hook leaves the original hot path byte-for-byte tree-shakable.
 export function registerImageBitmapCompositionResolver(resolver: ImageBitmapCompositionResolver | null): void {
   _resolveImageBitmapComposition = resolver;

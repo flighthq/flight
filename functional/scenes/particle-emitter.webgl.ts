@@ -13,7 +13,7 @@
 //
 // The scene assertion proves each particle drew its region's color at its own position and scale, that a rotated
 // particle still lands on its center, and that the gaps between particles stay background.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -88,7 +88,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
 }
 
 const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeAtlasCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(makeAtlasCanvas()) }),
 });
 for (let i = 0; i < SWATCHES.length; i++) addTextureAtlasRegion(atlas, i * REGION, 0, REGION, REGION);
 

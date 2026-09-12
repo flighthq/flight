@@ -13,25 +13,25 @@ import { ImageTextureSourceKind } from '@flighthq/types/contract';
 // names a browser type, which is why they live here rather than in the portable image package — that
 // package holds the resource identity and lifecycle, this one holds what a handle IS on the web.
 
-export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
+export function createWebImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   const out = allocateEntity<ImageResource>();
-  initializeImageResourceFromCanvas(out, canvas);
+  initializeWebImageResourceFromCanvas(out, canvas);
   return finishEntity(out);
 }
 
-export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
+export function createWebImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   const out = allocateEntity<ImageResource>();
-  initializeImageResourceFromImageBitmap(out, bitmap);
+  initializeWebImageResourceFromImageBitmap(out, bitmap);
   return finishEntity(out);
 }
 
-export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
+export function createWebImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   const out = allocateEntity<ImageResource>();
-  initializeImageResourceFromImageElement(out, img);
+  initializeWebImageResourceFromImageElement(out, img);
   return finishEntity(out);
 }
 
-export function initializeImageResourceFromCanvas(
+export function initializeWebImageResourceFromCanvas(
   out: EntityConstruction<ImageResource>,
   canvas: HTMLCanvasElement,
 ): void {
@@ -44,7 +44,7 @@ export function initializeImageResourceFromCanvas(
   out.width = canvas.width;
 }
 
-export function initializeImageResourceFromImageBitmap(
+export function initializeWebImageResourceFromImageBitmap(
   out: EntityConstruction<ImageResource>,
   bitmap: ImageBitmap,
 ): void {
@@ -57,7 +57,7 @@ export function initializeImageResourceFromImageBitmap(
   out.width = bitmap.width;
 }
 
-export function initializeImageResourceFromImageElement(
+export function initializeWebImageResourceFromImageElement(
   out: EntityConstruction<ImageResource>,
   img: HTMLImageElement,
 ): void {

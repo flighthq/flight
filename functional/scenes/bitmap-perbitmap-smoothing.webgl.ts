@@ -19,7 +19,7 @@
 //
 // WebGPU has the same proof in the sibling .webgpu variant (its own bind-group-variant path); canvas/dom
 // always honored per-bitmap smoothing (covered by the bare bitmap-smoothing / bitmap-downscale-smoothing).
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -80,7 +80,7 @@ const root = createDisplayObject();
 
 // One shared checker resource for BOTH bitmaps — see the header: this makes smoothing the only differing
 // batch key, so the scene fails if the smoothing key is dropped from the flush comparison.
-const checker = createImageResourceFromCanvas(buildCheckerCanvas());
+const checker = createWebImageResourceFromCanvas(buildCheckerCanvas());
 
 function placeChecker(x: number, y: number, smoothing: boolean): void {
   const bmp = createSprite();

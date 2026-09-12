@@ -1,4 +1,4 @@
-import { createImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
@@ -80,7 +80,7 @@ const emitter = createParticleEmitter3D();
 const atlas = createTextureAtlas({
   // The default sRGB declaration is intentional: the resolver decodes these colored atlas pixels into
   // the linear scene target before the particle shader applies alpha.
-  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeAtlasCanvas()) }),
+  texture: createTexture({ dimension: '2d', source: createWebImageResourceFromCanvas(makeAtlasCanvas()) }),
 });
 addTextureAtlasRegion(atlas, 0, 0, ATLAS_SIZE, ATLAS_SIZE);
 emitter.data.atlas = atlas;

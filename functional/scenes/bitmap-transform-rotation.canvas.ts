@@ -8,7 +8,7 @@
 //
 // Transform rotation composited with bitmap rendering is inherently visual — jsdom has no
 // rendering pipeline.
-import { createImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -48,7 +48,7 @@ const ctx = canvas.getContext('2d')!;
 ctx.fillStyle = '#ff0000';
 ctx.fillRect(0, 0, SIZE, SIZE);
 
-const imageResource = createImageResourceFromCanvas(canvas);
+const imageResource = createWebImageResourceFromCanvas(canvas);
 
 const root = createDisplayObject();
 
