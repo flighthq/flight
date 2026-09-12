@@ -58,7 +58,6 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
 
 // The distortion amount the effect is given AND the value the assertion reasons about. One constant so
 // the descriptor and the oracle cannot drift apart.

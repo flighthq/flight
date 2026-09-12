@@ -63,7 +63,6 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
-const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
