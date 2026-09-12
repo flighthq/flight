@@ -28,6 +28,7 @@ import type {
   GlTextureRenderTarget,
   RenderEffect,
   RenderEffectPipelineOptions,
+  RenderTargetClear,
   RenderTargetColorSpace,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -45,6 +46,7 @@ export function beginGlRenderEffectPipeline(
   state: GlRenderState,
   pipeline: GlRenderEffectPipeline,
   colorSpace: RenderTargetColorSpace = 'srgb',
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
 ): GlRenderPass {
   const w = state.gl.drawingBufferWidth;
   const h = state.gl.drawingBufferHeight;
@@ -63,8 +65,7 @@ export function beginGlRenderEffectPipeline(
     resizeGlTextureRenderTarget(state, pipeline.sceneTarget, w, h);
   }
   pipeline.sceneTarget.colorSpace = colorSpace;
-  clearGlRenderTarget(pipeline.sceneTarget, { color: [0, 0, 0, 0], depth: 1.0 });
-  return beginGlRenderPass(state, pipeline.sceneTarget);
+  return beginGlRenderPass(state, pipeline.sceneTarget, clear);
 }
 
 export function createGlRenderEffectPipeline(
