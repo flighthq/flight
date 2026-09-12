@@ -39,7 +39,7 @@ export interface WgpuHostAcquisitionOptions {
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuProvider extends Entity {
-  acquire(canvas: HTMLCanvasElement, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  acquire(surface: WgpuScreenSurface, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
   // Binds a device to a presentation surface and returns its configured swap-chain context, or null when
   // the surface cannot present. Separate from `acquire` because a device outlives any one surface: a
   // second window attaches its own surface to the device already in hand, and only the host knows how a
