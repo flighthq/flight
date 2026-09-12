@@ -122,6 +122,27 @@ For DOM, the background is a CSS property on the element — set it directly: `s
 
 Canvas 2D has a structural difference from GL/WGPU: each canvas element has its own `CanvasRenderingContext2D`, so swapping targets physically swaps the context. GL and WGPU have one context with bindable targets. `beginCanvasRenderPass` swaps the active context on the state and invalidates the binding shadow (`currentAlpha`, `currentBlendMode`, smoothing). This is internal — the pass handle abstracts it.
 
+### 8. Web convenience functions move to `host-web`; render packages become web-type-free
+
+Portable render packages (`render-gl`, `render-wgpu`) must not reference web types (`HTMLCanvasElement`, `document`, etc.). Web-only convenience functions move to `host-web`, following its `web*` prefix convention:
+
+- `createGlContextFromCanvasElement` → `createWebGlContext(canvas, options)` in `host-web`. Handles default context attributes (stencil, alpha, antialias) and the null-context error. Earns its existence because getting context attributes wrong is a real footgun.
+- `createGlCanvasElement` / `createGlRenderSurface` → `createWebCanvasElement(width, height, pixelRatio)` in `host-web`. Handles CSS size vs backing store size (pixel ratio math).
+- `createWgpuCanvasElement` → same pattern, moves to `host-web`.
+
+**Deleted entirely — no replacement:**
+
+- `setGlRenderSurfaceProvider` / `setWgpuRenderSurfaceProvider` — module-scoped mutable singletons in `render-gl` and `render-wgpu`. Violate explicit dependency. Zero package-level callers.
+- `enableHostWebGlRenderSurface` / `enableHostWebWgpuRenderSurface` — the `host-web` functions that write into those singletons.
+- `GlRenderSurfaceProvider` / `WgpuRenderSurfaceProvider` types — the provider interfaces behind the singletons.
+- `explainGlRenderSurfaceAbsence` / `getGlRenderSurfaceProvider` / `resetGlRenderSurfaceProviderForTest` — the singleton's diagnostic and test seams.
+
+The entire singleton provider chain (`enableHostWeb*RenderSurface` → `set*RenderSurfaceProvider` → module-scoped `_provider` → `create*RenderSurface`) is replaced by direct functions in `host-web` that callers import explicitly.
+
+**Also deleted:**
+
+- `createGlOffscreenRenderState` — a one-line wrapper around `createGlRenderState` with the same arguments. Under the new model, sharing a context is just passing the same `gl` handle. The "offscreen" distinction no longer exists when no render state owns a screen.
+
 ### 7. Context vs. context state
 
 Two separate types, both kept internally:
@@ -136,8 +157,8 @@ Two separate types, both kept internally:
 ```typescript
 // ─── Construction: backend-specific, honestly different ───
 
-// GL (web)
-const gl = canvas.getContext('webgl2');
+// GL (web) — createWebGlContext from host-web handles default attributes + null check
+const gl = createWebGlContext(canvas);
 const screen = createGlScreenRenderTarget(gl);
 const state = createGlRenderState(gl, pipeline);
 // ...register renderers, texture resolvers, blend support...
@@ -198,6 +219,11 @@ renderDomScene2D(state, root);
 | Update tools/examples render loops | ~120 files (mechanical) |
 | Context state internalized | render-gl, render-wgpu (creation path changes) |
 | `clearGlRenderPass` uses `colorAttachments` not `textures.length` | render-gl |
+| Delete `createGlOffscreenRenderState` | render-gl, callers use `createGlRenderState(gl, pipeline)` |
+| Move `createGlContextFromCanvasElement` → `createWebGlContext` | render-gl → host-web |
+| Move `createGlCanvasElement` / `createGlRenderSurface` → `createWebCanvasElement` | render-gl → host-web |
+| Move `createWgpuCanvasElement` → `createWebWgpuCanvasElement` | render-wgpu → host-web |
+| Delete singleton provider chain | render-gl, render-wgpu, host-web (`set*RenderSurfaceProvider`, `enable*`, `GlRenderSurfaceProvider`, `WgpuRenderSurfaceProvider`) |
 
 ## Open questions
 
