@@ -1,8 +1,5 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-
-import { TEST_RUN_COMPLETENESS_ENV } from './testRunCompleteness';
 
 // The host-web seam cleanup moved every browser-typed image, bitmap and atlas convenience out of the
 // portable packages. Its success condition is an ABSENCE, which is exactly the kind of property that
@@ -105,33 +102,47 @@ describe('host-web seam closure', () => {
 // The dimension resolver is one module-scoped slot shared by every test file in a Vitest process, so a
 // file that registers and never clears can satisfy a LATER file's missing registration. That is how
 // canvasTextureView passed in the broad suite while failing on its own: it never declared the dependency
-// and inherited one. Neither the broad suite nor a package-scoped run can catch that class of defect —
-// only a fresh process holding one file can — so this spends a child process to hold the line.
-describe('portable dimension-resolver isolation', () => {
-  const ISOLATED_FILES = [
-    'packages/scene2d-canvas/src/canvasTextureView.test.ts',
-    'packages/scene2d-canvas/src/canvasSprite.test.ts',
+// and inherited one. Neither the broad suite nor a package-scoped run can catch that, because both are
+// the very process that shares the slot — so the declaration is what gets pinned here, per file.
+//
+// The behavioral proof is a real fresh process, but it must not run inside this suite: nesting Vitest in
+// Vitest collided twice, once over the completeness reporter's output file and once over Vite's temp
+// config, each time failing the outer run with no failing test to explain it. Run it directly instead:
+//   npx vitest run --config vitest.config.ts packages/scene2d-canvas/src/canvasTextureView.test.ts
+describe('portable dimension-resolver declaration', () => {
+  // Every package whose tests wrap a host handle. A test that measures must say so in its own file.
+  const MEASURING_PACKAGES = [
+    'bitmap',
+    'image',
+    'scene2d-canvas',
+    'scene2d-dom',
+    'scene2d-gl',
+    'scene2d-wgpu',
+    'scene3d-gl',
+    'scene3d-wgpu',
+    'textureatlas',
   ];
 
-  for (const file of ISOLATED_FILES) {
-    it(`passes with nothing else loaded: ${file}`, () => {
-      const repositoryRoot = resolve(import.meta.dirname, '..');
-      // The completeness reporter writes to one file named by an environment variable. Inheriting it
-      // would point this child at the parent run's report — the child would overwrite it and delete the
-      // directory on the way out, failing the whole outer run with no failing test to explain it.
-      const { [TEST_RUN_COMPLETENESS_ENV]: _parentReport, ...childEnvironment } = process.env;
-      const run = (): void => {
-        execFileSync('npx', ['vitest', 'run', '--config', 'vitest.config.ts', file], {
-          cwd: repositoryRoot,
-          encoding: 'utf-8',
-          env: childEnvironment,
-          stdio: 'pipe',
-        });
-      };
+  it('registers and clears the resolver in every test file that measures a wrapped handle', () => {
+    const undeclared: string[] = [];
+    const unbalanced: string[] = [];
+    for (const packageName of MEASURING_PACKAGES) {
+      for (const [file, source] of readPackageTests(packageName)) {
+        const code = stripCommentsAndStrings(source);
+        const registers = /\bregisterTestImageDimensionResolver\b/u.test(code);
+        const clears = /\bunregisterTestImageDimensionResolver\b/u.test(code);
+        // Whether a given file's assertions happen to depend on the measured size is not something the
+        // file's text can answer — the dependency can sit inside the production code it calls, which is
+        // exactly where canvasTextureView's did. So the rule is the blunt one: wrap a handle in a test,
+        // supply the host.
+        if (!registers && /\bcreateImageResource\s*\(/u.test(code)) undeclared.push(`${packageName}/${file}`);
+        // Registering without clearing is what let one file cover for another.
+        if (registers && !clears) unbalanced.push(`${packageName}/${file}`);
+      }
+    }
 
-      expect(run).not.toThrow();
-    }, 120_000);
-  }
+    expect({ unbalanced, undeclared }).toStrictEqual({ unbalanced: [], undeclared: [] });
+  });
 });
 
 // Comments and string literals are prose: a sentence explaining that browser canvas decodes are
@@ -171,5 +182,12 @@ function readPackageSource(packageName: string): [string, string][] {
   const directory = resolve(packagesDirectory, packageName, 'src');
   return readdirSync(directory)
     .filter((file) => file.endsWith('.ts') && !file.endsWith('.test.ts'))
+    .map((file) => [file, readFileSync(resolve(directory, file), 'utf-8')]);
+}
+
+function readPackageTests(packageName: string): [string, string][] {
+  const directory = resolve(packagesDirectory, packageName, 'src');
+  return readdirSync(directory)
+    .filter((file) => file.endsWith('.test.ts'))
     .map((file) => [file, readFileSync(resolve(directory, file), 'utf-8')]);
 }

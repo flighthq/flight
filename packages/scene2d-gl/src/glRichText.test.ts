@@ -1,4 +1,8 @@
-﻿import { createImageResource } from '@flighthq/image/contract';
+﻿import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
@@ -16,6 +20,16 @@ import {
   registerGlTextInputOverlay,
 } from './glRichText';
 import { createGlState } from './glTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeRichTextNode(rendererData: unknown = { surface: createTestRaster2DSurface(1, 1) }): RenderProxy2D {
   const richText = createRichText();

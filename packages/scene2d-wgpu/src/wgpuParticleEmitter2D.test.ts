@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   beginWgpuScreenRenderPassForTest,
@@ -19,6 +23,16 @@ import {
 } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 beforeAll(() => {
   installWgpuMock();

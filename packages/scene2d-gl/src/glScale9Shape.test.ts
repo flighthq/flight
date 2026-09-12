@@ -1,4 +1,9 @@
-﻿import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
+﻿import {
+  createImageResource,
+  invalidateImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
@@ -16,6 +21,16 @@ import {
   initializeGlScale9ShapeData,
 } from './glScale9Shape';
 import { createGlState } from './glTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 const destroySurface = vi.fn();

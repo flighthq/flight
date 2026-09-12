@@ -1,5 +1,9 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
@@ -12,6 +16,16 @@ import { defaultCanvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './can
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
 import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 // The registry deliberately makes a tombstone unreachable without narrowing, so the helper narrows once
 // here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the

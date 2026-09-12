@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
@@ -20,6 +24,16 @@ import {
   drawWgpuRichTextWithOverlay,
   registerWgpuTextInputOverlay,
 } from './wgpuRichText';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 beforeAll(() => {
   installWgpuMock();

@@ -1,5 +1,9 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
@@ -8,6 +12,16 @@ import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasB
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 // Single-page stub glyph source whose page-0 image is a real ImageResource backed by a DOM <img>.
 function createTestGlyphSource(): GlyphSource {

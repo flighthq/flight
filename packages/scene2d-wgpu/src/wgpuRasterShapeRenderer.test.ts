@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import {
   beginWgpuScreenRenderPassForTest,
@@ -14,6 +18,16 @@ import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/c
 import { defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 beforeAll(() => installWgpuMock());
 

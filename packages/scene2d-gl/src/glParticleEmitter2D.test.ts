@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import {
   getGlRenderStateRuntime,
   registerGlCompressedImageTextureResolver,
@@ -10,6 +14,16 @@ import { CompressedImageTextureSourceKind, RegistryEntryState, TextureAtlasRotat
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeAtlas(rotation = TextureAtlasRotation.None) {
   const img = document.createElement('img');

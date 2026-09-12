@@ -1,4 +1,8 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { Raster2DSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
@@ -7,6 +11,16 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { createGlRichTextData, drawGlRichText } from './glRichText';
 import { createGlState } from './glTestHelper';
 import { drawGlTextInputOverlay, enableGlTextInput } from './glTextInput';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeFocusedInputProxy(state: Parameters<typeof createGlRichTextData>[0]): RenderProxy2D {
   const node = createRichText({ data: { height: 40, text: 'hello', width: 100 } });

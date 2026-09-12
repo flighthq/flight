@@ -1,10 +1,24 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 describe('registerDomTextureResolver', () => {
   it('registers and removes one state-scoped resolver', () => {

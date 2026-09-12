@@ -1,5 +1,9 @@
 import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/bitmaptext/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { setNodeColorAdjustmentsTint } from '@flighthq/node/contract';
 import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
@@ -10,6 +14,16 @@ import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMat
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 // A single-page stub glyph source whose page-0 image carries a drawable host source.
 function createTestGlyphSource(): GlyphSource {

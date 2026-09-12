@@ -1,6 +1,10 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createReadyImageElementForTest, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
@@ -18,6 +22,16 @@ import { describe, expect, it } from 'vitest';
 
 import { destroyWgpuParticleEmitter3DResources, drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+
+// A test that wraps a host handle supplies the host: the resource measures through the registered
+// resolver, and clearing after each test keeps this file from covering for another's missing one.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeCamera(): Camera3D {
   const cam = createCamera3D({
