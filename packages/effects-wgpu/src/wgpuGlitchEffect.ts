@@ -1,4 +1,9 @@
-import type { GlitchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlitchEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -9,8 +14,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
 export function applyGlitchEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<GlitchEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
@@ -19,7 +24,7 @@ export function applyGlitchEffectToWgpu(
   const seed = effect.seed ?? 0;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.glitch', GLITCH_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = blockSize;
     f32[2] = colorShift;

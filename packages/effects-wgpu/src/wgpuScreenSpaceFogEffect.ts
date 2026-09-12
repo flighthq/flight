@@ -2,7 +2,7 @@ import type {
   ScreenSpaceFogEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -16,8 +16,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // the proxy. color is a packed RGBA int unpacked to 0..1 floats on the JS side.
 export function applyScreenSpaceFogEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ScreenSpaceFogEffect>,
 ): void {
   const packed = effect.color ?? 0xc8d2dcff;
@@ -31,7 +31,7 @@ export function applyScreenSpaceFogEffectToWgpu(
     SCREEN_SPACE_FOG_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = density;
     f32[4] = r;
     f32[5] = g;

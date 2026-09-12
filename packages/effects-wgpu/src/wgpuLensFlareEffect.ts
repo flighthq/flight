@@ -2,7 +2,7 @@ import type {
   LensFlareEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -16,8 +16,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // buffer.
 export function applyLensFlareEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<LensFlareEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;
@@ -25,7 +25,7 @@ export function applyLensFlareEffectToWgpu(
   const ghosts = effect.ghosts ?? 4;
   const halo = effect.halo ?? 0.5;
   const pipeline = getWgpuEffectPipeline(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = intensity;
     f32[2] = ghosts;

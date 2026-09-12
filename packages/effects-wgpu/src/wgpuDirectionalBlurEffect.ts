@@ -2,7 +2,7 @@ import type {
   DirectionalBlurEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -15,8 +15,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // applyDirectionalBlurEffectToGl. u_resolution converts the texel length into UV space.
 export function applyDirectionalBlurEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
   const angle = ((effect.angle ?? 0) * Math.PI) / 180;
@@ -24,7 +24,7 @@ export function applyDirectionalBlurEffectToWgpu(
   const samples = effect.samples ?? 16;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'motion.directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = angle;
     f32[1] = length;
     f32[2] = samples;

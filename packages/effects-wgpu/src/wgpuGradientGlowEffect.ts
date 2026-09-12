@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   GradientGlowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
@@ -22,17 +22,17 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // multi-pass recipe (neutral tint → box blur → gradient lookup → composite), then releases them.
 export function applyGradientGlowEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<GradientGlowEffect>,
 ): void {
-  const src = source as WgpuRenderTarget;
-  const dst = dest as WgpuRenderTarget;
+  const src = source as WgpuTextureRenderTarget;
+  const dst = dest as WgpuTextureRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s1 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s2 = acquireWgpuRenderTarget(state, pool, descriptor);
+  const s0 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const strength = effect.strength ?? 1;
@@ -84,9 +84,9 @@ export function applyGradientGlowEffectToWgpu(
     applyWgpuEffectBlitPass(state, src, dst);
   }
 
-  releaseWgpuRenderTarget(pool, s0);
-  releaseWgpuRenderTarget(pool, s1);
-  releaseWgpuRenderTarget(pool, s2);
+  releaseWgpuTextureRenderTarget(pool, s0);
+  releaseWgpuTextureRenderTarget(pool, s1);
+  releaseWgpuTextureRenderTarget(pool, s2);
 }
 
 export const defaultWgpuGradientGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

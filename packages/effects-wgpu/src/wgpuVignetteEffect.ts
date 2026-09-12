@@ -2,7 +2,7 @@ import type {
   VignetteEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -16,8 +16,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // the packed RGBA color int is unpacked to normalized components in JS before upload.
 export function applyVignetteEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<VignetteEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
@@ -29,7 +29,7 @@ export function applyVignetteEffectToWgpu(
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
   const pipeline = getWgpuEffectPipeline(state, 'lens.vignette', VIGNETTE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radius;
     f32[2] = softness;

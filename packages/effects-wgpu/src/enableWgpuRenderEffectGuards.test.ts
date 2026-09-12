@@ -9,8 +9,10 @@ import {
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
+  beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   createWgpuRenderTexturePool,
+  endWgpuRenderPass,
   installWgpuMock,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
@@ -108,9 +110,9 @@ describe('enableWgpuRenderEffectGuards', () => {
     ] as unknown as Readonly<RenderEffect>[];
 
     const entries = captureLog(() => {
-      beginWgpuFrame(state);
-      beginWgpuRenderEffectPipeline(state, pipeline);
-      endWgpuRenderEffectPipeline(state, pipeline, chain);
+      const screenPass = beginWgpuScreenRenderPassForTest(state);
+      endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, chain);
+      endWgpuRenderPass(screenPass);
     });
 
     expect(entries).toHaveLength(1);
@@ -120,9 +122,9 @@ describe('enableWgpuRenderEffectGuards', () => {
     // Once per KIND, not once per frame: a chain missing the same effect every frame is one observation,
     // and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
-      beginWgpuFrame(state);
-      beginWgpuRenderEffectPipeline(state, pipeline);
-      endWgpuRenderEffectPipeline(state, pipeline, chain);
+      const screenPass = beginWgpuScreenRenderPassForTest(state);
+      endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, chain);
+      endWgpuRenderPass(screenPass);
     });
 
     expect(again).toHaveLength(0);

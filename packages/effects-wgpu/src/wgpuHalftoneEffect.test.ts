@@ -1,6 +1,6 @@
 import { createHalftoneEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { HalftoneEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { HalftoneEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
@@ -56,7 +56,7 @@ const SOURCE_HEIGHT = 64;
 function apply(effect: Readonly<Partial<HalftoneEffect>> = {}): readonly number[] {
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
-  const target = { height: SOURCE_HEIGHT, view: {}, width: SOURCE_WIDTH } as unknown as WgpuRenderTarget;
+  const target = { height: SOURCE_HEIGHT, view: {}, width: SOURCE_WIDTH } as unknown as WgpuTextureRenderTarget;
   applyHalftoneEffectToWgpu({} as unknown as WgpuRenderState, target, target, createHalftoneEffect(effect));
   return recorded.uniforms[0]!;
 }
@@ -172,7 +172,7 @@ describe('applyHalftoneEffectToWgpu', () => {
 describe('defaultWgpuHalftoneEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuRenderTarget;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
 
     defaultWgpuHalftoneEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,

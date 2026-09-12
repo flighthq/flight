@@ -23,6 +23,7 @@ import type {
   Scene3DRenderProxy,
   SurfaceMaterial,
   WgpuMeshMaterialRenderer,
+  WgpuRenderPass,
   WgpuRenderState,
   WgpuScene3DDrawEntry,
   WgpuScene3DForwardLightList,
@@ -52,14 +53,15 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // issues the per-subset indexed draw. A subset whose material resolves to no renderer (and no
 // StandardMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
 // material renderer's pipeline; the surrounding rgba16float scene render pass + depth attachment is
-// the effect pipeline's, not drawWgpuScene3D's. Must run inside an open render pass.
+// the effect pipeline's, not drawWgpuScene3D's. The pass names the target the scene lands in.
 export function drawWgpuScene3D(
-  state: WgpuRenderState,
+  pass: WgpuRenderPass,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
   forwardLights?: Readonly<WgpuScene3DForwardLightList>,
 ): void {
+  const state = pass.state;
   const list = prepareScene3DRender(state, scene, camera, lights);
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;

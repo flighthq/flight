@@ -1,5 +1,9 @@
 import { createImageResource } from '@flighthq/image/contract';
-import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  getWgpuRenderStateRuntime,
+  submitWgpuFrame,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
@@ -73,7 +77,7 @@ describe('destroyWgpuRichTextData', () => {
   it('removes the GPU cache entry before returning the node surface to its creator', async () => {
     const order: string[] = [];
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
@@ -86,7 +90,7 @@ describe('destroyWgpuRichTextData', () => {
     drawWgpuRichText(state, proxy);
     const surface = getWgpuRendererData<{ surface: Raster2DSurface }>(proxy.rendererData)!.surface;
     const entry = cache.get(surface.image)!;
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
     vi.spyOn(entry.texture, 'destroy').mockImplementation(() => {
       order.push('texture');
     });
@@ -106,7 +110,7 @@ describe('drawWgpuRichText', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const first = createRichText({ data: { height: 40, text: 'first', width: 100 } });
     const second = createRichText({ data: { height: 40, text: 'second', width: 100 } });
     prepareScene2DRender(state, first);
@@ -133,19 +137,19 @@ describe('drawWgpuRichText', () => {
     drawWgpuRichText(state, firstProxy);
     expect(firstOwned.surface).toBe(firstSurface);
     expect(firstOwned.surface!.image).toBe(firstImage);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('does not throw for empty rich text', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const richText = createRichText();
     prepareScene2DRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
     expect(() => drawWgpuRichText(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('does not throw when renderPass is null', async () => {
@@ -161,12 +165,12 @@ describe('drawWgpuRichText', () => {
 describe('drawWgpuRichTextWithOverlay', () => {
   it('does not throw for empty rich text', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const richText = createRichText();
     prepareScene2DRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
     expect(() => drawWgpuRichTextWithOverlay(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
@@ -176,7 +180,7 @@ describe('registerWgpuTextInputOverlay', () => {
     registerWgpuTextInputOverlay(overlay);
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
 
     const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });
     prepareScene2DRender(state, plain);
@@ -192,6 +196,6 @@ describe('registerWgpuTextInputOverlay', () => {
     editableProxy.rendererData = createWgpuRichTextData(state, editable);
     drawWgpuRichText(state, editableProxy);
     expect(overlay).toHaveBeenCalled();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });

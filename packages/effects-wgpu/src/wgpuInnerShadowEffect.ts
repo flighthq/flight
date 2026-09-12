@@ -1,10 +1,10 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   InnerShadowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -19,17 +19,17 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // multi-pass recipe (invert-tint → box blur → offset → inner clip → composite), then releases them.
 export function applyInnerShadowEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<InnerShadowEffect>,
 ): void {
-  const src = source as WgpuRenderTarget;
-  const dst = dest as WgpuRenderTarget;
+  const src = source as WgpuTextureRenderTarget;
+  const dst = dest as WgpuTextureRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s1 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s2 = acquireWgpuRenderTarget(state, pool, descriptor);
+  const s0 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const s1 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const s2 = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
@@ -57,9 +57,9 @@ export function applyInnerShadowEffectToWgpu(
   }
   applyWgpuEffectBlitPass(state, s1, dst);
 
-  releaseWgpuRenderTarget(pool, s0);
-  releaseWgpuRenderTarget(pool, s1);
-  releaseWgpuRenderTarget(pool, s2);
+  releaseWgpuTextureRenderTarget(pool, s0);
+  releaseWgpuTextureRenderTarget(pool, s1);
+  releaseWgpuTextureRenderTarget(pool, s2);
 }
 
 export const defaultWgpuInnerShadowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

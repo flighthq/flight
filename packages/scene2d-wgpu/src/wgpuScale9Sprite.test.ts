@@ -1,12 +1,12 @@
 import {
+  beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   getWgpuPipelineRegistries,
   getWgpuRenderStateRuntime,
   installWgpuMock,
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
-  renderWgpuBackground,
-  submitWgpuRenderPass,
+  submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import type {
@@ -41,7 +41,7 @@ describe('defaultWgpuScale9SpriteRenderer', () => {
 describe('drawWgpuScale9Sprite', () => {
   it('emits nine independently positioned quad instances', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     const texture = createResolvedRenderTexture(state);
@@ -69,12 +69,12 @@ describe('drawWgpuScale9Sprite', () => {
     expect(runtime.quadBatchWriterInstanceData[center + 9]).toBeCloseTo(0);
     expect(runtime.quadBatchWriterInstanceData[center + 10]).toBeCloseTo(0);
     expect(runtime.quadBatchWriterInstanceData[center + 11]).toBeCloseTo(10 / 60);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 
   it('indexes parallel instance streams from the post-flush writer count', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuRenderTextureResolver(state);
     registerWgpuStandardMaterial(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
@@ -90,7 +90,7 @@ describe('drawWgpuScale9Sprite', () => {
     expect(runtime.quadBatchWriterCount).toBe(9);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(1);
     expect(runtime.quadBatchWriterUniformColorScaleBias).toBe(tint);
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 

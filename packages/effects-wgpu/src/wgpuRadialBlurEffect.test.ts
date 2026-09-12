@@ -1,6 +1,6 @@
 import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { RadialBlurEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { RadialBlurEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
@@ -53,7 +53,7 @@ beforeAll(() => installWgpuMock());
 function apply(effect: Readonly<Partial<RadialBlurEffect>> = {}): readonly number[] {
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
-  const target = { height: 64, view: {}, width: 64 } as unknown as WgpuRenderTarget;
+  const target = { height: 64, view: {}, width: 64 } as unknown as WgpuTextureRenderTarget;
   applyRadialBlurEffectToWgpu({} as unknown as WgpuRenderState, target, target, createRadialBlurEffect(effect));
   return recorded.uniforms[0]!;
 }
@@ -119,7 +119,7 @@ describe('applyRadialBlurEffectToWgpu', () => {
 describe('defaultWgpuRadialBlurEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuRenderTarget;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
 
     defaultWgpuRadialBlurEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,

@@ -1,4 +1,4 @@
-import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
+import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
@@ -18,19 +18,19 @@ describe('defaultWgpuScene2DRenderer', () => {
 describe('drawWgpuScene2D', () => {
   it('is a no-op (plain display objects have no geometry)', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     const renderProxy = { source: createDisplayObject() } as never;
     expect(() => drawWgpuScene2D(state, renderProxy)).not.toThrow();
-    submitWgpuRenderPass(state);
+    submitWgpuFrame(state);
   });
 });
 
 describe('renderWgpuScene2D', () => {
   it('traverses a display object without error', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    const pass = beginWgpuScreenRenderPassForTest(state);
     const root = createDisplayObject();
-    expect(() => renderWgpuScene2D(state, root)).not.toThrow();
-    submitWgpuRenderPass(state);
+    expect(() => renderWgpuScene2D(pass, root)).not.toThrow();
+    submitWgpuFrame(state);
   });
 });

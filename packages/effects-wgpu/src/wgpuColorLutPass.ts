@@ -1,5 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  ColorLut,
+  WgpuColorLutTextureCache,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect';
@@ -16,8 +21,8 @@ import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 // grade uploads once. The caller owns `cache.texture` and destroys it on teardown.
 export function applyColorLutPassToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   lut: Readonly<ColorLut>,
   cache: WgpuColorLutTextureCache,
 ): void {
@@ -28,7 +33,7 @@ export function applyColorLutPassToWgpu(
   const sourceBG = device.createBindGroup({
     layout: fs.textureBGLayout,
     entries: [
-      { binding: 0, resource: (source as WgpuRenderTarget).view },
+      { binding: 0, resource: (source as WgpuTextureRenderTarget).view },
       { binding: 1, resource: fs.sampler },
     ],
   });
@@ -40,13 +45,13 @@ export function applyColorLutPassToWgpu(
     ],
   });
 
-  const pipeline = getLutPipeline(state, (dest as WgpuRenderTarget).format);
+  const pipeline = getLutPipeline(state, (dest as WgpuTextureRenderTarget).format);
   const slotOffset = fs.acquireSlot();
   fs.writeSlot(slotOffset, (f32) => {
     f32[0] = lut.size;
   });
 
-  const pass = fs.beginPass(dest as WgpuRenderTarget, 'load');
+  const pass = fs.beginPass(dest as WgpuTextureRenderTarget, 'load');
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, sourceBG);

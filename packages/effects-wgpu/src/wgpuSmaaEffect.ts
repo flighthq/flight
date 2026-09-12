@@ -1,4 +1,9 @@
-import type { SmaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  SmaaEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -9,8 +14,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // softens detected edges only and is acceptable until the multi-pass recipe lands.
 export function applySmaaEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<SmaaEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.1;
@@ -20,7 +25,7 @@ export function applySmaaEffectToWgpu(
   const width = source.width;
   const height = source.height;
   const pipeline = getWgpuEffectPipeline(state, 'antialiasing.smaa', SMAA_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = threshold;

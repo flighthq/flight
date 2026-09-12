@@ -1,7 +1,7 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { Node2D, Scene2DRenderer, RenderProxy2D, WgpuRenderState } from '@flighthq/types/contract';
+import type { Node2D, Scene2DRenderer, RenderProxy2D, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
@@ -9,7 +9,10 @@ export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderPro
   // Plain display objects have no visual geometry of their own.
 }
 
-export function renderWgpuScene2D(state: WgpuRenderState, source: Node2D): void {
+// Draws `source`'s subtree into the pass. The pass names the target, so the same scene renders to the
+// screen or into an offscreen target with no argument but this one changing.
+export function renderWgpuScene2D(pass: WgpuRenderPass, source: Node2D): void {
+  const state = pass.state;
   const tempStack = getWgpuRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 

@@ -1,13 +1,14 @@
-import {
-  acquireWgpuRenderTarget,
-  getWgpuSurfaceLogicalExtent,
-  releaseWgpuRenderTarget,
-} from '@flighthq/render-wgpu/contract';
-import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  BlurEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
+import { getWgpuEffectLogicalWidth, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
@@ -22,9 +23,9 @@ export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
 // target distinct from both `source` and `dest`.
 export function applyBlurEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
-  temp: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
+  temp: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<BlurEffect>,
 ): void {
   applyGaussianBlurToWgpu(state, source, dest, temp, { blurX: effect.blurX, blurY: effect.blurY });
@@ -32,9 +33,9 @@ export function applyBlurEffectToWgpu(
 
 export function applyGaussianBlurToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
-  temp: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
+  temp: Readonly<WgpuTextureRenderTarget>,
   options: Readonly<{ blurX?: number; blurY?: number }>,
 ): void {
   // ★ SIGMA IS IN LOGICAL PIXELS; THE PASS STEPS IN TEXELS. On a supersampled target those are not the
@@ -53,7 +54,7 @@ export function applyGaussianBlurToWgpu(
   // their own sampleCount is 1 — so asking `getWgpuRenderTargetSupersampleScale` gave 1 and the first
   // version of this fix changed nothing at all. Texel density against the canvas is the thing that
   // actually matters here, and it is true of any target however it was obtained.
-  const scale = getWgpuRenderTargetTexelScale(source.width, getWgpuSurfaceLogicalExtent(state).width);
+  const scale = getWgpuRenderTargetTexelScale(source.width, getWgpuEffectLogicalWidth(state, source));
   const sigmaX = (options.blurX ?? 4) * scale;
   const sigmaY = (options.blurY ?? 4) * scale;
   const radiusX = sigmaX > 0 ? Math.ceil(sigmaX * 3) : 0;
@@ -64,9 +65,9 @@ export function applyGaussianBlurToWgpu(
 
 export const defaultWgpuBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
-  const temp = acquireWgpuRenderTarget(ctx.state, ctx.pool, descriptor);
+  const temp = acquireWgpuTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
-  releaseWgpuRenderTarget(ctx.pool, temp);
+  releaseWgpuTextureRenderTarget(ctx.pool, temp);
 };
 
 export function registerWgpuBlurEffect(state: WgpuRenderState): void {
@@ -75,15 +76,15 @@ export function registerWgpuBlurEffect(state: WgpuRenderState): void {
 
 function applyWgpuGaussianBlurPass(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   sigma: number,
   radius: number,
   dirX: number,
   dirY: number,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'blur.gaussian', GAUSSIAN_BLUR_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = 1 / source.width;
     f32[1] = 1 / source.height;
     f32[2] = dirX;

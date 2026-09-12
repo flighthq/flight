@@ -2,7 +2,7 @@ import type {
   ToneMapEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -14,15 +14,15 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // that is compiled into the fragment once per state, keyed by operator name.
 export function applyToneMapEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<ToneMapEffect>,
 ): void {
   const operator = effect.operator ?? 'aces';
   const exposure = effect.exposure ?? 1;
   const white = effect.white ?? 1;
   const pipeline = getWgpuEffectPipeline(state, `toneMap.${operator}`, buildToneMapFragment(operator), 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = exposure;
     f32[1] = white;
   });

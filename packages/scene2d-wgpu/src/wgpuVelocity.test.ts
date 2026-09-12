@@ -1,10 +1,10 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import {
+  beginWgpuScreenRenderPassForTest,
   createWgpuOffscreenRenderState,
   createWgpuPipeline,
   getWgpuRenderStateRuntime,
-  renderWgpuBackground,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -67,7 +67,7 @@ describe('defaultWgpuParticleEmitter2DVelocityWriter', () => {
     const field = createVelocityField();
     beginVelocityFrame(field);
 
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     expect(() => renderWgpuVelocity(state, emitter, field, target)).not.toThrow();
   });
 });
@@ -97,7 +97,7 @@ describe('defaultWgpuQuadBatchVelocityWriter', () => {
     const field = createVelocityField();
     beginVelocityFrame(field);
 
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     expect(() => renderWgpuVelocity(state, batch, field, target)).not.toThrow();
   });
 });
@@ -159,11 +159,11 @@ describe('renderWgpuVelocity', () => {
     beginVelocityFrame(field);
     contributeVelocity(field, root, 3, -2);
 
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     expect(() => renderWgpuVelocity(state, root, field, target)).not.toThrow();
   });
 
-  it('throws when no command encoder is open (renderWgpuBackground not called)', async () => {
+  it('throws when no command encoder is open (no pass has opened one)', async () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuVelocityTarget(state, 128, 64);
     const root = createDisplayObject();

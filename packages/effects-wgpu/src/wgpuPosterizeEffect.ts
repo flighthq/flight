@@ -2,7 +2,7 @@ import type {
   PosterizeEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -12,13 +12,13 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // Posterize: floor each channel to `levels` discrete steps.
 export function applyPosterizeEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<PosterizeEffect>,
 ): void {
   const levels = Math.max(2, effect.levels ?? 8);
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.posterize', POSTERIZE_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = levels;
   });
 }

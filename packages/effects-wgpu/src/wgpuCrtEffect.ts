@@ -1,4 +1,9 @@
-import type { CrtEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  CrtEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -9,8 +14,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // the channels outward (chromatic aberration) for a tube-monitor look.
 export function applyCrtEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<CrtEffect>,
 ): void {
   const curvature = effect.curvature ?? 0.1;
@@ -19,7 +24,7 @@ export function applyCrtEffectToWgpu(
   const aberration = effect.aberration ?? 0.005;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.crt', CRT_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = curvature;
     f32[1] = scanlineIntensity;
     f32[2] = vignette;

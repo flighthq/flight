@@ -1,7 +1,11 @@
 import { createImageResource } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createWgpuRenderStateForTest, installWgpuMock, renderWgpuBackground } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  createWgpuRenderStateForTest,
+  getWgpuRenderStateRuntime,
+  installWgpuMock,
+} from '@flighthq/render-wgpu/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
@@ -128,7 +132,7 @@ describe('drawWgpuRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
@@ -145,7 +149,7 @@ describe('drawWgpuRasterShape', () => {
   it('replays the whole command stream, not the subset a mesh path could not express', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const shape = solidShape();
@@ -162,7 +166,7 @@ describe('drawWgpuRasterShape', () => {
   it('reports a ShapeRasterizer miss when no rasterizer is registered', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     enableRenderRegistryGuards(state);
 
@@ -176,7 +180,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('preserves expected surface absence without rasterizing or writing a batch', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const rasterizer = vi.fn();
@@ -191,7 +195,7 @@ describe('drawWgpuRasterShape', () => {
   it('does nothing without a render pass, for an empty command list, or with absent renderer data', async () => {
     const state = await createWgpuRenderStateForTest();
     state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
-    renderWgpuBackground(state);
+    beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const rasterizer = vi.fn();
     registerWgpuShapeRasterizer(state, rasterizer);

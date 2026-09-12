@@ -1,5 +1,5 @@
-import { getWgpuSurfaceLogicalExtent } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import { getWgpuActiveRenderPass } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 interface WgpuEffectLogicalResolution {
   readonly height: number;
@@ -9,14 +9,24 @@ interface WgpuEffectLogicalResolution {
 
 export function getWgpuEffectLogicalResolution(
   state: Readonly<WgpuRenderState>,
-  target: Readonly<WgpuRenderTarget>,
+  target: Readonly<WgpuTextureRenderTarget>,
 ): WgpuEffectLogicalResolution {
-  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, getWgpuSurfaceLogicalExtent(state).width);
+  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, getWgpuEffectLogicalWidth(state, target));
   return {
     height: target.height / texelsPerLogicalPixel,
     texelsPerLogicalPixel,
     width: target.width / texelsPerLogicalPixel,
   };
+}
+
+// The width one logical pixel is measured against: the open pass's viewport while a chain runs inside a
+// frame, and the target's own width when it does not — the render-texture path writes into a target with
+// no enclosing pass, and there logical and texel pixels coincide.
+export function getWgpuEffectLogicalWidth(
+  state: Readonly<WgpuRenderState>,
+  target: Readonly<WgpuTextureRenderTarget>,
+): number {
+  return getWgpuActiveRenderPass(state as WgpuRenderState)?.viewport.width ?? target.width;
 }
 
 /**

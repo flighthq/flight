@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -10,12 +10,12 @@ import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 // the RGB result is clamped, matching the per-op color passes this replaces.
 export function applyColorMatrixPassToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   matrix: ReadonlyArray<number>,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'adjustment.colorMatrix', COLOR_MATRIX_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     // Four coefficient rows (R/G/B/A) as vec4f, then the normalized bias column as a fifth vec4f.
     f32[0] = matrix[0] ?? 0;
     f32[1] = matrix[1] ?? 0;

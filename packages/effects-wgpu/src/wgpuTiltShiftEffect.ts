@@ -2,7 +2,7 @@ import type {
   TiltShiftEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -15,8 +15,8 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // approximated by averaging a few neighbor taps using the pixel size from the resolution uniform.
 export function applyTiltShiftEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   effect: Readonly<TiltShiftEffect>,
 ): void {
   const center = effect.center ?? 0.5;
@@ -24,7 +24,7 @@ export function applyTiltShiftEffectToWgpu(
   const blur = effect.blur ?? 4;
   const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_WGSL, 'replace');
-  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {
     f32[0] = center;
     f32[1] = width;
     f32[2] = blur;

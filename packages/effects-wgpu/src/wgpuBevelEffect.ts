@@ -1,10 +1,10 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   BevelEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
@@ -24,17 +24,17 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // multi-pass recipe (neutral tint → box blur → directional-gradient composite), then releases them.
 export function applyBevelEffectToWgpu(
   state: WgpuRenderState,
-  source: Readonly<WgpuRenderTarget>,
-  dest: Readonly<WgpuRenderTarget>,
+  source: Readonly<WgpuTextureRenderTarget>,
+  dest: Readonly<WgpuTextureRenderTarget>,
   pool: WgpuRenderTargetPool,
   effect: Readonly<BevelEffect>,
 ): void {
-  const src = source as WgpuRenderTarget;
-  const dst = dest as WgpuRenderTarget;
+  const src = source as WgpuTextureRenderTarget;
+  const dst = dest as WgpuTextureRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const tinted = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
-  const blurTemp = acquireWgpuRenderTarget(state, pool, descriptor);
+  const tinted = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuTextureRenderTarget(state, pool, descriptor);
+  const blurTemp = acquireWgpuTextureRenderTarget(state, pool, descriptor);
 
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
@@ -82,9 +82,9 @@ export function applyBevelEffectToWgpu(
 
   if (sourceMode === 'knockout') applyWgpuEffectErasePass(state, src, dst);
 
-  releaseWgpuRenderTarget(pool, tinted);
-  releaseWgpuRenderTarget(pool, blurred);
-  releaseWgpuRenderTarget(pool, blurTemp);
+  releaseWgpuTextureRenderTarget(pool, tinted);
+  releaseWgpuTextureRenderTarget(pool, blurred);
+  releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
 export const defaultWgpuBevelEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
@@ -146,9 +146,9 @@ type BevelCompositeParams = Readonly<{
 
 function applyWgpuBevelCompositePass(
   state: WgpuRenderState,
-  field: WgpuRenderTarget,
-  source: WgpuRenderTarget,
-  dest: WgpuRenderTarget,
+  field: WgpuTextureRenderTarget,
+  source: WgpuTextureRenderTarget,
+  dest: WgpuTextureRenderTarget,
   params: BevelCompositeParams,
 ): void {
   const pipeline = getWgpuBevelCompositeShader(state);

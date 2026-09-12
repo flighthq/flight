@@ -1,5 +1,10 @@
 import { installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  ColorLut,
+  WgpuColorLutTextureCache,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/types/contract';
 
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
@@ -111,7 +116,7 @@ function apply(
   cache: WgpuColorLutTextureCache,
   format = 'rgba8unorm',
 ): void {
-  const target = { format, view: { id: 'sourceView' } } as unknown as WgpuRenderTarget;
+  const target = { format, view: { id: 'sourceView' } } as unknown as WgpuTextureRenderTarget;
   applyColorLutPassToWgpu(harness.state, target, target, lut, cache);
 }
 

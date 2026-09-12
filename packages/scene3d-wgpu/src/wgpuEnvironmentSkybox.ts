@@ -1,6 +1,6 @@
 import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { Camera3D, Environment, WgpuRenderState } from '@flighthq/types/contract';
+import type { Camera3D, Environment, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -10,20 +10,21 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // ray from the inverse view-projection and samples the cube. The pipeline writes no depth and compares
 // 'always', so it fills every pixel with the backdrop; call it once, inside the open scene render pass and
 // BEFORE drawWgpuScene3D, so opaque geometry (depth-test LESS) draws over it. A no-op when the environment
-// has no complete source cube or no render pass is open. `aspect` is the viewport width / height (matches
+// has no complete source cube. `aspect` is the viewport width / height (matches
 // the camera aspect drawWgpuScene3D uses). The ray reconstruction uses GL-convention clip Z (near -1, far
 // +1) to match the camera's projection matrices — the same convention the mesh/shadow paths assume.
 export function drawWgpuEnvironmentSkybox(
-  state: WgpuRenderState,
+  renderPass: WgpuRenderPass,
   environment: Readonly<Environment>,
   camera: Readonly<Camera3D>,
   aspect: number,
 ): void {
+  const state = renderPass.state;
   const cubeView = ensureWgpuEnvironmentSourceCube(state, environment);
   if (cubeView === null) return;
 
   const stateRuntime = getWgpuRenderStateRuntime(state);
-  const pass = stateRuntime.renderPass;
+  const pass = renderPass.encoder;
   if (pass === null) return;
 
   const scene = getWgpuScene3DRuntime(state);

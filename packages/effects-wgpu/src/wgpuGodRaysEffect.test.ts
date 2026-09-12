@@ -1,6 +1,6 @@
 import { createGodRaysEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { GodRaysEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { GodRaysEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
@@ -47,7 +47,7 @@ afterEach(() => vi.restoreAllMocks());
 function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): readonly number[] {
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
-  const target = { height: 64, view: {}, width: 64 } as unknown as WgpuRenderTarget;
+  const target = { height: 64, view: {}, width: 64 } as unknown as WgpuTextureRenderTarget;
   applyGodRaysEffectToWgpu({} as unknown as WgpuRenderState, target, target, createGodRaysEffect(effect));
   return recorded.uniforms[0]!;
 }
@@ -120,7 +120,7 @@ describe('applyGodRaysEffectToWgpu', () => {
 describe('defaultWgpuGodRaysEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuRenderTarget;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
 
     defaultWgpuGodRaysEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,

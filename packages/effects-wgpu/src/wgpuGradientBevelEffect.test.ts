@@ -4,7 +4,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import type {
   GradientBevelEffect,
   WgpuRenderState,
-  WgpuRenderTarget,
+  WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -100,7 +100,7 @@ beforeEach(() => {
     recorded.tints.push([color, alpha, strength]);
   }) as never);
 
-  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuTextureRenderTarget').mockImplementation(((
     _state: unknown,
     _pool: unknown,
     descriptor: object,
@@ -109,8 +109,10 @@ beforeEach(() => {
     recorded.acquired.push(target);
     return target;
   }) as never);
-  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation(((_pool: unknown, target: unknown) =>
-    recorded.released.push(target)) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuTextureRenderTarget').mockImplementation(((
+    _pool: unknown,
+    target: unknown,
+  ) => recorded.released.push(target)) as never);
 });
 
 afterEach(() => {
@@ -144,7 +146,7 @@ function apply(effect: Readonly<Partial<GradientBevelEffect>> = {}): void {
     id: 'source',
     view: {},
     width: SOURCE_WIDTH,
-  } as unknown as WgpuRenderTarget;
+  } as unknown as WgpuTextureRenderTarget;
   applyGradientBevelEffectToWgpu(
     state,
     target,
@@ -252,7 +254,13 @@ describe('applyGradientBevelEffectToWgpu', () => {
 describe('defaultWgpuGradientBevelEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     for (const key of Object.keys(recorded) as (keyof typeof recorded)[]) recorded[key].length = 0;
-    const target = { format: 'rgba8unorm', height: 8, id: 'source', view: {}, width: 8 } as unknown as WgpuRenderTarget;
+    const target = {
+      format: 'rgba8unorm',
+      height: 8,
+      id: 'source',
+      view: {},
+      width: 8,
+    } as unknown as WgpuTextureRenderTarget;
 
     defaultWgpuGradientBevelEffectRunner(
       {

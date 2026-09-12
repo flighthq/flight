@@ -1,9 +1,12 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getWgpuEffectLogicalResolution, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
 
 describe('getWgpuEffectLogicalResolution', () => {
-  const state = { surface: { width: 800, height: 600 } };
+  // Logical pixels are the open pass's viewport: a scratch target twice that wide holds two texels per
+  // logical pixel, whatever its own sample count says.
+  const state = { [EntityRuntimeKey]: { passStack: [{ viewport: { height: 600, width: 800 } }] } };
 
   it('preserves native target dimensions', () => {
     expect(

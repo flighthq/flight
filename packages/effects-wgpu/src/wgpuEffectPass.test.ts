@@ -1,5 +1,6 @@
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   EFFECT_VERTEX_WGSL,
@@ -13,18 +14,9 @@ import {
   initializeWgpuEffectPipeline,
 } from './wgpuEffectPass';
 
-let runtimeMockCurrent: unknown = null;
-
 beforeAll(() => renderWgpuContract.installWgpuMock());
 
-beforeEach(() => {
-  vi.spyOn(renderWgpuContract, 'getWgpuRenderStateRuntime').mockImplementation((() => runtimeMockCurrent) as never);
-});
-
-afterEach(() => {
-  runtimeMockCurrent = null;
-  vi.restoreAllMocks();
-});
+afterEach(() => vi.restoreAllMocks());
 
 interface Recorded {
   bindGroups: { dynamicOffsets: number[] | undefined; group: unknown; index: number }[];
@@ -51,15 +43,19 @@ function createHarness(): { recorded: Recorded; state: WgpuRenderState } {
       return pass;
     }),
   };
-  runtimeMockCurrent = {
-    canvasTextureView: { id: 'canvasView' },
+  // The enclosing pass, standing in for the screen pass an effect chain composites into: a null
+  // destination resolves to ITS colorView, which is what makes "present to the canvas" a fact about the
+  // open pass rather than about a view cached on the state.
+  const enclosingPass = { colorView: { id: 'canvasView' }, encoder: null };
+  const runtime = {
     commandEncoder,
+    passStack: [enclosingPass],
     renderPass: null,
     renderTargetViewport: { height: 64, width: 64 },
   };
   let nextBindGroup = 0;
   const state = {
-    surface: { height: 64, width: 64 },
+    [EntityRuntimeKey]: runtime,
     device: {
       createBindGroup: vi.fn(() => ({ id: `bindGroup-${nextBindGroup++}` })),
       createBindGroupLayout: vi.fn((descriptor: unknown) => ({ descriptor })),
@@ -77,8 +73,14 @@ function createHarness(): { recorded: Recorded; state: WgpuRenderState } {
   return { recorded, state };
 }
 
-function createTarget(id: string): WgpuRenderTarget {
-  return { format: 'rgba8unorm', height: 32, id, view: { id: `${id}-view` }, width: 64 } as unknown as WgpuRenderTarget;
+function createTarget(id: string): WgpuTextureRenderTarget {
+  return {
+    format: 'rgba8unorm',
+    height: 32,
+    id,
+    view: { id: `${id}-view` },
+    width: 64,
+  } as unknown as WgpuTextureRenderTarget;
 }
 
 // `select(whenFalse, whenTrue, condition)` in WGSL. Both arguments are read out of the shipped shader
@@ -342,10 +344,10 @@ describe('getWgpuEffectPassState', () => {
   // AGENTS.md reserves throwing for exactly this, and the message names the call that was missed.
   it('throws when there is no active command encoder', () => {
     const harness = createHarness();
-    (runtimeMockCurrent as { commandEncoder: unknown }).commandEncoder = null;
+    (renderWgpuContract.getWgpuRenderStateRuntime(harness.state) as { commandEncoder: unknown }).commandEncoder = null;
 
     expect(() => getWgpuEffectPassState(harness.state).beginPass(createTarget('dest'), 'load')).toThrow(
-      'renderWgpuBackground',
+      'beginWgpuRenderPass',
     );
   });
 });

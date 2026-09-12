@@ -16,7 +16,7 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuTextureRenderTarget').mockImplementation(((
     _state: never,
     _pool: never,
     descriptor: never,
@@ -25,7 +25,7 @@ beforeEach(() => {
     id: `scratch-${nextTargetId++}`,
     texture: {},
   })) as never);
-  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuTextureRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectBlitPass').mockImplementation((() => {}) as never);
   vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectErasePass').mockImplementation((() => {}) as never);
   vi.spyOn(wgpuEffectBoxBlurModule, 'applyWgpuEffectBoxBlur').mockImplementation((() => {}) as never);
