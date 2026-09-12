@@ -1,4 +1,8 @@
-import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createPixelArtSampler, createTexture } from '@flighthq/texture/contract';
@@ -8,13 +12,12 @@ import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { defaultDomSpriteRenderer, drawDomSprite } from './domSprite';
 
-// The canvases these tests wrap are measured by the host, so the test registers the one-line resolver a
-// browser host would install rather than pulling the whole web host into a renderer package's tests.
-registerHostImageDimensionResolver((source, out) => {
-  const sized = source as { height: number; width: number };
-  out.height = sized.height;
-  out.width = sized.width;
-  return true;
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
 });
 
 function drawElement(source: CanvasImageSource): HTMLElement | null {

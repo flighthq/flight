@@ -1,5 +1,9 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
@@ -13,13 +17,12 @@ import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
 
-// The canvases these tests wrap are measured by the host, so the test registers the one-line resolver a
-// browser host would install rather than pulling the whole web host into a renderer package's tests.
-registerHostImageDimensionResolver((source, out) => {
-  const sized = source as { height: number; width: number };
-  out.height = sized.height;
-  out.width = sized.width;
-  return true;
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
 });
 
 // The state the backend hands the rasterizer is where the commands live, so this is the wiring a GPU or

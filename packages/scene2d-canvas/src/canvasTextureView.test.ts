@@ -1,7 +1,24 @@
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
 import { drawCanvasTextureView } from './canvasTextureView';
+
+// drawCanvasTextureView reads the texture's backing size and draws nothing when it is zero, and a
+// resource only knows its size once a host measures its handle. That dependency is declared here rather
+// than inherited: run on its own, this file used to see a 0x0 source and assert against a drawImage that
+// never happened, and only passed in the broad suite because another package's test file had registered
+// a resolver first.
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
+});
 
 function makeTexture(width = 100, height = 50) {
   const source = document.createElement('canvas');

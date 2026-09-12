@@ -1,4 +1,8 @@
-import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  registerTestImageDimensionResolver,
+  unregisterTestImageDimensionResolver,
+} from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { HostImageProvider, ImageResource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -11,13 +15,12 @@ import {
   loadTextureAtlasFromUrl,
 } from './textureAtlasFrom';
 
-// The <img> this fake host decodes is measured by the host, so the test registers the one-line resolver
-// a browser host would install rather than depending on host-web from a portable package's tests.
-registerHostImageDimensionResolver((source: unknown, out: { height: number; width: number }) => {
-  const sized = source as { height: number; width: number };
-  out.height = sized.height;
-  out.width = sized.width;
-  return true;
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
 });
 
 function createTestImageBackend(): HostImageProvider {

@@ -11,15 +11,14 @@ import {
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from './imageResourceFrom';
-import { registerHostImageDimensionResolver } from './imageSourceDimensions';
+import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper';
 
-// This fake host measures its own canvases and <img> elements, which is exactly the seam a real host
-// fills; registering it here keeps the test's resources sized without importing a platform package.
-registerHostImageDimensionResolver((source, out) => {
-  const sized = source as { height: number; width: number };
-  out.height = sized.height;
-  out.width = sized.width;
-  return true;
+beforeEach(() => {
+  registerTestImageDimensionResolver();
+});
+
+afterEach(() => {
+  unregisterTestImageDimensionResolver();
 });
 
 function webHost(): { readonly graphics: { readonly image: HostImageProvider } } {
