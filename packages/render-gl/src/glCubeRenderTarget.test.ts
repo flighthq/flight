@@ -13,7 +13,7 @@ import { declareGlRenderTargetColorSpace } from './glRenderTarget';
 import { createGlState } from './glTestHelper';
 
 function makeState() {
-  const { state, gl: base } = createGlState({ backgroundColorRgba: [0.25, 0.5, 0.75, 1] });
+  const { state, gl: base } = createGlState();
   const framebuffer = { name: 'cube-framebuffer' } as WebGLFramebuffer;
   const texture = { name: 'cube-texture' } as WebGLTexture;
   const renderbuffer = { name: 'cube-depth' } as WebGLRenderbuffer;
@@ -109,7 +109,7 @@ describe('beginGlCubeRenderFace', () => {
       0,
     );
     expect(gl.viewport).toHaveBeenCalledWith(0, 0, 32, 32);
-    expect(gl.clearBufferfv).toHaveBeenCalledWith(gl.COLOR, 0, new Float32Array([0.25, 0.5, 0.75, 1]));
+    expect(gl.clearBufferfv).toHaveBeenCalledWith(gl.COLOR, 0, new Float32Array([0, 0, 0, 0]));
     expect(gl.clearBufferfi).toHaveBeenCalledWith(gl.DEPTH_STENCIL, 0, 1, 0);
     expect(target.colorSpace).toBe('srgb');
     endGlCubeRenderFace(pass);
@@ -171,7 +171,7 @@ describe('destroyGlCubeRenderTarget', () => {
     const target = createGlCubeRenderTarget(state, 16);
     vi.clearAllMocks();
 
-    destroyGlCubeRenderTarget(state, target);
+    destroyGlCubeRenderTarget(target);
 
     expect(gl.deleteFramebuffer).toHaveBeenCalledWith(framebuffer);
     expect(gl.deleteTexture).toHaveBeenCalledWith(texture);

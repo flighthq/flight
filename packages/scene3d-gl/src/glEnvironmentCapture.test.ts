@@ -102,7 +102,7 @@ describe('getGlEnvironmentCaptureTexture', () => {
     const { state } = makeCaptureState();
     const target = createGlCubeRenderTarget(state, 16);
     expect(getGlEnvironmentCaptureTexture(target)).toBe(target.texture);
-    destroyGlCubeRenderTarget(state, target);
+    destroyGlCubeRenderTarget(target);
   });
 });
 
@@ -132,7 +132,7 @@ describe('renderGlEnvironmentCapture', () => {
     ]);
     expect(gl.calls.filter((call) => call.name === 'viewport').at(-1)?.args).toEqual([7, 8, 90, 70]);
     expect(gl.calls.filter((call) => call.name === 'activeTexture').at(-1)?.args).toEqual([activeTexture]);
-    destroyGlCubeRenderTarget(state, target);
+    destroyGlCubeRenderTarget(target);
   });
 
   it('temporarily excludes one node and restores its enabled state', () => {
@@ -145,7 +145,7 @@ describe('renderGlEnvironmentCapture', () => {
 
     expect(cameras).toHaveLength(0);
     expect(mesh.enabled).toBe(true);
-    destroyGlCubeRenderTarget(state, target);
+    destroyGlCubeRenderTarget(target);
   });
 
   it('restores exclusion and GL state when a face draw throws', () => {
@@ -166,6 +166,6 @@ describe('renderGlEnvironmentCapture', () => {
       previousFramebuffer,
     ]);
     expect(gl.calls.filter((call) => call.name === 'activeTexture').at(-1)?.args).toEqual([activeTexture]);
-    destroyGlCubeRenderTarget(state, target);
+    destroyGlCubeRenderTarget(target);
   });
 });
