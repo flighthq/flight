@@ -35,7 +35,7 @@ import { setWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuOffscreenRenderState as createDeviceOnlyWgpuRenderState,
   createWgpuRenderState as createWgpuRenderStateWithPipeline,
@@ -124,9 +124,9 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Ren
   );
 }
 
-describe('createWgpuAcquisitionFromCanvasElement', () => {
+describe('createWgpuAcquisition', () => {
   it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
-    const acquisition = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(document.createElement('canvas'));
 
     expect(acquisition).not.toBeNull();
     expect(acquisition!.ownership).toBe('caller');
@@ -148,7 +148,7 @@ describe('createWgpuAcquisitionFromCanvasElement', () => {
       }),
     );
 
-    await expect(createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'))).resolves.toBeNull();
+    await expect(createWgpuAcquisition(document.createElement('canvas'))).resolves.toBeNull();
     setWgpuHostBackend(null);
   });
 });
@@ -456,7 +456,7 @@ describe('createWgpuRenderState', () => {
     // The state is "how to talk to the GPU" and the screen target is "which surface a frame lands on".
     // Keeping them apart is what lets one state render to several windows, and lets an offscreen state
     // exist without inventing a canvas for it.
-    const acquisition = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(document.createElement('canvas'));
     const state = createWgpuRenderState(acquisition!.device, { format: acquisition!.format });
 
     expect(state.device).toBe(acquisition!.device);
@@ -885,7 +885,7 @@ describe('releaseWgpuAcquisition', () => {
   // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
   // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
   it('releases caller-owned handles, which Flight itself never does', async () => {
-    const acquired = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+    const acquired = await createWgpuAcquisition(document.createElement('canvas'));
     const acquisition = acquired!;
     const released: Readonly<WgpuHostAcquisition>[] = [];
     setWgpuHostBackend(

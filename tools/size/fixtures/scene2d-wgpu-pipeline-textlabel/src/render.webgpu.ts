@@ -4,7 +4,7 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -32,7 +32,7 @@ const pipeline = createWgpuPipeline({
   ),
   renderers: withRegistryTableEntry(registries.renderers, TextLabelKind, defaultWgpuTextLabelRenderer),
 });
-const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
 export const state = createWgpuRenderState(acquisition.device, pipeline, {

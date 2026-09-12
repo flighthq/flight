@@ -12,7 +12,7 @@ import {
   createCanvasTextureResolvers,
   createMatrix,
   beginWgpuRenderPass,
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuCanvasElement,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -67,7 +67,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+  const acquisition = await createWgpuAcquisition(canvas);
   if (acquisition === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
   const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
   const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

@@ -24,7 +24,7 @@ import {
   createQuaternion,
   createSkeleton3D,
   createVector3,
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -64,7 +64,7 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+const acquisition = await createWgpuAcquisition(canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

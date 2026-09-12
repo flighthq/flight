@@ -36,7 +36,7 @@ const RING_SLOT_COUNT = 4096;
 // ends their life with `releaseWgpuAcquisition`, and a state built on them leaves them intact when it is
 // destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
 // outcome and not a programmer error.
-export async function createWgpuAcquisitionFromCanvasElement(
+export async function createWgpuAcquisition(
   canvas: HTMLCanvasElement,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
@@ -113,7 +113,7 @@ export function createWgpuOffscreenRenderState(
 // is a per-pass decision, so the screen target is created separately and flows in at beginWgpuRenderPass.
 //
 // Synchronous, because everything asynchronous (adapter and device discovery) happens before this call:
-//   const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+//   const acquisition = await createWgpuAcquisition(canvas);
 //   const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
 //   const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format });
 export function createWgpuRenderState(

@@ -42,7 +42,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
         expect(source).toContain('createWebWgpuRenderSurfaceProvider');
         expect(source).toContain('createEmptyWgpuRegistries');
         expect(source).toContain('createWgpuPipeline(');
-        expect(source).toContain('createWgpuAcquisitionFromCanvasElement(');
+        expect(source).toContain('createWgpuAcquisition(');
         expect(source).toContain('createWgpuScreenRenderTarget(');
         expect(source).toContain('createWgpuRenderState(');
         expect(source).toContain('prepareScene2DRender(');

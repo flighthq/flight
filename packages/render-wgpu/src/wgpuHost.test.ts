@@ -12,7 +12,7 @@ import {
 } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
-  createWgpuAcquisitionFromCanvasElement,
+  createWgpuAcquisition,
   createWgpuRenderState,
   destroyWgpuRenderState,
   releaseWgpuAcquisition,
@@ -140,7 +140,7 @@ describe('setWgpuHostBackend', () => {
     const canvas = document.createElement('canvas');
     setWgpuHostBackend(backend);
 
-    const routed = await createWgpuAcquisitionFromCanvasElement(canvas);
+    const routed = await createWgpuAcquisition(canvas);
     expect(backend.acquire).toHaveBeenCalledWith(canvas, {});
     expect(routed?.device).toBe(acquisition.device);
     expect(routed?.format).toBe(acquisition.format);
