@@ -15,8 +15,6 @@ export {
   hasImageEncoder,
   registerImageDecoder,
   registerImageEncoder,
-  registerWebImageDecoders,
-  registerWebImageEncoders,
   unregisterImageDecoder,
   unregisterImageEncoder,
 } from './contract';

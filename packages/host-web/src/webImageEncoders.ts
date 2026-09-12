@@ -1,6 +1,5 @@
+import { registerImageEncoder } from '@flighthq/image-codec/contract';
 import type { DecodedImage, ImageEncodeOptions, ImageEncoder } from '@flighthq/types/contract';
-
-import { registerImageEncoder } from './imageEncoderRegistry';
 
 // Registers the OffscreenCanvas + convertToBlob encoder under every MIME type the platform can encode.
 // Opt-in — nothing runs until the caller invokes this. A native host registers wasm encoders instead.

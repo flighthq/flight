@@ -3,9 +3,13 @@ import type {
   CompressedImageData,
   CompressedImageResource,
   EntityConstruction,
+  HostImageDimensions,
+  HostImageSource,
   ImageResource,
 } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
+
+import { getHostImageSourceDimensions } from './imageSourceDimensions';
 
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.
@@ -27,7 +31,10 @@ export function createCompressedImageResource(compressed: Readonly<CompressedIma
   return finishEntity(out);
 }
 
-export function createImageResource(image: CanvasImageSource): ImageResource {
+// Wraps a borrowed host handle whose size is read through the registered host dimension resolver. A
+// caller that already holds the size — a host factory building from its own canvas or decoded bitmap —
+// sets width and height directly instead and needs no resolver.
+export function createImageResource(image: HostImageSource): ImageResource {
   const resource = allocateEntity<ImageResource>();
   resource.alphaType = DECODED_ALPHA_TYPE;
   resource.gamut = DECODED_GAMUT;
@@ -65,19 +72,17 @@ export function isImageResourceEmpty(resource: Readonly<ImageResource>): boolean
   return resource.width <= 0 || resource.height <= 0;
 }
 
-// Reads pixel dimensions from the current host element. Video sources carry their size on
-// videoWidth/videoHeight; every other CanvasImageSource exposes width/height directly.
+// Re-reads pixel dimensions from the borrowed handle through the host resolver. With no resolver
+// registered the resource keeps the dimensions it already carries, which is what a host factory that
+// measured its own source at construction wants.
 function updateImageResourceSize(resource: ImageResource): void {
-  const element = resource.source;
-  if (element === null) return;
-  if (element instanceof HTMLVideoElement) {
-    resource.width = element.videoWidth;
-    resource.height = element.videoHeight;
-  } else {
-    const sized = element as HTMLImageElement | HTMLCanvasElement | ImageBitmap;
-    resource.width = sized.width;
-    resource.height = sized.height;
-  }
+  const source = resource.source;
+  if (source === null) return;
+  _measured.height = resource.height;
+  _measured.width = resource.width;
+  if (!getHostImageSourceDimensions(source, _measured)) return;
+  resource.height = _measured.height;
+  resource.width = _measured.width;
 }
 
 // What a HOST decode yields, and the only honest default for a source whose pixels we never touch.
@@ -87,3 +92,6 @@ function updateImageResourceSize(resource: ImageResource): void {
 // `alphaType !== 'premultiplied'` guard starts protecting ImageResource the way it already protects Bitmap.
 const DECODED_ALPHA_TYPE = 'straight';
 const DECODED_GAMUT = 'srgb';
+
+// Scratch pair reused by the size re-read; measuring a resource never allocates.
+const _measured: HostImageDimensions = { height: 0, width: 0 };

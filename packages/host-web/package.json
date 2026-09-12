@@ -51,6 +51,7 @@
     "@flighthq/glyphatlas": "*",
     "@flighthq/haptics": "*",
     "@flighthq/image": "*",
+    "@flighthq/image-codec": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/media": "*",
     "@flighthq/menu": "*",
@@ -69,6 +70,8 @@
     "@flighthq/signals": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/storage": "*",
+    "@flighthq/texture": "*",
+    "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",
     "@flighthq/useragent": "*",
     "@flighthq/video": "*"

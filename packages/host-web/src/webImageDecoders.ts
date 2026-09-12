@@ -1,6 +1,5 @@
+import { registerImageDecoder } from '@flighthq/image-codec/contract';
 import type { DecodedImage, ImageDecodeOptions, ImageDecoder } from '@flighthq/types/contract';
-
-import { registerImageDecoder } from './imageDecoderRegistry';
 
 // Registers the browser's createImageBitmap + OffscreenCanvas decoder under every MIME type the platform
 // can decode. Opt-in — nothing runs until the caller invokes this. A native host registers wasm codecs

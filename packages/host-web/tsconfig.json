@@ -23,6 +23,7 @@
     { "path": "../glyphatlas" },
     { "path": "../haptics" },
     { "path": "../image" },
+    { "path": "../image-codec" },
     { "path": "../lifecycle" },
     { "path": "../media" },
     { "path": "../menu" },
@@ -41,6 +42,8 @@
     { "path": "../signals" },
     { "path": "../statusbar" },
     { "path": "../storage" },
+    { "path": "../texture" },
+    { "path": "../textureatlas" },
     { "path": "../types" },
     { "path": "../useragent" },
     { "path": "../video" }

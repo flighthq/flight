@@ -1,10 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import {
-  decodeImage,
-  decodeImagePremultiplied,
-  explainImageDecodeFailure,
-  getImageBitmapComposer,
-} from '@flighthq/image-codec/contract';
+import { decodeImage, decodeImagePremultiplied, explainImageDecodeFailure } from '@flighthq/image-codec/contract';
 import type {
   AlphaType,
   Bitmap,
@@ -13,6 +8,7 @@ import type {
   ImageResourceFailure,
   ImageResourceFetch,
   ImageResourceReference,
+  ImageBitmapCompositionResolver,
   ImageResourceReferenceResolutionExplanation,
   TextureSource,
   EntityConstruction,
@@ -89,39 +85,6 @@ export function createImageResourceFailure(cause: unknown): ImageResourceFailure
   return finishEntity(out);
 }
 
-export function disableImageBitmapComposition(): void {
-  _resolveImageBitmapComposition = null;
-}
-
-// Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain
-// its registry lookup or straight-decode branch. A format package calls this beside its composer
-// registrations; until then the nullable hook leaves the original hot path byte-for-byte tree-shakable.
-export function enableImageBitmapComposition(): void {
-  _resolveImageBitmapComposition = resolveImageBitmapComposition;
-}
-
-async function resolveImageBitmapComposition(
-  ref: Readonly<EmbeddedImageResourceReference>,
-  signal: AbortSignal,
-): Promise<Bitmap | null> {
-  signal.throwIfAborted();
-  const composition = ref.bitmapComposition!;
-  const composer = getImageBitmapComposer(composition.kind);
-  if (composer === null) return null;
-  // A composer always receives straight decoded pixels. It may also own a raw raster with no MIME
-  // decoder, in which case decoded is null and its plain payload is the complete input.
-  const decoded = await decodeImage(ref.bytes, ref.mimeType ?? undefined);
-  signal.throwIfAborted();
-  return composer(decoded, composition.payload);
-}
-
-type ResolveImageBitmapComposition = (
-  ref: Readonly<EmbeddedImageResourceReference>,
-  signal: AbortSignal,
-) => Promise<Bitmap | null>;
-
-let _resolveImageBitmapComposition: ResolveImageBitmapComposition | null = null;
-
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
 // and exposes no resolver runtime or raw thrown value.
 export function explainImageResourceReferenceResolution(
@@ -134,6 +97,8 @@ export function explainImageResourceReferenceResolution(
     state: ref.state,
   };
 }
+
+let _resolveImageBitmapComposition: ImageBitmapCompositionResolver | null = null;
 
 // `bytes` is retained as the view the container handed over, not a copy: a parser carves an image payload
 // out of its source and the reference borrows it, so a document that never resolves an image never pays for
@@ -165,6 +130,14 @@ export function initializeExternalImageResourceReference(
   out.state = ResourceResolutionState.Unresolved;
   out.textures = [];
   out.uri = uri;
+}
+
+// The slot the optional decoded-pixel join installs into, so an ordinary embedded-image consumer keeps
+// neither a composer registry nor a second decode branch. Whoever owns the composers — the web host
+// today, through enableImageBitmapComposition — puts its resolver here and passes null to take it back;
+// until something does, the nullable hook leaves the original hot path byte-for-byte tree-shakable.
+export function registerImageBitmapCompositionResolver(resolver: ImageBitmapCompositionResolver | null): void {
+  _resolveImageBitmapComposition = resolver;
 }
 
 // Returns a failed reference to the requestable state. Loading/resolved/unresolved references are unchanged
