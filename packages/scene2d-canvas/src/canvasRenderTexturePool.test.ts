@@ -16,14 +16,14 @@ import {
   acquireTestCanvasRenderSurface,
   canvasTestSurfaceCreator,
   createCanvasRenderState,
-  createCanvasRenderTarget,
+  createCanvasTextureRenderTarget,
   createCanvasTextureResolvers,
 } from './canvasTestSupport';
 
 describe('acquireCanvasRenderTexture', () => {
   it('reuses a released handle and applies current dimensions on every acquisition', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const first = acquireCanvasRenderTexture(state, pool, { width: 32, height: 16 });
     writeCanvasRenderTextureTarget(state, first, () => {});
     releaseCanvasRenderTexture(state, pool, first);
@@ -42,7 +42,7 @@ describe('acquireCanvasRenderTexture', () => {
 
   it('resets a released slab view before exposing the next logical target', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const slabView = acquireCanvasRenderTexture(state, pool, { width: 720, height: 480 });
     slabView.flipX = true;
     slabView.flipY = true;
@@ -67,12 +67,8 @@ describe('acquireCanvasRenderTexture', () => {
 
   it('requires the pool owner explicitly instead of resolving a hidden screen state', () => {
     const screen = createCanvasRenderState(document.createElement('canvas'));
-    const offscreen = createCanvasOffscreenRenderState(
-      acquireTestCanvasRenderSurface(),
-      screen.pipeline,
-      createCanvasTextureResolvers(),
-    );
-    const pool = createCanvasRenderTexturePool(screen.surface.creator);
+    const offscreen = createCanvasOffscreenRenderState(screen.pipeline, createCanvasTextureResolvers());
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const texture = acquireCanvasRenderTexture(screen, pool, { width: 8, height: 8 });
 
     expect(() => acquireCanvasRenderTexture(offscreen, pool, { width: 8, height: 8 })).toThrow(
@@ -86,7 +82,7 @@ describe('acquireCanvasRenderTexture', () => {
   it('does not allow a pool to cross screen states', () => {
     const a = createCanvasRenderState(document.createElement('canvas'));
     const b = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(a.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     acquireCanvasRenderTexture(a, pool, { width: 8, height: 8 });
 
     expect(() => acquireCanvasRenderTexture(b, pool, { width: 8, height: 8 })).toThrow(
@@ -108,14 +104,14 @@ describe('createCanvasRenderTexturePool', () => {
 describe('destroyCanvasRenderTexturePool', () => {
   it('collapses hidden and effect scratch canvases for free and outstanding leases', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const free = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const leased = acquireCanvasRenderTexture(state, pool, { width: 16, height: 16 });
     writeCanvasRenderTextureTarget(state, free, () => {});
     writeCanvasRenderTextureTarget(state, leased, () => {});
     const freeCanvas = getCanvasRenderTextureTarget(state, free)!.canvas;
     const leasedCanvas = getCanvasRenderTextureTarget(state, leased)!.canvas;
-    const effectScratch = createCanvasRenderTarget(24, 12);
+    const effectScratch = createCanvasTextureRenderTarget(24, 12);
     pool.effectTargets.free.push(effectScratch);
     releaseCanvasRenderTexture(state, pool, free);
 
@@ -131,7 +127,7 @@ describe('destroyCanvasRenderTexturePool', () => {
 
   it('rejects acquisition after destruction', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     destroyCanvasRenderTexturePool(state, pool);
     expect(() => acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 })).toThrow('has been destroyed');
   });
@@ -146,7 +142,7 @@ describe('initializeCanvasRenderTexturePool', () => {
 describe('releaseCanvasRenderTexture', () => {
   it('rejects a double release', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const texture = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     releaseCanvasRenderTexture(state, pool, texture);
 
@@ -156,7 +152,7 @@ describe('releaseCanvasRenderTexture', () => {
 describe('withCanvasRenderTextures', () => {
   it('releases every lease when the bracket callback throws', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(state.surface.creator);
+    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
 
     expect(() =>
       withCanvasRenderTextures(

@@ -90,10 +90,10 @@ describe('renderIntoCanvasRenderTexture', () => {
     const texture = createRenderTexture({ height: 16, width: 32 });
     const initialVersion = texture.version;
 
-    renderIntoCanvasRenderTexture(state, state, texture, (targetState) => {
-      expect(targetState.canvas).not.toBe(canvas);
-      expect(targetState.canvas.width).toBe(32);
-      expect(targetState.canvas.height).toBe(16);
+    renderIntoCanvasRenderTexture(state, state, texture, (targetPass) => {
+      expect(targetPass.target.canvas).not.toBe(canvas);
+      expect(targetPass.target.canvas.width).toBe(32);
+      expect(targetPass.target.canvas.height).toBe(16);
     });
 
     expect(state.canvas).toBe(canvas);

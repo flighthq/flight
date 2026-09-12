@@ -6,18 +6,24 @@ import { createCanvasPipeline, createEmptyCanvasRegistries } from './canvasPipel
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
 import { createCanvasRenderSurface } from './canvasRenderSurface';
 import {
+  beginCanvasRenderPass,
   canvasTestSurfaceCreator,
   createCanvasRenderState,
+  createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
 } from './canvasTestSupport';
 
 function createBlendlessState(canvas: HTMLCanvasElement): CanvasRenderState {
-  return createExplicitCanvasRenderState(
-    createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
+  const state = createExplicitCanvasRenderState(
     createCanvasPipeline(createEmptyCanvasRegistries()),
     createCanvasTextureResolvers(),
   );
+  beginCanvasRenderPass(
+    state,
+    createCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas)),
+  );
+  return state;
 }
 
 describe('applyCanvasBlendMode', () => {

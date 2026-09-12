@@ -16,9 +16,12 @@ import {
 } from './canvasCache';
 import {
   acquireTestCanvasRenderSurface,
+  beginCanvasRenderPass,
   createCanvasRenderState,
+  createCanvasTextureRenderTarget,
   createCanvasTextureResolvers,
   destroyCanvasRenderState,
+  endCanvasRenderPass,
   getCanvasRenderStateRuntime,
 } from './canvasTestSupport';
 
@@ -35,30 +38,18 @@ function makeCacheNode(source: unknown): any {
 
 function makeCacheState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
   const ownerRuntime = getCanvasRenderStateRuntime(ownerState);
-  return createCanvasCacheState(
-    ownerState,
-    acquireTestCanvasRenderSurface(),
-    ownerState.pipeline,
-    createCanvasTextureResolvers(),
-    {
-      backgroundColor: ownerState.backgroundColor,
-      imageSmoothingEnabled: ownerRuntime.imageSmoothingEnabled,
-      imageSmoothingQuality: ownerRuntime.imageSmoothingQuality,
-      pixelRatio: ownerState.pixelRatio,
-      roundPixels: ownerState.roundPixels,
-      sceneGraphSyncPolicy: ownerState.sceneGraphSyncPolicy,
-      ...options,
-    },
-  );
+  return createCanvasCacheState(ownerState, ownerState.pipeline, createCanvasTextureResolvers(), {
+    imageSmoothingEnabled: ownerRuntime.imageSmoothingEnabled,
+    imageSmoothingQuality: ownerRuntime.imageSmoothingQuality,
+    pixelRatio: ownerState.pixelRatio,
+    roundPixels: ownerState.roundPixels,
+    sceneGraphSyncPolicy: ownerState.sceneGraphSyncPolicy,
+    ...options,
+  });
 }
 
 function makeOffscreenState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
-  return createCanvasOffscreenRenderState(
-    acquireTestCanvasRenderSurface(),
-    ownerState.pipeline,
-    createCanvasTextureResolvers(),
-    options,
-  );
+  return createCanvasOffscreenRenderState(ownerState.pipeline, createCanvasTextureResolvers(), options);
 }
 
 describe('createCanvasCacheState', () => {
@@ -92,15 +83,15 @@ describe('createCanvasCacheState', () => {
     expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
   });
 
-  it('releases the cache state and every target with its explicit owner', () => {
+  it('releases every target it allocated when its explicit owner is destroyed', () => {
     const screen = makeCanvasState();
-    const cacheState = makeCacheState(screen);
+    makeCacheState(screen);
     const target = ensureCanvasRenderCacheTarget(screen, createRenderCache(), 16, 24);
 
     destroyCanvasRenderState(screen);
 
-    expect(cacheState.canvas.width).toBe(0);
-    expect(cacheState.canvas.height).toBe(0);
+    // The cache STATE has no backing store to release any more — a state owns no canvas — so what
+    // teardown has to reach is the storage the targets allocated.
     expect(target.canvas.width).toBe(0);
     expect(target.canvas.height).toBe(0);
   });
@@ -109,28 +100,31 @@ describe('createCanvasCacheState', () => {
 describe('createCanvasOffscreenRenderState', () => {
   it('does not reach ambient document state during construction', () => {
     const screen = makeCanvasState();
-    const surface = acquireTestCanvasRenderSurface();
     const resolvers = createCanvasTextureResolvers();
     const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')!;
     Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined });
 
     try {
-      expect(() => createCanvasOffscreenRenderState(surface, screen.pipeline, resolvers)).not.toThrow();
+      expect(() => createCanvasOffscreenRenderState(screen.pipeline, resolvers)).not.toThrow();
     } finally {
       Object.defineProperty(globalThis, 'document', documentDescriptor);
     }
   });
 
-  it('releases the owned backing store when destroyed', () => {
+  // ★ AN OFFSCREEN STATE OWNS NO CANVAS. It used to be constructed around one, so destroying it had to
+  // free that canvas — and a caller who had handed in their own got it collapsed underneath them. The
+  // state now holds only the handles of whatever pass is open, so there is nothing for teardown to free
+  // and nothing for it to take by mistake.
+  it('holds no backing store of its own to release', () => {
     const screen = makeCanvasState();
     const offscreen = makeOffscreenState(screen);
-    offscreen.canvas.width = 17;
-    offscreen.canvas.height = 19;
+    const target = createCanvasTextureRenderTarget(17, 19);
+    endCanvasRenderPass(beginCanvasRenderPass(offscreen, target));
 
     destroyCanvasRenderState(offscreen);
 
-    expect(offscreen.canvas.width).toBe(0);
-    expect(offscreen.canvas.height).toBe(0);
+    expect(target.canvas.width).toBe(17);
+    expect(target.canvas.height).toBe(19);
   });
 
   it('creates an independent host canvas without a hidden owner link', () => {

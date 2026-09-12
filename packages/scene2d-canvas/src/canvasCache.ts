@@ -12,9 +12,8 @@ import {
 import type {
   CanvasPipeline,
   CanvasRenderOptions,
-  CanvasRenderSurface,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasTextureResolvers,
   Node2D,
   Scene2DRenderer,
@@ -26,19 +25,18 @@ import type {
 } from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D';
+import { beginCanvasRenderPass, endCanvasRenderPass, setCanvasRenderTransform2D } from './canvasRenderPass';
 import {
   createCanvasRenderState,
   destroyCanvasRenderState,
-  getCanvasRenderStateRuntime,
   registerCanvasRenderStateTeardown,
 } from './canvasRenderState';
-import { setCanvasRenderStateHandles } from './canvasRenderStateHandles';
+import { getCanvasSurfaceCreator } from './canvasRenderSurface';
 import {
-  createCanvasRenderTarget,
-  destroyCanvasRenderTarget,
-  resizeCanvasRenderTarget,
-  setCanvasRenderTransform2D,
-} from './canvasRenderTarget';
+  createCanvasTextureRenderTarget,
+  destroyCanvasTextureRenderTarget,
+  resizeCanvasTextureRenderTarget,
+} from './canvasTextureRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
 
 /**
@@ -50,12 +48,11 @@ import { setCanvasTransform } from './canvasTransform';
  */
 export function createCanvasCacheState(
   ownerState: CanvasRenderState,
-  surface: CanvasRenderSurface,
   pipeline: Readonly<CanvasPipeline>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const cacheState = createCanvasOffscreenRenderState(surface, pipeline, canvasTextureResolvers, options);
+  const cacheState = createCanvasOffscreenRenderState(pipeline, canvasTextureResolvers, options);
   registerCanvasRenderStateTeardown(ownerState, () => destroyCanvasRenderState(cacheState));
   return cacheState;
 }
@@ -66,12 +63,11 @@ export function createCanvasCacheState(
  * canvases remain independent.
  */
 export function createCanvasOffscreenRenderState(
-  surface: CanvasRenderSurface,
   pipeline: Readonly<CanvasPipeline>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  return createCanvasRenderState(surface, pipeline, canvasTextureResolvers, options);
+  return createCanvasRenderState(pipeline, canvasTextureResolvers, options);
 }
 
 export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): void {
@@ -81,7 +77,7 @@ export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: 
   const targets = getTargets(state);
   const target = targets.get(cache);
   if (target !== undefined) {
-    destroyCanvasRenderTarget(target);
+    destroyCanvasTextureRenderTarget(target);
     targets.delete(cache);
   }
 }
@@ -100,19 +96,23 @@ export function ensureCanvasRenderCacheTarget(
   cache: RenderCache,
   width: number,
   height: number,
-): CanvasRenderTarget {
+): CanvasTextureRenderTarget {
+  const creator = getCanvasSurfaceCreator(state);
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createCanvasRenderTarget(state.surface.creator, width, height);
+    target = createCanvasTextureRenderTarget(creator, width, height);
     targets.set(cache, target);
   } else {
-    resizeCanvasRenderTarget(target, width, height);
+    resizeCanvasTextureRenderTarget(target, width, height);
   }
   return target;
 }
 
-export function getCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): CanvasRenderTarget | null {
+export function getCanvasRenderCacheTarget(
+  state: CanvasRenderState,
+  cache: RenderCache,
+): CanvasTextureRenderTarget | null {
   return _renderCacheTargets.get(state)?.get(cache) ?? null;
 }
 
@@ -150,25 +150,27 @@ export function refreshCanvasRenderCache(
   computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
-  const runtime = getCanvasRenderStateRuntime(cacheState);
-  setCanvasRenderStateHandles(cacheState, target.canvas, target.context);
-  cacheState.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
-  cacheState.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
-  setCanvasRenderTransform2D(cacheState, _renderTransform);
-
-  const dirty = prepareScene2DRender(cacheState, source);
-  if (dirty || resized) {
-    cacheState.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
-    renderCanvasScene2D(cacheState, source);
+  // The bake is an ordinary pass into the cache target: begin installs its context and resets
+  // compositing, and end restores whatever the caller was drawing through.
+  const pass = beginCanvasRenderPass(cacheState, target);
+  try {
+    setCanvasRenderTransform2D(pass, _renderTransform);
+    const dirty = prepareScene2DRender(cacheState, source);
+    if (dirty || resized) {
+      pass.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
+      renderCanvasScene2D(pass, source);
+    }
+    return dirty || resized;
+  } finally {
+    endCanvasRenderPass(pass);
   }
-  return dirty || resized;
 }
 
 export function releaseCanvasRenderCache(state: CanvasRenderState, cache: RenderCache): void {
   const targets = _renderCacheTargets.get(state);
   const target = targets?.get(cache);
   if (target === undefined) return;
-  destroyCanvasRenderTarget(target);
+  destroyCanvasTextureRenderTarget(target);
   targets!.delete(cache);
 }
 
@@ -184,7 +186,7 @@ function drawCanvasRenderCache(state: RenderState, renderProxy: RenderProxy2D): 
   canvasState.context.drawImage(target.canvas, 0, 0);
 }
 
-function getTargets(state: CanvasRenderState): Map<RenderCache, CanvasRenderTarget> {
+function getTargets(state: CanvasRenderState): Map<RenderCache, CanvasTextureRenderTarget> {
   let targets = _renderCacheTargets.get(state);
   if (targets === undefined) {
     targets = new Map();
@@ -197,7 +199,7 @@ function getTargets(state: CanvasRenderState): Map<RenderCache, CanvasRenderTarg
 function destroyOwnedCanvasRenderCacheTargets(state: CanvasRenderState): void {
   const targets = _renderCacheTargets.get(state);
   if (targets === undefined) return;
-  for (const target of targets.values()) destroyCanvasRenderTarget(target);
+  for (const target of targets.values()) destroyCanvasTextureRenderTarget(target);
   targets.clear();
   _renderCacheTargets.delete(state);
 }
@@ -209,7 +211,7 @@ export const defaultCanvasRenderCacheRenderer: Scene2DRenderer = {
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be
 // composited by several states without the handle carrying a backend resource.
-const _renderCacheTargets = new WeakMap<CanvasRenderState, Map<RenderCache, CanvasRenderTarget>>();
+const _renderCacheTargets = new WeakMap<CanvasRenderState, Map<RenderCache, CanvasTextureRenderTarget>>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _targetSize = { width: 0, height: 0 };

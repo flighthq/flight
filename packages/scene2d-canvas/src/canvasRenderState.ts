@@ -3,23 +3,22 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
-  setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
   CanvasPipeline,
   CanvasRenderOptions,
-  CanvasRenderSurface,
   CanvasRenderState,
   CanvasRenderStateRuntime,
   CanvasTextureResolvers,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { destroyCanvasRenderSurface } from './canvasRenderSurface';
 import { destroyCanvasTextureResolvers } from './canvasTextureResolver';
 
+// Takes no driver handle: a state is "how to draw" — the pipeline, the resolvers, the smoothing policy
+// — while "where" is a render target that flows in at beginCanvasRenderPass. On this backend that
+// separation is what lets one state draw to several canvases, since each canvas carries its own context.
 export function createCanvasRenderState(
-  surface: CanvasRenderSurface,
   pipeline: Readonly<CanvasPipeline>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
@@ -31,17 +30,9 @@ export function createCanvasRenderState(
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as CanvasRenderState;
 
-  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
-
-  // canvas/context/contextAttributes are readonly handles on the entity; written once here at the
-  // construction boundary.
   state.applyBlendMode = pipeline.registries.blendModeApplication ?? null;
   state.canvasCssFilterResolver = null;
-  (state as { canvas: HTMLCanvasElement }).canvas = surface.canvas;
-  (state as { context: CanvasRenderingContext2D }).context = surface.context;
-  (state as { contextAttributes: CanvasRenderingContext2DSettings }).contextAttributes = surface.contextAttributes;
   (state as { pipeline: Readonly<CanvasPipeline> }).pipeline = pipeline;
-  (state as { surface: CanvasRenderSurface }).surface = surface;
 
   const runtime = createCanvasRenderStateRuntime(pipeline, canvasTextureResolvers);
   state[EntityRuntimeKey] = runtime;
@@ -52,9 +43,6 @@ export function createCanvasRenderState(
   runtime.currentBlendMode = null;
   runtime.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
   runtime.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
-
-  surface.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
-  surface.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
   return state;
 }
 
@@ -69,6 +57,8 @@ export function createCanvasRenderStateRuntime(
   const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
   runtime.registries = { ...pipeline.registries };
   runtime.canvasTextureResolvers = canvasTextureResolvers;
+  runtime.currentRenderTarget = null;
+  runtime.passStack = [];
   runtime.teardowns = [];
   return runtime;
 }
@@ -81,7 +71,6 @@ export function destroyCanvasRenderState(state: CanvasRenderState): void {
   runtime.teardowns.length = 0;
   destroyRenderState(state);
   destroyCanvasTextureResolvers(runtime.canvasTextureResolvers);
-  destroyCanvasRenderSurface(state.surface);
 }
 
 // Resolves the package-private 2D-canvas runtime attached to a CanvasRenderState. Mutable by design:

@@ -5,7 +5,7 @@ import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
 import { defaultCanvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';
-import { createCanvasRenderState } from './canvasTestSupport';
+import { createCanvasRenderState, getCanvasActiveRenderPass } from './canvasTestSupport';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -48,7 +48,7 @@ describe('renderCanvasScene2D', () => {
     const state = makeState();
     const obj = createDisplayObject();
     prepareScene2DRender(state, obj);
-    expect(() => renderCanvasScene2D(state, obj)).not.toThrow();
+    expect(() => renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj)).not.toThrow();
   });
 
   it('calls renderer.submit for a visible object with a renderer', () => {
@@ -58,7 +58,7 @@ describe('renderCanvasScene2D', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
 
-    renderCanvasScene2D(state, obj);
+    renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj);
 
     expect(renderer.submit).toHaveBeenCalledOnce();
   });
@@ -71,7 +71,7 @@ describe('renderCanvasScene2D', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
 
-    renderCanvasScene2D(state, obj);
+    renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj);
 
     expect(renderer.submit).not.toHaveBeenCalled();
   });
@@ -85,7 +85,7 @@ describe('renderCanvasScene2D', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, parent);
 
-    renderCanvasScene2D(state, parent);
+    renderCanvasScene2D(getCanvasActiveRenderPass(state)!, parent);
 
     expect(renderer.submit).toHaveBeenCalledTimes(2);
   });
@@ -105,7 +105,7 @@ describe('renderCanvasScene2D', () => {
     setCanvasCssFilter(state, obj, 'blur(3px)');
     prepareScene2DRender(state, obj);
 
-    renderCanvasScene2D(state, obj);
+    renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj);
 
     expect(observed).toBe('blur(3px)');
     expect(state.context.filter).toBe('none');

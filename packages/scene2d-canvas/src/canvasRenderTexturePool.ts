@@ -11,8 +11,8 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { destroyCanvasRenderTarget } from './canvasRenderTarget';
 import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture';
+import { destroyCanvasTextureRenderTarget } from './canvasTextureRenderTarget';
 
 export function acquireCanvasRenderTexture(
   state: CanvasRenderState,
@@ -46,7 +46,8 @@ export function destroyCanvasRenderTexturePool(state: CanvasRenderState, pool: C
   for (const renderTexture of textures) destroyCanvasRenderTexture(state, renderTexture);
   pool.free.length = 0;
   pool.leased.clear();
-  for (const target of [...pool.effectTargets.free, ...pool.effectTargets.inUse]) destroyCanvasRenderTarget(target);
+  for (const target of [...pool.effectTargets.free, ...pool.effectTargets.inUse])
+    destroyCanvasTextureRenderTarget(target);
   pool.effectTargets.free.length = 0;
   pool.effectTargets.inUse.length = 0;
   pool.owner = null;
