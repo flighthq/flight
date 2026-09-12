@@ -72,9 +72,11 @@ export const height = 600;
 // keeps passing when the descriptor changes. `centerY` is top-left-origin per GodRaysEffect.
 const LIGHT_CENTER_Y = 0.4;
 
+const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
+
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
   endGlRenderEffectPipeline(pass, pipeline, [
     createGodRaysEffect({
