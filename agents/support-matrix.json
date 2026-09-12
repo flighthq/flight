@@ -2221,7 +2221,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2321,7 +2321,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2396,7 +2396,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2446,7 +2446,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2546,7 +2546,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2596,7 +2596,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2621,7 +2621,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2696,7 +2696,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2821,7 +2821,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -2977,7 +2977,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -3077,7 +3077,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -3800,7 +3800,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -3920,7 +3920,7 @@
             "webgl": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgpu": {
               "status": "unbaselined",
@@ -3950,7 +3950,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -3975,7 +3975,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         }
@@ -4282,7 +4282,7 @@
             "webgl": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgpu": {
               "status": "unbaselined",
