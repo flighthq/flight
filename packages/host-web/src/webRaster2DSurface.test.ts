@@ -1,3 +1,4 @@
+import { invalidateImageResource, unregisterHostImageDimensionResolver } from '@flighthq/image/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -35,6 +36,21 @@ describe('createWebRaster2DSurfaceProvider', () => {
     expect(surface.context).toBeInstanceOf(CanvasRenderingContext2D);
     expect(surface.image.source).toBe(surface.context.canvas);
     expect('canvas' in surface).toBe(false);
+  });
+
+  // The GL and WGPU raster-shape, rich-text, scale-9 and text-label renderers resize a surface and then
+  // call invalidateImageResource on its image, which no longer measures the element back through a host.
+  // The surface must therefore carry its own size onto the resource, or every one of those paths uploads
+  // with a stale width and height and nothing fails loudly.
+  it('carries a resize onto the image resource without any registered dimension resolver', () => {
+    unregisterHostImageDimensionResolver();
+    const surface = createWebRaster2DSurfaceProvider().createRaster2DSurface(4, 4)!;
+    surface.width = 128;
+    surface.height = 64;
+    invalidateImageResource(surface.image);
+
+    expect(surface.image.width).toBe(128);
+    expect(surface.image.height).toBe(64);
   });
 
   it('forwards dimension reads and writes to the wrapped upload source', () => {

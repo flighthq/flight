@@ -1,9 +1,19 @@
-import { createImageResource } from '@flighthq/image/contract';
+import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
 import type { HostBitmapReadbackProvider } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
 import { captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
+
+// captureBitmapFromImageResource reads the resource's own width and height, and a resource measures its
+// borrowed handle through the host. This test wraps canvases, so it registers the one-line structural
+// reader a browser host installs rather than depending on host-web from a portable package's tests.
+registerHostImageDimensionResolver((source, out) => {
+  const sized = source as unknown as { height: number; width: number };
+  out.height = sized.height;
+  out.width = sized.width;
+  return true;
+});
 
 function hostWith(backend: HostBitmapReadbackProvider): {
   readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
