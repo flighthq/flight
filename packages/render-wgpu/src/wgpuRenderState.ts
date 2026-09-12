@@ -4,7 +4,6 @@ import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
-  setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
@@ -16,10 +15,8 @@ import type {
   WgpuDeviceState,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
-  HostWgpuProvider,
   WgpuOffscreenRenderStateResult,
   WgpuPipeline,
-  WgpuPresentationRenderState,
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
@@ -93,7 +90,6 @@ export function createWgpuOffscreenRenderState(
 
   const derivedPipeline = createWgpuPipeline(sourceRuntime.registries);
   const state = initializeWgpuDeviceRenderState(source.deviceState, derivedPipeline, {
-    backgroundColor: source.backgroundColor,
     format: source.format,
     imageSmoothingEnabled: source.allowSmoothing,
     pixelRatio: source.pixelRatio,
@@ -112,37 +108,20 @@ export function createWgpuOffscreenRenderState(
   return finishEntity(out);
 }
 
-// Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous
-// lives in acquisition.
+// Takes the driver handle directly: the device is how a state talks to the GPU — shader compilation,
+// texture upload, renderer registration — and none of that needs a target. Which surface a frame lands on
+// is a per-pass decision, so the screen target is created separately and flows in at beginWgpuRenderPass.
+//
+// Synchronous, because everything asynchronous (adapter and device discovery) happens before this call:
+//   const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+//   const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+//   const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format });
 export function createWgpuRenderState(
-  acquisition: Readonly<WgpuHostAcquisition>,
+  device: GPUDevice,
   pipeline: Readonly<WgpuPipeline>,
   options: Readonly<WgpuRenderOptions> = {},
-): WgpuPresentationRenderState {
-  const hostBackend = getWgpuHostBackend();
-  try {
-    return initializeWgpuPresentationRenderState(options, acquisition, pipeline, hostBackend);
-  } catch (error) {
-    // ★ NEVER release what the caller owns, not even while unwinding a failure. This is the path where
-    // borrowed handles were previously destroyed on the way out, and it was safe only because the shipped
-    // backend happened to check. The policy belongs here, where it holds for every backend.
-    if (acquisition.ownership !== 'caller') hostBackend.release(acquisition);
-    throw error;
-  }
-}
-
-// The canvas convenience: acquire, then build. The handles are `flight`-owned, so destroying the state
-// releases them — the behavior every existing caller had when it passed a canvas.
-export async function createWgpuRenderStateFromCanvasElement(
-  canvas: HTMLCanvasElement,
-  pipeline: Readonly<WgpuPipeline>,
-  options: Readonly<WgpuRenderOptions & WgpuHostAcquisitionOptions> = {},
-): Promise<WgpuPresentationRenderState> {
-  const acquisition = await getWgpuHostBackend().acquire(canvas, {
-    format: options.format,
-    powerPreference: options.powerPreference,
-  });
-  return createWgpuRenderState(acquisition, pipeline, options);
+): WgpuRenderState {
+  return initializeWgpuDeviceRenderState(createWgpuDeviceState(device), pipeline, options);
 }
 
 export function createWgpuRenderStateRuntime(
@@ -161,33 +140,6 @@ export function createWgpuRenderStateRuntime(
         : (deviceStateOrRuntime as WgpuRenderStateRuntime).registries,
     );
   return createWgpuRenderStateRuntimeInternal(deviceRuntime, resolvedPipeline);
-}
-
-function initializeWgpuPresentationRenderState(
-  options: Readonly<WgpuRenderOptions>,
-  acquisition: Readonly<WgpuHostAcquisition>,
-  pipeline: Readonly<WgpuPipeline>,
-  hostBackend: HostWgpuProvider,
-): WgpuPresentationRenderState {
-  const { context, device, format } = acquisition;
-
-  // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createBitmapFromWgpuRenderState).
-  // It is the only reliable way to read a Wgpu frame in headless/software contexts, where canvas
-  // presentation does not surface the swapchain; it also backs user-facing screenshot/save-pixels needs.
-  context.configure({
-    device,
-    format,
-    alphaMode: 'premultiplied',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-  });
-
-  const deviceState = createWgpuDeviceState(device);
-  const ownership: WgpuAcquisitionOwnership = { acquisition, hostBackend, references: 0 };
-  _acquisitionByDeviceRuntime.set(getWgpuDeviceRuntime(deviceState), ownership);
-  const state = initializeWgpuDeviceRenderState(deviceState, pipeline, { ...options, format });
-  Object.assign(state, { context, surface: acquisition.surface });
-  getWgpuRenderStateRuntime(state).surfaceAntialiasEnabled = options.antialias ?? false;
-  return state as WgpuPresentationRenderState;
 }
 
 function initializeWgpuDeviceRenderState(
@@ -221,15 +173,12 @@ function initializeWgpuDeviceRenderState(
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as WgpuRenderState;
 
-  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
-
   state.applyBlendMode = null;
   Object.assign(state, { deviceState, device, format, pipeline });
 
   const runtime = createWgpuRenderStateRuntime(deviceState, pipeline);
   state[EntityRuntimeKey] = runtime;
 
-  runtime.surfaceAntialiasEnabled = false;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
   runtime.uniformBuffer = uniformBuffer;
@@ -262,19 +211,7 @@ function initializeWgpuDeviceRenderState(
 
   runtime.commandEncoder = null;
   runtime.renderPass = null;
-  runtime.canvasTextureView = null;
-  runtime.canvasViewCleared = false;
-  runtime.frameCaptureEnabled = false;
-  runtime.frameCaptureTexture = null;
-  runtime.frameCaptureBuffer = null;
-  runtime.frameCaptureBytesPerRow = 0;
-  runtime.frameCaptureWidth = 0;
-  runtime.frameCaptureHeight = 0;
-
-  runtime.depthStencilTexture = null;
-  runtime.depthStencilView = null;
-  runtime.depthStencilWidth = 0;
-  runtime.depthStencilHeight = 0;
+  runtime.frameScreenTarget = null;
 
   runtime.currentMaskDepth = 0;
   runtime.maskWriteMode = false;
@@ -286,7 +223,7 @@ function initializeWgpuDeviceRenderState(
   runtime.scissorStack = [];
   runtime.currentScissorRect = null;
   runtime.renderTargetViewport = null;
-  runtime.renderTargetStack = [];
+  runtime.passStack = [];
 
   warmWgpuPipelines(state);
 
@@ -300,8 +237,8 @@ function initializeWgpuDeviceRenderState(
 //
 // GC-managed Wgpu objects with no destroy() (pipelines, bind groups, layouts, samplers, shader
 // modules, texture views) are not touched. textureCache is a WeakMap and cannot be enumerated; its
-// entries' textures are freed per-node by the dispose* paths. The shared device tier routes its
-// acquisition through the originating host backend when its last state is destroyed.
+// entries' textures are freed per-node by the dispose* paths. Surface storage belongs to the screen
+// render target, not to a state, so destroyWgpuScreenRenderTarget frees that side.
 export function destroyWgpuRenderState(state: WgpuRenderState): void {
   if (_destroyedStates.has(state)) return;
   _destroyedStates.add(state);
@@ -311,8 +248,6 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   destroyRenderState(state);
   runtime.uniformBuffer?.destroy();
   runtime.particleInstanceBuffer?.destroy();
-  runtime.depthStencilTexture?.destroy();
-  runtime.surfaceAntialiasTexture?.destroy();
   for (const slot of runtime.quadBatchWriterBufferPool) {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
@@ -327,13 +262,6 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
     for (const teardown of ctx.teardowns) teardown(device);
     ctx.teardowns.length = 0;
   }
-  const ownership = _acquisitionByStateRuntime.get(runtime);
-  if (ownership !== undefined) {
-    ownership.references--;
-    if (ownership.references === 0 && ownership.acquisition.ownership !== 'caller') {
-      ownership.hostBackend.release(ownership.acquisition);
-    }
-  }
 }
 
 function createWgpuRenderStateRuntimeInternal(
@@ -346,23 +274,11 @@ function createWgpuRenderStateRuntimeInternal(
   // reaches an instanced draw — presentation, offscreen, or a test helper's — has the pool to claim from.
   runtime.meshInstanceBufferPool = [];
   runtime.meshInstanceBufferCursor = 0;
-  runtime.surfaceAntialiasEnabled = false;
-  runtime.surfaceAntialiasTexture = null;
-  runtime.surfaceAntialiasView = null;
-  runtime.surfaceAntialiasWidth = 0;
-  runtime.surfaceAntialiasHeight = 0;
   runtime.surfaceAntialiasResolveBindGroupLayout = null;
   runtime.surfaceAntialiasResolvePipeline = null;
-  runtime.surfaceAntialiasResolveBindGroup = null;
-  runtime.surfacePresentationView = null;
   runtime.registries = { ...pipeline.registries };
   runtime.teardowns = [];
   runtime.borrowedSurfaceExtent = null;
-  const ownership = _acquisitionByDeviceRuntime.get(deviceRuntime);
-  if (ownership !== undefined) {
-    ownership.references++;
-    _acquisitionByStateRuntime.set(runtime, ownership);
-  }
   deviceRuntime.references++;
   runtime.context = deviceRuntime;
   return runtime;
@@ -522,12 +438,6 @@ function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDevic
   });
 }
 
-type WgpuAcquisitionOwnership = {
-  acquisition: Readonly<WgpuHostAcquisition>;
-  hostBackend: HostWgpuProvider;
-  references: number;
-};
-
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
 export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
   getWgpuHostBackend().release(acquisition);
@@ -555,8 +465,6 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
   return runtime;
 }
 
-const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
-const _acquisitionByDeviceRuntime = new WeakMap<WgpuDeviceRuntime, WgpuAcquisitionOwnership>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
 // Resolve the blend hook at the draw seam rather than hiding derived-state delegation behind an

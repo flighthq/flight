@@ -4,7 +4,9 @@ import type { RenderTargetTextureSourceKind } from './TextureSourceKind';
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
 // MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
-// per-backend target types (GlTextureRenderTarget, WgpuRenderTarget) realize these axes.
+// per-backend target types (GlRenderTarget, WgpuRenderTarget) realize these axes; each splits into a
+// screen realization (the swap chain) and a texture realization (GlTextureRenderTarget,
+// WgpuTextureRenderTarget — sampleable offscreen storage).
 
 // Common allocation-backed target identity used by backend-neutral assemblies. Backend target types
 // extend this with their storage handles and effective format axes.

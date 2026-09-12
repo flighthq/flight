@@ -1,7 +1,13 @@
-import type { WgpuPresentationRenderState, WgpuRenderOptions } from '@flighthq/types/contract';
+import type {
+  WgpuRenderOptions,
+  WgpuRenderState,
+  WgpuScreenRenderTarget,
+  WgpuScreenRenderTargetOptions,
+} from '@flighthq/types/contract';
 
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
-import { createWgpuRenderStateFromCanvasElement } from './wgpuRenderState';
+import { createWgpuAcquisitionFromCanvasElement, createWgpuRenderState } from './wgpuRenderState';
+import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
 
 // Wgpu flag constants are only type-level in @webgpu/types; install runtime values for JSDOM.
 function installWgpuConstants(): void {
@@ -281,13 +287,27 @@ export function createReadyImageElementForTest(width = 1, height = 1): HTMLImage
   return image;
 }
 
-export async function createWgpuRenderStateForTest(
-  options: WgpuRenderOptions = {},
-): Promise<WgpuPresentationRenderState> {
+export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = {}): Promise<WgpuRenderState> {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
-  return createWgpuRenderStateFromCanvasElement(canvas, _testWgpuPipeline, options);
+  const acquisition = await createWgpuAcquisitionFromCanvasElement(canvas);
+  if (acquisition === null) throw new Error('createWgpuRenderStateForTest: the mock adapter refused a device');
+  return createWgpuRenderState(acquisition.device, _testWgpuPipeline, { format: acquisition.format, ...options });
+}
+
+// The screen half of the test rig. A state and a screen target are independent, so a test that only
+// compiles shaders or uploads textures takes the state alone and never allocates a surface.
+export function createWgpuScreenRenderTargetForTest(
+  state: WgpuRenderState,
+  options: Readonly<WgpuScreenRenderTargetOptions> = {},
+  width = 800,
+  height = 600,
+): WgpuScreenRenderTarget {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return createWgpuScreenRenderTarget(state.device, canvas, { format: state.format, ...options });
 }
 
 const _testWgpuPipeline = createWgpuPipeline(createEmptyWgpuRegistries());

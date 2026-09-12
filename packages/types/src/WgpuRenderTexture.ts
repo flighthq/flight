@@ -1,8 +1,7 @@
 import type { Entity } from './Entity';
 import type { RenderTexture } from './RenderTexture';
 import type { WgpuRenderState } from './WgpuRenderState';
-import type { WgpuRenderTarget } from './WgpuRenderTarget';
-import type { WgpuRenderTargetPool } from './WgpuRenderTarget';
+import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget';
 
 export type WgpuRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 
@@ -15,7 +14,7 @@ export interface WgpuRenderTextureExplanation {
 // Runtime-owned realization of one render Texture for one WgpuRenderState.
 export interface WgpuRenderTextureEntry {
   status: WgpuRenderTextureStatus;
-  target: WgpuRenderTarget;
+  target: WgpuTextureRenderTarget;
 }
 
 // App-level lease pool. Handles and raw effect targets are locked to the first GPUDevice that uses

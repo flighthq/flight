@@ -19,8 +19,8 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
-import { retireWgpuTexture } from './wgpuBackground';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
+import { retireWgpuTexture } from './wgpuFrame';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
 

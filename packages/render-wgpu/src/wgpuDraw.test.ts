@@ -15,7 +15,6 @@ import {
   ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import {
   applyWgpuBlendMode,
@@ -36,6 +35,7 @@ import {
   updateWgpuTextureEntry,
   warmWgpuPipelines,
 } from './wgpuDraw';
+import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuFrame';
 import { registerWgpuMipmapGeneration } from './wgpuMipmap';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';

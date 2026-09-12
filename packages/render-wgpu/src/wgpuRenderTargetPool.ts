@@ -3,17 +3,17 @@ import type {
   EntityConstruction,
   RenderTargetColorSpace,
   WgpuRenderState,
-  WgpuRenderTarget,
   WgpuRenderTargetPool,
+  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { createWgpuRenderTarget, destroyWgpuRenderTarget } from './wgpuRenderTarget';
+import { createWgpuTextureRenderTarget, destroyWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
-// brackets: every acquireWgpuRenderTarget must have a matching releaseWgpuRenderTarget. A released
+// brackets: every acquireWgpuTextureRenderTarget must have a matching releaseWgpuTextureRenderTarget. A released
 // target returns to the free list (its GPU storage is kept) rather than being destroyed.
 //
-export function acquireWgpuRenderTarget(
+export function acquireWgpuTextureRenderTarget(
   state: WgpuRenderState,
   pool: WgpuRenderTargetPool,
   descriptor: Readonly<{
@@ -23,7 +23,7 @@ export function acquireWgpuRenderTarget(
     colorSpace?: RenderTargetColorSpace;
     sampleCount?: number;
   }>,
-): WgpuRenderTarget {
+): WgpuTextureRenderTarget {
   const sampleCount = descriptor.sampleCount !== undefined && descriptor.sampleCount > 1 ? 4 : 1;
   const scale = sampleCount === 4 ? 2 : 1;
   const w = Math.max(1, Math.ceil(descriptor.width)) * scale;
@@ -43,7 +43,14 @@ export function acquireWgpuRenderTarget(
       return candidate;
     }
   }
-  return createWgpuRenderTarget(state, descriptor.width, descriptor.height, format, descriptor.colorSpace, sampleCount);
+  return createWgpuTextureRenderTarget(
+    state,
+    descriptor.width,
+    descriptor.height,
+    format,
+    descriptor.colorSpace,
+    sampleCount,
+  );
 }
 
 export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
@@ -53,7 +60,7 @@ export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
 }
 
 export function destroyWgpuRenderTargetPool(state: WgpuRenderState, pool: WgpuRenderTargetPool): void {
-  for (const target of pool.free) destroyWgpuRenderTarget(state, target);
+  for (const target of pool.free) destroyWgpuTextureRenderTarget(state, target);
   pool.free.length = 0;
 }
 
@@ -61,6 +68,6 @@ export function initializeWgpuRenderTargetPool(out: EntityConstruction<WgpuRende
   out.free = [];
 }
 
-export function releaseWgpuRenderTarget(pool: WgpuRenderTargetPool, target: WgpuRenderTarget): void {
+export function releaseWgpuTextureRenderTarget(pool: WgpuRenderTargetPool, target: WgpuTextureRenderTarget): void {
   pool.free.push(target);
 }

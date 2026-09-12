@@ -1,6 +1,5 @@
 export * from './wgpuAdapterCapabilities';
-export * from './wgpuAntialias';
-export * from './wgpuBackground';
+export * from './wgpuFrame';
 export * from './wgpuCompressedTexture';
 export * from './wgpuDeviceLoss';
 export * from './wgpuDraw';
@@ -13,6 +12,7 @@ export * from './wgpuHost';
 export * from './wgpuMaterialRegistry';
 export * from './wgpuMipmap';
 export * from './wgpuPipeline';
+export * from './wgpuRenderPass';
 export * from './wgpuRenderState';
 export * from './wgpuRenderTarget';
 export * from './wgpuRenderTargetPool';
@@ -22,11 +22,19 @@ export * from './wgpuScissor';
 export * from './wgpuShader';
 export * from './wgpuShaderBinding';
 export * from './wgpuShaderRegistry';
-export * from './wgpuSurface';
+export * from './wgpuScreenCapture';
+export * from './wgpuScreenRenderTarget';
+export * from './wgpuTextureRenderTarget';
 export * from './wgpuTextureUpload';
 export * from './wgpuTextureResolver';
-export { createReadyImageElementForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-export { initializeWgpuRenderTarget } from './wgpuRenderTarget';
+export {
+  createReadyImageElementForTest,
+  createWgpuRenderStateForTest,
+  createWgpuScreenRenderTargetForTest,
+  installWgpuMock,
+} from './wgpuTestHelper';
+export { initializeWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+export { initializeWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
 export { initializeEmptyWgpuRegistries } from './wgpuPipeline';
 export { initializeWgpuBindGroupLayouts } from './wgpuShader';
 export { initializeWgpuFullscreenPipeline } from './wgpuFullscreenPass';
