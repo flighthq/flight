@@ -14,7 +14,7 @@ import {
   createGlCanvasElement,
   createGlProgram,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   declareGlRenderTargetColorSpace,
   endGlRenderPass,
   invalidateGlRenderStateCache,
@@ -68,7 +68,7 @@ const state = createGlRenderState(
     pixelRatio: scale,
   },
 );
-const target = createGlRenderTarget(state, {
+const target = createGlTextureRenderTarget(state, {
   colorSpace: 'srgb',
   depth: 'depth-stencil',
   height: canvas.height,

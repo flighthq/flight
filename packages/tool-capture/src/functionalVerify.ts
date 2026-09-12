@@ -13,6 +13,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type {
   CanvasRenderState,
+  CanvasScreenRenderTarget,
   Node2D,
   DomRenderState,
   GlRenderState,
@@ -54,6 +55,10 @@ export type FunctionalRenderOracle = (bitmap: Readonly<Bitmap>) => void | Promis
 
 export interface FunctionalCanvasTarget {
   kind: 'canvas';
+  // The state draws and the screen target presents: two independent handles now. Readback needs the
+  // screen one, because the state's canvas belongs to whichever pass is open and there is none between
+  // frames.
+  screen: CanvasScreenRenderTarget;
   state: CanvasRenderState;
   width: number;
   height: number;
@@ -281,7 +286,7 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
     return createBitmapFromWgpuScreenRenderTarget(target.screen, getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE));
   }
   if (target?.kind === 'webgl') return createBitmapFromGlRenderState(target.state);
-  const canvas = target ? target.state.canvas : findRenderCanvas();
+  const canvas = target?.kind === 'canvas' ? target.screen.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   if (canvas.getContext('2d') !== null) return createBitmapFromCanvas(canvas, 0, 0, canvas.width, canvas.height);
   const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');

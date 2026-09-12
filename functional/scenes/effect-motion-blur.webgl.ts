@@ -1,5 +1,5 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, GlRenderTarget, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   createGlContextState,
@@ -73,7 +73,7 @@ registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 
 // Velocity target is sized to the canvas backing store (logical size * pixelRatio).
-const velocityTarget: GlRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
+const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
 export const scale = pixelRatio;

@@ -5,6 +5,7 @@
 import type {
   Bitmap,
   CanvasRenderState,
+  CanvasScreenRenderTarget,
   DomRenderState,
   GlRenderState,
   WgpuPresentationSurface,
@@ -20,8 +21,12 @@ import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerifi
 export interface CapturePageTargetOptions {
   renderer: 'canvas' | 'dom' | 'webgl' | 'webgpu';
   state: CanvasRenderState | DomRenderState | GlRenderState | WgpuRenderState;
-  /** The WGPU screen target the frame lands on. Required for, and only used by, the 'webgpu' renderer. */
-  screen?: WgpuScreenRenderTarget;
+  /**
+   * The screen render target the frame lands on. Required for the 'canvas' and 'webgpu' renderers, whose
+   * states carry no surface of their own: readback reads the target's canvas, not the state's, because
+   * the state's belongs to whichever pass is open and there is none between frames.
+   */
+  screen?: CanvasScreenRenderTarget | WgpuScreenRenderTarget;
   /** Draw work to perform after registration. May be omitted when the page already rendered. */
   render?: () => void | Promise<void>;
   assertRender?: FunctionalRenderOracle;
@@ -100,8 +105,8 @@ export async function installCaptureTarget(
 ): Promise<CaptureVerification | null> {
   const scale = options.scale ?? 1;
   if (options.renderer === 'webgpu') {
-    if (options.screen === undefined) {
-      throw new Error("installCaptureTarget: renderer 'webgpu' requires the screen render target to capture from");
+    if (options.screen === undefined || 'canvas' in options.screen) {
+      throw new Error("installCaptureTarget: renderer 'webgpu' requires the WGPU screen render target");
     }
     registerWgpuFunctionalTarget(options.state as WgpuRenderState, options.screen, scale);
   } else {
@@ -143,12 +148,13 @@ export async function verifyCaptureTarget(
 
 function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, scale: number): FunctionalTarget {
   const state = options.state;
-  const canvas = 'canvas' in state ? state.canvas : null;
   const element = 'element' in state ? state.element : null;
-  // A WGPU state carries no canvas and no surface — the screen render target owns the presentation
-  // surface — so this fallback reads it there, or a webgpu target with no explicit width silently falls
-  // through to zero.
-  const surface: WgpuPresentationSurface | null = options.screen?.surface ?? null;
+  // Neither a Canvas nor a WGPU state carries a surface any more — the screen render target owns it — so
+  // this fallback reads the extent there, or a target with no explicit width silently falls through to
+  // zero.
+  const canvas = options.screen !== undefined && 'canvas' in options.screen ? options.screen.canvas : null;
+  const surface: WgpuPresentationSurface | null =
+    options.screen !== undefined && !('canvas' in options.screen) ? options.screen.surface : null;
   const gl = options.renderer === 'webgl' ? (state as GlRenderState).gl : null;
   const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? surface?.width ?? element?.clientWidth ?? 0;
   const height =
@@ -157,7 +163,18 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   if (options.renderer === 'dom') return { kind: 'dom', state: state as DomRenderState, width, height, scale, render };
   if (options.renderer === 'webgl')
     return { kind: 'webgl', state: state as GlRenderState, width, height, scale, render };
-  return { kind: 'canvas', state: state as CanvasRenderState, width, height, scale, render };
+  if (options.screen === undefined || !('canvas' in options.screen)) {
+    throw new Error("installCaptureTarget: renderer 'canvas' requires the screen render target to capture from");
+  }
+  return {
+    kind: 'canvas',
+    screen: options.screen,
+    state: state as CanvasRenderState,
+    width,
+    height,
+    scale,
+    render,
+  };
 }
 
 async function synchronizeCaptureTarget(

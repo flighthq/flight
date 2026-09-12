@@ -117,6 +117,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
 
   return registerFunctionalTarget({
     kind: 'canvas',
+    screen,
     state,
     width,
     height,
