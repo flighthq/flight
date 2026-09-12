@@ -301,4 +301,8 @@ function enterFrame(): void {
   if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
-requestAnimationFrame(enterFrame);
+if (captureMode) {
+  enterFrame();
+} else {
+  requestAnimationFrame(enterFrame);
+}
