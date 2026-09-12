@@ -41,13 +41,16 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 
 export const scale = pixelRatio;
 
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x09 / 0xff, 0x07 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
+
 export function render(
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
   effects: readonly RenderEffect[],
 ): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
   endGlRenderEffectPipeline(pass, pipeline, effects);

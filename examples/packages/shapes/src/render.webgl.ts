@@ -50,9 +50,12 @@ registerGlShapeCommands(state, defaultGlShapeCommands);
 
 export const scale = pixelRatio;
 
+// What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
+const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
+
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderPass(state, screenTarget);
+  const pass = beginGlRenderPass(state, screenTarget, screenClear);
   renderGlScene2D(pass, root);
   endGlRenderPass(pass);
 }
