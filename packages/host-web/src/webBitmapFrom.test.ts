@@ -1,11 +1,11 @@
-import { createBitmapFromCanvas, initializeBitmapFromCanvas } from './webBitmapFrom';
+import { createWebBitmapFromCanvas, initializeWebBitmapFromCanvas } from './webBitmapFrom';
 
-describe('createBitmapFromCanvas', () => {
+describe('createWebBitmapFromCanvas', () => {
   it('returns Bitmap matching the canvas size', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const data = createBitmapFromCanvas(canvas);
+    const data = createWebBitmapFromCanvas(canvas);
     expect(data.width).toBe(4);
     expect(data.height).toBe(4);
   });
@@ -14,7 +14,7 @@ describe('createBitmapFromCanvas', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 8;
     canvas.height = 8;
-    const data = createBitmapFromCanvas(canvas);
+    const data = createWebBitmapFromCanvas(canvas);
     expect(data.data.length).toBe(8 * 8 * 4);
   });
 
@@ -23,7 +23,7 @@ describe('createBitmapFromCanvas', () => {
     canvas.width = 8;
     canvas.height = 8;
 
-    const data = createBitmapFromCanvas(canvas, 2, 1, 2, 3);
+    const data = createWebBitmapFromCanvas(canvas, 2, 1, 2, 3);
 
     expect(data.width).toBe(2);
     expect(data.height).toBe(3);
@@ -40,8 +40,8 @@ describe('createBitmapFromCanvas', () => {
   });
 });
 
-describe('initializeBitmapFromCanvas', () => {
-  it('is the construction initializer of createBitmapFromCanvas', () => {
-    expect(typeof initializeBitmapFromCanvas).toBe('function');
+describe('initializeWebBitmapFromCanvas', () => {
+  it('is the construction initializer of createWebBitmapFromCanvas', () => {
+    expect(typeof initializeWebBitmapFromCanvas).toBe('function');
   });
 });

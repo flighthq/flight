@@ -1,6 +1,6 @@
 import { createBitmap, extractBitmapPixels, setBitmapPixel } from '@flighthq/bitmap/contract';
 
-import { drawBitmap } from './webBitmapDraw';
+import { drawWebBitmap } from './webBitmapDraw';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };
@@ -32,7 +32,7 @@ function guardGlobalImageDataAccess() {
   };
 }
 
-describe('drawBitmap', () => {
+describe('drawWebBitmap', () => {
   it('allocates through one destination context and puts the exact extracted pixels at the caller coordinates', () => {
     const src = createBitmap(2, 1);
     setBitmapPixel(src, 0, 0, 0x112233ff);
@@ -51,7 +51,7 @@ describe('drawBitmap', () => {
     const globalImageData = guardGlobalImageDataAccess();
 
     try {
-      drawBitmap(canvas, region(src), 7, -3);
+      drawWebBitmap(canvas, region(src), 7, -3);
       expect(getContext).toHaveBeenCalledOnce();
       expect(getContext).toHaveBeenCalledWith('2d');
       expect(createImageData).toHaveBeenCalledOnce();
@@ -116,7 +116,7 @@ describe('drawBitmap', () => {
     const globalImageData = guardGlobalImageDataAccess();
 
     try {
-      expect(() => drawBitmap(canvas, region(src, 0, 0, width, height), 0, 0)).not.toThrow();
+      expect(() => drawWebBitmap(canvas, region(src, 0, 0, width, height), 0, 0)).not.toThrow();
       expect(getContext).not.toHaveBeenCalled();
       expect(createImageData).not.toHaveBeenCalled();
       expect(putImageData).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe('drawBitmap', () => {
     const putImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'putImageData');
 
     try {
-      expect(() => drawBitmap(canvas, region(src), 0, 0)).toThrow();
+      expect(() => drawWebBitmap(canvas, region(src), 0, 0)).toThrow();
       expect(getContext).toHaveBeenCalledOnce();
       expect(getContext).toHaveBeenCalledWith('2d');
       expect(createImageData).not.toHaveBeenCalled();

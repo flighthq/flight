@@ -29,7 +29,8 @@ const BROWSER_TYPES = [
 // package's lanes, under any spelling — a re-export is the compatibility shim the tranche forbade.
 const MOVED_TO_HOST_WEB = [
   'clearWebImageBitmapComposers',
-  'createBitmapFromCanvas',
+  'createWebBitmapFromCanvas',
+  'createWebGlContext',
   'createWebImageResourceFromCanvas',
   'createWebImageResourceFromImageBitmap',
   'createWebImageResourceFromImageElement',
@@ -37,12 +38,12 @@ const MOVED_TO_HOST_WEB = [
   'createWebTextureAtlasFromImageBitmap',
   'createWebTextureAtlasFromImageElement',
   'disableWebImageBitmapComposition',
-  'drawBitmap',
+  'drawWebBitmap',
   'enableWebImageBitmapComposition',
   'getWebImageBitmapComposer',
   'getWebImageBitmapComposerKinds',
   'hasWebImageBitmapComposer',
-  'initializeBitmapFromCanvas',
+  'initializeWebBitmapFromCanvas',
   'initializeWebImageResourceFromCanvas',
   'initializeWebImageResourceFromImageBitmap',
   'initializeWebImageResourceFromImageElement',
@@ -58,6 +59,7 @@ const MOVED_TO_HOST_WEB = [
 // read-only to builders, and its prose legitimately recalls what the functions used to be called.
 const RETIRED_NAMES = [
   'clearImageBitmapComposers',
+  'createBitmapFromCanvas',
   'createImageResourceFromCanvas',
   'createImageResourceFromImageBitmap',
   'createImageResourceFromImageElement',
@@ -65,16 +67,20 @@ const RETIRED_NAMES = [
   'createTextureAtlasFromImageBitmap',
   'createTextureAtlasFromImageElement',
   'disableImageBitmapComposition',
+  'drawBitmap',
   'enableImageBitmapComposition',
   'getImageBitmapComposer',
   'getImageBitmapComposerKinds',
   'hasImageBitmapComposer',
+  'initializeBitmapFromCanvas',
   'initializeImageResourceFromCanvas',
   'initializeImageResourceFromImageBitmap',
   'initializeImageResourceFromImageElement',
   'registerImageBitmapComposer',
   'unregisterImageBitmapComposer',
 ];
+
+const MOVED_GL_CONTEXT_NAMES = ['createGlContext', 'createGlContextFromCanvasElement'];
 
 describe('host-web seam closure', () => {
   // Reported as one list rather than one failure per package, so a regression names every site at once
@@ -130,6 +136,25 @@ describe('host-web seam closure', () => {
     });
 
     expect(missing).toStrictEqual([]);
+  });
+});
+
+describe('GL context migration closure', () => {
+  it('does not export the old GL context factory names from render-gl public lane', () => {
+    const chunks = readLaneWithWildcards('render-gl', 'index.ts');
+    const found = MOVED_GL_CONTEXT_NAMES.filter((name) => {
+      const pattern = new RegExp(`\\b${name}\\b`, 'u');
+      return chunks.some((chunk) => pattern.test(chunk));
+    });
+
+    expect(found).toStrictEqual([]);
+  });
+
+  it('exports createWebGlContext from a host-web lane', () => {
+    const chunks = ['index.ts', 'contract.ts'].flatMap((lane) => readLaneWithWildcards('host-web', lane));
+    const pattern = /\bcreateWebGlContext\b/u;
+
+    expect(chunks.some((chunk) => pattern.test(chunk))).toBe(true);
   });
 });
 
