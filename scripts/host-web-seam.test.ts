@@ -115,13 +115,10 @@ describe('host-web seam closure', () => {
   // bare substring search would be satisfied by the new name; the word-boundary match is what keeps this
   // from passing vacuously the moment the rename lands.
   it('leaves no retired unprefixed name anywhere in the repository', () => {
-    const found = RETIRED_NAMES.flatMap((retired) => {
-      const hits = searchRepository(retired);
-      return hits.map((hit) => `${hit}: ${retired}`);
-    });
+    const found = searchRepository(RETIRED_NAMES);
 
     expect(found).toStrictEqual([]);
-  });
+  }, 30_000);
 
   // A moved function that reached no lane at all would satisfy both checks above while being unreachable,
   // so the census is asserted from the other side too.
@@ -229,14 +226,17 @@ function readPackageTests(packageName: string): [string, string][] {
     .map((file) => [file, readFileSync(resolve(directory, file), 'utf-8')]);
 }
 
-// Searches tracked files for a whole-word identifier, skipping agents/ documentation and this file, which
-// necessarily names every retired spelling in order to forbid it.
-function searchRepository(name: string): string[] {
-  const result = spawnSync('git', ['grep', '-lw', name], {
+// Searches tracked files for any of these whole-word identifiers in ONE git pass. Seventeen separate
+// greps was the obvious shape and the wrong one: it timed out under a loaded full-suite run, and a
+// ratchet that fails on machine load teaches people to ignore it. agents/ is skipped because it is
+// documentation of record, read-only to builders, whose prose legitimately recalls the old names; this
+// file is skipped because it must name every retired spelling in order to forbid it.
+function searchRepository(names: readonly string[]): string[] {
+  const result = spawnSync('git', ['grep', '-lwE', names.join('|')], {
     cwd: resolve(import.meta.dirname, '..'),
     encoding: 'utf-8',
   });
-  // git grep exits 1 with no output when nothing matches, which is the answer this wants, not an error.
+  // git grep exits 1 with no output when nothing matches, which is this check's success, not an error.
   if (result.status !== 0 && result.stdout === '') return [];
   return result.stdout
     .split('\n')
