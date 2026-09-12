@@ -14,7 +14,7 @@ import {
   computeRenderEffectPadding,
   createBlurEffect,
   createDisplayObject,
-  createGlOffscreenRenderState,
+  createGlRenderState,
   createGlRenderTexturePool,
   createMatrix,
   createRectangle,
@@ -70,7 +70,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgl') throw new Error('per-node-effect-lane requires WebGL');
 const { render, state, width } = target;
 
-const offscreenState = createGlOffscreenRenderState(state.contextState, state.pipeline);
+const offscreenState = createGlRenderState(state.gl, state.pipeline);
 const pool = createGlRenderTexturePool();
 registerGlBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
