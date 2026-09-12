@@ -3,14 +3,14 @@ import type {
   BevelEffect,
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -32,26 +32,26 @@ import { clearCanvasTarget, compositeCanvasImage, drawCanvasTintedAlphaMask } fr
 // Realizing it this way is what keeps the effect on the composite path: blur, two offset draws, two
 // knockouts, two tints. `strength` scales the band's alpha, as it scales `|gradient|` on GL.
 export function applyBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<BevelEffect>,
 ): void;
 export function applyBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<BevelEffect>,
 ): void;
 export function applyBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<BevelEffect>,
   maybeEffect?: Readonly<BevelEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<BevelEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -60,8 +60,8 @@ export function applyBevelEffectToCanvas(
 // 'outer', everywhere for 'full'. Exported because the gradient bevel applies the identical rule to a
 // ramp-tinted band, and one clip is easier to keep honest than two.
 export function clipCanvasBevelBand(
-  band: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  band: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   bevelType: BevelEffect['bevelType'],
 ): void {
   if (bevelType === 'outer') {
@@ -81,8 +81,8 @@ export function registerCanvasBevelEffect(state: CanvasRenderState): void {
 }
 
 function applyBevelEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<BevelEffect>,
 ): void {

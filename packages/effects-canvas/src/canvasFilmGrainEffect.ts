@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   FilmGrainEffect,
 } from '@flighthq/types/contract';
@@ -14,8 +14,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // 'overlay' composite op. The noise is generated once into a small scratch canvas (cell size from
 // `size`, jittered by `seed`) and tiled across the frame as a repeating fill pattern.
 export function applyFilmGrainEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<FilmGrainEffect>,
 ): void {

@@ -1,4 +1,4 @@
-import type { CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 
@@ -22,8 +22,8 @@ import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 // Output alpha is the ramp's own, matching GL, where the lookup result is written unmultiplied by the
 // source. A ramp whose first entry is transparent therefore leaves the untouched exterior transparent.
 export function applyCanvasGradientRampLookup(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   ramp: Readonly<Uint8ClampedArray>,
   bias = 0,
   scale = 1,

@@ -1,6 +1,6 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BevelEffect, CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { BevelEffect, CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
   applyBevelEffectToCanvas,
@@ -8,14 +8,18 @@ import {
   defaultCanvasBevelEffectRunner,
   registerCanvasBevelEffect,
 } from './canvasBevelEffect';
-import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+} from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // every pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.
-function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasRenderTarget[] } {
+function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasTextureRenderTarget[] } {
   const targets = ids.map((id) => {
-    const target = createCanvasRenderTarget(4, 4);
+    const target = createCanvasTextureRenderTarget(4, 4);
     target.canvas.id = id;
     return target;
   });
@@ -39,7 +43,7 @@ interface Draw {
   dy: number;
 }
 
-function recordAll(log: Draw[], targets: readonly Readonly<CanvasRenderTarget>[]): void {
+function recordAll(log: Draw[], targets: readonly Readonly<CanvasTextureRenderTarget>[]): void {
   for (const target of targets) {
     const context = target.context;
     const into = target.canvas.id;
@@ -50,9 +54,9 @@ function recordAll(log: Draw[], targets: readonly Readonly<CanvasRenderTarget>[]
   }
 }
 
-function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
-  const source = createCanvasRenderTarget(4, 4);
-  const dest = createCanvasRenderTarget(4, 4);
+function scene(): { source: CanvasTextureRenderTarget; dest: CanvasTextureRenderTarget } {
+  const source = createCanvasTextureRenderTarget(4, 4);
+  const dest = createCanvasTextureRenderTarget(4, 4);
   source.canvas.id = 'source';
   dest.canvas.id = 'dest';
   return { source, dest };
@@ -174,8 +178,8 @@ describe('applyBevelEffectToCanvas', () => {
 
 describe('clipCanvasBevelBand', () => {
   function clipOperation(bevelType: BevelEffect['bevelType']): string[] {
-    const band = createCanvasRenderTarget(4, 4);
-    const source = createCanvasRenderTarget(4, 4);
+    const band = createCanvasTextureRenderTarget(4, 4);
+    const source = createCanvasTextureRenderTarget(4, 4);
     band.canvas.id = 'band';
     source.canvas.id = 'source';
     const log: Draw[] = [];

@@ -1,8 +1,8 @@
 import { createPosterizeEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
+import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyPosterizeEffectToCanvas,
   defaultCanvasPosterizeEffectRunner,
@@ -14,8 +14,8 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 // canvasColorMatrixPass.test.ts uses for the same reason: it keeps the assertion independent of module
 // load order in a non-isolated suite.
 function createStubTargets(pixels: ReadonlyArray<number>): {
-  dest: CanvasRenderTarget;
-  source: CanvasRenderTarget;
+  dest: CanvasTextureRenderTarget;
+  source: CanvasTextureRenderTarget;
   written: { data: Uint8ClampedArray | null };
 } {
   const imageData = { data: new Uint8ClampedArray(pixels) };
@@ -25,7 +25,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     out.context = { getImageData: () => imageData };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -43,7 +43,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   return { dest, source, written };
 }
@@ -145,8 +145,8 @@ describe('registerCanvasPosterizeEffect', () => {
   // state's RUNTIME registries, so a hand-made { renderEffects } object would assert against a shape the
   // production path never touches — a test that passes while the registration goes somewhere else.
   it('makes the runner resolvable for the PosterizeEffect kind', () => {
-    const context = { canvas: {}, getContextAttributes: () => ({}) };
-    const state = createCanvasRenderState({ getContext: () => context } as unknown as HTMLCanvasElement, {});
+    // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
+    const state = createCanvasRenderStateWithoutPass();
 
     expect(getCanvasRenderEffectRunner(state, 'PosterizeEffect')).toBeNull();
     registerCanvasPosterizeEffect(state);

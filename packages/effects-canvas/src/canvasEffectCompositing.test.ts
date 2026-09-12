@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   drawCanvasAccumulationPass,
@@ -54,16 +54,16 @@ describe('passthroughCanvasEffectPass', () => {
   });
 });
 
-// Minimal CanvasRenderTarget factory for unit tests.
-function makeTarget(w = 4, h = 4): CanvasRenderTarget {
+// Minimal CanvasTextureRenderTarget factory for unit tests.
+function makeTarget(w = 4, h = 4): CanvasTextureRenderTarget {
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-  const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<CanvasTextureRenderTarget>();
   out.canvas = canvas;
   out.context = context;
   out.width = w;
   out.height = h;
-  return finishEntity(out) as CanvasRenderTarget;
+  return finishEntity(out) as CanvasTextureRenderTarget;
 }

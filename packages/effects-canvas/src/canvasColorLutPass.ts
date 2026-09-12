@@ -1,5 +1,5 @@
 import { sampleColorLut } from '@flighthq/adjustments/contract';
-import type { CanvasRenderTarget, ColorLut } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, ColorLut } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 
@@ -9,8 +9,8 @@ import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 // one pass per op. Each pixel is normalized to [0,1], trilinearly sampled from the LUT (the CPU
 // counterpart of the GPU's hardware-filtered 3D tap), and written back; alpha is preserved.
 export function applyColorLutPassToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   lut: Readonly<ColorLut>,
 ): void {
   const rgb: [number, number, number] = [0, 0, 0];

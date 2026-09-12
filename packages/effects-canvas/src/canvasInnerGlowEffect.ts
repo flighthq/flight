@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   InnerGlowEffect,
 } from '@flighthq/types/contract';
@@ -9,7 +9,7 @@ import type {
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -33,26 +33,26 @@ import {
 // Composite order is the mirror of the outer effects too. An outer glow lays the glow down and composites
 // the source over it; an inner glow sits ON the shape, so the source goes down first and the glow over it.
 export function applyInnerGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<InnerGlowEffect>,
 ): void;
 export function applyInnerGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<InnerGlowEffect>,
 ): void;
 export function applyInnerGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<InnerGlowEffect>,
   maybeEffect?: Readonly<InnerGlowEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<InnerGlowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyInnerGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -66,8 +66,8 @@ export function registerCanvasInnerGlowEffect(state: CanvasRenderState): void {
 }
 
 function applyInnerGlowEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<InnerGlowEffect>,
 ): void {

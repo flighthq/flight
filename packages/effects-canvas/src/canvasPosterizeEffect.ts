@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   PosterizeEffect,
 } from '@flighthq/types/contract';
 
@@ -22,8 +22,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // So the byte is converted to the float domain, quantised there with the identical expression, and only
 // then rounded back, with the same clamp the shader applies.
 export function applyPosterizeEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<PosterizeEffect>,
 ): void {
   const levels = Math.max(2, effect.levels ?? 8);

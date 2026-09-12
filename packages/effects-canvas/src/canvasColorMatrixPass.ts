@@ -1,4 +1,4 @@
-import type { CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 
@@ -7,8 +7,8 @@ import { drawCanvasImageDataPass } from './canvasEffectCompositing';
 // (in the adjustments colorMatrixMath convention: linear RGBA coefficients + normalized-linear bias
 // column) and runs through this one per-pixel pass instead of one pass per op.
 export function applyColorMatrixPassToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   matrix: ReadonlyArray<number>,
 ): void {
   drawCanvasImageDataPass(dest, source, (data, pixelCount) => {

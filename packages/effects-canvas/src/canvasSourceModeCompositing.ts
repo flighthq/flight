@@ -1,6 +1,6 @@
-import type { CanvasEffectSourceMode, CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasEffectSourceMode, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
-export function clearCanvasTarget(dest: Readonly<CanvasRenderTarget>): void {
+export function clearCanvasTarget(dest: Readonly<CanvasTextureRenderTarget>): void {
   const ctx = dest.context;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -12,8 +12,8 @@ export function clearCanvasTarget(dest: Readonly<CanvasRenderTarget>): void {
 }
 
 export function compositeCanvasImage(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   dx = 0,
   dy = 0,
   compositeOperation: GlobalCompositeOperation = 'source-over',
@@ -29,8 +29,8 @@ export function compositeCanvasImage(
 }
 
 export function compositeCanvasSourceMode(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   sourceMode: CanvasEffectSourceMode,
 ): void {
   if (sourceMode === 'hide') return;
@@ -46,8 +46,8 @@ export function compositeCanvasSourceMode(
 // Realized as a full-target fill knocked out by the source rather than a per-pixel inversion, which is
 // the same result without a getImageData round trip.
 export function drawCanvasInvertedTintedAlphaMask(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   color: number,
   alpha: number,
   strength: number,
@@ -71,8 +71,8 @@ export function drawCanvasInvertedTintedAlphaMask(
 }
 
 export function drawCanvasTintedAlphaMask(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   color: number,
   alpha: number,
   strength: number,

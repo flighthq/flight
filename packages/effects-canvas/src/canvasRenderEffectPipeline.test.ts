@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
@@ -7,7 +8,7 @@ import {
   acquireCanvasRenderTarget,
   beginCanvasRenderEffectPipeline,
   createCanvasRenderEffectPipeline,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   destroyCanvasRenderEffectPipeline,
   endCanvasRenderEffectPipeline,
   initializeCanvasRenderEffectPipeline,
@@ -34,13 +35,13 @@ describe('createCanvasRenderEffectPipeline', () => {
   });
 });
 
-describe('createCanvasRenderTargetPool', () => {
+describe('createCanvasTextureRenderTargetPool', () => {
   it('is a function', () => {
-    expect(typeof createCanvasRenderTargetPool).toBe('function');
+    expect(typeof createCanvasTextureRenderTargetPool).toBe('function');
   });
 
   it('returns a pool with empty free and inUse lists', () => {
-    const pool = createCanvasRenderTargetPool(canvasTestSurfaceCreator);
+    const pool = createCanvasTextureRenderTargetPool(canvasTestSurfaceCreator);
     expect(pool.free).toEqual([]);
     expect(pool.inUse).toEqual([]);
   });
@@ -63,7 +64,7 @@ describe('endCanvasRenderEffectPipeline', () => {
     canvas.height = 4;
     const state = createCanvasRenderState(canvas);
     const pipeline = createCanvasRenderEffectPipeline(state);
-    beginCanvasRenderEffectPipeline(state, pipeline);
+    const scenePass = beginCanvasRenderEffectPipeline(getCanvasActiveRenderPass(state)!, pipeline);
     const scene = pipeline.sceneTarget!;
     scene.context.fillStyle = '#ff0000';
     scene.context.fillRect(0, 0, 4, 4);
@@ -73,7 +74,7 @@ describe('endCanvasRenderEffectPipeline', () => {
     });
     registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
 
-    endCanvasRenderEffectPipeline(state, pipeline, [
+    endCanvasRenderEffectPipeline(scenePass, pipeline, [
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'UnregisteredEffect';
@@ -105,7 +106,7 @@ describe('initializeCanvasRenderEffectPipeline', () => {
   });
 });
 describe('initializeCanvasRenderTargetPool', () => {
-  it('is the construction initializer of createCanvasRenderTargetPool', () => {
+  it('is the construction initializer of createCanvasTextureRenderTargetPool', () => {
     expect(typeof initializeCanvasRenderTargetPool).toBe('function');
   });
 });
@@ -116,7 +117,7 @@ describe('releaseCanvasRenderTarget', () => {
   });
 
   it('moves an acquired target back to the free list', () => {
-    const pool = createCanvasRenderTargetPool(canvasTestSurfaceCreator);
+    const pool = createCanvasTextureRenderTargetPool(canvasTestSurfaceCreator);
     const target = acquireCanvasRenderTarget(pool, 16, 16);
     expect(pool.inUse).toContain(target);
     releaseCanvasRenderTarget(pool, target);

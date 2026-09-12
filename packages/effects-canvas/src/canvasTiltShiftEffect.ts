@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   TiltShiftEffect,
 } from '@flighthq/types/contract';
 
@@ -21,8 +21,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // asymmetry is the convention working, not a discrepancy — and a centred band hides it completely,
 // because |y - 0.5| is symmetric, so only an off-centre band can show it going wrong.
 export function applyTiltShiftEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<TiltShiftEffect>,
 ): void {
   const center = effect.center ?? 0.5;

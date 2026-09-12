@@ -1,4 +1,4 @@
-import type { CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 // Shared Canvas 2D draw helpers for effect recipes. These keep every recipe's compositing boilerplate
 // — save/restore, transform reset, alpha/filter reset, clearing — in one place so each apply* function
@@ -11,8 +11,8 @@ import type { CanvasRenderTarget } from '@flighthq/types/contract';
 // `perSampleTransform` receives the zero-based sample index and the total sample count and must apply
 // any 2D transform to `ctx` (translate, scale, rotate) before the drawImage call.
 export function drawCanvasAccumulationPass(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   samples: number,
   perSampleTransform: (ctx: CanvasRenderingContext2D, index: number, total: number) => void,
 ): void {
@@ -38,8 +38,8 @@ export function drawCanvasAccumulationPass(
 // cleared before drawing so the result is exactly `source` under the given filter, not blended over
 // stale pixels.
 export function drawCanvasEffectPass(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   filter: string,
   compositeOperation: GlobalCompositeOperation = 'source-over',
 ): void {
@@ -62,8 +62,8 @@ export function drawCanvasEffectPass(
 // the per-pixel pass primitive for effects that have no CSS filter equivalent but are expressible
 // via getImageData / putImageData on Canvas 2D.
 export function drawCanvasImageDataPass(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
   transform: (data: Uint8ClampedArray, pixelCount: number) => void,
 ): void {
   const w = source.width;
@@ -91,8 +91,8 @@ export function drawCanvasImageDataPass(
 // implemented. Either way the pipeline scene2d is preserved so the registry stays populated for parity, but
 // the image is untouched.
 export function passthroughCanvasEffectPass(
-  dest: Readonly<CanvasRenderTarget>,
-  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
 ): void {
   drawCanvasEffectPass(dest, source, 'none');
 }

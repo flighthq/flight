@@ -3,7 +3,7 @@ import type {
   BloomEffect,
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -32,8 +32,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // them stays a CSS blur, which is correct: a blur is spatial and per-channel by nature, so it is the
 // one stage where the filter chain and the shader already agree.
 export function applyBloomEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
