@@ -10,6 +10,7 @@ import type {
   Viewport,
 } from '@flighthq/types/contract';
 
+import { clearGlRenderTarget, clearGlRenderTargetAttachments, fillGlRect } from './glFullscreenPass';
 import {
   acquireGlRenderPassHandle,
   beginGlRenderPass,
@@ -19,6 +20,7 @@ import {
   setGlRenderTransform2D,
 } from './glRenderPass';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
+import { drawGlTextureRenderTargetResult } from './glRenderTarget';
 import { createGlState } from './glTestHelper';
 
 function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
@@ -516,5 +518,77 @@ describe('setGlRenderTransform2D', () => {
     setGlRenderTransform2D(state, createMatrix());
 
     expect(proxy.lastLocalTransformId).toBe(-1);
+  });
+});
+
+describe('zero-compat ratchet', () => {
+  it('clearGlRenderTarget takes (target, clear) — no state parameter', () => {
+    expect(clearGlRenderTarget).toHaveLength(2);
+  });
+
+  it('clearGlRenderTargetAttachments takes (target, clear) — no state parameter', () => {
+    expect(clearGlRenderTargetAttachments).toHaveLength(2);
+  });
+
+  it('fillGlRect first parameter is a pass, not state', () => {
+    const { state } = createGlState();
+    const target = makeTarget();
+    const pass = beginGlRenderPass(state, target);
+    expect(pass.gl).toBe(state.gl);
+    expect(pass.state).toBe(state);
+    expect(pass.target).toBe(target);
+    endGlRenderPass(pass);
+  });
+
+  it('drawGlTextureRenderTargetResult first parameter is a pass', () => {
+    expect(drawGlTextureRenderTargetResult).toHaveLength(4);
+  });
+
+  it('beginGlRenderPass returns a GlRenderPass with gl, state, and target', () => {
+    const { state } = createGlState();
+    const target = makeTarget();
+    const pass = beginGlRenderPass(state, target);
+    expect(pass).toHaveProperty('gl');
+    expect(pass).toHaveProperty('state');
+    expect(pass).toHaveProperty('target');
+    expect(pass.gl).toBe(state.gl);
+    expect(pass.state).toBe(state);
+    expect(pass.target).toBe(target);
+    endGlRenderPass(pass);
+  });
+
+  it('endGlRenderPass accepts GlRenderPass only', () => {
+    expect(endGlRenderPass).toHaveLength(1);
+  });
+
+  it('getGlCurrentRenderPass tracks the active pass on the state', () => {
+    const { state } = createGlState();
+    const target = makeTarget();
+    expect(getGlCurrentRenderPass(state)).toBeNull();
+    const pass = beginGlRenderPass(state, target);
+    expect(getGlCurrentRenderPass(state)).toBe(pass);
+    endGlRenderPass(pass);
+    expect(getGlCurrentRenderPass(state)).toBeNull();
+  });
+
+  it('pooled handles are reused across begin/end cycles', () => {
+    const { state, gl } = createGlState();
+    const target = makeTarget();
+    const first = beginGlRenderPass(state, target);
+    endGlRenderPass(first);
+    const second = beginGlRenderPass(state, target);
+    expect(second).toBe(first);
+    endGlRenderPass(second);
+  });
+
+  it('screen and offscreen states share the context pass pool', () => {
+    const { state, gl } = createGlState();
+    const offscreen = createGlRenderState(state.gl, state.pipeline);
+    const target = makeTarget();
+    const screenPass = beginGlRenderPass(state, target);
+    endGlRenderPass(screenPass);
+    const offscreenPass = beginGlRenderPass(offscreen, target);
+    expect(offscreenPass).toBe(screenPass);
+    endGlRenderPass(offscreenPass);
   });
 });
