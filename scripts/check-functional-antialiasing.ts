@@ -332,7 +332,7 @@ function getEffectivePolicy(
       }
       if (
         callName === 'createGlRenderEffectPipeline' ||
-        callName === 'createGlRenderTarget' ||
+        callName === 'createGlTextureRenderTarget' ||
         callName === 'createGlApplicationRenderView'
       ) {
         for (const argument of node.arguments) findNamedProperties(argument, 'sampleCount', sampleCountValues);

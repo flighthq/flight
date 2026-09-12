@@ -4,7 +4,6 @@ import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   createScene3DLights,
   addNodeChild,
   beginGlRenderPass,
@@ -17,7 +16,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   createMesh,
   createPerspectiveProjection,
   createSphereMeshGeometry,
@@ -49,11 +48,9 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio,
@@ -66,7 +63,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   format: 'rgba16f',
   depth: 'depth-stencil',
 });
-const opaqueSceneTarget = createGlRenderTarget(state, {
+const opaqueSceneTarget = createGlTextureRenderTarget(state, {
   colorSpace: 'linear',
   depth: 'depth-stencil',
   format: 'rgba8',

@@ -9,17 +9,16 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, createViewport } from '@flighthq/node';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
-  createGlContextState,
   beginGlRenderPass,
   createGlCanvasElement,
+  createGlContextFromCanvasElement,
   createGlProgram,
   createGlRenderState,
-  createGlRenderTarget,
+  createGlTextureRenderTarget,
   declareGlRenderTargetColorSpace,
   endGlRenderPass,
   invalidateGlRenderStateCache,
   presentGlRenderTarget,
-  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
 import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -57,18 +56,16 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      antialias: false,
-      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createGlContextFromCanvasElement(canvas, {
+    antialias: false,
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio: scale,
   },
 );
-const target = createGlRenderTarget(state, {
+const target = createGlTextureRenderTarget(state, {
   colorSpace: 'srgb',
   depth: 'depth-stencil',
   height: canvas.height,
