@@ -4,10 +4,10 @@ import {
   bindWgpuScreenRenderTarget,
   createWgpuScreenRenderTarget,
   destroyWgpuScreenRenderTarget,
-  encodeWgpuScreenRenderTargetResolve,
   endWgpuScreenRenderTargetFrame,
   initializeWgpuScreenRenderTarget,
   isWgpuScreenRenderTarget,
+  syncWgpuScreenRenderTargetExtent,
 } from './wgpuScreenRenderTarget';
 import { createWgpuRenderStateForTest, createWgpuScreenRenderTargetForTest, installWgpuMock } from './wgpuTestHelper';
 import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
@@ -107,40 +107,6 @@ describe('destroyWgpuScreenRenderTarget', () => {
   });
 });
 
-describe('encodeWgpuScreenRenderTargetResolve', () => {
-  it('is a no-op for a target that is not antialiased', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const screen = createWgpuScreenRenderTargetForTest(state);
-    bindWgpuScreenRenderTarget(state, screen);
-    let passes = 0;
-    const encoder = { beginRenderPass: () => passes++ } as unknown as GPUCommandEncoder;
-
-    encodeWgpuScreenRenderTargetResolve(state, screen, encoder);
-
-    expect(passes).toBe(0);
-  });
-
-  it('resolves the supersample texture into the presentation view', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const screen = createWgpuScreenRenderTargetForTest(state, { antialias: true });
-    const pass = beginWgpuRenderPass(state, screen, { color: [0, 0, 0, 0] });
-    const presentationView = screen.presentationView;
-    const encoded: GPURenderPassDescriptor[] = [];
-    const encoder = {
-      beginRenderPass: (descriptor: GPURenderPassDescriptor) => {
-        encoded.push(descriptor);
-        return { draw: () => {}, end: () => {}, setBindGroup: () => {}, setPipeline: () => {} };
-      },
-    } as unknown as GPUCommandEncoder;
-
-    encodeWgpuScreenRenderTargetResolve(state, screen, encoder);
-
-    expect(encoded.length).toBe(1);
-    expect(Array.from(encoded[0]!.colorAttachments)[0]!.view).toBe(presentationView);
-    endWgpuRenderPass(pass);
-  });
-});
-
 describe('endWgpuScreenRenderTargetFrame', () => {
   it('is what a submitted frame calls, leaving no view behind', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -165,5 +131,22 @@ describe('isWgpuScreenRenderTarget', () => {
 
     expect(isWgpuScreenRenderTarget(createWgpuScreenRenderTargetForTest(state))).toBe(true);
     expect(isWgpuScreenRenderTarget(createWgpuTextureRenderTarget(state, 16, 16))).toBe(false);
+  });
+});
+
+describe('syncWgpuScreenRenderTargetExtent', () => {
+  it('follows the surface without a resize call', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 240;
+    const screen = createWgpuScreenRenderTarget(state.device, canvas, { format: state.format });
+
+    canvas.width = 500;
+    canvas.height = 400;
+    syncWgpuScreenRenderTargetExtent(screen);
+
+    expect(screen.width).toBe(500);
+    expect(screen.height).toBe(400);
   });
 });

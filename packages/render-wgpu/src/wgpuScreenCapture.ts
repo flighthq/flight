@@ -64,6 +64,27 @@ export async function createBitmapFromWgpuScreenRenderTarget(
 // normal on-screen rendering. The capture texture and buffer are allocated lazily.
 export function enableWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarget): void {
   target.captureEnabled = true;
+  target.acquireCaptureTexture = acquireWgpuScreenRenderTargetCaptureTexture;
+  target.encodeCapture = encodeWgpuScreenRenderTargetCapture;
+}
+
+// The offscreen texture a captured frame renders into, sized to the surface's logical extent (a
+// supersampled frame resolves down into it). Installed as the target's capture slot by the enable above.
+function acquireWgpuScreenRenderTargetCaptureTexture(target: WgpuScreenRenderTarget): GPUTexture {
+  const scale = target.antialias ? 2 : 1;
+  const width = Math.max(1, Math.floor(target.width / scale));
+  const height = Math.max(1, Math.floor(target.height / scale));
+  const existing = target.captureTexture;
+  if (existing !== null && existing.width === width && existing.height === height) return existing;
+
+  existing?.destroy();
+  const texture = target.device.createTexture({
+    size: [width, height, 1],
+    format: target.format,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+  });
+  target.captureTexture = texture;
+  return texture;
 }
 
 // Encodes the capture-texture → capture-buffer copy into the frame's command encoder, sizing and

@@ -25,6 +25,7 @@ export {
   destroyWgpuRenderState,
   disposeExternalWgpuTexture,
   enableWgpuBlendModeSupport,
+  enableWgpuScreenRenderTargetAntialias,
   enableWgpuScreenRenderTargetCapture,
   enableWgpuTextureResolverGuards,
   endWgpuRenderPass,

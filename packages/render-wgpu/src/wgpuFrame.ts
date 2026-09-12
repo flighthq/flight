@@ -1,8 +1,7 @@
 import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { encodeWgpuScreenRenderTargetCapture } from './wgpuScreenCapture';
-import { encodeWgpuScreenRenderTargetResolve, endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget';
+import { endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget';
 
 /**
  * Opens the command encoder a frame records into, without opening any render pass.
@@ -71,11 +70,12 @@ export function submitWgpuFrame(state: WgpuRenderState): void {
     // A frame that only drew into texture targets has no screen to resolve or capture, and must not
     // overwrite the capture buffer with the previous visible frame's retained capture texture.
     if (screen !== null) {
-      // Resolve the optional 2x supersample into the presentation view before capture reads it back.
-      encodeWgpuScreenRenderTargetResolve(state, screen, commandEncoder);
-      // Copy the capture texture into the readback buffer within this frame's encoder; on the adapters
-      // capture exists for, GPU work queued in a later task does not land.
-      encodeWgpuScreenRenderTargetCapture(screen, commandEncoder);
+      // Resolve the optional 2x supersample into the presentation view before capture reads it back, then
+      // copy the capture texture into the readback buffer within this frame's encoder — on the adapters
+      // capture exists for, GPU work queued in a later task does not land. Both arrive as slots the
+      // opt-in modules install, so a frame that uses neither pulls in neither.
+      screen.encodeAntialiasResolve?.(state, screen, commandEncoder);
+      screen.encodeCapture?.(screen, commandEncoder);
     }
     device.queue.submit([commandEncoder.finish()]);
     runtime.commandEncoder = null;

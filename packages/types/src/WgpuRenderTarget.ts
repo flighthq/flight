@@ -1,7 +1,7 @@
 import type { Entity } from './Entity';
 import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget';
 import type { WgpuPresentationSurface } from './WgpuHost';
-import type { WgpuTextureBindings } from './WgpuRenderState';
+import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState';
 
 // What a Wgpu render pass needs in order to bind and clear a target, and nothing more. The two
 // realizations differ in where the color pixels live: a screen target presents into a swap-chain
@@ -52,21 +52,41 @@ export interface WgpuScreenRenderTarget extends WgpuRenderTarget {
   // 2x supersample in each axis, resolved into the swap-chain texture by one fullscreen linear-sampling
   // pass immediately before submit. Deliberately a surface seam rather than a pipeline variant: every
   // scene pipeline stays single-sampled.
+  //
+  // The flag is DATA — the supersample scale reads it, and that rule has to hold for every target — while
+  // the machinery that realizes it lives behind the two slots below, installed by
+  // enableWgpuScreenRenderTargetAntialias. A frame loop that never asks for antialiasing therefore never
+  // pulls in the resolve pipeline or its shader.
   antialias: boolean;
   antialiasResolveBindGroup: GPUBindGroup | null;
   antialiasTexture: GPUTexture | null;
   antialiasView: GPUTextureView | null;
-  // Opt-in frame capture (enableWgpuFrameCapture -> createBitmapFromWgpuScreenRenderTarget). When
-  // enabled the frame renders into `captureTexture` (an offscreen COPY_SRC target) instead of the
-  // swap chain, because software/headless adapters do not present the swap chain and its texture
-  // reads back as zeros. The frame's own encoder copies that texture into `captureBuffer`; the CPU
-  // maps only the buffer afterward.
+  // Returns the view a frame draws into when supersampling is on — the 2x texture rather than the
+  // presentation view. Null until antialiasing is enabled, and then the pass draws into the swap chain
+  // directly.
+  acquireAntialiasView: ((state: WgpuRenderState, target: WgpuScreenRenderTarget) => GPUTextureView) | null;
+  // Encodes the supersample resolve into the frame's encoder, immediately before capture reads back.
+  encodeAntialiasResolve:
+    | ((state: WgpuRenderState, target: Readonly<WgpuScreenRenderTarget>, encoder: GPUCommandEncoder) => void)
+    | null;
+  // Opt-in frame capture (enableWgpuScreenRenderTargetCapture ->
+  // createBitmapFromWgpuScreenRenderTarget). When enabled the frame renders into `captureTexture` (an
+  // offscreen COPY_SRC target) instead of the swap chain, because software/headless adapters do not
+  // present the swap chain and its texture reads back as zeros. The frame's own encoder copies that
+  // texture into `captureBuffer`; the CPU maps only the buffer afterward.
+  //
+  // Same split as antialiasing: the buffers are data this target owns and frees, while the code that
+  // fills them arrives through the two slots the enable* function installs.
   captureBuffer: GPUBuffer | null;
   captureBytesPerRow: number;
   captureEnabled: boolean;
   captureHeight: number;
   captureTexture: GPUTexture | null;
   captureWidth: number;
+  // Returns the offscreen texture a captured frame renders into instead of the swap chain.
+  acquireCaptureTexture: ((target: WgpuScreenRenderTarget) => GPUTexture) | null;
+  // Encodes the capture-texture -> capture-buffer copy into the frame's encoder.
+  encodeCapture: ((target: WgpuScreenRenderTarget, encoder: GPUCommandEncoder) => void) | null;
   readonly context: GPUCanvasContext;
   readonly device: GPUDevice;
   // The view a frame ultimately presents into — the swap-chain view, or `captureTexture`'s view while
@@ -78,8 +98,6 @@ export interface WgpuScreenRenderTarget extends WgpuRenderTarget {
 }
 
 export interface WgpuScreenRenderTargetOptions {
-  // Supersample the surface at 2x in each axis, then resolve into the swap chain. Default false.
-  readonly antialias?: boolean;
   // Alpha compositing of the swap-chain texture against the page. Default 'premultiplied'.
   readonly alphaMode?: GPUCanvasAlphaMode;
   readonly colorSpace?: RenderTargetColorSpace;
