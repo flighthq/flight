@@ -19,10 +19,8 @@ import {
   p5GlRenderSurfaceConsumerFailures,
   p5GlRenderSurfaceConsumerSourceFailures,
   p5GlRenderSurfaceProviderBoundaryFailures,
-  p5WgpuExampleRunnerOwnershipFailures,
   p5WgpuRenderSurfaceConsumerFailures,
   p5WgpuRenderSurfaceConsumerSourceFailures,
-  p5WgpuRenderSurfaceProviderBoundaryFailures,
   p5WgpuRenderSurfaceRepairFailures,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
@@ -218,51 +216,62 @@ describe('P5 host-bypass derived gate', () => {
     );
   });
 
-  it('derives WGPU surface ownership for every direct functional consumer and both shared owners', () => {
+  it('derives WGPU surface ownership for every functional consumer and the shared harness', () => {
     expect(p5WgpuRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
   });
 
-  it('mutation-proves a direct functional WGPU consumer cannot omit its Web enabler', () => {
+  // ★ THE OWNERSHIP FACT SURVIVED THE SINGLETON. The enabler this used to require is deleted, so the
+  // mutation that proves the gate still bites is the one that matters now: a page that reaches for
+  // document.createElement('canvas') instead of the host's sizing helper.
+  it('mutation-proves a functional WGPU consumer cannot create its own canvas', () => {
     const file = 'functional/scenes/camera-orthographic.webgpu.ts';
-    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebWgpuRenderSurface();', '');
+    const source = readFileSync(join(ROOT, file), 'utf8').replace(
+      /createWebWgpuCanvasElement\([^)]*\)/,
+      "document.createElement('canvas')",
+    );
+
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining('WGPU surface creation is not immediately preceded by enableHostWebWgpuRenderSurface()'),
+      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
     ]);
   });
 
-  it('mutation-proves the shared functional WebGPU harness cannot omit its Web enabler', () => {
+  it('mutation-proves the shared functional WebGPU harness cannot create its own canvas', () => {
     const file = 'tools/harness/webgpu.ts';
-    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebWgpuRenderSurface();', '');
+    const source = readFileSync(join(ROOT, file), 'utf8').replace(
+      /createWebWgpuCanvasElement\([^)]*\)/,
+      "document.createElement('canvas')",
+    );
+
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining('WGPU surface creation is not immediately preceded by enableHostWebWgpuRenderSurface()'),
+      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
     ]);
   });
 
-  it('mutation-proves the generated example WebGPU owner cannot omit or delay its Web enabler', () => {
-    const source = readFileSync(join(ROOT, 'examples/runners/web/vite.config.ts'), 'utf8');
-    expect(
-      p5WgpuExampleRunnerOwnershipFailures(
-        source.replace('`enableHostWebWgpuRenderSurface();`', '`mutation removed WebGPU surface enabler`'),
-      ),
-    ).toContain('examples WebGPU entry does not call enableHostWebWgpuRenderSurface()');
-    const branch = source.match(/  if \(render === 'webgpu'\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
-    expect(p5WgpuExampleRunnerOwnershipFailures(source.replace(branch, '').concat(`\n${branch}`))).toContain(
-      'examples WebGPU enabler does not run before the capture render dynamic import',
-    );
+  // A scene painting an 8x8 cubemap face into a canvas is not presenting through it. That is a different
+  // bypass with its own kind and budget, and this gate flagging it would make the two indistinguishable.
+  it('does not flag a scratch canvas a WGPU scene paints texture content into', () => {
+    const source = [
+      "import { createWebWgpuCanvasElement } from '@flighthq/host-web';",
+      'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
+      'const acquisition = await createWgpuAcquisition(canvas);',
+      'const screen = createWgpuScreenRenderTarget(acquisition.device, canvas);',
+      "const face = document.createElement('canvas');",
+    ].join('\n');
+
+    expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([]);
   });
 
-  it('pins the portable WGPU provider against DOM, GL and acquisition fallback independently', () => {
-    const source = readFileSync(join(ROOT, 'packages/render-wgpu/src/wgpuElement.ts'), 'utf8');
-    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(source)).toEqual([]);
-    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ncreateGlCanvasElement(1, 1);`)).toContain(
-      'portable WGPU surface provider crosses into the GL surface boundary',
-    );
-    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ngetWgpuHostBackend();`)).toContain(
-      'portable WGPU surface provider crosses into the WGPU acquisition boundary',
-    );
-    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ndocument.createElement('canvas');`)).toContain(
-      'portable WGPU surface provider reads document instead of returning null',
-    );
+  it('mutation-proves the host-web import is required, not just the call', () => {
+    const source = [
+      'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
+      'const acquisition = await createWgpuAcquisition(canvas);',
+    ].join('\n');
+
+    expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([
+      expect.stringContaining('does not import createWebWgpuCanvasElement from @flighthq/host-web'),
+    ]);
   });
 
   it('pins zero remaining render-surface sites after S08', () => {

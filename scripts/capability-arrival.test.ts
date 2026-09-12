@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
 import { capabilityArrivalFailures } from './capability-arrival';
 
-type Removal = 'gl-surface' | 'wgpu-surface';
+type Removal = 'gl-surface';
 
 interface RemovalControl {
   readonly after: number;
@@ -43,9 +43,6 @@ function mutateGeneratedEntry(
   let source = entry.source;
   if (removal === 'gl-surface' && entry.consumer === 'examples:shapes/webgl') {
     source = removeRequiredOccurrence(source, 'enableHostWebGlRenderSurface();', entry.consumer, controls);
-  }
-  if (removal === 'wgpu-surface' && entry.consumer === 'examples:shapes/webgpu') {
-    source = removeRequiredOccurrence(source, 'enableHostWebWgpuRenderSurface();', entry.consumer, controls);
   }
   return source;
 }
@@ -98,10 +95,8 @@ describe('capability-arrival source gate', () => {
     expect(arrivalNames(failures)).toContain('examples:shapes/webgl:GlRenderSurface:arrival');
   });
 
-  it('reddens a named WGPU page when its explicit surface arrival is removed', async () => {
-    const { controls, failures } = await analyze('wgpu-surface');
-
-    expect(controls).toEqual([{ after: 0, before: 1, specimen: 'examples:shapes/webgpu' }]);
-    expect(arrivalNames(failures)).toContain('examples:shapes/webgpu:WgpuRenderSurface:arrival');
-  });
+  // The WGPU page has no surface arrival left to remove: the WgpuRenderSurface capability was the
+  // provider singleton, and deleting it removed the arrival along with the thing that had to arrive. The
+  // GL specimen above still proves the gate bites; when the GL half of the same migration lands, its
+  // specimen goes the same way and this describe loses its last removal case.
 });
