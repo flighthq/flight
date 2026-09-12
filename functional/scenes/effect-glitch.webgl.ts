@@ -1,7 +1,7 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   createGlContextState,
   ShapeKind,
   addNodeChild,
@@ -20,7 +20,6 @@ import {
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerGlStandardMaterial,
   registerRenderer,
   renderGlScene2D,
   createGlContextFromCanvasElement,
@@ -45,14 +44,13 @@ export const state = createGlRenderState(
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
     }),
   ),
-  scene2DGlPipeline,
+  scene3DGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x101014ff,
   },
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlStandardMaterial(state);
 registerGlGlitchEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
