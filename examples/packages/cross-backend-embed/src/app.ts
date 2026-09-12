@@ -4,9 +4,11 @@ import {
   addNodeChild,
   addTextureAtlasRegion,
   appendQuadBatchInstance,
+  beginGlRenderPass,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
+  createGlScreenRenderTarget,
   createHtmlView,
   createQuadBatch,
   createRectangle,
@@ -15,6 +17,7 @@ import {
   createTexture,
   createTextureAtlas,
   defaultGlQuadBatchRenderer,
+  endGlRenderPass,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   setTextLabelString,
@@ -48,6 +51,7 @@ const producerState = createGlRenderState(
 );
 registerGlImageTextureResolver(producerState);
 registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);
+const producerScreenTarget = createGlScreenRenderTarget(producerState.gl);
 
 const atlasCanvas = document.createElement('canvas');
 atlasCanvas.width = QUAD_SIZE * 3;
@@ -122,7 +126,9 @@ function enterFrame(): void {
   invalidateNodeAppearance(batch);
 
   if (prepareScene2DRender(producerState, producerRoot)) {
-    renderGlScene2D(producerState, producerRoot);
+    const pass = beginGlRenderPass(producerState, producerScreenTarget);
+    renderGlScene2D(pass, producerRoot);
+    endGlRenderPass(pass);
   }
 
   // ImageResource is a borrowed host representation. Advancing its version publishes the producer's

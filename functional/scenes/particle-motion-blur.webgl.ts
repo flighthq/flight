@@ -7,7 +7,7 @@ import { createWebGlContext, createWebImageResourceFromCanvas, enableHostWebGlRe
 // The limitation is structural — the fingerprint cannot represent this subject — rather than a missing
 // capability, so this must never be filed later as an unfixed gap.
 //
-import type { Bitmap, Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlRenderEffectPipeline, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   ParticleEmitter2DKind,
@@ -73,7 +73,7 @@ registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
-const velocityTarget: GlRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
+const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
 export const scale = pixelRatio;
