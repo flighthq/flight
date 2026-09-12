@@ -72,6 +72,7 @@ working in that area, but do not build on it as settled. New architecture record
 - [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
 - [read integrity](read-integrity.md) — the axes a format reader must hold.
 - [render architecture](render-architecture.md) — the render and scene architecture in full.
+- [render target & pass architecture](render-target-architecture.md) — **unratified.** before touching render targets, render passes, `render*Background`, or `backgroundColor` on RenderState. The screen render target, pooled pass handle, and target type hierarchy.
 - [render backend support](render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. The narrative behind the generated [support matrix](support-matrix.md).
 - [render oracle calibration record](render-reference-image-calibration-record.md) — the committed cross-host calibration result that rules §10 contingently, and which of its fields are measured rather than inferred.
 - [reference-image rename](reference-image-rename.md) — **ratified, ready to dispatch.** retiring "oracle" as an unqualified term: the three-bucket partition, the exclusion list, and why a blanket rename corrupts the largest population.
