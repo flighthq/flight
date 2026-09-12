@@ -8,7 +8,6 @@ import {
   enableGlBlendModeSupport,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, scene2DGlPipeline } from '@flighthq/scene2d-gl';
@@ -41,7 +40,6 @@ sprite.y = 40;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipeline', { registries, root });

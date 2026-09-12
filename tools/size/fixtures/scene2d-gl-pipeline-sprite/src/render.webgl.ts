@@ -11,7 +11,6 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { defaultGlSpriteRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -58,7 +57,6 @@ sprite.y = 70;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineSprite', { registries, root, sprite });

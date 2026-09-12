@@ -12,7 +12,6 @@ import {
   createGlRenderState,
   getGlPipelineRegistries,
   registerGlImageTextureResolver,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlParticleEmitter2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -76,7 +75,6 @@ emitter.y = 90;
 addNodeChild(root, emitter);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineParticleEmitter2D', { emitter, registries, root });

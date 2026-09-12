@@ -8,7 +8,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlScene2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -44,7 +43,6 @@ root.x = 40;
 root.y = 30;
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineDisplayObject', { registries, root });

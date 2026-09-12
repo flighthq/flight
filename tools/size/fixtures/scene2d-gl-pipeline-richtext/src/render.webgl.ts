@@ -9,7 +9,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlRichTextRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -57,7 +56,6 @@ richText.y = 70;
 addNodeChild(root, richText);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineRichText', { registries, richText, root });

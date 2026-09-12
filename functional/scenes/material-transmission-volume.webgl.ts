@@ -98,7 +98,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   });
 
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
-  // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);

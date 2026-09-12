@@ -43,7 +43,6 @@ import {
   registerGlShapeCommands,
   registerGlShapeRasterizer,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   scene2DCanvasPipeline,
   RichTextKind,
@@ -123,7 +122,6 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     scale: pixelRatio,
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
-      renderGlBackground(state);
       renderGlScene2D(state, root);
     },
     benchmark(root: Node2D): void {

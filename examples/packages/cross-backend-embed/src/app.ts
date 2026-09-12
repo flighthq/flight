@@ -25,7 +25,6 @@ import {
   QuadBatchKind,
   registerGlImageTextureResolver,
   registerRenderer,
-  renderGlBackground,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
 } from '@flighthq/sdk';
@@ -129,7 +128,6 @@ function enterFrame(): void {
   invalidateNodeAppearance(batch);
 
   if (prepareScene2DRender(producerState, producerRoot)) {
-    renderGlBackground(producerState);
     renderGlScene2D(producerState, producerRoot);
   }
 

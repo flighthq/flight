@@ -10,7 +10,6 @@ import {
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
-  renderGlBackground,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlMorphShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
@@ -64,7 +63,6 @@ morphShape.y = 80;
 addNodeChild(root, morphShape);
 
 prepareScene2DRender(state, root);
-renderGlBackground(state);
 renderGlScene2D(state, root);
 
 Reflect.set(globalThis, '__flightScene2dGlPipelineMorphShape', { morphShape, registries, root });
