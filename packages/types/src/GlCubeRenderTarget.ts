@@ -1,10 +1,12 @@
 import type { Entity } from './Entity';
+import type { GlContext } from './GlContext';
 import type { RenderTargetColorSpace } from './RenderTarget';
 
 // A single-sample RGBA16F cubemap whose six faces share one framebuffer attachment point. The
 // framebuffer is reattached to the selected face by beginGlCubeRenderFace. `textures` mirrors the
 // active-target shape used by framebuffer-feedback diagnostics; its sole entry is `texture`.
 export interface GlCubeRenderTarget extends Entity {
+  readonly gl: GlContext;
   colorSpace: RenderTargetColorSpace;
   depthStencilRenderbuffer: WebGLRenderbuffer | null;
   framebuffer: WebGLFramebuffer;

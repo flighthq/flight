@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
-import type { Bitmap, CubeTexture, Environment, GlCubeRenderTarget } from '@flighthq/types/contract';
+import type { Bitmap, CubeTexture, Environment, GlContext, GlCubeRenderTarget } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
@@ -37,9 +37,9 @@ function dataOnlyEnvironment(size: number): Environment & { environment: CubeTex
   return { environment: cube, intensity: 1 } as Environment & { environment: CubeTexture };
 }
 
-function captureTarget(texture: WebGLTexture): GlCubeRenderTarget {
+function captureTarget(gl: GlContext, texture: WebGLTexture): GlCubeRenderTarget {
   const target = allocateEntity<GlCubeRenderTarget>();
-  initializeGlCubeRenderTarget(target, 4, {} as WebGLFramebuffer, texture, null);
+  initializeGlCubeRenderTarget(target, gl, 4, {} as WebGLFramebuffer, texture, null);
   return finishEntity(target);
 }
 
@@ -51,7 +51,7 @@ describe('bakeGlEnvironmentCaptureIbl', () => {
     const previousSource = ensureGlEnvironmentSourceCube(state, environment)!;
     const capturedTexture = { name: 'captured-cube' } as WebGLTexture;
 
-    bakeGlEnvironmentCaptureIbl(state, captureTarget(capturedTexture), 2.5);
+    bakeGlEnvironmentCaptureIbl(state, captureTarget(gl as unknown as GlContext, capturedTexture), 2.5);
 
     expect(runtime.environmentSourceCube).toBe(previousSource);
     expect(runtime.ibl?.environmentSourceRevision).toBe(runtime.environmentSourceRevision);

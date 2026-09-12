@@ -83,7 +83,10 @@ export function beginGlCubeRenderFace(state: GlRenderState, target: GlCubeRender
   runtime.currentMaskDepth = 0;
   invalidateGlCubeFaceBindingCache(runtime);
 
-  resolveGlCubeFaceClearColor(state, clearRgba);
+  clearRgba[0] = 0;
+  clearRgba[1] = 0;
+  clearRgba[2] = 0;
+  clearRgba[3] = 0;
   gl.clearBufferfv(gl.COLOR, 0, clearRgba);
   if (target.depthStencilRenderbuffer !== null) {
     gl.depthMask(true);
@@ -145,7 +148,7 @@ export function createGlCubeRenderTarget(
   }
 
   const target = allocateEntity<GlCubeRenderTarget>();
-  initializeGlCubeRenderTarget(target, normalizedSize, framebuffer, texture, depthStencilRenderbuffer);
+  initializeGlCubeRenderTarget(target, gl, normalizedSize, framebuffer, texture, depthStencilRenderbuffer);
   finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, previousFramebuffer);
@@ -155,8 +158,8 @@ export function createGlCubeRenderTarget(
 }
 
 // Frees the cubemap texture, framebuffer, and optional depth-stencil buffer owned by `target`.
-export function destroyGlCubeRenderTarget(state: GlRenderState, target: GlCubeRenderTarget): void {
-  const gl = state.gl;
+export function destroyGlCubeRenderTarget(target: GlCubeRenderTarget): void {
+  const gl = target.gl;
   gl.deleteFramebuffer(target.framebuffer);
   gl.deleteTexture(target.texture);
   if (target.depthStencilRenderbuffer !== null) gl.deleteRenderbuffer(target.depthStencilRenderbuffer);
@@ -193,11 +196,13 @@ export function endGlCubeRenderFace(pass: GlRenderPass): void {
 
 export function initializeGlCubeRenderTarget(
   out: EntityConstruction<GlCubeRenderTarget>,
+  gl: GlRenderState['gl'],
   size: number,
   framebuffer: WebGLFramebuffer,
   texture: WebGLTexture,
   depthStencilRenderbuffer: WebGLRenderbuffer | null,
 ): void {
+  (out as unknown as { gl: GlRenderState['gl'] }).gl = gl;
   out.colorSpace = 'linear';
   out.depthStencilRenderbuffer = depthStencilRenderbuffer;
   out.framebuffer = framebuffer;
@@ -218,14 +223,6 @@ function readGlCubeFaceBox(gl: GlRenderState['gl'], parameter: number): [number,
   const value = gl.getParameter(parameter) as ArrayLike<number> | null;
   if (value === null || value.length < 4) return [0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight];
   return [value[0], value[1], value[2], value[3]];
-}
-
-function resolveGlCubeFaceClearColor(state: Readonly<GlRenderState>, out: Float32Array): void {
-  const color = state.backgroundColorRgba;
-  out[0] = color[0] ?? 0;
-  out[1] = color[1] ?? 0;
-  out[2] = color[2] ?? 0;
-  out[3] = color.length >= 4 ? color[3] : 0;
 }
 
 function restoreGlCubeFaceCapability(gl: GlRenderState['gl'], capability: number, enabled: boolean): void {
