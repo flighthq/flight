@@ -127,7 +127,7 @@ describe('destroyGlApplicationRenderView', () => {
     emitSignal(window.onResize);
 
     expect(renderGlContract.resizeGlTextureRenderTarget).not.toHaveBeenCalled();
-    expect(renderGlContract.destroyGlTextureRenderTarget).toHaveBeenCalledWith(view.renderState, view.renderTarget);
+    expect(renderGlContract.destroyGlTextureRenderTarget).toHaveBeenCalledWith(view.renderTarget);
     expect(renderGlContract.destroyGlRenderState).toHaveBeenCalledWith(view.renderState);
   });
 });

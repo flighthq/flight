@@ -235,7 +235,7 @@ describe('releaseGlRenderCache', () => {
     const cache = createRenderCache();
     const target = ensureGlRenderCacheTarget(state, cache, 8, 8);
     releaseGlRenderCache(state, cache);
-    expect(renderGl.destroyGlTextureRenderTarget).toHaveBeenCalledWith(state, target);
+    expect(renderGl.destroyGlTextureRenderTarget).toHaveBeenCalledWith(target);
     expect(getGlRenderCacheTarget(state, cache)).toBeNull();
   });
 

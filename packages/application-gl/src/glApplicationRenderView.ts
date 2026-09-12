@@ -59,7 +59,7 @@ export function createGlApplicationRenderView(
 // createGlApplicationRenderView. The canvas and ApplicationWindow remain caller-owned.
 export function destroyGlApplicationRenderView(view: GlApplicationRenderView): void {
   detachApplicationRenderView(view);
-  destroyGlTextureRenderTarget(view.renderState, view.renderTarget);
+  destroyGlTextureRenderTarget(view.renderTarget);
   destroyGlRenderState(view.renderState);
 }
 

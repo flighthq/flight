@@ -48,7 +48,7 @@ export function clearGlRenderTexture(state: GlRenderState, renderTexture: Render
   writeGlRenderTextureTarget(state, renderTexture, (target) => {
     pushGlRenderState(state);
     try {
-      clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
+      clearGlRenderTarget(target, { color: [0, 0, 0, 0] });
     } finally {
       popGlRenderState(state);
     }
@@ -59,7 +59,7 @@ export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Read
   const entries = getGlRenderStateRuntime(state).context.glRenderTextureCache;
   const entry = entries?.get(renderTexture);
   if (entry === undefined) return;
-  destroyGlTextureRenderTarget(state, entry.target);
+  destroyGlTextureRenderTarget(entry.target);
   entries!.delete(renderTexture);
 }
 
@@ -187,7 +187,7 @@ function ensureEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture
         colorSpace: requested.colorSpace,
       };
     } else {
-      destroyGlTextureRenderTarget(state, entry.target);
+      destroyGlTextureRenderTarget(entry.target);
       entry.target = createGlTextureRenderTarget(state, descriptor);
       entry.status = 'unrendered';
     }

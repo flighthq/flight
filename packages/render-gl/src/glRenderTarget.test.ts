@@ -248,7 +248,7 @@ describe('destroyGlTextureRenderTarget', () => {
     const target = createGlTextureRenderTarget(state, { width: 32, height: 32 });
     const { framebuffer, texture } = target;
 
-    destroyGlTextureRenderTarget(state, target);
+    destroyGlTextureRenderTarget(target);
 
     expect(vi.mocked(gl.deleteFramebuffer)).toHaveBeenCalledWith(framebuffer);
     expect(vi.mocked(gl.deleteTexture)).toHaveBeenCalledWith(texture);
@@ -258,32 +258,38 @@ describe('destroyGlTextureRenderTarget', () => {
 describe('drawGlTextureRenderTargetResult', () => {
   it('is a no-op when target dimensions are zero', () => {
     const { state, gl } = makeState();
+    const screenTarget = createGlScreenRenderTarget(gl);
+    const pass = beginGlRenderPass(state, screenTarget);
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     const target = createGlTextureRenderTarget(state, { width: 1, height: 1 });
     target.width = 0;
     vi.clearAllMocks();
 
-    drawGlTextureRenderTargetResult(state, node, target, createMatrix());
+    drawGlTextureRenderTargetResult(pass, node, target, createMatrix());
 
     expect(vi.mocked(gl.bindTexture)).not.toHaveBeenCalled();
   });
 
   it('composites a valid target without throwing', () => {
-    const { state } = makeState();
+    const { state, gl } = makeState();
+    const screenTarget = createGlScreenRenderTarget(gl);
+    const pass = beginGlRenderPass(state, screenTarget);
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     node.alpha = 1;
     const target = createGlTextureRenderTarget(state, { width: 64, height: 48 });
 
-    expect(() => drawGlTextureRenderTargetResult(state, node, target, createMatrix())).not.toThrow();
+    expect(() => drawGlTextureRenderTargetResult(pass, node, target, createMatrix())).not.toThrow();
   });
 
   it('binds the target texture', () => {
     const { state, gl } = makeState();
+    const screenTarget = createGlScreenRenderTarget(gl);
+    const pass = beginGlRenderPass(state, screenTarget);
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     const target = createGlTextureRenderTarget(state, { width: 64, height: 48 });
     vi.clearAllMocks();
 
-    drawGlTextureRenderTargetResult(state, node, target, createMatrix());
+    drawGlTextureRenderTargetResult(pass, node, target, createMatrix());
 
     expect(vi.mocked(gl.bindTexture)).toHaveBeenCalledWith(
       (gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D,

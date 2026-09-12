@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderPass, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   clearGlRenderTarget,
@@ -11,6 +11,14 @@ import {
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState, makeGL } from './glTestHelper';
 
+function makePass(state: GlRenderState): GlRenderPass {
+  const pass = allocateEntity<GlRenderPass>();
+  (pass as unknown as { gl: GlRenderState['gl'] }).gl = state.gl;
+  (pass as unknown as { state: GlRenderState }).state = state;
+  (pass as unknown as { target: null }).target = null as never;
+  return finishEntity(pass);
+}
+
 const FRAG_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
@@ -20,8 +28,14 @@ void main() {
   fragColor = texture(u_texture, v_texCoord);
 }`;
 
-function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlTextureRenderTarget {
+function makeTarget(
+  framebuffer: WebGLFramebuffer,
+  width = 32,
+  height = 16,
+  gl?: WebGL2RenderingContext,
+): GlTextureRenderTarget {
   const out = allocateEntity<GlTextureRenderTarget>();
+  if (gl) (out as unknown as { gl: WebGL2RenderingContext }).gl = gl;
   out.requestedAxes = {
     width,
     height,
@@ -53,34 +67,33 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlT
 
 describe('clearGlRenderTarget', () => {
   it('binds the target framebuffer and clears color via clearBufferfv', () => {
-    const { state, gl } = createGlState();
+    const { gl } = createGlState();
     const fb = {} as WebGLFramebuffer;
-    const target = makeTarget(fb);
+    const target = makeTarget(fb, 32, 16, gl);
     const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
     const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
+    clearGlRenderTarget(target, { color: [0, 0, 0, 0] });
 
     expect(bindSpy).toHaveBeenCalledWith(gl.FRAMEBUFFER, fb);
     expect(clearSpy).toHaveBeenCalledWith(gl.COLOR, 0, expect.anything());
   });
 
-  it('sets the viewport and renderTargetViewport to the target size', () => {
-    const { state, gl } = createGlState();
-    const target = makeTarget({} as WebGLFramebuffer, 48, 24);
+  it('sets the viewport to the target size', () => {
+    const { gl } = createGlState();
+    const target = makeTarget({} as WebGLFramebuffer, 48, 24, gl);
     const viewportSpy = vi.spyOn(gl, 'viewport');
 
-    clearGlRenderTarget(state, target, { color: [0, 0, 0, 0] });
+    clearGlRenderTarget(target, { color: [0, 0, 0, 0] });
 
     expect(viewportSpy).toHaveBeenCalledWith(0, 0, 48, 24);
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ height: 24, width: 48, x: 0, y: 0 });
   });
 
   it('writes float RGBA values directly to clearBufferfv', () => {
-    const { state, gl } = createGlState();
+    const { gl } = createGlState();
     const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer), { color: [1, 0, 0.5, 1] });
+    clearGlRenderTarget(makeTarget({} as WebGLFramebuffer, 32, 16, gl), { color: [1, 0, 0.5, 1] });
 
     const rgba = clearSpy.mock.calls[0][2] as Float32Array;
     expect(rgba[0]).toBeCloseTo(1);
@@ -88,40 +101,16 @@ describe('clearGlRenderTarget', () => {
     expect(rgba[2]).toBeCloseTo(0.5);
     expect(rgba[3]).toBeCloseTo(1);
   });
-
-  it('invalidates cached texture and blend-mode bindings', () => {
-    const { state } = createGlState();
-    const runtime = getGlRenderStateRuntime(state);
-    runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
-    runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
-
-    clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer), { color: [0, 0, 0, 0] });
-
-    expect(runtime.context.currentTextureRealization).toBeNull();
-    expect(runtime.context.currentBlendSignature).toBeNull();
-  });
-
-  it('skips rebinding when the target framebuffer is already current', () => {
-    const { state, gl } = createGlState();
-    const fb = {} as WebGLFramebuffer;
-    const runtime = getGlRenderStateRuntime(state);
-    runtime.currentFramebuffer = fb;
-    const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
-
-    clearGlRenderTarget(state, makeTarget(fb), { color: [0, 0, 0, 0] });
-
-    expect(bindSpy).not.toHaveBeenCalled();
-  });
 });
 
 describe('clearGlRenderTargetAttachments', () => {
   it('clears individual color attachments via clearBufferfv', () => {
-    const { state, gl } = createGlState();
+    const { gl } = createGlState();
     const fb = {} as WebGLFramebuffer;
-    const target = makeTarget(fb);
+    const target = makeTarget(fb, 32, 16, gl);
     const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTargetAttachments(state, target, {
+    clearGlRenderTargetAttachments(target, {
       colors: [
         [1, 0, 0, 1],
         [0, 1, 0, 1],
@@ -133,11 +122,11 @@ describe('clearGlRenderTargetAttachments', () => {
   });
 
   it('skips undefined entries in colors', () => {
-    const { state, gl } = createGlState();
-    const target = makeTarget({} as WebGLFramebuffer);
+    const { gl } = createGlState();
+    const target = makeTarget({} as WebGLFramebuffer, 32, 16, gl);
     const clearSpy = vi.spyOn(gl, 'clearBufferfv');
 
-    clearGlRenderTargetAttachments(state, target, {
+    clearGlRenderTargetAttachments(target, {
       colors: [undefined, [0, 0, 1, 1]],
     });
 
@@ -146,28 +135,16 @@ describe('clearGlRenderTargetAttachments', () => {
   });
 
   it('disables scissor test during clear and restores it', () => {
-    const { state, gl } = createGlState();
-    const target = makeTarget({} as WebGLFramebuffer);
+    const { gl } = createGlState();
+    const target = makeTarget({} as WebGLFramebuffer, 32, 16, gl);
     gl.enable(gl.SCISSOR_TEST);
     const disableSpy = vi.spyOn(gl, 'disable');
     const enableSpy = vi.spyOn(gl, 'enable');
 
-    clearGlRenderTargetAttachments(state, target, { colors: [[0, 0, 0, 0]] });
+    clearGlRenderTargetAttachments(target, { colors: [[0, 0, 0, 0]] });
 
     expect(disableSpy).toHaveBeenCalledWith(gl.SCISSOR_TEST);
     expect(enableSpy).toHaveBeenCalledWith(gl.SCISSOR_TEST);
-  });
-
-  it('invalidates cached texture and blend-mode bindings', () => {
-    const { state } = createGlState();
-    const runtime = getGlRenderStateRuntime(state);
-    runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
-    runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
-
-    clearGlRenderTargetAttachments(state, makeTarget({} as WebGLFramebuffer), { colors: [[0, 0, 0, 0]] });
-
-    expect(runtime.context.currentTextureRealization).toBeNull();
-    expect(runtime.context.currentBlendSignature).toBeNull();
   });
 });
 
@@ -426,7 +403,7 @@ describe('fillGlRect', () => {
     const { state, gl } = createGlState();
     const uniform4fSpy = vi.spyOn(gl, 'uniform4f');
 
-    fillGlRect(state, 0xff8040ff);
+    fillGlRect(makePass(state), 0xff8040ff);
 
     const call = uniform4fSpy.mock.calls.find((c) => typeof c[1] === 'number' && c[1] === 1);
     expect(call).toBeDefined();
@@ -446,7 +423,7 @@ describe('fillGlRect', () => {
       depthAtDraw = gl.isEnabled(gl.DEPTH_TEST);
     });
 
-    fillGlRect(state, 0x000000ff);
+    fillGlRect(makePass(state), 0x000000ff);
 
     expect(blendAtDraw).toBe(true);
     expect(depthAtDraw).toBe(false);
@@ -457,7 +434,7 @@ describe('fillGlRect', () => {
     gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
 
-    fillGlRect(state, 0x000000ff);
+    fillGlRect(makePass(state), 0x000000ff);
 
     expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(true);
     expect(gl.isEnabled(gl.BLEND)).toBe(false);
@@ -467,7 +444,7 @@ describe('fillGlRect', () => {
     const { state, gl } = createGlState();
     const scissorSpy = vi.spyOn(gl, 'scissor');
 
-    fillGlRect(state, 0xff0000ff, { x: 10, y: 20, width: 30, height: 40 });
+    fillGlRect(makePass(state), 0xff0000ff, { x: 10, y: 20, width: 30, height: 40 });
 
     expect(scissorSpy).toHaveBeenCalledWith(10, 20, 30, 40);
   });
@@ -476,7 +453,7 @@ describe('fillGlRect', () => {
     const { state, gl } = createGlState();
     gl.disable(gl.SCISSOR_TEST);
 
-    fillGlRect(state, 0xff0000ff, { x: 0, y: 0, width: 10, height: 10 });
+    fillGlRect(makePass(state), 0xff0000ff, { x: 0, y: 0, width: 10, height: 10 });
 
     expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(false);
   });

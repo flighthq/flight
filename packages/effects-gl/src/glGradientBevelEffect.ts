@@ -108,7 +108,7 @@ export function applyGradientBevelEffectToGl(
   applyBevelApplyPass(state, s0, ramp, src, s1);
   gl.deleteTexture(ramp);
 
-  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
+  clearGlRenderTarget(dst, { color: [0, 0, 0, 0] });
   if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }

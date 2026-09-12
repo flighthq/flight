@@ -150,7 +150,9 @@ export function beginGlRenderPass(
 
   clearGlRenderPass(state, target, clear);
 
-  return acquireGlRenderPassHandle(gl, state, target);
+  const pass = acquireGlRenderPassHandle(gl, state, target);
+  runtime.currentPass = pass;
+  return pass;
 }
 
 // Ends the pass opened by beginGlRenderPass: restores the framebuffer binding, exact viewport/scissor,
@@ -175,6 +177,7 @@ export function endGlRenderPass(pass: GlRenderPass): void {
   releaseGlRenderPassHandle(gl, pass);
 
   const runtime = getGlRenderStateRuntime(state);
+  runtime.currentPass = null;
   // This bracket installs only GlRenderTarget; a restored outer target may be a cube target, but the
   // target being ended here is always the 2D/MSAA target beginGlRenderPass installed.
   const ended = runtime.currentRenderTarget as GlTextureRenderTarget | null;
@@ -198,6 +201,10 @@ export function endGlRenderPass(pass: GlRenderPass): void {
   }
 
   if (ended !== null) resolveGlTextureRenderTarget(saved.previousOwner, ended);
+}
+
+export function getGlCurrentRenderPass(state: GlRenderState): GlRenderPass | null {
+  return getGlRenderStateRuntime(state).currentPass;
 }
 
 function clearGlRenderPass(

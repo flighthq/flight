@@ -69,7 +69,7 @@ export function acquireGlTextureRenderTarget(
         depth: requested.depth,
         colorSpace: requested.colorSpace,
       };
-      clearGlRenderTarget(state, candidate, { color: [0, 0, 0, 0] });
+      clearGlRenderTarget(candidate, { color: [0, 0, 0, 0] });
       return candidate;
     }
   }
@@ -82,8 +82,8 @@ export function createGlTextureRenderTargetPool(): GlTextureRenderTargetPool {
   return finishEntity(out);
 }
 
-export function destroyGlTextureRenderTargetPool(state: GlRenderState, pool: GlTextureRenderTargetPool): void {
-  for (const target of pool.free) destroyGlTextureRenderTarget(state, target);
+export function destroyGlTextureRenderTargetPool(pool: GlTextureRenderTargetPool): void {
+  for (const target of pool.free) destroyGlTextureRenderTarget(target);
   pool.free.length = 0;
 }
 

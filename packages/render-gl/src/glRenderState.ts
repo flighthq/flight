@@ -48,6 +48,7 @@ export function createGlRenderStateRuntime(
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
   runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
   runtime.context.references++;
+  runtime.currentPass = null;
   runtime.currentRenderTarget = null;
   runtime.registries = { ...pipeline.registries };
   runtime.bindingCacheGuard = null;

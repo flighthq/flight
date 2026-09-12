@@ -4,6 +4,7 @@ import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighth
 import type {
   EntityConstruction,
   GlContext,
+  GlRenderPass,
   GlRenderState,
   GlScreenRenderTarget,
   GlTextureRenderTarget,
@@ -33,6 +34,7 @@ interface GlTextureRenderTargetStorage extends RenderTargetAxes {
 
 export function createGlScreenRenderTarget(gl: GlContext): GlScreenRenderTarget {
   const target = allocateEntity<GlScreenRenderTarget>();
+  (target as unknown as { gl: GlContext }).gl = gl;
   target.framebuffer = null;
   target.width = gl.drawingBufferWidth;
   target.height = gl.drawingBufferHeight;
@@ -95,6 +97,7 @@ export function createGlTextureRenderTarget(
 
   const texture = allocateGlTextureRenderTargetStorage(state, storage);
   const target = allocateEntity<GlTextureRenderTarget>();
+  (target as unknown as { gl: GlContext }).gl = gl;
   initializeGlTextureRenderTarget(target, requested, storage, texture);
   finishEntity(target);
 
@@ -122,8 +125,8 @@ export function declareGlRenderTargetColorSpace(state: GlRenderState, colorSpace
 }
 
 /** Deletes the GL resources owned by `target`. The target object must not be used after this call. */
-export function destroyGlTextureRenderTarget(state: GlRenderState, target: GlTextureRenderTarget): void {
-  const gl = state.gl;
+export function destroyGlTextureRenderTarget(target: GlTextureRenderTarget): void {
+  const gl = target.gl;
   gl.deleteFramebuffer(target.framebuffer);
   if (target.resolveFramebuffer) gl.deleteFramebuffer(target.resolveFramebuffer);
   for (const texture of target.textures) gl.deleteTexture(texture);
@@ -141,18 +144,19 @@ export function destroyGlTextureRenderTarget(state: GlRenderState, target: GlTex
  * flipped (`v0=1, v1=0`) so the result composites upright.
  */
 export function drawGlTextureRenderTargetResult(
-  state: GlRenderState,
+  pass: GlRenderPass,
   renderProxy: RenderProxy2D,
   target: Readonly<GlTextureRenderTarget>,
   transform: Readonly<Matrix>,
 ): void {
   if (target.width <= 0 || target.height <= 0) return;
 
+  const state = pass.state;
   const runtime = getGlRenderStateRuntime(state);
   useGlProgram(state);
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  const gl = state.gl;
+  const gl = pass.gl;
   const { matrixArray } = runtime;
   const locations = runtime.context.currentShader!.locations!;
   bindGlTextureRealization(state, { straightAlpha: false, texture: target.texture });

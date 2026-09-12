@@ -81,7 +81,7 @@ export function applyBevelEffectToGl(
     passes: quality,
   });
 
-  clearGlRenderTarget(state, dst, { color: [0, 0, 0, 0] });
+  clearGlRenderTarget(dst, { color: [0, 0, 0, 0] });
   if (sourceMode === 'draw') applyGlEffectBlitPass(state, src, dst);
 
   applyGlBevelCompositePass(state, blurred, src, dst, {
