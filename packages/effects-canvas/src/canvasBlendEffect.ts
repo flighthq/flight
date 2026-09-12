@@ -4,7 +4,7 @@ import type {
   BlendEffect,
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
@@ -26,8 +26,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // which reduces to a source-over passthrough rather than erroring — matching the GL contract.
 export function applyBlendEffectToCanvas(
   state: CanvasRenderState,
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<BlendEffect>,
 ): void {
   const backdrop = getCanvasBlendEffectBackdrop(state, effect.backdropKey ?? null);
@@ -64,7 +64,7 @@ export const defaultCanvasBlendEffectRunner: CanvasRenderEffectRunner = (ctx, ef
 export function getCanvasBlendEffectBackdrop(
   state: CanvasRenderState,
   backdropKey: string | null,
-): CanvasRenderTarget | null {
+): CanvasTextureRenderTarget | null {
   if (backdropKey === null) return null;
   return getCanvasRenderStateRuntime(state).canvasBlendEffectBackdrops?.get(backdropKey) ?? null;
 }
@@ -87,7 +87,7 @@ export function registerCanvasBlendEffect(state: CanvasRenderState): void {
 export function registerCanvasBlendEffectBackdrop(
   state: CanvasRenderState,
   backdropKey: string,
-  target: CanvasRenderTarget,
+  target: CanvasTextureRenderTarget,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);
   (runtime.canvasBlendEffectBackdrops ??= new Map()).set(backdropKey, target);

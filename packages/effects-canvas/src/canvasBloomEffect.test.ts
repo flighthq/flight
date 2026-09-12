@@ -1,20 +1,20 @@
 import { createBloomEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
   applyBloomEffectToCanvas,
   defaultCanvasBloomEffectRunner,
   registerCanvasBloomEffect,
 } from './canvasBloomEffect';
-import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
+import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // A target whose ImageData is a real buffer, so the bright pass and the composite run their actual
 // arithmetic rather than being observed through a spy. `filter` is accepted and ignored: the only CSS
 // filter left in this effect is the blur between the two stages, and a blur of a flat one-pixel field
 // is the identity, which keeps these tests about the two stages that changed.
-function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
+function createTarget(pixels: ReadonlyArray<number>): CanvasTextureRenderTarget {
   const data = new Uint8ClampedArray(pixels);
   const canvas = { __data: data };
   const out = allocateEntity<any>();
@@ -43,16 +43,16 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   };
   out.height = 1;
   out.width = pixels.length / 4;
-  return finishEntity(out) as CanvasRenderTarget;
+  return finishEntity(out) as CanvasTextureRenderTarget;
 }
 
 // The pool hands out targets that start as copies of the source, which is what the real
-// createCanvasRenderTarget-plus-draw sequence produces for a one-pixel field.
+// createCanvasTextureRenderTarget-plus-draw sequence produces for a one-pixel field.
 // Scratch targets start EMPTY. The effect is what fills them — the bright pass writes the gate's result
 // and the blur copies it forward — so a pool pre-seeded with the source would hide a bright pass that
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
-  const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
+  const blank = (): CanvasTextureRenderTarget => createTarget(new Array(width * 4).fill(0));
   const out = allocateEntity<any>();
   out.creator = canvasTestSurfaceCreator;
   out.free = [blank(), blank()];
@@ -60,7 +60,7 @@ function createPool(width: number): CanvasRenderTargetPool {
   return finishEntity(out) as CanvasRenderTargetPool;
 }
 
-const read = (target: CanvasRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];
+const read = (target: CanvasTextureRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];
 
 describe('applyBloomEffectToCanvas', () => {
   // ★ THE CASE THAT FAILED BEFORE THIS EFFECT WAS REBUILT. A yellow pixel's blue channel sits below the
@@ -181,8 +181,8 @@ describe('defaultCanvasBloomEffectRunner', () => {
 
 describe('registerCanvasBloomEffect', () => {
   it('makes the runner resolvable for the BloomEffect kind', () => {
-    const context = { canvas: {}, getContextAttributes: () => ({}) };
-    const state = createCanvasRenderState({ getContext: () => context } as unknown as HTMLCanvasElement, {});
+    // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
+    const state = createCanvasRenderStateWithoutPass();
 
     expect(getCanvasRenderEffectRunner(state, 'BloomEffect')).toBeNull();
     registerCanvasBloomEffect(state);

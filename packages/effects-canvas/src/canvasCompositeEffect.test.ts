@@ -2,7 +2,7 @@ import { createCompositeEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   CompositeEffect,
 } from '@flighthq/types/contract';
@@ -14,14 +14,18 @@ import {
   getCanvasCompositeEffectOperation,
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
-import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+} from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Draw-contract assertions rather than pixels, for the reason spelled out in canvasBlendEffect.test.ts:
 // jsdom's 2D context accepts every call and rasterizes nothing, so a pixel assertion would pass
 // vacuously. What is verifiable — and what carries the correctness claims — is which images are drawn,
 // in what order, and under which globalCompositeOperation.
-function recordDraws(target: Readonly<CanvasRenderTarget>): string[] {
+function recordDraws(target: Readonly<CanvasTextureRenderTarget>): string[] {
   const drawn: string[] = [];
   const context = target.context;
   vi.spyOn(context, 'drawImage').mockImplementation(((image: CanvasImageSource) => {
@@ -30,17 +34,17 @@ function recordDraws(target: Readonly<CanvasRenderTarget>): string[] {
   return drawn;
 }
 
-function scene(): { state: CanvasRenderState; source: CanvasRenderTarget; dest: CanvasRenderTarget } {
+function scene(): { state: CanvasRenderState; source: CanvasTextureRenderTarget; dest: CanvasTextureRenderTarget } {
   const state = createCanvasRenderState(document.createElement('canvas'));
-  const source = createCanvasRenderTarget(4, 4);
-  const dest = createCanvasRenderTarget(4, 4);
+  const source = createCanvasTextureRenderTarget(4, 4);
+  const dest = createCanvasTextureRenderTarget(4, 4);
   source.canvas.id = 'source';
   dest.canvas.id = 'dest';
   return { state, source, dest };
 }
 
-function backdropTarget(): CanvasRenderTarget {
-  const backdrop = createCanvasRenderTarget(4, 4);
+function backdropTarget(): CanvasTextureRenderTarget {
+  const backdrop = createCanvasTextureRenderTarget(4, 4);
   backdrop.canvas.id = 'backdrop';
   return backdrop;
 }

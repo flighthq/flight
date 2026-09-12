@@ -3,7 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   BlendEffect,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
@@ -16,7 +16,11 @@ import {
   registerCanvasBlendEffectBackdrop,
   unregisterCanvasBlendEffectBackdrop,
 } from './canvasBlendEffect';
-import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+} from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // These tests assert the DRAW CONTRACT, not pixels, and that is deliberate rather than a shortcut.
@@ -27,7 +31,7 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 // claims: that the backdrop is laid down before the layer (every non-commutative mode gives a different
 // image if that order flips), that the mode maps to the right native operation, and that opacity reaches
 // globalAlpha. Real pixels belong to the functional/browser suite.
-function recordDraws(target: Readonly<CanvasRenderTarget>): string[] {
+function recordDraws(target: Readonly<CanvasTextureRenderTarget>): string[] {
   const drawn: string[] = [];
   const context = target.context;
   vi.spyOn(context, 'drawImage').mockImplementation(((image: CanvasImageSource) => {
@@ -39,17 +43,17 @@ function recordDraws(target: Readonly<CanvasRenderTarget>): string[] {
   return drawn;
 }
 
-function scene(): { state: CanvasRenderState; source: CanvasRenderTarget; dest: CanvasRenderTarget } {
+function scene(): { state: CanvasRenderState; source: CanvasTextureRenderTarget; dest: CanvasTextureRenderTarget } {
   const state = createCanvasRenderState(document.createElement('canvas'));
-  const source = createCanvasRenderTarget(4, 4);
-  const dest = createCanvasRenderTarget(4, 4);
+  const source = createCanvasTextureRenderTarget(4, 4);
+  const dest = createCanvasTextureRenderTarget(4, 4);
   source.canvas.id = 'source';
   dest.canvas.id = 'dest';
   return { state, source, dest };
 }
 
-function backdropTarget(): CanvasRenderTarget {
-  const backdrop = createCanvasRenderTarget(4, 4);
+function backdropTarget(): CanvasTextureRenderTarget {
+  const backdrop = createCanvasTextureRenderTarget(4, 4);
   backdrop.canvas.id = 'backdrop';
   return backdrop;
 }

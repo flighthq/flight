@@ -1,8 +1,12 @@
 import { createInnerShadowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
 
-import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+} from './canvasEffectTestSupport';
 import {
   applyInnerShadowEffectToCanvas,
   defaultCanvasInnerShadowEffectRunner,
@@ -13,9 +17,9 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts for why jsdom forces that. Scratch
 // targets are pre-seeded into the pool so each pass is identifiable; acquisition pops from the end, so the
 // seed order is the reverse of the acquisition order.
-function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasRenderTarget[] } {
+function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasTextureRenderTarget[] } {
   const targets = ids.map((id) => {
-    const target = createCanvasRenderTarget(4, 4);
+    const target = createCanvasTextureRenderTarget(4, 4);
     target.canvas.id = id;
     return target;
   });
@@ -37,7 +41,7 @@ interface Draw {
   dy: number;
 }
 
-function recordAll(log: Draw[], targets: readonly Readonly<CanvasRenderTarget>[]): void {
+function recordAll(log: Draw[], targets: readonly Readonly<CanvasTextureRenderTarget>[]): void {
   for (const target of targets) {
     const context = target.context;
     const into = target.canvas.id;
@@ -51,9 +55,9 @@ function recordAll(log: Draw[], targets: readonly Readonly<CanvasRenderTarget>[]
   }
 }
 
-function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
-  const source = createCanvasRenderTarget(4, 4);
-  const dest = createCanvasRenderTarget(4, 4);
+function scene(): { source: CanvasTextureRenderTarget; dest: CanvasTextureRenderTarget } {
+  const source = createCanvasTextureRenderTarget(4, 4);
+  const dest = createCanvasTextureRenderTarget(4, 4);
   source.canvas.id = 'source';
   dest.canvas.id = 'dest';
   return { source, dest };

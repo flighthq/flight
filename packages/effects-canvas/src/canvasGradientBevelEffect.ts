@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   GradientBevelEffect,
 } from '@flighthq/types/contract';
@@ -11,7 +11,7 @@ import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -29,26 +29,26 @@ import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompo
 // The band itself is built the same way as the plain bevel, and carries the same documented departure
 // from GL: Canvas has no per-fragment subtraction, so each side is a knockout rather than a difference.
 export function applyGradientBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<GradientBevelEffect>,
 ): void;
 export function applyGradientBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<GradientBevelEffect>,
 ): void;
 export function applyGradientBevelEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<GradientBevelEffect>,
   maybeEffect?: Readonly<GradientBevelEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientBevelEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -62,8 +62,8 @@ export function registerCanvasGradientBevelEffect(state: CanvasRenderState): voi
 }
 
 function applyGradientBevelEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<GradientBevelEffect>,
 ): void {

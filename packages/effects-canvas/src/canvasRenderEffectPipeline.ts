@@ -8,19 +8,22 @@ import {
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   beginCanvasRenderPass,
-  createCanvasRenderTarget,
+  createCanvasTextureRenderTarget,
   endCanvasRenderPass,
-  resizeCanvasRenderTarget,
+  getCanvasSurfaceCreator,
+  resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
   Adjustment,
   CanvasRenderEffectPipeline,
+  CanvasRenderPass,
   CanvasRenderState,
   CanvasRenderSurfaceCreator,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   RenderEffect,
   RenderEffectPipelineOptions,
+  RenderTargetClear,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -43,25 +46,32 @@ export function acquireCanvasRenderTarget(
   pool: CanvasRenderTargetPool,
   width: number,
   height: number,
-): CanvasRenderTarget {
+): CanvasTextureRenderTarget {
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
-  const target = pool.free.pop() ?? createCanvasRenderTarget(pool.creator, w, h);
-  if (target.width !== w || target.height !== h) resizeCanvasRenderTarget(target, w, h);
+  const target = pool.free.pop() ?? createCanvasTextureRenderTarget(pool.creator, w, h);
+  if (target.width !== w || target.height !== h) resizeCanvasTextureRenderTarget(target, w, h);
   pool.inUse.push(target);
   return target;
 }
 
-export function beginCanvasRenderEffectPipeline(state: CanvasRenderState, pipeline: CanvasRenderEffectPipeline): void {
-  const w = state.canvas.width;
-  const h = state.canvas.height;
+// `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
+// value, not a property the render state carries around. Returns the pass the scene draws into; the
+// enclosing pass — the screen, ordinarily — is what the finished chain composites back onto.
+export function beginCanvasRenderEffectPipeline(
+  pass: CanvasRenderPass,
+  pipeline: CanvasRenderEffectPipeline,
+  clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0] },
+): CanvasRenderPass {
+  const state = pass.state;
+  const { height: h, width: w } = pass.viewport;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createCanvasRenderTarget(state.surface.creator, w, h);
+    pipeline.sceneTarget = createCanvasTextureRenderTarget(getCanvasSurfaceCreator(state), w, h);
   } else {
-    resizeCanvasRenderTarget(pipeline.sceneTarget, w, h);
+    resizeCanvasTextureRenderTarget(pipeline.sceneTarget, w, h);
   }
-  beginCanvasRenderPass(state, pipeline.sceneTarget, { color: [0, 0, 0, 0] });
+  return beginCanvasRenderPass(state, pipeline.sceneTarget, clear);
 }
 
 export function createCanvasRenderEffectPipeline(
@@ -73,7 +83,9 @@ export function createCanvasRenderEffectPipeline(
   return finishEntity(out);
 }
 
-export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
+export function createCanvasTextureRenderTargetPool(
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+): CanvasRenderTargetPool {
   const out = allocateEntity<CanvasRenderTargetPool>();
   initializeCanvasRenderTargetPool(out, creator);
   return finishEntity(out);
@@ -93,19 +105,20 @@ export function destroyCanvasRenderEffectPipeline(
 }
 
 export function endCanvasRenderEffectPipeline(
-  state: CanvasRenderState,
+  scenePass: CanvasRenderPass,
   pipeline: CanvasRenderEffectPipeline,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
+  const state = scenePass.state;
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
 
-  endCanvasRenderPass(state);
+  endCanvasRenderPass(scenePass);
 
   const pool = pipeline.pool;
-  let source: CanvasRenderTarget = scene;
-  let scratchA: CanvasRenderTarget | null = null;
-  let scratchB: CanvasRenderTarget | null = null;
+  let source: CanvasTextureRenderTarget = scene;
+  let scratchA: CanvasTextureRenderTarget | null = null;
+  let scratchB: CanvasTextureRenderTarget | null = null;
   // A maximal run of consecutive pointwise adjustments fuses into ONE pass: all matrix-tier → one 4×5
   // matrix (cheaper applyColorMatrixPass); any LUT-tier member → the whole run (matrices folded in) bakes
   // into one ColorLut (applyColorLutPass). An effect (or the end of the stack) breaks the run and flushes
@@ -166,7 +179,7 @@ export function initializeCanvasRenderEffectPipeline(
 ): void {
   out.options = { ...options };
   out.sceneTarget = null;
-  out.pool = createCanvasRenderTargetPool(state.surface.creator);
+  out.pool = createCanvasTextureRenderTargetPool(getCanvasSurfaceCreator(state));
   out.lutCache = createColorLutCache();
 }
 
@@ -181,7 +194,7 @@ export function initializeCanvasRenderTargetPool(
 
 // Returns a scratch canvas to the pool so a later acquire can reuse it. Pairs with
 // acquireCanvasRenderTarget like a bracket.
-export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: CanvasRenderTarget): void {
+export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: CanvasTextureRenderTarget): void {
   const index = pool.inUse.indexOf(target);
   if (index !== -1) pool.inUse.splice(index, 1);
   pool.free.push(target);
@@ -189,7 +202,7 @@ export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: 
 
 // Blits the final effect result to the main canvas. Clears first so a transparent scene composites
 // correctly, then draws the offscreen source 1:1.
-function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasRenderTarget>): void {
+function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
   const context = state.context;
   context.save();
   context.setTransform(1, 0, 0, 1, 0, 0);

@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CompositeEffect,
   CompositeOperator,
 } from '@flighthq/types/contract';
@@ -28,8 +28,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // against zero coverage is exactly what they are defined to do.
 export function applyCompositeEffectToCanvas(
   state: CanvasRenderState,
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<CompositeEffect>,
 ): void {
   const ctx = dest.context;

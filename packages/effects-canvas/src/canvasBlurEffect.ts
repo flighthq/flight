@@ -2,7 +2,7 @@ import type {
   BlurEffect,
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
@@ -12,8 +12,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // branch uses. Canvas `blur()` is isotropic (a single radius), so the per-axis `blurX`/`blurY` sigmas
 // are averaged into one radius; a non-positive radius passes the image through unchanged.
 export function applyBlurEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<BlurEffect>,
 ): void {
   const blurX = effect.blurX ?? 4;

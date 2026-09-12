@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   LensDistortionEffect,
 } from '@flighthq/types/contract';
 
@@ -21,8 +21,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // pixel of the right answer everywhere and still look wrong along every edge in the picture, which is
 // the difference between "the parameter is observable" and "the backends agree".
 export function applyLensDistortionEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<LensDistortionEffect>,
 ): void {
   const amount = effect.amount ?? 0.2;

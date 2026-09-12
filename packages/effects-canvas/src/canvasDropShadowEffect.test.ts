@@ -28,7 +28,7 @@ beforeEach(() => {
     width,
     height,
   })) as never);
-  vi.spyOn(canvasRenderEffectPipeline, 'createCanvasRenderTargetPool').mockImplementation((() => ({
+  vi.spyOn(canvasRenderEffectPipeline, 'createCanvasTextureRenderTargetPool').mockImplementation((() => ({
     free: [],
     inUse: [],
   })) as never);

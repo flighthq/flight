@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass';
 
@@ -7,9 +7,9 @@ import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from '
 // rather than substituting the compositing module keeps the wiring assertion independent of module
 // load order, which matters because the suite runs non-isolated (one module registry per worker).
 function createStubTargets(pixels: ReadonlyArray<number>): {
-  dest: CanvasRenderTarget;
+  dest: CanvasTextureRenderTarget;
   written: { data: Uint8ClampedArray | null };
-  source: CanvasRenderTarget;
+  source: CanvasTextureRenderTarget;
 } {
   const imageData = { data: new Uint8ClampedArray(pixels) };
   const written: { data: Uint8ClampedArray | null } = { data: null };
@@ -18,7 +18,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     out.context = { getImageData: () => imageData };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -36,7 +36,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   return { dest, source, written };
 }

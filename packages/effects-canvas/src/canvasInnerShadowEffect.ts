@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   InnerShadowEffect,
 } from '@flighthq/types/contract';
@@ -9,7 +9,7 @@ import type {
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -29,26 +29,26 @@ import {
 //
 // Angle is DEGREES on this descriptor, converted here, per the SDK's authoring-layer convention.
 export function applyInnerShadowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<InnerShadowEffect>,
 ): void;
 export function applyInnerShadowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<InnerShadowEffect>,
 ): void;
 export function applyInnerShadowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<InnerShadowEffect>,
   maybeEffect?: Readonly<InnerShadowEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<InnerShadowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyInnerShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -62,8 +62,8 @@ export function registerCanvasInnerShadowEffect(state: CanvasRenderState): void 
 }
 
 function applyInnerShadowEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<InnerShadowEffect>,
 ): void {

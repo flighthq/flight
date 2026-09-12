@@ -81,7 +81,6 @@ describe('offscreen effect registration policy', () => {
     const later: CanvasRenderEffectRunner = vi.fn();
     registerCanvasRenderEffect(screen, 'acme.First', first);
     const offscreen = createCanvasOffscreenRenderState(
-      acquireTestCanvasRenderSurface(),
       screen.pipeline,
       createCanvasTextureResolvers(canvasTestSurfaceCreator),
     );

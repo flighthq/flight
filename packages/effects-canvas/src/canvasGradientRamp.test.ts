@@ -1,4 +1,4 @@
-import { createCanvasRenderTarget } from './canvasEffectTestSupport';
+import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 
 function entry(ramp: Readonly<Uint8ClampedArray>, index: number): number[] {
@@ -10,8 +10,8 @@ describe('applyCanvasGradientRampLookup', () => {
   // per-pixel pass IS verifiable here in a way a drawImage recipe is not. Seed the source buffer, run the
   // pass, read the destination back.
   function runLookup(alphas: readonly number[], ramp: Uint8ClampedArray, bias?: number, scale?: number): number[][] {
-    const source = createCanvasRenderTarget(alphas.length, 1);
-    const dest = createCanvasRenderTarget(alphas.length, 1);
+    const source = createCanvasTextureRenderTarget(alphas.length, 1);
+    const dest = createCanvasTextureRenderTarget(alphas.length, 1);
     const seeded = source.context.createImageData(alphas.length, 1);
     for (let i = 0; i < alphas.length; i++) seeded.data[i * 4 + 3] = alphas[i];
     vi.spyOn(source.context, 'getImageData').mockReturnValue(seeded);

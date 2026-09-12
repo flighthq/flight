@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   GradientGlowEffect,
 } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -24,26 +24,26 @@ import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompo
 // the ramp's low end paints the faint outer fringe and its high end the bright rim. See canvasGradientRamp
 // for why that cannot be a CSS gradient.
 export function applyGradientGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<GradientGlowEffect>,
 ): void;
 export function applyGradientGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<GradientGlowEffect>,
 ): void;
 export function applyGradientGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<GradientGlowEffect>,
   maybeEffect?: Readonly<GradientGlowEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientGlowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -57,8 +57,8 @@ export function registerCanvasGradientGlowEffect(state: CanvasRenderState): void
 }
 
 function applyGradientGlowEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<GradientGlowEffect>,
 ): void {

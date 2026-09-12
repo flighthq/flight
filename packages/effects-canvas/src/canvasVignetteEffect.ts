@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   VignetteEffect,
 } from '@flighthq/types/contract';
 
@@ -20,8 +20,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 const RAMP_STOPS = 16;
 
 export function applyVignetteEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<VignetteEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;

@@ -1,4 +1,4 @@
-import { createCanvasRenderTarget } from './canvasEffectTestSupport';
+import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -30,8 +30,8 @@ describe('drawCanvasInvertedTintedAlphaMask', () => {
     // The inversion IS the knockout: fill everywhere, then remove where the silhouette is. Doing it the
     // other way round (source-in against the source) produces the ordinary tinted mask, which is the
     // outer-effect primitive and would turn every inner effect into an outer one.
-    const dest = createCanvasRenderTarget(4, 4);
-    const source = createCanvasRenderTarget(4, 4);
+    const dest = createCanvasTextureRenderTarget(4, 4);
+    const source = createCanvasTextureRenderTarget(4, 4);
     source.canvas.id = 'source';
     const log: string[] = [];
     vi.spyOn(dest.context, 'fillRect').mockImplementation((() => {
@@ -48,8 +48,8 @@ describe('drawCanvasInvertedTintedAlphaMask', () => {
   });
 
   it('shifts which side of the boundary the tint survives on when given an offset', () => {
-    const dest = createCanvasRenderTarget(4, 4);
-    const source = createCanvasRenderTarget(4, 4);
+    const dest = createCanvasTextureRenderTarget(4, 4);
+    const source = createCanvasTextureRenderTarget(4, 4);
     let offset = '';
     vi.spyOn(dest.context, 'drawImage').mockImplementation(((_i: CanvasImageSource, dx?: number, dy?: number) => {
       offset = `${dx ?? 0},${dy ?? 0}`;

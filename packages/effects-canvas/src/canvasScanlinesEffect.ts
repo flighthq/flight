@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   ScanlinesEffect,
 } from '@flighthq/types/contract';
 
@@ -11,8 +11,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // Scanlines (REAL): draw the scene, then overlay evenly spaced darkening bands. `count` horizontal
 // lines span the frame; each darkens its row by `intensity` via a 'multiply' fill.
 export function applyScanlinesEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<ScanlinesEffect>,
 ): void {
   const count = Math.max(1, Math.round(effect.count ?? 240));

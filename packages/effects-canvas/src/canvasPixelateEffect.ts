@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   PixelateEffect,
 } from '@flighthq/types/contract';
@@ -13,8 +13,8 @@ import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 // back to full size with imageSmoothingEnabled=false so the blocks stay hard-edged — the canonical 2D
 // mosaic.
 export function applyPixelateEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<PixelateEffect>,
 ): void {

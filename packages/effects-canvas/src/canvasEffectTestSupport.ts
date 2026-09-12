@@ -1,9 +1,12 @@
 import {
-  createCanvasRenderState as createExplicitCanvasRenderState,
   acquireCanvasRenderSurface,
+  beginCanvasRenderPass,
+  createCanvasRenderState as createExplicitCanvasRenderState,
   createCanvasRenderSurface,
-  createCanvasRenderTarget as createExplicitCanvasRenderTarget,
+  createCanvasScreenRenderTarget,
+  createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget,
   createCanvasTextureResolvers,
+  registerCanvasSurfaceCreator,
   scene2DCanvasPipeline,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
@@ -11,7 +14,7 @@ import type {
   CanvasRenderState,
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -37,18 +40,35 @@ export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRen
   return surface;
 }
 
+// A state with a screen pass already open over `canvas`, so an effect test starts where an effect runs.
 export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  return createExplicitCanvasRenderState(
-    createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
+  const state = createExplicitCanvasRenderState(
     scene2DCanvasPipeline,
     createCanvasTextureResolvers(canvasTestSurfaceCreator),
     options,
   );
+  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  beginCanvasRenderPass(
+    state,
+    createCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas)),
+  );
+  return state;
 }
 
-export function createCanvasRenderTarget(width: number, height: number): CanvasRenderTarget {
+// A state with no pass open, for tests about registration or construction rather than about drawing.
+export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
+  const state = createExplicitCanvasRenderState(
+    scene2DCanvasPipeline,
+    createCanvasTextureResolvers(canvasTestSurfaceCreator),
+    options,
+  );
+  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  return state;
+}
+
+export function createCanvasTextureRenderTarget(width: number, height: number): CanvasTextureRenderTarget {
   return createExplicitCanvasRenderTarget(canvasTestSurfaceCreator, width, height);
 }

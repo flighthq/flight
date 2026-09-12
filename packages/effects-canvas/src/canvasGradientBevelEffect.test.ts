@@ -1,8 +1,12 @@
 import { createGradientBevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget, CanvasRenderTargetPool, GradientBevelEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, GradientBevelEffect } from '@flighthq/types/contract';
 
-import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+} from './canvasEffectTestSupport';
 import {
   applyGradientBevelEffectToCanvas,
   defaultCanvasGradientBevelEffectRunner,
@@ -12,9 +16,9 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // each pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.
-function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasRenderTarget[] } {
+function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; targets: CanvasTextureRenderTarget[] } {
   const targets = ids.map((id) => {
-    const target = createCanvasRenderTarget(4, 4);
+    const target = createCanvasTextureRenderTarget(4, 4);
     target.canvas.id = id;
     return target;
   });
@@ -30,7 +34,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
   };
 }
 
-function recordAll(log: string[], targets: readonly Readonly<CanvasRenderTarget>[]): void {
+function recordAll(log: string[], targets: readonly Readonly<CanvasTextureRenderTarget>[]): void {
   for (const target of targets) {
     const context = target.context;
     const into = target.canvas.id;
@@ -40,9 +44,9 @@ function recordAll(log: string[], targets: readonly Readonly<CanvasRenderTarget>
   }
 }
 
-function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
-  const source = createCanvasRenderTarget(4, 4);
-  const dest = createCanvasRenderTarget(4, 4);
+function scene(): { source: CanvasTextureRenderTarget; dest: CanvasTextureRenderTarget } {
+  const source = createCanvasTextureRenderTarget(4, 4);
+  const dest = createCanvasTextureRenderTarget(4, 4);
   source.canvas.id = 'source';
   dest.canvas.id = 'dest';
   return { source, dest };

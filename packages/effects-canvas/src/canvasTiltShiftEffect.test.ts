@@ -1,8 +1,8 @@
 import { createTiltShiftEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
+import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 import {
   applyTiltShiftEffectToCanvas,
@@ -18,7 +18,7 @@ function createImpulseTargets(
   width: number,
   height: number,
   rows: ReadonlyArray<number>,
-): { dest: CanvasRenderTarget; source: CanvasRenderTarget; written: { data: Uint8ClampedArray | null } } {
+): { dest: CanvasTextureRenderTarget; source: CanvasTextureRenderTarget; written: { data: Uint8ClampedArray | null } } {
   const pixels = new Uint8ClampedArray(width * height * 4);
   for (let y = 0; y < height; y++) {
     const value = rows.includes(y) ? 255 : 0;
@@ -37,7 +37,7 @@ function createImpulseTargets(
     out.context = { getImageData: () => imageData };
     out.height = height;
     out.width = width;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -55,7 +55,7 @@ function createImpulseTargets(
     };
     out.height = height;
     out.width = width;
-    return finishEntity(out) as CanvasRenderTarget;
+    return finishEntity(out) as CanvasTextureRenderTarget;
   })();
   return { dest, source, written };
 }
@@ -163,8 +163,8 @@ describe('registerCanvasTiltShiftEffect', () => {
   // Through the real registry, not a stub table: registerCanvasRenderEffect writes into the state's
   // runtime registries, so a hand-made object would assert against a shape production never touches.
   it('makes the runner resolvable for the TiltShiftEffect kind', () => {
-    const context = { canvas: {}, getContextAttributes: () => ({}) };
-    const state = createCanvasRenderState({ getContext: () => context } as unknown as HTMLCanvasElement, {});
+    // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
+    const state = createCanvasRenderStateWithoutPass();
 
     expect(getCanvasRenderEffectRunner(state, 'TiltShiftEffect')).toBeNull();
     registerCanvasTiltShiftEffect(state);

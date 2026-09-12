@@ -1,7 +1,7 @@
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
-  CanvasRenderTarget,
+  CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   OuterGlowEffect,
 } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';
 import {
   acquireCanvasRenderTarget,
-  createCanvasRenderTargetPool,
+  createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -25,19 +25,19 @@ import {
 // Canvas 2D keeps the CSS `drop-shadow()` fast path for sourceMode 'draw' with isotropic blur. Source
 // hide/knockout use explicit compositing because CSS drop-shadow always draws the original image too.
 export function applyOuterGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   effect: Readonly<OuterGlowEffect>,
 ): void;
 export function applyOuterGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<OuterGlowEffect>,
 ): void;
 export function applyOuterGlowEffectToCanvas(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   poolOrEffect: CanvasRenderTargetPool | Readonly<OuterGlowEffect>,
   maybeEffect?: Readonly<OuterGlowEffect>,
 ): void {
@@ -50,7 +50,7 @@ export function applyOuterGlowEffectToCanvas(
 
   const pool =
     maybeEffect === undefined
-      ? createCanvasRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(source.surface.creator)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyOuterGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
@@ -64,8 +64,8 @@ export function registerCanvasOuterGlowEffect(state: CanvasRenderState): void {
 }
 
 function applyOuterGlowEffectToCanvasWithPool(
-  source: Readonly<CanvasRenderTarget>,
-  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasTextureRenderTarget>,
+  dest: Readonly<CanvasTextureRenderTarget>,
   pool: CanvasRenderTargetPool,
   effect: Readonly<OuterGlowEffect>,
 ): void {
