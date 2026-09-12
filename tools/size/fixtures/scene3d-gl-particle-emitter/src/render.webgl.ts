@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
@@ -8,8 +8,6 @@ import { prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   beginGlRenderPass,
@@ -25,13 +23,11 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   createGlPipeline(createEmptyGlRegistries()),
-  { backgroundColor: 0x101522ff, pixelRatio: 1 },
+  { pixelRatio: 1 },
 );
 const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();

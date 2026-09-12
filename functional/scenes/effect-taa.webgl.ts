@@ -1,9 +1,8 @@
 import { hasGlRenderEffectRunner } from '@flighthq/effects-gl/contract';
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -22,7 +21,6 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -47,15 +45,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio,
-    backgroundColor: 0x05060aff,
   },
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

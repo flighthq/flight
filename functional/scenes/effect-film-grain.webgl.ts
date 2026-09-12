@@ -1,4 +1,4 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -11,7 +11,6 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -31,7 +30,6 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -50,15 +48,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio,
-    backgroundColor: 0x808080ff,
   },
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

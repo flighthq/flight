@@ -1,4 +1,5 @@
 import {
+  createWebGlContext,
   enableHostWebGlRenderSurface,
   webCanvasRenderSurfaceCreator,
   webHostImage,
@@ -13,8 +14,6 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlRenderState,
   createMatrix,
   defaultGlParticleEmitter2DRenderer,
@@ -70,20 +69,26 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   document.body.appendChild(canvas);
 
   const state = createGlRenderState(
-    createGlContextState(
-      createGlContextFromCanvasElement(canvas, {
-        contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
-      }),
-    ),
+    createWebGlContext(canvas, {
+      contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+    }),
     scene3DGlPipeline,
     {
       pixelRatio,
-      backgroundColor: options.background,
       raster2DSurfaceProvider: webRaster2DSurfaceProvider,
       sceneGraphSyncPolicy: options.syncPolicy,
     },
   );
   const screenTarget = createGlScreenRenderTarget(state.gl);
+  const background = options.background ?? 0x00000000;
+  const screenClear = {
+    color: [
+      ((background >>> 24) & 0xff) / 0xff,
+      ((background >>> 16) & 0xff) / 0xff,
+      ((background >>> 8) & 0xff) / 0xff,
+      (background & 0xff) / 0xff,
+    ] as const,
+  };
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
@@ -128,7 +133,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     scale: pixelRatio,
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
-      const pass = beginGlRenderPass(state, screenTarget);
+      const pass = beginGlRenderPass(state, screenTarget, screenClear);
       renderGlScene2D(pass, root);
       endGlRenderPass(pass);
     },

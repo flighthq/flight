@@ -1,12 +1,10 @@
-import { createWebImageResourceFromCanvas, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebGlContext, createWebGlRenderSurfaceProvider, createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
@@ -36,11 +34,9 @@ const pipeline = createGlPipeline({
   ),
 });
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   pipeline,
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
+  { pixelRatio: 1 },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

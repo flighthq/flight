@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
 import {
+  createWebGlContext,
   createWebGlRenderSurfaceProvider,
   webCanvasRenderSurfaceCreator,
   webRaster2DSurfaceProvider,
@@ -9,8 +10,6 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
@@ -41,11 +40,9 @@ const pipeline = createGlPipeline({
   renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, defaultGlScale9ShapeRenderer),
 });
 const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  ),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   pipeline,
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
+  { pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

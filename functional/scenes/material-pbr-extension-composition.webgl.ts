@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type {
@@ -22,8 +22,6 @@ import {
   createEnvironment,
   createExtendedPbrMaterial,
   createGlCanvasElement,
-  createGlContextFromCanvasElement,
-  createGlContextState,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -63,13 +61,11 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
-  { backgroundColor: 0x080b12ff, pixelRatio },
+  { pixelRatio },
 );
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

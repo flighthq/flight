@@ -1,4 +1,4 @@
-import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a GLOBAL TONAL SHIFT over a flat field. That is the one class `npm run contrast` states it
 // does not bound, and `npm run displacement` cannot see it either — moving a flat field changes nothing;
@@ -11,7 +11,6 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
-  createGlContextState,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -30,7 +29,6 @@ import {
   registerRenderer,
   renderGlScene2D,
   getBitmapPixelRgb,
-  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,15 +46,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-    }),
-  ),
+  createWebGlContext(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
   scene3DGlPipeline,
   {
     pixelRatio,
-    backgroundColor: 0x202830ff,
   },
 );
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
