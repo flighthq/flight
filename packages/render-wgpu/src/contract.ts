@@ -22,6 +22,7 @@ export * from './wgpuScissor';
 export * from './wgpuShader';
 export * from './wgpuShaderBinding';
 export * from './wgpuShaderRegistry';
+export * from './wgpuScreenAntialias';
 export * from './wgpuScreenCapture';
 export * from './wgpuScreenRenderTarget';
 export * from './wgpuTextureRenderTarget';

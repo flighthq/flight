@@ -10,6 +10,7 @@ import type {
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisitionFromCanvasElement, createWgpuRenderState } from './wgpuRenderState';
+import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
 import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
 
 // Wgpu flag constants are only type-level in @webgpu/types; install runtime values for JSDOM.
@@ -282,9 +283,11 @@ function makeAdapter(): GPUAdapter {
 export function beginWgpuScreenRenderPassForTest(
   state: WgpuRenderState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
-  options: Readonly<WgpuScreenRenderTargetOptions> = {},
+  options: Readonly<WgpuScreenRenderTargetOptions & { antialias?: boolean }> = {},
 ): WgpuRenderPass {
-  return beginWgpuRenderPass(state, createWgpuScreenRenderTargetForTest(state, options), clear);
+  const screen = createWgpuScreenRenderTargetForTest(state, options);
+  if (options.antialias === true) enableWgpuScreenRenderTargetAntialias(screen);
+  return beginWgpuRenderPass(state, screen, clear);
 }
 
 // JSDOM does not decode image elements, so a bare <img> remains incomplete even when its layout
@@ -315,14 +318,16 @@ export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = 
 // compiles shaders or uploads textures takes the state alone and never allocates a surface.
 export function createWgpuScreenRenderTargetForTest(
   state: WgpuRenderState,
-  options: Readonly<WgpuScreenRenderTargetOptions> = {},
+  options: Readonly<WgpuScreenRenderTargetOptions & { antialias?: boolean }> = {},
   width = 800,
   height = 600,
 ): WgpuScreenRenderTarget {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  return createWgpuScreenRenderTarget(state.device, canvas, { format: state.format, ...options });
+  const screen = createWgpuScreenRenderTarget(state.device, canvas, { format: state.format, ...options });
+  if (options.antialias === true) enableWgpuScreenRenderTargetAntialias(screen);
+  return screen;
 }
 
 const _testWgpuPipeline = createWgpuPipeline(createEmptyWgpuRegistries());
