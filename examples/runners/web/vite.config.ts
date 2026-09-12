@@ -81,7 +81,7 @@ function entryWithLogCapture(name: string, render: string): string {
       `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
       `  const { registerWgpuFunctionalTarget } = await import(${JSON.stringify(verifyPath)});`,
       `  const __render = await import(${JSON.stringify(renderPath)});`,
-      `  registerWgpuFunctionalTarget(__render.state, __render.scale);`,
+      `  registerWgpuFunctionalTarget(__render.state, __render.screen, __render.scale);`,
       `}`,
     );
   }
