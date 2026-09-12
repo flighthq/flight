@@ -14,9 +14,9 @@ export {
 export { webHostApp } from './webAppHost';
 export { webHostAudio } from './webAudio';
 export { webHostAudioDevice } from './webAudioDevice';
-export { drawBitmap } from './webBitmapDraw';
+export { drawWebBitmap } from './webBitmapDraw';
 export { createWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
-export { createBitmapFromCanvas } from './webBitmapFrom';
+export { createWebBitmapFromCanvas } from './webBitmapFrom';
 export { createWebBitmapReadbackBackend, webHostBitmapReadback } from './webBitmapReadback';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export {

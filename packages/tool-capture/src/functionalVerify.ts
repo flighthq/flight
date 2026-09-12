@@ -6,7 +6,7 @@ import {
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
 import { enableWgpuRenderEffectGuards } from '@flighthq/effects-wgpu/contract';
-import { createBitmapFromCanvas } from '@flighthq/host-web/contract';
+import { createWebBitmapFromCanvas } from '@flighthq/host-web/contract';
 import {
   createBitmapFromWgpuScreenRenderTarget,
   enableWgpuScreenRenderTargetCapture,
@@ -288,7 +288,7 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   if (target?.kind === 'webgl') return createBitmapFromGlRenderState(target.state);
   const canvas = target?.kind === 'canvas' ? target.screen.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
-  if (canvas.getContext('2d') !== null) return createBitmapFromCanvas(canvas, 0, 0, canvas.width, canvas.height);
+  if (canvas.getContext('2d') !== null) return createWebBitmapFromCanvas(canvas, 0, 0, canvas.width, canvas.height);
   const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
   if (gl !== null) return createBitmapFromGlContext(gl);
   return null;

@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, EntityConstruction } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-export function createBitmapFromCanvas(
+export function createWebBitmapFromCanvas(
   canvas: HTMLCanvasElement,
   x: number = 0,
   y: number = 0,
@@ -10,11 +10,11 @@ export function createBitmapFromCanvas(
   height?: number,
 ): Bitmap {
   const out = allocateEntity<Bitmap>();
-  initializeBitmapFromCanvas(out, canvas, x, y, width, height);
+  initializeWebBitmapFromCanvas(out, canvas, x, y, width, height);
   return finishEntity(out);
 }
 
-export function initializeBitmapFromCanvas(
+export function initializeWebBitmapFromCanvas(
   out: EntityConstruction<Bitmap>,
   canvas: HTMLCanvasElement,
   x: number = 0,
