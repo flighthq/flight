@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResourceFromCanvas } from '@flighthq/image/contract';
+import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
@@ -12,6 +12,15 @@ import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from '.
 import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
+
+// The canvases these tests wrap are measured by the host, so the test registers the one-line resolver a
+// browser host would install rather than pulling the whole web host into a renderer package's tests.
+registerHostImageDimensionResolver((source, out) => {
+  const sized = source as { height: number; width: number };
+  out.height = sized.height;
+  out.width = sized.width;
+  return true;
+});
 
 // The state the backend hands the rasterizer is where the commands live, so this is the wiring a GPU or
 // DOM backend does on its own state. Texture fills are their own command set, separately registered from
@@ -30,7 +39,7 @@ function createTestImageBackend(): HostImageProvider {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
-      return createImageResourceFromCanvas(canvas);
+      return createImageResource(canvas);
     },
     loadImageFromUrl: vi.fn(),
   };
@@ -110,7 +119,7 @@ describe('createCanvasShapeRasterizer', () => {
     registerCanvasImageTextureResolver(resolvers);
 
     const texture = createTexture();
-    setTextureSource(texture, createImageResourceFromCanvas(backing));
+    setTextureSource(texture, createImageResource(backing));
     const shape = createShape();
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);

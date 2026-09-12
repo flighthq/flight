@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResourceFromCanvas } from '@flighthq/image/contract';
+import { createImageResource, registerHostImageDimensionResolver } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -10,6 +10,15 @@ import {
   getCanvasRenderStateTextureResolvers,
   resolveCanvasTexture,
 } from './canvasTestSupport';
+
+// The canvases these tests wrap are measured by the host, so the test registers the one-line resolver a
+// browser host would install rather than pulling the whole web host into a renderer package's tests.
+registerHostImageDimensionResolver((source, out) => {
+  const sized = source as { height: number; width: number };
+  out.height = sized.height;
+  out.width = sized.width;
+  return true;
+});
 
 function imageHost(backend: HostImageProvider = createTestImageBackend()): {
   readonly graphics: { readonly image: HostImageProvider };
@@ -24,7 +33,7 @@ function createTestImageBackend(): HostImageProvider {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
-      return createImageResourceFromCanvas(canvas);
+      return createImageResource(canvas);
     },
     loadImageFromUrl: vi.fn(),
   };
