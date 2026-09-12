@@ -16,6 +16,7 @@ A shared base type carries what pass functions need (bind + clear). Subtypes car
 
 ```
 GlRenderTarget (base: Entity)
+├── gl: GlContext
 ├── framebuffer: WebGLFramebuffer | null
 ├── width, height
 ├── colorAttachments: number
@@ -142,6 +143,35 @@ The entire singleton provider chain (`enableHostWeb*RenderSurface` → `set*Rend
 **Also deleted:**
 
 - `createGlOffscreenRenderState` — a one-line wrapper around `createGlRenderState` with the same arguments. Under the new model, sharing a context is just passing the same `gl` handle. The "offscreen" distinction no longer exists when no render state owns a screen.
+
+### 9. `gl` on the base render target; target-only operations
+
+The base `GlRenderTarget` holds `gl: GlContext`. The screen target already holds it for identity; the base carries it so target-specific operations need only the target:
+
+- `clearGlRenderTarget(target, clear)` — binds framebuffer, clears. No render state needed.
+- `destroyGlRenderTarget(target)` — deletes GPU resources. Currently takes state just as a `gl` proxy.
+- `resizeGlRenderTarget(target, w, h)` — reallocates textures. Same.
+
+These are target operations, not render operations. They don't need pipelines, registries, or blend state. With `gl` on the target, they take the target alone.
+
+`gl` is on both the target and the render state for different reasons: the target owns its relationship to the GPU (bind, clear, destroy, resize), the state owns the rendering machinery (shaders, registries, blend). Same handle, different roles.
+
+Clear is available two ways: as the standalone primitive `clearGlRenderTarget(target, clear)`, and as the optional clear descriptor on `beginGlRenderPass(state, target, clear?)`. The pass-begin path is a convenience that clears on bind; the standalone path is the primitive.
+
+### 10. Draw functions take pass; clear and target lifecycle take target
+
+Functions that **draw** (issue draw calls into an active pass) take the pass handle:
+- `renderGlScene2D(pass, root)`
+- `drawGlScene3D(pass, scene, camera, lights)`
+- `fillGlRect(pass, color, rect?)`
+- `drawGlTextureRenderTargetResult(pass, source, ...)`
+
+Functions that **operate on a target** (GPU state writes, resource lifecycle) take the target:
+- `clearGlRenderTarget(target, clear)`
+- `destroyGlRenderTarget(target)`
+- `resizeGlRenderTarget(target, w, h)`
+
+`drawGlFullscreenPass` is used in effects pipelines that rapidly ping-pong targets. It manages its own framebuffer binding and takes the destination target directly rather than requiring a caller-managed pass bracket.
 
 ### 7. Context vs. context state
 
