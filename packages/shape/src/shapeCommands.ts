@@ -438,7 +438,7 @@ export function appendShapeTangentArcTo(
   const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
   const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
   // Degenerate case: zero-length tangent → emit a plain lineTo to (x1, y1).
-  if (len1 < 1e-10 || len2 < 1e-10) {
+  if (radius <= 0 || len1 < 1e-10 || len2 < 1e-10) {
     cmds.push('lineTo', 2, x1, y1);
     invalidateContent(shape);
     return;
@@ -478,10 +478,9 @@ export function appendShapeTangentArcTo(
   // The sweep from start tangent to end tangent.
   const startA = Math.atan2(ty1 - ocy, tx1 - ocx);
   const endA = Math.atan2(ty2 - ocy, tx2 - ocx);
-  // Determine direction: cross product of the two tangent vectors tells us winding.
-  const cross = d1x * d2y - d1y * d2x;
-  const isAnticlockwise = cross < 0;
-  const sweep = normalizeArcSweep(startA, endA, isAnticlockwise);
+  let sweep = endA - startA;
+  if (sweep > Math.PI) sweep -= Math.PI * 2;
+  if (sweep < -Math.PI) sweep += Math.PI * 2;
   const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
   const segmentAngle = sweep / segmentCount;
   const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
