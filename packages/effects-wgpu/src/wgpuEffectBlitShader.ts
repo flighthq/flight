@@ -51,11 +51,10 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
  * Pixels sampling outside the source bounds produce transparent output.
  *
- * The offset matches the Gl path exactly — (-dx/w, +dy/h). The shader samples `uv + offset`, so a
- * screen-space shift of (+dx,+dy) needs offset (-dx, +dy): the +dy is NOT negated for Wgpu. Wgpu's UV
- * y=0 is top (opposite Gl's bottom-origin) but Wgpu render-target textures are also stored top-down, so
- * the two inversions cancel. A previous extra Y negation put the shadow on the wrong side of the source
- * (it landed up-left instead of down-right) — caught by filter-drop-shadow-parity.
+ * The shader samples `uv + offset`, so a screen-space shift of (+dx, +dy) needs the UV offset to
+ * point in the opposite direction on both axes. In Wgpu UV space y=0 is at the top — the same
+ * direction as screen space — so a downward shift (+dy) requires a negative UV offset (-dy/h),
+ * unlike Gl where UV y=0 is at the bottom and the sign convention is reversed.
  */
 export function applyWgpuEffectBlitOffsetPass(
   state: WgpuRenderState,
@@ -67,7 +66,7 @@ export function applyWgpuEffectBlitOffsetPass(
   const pipeline = getWgpuBlitOffsetShader(state);
   drawWgpuEffectPass(state, source, dest, pipeline, (f32) => {
     f32[0] = -dx / source.width;
-    f32[1] = dy / source.height;
+    f32[1] = -dy / source.height;
   });
 }
 
