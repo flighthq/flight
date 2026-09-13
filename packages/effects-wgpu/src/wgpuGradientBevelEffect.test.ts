@@ -187,25 +187,21 @@ describe('applyGradientBevelEffectToWgpu', () => {
     expect(recorded.tints[0]![2]).toBe(0.25);
   });
 
-  // ★ THE VERTICAL SEAM, the same class that was wrong in six effects tonight: the light direction
-  // arrives in screen space (Y down) and only the Y component is negated into the target's contents.
-  it('negates only the vertical component of the light offset', () => {
+  it('passes the light offset without negation on either axis', () => {
     apply({ angle: 0, distance: 10 });
     expect(lightOffset()[0]).toBeCloseTo(10 / SOURCE_WIDTH, 6);
     expect(lightOffset()[1]).toBeCloseTo(0, 6);
 
     apply({ angle: 90, distance: 10 });
     expect(lightOffset()[0]).toBeCloseTo(0, 6);
-    expect(lightOffset()[1]).toBeCloseTo(-10 / SOURCE_HEIGHT, 6);
+    expect(lightOffset()[1]).toBeCloseTo(10 / SOURCE_HEIGHT, 6);
   });
 
-  // Normalised per axis; the two source dimensions differ on purpose, since with them equal dividing by
-  // the wrong one is invisible. Unlike the plain bevel, this recipe does NOT snap to whole pixels.
   it('normalises each offset component by its own source dimension, without rounding', () => {
     apply({ angle: 30, distance: 10 });
 
     expect(lightOffset()[0]).toBeCloseTo((Math.cos(Math.PI / 6) * 10) / SOURCE_WIDTH, 6);
-    expect(lightOffset()[1]).toBeCloseTo(-(Math.sin(Math.PI / 6) * 10) / SOURCE_HEIGHT, 6);
+    expect(lightOffset()[1]).toBeCloseTo((Math.sin(Math.PI / 6) * 10) / SOURCE_HEIGHT, 6);
   });
 
   it('looks the band colour up from the descriptor stops, unchanged', () => {

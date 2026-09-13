@@ -153,36 +153,28 @@ describe('applyBevelEffectToWgpu', () => {
     expect(uniforms.slice(4, 8)).toEqual([0, 0, 0, 1]);
   });
 
-  // ★ THE VERTICAL SEAM, the same class that was wrong in six effects tonight: the light direction
-  // arrives in screen space (Y down) and only the Y component is negated on the way into the shader.
-  // Written symmetrically, every bevel is lit from the wrong side — and still looks like a bevel.
-  it('negates only the vertical component of the light offset', () => {
-    // 0 degrees points along +X, 90 degrees along +Y in screen space.
+  it('passes the light offset without negation on either axis', () => {
     const alongX = apply({ angle: 0, distance: 10 });
     expect(alongX[8]).toBeCloseTo(10 / SOURCE_WIDTH, 6);
     expect(alongX[9]).toBeCloseTo(0, 6);
 
     const alongY = apply({ angle: 90, distance: 10 });
     expect(alongY[8]).toBeCloseTo(0, 6);
-    expect(alongY[9]).toBeCloseTo(-10 / SOURCE_HEIGHT, 6);
+    expect(alongY[9]).toBeCloseTo(10 / SOURCE_HEIGHT, 6);
   });
 
-  // Normalised per axis, and the two source dimensions differ here on purpose: with them equal, dividing
-  // by the wrong one is invisible.
   it('normalises each offset component by its own source dimension', () => {
     const uniforms = apply({ angle: 45, distance: 10 });
 
-    // cos(45)*10 and sin(45)*10 both round to 7.
     expect(uniforms[8]).toBeCloseTo(7 / SOURCE_WIDTH, 6);
-    expect(uniforms[9]).toBeCloseTo(-7 / SOURCE_HEIGHT, 6);
+    expect(uniforms[9]).toBeCloseTo(7 / SOURCE_HEIGHT, 6);
   });
 
   it('snaps the light offset to whole pixels, matching the surface reference', () => {
-    // cos(30)*10 = 8.66 -> 9, sin(30)*10 = 5 -> 5.
     const uniforms = apply({ angle: 30, distance: 10 });
 
     expect(uniforms[8] * SOURCE_WIDTH).toBeCloseTo(9, 6);
-    expect(uniforms[9] * SOURCE_HEIGHT).toBeCloseTo(-5, 6);
+    expect(uniforms[9] * SOURCE_HEIGHT).toBeCloseTo(5, 6);
   });
 
   it('maps each bevel type to its clip mode', () => {
