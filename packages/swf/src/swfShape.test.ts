@@ -98,7 +98,7 @@ describe('createSwfShape', () => {
       2,
       1,
       2,
-      'curveTo',
+      'quadraticCurveTo',
       4,
       11,
       2,

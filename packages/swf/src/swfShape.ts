@@ -1,15 +1,15 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import { appendPathLineTo, appendPathMoveTo, appendPathQuadraticCurveTo, createPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeBeginTextureFill,
-  appendShapeCurveTo,
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
+  appendShapeQuadraticCurveTo,
   createShape,
 } from '@flighthq/shape/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
@@ -277,14 +277,14 @@ function createSwfMorphSegmentPaths(
       appendPathMoveTo(endPath, (contour.endStartX ?? 0) / TWIPS_PER_PIXEL, (contour.endStartY ?? 0) / TWIPS_PER_PIXEL);
       for (const edge of contour.edges) {
         if (edge.curved) {
-          appendPathCurveTo(
+          appendPathQuadraticCurveTo(
             startPath,
             edge.controlX / TWIPS_PER_PIXEL,
             edge.controlY / TWIPS_PER_PIXEL,
             edge.toX / TWIPS_PER_PIXEL,
             edge.toY / TWIPS_PER_PIXEL,
           );
-          appendPathCurveTo(
+          appendPathQuadraticCurveTo(
             endPath,
             (edge.endControlX ?? 0) / TWIPS_PER_PIXEL,
             (edge.endControlY ?? 0) / TWIPS_PER_PIXEL,
@@ -440,7 +440,7 @@ function appendSwfShapeContours(shape: Shape, segments: readonly Readonly<SwfSha
     appendShapeMoveTo(shape, contour.startX / TWIPS_PER_PIXEL, contour.startY / TWIPS_PER_PIXEL);
     for (const edge of contour.edges) {
       if (edge.curved) {
-        appendShapeCurveTo(
+        appendShapeQuadraticCurveTo(
           shape,
           edge.controlX / TWIPS_PER_PIXEL,
           edge.controlY / TWIPS_PER_PIXEL,
