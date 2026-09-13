@@ -1,10 +1,10 @@
 import {
-  appendPathArcTo,
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathCurveTo,
+  appendPathEllipticalArcTo,
   appendPathLineTo,
   appendPathMoveTo,
+  appendPathQuadraticCurveTo,
   createPath,
   forEachPathSegment,
 } from '@flighthq/path/contract';
@@ -20,9 +20,9 @@ import type { Path, SvgPathDataFormatOptions } from '@flighthq/types/contract';
  * unchanged; returns `true` when the whole string parses. An empty or whitespace-only string is
  * well-formed and appends nothing.
  *
- * Elliptic arcs (`A`/`a`) are appended through `appendPathArcTo`, which approximates them as cubic
- * bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`) therefore sees
- * cubics, not an arc verb. The geometry round-trips; the arc command does not.
+ * Elliptic arcs (`A`/`a`) are appended through `appendPathEllipticalArcTo`, which approximates them
+ * as cubic bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`)
+ * therefore sees cubics, not an arc verb. The geometry round-trips; the arc command does not.
  */
 export function appendSvgPathData(path: Path, d: string): boolean {
   const scratch = createPath();
@@ -239,7 +239,7 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
         const cy = relative ? currentY + y1 : y1;
         const ax = relative ? currentX + x : x;
         const ay = relative ? currentY + y : y;
-        appendPathCurveTo(path, cx, cy, ax, ay);
+        appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
         lastQuadControlX = cx;
         lastQuadControlY = cy;
         currentX = ax;
@@ -254,7 +254,7 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
         const cy = reflect ? 2 * currentY - lastQuadControlY : currentY;
         const ax = relative ? currentX + x : x;
         const ay = relative ? currentY + y : y;
-        appendPathCurveTo(path, cx, cy, ax, ay);
+        appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
         lastQuadControlX = cx;
         lastQuadControlY = cy;
         currentX = ax;
@@ -281,10 +281,10 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
         }
         const ax = relative ? currentX + x : x;
         const ay = relative ? currentY + y : y;
-        // appendPathArcTo discovers its start through the path's last stored point. CLOSE stores no
-        // coordinates, so anchor the SVG pen at the subpath origin before asking it to build cubics.
+        // appendPathEllipticalArcTo discovers its start through the path's last stored point. CLOSE
+        // stores no coordinates, so anchor the SVG pen at the subpath origin before building cubics.
         if (lastKind === 'Z') appendPathMoveTo(path, currentX, currentY);
-        appendPathArcTo(path, rx, ry, (rotationDegrees * Math.PI) / 180, largeArc === 1, sweep === 1, ax, ay);
+        appendPathEllipticalArcTo(path, rx, ry, (rotationDegrees * Math.PI) / 180, largeArc === 1, sweep === 1, ax, ay);
         currentX = ax;
         currentY = ay;
         lastKind = 'A';
@@ -303,9 +303,9 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
 
 /**
  * Serializes a `Path` to an SVG path `d` string, emitting absolute commands. Each `PathSegment`
- * maps to its SVG verb: `moveTo`→`M`, `lineTo`→`L`, `curveTo` (quadratic)→`Q`, `cubicCurveTo`→`C`,
- * `close`→`Z`. Arcs are not a distinct segment kind — the path stores them as cubics — so no `A`
- * command is produced.
+ * maps to its SVG verb: `moveTo`→`M`, `lineTo`→`L`, `quadraticCurveTo`→`Q`,
+ * `cubicCurveTo`→`C`, `close`→`Z`. Arcs are not a distinct segment kind — the path stores them
+ * as cubics — so no `A` command is produced.
  *
  * `options.precision`, when given, rounds every coordinate to that many decimal places and drops
  * trailing zeros; the default emits full-precision numbers (also trailing-zero-free).
@@ -318,15 +318,15 @@ export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<SvgPa
       parts.push(`M${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`);
     } else if (segment.kind === 'lineTo') {
       parts.push(`L${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`);
-    } else if (segment.kind === 'curveTo') {
+    } else if (segment.kind === 'quadraticCurveTo') {
       parts.push(
         `Q${formatSvgNumber(segment.controlX, precision)} ${formatSvgNumber(segment.controlY, precision)} ` +
           `${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`,
       );
     } else if (segment.kind === 'cubicCurveTo') {
       parts.push(
-        `C${formatSvgNumber(segment.control1X, precision)} ${formatSvgNumber(segment.control1Y, precision)} ` +
-          `${formatSvgNumber(segment.control2X, precision)} ${formatSvgNumber(segment.control2Y, precision)} ` +
+        `C${formatSvgNumber(segment.controlX1, precision)} ${formatSvgNumber(segment.controlY1, precision)} ` +
+          `${formatSvgNumber(segment.controlX2, precision)} ${formatSvgNumber(segment.controlY2, precision)} ` +
           `${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`,
       );
     } else if (segment.kind === 'close') {

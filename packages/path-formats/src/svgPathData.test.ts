@@ -1,4 +1,5 @@
 import { createPath, forEachPathSegment } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import type { Path, PathSegment } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -115,7 +116,7 @@ describe('parseSvgPathData', () => {
     const path = parseSvgPathData('M0 0 C1 2 3 4 5 6');
     expect(collectSegments(path as Path)).toEqual([
       { kind: 'moveTo', x: 0, y: 0 },
-      { kind: 'cubicCurveTo', control1X: 1, control1Y: 2, control2X: 3, control2Y: 4, x: 5, y: 6 },
+      { kind: 'cubicCurveTo', controlX1: 1, controlY1: 2, controlX2: 3, controlY2: 4, x: 5, y: 6 },
     ]);
   });
 
@@ -124,10 +125,10 @@ describe('parseSvgPathData', () => {
     const segments = collectSegments(path as Path);
     expect(segments[2]).toEqual({
       kind: 'cubicCurveTo',
-      control1X: 7,
-      control1Y: 8,
-      control2X: 3,
-      control2Y: 3,
+      controlX1: 7,
+      controlY1: 8,
+      controlX2: 3,
+      controlY2: 3,
       x: 4,
       y: 4,
     });
@@ -138,10 +139,10 @@ describe('parseSvgPathData', () => {
     const segments = collectSegments(path as Path);
     expect(segments[2]).toEqual({
       kind: 'cubicCurveTo',
-      control1X: 2,
-      control1Y: 2,
-      control2X: 3,
-      control2Y: 3,
+      controlX1: 2,
+      controlY1: 2,
+      controlX2: 3,
+      controlY2: 3,
       x: 4,
       y: 4,
     });
@@ -151,14 +152,20 @@ describe('parseSvgPathData', () => {
     const path = parseSvgPathData('M0 0 Q1 1 2 2');
     expect(collectSegments(path as Path)).toEqual([
       { kind: 'moveTo', x: 0, y: 0 },
-      { kind: 'curveTo', controlX: 1, controlY: 1, x: 2, y: 2 },
+      { kind: 'quadraticCurveTo', controlX: 1, controlY: 1, x: 2, y: 2 },
     ]);
+  });
+
+  it('preserves the quadratic command numeric value in the parsed path', () => {
+    const path = parseSvgPathData('M0 0 Q1 1 2 2');
+    expect(PathCommand.QUADRATIC_CURVE_TO).toBe(3);
+    expect(path?.commands).toEqual([PathCommand.MOVE_TO, 3]);
   });
 
   it('reflects the previous quadratic control for the T shorthand', () => {
     const path = parseSvgPathData('M0 0 Q1 1 2 2 T4 4');
     const segments = collectSegments(path as Path);
-    expect(segments[2]).toEqual({ kind: 'curveTo', controlX: 3, controlY: 3, x: 4, y: 4 });
+    expect(segments[2]).toEqual({ kind: 'quadraticCurveTo', controlX: 3, controlY: 3, x: 4, y: 4 });
   });
 
   it('appends an arc as cubic segments ending at the arc endpoint', () => {

@@ -49,21 +49,19 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
     argument('controlY1', 'number'),
     argument('controlX2', 'number'),
     argument('controlY2', 'number'),
-    argument('anchorX', 'number'),
-    argument('anchorY', 'number'),
-  ]),
-  curveTo: definition(4, [
-    argument('controlX', 'number'),
-    argument('controlY', 'number'),
-    argument('anchorX', 'number'),
-    argument('anchorY', 'number'),
-  ]),
-  drawCircle: definition(3, [argument('x', 'number'), argument('y', 'number'), argument('radius', 'number')]),
-  drawEllipse: definition(4, [
     argument('x', 'number'),
     argument('y', 'number'),
-    argument('width', 'number'),
-    argument('height', 'number'),
+  ]),
+  drawCircle: definition(3, [
+    argument('centerX', 'number'),
+    argument('centerY', 'number'),
+    argument('radius', 'number'),
+  ]),
+  drawEllipse: definition(4, [
+    argument('centerX', 'number'),
+    argument('centerY', 'number'),
+    argument('radiusX', 'number'),
+    argument('radiusY', 'number'),
   ]),
   drawPath: definition(2, [
     argument('commands', 'numbers'),
@@ -76,13 +74,13 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
     argument('width', 'number'),
     argument('height', 'number'),
   ]),
-  drawRoundRectangle: definition(6, [
+  drawRoundedRectangle: definition(6, [
     argument('x', 'number'),
     argument('y', 'number'),
     argument('width', 'number'),
     argument('height', 'number'),
-    argument('ellipseWidth', 'number'),
-    argument('ellipseHeight', 'number'),
+    argument('radiusX', 'number'),
+    argument('radiusY', 'number'),
   ]),
   drawTriangles: definition(1, [
     argument('vertices', 'numbers'),
@@ -105,6 +103,12 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
   ]),
   lineTo: definition(2, [argument('x', 'number'), argument('y', 'number')]),
   moveTo: definition(2, [argument('x', 'number'), argument('y', 'number')]),
+  quadraticCurveTo: definition(4, [
+    argument('controlX', 'number'),
+    argument('controlY', 'number'),
+    argument('x', 'number'),
+    argument('y', 'number'),
+  ]),
 } satisfies Readonly<Record<ShapeCommandKey, ShapeCommandSchemaDefinition>>;
 
 // The one runtime schema table for the built-in retained-shape vocabulary. Native shape JSON uses

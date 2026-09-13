@@ -4,8 +4,8 @@ import { defaultShapeCommandSchemas } from './shapeCommandSchemas';
 
 describe('defaultShapeCommandSchemas', () => {
   it('pins the authored quadratic curve argument names to the ShapeCommandRegistry labels', () => {
-    const schema = getRegistryTableEntry(defaultShapeCommandSchemas, 'curveTo');
-    expect(schema?.arguments.map(({ name }) => name)).toEqual(['controlX', 'controlY', 'anchorX', 'anchorY']);
+    const schema = getRegistryTableEntry(defaultShapeCommandSchemas, 'quadraticCurveTo');
+    expect(schema?.arguments.map(({ name }) => name)).toEqual(['controlX', 'controlY', 'x', 'y']);
   });
 
   it('pins the authored cubic curve argument names to the ShapeCommandRegistry labels', () => {
@@ -15,9 +15,26 @@ describe('defaultShapeCommandSchemas', () => {
       'controlY1',
       'controlX2',
       'controlY2',
-      'anchorX',
-      'anchorY',
+      'x',
+      'y',
     ]);
+  });
+
+  it('names circle and ellipse centers and uses no Flash diameter vocabulary', () => {
+    expect(getRegistryTableEntry(defaultShapeCommandSchemas, 'drawCircle')?.arguments.map(({ name }) => name)).toEqual([
+      'centerX',
+      'centerY',
+      'radius',
+    ]);
+    expect(getRegistryTableEntry(defaultShapeCommandSchemas, 'drawEllipse')?.arguments.map(({ name }) => name)).toEqual(
+      ['centerX', 'centerY', 'radiusX', 'radiusY'],
+    );
+  });
+
+  it('names rounded-rectangle radii without Flash ellipse-width vocabulary', () => {
+    expect(
+      getRegistryTableEntry(defaultShapeCommandSchemas, 'drawRoundedRectangle')?.arguments.map(({ name }) => name),
+    ).toEqual(['x', 'y', 'width', 'height', 'radiusX', 'radiusY']);
   });
 
   it('carries positional validation types and required arity in the same runtime entry', () => {

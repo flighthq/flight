@@ -2,7 +2,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, getPathBounds, transformPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
-  appendShapeCurveTo,
+  appendShapeQuadraticCurveTo,
   appendShapeEndFill,
   appendShapeLineTo,
   appendShapeMoveTo,
@@ -203,8 +203,8 @@ function appendSwfGlyphOutline(
         (glyph.data[dataIndex + 1] * scale) / TWIPS_PER_PIXEL + offsetY,
       );
       dataIndex += 2;
-    } else if (command === PathCommand.CURVE_TO) {
-      appendShapeCurveTo(
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
+      appendShapeQuadraticCurveTo(
         target,
         (glyph.data[dataIndex] * scale) / TWIPS_PER_PIXEL + offsetX,
         (glyph.data[dataIndex + 1] * scale) / TWIPS_PER_PIXEL + offsetY,
