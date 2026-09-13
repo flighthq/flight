@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 3,
+  "id": "8e6e1bbc-fb8c-425e-a7c4-c364ecbed230",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "svg-image",
+      "renderer": "dom",
+      "pixelSha256": "c2d4ae56429b2e11894c9afff517483a778775341c16b6a05f316a6f55a984be",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-image",
+      "renderer": "canvas",
+      "pixelSha256": "c6ab27889d6b5b7fa600378ac3106c8f8c021f93d9d3a318b707069dfe8dc699",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-image",
+      "renderer": "webgl",
+      "pixelSha256": "e8843d441619e86c28ee29ea4a059f7f43df21f8eb611689fb8e424b0b330c8a",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-image",
+      "renderer": "webgpu",
+      "pixelSha256": "d68ec304fec0cc3d20a9f7500ad7e1e92b46546a9c842dbea821bf6524fc89e9",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review",
+  "createdAt": "2026-09-13T02:47:51.902Z"
+}
