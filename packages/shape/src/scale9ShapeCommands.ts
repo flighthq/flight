@@ -41,8 +41,7 @@ export function mapScale9ShapeCommands(
         out[i + 6] = mapper.mapX(out[i + 6] as number);
         out[i + 7] = mapper.mapY(out[i + 7] as number);
         break;
-      case 'drawRectangle':
-      case 'drawEllipse': {
+      case 'drawRectangle': {
         const x = out[i + 2] as number;
         const y = out[i + 3] as number;
         const w = out[i + 4] as number;
@@ -53,6 +52,21 @@ export function mapScale9ShapeCommands(
         out[i + 3] = my;
         out[i + 4] = mapper.mapX(x + w) - mx;
         out[i + 5] = mapper.mapY(y + h) - my;
+        break;
+      }
+      case 'drawEllipse': {
+        const centerX = out[i + 2] as number;
+        const centerY = out[i + 3] as number;
+        const radiusX = out[i + 4] as number;
+        const radiusY = out[i + 5] as number;
+        const left = mapper.mapX(centerX - radiusX);
+        const right = mapper.mapX(centerX + radiusX);
+        const top = mapper.mapY(centerY - radiusY);
+        const bottom = mapper.mapY(centerY + radiusY);
+        out[i + 2] = (left + right) / 2;
+        out[i + 3] = (top + bottom) / 2;
+        out[i + 4] = Math.abs(right - left) / 2;
+        out[i + 5] = Math.abs(bottom - top) / 2;
         break;
       }
       case 'drawRoundedRectangle': {
@@ -96,7 +110,7 @@ function remapPathData(out: number[], source: readonly number[], cmds: readonly 
         out[di + 1] = mapper.mapY(out[di + 1]);
         di += 2;
         break;
-      case 3: // QUADRATIC_CURVE_TO [cx, cy, ax, ay]
+      case 3: // QUADRATIC_CURVE_TO [controlX, controlY, x, y]
         out[di] = mapper.mapX(out[di]);
         out[di + 1] = mapper.mapY(out[di + 1]);
         out[di + 2] = mapper.mapX(out[di + 2]);
@@ -109,7 +123,7 @@ function remapPathData(out: number[], source: readonly number[], cmds: readonly 
         out[di + 3] = mapper.mapY(out[di + 3]);
         di += 4;
         break;
-      case 6: // CUBIC_CURVE_TO [cx1, cy1, cx2, cy2, ax, ay]
+      case 6: // CUBIC_CURVE_TO [controlX1, controlY1, controlX2, controlY2, x, y]
         out[di] = mapper.mapX(out[di]);
         out[di + 1] = mapper.mapY(out[di + 1]);
         out[di + 2] = mapper.mapX(out[di + 2]);

@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest';
 
 import { createShape } from './shape';
 import {
+  appendShapeEllipticalArcTo,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
   appendShapePolygon,
   appendShapeRectangle,
+  appendShapeTangentArcTo,
 } from './shapeCommands';
 import { getShapeStrokeRegions, hasNonSolidShapeStroke } from './shapeStroke';
 
@@ -34,6 +36,31 @@ describe('getShapeStrokeRegions', () => {
     expect(regions![0].style).toMatchObject({ width: 20, join: 'miter', cap: 'butt' });
     expect(regions![0].path.commands.length).toBeGreaterThan(0);
     expect(regions![0].path.commands[0]).toBe(PathCommand.MOVE_TO);
+  });
+
+  it('converts elliptical and tangent arcs into the stroked centerline', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0x112233ff);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeEllipticalArcTo(shape, 50, 25, 0, false, true, 100, 0);
+    appendShapeTangentArcTo(shape, 150, 0, 150, 50, 10);
+
+    const path = getShapeStrokeRegions(shape.data.commands)![0].path;
+    expect(path.commands.filter((command) => command === PathCommand.CUBIC_CURVE_TO).length).toBeGreaterThanOrEqual(3);
+    expect(path.data.at(-2)).toBeCloseTo(150);
+    expect(path.data.at(-1)).toBeCloseTo(10);
+  });
+
+  it('carries a tangent arc endpoint across a later stroke-style boundary', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 100, 0, 100, 100, 20);
+    appendShapeLineStyle(shape, 8, 0x112233ff);
+    appendShapeLineTo(shape, 100, 50);
+
+    const path = getShapeStrokeRegions(shape.data.commands)![0].path;
+    expect(path.data[0]).toBeCloseTo(100);
+    expect(path.data[1]).toBeCloseTo(20);
   });
 
   it('preserves miter, bevel, and round styles for the shared stroke tessellator', () => {

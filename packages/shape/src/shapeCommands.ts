@@ -351,10 +351,9 @@ export function appendShapeRoundedRectangle(
   y: number,
   width: number,
   height: number,
-  ellipseWidth: number,
-  ellipseHeight: number,
+  radius: number,
 ): void {
-  shape.data.commands.push('drawRoundedRectangle', 6, x, y, width, height, ellipseWidth, ellipseHeight);
+  shape.data.commands.push('drawRoundedRectangle', 5, x, y, width, height, radius);
   invalidateContent(shape);
 }
 

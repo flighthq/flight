@@ -43,14 +43,7 @@ export interface ShapeCommandRegistry {
   drawEllipse: readonly [centerX: number, centerY: number, radiusX: number, radiusY: number];
   drawPath: readonly [commands: number[], data: number[], winding: PathWinding];
   drawRectangle: readonly [x: number, y: number, width: number, height: number];
-  drawRoundedRectangle: readonly [
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    ellipseWidth: number,
-    ellipseHeight: number,
-  ];
+  drawRoundedRectangle: readonly [x: number, y: number, width: number, height: number, radius: number];
   drawTriangles: readonly [
     vertices: number[],
     indices: number[] | null,

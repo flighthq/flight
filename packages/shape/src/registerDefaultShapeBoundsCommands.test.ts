@@ -1,15 +1,16 @@
 import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
   defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsDrawRoundedRectangle,
   defaultShapeBoundsFlush,
   defaultShapeBoundsLineStyle,
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
+  defaultShapeBoundsQuadraticCurveTo,
 } from './shapeBounds';
 import { getShapeBoundsCommand, getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry';
 
@@ -33,18 +34,18 @@ describe('registerDefaultShapeBoundsCommands', () => {
       ['beginFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['beginGradientFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['cubicCurveTo', defaultShapeBoundsCubicCurveTo, defaultShapeBoundsCubicCurveTo],
-      ['quadraticCurveTo', defaultShapeBoundsQuadraticCurveTo, defaultShapeBoundsQuadraticCurveTo],
       ['drawCircle', defaultShapeBoundsDrawCircle, defaultShapeBoundsDrawCircle],
       ['drawEllipse', defaultShapeBoundsDrawEllipse, defaultShapeBoundsDrawEllipse],
       ['drawPath', defaultShapeBoundsDrawPath, defaultShapeBoundsDrawPath],
       ['drawRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
-      ['drawRoundedRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
+      ['drawRoundedRectangle', defaultShapeBoundsDrawRoundedRectangle, defaultShapeBoundsDrawRoundedRectangle],
       ['endFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['lineTextureStyle', null, null],
       ['lineGradientStyle', null, null],
       ['lineStyle', defaultShapeBoundsFlush, defaultShapeBoundsLineStyle],
       ['lineTo', defaultShapeBoundsLineTo, defaultShapeBoundsLineTo],
       ['moveTo', defaultShapeBoundsMoveTo, defaultShapeBoundsMoveTo],
+      ['quadraticCurveTo', defaultShapeBoundsQuadraticCurveTo, defaultShapeBoundsQuadraticCurveTo],
     ] as const;
     // Importing the module must be side-effect-free: the explicit installer is the only door through
     // which standard bounds commands enter the registry.

@@ -11,7 +11,7 @@ import {
   appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeCubicCurveTo,
-  appendShapeQuadraticCurveTo,
+  appendShapeEllipticalArcTo,
   appendShapeEllipse,
   appendShapeEndFill,
   appendShapeLineTextureStyle,
@@ -20,8 +20,10 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
+  appendShapeQuadraticCurveTo,
   appendShapeRectangle,
   appendShapeRoundedRectangle,
+  appendShapeTangentArcTo,
   createShape,
   PathCommand,
 } from '@flighthq/shape/contract';
@@ -79,6 +81,41 @@ const host: { readonly graphics: { readonly image: HostImageProvider } } = {
 const resolvers = createCanvasTextureResolvers();
 registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 registerCanvasImageTextureResolver(resolvers);
+
+describe('appendShapeEllipticalArcTo rendering', () => {
+  it('dispatches the canonical cubic expansion', () => {
+    const { context, state } = makeShapeTarget();
+    const spy = vi.spyOn(context, 'bezierCurveTo');
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000ff);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeEllipticalArcTo(shape, 50, 25, 0, false, true, 100, 0);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    const finalCall = spy.mock.calls.at(-1)!;
+    expect(finalCall.at(-2)).toBeCloseTo(100);
+    expect(finalCall.at(-1)).toBeCloseTo(0);
+  });
+});
+
+describe('appendShapeTangentArcTo rendering', () => {
+  it('dispatches the canonical line and cubic expansion', () => {
+    const { context, state } = makeShapeTarget();
+    const lineSpy = vi.spyOn(context, 'lineTo');
+    const cubicSpy = vi.spyOn(context, 'bezierCurveTo');
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000ff);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 100, 0, 100, 100, 20);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+
+    expect(lineSpy).toHaveBeenCalled();
+    expect(cubicSpy).toHaveBeenCalled();
+  });
+});
 
 describe('defaultCanvasBeginFill', () => {
   it('calls fill when alpha is above threshold', () => {
@@ -375,15 +412,15 @@ describe('defaultCanvasDrawRectangle', () => {
 });
 
 describe('defaultCanvasDrawRoundedRectangle', () => {
-  it('calls roundRect with the minimum of rx and ry', () => {
+  it('passes the authored corner radius through without treating it as a diameter', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'roundRect');
     const shape = createShape();
     appendShapeBeginFill(shape, 0xffffffff);
-    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 10, 10);
+    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 20);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
-    expect(spy).toHaveBeenCalledWith(0, 0, 100, 50, 5);
+    expect(spy).toHaveBeenCalledWith(0, 0, 100, 50, 20);
   });
 
   it('keeps the corner radius nonnegative when rectangle dimensions are negative', () => {
@@ -391,7 +428,7 @@ describe('defaultCanvasDrawRoundedRectangle', () => {
     const spy = vi.spyOn(context, 'roundRect');
     const shape = createShape();
     appendShapeBeginFill(shape, 0xffffffff);
-    appendShapeRoundedRectangle(shape, 0, 0, -100, -50, 200, 200);
+    appendShapeRoundedRectangle(shape, 0, 0, -100, -50, 200);
     appendShapeEndFill(shape);
 
     expect(() => renderCanvasShapeCommands(context, state, shape.data.commands, resolvers)).not.toThrow();
@@ -548,7 +585,7 @@ describe('defaultCanvasMoveTo', () => {
 });
 
 describe('defaultCanvasQuadraticCurveTo', () => {
-  it('calls quadraticCurveTo with correct control and anchor points', () => {
+  it('calls quadraticCurveTo with correct control and endpoint coordinates', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'quadraticCurveTo');
     const shape = createShape();
@@ -578,7 +615,6 @@ describe('defaultCanvasShapeCommands', () => {
       'beginFill',
       'beginGradientFill',
       'cubicCurveTo',
-      'quadraticCurveTo',
       'drawCircle',
       'drawEllipse',
       'drawPath',
@@ -589,6 +625,7 @@ describe('defaultCanvasShapeCommands', () => {
       'lineTo',
       'lineStyle',
       'moveTo',
+      'quadraticCurveTo',
     ];
     const registeredKeys = defaultCanvasShapeCommands.map((c) => c.key);
     for (const key of keys) {

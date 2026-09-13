@@ -9,8 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-// Appends one shape geometry command (moveTo/lineTo/quadraticCurveTo/cubicCurveTo and the drawCircle/Ellipse/
-// Rectangle/RoundedRectangle/Path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE
+// Appends one shape geometry command (moveTo/lineTo/quadraticCurveTo/cubicCurveTo, arcs, and the
+// circle/ellipse/rectangle/rounded-rectangle/path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE
 // verbs (curves kept for the renderer to flatten). Shared by the fill-region and stroke-region walkers
 // so both expand geometry identically. Non-geometry command names are ignored (a no-op). `a` is the
 // index of the command's first argument in `commands`.
@@ -81,8 +81,7 @@ export function appendShapeGeometryCommand(
         commands[a + 1] as number,
         commands[a + 2] as number,
         commands[a + 3] as number,
-        (commands[a + 4] as number) / 2,
-        (commands[a + 5] as number) / 2,
+        commands[a + 4] as number,
       );
       break;
     case 'drawPath':
@@ -244,22 +243,21 @@ function appendRoundRectangleToPath(
   y: number,
   w: number,
   h: number,
-  rx: number,
-  ry: number,
+  authoredRadius: number,
 ): void {
+  const radius = Math.max(0, Math.min(authoredRadius, Math.abs(w) / 2, Math.abs(h) / 2));
   const right = x + w;
   const bottom = y + h;
-  const kx = rx * CIRCLE_KAPPA;
-  const ky = ry * CIRCLE_KAPPA;
-  pushVerb(path, PathCommand.MOVE_TO, x + rx, y);
-  pushVerb(path, PathCommand.LINE_TO, right - rx, y);
-  pushCubic(path, right - rx + kx, y, right, y + ry - ky, right, y + ry);
-  pushVerb(path, PathCommand.LINE_TO, right, bottom - ry);
-  pushCubic(path, right, bottom - ry + ky, right - rx + kx, bottom, right - rx, bottom);
-  pushVerb(path, PathCommand.LINE_TO, x + rx, bottom);
-  pushCubic(path, x + rx - kx, bottom, x, bottom - ry + ky, x, bottom - ry);
-  pushVerb(path, PathCommand.LINE_TO, x, y + ry);
-  pushCubic(path, x, y + ry - ky, x + rx - kx, y, x + rx, y);
+  const kappaRadius = radius * CIRCLE_KAPPA;
+  pushVerb(path, PathCommand.MOVE_TO, x + radius, y);
+  pushVerb(path, PathCommand.LINE_TO, right - radius, y);
+  pushCubic(path, right - radius + kappaRadius, y, right, y + radius - kappaRadius, right, y + radius);
+  pushVerb(path, PathCommand.LINE_TO, right, bottom - radius);
+  pushCubic(path, right, bottom - radius + kappaRadius, right - radius + kappaRadius, bottom, right - radius, bottom);
+  pushVerb(path, PathCommand.LINE_TO, x + radius, bottom);
+  pushCubic(path, x + radius - kappaRadius, bottom, x, bottom - radius + kappaRadius, x, bottom - radius);
+  pushVerb(path, PathCommand.LINE_TO, x, y + radius);
+  pushCubic(path, x, y + radius - kappaRadius, x + radius - kappaRadius, y, x + radius, y);
 }
 
 function pushCubic(path: Path, c1x: number, c1y: number, c2x: number, c2y: number, ax: number, ay: number): void {

@@ -1,14 +1,15 @@
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
   defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsDrawRoundedRectangle,
   defaultShapeBoundsFlush,
   defaultShapeBoundsLineStyle,
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
+  defaultShapeBoundsQuadraticCurveTo,
 } from './shapeBounds';
 import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
 
@@ -62,9 +63,9 @@ export function registerDefaultShapeBoundsCommands(): void {
     strokeBounds: defaultShapeBoundsDrawRectangle,
   });
   registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsDrawRectangle,
+    fillBounds: defaultShapeBoundsDrawRoundedRectangle,
     key: 'drawRoundedRectangle',
-    strokeBounds: defaultShapeBoundsDrawRectangle,
+    strokeBounds: defaultShapeBoundsDrawRoundedRectangle,
   });
   registerShapeBoundsCommand({
     fillBounds: defaultShapeBoundsFlush,

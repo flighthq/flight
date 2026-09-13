@@ -5,11 +5,15 @@ import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeCircle,
+  appendShapeEllipse,
+  appendShapeEllipticalArcTo,
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
+  appendShapeRoundedRectangle,
+  appendShapeTangentArcTo,
 } from './shapeCommands';
 import {
   appendShapeGeometryCommand,
@@ -135,6 +139,49 @@ describe('getShapeFillRegions', () => {
     ]);
     // Starts at the rightmost point (cx + r, cy).
     expect(regions[0].path.data.slice(0, 2)).toEqual([70, 50]);
+  });
+
+  it('expands ellipse center and radii semantics into four cubic curves', () => {
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00ff00ff);
+    appendShapeEllipse(shape, 50, 25, 40, 10);
+    appendShapeEndFill(shape);
+
+    const path = getShapeFillRegions(shape.data.commands)![0].path;
+    expect(path.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+    ]);
+    expect(path.data.slice(0, 2)).toEqual([90, 25]);
+  });
+
+  it('expands elliptical and tangent arc commands into path curves', () => {
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00ff00ff);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeEllipticalArcTo(shape, 50, 25, 0, false, true, 100, 0);
+    appendShapeTangentArcTo(shape, 150, 0, 150, 50, 10);
+    appendShapeEndFill(shape);
+
+    const path = getShapeFillRegions(shape.data.commands)![0].path;
+    expect(path.commands.filter((command) => command === PathCommand.CUBIC_CURVE_TO).length).toBeGreaterThanOrEqual(3);
+    expect(path.data.at(-2)).toBeCloseTo(150);
+    expect(path.data.at(-1)).toBeCloseTo(10);
+  });
+
+  it('expands a rounded rectangle using the authored radius without halving it', () => {
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00ff00ff);
+    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 20);
+    appendShapeEndFill(shape);
+
+    const path = getShapeFillRegions(shape.data.commands)![0].path;
+    expect(path.commands.filter((command) => command === PathCommand.CUBIC_CURVE_TO)).toHaveLength(4);
+    expect(path.data.slice(0, 2)).toEqual([20, 0]);
+    expect(path.data.slice(-2)).toEqual([20, 0]);
   });
 
   it('resolves a moveTo/lineTo polygon fill', () => {

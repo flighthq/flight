@@ -30,10 +30,6 @@ export function buildScale9Mapper(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
 /**
  * Maps a local coordinate to its 9-slice-scaled position.
  * Port of OpenFL's CanvasGraphics.hx `toScale9Position`.
