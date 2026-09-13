@@ -1,7 +1,7 @@
-// shape-round-rect — validates round-rectangle fill rendering via appendShapeRoundRectangle.
+// shape-round-rect — validates rounded-rectangle fill rendering via appendShapeRoundedRectangle.
 //
-// Draws a cyan-filled round rectangle at (50,50) with width 300, height 200, and ellipse
-// dimensions 40x40. The scene assertion verifies:
+// Draws a cyan-filled rounded rectangle at (50,50) with width 300, height 200, and corner radii 20x20.
+// The scene assertion verifies:
 //   - the center of the round rect is cyan,
 //   - a point near the flat top edge (inside) is cyan,
 //   - a point in the corner region (outside the rounded corner, inside the bounding box) is
@@ -14,7 +14,7 @@ import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
-  appendShapeRoundRectangle,
+  appendShapeRoundedRectangle,
   createDisplayObject,
   createShape,
   getBitmapPixelRgb,
@@ -29,7 +29,8 @@ const RX = 50;
 const RY = 50;
 const RW = 300;
 const RH = 200;
-const ELLIPSE = 40;
+const RADIUS_X = 20;
+const RADIUS_Y = 20;
 
 declareAntialiasingPolicy('aa');
 
@@ -46,12 +47,12 @@ const { render, width } = await createFunctionalTarget({
 
 const root = createDisplayObject();
 
-const roundRect = createShape();
-appendShapeBeginFill(roundRect, 0x00ccccff, 1);
-appendShapeRoundRectangle(roundRect, RX, RY, RW, RH, ELLIPSE, ELLIPSE);
-appendShapeEndFill(roundRect);
-invalidateNodeAppearance(roundRect);
-addNodeChild(root, roundRect);
+const roundedRectangle = createShape();
+appendShapeBeginFill(roundedRectangle, 0x00ccccff, 1);
+appendShapeRoundedRectangle(roundedRectangle, RX, RY, RW, RH, RADIUS_X, RADIUS_Y);
+appendShapeEndFill(roundedRectangle);
+invalidateNodeAppearance(roundedRectangle);
+addNodeChild(root, roundedRectangle);
 
 render(root);
 

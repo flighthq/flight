@@ -5,15 +5,15 @@ import {
   appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeCubicCurveTo,
-  appendShapeCurveTo,
   appendShapeEllipse,
   appendShapeEndFill,
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
+  appendShapeQuadraticCurveTo,
   appendShapeRectangle,
-  appendShapeRoundRectangle,
+  appendShapeRoundedRectangle,
   clearShapeCommands,
   createDisplayObject,
   createGradientTransformMatrix,
@@ -107,15 +107,15 @@ placeShape(circ, COL_START + 160, row1Y + 5);
 
 const ellip = createShape();
 appendShapeBeginFill(ellip, FILL_COLOR);
-appendShapeEllipse(ellip, 0, 0, 140, 90);
+appendShapeEllipse(ellip, 70, 45, 70, 45);
 appendShapeEndFill(ellip);
 placeShape(ellip, COL_START + 300, row1Y + 10);
 
-const roundRect = createShape();
-appendShapeBeginFill(roundRect, FILL_COLOR);
-appendShapeRoundRectangle(roundRect, 0, 0, 140, 90, 20, 20);
-appendShapeEndFill(roundRect);
-placeShape(roundRect, COL_START + 500, row1Y + 10);
+const roundedRectangle = createShape();
+appendShapeBeginFill(roundedRectangle, FILL_COLOR);
+appendShapeRoundedRectangle(roundedRectangle, 0, 0, 140, 90, 10, 10);
+appendShapeEndFill(roundedRectangle);
+placeShape(roundedRectangle, COL_START + 500, row1Y + 10);
 
 // ===== Row 2: Polygons =====
 
@@ -161,7 +161,7 @@ placeShape(straightLine, COL_START, row3Y + 15);
 const quadCurve = createShape();
 appendShapeLineStyle(quadCurve, 3, STROKE_COLOR);
 appendShapeMoveTo(quadCurve, 0, curveHeight);
-appendShapeCurveTo(quadCurve, curveWidth / 2, -curveHeight * 0.4, curveWidth, curveHeight);
+appendShapeQuadraticCurveTo(quadCurve, curveWidth / 2, -curveHeight * 0.4, curveWidth, curveHeight);
 placeShape(quadCurve, COL_START + 240, row3Y + 10);
 
 const cubicCurve = createShape();
@@ -208,7 +208,7 @@ appendShapeBeginGradientFill(
   'rgb',
   -0.35,
 );
-appendShapeEllipse(radialGradient, 0, 0, 100, fillSize);
+appendShapeEllipse(radialGradient, 50, fillSize / 2, 50, fillSize / 2);
 appendShapeEndFill(radialGradient);
 placeShape(radialGradient, COL_START + 160, row4Y + 15);
 

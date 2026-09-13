@@ -2,7 +2,7 @@
 //
 // This scene builds a smooth closed blob from Bézier curves: a circle approximated by four cubic
 // segments (appendShapeCubicCurveTo), then dimpled at the top with a quadratic segment
-// (appendShapeCurveTo) so both curve commands are exercised. It is filled with a solid color. The
+// (appendShapeQuadraticCurveTo) so both curve commands are exercised. It is filled with a solid color. The
 // scene assertion proves the curved outline encloses a filled interior: the center samples the fill color,
 // while a canvas corner well outside the blob stays background. This is visual — it depends on curve
 // flattening and scan-fill of a non-rectangular region, which jsdom cannot rasterize.
@@ -11,9 +11,9 @@ import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeCubicCurveTo,
-  appendShapeCurveTo,
   appendShapeEndFill,
   appendShapeMoveTo,
+  appendShapeQuadraticCurveTo,
   createDisplayObject,
   createShape,
   getBitmapPixelRgb,
@@ -60,7 +60,7 @@ appendShapeCubicCurveTo(blob, CX - K, CY + R, CX - R, CY + K, CX - R, CY);
 // Left -> top
 appendShapeCubicCurveTo(blob, CX - R, CY - K, CX - K, CY - R, CX, CY - R);
 // Top -> right, but routed via a quadratic with a control point dimpling inward.
-appendShapeCurveTo(blob, CX + K * 0.6, CY - K * 0.6, CX + R, CY);
+appendShapeQuadraticCurveTo(blob, CX + K * 0.6, CY - K * 0.6, CX + R, CY);
 appendShapeEndFill(blob);
 addNodeChild(root, blob);
 

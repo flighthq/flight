@@ -53,7 +53,7 @@ describe('findUndrawnRegistryMisses', () => {
     expect(
       findUndrawnRegistryMisses([
         miss('Blur', RenderRegistry.EffectPaddingResolver),
-        miss('roundRect', RenderRegistry.ShapeCommandHandler),
+        miss('drawRoundedRectangle', RenderRegistry.ShapeCommandHandler),
         miss('Image', RenderRegistry.TextureResolver),
       ]),
     ).toEqual([]);

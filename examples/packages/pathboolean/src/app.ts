@@ -11,7 +11,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { appendPathCircle, appendPathRoundRectangle, createPath } from '@flighthq/sdk/scene2d';
+import { appendPathCircle, appendPathRoundedRectangle, createPath } from '@flighthq/sdk/scene2d';
 import { differencePaths, intersectPaths, unionPaths, xorPaths } from '@flighthq/sdk/scene2d';
 
 import { canvas, render, scale } from './render';
@@ -72,7 +72,7 @@ function buildSourcePaths(): { pathA: Path; pathB: Path } {
   appendPathCircle(pathA, cx + shapeAOffsetX, cy + shapeAOffsetY, 80);
 
   const pathB = createPath();
-  appendPathRoundRectangle(pathB, cx + shapeBOffsetX - 70, cy + shapeBOffsetY - 60, 140, 120, 16);
+  appendPathRoundedRectangle(pathB, cx + shapeBOffsetX - 70, cy + shapeBOffsetY - 60, 140, 120, 16);
 
   return { pathA, pathB };
 }
