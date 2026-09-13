@@ -11,8 +11,8 @@
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeArc,
   appendShapeBeginFill,
+  appendShapeArc,
   appendShapeEndFill,
   appendShapeLineTo,
   appendShapeMoveTo,

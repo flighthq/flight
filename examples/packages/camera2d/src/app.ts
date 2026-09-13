@@ -328,13 +328,7 @@ function rebuildClouds(): void {
   clearShapeCommands(cloudsShape);
   for (const cloud of clouds) {
     appendShapeBeginFill(cloudsShape, 0xc8d2e6ff, 0.4);
-    appendShapeEllipse(
-      cloudsShape,
-      cloud.x - cloud.width * 0.5,
-      cloud.y - cloud.height * 0.5,
-      cloud.width,
-      cloud.height,
-    );
+    appendShapeEllipse(cloudsShape, cloud.x, cloud.y, cloud.width * 0.5, cloud.height * 0.5);
     appendShapeEndFill(cloudsShape);
   }
   invalidateNodeAppearance(cloudsShape);
