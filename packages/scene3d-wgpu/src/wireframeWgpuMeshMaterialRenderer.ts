@@ -9,6 +9,7 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuSkinningAdapter,
   WireframeMaterial,
 } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
@@ -68,13 +69,24 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const subset = proxy.subset;
     if (subset.indexCount === 0) return;
 
-    const upload = ensureWgpuWireframeUpload(state, geometry);
+    const activePipeline = scene.activeMeshPipeline;
+    const upload = ensureWgpuWireframeUpload(state, geometry, activePipeline.skinned);
     if (upload === null) return;
 
+    const jointMatrices = proxy.jointMatrices ?? null;
+    const normalMatrices = proxy.normalMatrices ?? null;
+    const skinning = scene.skinningAdapter as WgpuSkinningAdapter | null;
+    // The skinned wireframe pipeline declares the pose + normal palettes beside Draw at group(1), just
+    // like the triangle families. Bind that matching group before writing Draw so the palette bases the
+    // upload claims are published in the same dynamic uniform record.
+    const skinDrawBindGroup =
+      activePipeline.skinned && jointMatrices !== null && normalMatrices !== null && skinning !== null
+        ? skinning.getMeshDrawBindGroup(state, jointMatrices, normalMatrices)
+        : null;
     const drawBindGroup = writeWgpuDrawUniform(state, proxy);
     _dynamicOffsets[0] = scene.pendingDrawOffset;
 
-    pass.setBindGroup(1, drawBindGroup, _dynamicOffsets);
+    pass.setBindGroup(1, skinDrawBindGroup ?? drawBindGroup, _dynamicOffsets);
     pass.setVertexBuffer(0, upload.vertexBuffer);
     pass.setVertexBuffer(1, ensureWgpuInstanceBuffer(state, null, 1));
     pass.setIndexBuffer(upload.lineIndexBuffer, upload.indexFormat);

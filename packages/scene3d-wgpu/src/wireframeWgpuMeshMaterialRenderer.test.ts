@@ -2,12 +2,13 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createWireframeMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy, WgpuSkinningAdapter } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { defaultWgpuSkinningAdapter } from './wgpuSkinPalette';
 import { registerWgpuWireframeMaterial, wireframeWgpuMeshMaterialRenderer } from './wireframeWgpuMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
@@ -71,6 +72,33 @@ describe('wireframeWgpuMeshMaterialRenderer', () => {
     const drawCall = fake.calls.find((c) => c.name === 'drawIndexed');
     expect(drawCall).toBeDefined();
     expect(drawCall!.args[0]).toBe(proxy.subset.indexCount * 2);
+  });
+
+  it('draw binds the palette-backed group selected by a skinned pipeline', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const runtime = getWgpuScene3DRuntime(state);
+    const skinGroup = {} as GPUBindGroup;
+    let skinGroupCalls = 0;
+    runtime.skinningAdapter = {
+      ...defaultWgpuSkinningAdapter,
+      getMeshDrawBindGroup: () => {
+        skinGroupCalls++;
+        return skinGroup;
+      },
+    } satisfies WgpuSkinningAdapter;
+    runtime.activeSkinnedRun = true;
+    const base = makeProxy();
+    const proxy: Scene3DRenderProxy = {
+      ...base,
+      jointMatrices: new Float32Array(16),
+      normalMatrices: new Float32Array(12),
+    };
+
+    wireframeWgpuMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
+    wireframeWgpuMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
+
+    expect(skinGroupCalls).toBe(1);
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 1 && c.args[1] === skinGroup)).toBe(true);
   });
 
   it('draw is a no-op when bind has not selected a pipeline', () => {

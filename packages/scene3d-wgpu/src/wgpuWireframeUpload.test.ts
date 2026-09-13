@@ -1,6 +1,9 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { defaultWgpuSkinningAdapter } from './wgpuSkinPalette';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
 
 describe('ensureWgpuWireframeUpload', () => {
@@ -60,5 +63,20 @@ describe('ensureWgpuWireframeUpload', () => {
     const second = ensureWgpuWireframeUpload(state, geometry);
     expect(second).toBe(first);
     expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(buffers);
+  });
+
+  it('refreshes its vertex-buffer reference when a skinned upload replaces the rigid one', () => {
+    const { state } = makeWgpuScene3DState();
+    const geometry = createBoxMeshGeometry();
+    const rigid = ensureWgpuWireframeUpload(state, geometry);
+    getWgpuScene3DRuntime(state).skinningAdapter = {
+      ...defaultWgpuSkinningAdapter,
+      getUploadVertices: () => new Float32Array(geometry.vertices),
+      hasBindPose: () => true,
+    } satisfies WgpuSkinningAdapter;
+
+    const skinned = ensureWgpuWireframeUpload(state, geometry, true);
+
+    expect(skinned!.vertexBuffer).not.toBe(rigid!.vertexBuffer);
   });
 });
