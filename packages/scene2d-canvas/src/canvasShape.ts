@@ -75,6 +75,8 @@ function createCanvasShapeDrawState(
     bitmapSrc: null,
     bitmapW: 0,
     canvasTextureResolvers: resolvers,
+    currentX: 0,
+    currentY: 0,
     fillMatrix: null,
     fillMatrixInverse: null,
     fillStyle: '',
@@ -85,6 +87,8 @@ function createCanvasShapeDrawState(
     lineScaleMode: 'normal',
     strokeStyle: '',
     strokeWidth: 1,
+    subpathStartX: 0,
+    subpathStartY: 0,
     windingRule: 'evenodd',
     flush: () => flushCanvasShapePath(context, state),
   };
@@ -111,6 +115,10 @@ function flushCanvasShapePath(context: CanvasRenderingContext2D, state: CanvasSh
   }
   state.hasPendingPath = false;
   state.hasCurrentPoint = false;
+  state.currentX = 0;
+  state.currentY = 0;
+  state.subpathStartX = 0;
+  state.subpathStartY = 0;
   context.beginPath();
 }
 

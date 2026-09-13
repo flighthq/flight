@@ -270,6 +270,12 @@ describe('appendPathRoundedRectangle', () => {
     expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
   });
 
+  it('uses an authored radius of 20 directly rather than treating it as a diameter of 40', () => {
+    const path = createPath();
+    appendPathRoundedRectangle(path, 0, 0, 100, 50, 20);
+    expect(path.data.slice(0, 4)).toEqual([20, 0, 80, 0]);
+  });
+
   it('produces a rectangle (no arcs) when radius is 0', () => {
     const round = createPath();
     appendPathRoundedRectangle(round, 0, 0, 100, 50, 0);
@@ -292,12 +298,29 @@ describe('appendPathRoundedRectangle', () => {
 });
 
 describe('appendPathRoundedRectangleWithCornerRadii', () => {
-  it('accepts per-corner radii', () => {
+  it('uses per-corner radii clockwise in top-left, top-right, bottom-right, bottom-left order', () => {
     const path = createPath();
     appendPathRoundedRectangleWithCornerRadii(path, 0, 0, 100, 100, 10, 20, 30, 40);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(path.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CLOSE,
+    ]);
+    expect(path.data.slice(0, 4)).toEqual([10, 0, 80, 0]);
+    expect(path.data.slice(8, 12)).toEqual([100, 20, 100, 70]);
+    expect(path.data.slice(16, 20)).toEqual([70, 100, 40, 100]);
+    expect(path.data[24]).toBeCloseTo(0);
+    expect(path.data[25]).toBeCloseTo(60);
+    expect(path.data.slice(26, 28)).toEqual([0, 10]);
+    expect(path.data[32]).toBeCloseTo(10);
+    expect(path.data[33]).toBeCloseTo(0);
   });
 });
 

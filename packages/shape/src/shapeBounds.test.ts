@@ -6,16 +6,17 @@ import { createShape } from './shape';
 import {
   computeShapeBoundsRectangle,
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
   defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsDrawRoundedRectangle,
   defaultShapeBoundsExpandPointPairs,
   defaultShapeBoundsFlush,
   defaultShapeBoundsLineStyle,
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   explainShapeBounds,
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
@@ -25,11 +26,15 @@ import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
 import {
   appendShapeBeginFill,
   appendShapeCubicCurveTo,
+  appendShapeEllipse,
+  appendShapeEllipticalArcTo,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
+  appendShapeRoundedRectangle,
   appendShapeRectangle,
+  appendShapeTangentArcTo,
 } from './shapeCommands';
 
 beforeAll(() => {
@@ -135,6 +140,42 @@ describe('computeShapeBoundsRectangle', () => {
     expect(out.height).toBeCloseTo(200 / 3, 5);
   });
 
+  it('uses center and radii semantics for ellipse bounds', () => {
+    const shape = createShape();
+    appendShapeEllipse(shape, 100, 100, 60, 30);
+    const out = createRectangle();
+
+    computeShapeBoundsRectangle(out, shape, 'fill');
+
+    expect(out).toMatchObject({ height: 60, width: 120, x: 40, y: 70 });
+  });
+
+  it('includes endpoint elliptical arcs and tangent arcs', () => {
+    const elliptical = createShape();
+    appendShapeMoveTo(elliptical, 0, 0);
+    appendShapeEllipticalArcTo(elliptical, 50, 25, 0, false, true, 100, 0);
+    const ellipticalBounds = createRectangle();
+    computeShapeBoundsRectangle(ellipticalBounds, elliptical, 'fill');
+    expect(ellipticalBounds).toMatchObject({ height: 25, width: 100, x: 0, y: -25 });
+
+    const tangent = createShape();
+    appendShapeMoveTo(tangent, 0, 0);
+    appendShapeTangentArcTo(tangent, 100, 0, 100, 100, 20);
+    const tangentBounds = createRectangle();
+    computeShapeBoundsRectangle(tangentBounds, tangent, 'fill');
+    expect(tangentBounds).toMatchObject({ height: 20, width: 100, x: 0, y: 0 });
+  });
+
+  it('keeps rounded rectangle bounds equal to its authored rectangle', () => {
+    const shape = createShape();
+    appendShapeRoundedRectangle(shape, 10, 20, 100, 50, 24);
+    const out = createRectangle();
+
+    computeShapeBoundsRectangle(out, shape, 'fill');
+
+    expect(out).toMatchObject({ height: 50, width: 100, x: 10, y: 20 });
+  });
+
   it('passes only the registered command arguments through the reusable cursor', () => {
     const key = '__test.cursor__';
     const seen: unknown[] = [];
@@ -183,6 +224,12 @@ describe('defaultShapeBoundsDrawPath', () => {
 describe('defaultShapeBoundsDrawRectangle', () => {
   it('is available for paired command registration', () => {
     expect(defaultShapeBoundsDrawRectangle).toBeTypeOf('function');
+  });
+});
+
+describe('defaultShapeBoundsDrawRoundedRectangle', () => {
+  it('is available for paired command registration', () => {
+    expect(defaultShapeBoundsDrawRoundedRectangle).toBeTypeOf('function');
   });
 });
 

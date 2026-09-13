@@ -1,7 +1,13 @@
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 
 import { createShape } from './shape';
-import { appendShapeLineStyle, appendShapeLineTo, appendShapeMoveTo, appendShapeRectangle } from './shapeCommands';
+import {
+  appendShapeEllipticalArcTo,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapeRectangle,
+} from './shapeCommands';
 import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline';
 
 describe('getShapeStrokeOutlineRegions', () => {
@@ -16,6 +22,19 @@ describe('getShapeStrokeOutlineRegions', () => {
     expect(regions).not.toBeNull();
     expect(regions).toHaveLength(1);
     expect(regions![0]).toMatchObject({ alpha: 0.5, color: 0x123456ff });
+    expect(regions![0].path.commands.length).toBeGreaterThan(0);
+  });
+
+  it('converts an open elliptical arc into a fill outline', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0x123456ff);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeEllipticalArcTo(shape, 50, 25, 0, false, true, 100, 0);
+
+    const regions = getShapeStrokeOutlineRegions(shape.data.commands);
+
+    expect(regions).not.toBeNull();
+    expect(regions).toHaveLength(1);
     expect(regions![0].path.commands.length).toBeGreaterThan(0);
   });
 

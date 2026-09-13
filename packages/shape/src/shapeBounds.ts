@@ -222,15 +222,17 @@ function createShapeBoundsContext(state: ShapeBoundsLaneState): ShapeBoundsConte
     closePath: () => closeShapeBoundsPath(state),
     cubicCurveTo: (controlX1, controlY1, controlX2, controlY2, x, y) =>
       cubicShapeBoundsCurveTo(state, controlX1, controlY1, controlX2, controlY2, x, y),
-    quadraticCurveTo: (controlX, controlY, x, y) => quadraticShapeBoundsCurveTo(state, controlX, controlY, x, y),
-    drawCircle: (x, y, radius) => drawShapeBoundsCircle(state, x, y, radius),
+    drawCircle: (centerX, centerY, radius) => drawShapeBoundsCircle(state, centerX, centerY, radius),
     drawEllipse: (centerX, centerY, radiusX, radiusY) =>
       drawShapeBoundsEllipse(state, centerX, centerY, radiusX, radiusY),
     drawRectangle: (x, y, width, height) => drawShapeBoundsRectangle(state, x, y, width, height),
+    drawRoundedRectangle: (x, y, width, height, radius) =>
+      drawShapeBoundsRoundedRectangle(state, x, y, width, height, radius),
     expandPoint: (x, y) => expandShapeBoundsPointForLane(state, x, y),
     flushPath: () => flushShapeBoundsPath(state),
     lineTo: (x, y) => lineShapeBoundsTo(state, x, y),
     moveTo: (x, y) => moveShapeBoundsTo(state, x, y),
+    quadraticCurveTo: (controlX, controlY, x, y) => quadraticShapeBoundsCurveTo(state, controlX, controlY, x, y),
     setStrokeStyle: (width, caps, joints, miterLimit) =>
       setShapeBoundsStrokeStyle(state, width, caps, joints, miterLimit),
   };
@@ -344,17 +346,17 @@ function cubicShapeBoundsCurveTo(
   state.penY = y;
 }
 
-function drawShapeBoundsCircle(state: ShapeBoundsLaneState, x: number, y: number, radius: number): void {
+function drawShapeBoundsCircle(state: ShapeBoundsLaneState, centerX: number, centerY: number, radius: number): void {
   finishShapeBoundsOpenSubpath(state, false);
   const padding = getShapeBoundsLanePadding(state);
   if (padding >= 0) {
     const magnitude = Math.abs(radius);
-    expandShapeBoundsPoint(state.accumulator, x - magnitude, y - magnitude, padding);
-    expandShapeBoundsPoint(state.accumulator, x + magnitude, y + magnitude, padding);
+    expandShapeBoundsPoint(state.accumulator, centerX - magnitude, centerY - magnitude, padding);
+    expandShapeBoundsPoint(state.accumulator, centerX + magnitude, centerY + magnitude, padding);
   }
   state.hasCurrentPoint = true;
-  state.penX = x + radius;
-  state.penY = y;
+  state.penX = centerX + radius;
+  state.penY = centerY;
   state.subpathStartX = state.penX;
   state.subpathStartY = state.penY;
 }
@@ -369,14 +371,36 @@ function drawShapeBoundsEllipse(
   finishShapeBoundsOpenSubpath(state, false);
   const padding = getShapeBoundsLanePadding(state);
   if (padding >= 0) {
-    const rx = Math.abs(radiusX);
-    const ry = Math.abs(radiusY);
-    expandShapeBoundsPoint(state.accumulator, centerX - rx, centerY - ry, padding);
-    expandShapeBoundsPoint(state.accumulator, centerX + rx, centerY + ry, padding);
+    const magnitudeX = Math.abs(radiusX);
+    const magnitudeY = Math.abs(radiusY);
+    expandShapeBoundsPoint(state.accumulator, centerX - magnitudeX, centerY - magnitudeY, padding);
+    expandShapeBoundsPoint(state.accumulator, centerX + magnitudeX, centerY + magnitudeY, padding);
   }
   state.hasCurrentPoint = true;
   state.penX = centerX + radiusX;
   state.penY = centerY;
+  state.subpathStartX = state.penX;
+  state.subpathStartY = state.penY;
+}
+
+function drawShapeBoundsRoundedRectangle(
+  state: ShapeBoundsLaneState,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  authoredRadius: number,
+): void {
+  finishShapeBoundsOpenSubpath(state, false);
+  const padding = getShapeBoundsLanePadding(state);
+  if (padding >= 0) {
+    expandShapeBoundsPoint(state.accumulator, Math.min(x, x + width), Math.min(y, y + height), padding);
+    expandShapeBoundsPoint(state.accumulator, Math.max(x, x + width), Math.max(y, y + height), padding);
+  }
+  const radius = Math.max(0, Math.min(authoredRadius, Math.abs(width) / 2, Math.abs(height) / 2));
+  state.hasCurrentPoint = true;
+  state.penX = x + radius;
+  state.penY = y;
   state.subpathStartX = state.penX;
   state.subpathStartY = state.penY;
 }
@@ -811,6 +835,16 @@ export const defaultShapeBoundsDrawRectangle: ShapeBoundsCommandHandler = (conte
     command.getArgument(1) as number,
     command.getArgument(2) as number,
     command.getArgument(3) as number,
+  );
+};
+
+export const defaultShapeBoundsDrawRoundedRectangle: ShapeBoundsCommandHandler = (context, command) => {
+  context.drawRoundedRectangle(
+    command.getArgument(0) as number,
+    command.getArgument(1) as number,
+    command.getArgument(2) as number,
+    command.getArgument(3) as number,
+    command.getArgument(4) as number,
   );
 };
 

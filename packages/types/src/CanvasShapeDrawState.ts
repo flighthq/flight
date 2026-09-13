@@ -15,8 +15,12 @@ export interface CanvasShapeDrawState {
   lineScaleMode: LineScaleMode;
   strokeStyle: string | CanvasPattern | CanvasGradient;
   strokeWidth: number;
+  currentX: number;
+  currentY: number;
   hasPendingPath: boolean;
   hasCurrentPoint: boolean;
+  subpathStartX: number;
+  subpathStartY: number;
   windingRule: CanvasFillRule;
   bitmapSrc: CanvasImageSource | null;
   bitmapW: number;

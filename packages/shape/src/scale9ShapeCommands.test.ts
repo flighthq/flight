@@ -34,10 +34,10 @@ describe('mapScale9ShapeCommands', () => {
     expect(out).toEqual(['drawRectangle', 4, 20, 40, 100, 60]);
   });
 
-  it('remaps drawRoundedRectangle corners but leaves ellipse radii unchanged', () => {
+  it('remaps drawRoundedRectangle corners but leaves its radius unchanged', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawRoundedRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
-    expect(out).toEqual(['drawRoundedRectangle', 6, 20, 40, 100, 60, 8, 8]);
+    mapScale9ShapeCommands(out, ['drawRoundedRectangle', 5, 10, 20, 50, 30, 20], mapper);
+    expect(out).toEqual(['drawRoundedRectangle', 5, 20, 40, 100, 60, 20]);
   });
 
   it('remaps drawCircle center but leaves radius unchanged', () => {
@@ -46,10 +46,19 @@ describe('mapScale9ShapeCommands', () => {
     expect(out).toEqual(['drawCircle', 3, 55, 60, 25]);
   });
 
-  it('remaps drawEllipse corners and recomputes size', () => {
+  it('remaps drawEllipse extrema and recomputes its center and radii', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawEllipse', 4, 0, 0, 100, 50], mapper);
-    expect(out).toEqual(['drawEllipse', 4, 0, 0, 200, 100]);
+    mapScale9ShapeCommands(out, ['drawEllipse', 4, 50, 25, 50, 25], mapper);
+    expect(out).toEqual(['drawEllipse', 4, 100, 50, 100, 50]);
+  });
+
+  it('remaps quadratic and cubic controls plus endpoints', () => {
+    const mapper = { mapX: (x: number) => x + 1, mapY: (y: number) => y + 2 };
+    mapScale9ShapeCommands(out, ['quadraticCurveTo', 4, 10, 20, 30, 40], mapper);
+    expect(out).toEqual(['quadraticCurveTo', 4, 11, 22, 31, 42]);
+
+    mapScale9ShapeCommands(out, ['cubicCurveTo', 6, 1, 2, 3, 4, 5, 6], mapper);
+    expect(out).toEqual(['cubicCurveTo', 6, 2, 4, 4, 6, 6, 8]);
   });
 
   it('returns a buffer with the same element count as the input', () => {

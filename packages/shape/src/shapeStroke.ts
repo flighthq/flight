@@ -8,6 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
+import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry';
 import { appendShapeGeometryCommand } from './shapeFill';
 
 // Resolves each solid lineStyle span into its authored centerline + stroke style. The backend-neutral
@@ -66,22 +67,16 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
       }
     } else if (isShapeGeometryCommand(name)) {
       if (centerline !== null) {
-        // A span whose first geometry is a lineTo/curve starts from the current pen, matching Canvas.
+        // A span whose first geometry is a lineTo/curve/arc starts from the current pen, matching Canvas.
         if (centerline.commands.length === 0 && name !== 'moveTo') {
           centerline.commands.push(PathCommand.MOVE_TO);
           centerline.data.push(penX, penY);
         }
         appendShapeGeometryCommand(centerline, name, commands, a);
       }
-      if (name === 'moveTo' || name === 'lineTo') {
-        penX = commands[a] as number;
-        penY = commands[a + 1] as number;
-      } else if (name === 'quadraticCurveTo') {
-        penX = commands[a + 2] as number;
-        penY = commands[a + 3] as number;
-      } else if (name === 'cubicCurveTo') {
-        penX = commands[a + 4] as number;
-        penY = commands[a + 5] as number;
+      if (writeShapeGeometryCommandEnd(geometryEnd, penX, penY, name, commands, a)) {
+        penX = geometryEnd.x;
+        penY = geometryEnd.y;
       }
     }
   }
@@ -123,3 +118,5 @@ function isShapeGeometryCommand(name: string): boolean {
     name === 'drawPath'
   );
 }
+
+const geometryEnd = { x: 0, y: 0 };

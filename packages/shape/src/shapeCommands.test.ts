@@ -480,28 +480,27 @@ describe('appendShapeRectangle', () => {
 });
 
 describe('appendShapeRoundedRectangle', () => {
-  it('pushes a drawRoundedRectangle command with position, dimensions, and corner radii', () => {
+  it('pushes a drawRoundedRectangle command with position, dimensions, and radius', () => {
     const shape = createShape();
-    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 10, 8);
-    expect(shape.data.commands).toEqual(['drawRoundedRectangle', 6, 0, 0, 100, 50, 10, 8]);
+    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 20);
+    expect(shape.data.commands).toEqual(['drawRoundedRectangle', 5, 0, 0, 100, 50, 20]);
   });
 });
 
 describe('appendShapeRoundedRectangleWithCornerRadii', () => {
-  it('expands to moveTo/lineTo/cubicCurveTo commands using kappa arc approximation', () => {
+  it('expands clockwise in top-left, top-right, bottom-right, bottom-left order', () => {
     const shape = createShape();
-    appendShapeRoundedRectangleWithCornerRadii(shape, 0, 0, 100, 50, 5, 5, 5, 5);
-    const knownPrimitives = ['moveTo', 'lineTo', 'cubicCurveTo'];
-    const keys: string[] = [];
-    let i = 0;
-    while (i < shape.data.commands.length) {
-      const key = shape.data.commands[i] as string;
-      const argCount = shape.data.commands[i + 1] as number;
-      keys.push(key);
-      i += argCount + 2;
-    }
-    expect(keys.length).toBeGreaterThan(1);
-    expect(keys.every((k) => knownPrimitives.includes(k))).toBe(true);
+    appendShapeRoundedRectangleWithCornerRadii(shape, 0, 0, 100, 100, 10, 20, 30, 40);
+    expect(shape.data.commands[0]).toBe('moveTo');
+    expect(shape.data.commands.slice(2, 4)).toEqual([10, 0]);
+    expect(shape.data.commands.slice(6, 8)).toEqual([80, 0]);
+    expect(shape.data.commands.slice(14, 16)).toEqual([100, 20]);
+    expect(shape.data.commands.slice(18, 20)).toEqual([100, 70]);
+    expect(shape.data.commands.slice(26, 28)).toEqual([70, 100]);
+    expect(shape.data.commands.slice(30, 32)).toEqual([40, 100]);
+    expect(shape.data.commands.slice(38, 40)).toEqual([0, 60]);
+    expect(shape.data.commands.slice(42, 44)).toEqual([0, 10]);
+    expect(shape.data.commands.slice(50, 52)).toEqual([10, 0]);
   });
 });
 

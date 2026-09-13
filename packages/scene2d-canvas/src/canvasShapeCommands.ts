@@ -1,15 +1,16 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
   defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsDrawRoundedRectangle,
   defaultShapeBoundsFlush,
   defaultShapeBoundsLineStyle,
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
 } from '@flighthq/shape/contract';
@@ -113,13 +114,15 @@ export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
     const controlY1 = buf[i + 1] as number;
     const controlX2 = buf[i + 2] as number;
     const controlY2 = buf[i + 3] as number;
-    const anchorX = buf[i + 4] as number;
-    const anchorY = buf[i + 5] as number;
+    const x = buf[i + 4] as number;
+    const y = buf[i + 5] as number;
     if (!state.hasCurrentPoint) {
       context.moveTo(0, 0);
       state.hasCurrentPoint = true;
     }
-    context.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
+    context.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, x, y);
+    state.currentX = x;
+    state.currentY = y;
     state.hasPendingPath = true;
   },
 };
@@ -131,13 +134,15 @@ export const defaultCanvasQuadraticCurveTo: CanvasShapeCommand<'quadraticCurveTo
   draw(context, state, buf, i) {
     const controlX = buf[i] as number;
     const controlY = buf[i + 1] as number;
-    const anchorX = buf[i + 2] as number;
-    const anchorY = buf[i + 3] as number;
+    const x = buf[i + 2] as number;
+    const y = buf[i + 3] as number;
     if (!state.hasCurrentPoint) {
       context.moveTo(0, 0);
       state.hasCurrentPoint = true;
     }
-    context.quadraticCurveTo(controlX, controlY, anchorX, anchorY);
+    context.quadraticCurveTo(controlX, controlY, x, y);
+    state.currentX = x;
+    state.currentY = y;
     state.hasPendingPath = true;
   },
 };
@@ -147,11 +152,15 @@ export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
   key: 'drawCircle',
   strokeBounds: defaultShapeBoundsDrawCircle,
   draw(context, state, buf, i) {
-    const x = buf[i] as number;
-    const y = buf[i + 1] as number;
+    const centerX = buf[i] as number;
+    const centerY = buf[i + 1] as number;
     const radius = buf[i + 2] as number;
-    context.moveTo(x + radius, y);
-    context.arc(x, y, radius, 0, Math.PI * 2, true);
+    context.moveTo(centerX + radius, centerY);
+    context.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+    state.currentX = centerX + radius;
+    state.currentY = centerY;
+    state.subpathStartX = state.currentX;
+    state.subpathStartY = state.currentY;
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -164,10 +173,14 @@ export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
   draw(context, state, buf, i) {
     const centerX = buf[i] as number;
     const centerY = buf[i + 1] as number;
-    const radiusX = buf[i + 2] as number;
-    const radiusY = buf[i + 3] as number;
+    const radiusX = Math.abs(buf[i + 2] as number);
+    const radiusY = Math.abs(buf[i + 3] as number);
     context.moveTo(centerX + radiusX, centerY);
-    context.ellipse(centerX, centerY, Math.abs(radiusX), Math.abs(radiusY), 0, 0, Math.PI * 2);
+    context.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    state.currentX = centerX + radiusX;
+    state.currentY = centerY;
+    state.subpathStartX = state.currentX;
+    state.subpathStartY = state.currentY;
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -189,6 +202,10 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
           break;
         case 1: // MOVE_TO
           context.moveTo(data[di], data[di + 1]);
+          state.currentX = data[di];
+          state.currentY = data[di + 1];
+          state.subpathStartX = state.currentX;
+          state.subpathStartY = state.currentY;
           di += 2;
           state.hasPendingPath = true;
           state.hasCurrentPoint = true;
@@ -199,6 +216,8 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
             state.hasCurrentPoint = true;
           }
           context.lineTo(data[di], data[di + 1]);
+          state.currentX = data[di];
+          state.currentY = data[di + 1];
           di += 2;
           state.hasPendingPath = true;
           break;
@@ -208,11 +227,17 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
             state.hasCurrentPoint = true;
           }
           context.quadraticCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3]);
+          state.currentX = data[di + 2];
+          state.currentY = data[di + 3];
           di += 4;
           state.hasPendingPath = true;
           break;
         case 4: // WIDE_MOVE_TO
           context.moveTo(data[di + 2], data[di + 3]);
+          state.currentX = data[di + 2];
+          state.currentY = data[di + 3];
+          state.subpathStartX = state.currentX;
+          state.subpathStartY = state.currentY;
           di += 4;
           state.hasPendingPath = true;
           state.hasCurrentPoint = true;
@@ -223,6 +248,8 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
             state.hasCurrentPoint = true;
           }
           context.lineTo(data[di + 2], data[di + 3]);
+          state.currentX = data[di + 2];
+          state.currentY = data[di + 3];
           di += 4;
           state.hasPendingPath = true;
           break;
@@ -232,6 +259,8 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
             state.hasCurrentPoint = true;
           }
           context.bezierCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3], data[di + 4], data[di + 5]);
+          state.currentX = data[di + 4];
+          state.currentY = data[di + 5];
           di += 6;
           state.hasPendingPath = true;
           break;
@@ -241,6 +270,8 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
           // not just this one, because scene2d-gl and scene2d-wgpu rasterize through these same commands
           // whenever a stroke is closed — the tessellators deliberately defer closed rings to raster.
           context.closePath();
+          state.currentX = state.subpathStartX;
+          state.currentY = state.subpathStartY;
           break;
       }
     }
@@ -280,34 +311,38 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
       }
     }
     context.rect(x, y, width, height);
+    state.currentX = x;
+    state.currentY = y;
+    state.subpathStartX = x;
+    state.subpathStartY = y;
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
 };
 
 export const defaultCanvasDrawRoundedRectangle: CanvasShapeCommand<'drawRoundedRectangle'> = {
-  fillBounds: defaultShapeBoundsDrawRectangle,
+  fillBounds: defaultShapeBoundsDrawRoundedRectangle,
   key: 'drawRoundedRectangle',
-  strokeBounds: defaultShapeBoundsDrawRectangle,
+  strokeBounds: defaultShapeBoundsDrawRoundedRectangle,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     const width = buf[i + 2] as number;
     const height = buf[i + 3] as number;
-    const ellipseWidth = buf[i + 4] as number;
-    const ellipseHeight = buf[i + 5] as number;
+    const authoredRadius = buf[i + 4] as number;
     // Canvas accepts signed rectangle dimensions and flips the path, but radii are magnitudes and a
-    // negative one throws. Clamp the authored ellipse size against the absolute edge lengths so a
+    // negative one throws. Clamp the authored radius against the absolute edge lengths so a
     // backwards rectangle follows the same geometry instead of reaching roundRect with a bad radius.
-    const radius = Math.max(
-      0,
-      Math.min(ellipseWidth / 2, ellipseHeight / 2, Math.abs(width) / 2, Math.abs(height) / 2),
-    );
+    const radius = Math.max(0, Math.min(authoredRadius, Math.abs(width) / 2, Math.abs(height) / 2));
     if (typeof context.roundRect === 'function') {
       context.roundRect(x, y, width, height, radius);
     } else {
       context.rect(x, y, width, height);
     }
+    state.currentX = x + radius;
+    state.currentY = y;
+    state.subpathStartX = state.currentX;
+    state.subpathStartY = state.currentY;
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -412,6 +447,8 @@ export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
       state.hasCurrentPoint = true;
     }
     context.lineTo(x, y);
+    state.currentX = x;
+    state.currentY = y;
     state.hasPendingPath = true;
   },
 };
@@ -424,6 +461,10 @@ export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     context.moveTo(x, y);
+    state.currentX = x;
+    state.currentY = y;
+    state.subpathStartX = x;
+    state.subpathStartY = y;
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -434,7 +475,6 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
   defaultCanvasCubicCurveTo,
-  defaultCanvasQuadraticCurveTo,
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawPath,
@@ -445,6 +485,7 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
+  defaultCanvasQuadraticCurveTo,
 ];
 
 // Texture-backed shape styles are an explicit assembly so ordinary vector shapes do not retain
