@@ -240,7 +240,7 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
     state,
     linear ? 'effect.present.linear' : 'effect.present',
     linear ? LINEAR_PRESENT_FRAGMENT_WGSL : PRESENT_FRAGMENT_WGSL,
-    'replace',
+    'premul',
   );
   drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, null, pipeline, () => {});
 }
