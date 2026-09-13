@@ -7,11 +7,11 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 387 |
+| able | 383 |
 | blind | 0 |
 | gap | 0 |
 | exempt | 0 |
-| **total** | **387** |
+| **total** | **383** |
 
 `able` means at least one throw threshold depends on a named sample point, spatial bound or
 neighbourhood, or multiple distinct call-site regions. `blind` means its thresholds use only
@@ -216,22 +216,18 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/material-phong.webgl.ts` | able | L172: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-phong.webgpu.ts` | able | L174: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-sheen.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-sheen.webgpu.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-specular-glossiness.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-specular-glossiness.webgpu.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-specular.webgl.ts` | able | L165: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-specular.webgpu.ts` | able | L159: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-standard-pbr.webgl.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-standard-pbr.webgpu.ts` | able | L154: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-subsurface.webgl.ts` | able | L147: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-subsurface.webgpu.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-toon.webgl.ts` | able | L147: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-toon.webgpu.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/material-transmission-volume.webgl.ts` | able | L178: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-unlit.webgl.ts` | able | L133: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-unlit.webgpu.ts` | able | L141: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-vertex-color-interpolated.webgl.ts` | able | L172: getBitmapPixelChannel is thresholded at named coordinates (x, y) |
-| `functional/scenes/material-vertex-color-interpolated.webgpu.ts` | able | L164: getBitmapPixelChannel is thresholded at named coordinates (x, y) |
 | `functional/scenes/material-vertex-color.webgl.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-vertex-color.webgpu.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-video-map.webgl.ts` | able | L95: sample samples pixels from a named call site (0.35) |
@@ -356,7 +352,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/shape-arc-fill.ts` | able | L64: at samples pixels from a named call site (CX + 40, CY + 40) |
 | `functional/scenes/shape-circle-fill.ts` | able | L64: at samples pixels from a named call site (150, 150) |
 | `functional/scenes/shape-curves.ts` | able | L74: at samples pixels from a named call site (CX, CY + 30) |
-| `functional/scenes/shape-ellipse-fill.ts` | able | L63: at samples pixels from a named call site (ECX, ECY) |
+| `functional/scenes/shape-ellipse-fill.ts` | able | L61: at samples pixels from a named call site (CENTER_X, CENTER_Y) |
 | `functional/scenes/shape-fill-bitmap.ts` | able | L101: at is checked by a throw threshold inside its sampling loop (RECT_X + i * CELL + CELL / 2, cellCenterY) |
 | `functional/scenes/shape-fill-gradient.ts` | able | L67: at samples pixels from a named call site (RECT_X + 40, midY) |
 | `functional/scenes/shape-fill-radial.ts` | able | L94: cardinalLumas samples pixels from a named call site (A_CX, A_CY) |
