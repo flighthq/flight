@@ -5,6 +5,7 @@ import type {
   WgpuMatcapPipeline,
   WgpuMaterialBinding,
   WgpuRenderState,
+  WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
@@ -12,10 +13,10 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScene3DPipeline,
+  getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 
 // The shared Wgpu matcap prelude — the WGSL mirror of scene-gl's glMatcapPrelude. One module for the
 // lighting-independent Matcap (material-capture) material: a matcap is a prebaked-lit sphere texture
@@ -96,9 +97,11 @@ export function compileWgpuMatcapPipeline(
   key: Readonly<WgpuMatcapDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  skinned = false,
 ): WgpuMatcapPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuMatcapModuleSourceForKey(key) });
+  const skinning = getWgpuSkinningAdapter(state);
+  const module = device.createShaderModule({ code: getWgpuMatcapModuleSourceForKey(key, skinned, skinning) });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -112,6 +115,7 @@ export function compileWgpuMatcapPipeline(
     format,
     materialBindGroupLayout,
     module,
+    skinned,
   });
 }
 
@@ -122,18 +126,22 @@ export function ensureWgpuMatcapPipeline(
   key: Readonly<WgpuMatcapDefineKey>,
   format: GPUTextureFormat,
 ): WgpuMatcapPipeline {
-  return ensureWgpuScene3DPipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended) =>
-    compileWgpuMatcapPipeline(state, key, format, blended),
+  return ensureWgpuScene3DPipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended, skinned) =>
+    compileWgpuMatcapPipeline(state, key, format, blended, skinned),
   );
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
 // Draw/vs_main) + the matcap material block + fs_main.
-export function getWgpuMatcapModuleSourceForKey(key: Readonly<WgpuMatcapDefineKey>): string {
+export function getWgpuMatcapModuleSourceForKey(
+  key: Readonly<WgpuMatcapDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
     `const ALPHA_MASK : bool = ${key.alphaMaskEnabled ? 'true' : 'false'};\n` +
     `const HAS_MATCAP : bool = ${key.hasMatcap ? 'true' : 'false'};\n` +
-    WGPU_MESH_PRELUDE_WGSL +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
     MATCAP_WGSL_BODY
   );
 }

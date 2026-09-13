@@ -4,6 +4,7 @@ import type {
   WgpuDebugPipeline,
   WgpuRenderState,
   WgpuMaterialBinding,
+  WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
@@ -11,10 +12,10 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScene3DPipeline,
+  getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the debug Material bind group — a uniform buffer + the
 // shared sampler + the placeholder texture — and rewrites its uniform with this surface's params. The
 // params vec4 packs near/far (depth mode) and normalScale (normal mode) into one buffer shared by both
@@ -76,9 +77,11 @@ export function compileWgpuDebugPipeline(
   format: GPUTextureFormat,
   blended = false,
   doubleSided = false,
+  skinned = false,
 ): WgpuDebugPipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuDebugModuleSourceForKey(key) });
+  const skinning = getWgpuSkinningAdapter(state);
+  const module = device.createShaderModule({ code: getWgpuDebugModuleSourceForKey(key, skinned, skinning) });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -86,7 +89,7 @@ export function compileWgpuDebugPipeline(
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { blended, doubleSided, format, materialBindGroupLayout, module });
+  return createWgpuMeshPipeline(state, { blended, doubleSided, format, materialBindGroupLayout, module, skinned });
 }
 
 // Resolves the debug pipeline for a define key + color format + cull choice, compiling and caching it
@@ -101,19 +104,23 @@ export function ensureWgpuDebugPipeline(
   return ensureWgpuScene3DPipeline(
     state,
     `debug:${format}|${buildWgpuDebugDefineKey(key)}|${doubleSided ? 'double' : 'single'}`,
-    (blended) => compileWgpuDebugPipeline(state, key, format, blended, doubleSided),
+    (blended, skinned) => compileWgpuDebugPipeline(state, key, format, blended, doubleSided, skinned),
   );
 }
 
 // The full WGSL module source for a define key: the const-flag block (MODE discriminator + normal-map
 // flag) + the shared mesh prelude (Frame/Draw/vs_main) + the debug material block +
 // fs_main.
-export function getWgpuDebugModuleSourceForKey(key: Readonly<WgpuDebugDefineKey>): string {
+export function getWgpuDebugModuleSourceForKey(
+  key: Readonly<WgpuDebugDefineKey>,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
     `const MODE : i32 = ${key.mode === 'depth' ? 'DEPTH_MODE' : 'NORMAL_MODE'};\n` +
     `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
     DEBUG_MODE_CONSTS_WGSL +
-    WGPU_MESH_PRELUDE_WGSL +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
     DEBUG_WGSL_BODY
   );
 }

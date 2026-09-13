@@ -1,7 +1,7 @@
 import type { LinearColor } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 import {
   bindWgpuWireframeColor,
   compileWgpuWireframePipeline,
@@ -67,5 +67,15 @@ describe('getWgpuWireframeModuleSource', () => {
     const source = getWgpuWireframeModuleSource(true);
     expect(source).toContain('const ALPHA_MASK : bool = true');
     expect(source).toContain('material.color.a < material.params.x');
+  });
+
+  it('includes skin attribute declarations and skinMatrix when skinned', () => {
+    const rigid = getWgpuWireframeModuleSource();
+    const skinning = makeWgpuSkinningAdapter();
+    const skinned = getWgpuWireframeModuleSource(false, true, skinning);
+    expect(rigid).not.toContain('skinMatrix');
+    expect(skinned).toContain('@location(4) joints0');
+    expect(skinned).toContain('@location(5) weights0');
+    expect(skinned).toContain('skinMatrix(joints0, weights0)');
   });
 });

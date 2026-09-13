@@ -2,6 +2,7 @@ import type {
   LinearColor,
   WgpuMaterialBinding,
   WgpuRenderState,
+  WgpuSkinningAdapter,
   WgpuWireframePipeline,
 } from '@flighthq/types/contract';
 
@@ -9,10 +10,10 @@ import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScene3DPipeline,
+  getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-  WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 
 // The Wgpu wireframe prelude — the WGSL mirror of scene-gl's glWireframePrelude. A minimal module that
 // reuses the shared vs_main (position → clip) and outputs a single flat LINE color; the wireframe
@@ -66,9 +67,13 @@ export function compileWgpuWireframePipeline(
   format: GPUTextureFormat,
   blended = false,
   alphaMaskEnabled = false,
+  skinned = false,
 ): WgpuWireframePipeline {
   const device = state.device;
-  const module = device.createShaderModule({ code: getWgpuWireframeModuleSource(alphaMaskEnabled) });
+  const skinning = getWgpuSkinningAdapter(state);
+  const module = device.createShaderModule({
+    code: getWgpuWireframeModuleSource(alphaMaskEnabled, skinned, skinning),
+  });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
   });
@@ -78,6 +83,7 @@ export function compileWgpuWireframePipeline(
     format,
     materialBindGroupLayout,
     module,
+    skinned,
     topology: 'line-list',
   });
 }
@@ -89,16 +95,24 @@ export function ensureWgpuWireframePipeline(
   format: GPUTextureFormat,
   alphaMaskEnabled = false,
 ): WgpuWireframePipeline {
-  return ensureWgpuScene3DPipeline(state, `wireframe:${format}|${alphaMaskEnabled ? 'mask' : 'base'}`, (blended) =>
-    compileWgpuWireframePipeline(state, format, blended, alphaMaskEnabled),
+  return ensureWgpuScene3DPipeline(
+    state,
+    `wireframe:${format}|${alphaMaskEnabled ? 'mask' : 'base'}`,
+    (blended, skinned) => compileWgpuWireframePipeline(state, format, blended, alphaMaskEnabled, skinned),
   );
 }
 
 // The full WGSL module source: the shared mesh prelude (Frame/Draw/vs_main) + the
 // wireframe color uniform + fs_main.
-export function getWgpuWireframeModuleSource(alphaMaskEnabled = false): string {
+export function getWgpuWireframeModuleSource(
+  alphaMaskEnabled = false,
+  skinned = false,
+  skinning: Readonly<WgpuSkinningAdapter> | null = null,
+): string {
   return (
-    `const ALPHA_MASK : bool = ${alphaMaskEnabled ? 'true' : 'false'};\n` + WGPU_MESH_PRELUDE_WGSL + WIREFRAME_WGSL_BODY
+    `const ALPHA_MASK : bool = ${alphaMaskEnabled ? 'true' : 'false'};\n` +
+    getWgpuMeshPreludeWgsl(skinned, skinning) +
+    WIREFRAME_WGSL_BODY
   );
 }
 
