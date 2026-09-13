@@ -213,7 +213,6 @@
       "material-normal/webgl": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-normal/webgpu": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-pbr-extension-composition/webgl": ["fingerprint", "sceneAssertion", "screenshot"],
-      "material-pbr-extension-composition/webgpu": ["sceneAssertion"],
       "material-phong/webgl": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-phong/webgpu": ["fingerprint", "referenceImage", "sceneAssertion", "screenshot"],
       "material-sheen/webgl": ["fingerprint", "sceneAssertion", "screenshot"],
