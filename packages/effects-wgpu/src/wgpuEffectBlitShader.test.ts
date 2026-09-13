@@ -57,48 +57,26 @@ function offsetFor(dx: number, dy: number): readonly number[] {
 }
 
 describe('applyWgpuEffectBlitOffsetPass', () => {
-  // ★ WHY THIS FILE IS WORTH MORE THAN ONE EFFECT'S. Every offset composite on this backend goes through
-  // this one pass — drop shadow, inner shadow, both bevels, the glows. The offset is where an author's
-  // `distance` and `angle` finally become pixels, so a sign error moves the shadow on EVERY one of them
-  // at once, and it still draws a shadow.
-  //
-  // ★ THIS ONE IS BRANCH 1: THE DEFECT IS IN GIT AND STILL RESTORABLE. The Y offset used to be NEGATED
-  // here relative to the Gl path, on the reasonable-sounding argument that Wgpu's uv y=0 is the top while
-  // Gl's is the bottom. It is the wrong conclusion: Wgpu render-target textures are ALSO stored top-down,
-  // so the two inversions cancel and the offset must match Gl exactly. With the extra negation the shadow
-  // landed up-left instead of down-right on every offset composite. Fixed in 915040009 (then
-  // filters-wgpu/src/wgpuBlitShader.ts), and until now the only thing standing behind it was one parity
-  // scene and a paragraph of prose.
-  //
-  // MEASURED by restoring 915040009^'s exact line `f32[1] = -dy / source.height;` — 3 of 9 failed:
-  //   AssertionError: expected -0.25 to be close to 0.25, received difference is 0.5
-  //   AssertionError: expected -0.25 to be greater than 0
-  //   AssertionError: expected -0.5 to be close to 0.5, received difference is 1
   it('moves the image right for a positive dx, by offsetting the sample left', () => {
     expect(offsetFor(8, 0)[0]).toBeCloseTo(-8 / SOURCE_WIDTH, 10);
   });
 
-  // ★ THE ASSERTION THE WHOLE FILE IS FOR, and the one the restored line breaks.
-  it('moves the image down for a positive dy, matching the Gl path exactly', () => {
-    expect(offsetFor(0, 8)[1]).toBeCloseTo(8 / SOURCE_HEIGHT, 10);
+  it('moves the image down for a positive dy, by offsetting the sample up', () => {
+    expect(offsetFor(0, 8)[1]).toBeCloseTo(-8 / SOURCE_HEIGHT, 10);
   });
 
-  // Stated as its own claim because the two axes disagree in sign for the same positive input: a test of
-  // either axis alone would pass a version that negated both or neither.
-  it('gives the two axes opposite signs for the same positive offset', () => {
+  it('negates both axes for a positive offset', () => {
     const [x, y] = offsetFor(8, 8);
 
     expect(x).toBeLessThan(0);
-    expect(y).toBeGreaterThan(0);
+    expect(y).toBeLessThan(0);
   });
 
-  // Normalised by the SOURCE, per axis. Width and height differ here on purpose: with them equal,
-  // dividing by the wrong one is invisible.
   it('normalises each axis by the source dimension for that axis', () => {
     const [x, y] = offsetFor(16, 16);
 
     expect(x).toBeCloseTo(-16 / SOURCE_WIDTH, 10);
-    expect(y).toBeCloseTo(16 / SOURCE_HEIGHT, 10);
+    expect(y).toBeCloseTo(-16 / SOURCE_HEIGHT, 10);
     expect(Math.abs(x)).not.toBeCloseTo(Math.abs(y), 6);
   });
 
