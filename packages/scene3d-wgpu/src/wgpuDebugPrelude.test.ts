@@ -95,6 +95,12 @@ describe('getWgpuDebugModuleSourceForKey', () => {
     expect(depthSource).toContain('fn fs_main');
   });
 
+  it('derives depth from the post-transform world position for orthographic cameras', () => {
+    const depthSource = getWgpuDebugModuleSourceForKey(DEPTH);
+    expect(depthSource).toContain('let eyeDepth = -(frame.view * vec4f(in.worldPosition, 1.0)).z;');
+    expect(depthSource).not.toContain('1.0 / in.clipPosition.w');
+  });
+
   it('includes skin attribute declarations and skinMatrix when skinned', () => {
     const rigid = getWgpuDebugModuleSourceForKey(DEPTH);
     const skinning = makeWgpuSkinningAdapter();

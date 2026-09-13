@@ -147,13 +147,12 @@ struct DebugMaterial {
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) frontFacing : bool) -> @location(0) vec4f {
   if (MODE == DEPTH_MODE) {
-    // Linear view-space distance is the perspective w: in.clipPosition is the @builtin(position), whose
-    // .w in the fragment scene2d is 1 / w_clip, so 1 / in.clipPosition.w == w_clip == eye distance. This
-    // is camera-agnostic (no camera near/far needed); map it across the material's [near, far]
-    // visualization window to grayscale [0, 1].
+    // Positive distance along the camera's view axis, computed before projection so perspective and
+    // orthographic cameras agree. frame.view is already part of the shared Frame uniform and
+    // in.worldPosition is the post-skin, post-instance position, matching the GL depth path exactly.
     let near = material.params.x;
     let far = material.params.y;
-    let eyeDepth = 1.0 / in.clipPosition.w;
+    let eyeDepth = -(frame.view * vec4f(in.worldPosition, 1.0)).z;
     let d = clamp((eyeDepth - near) / max(far - near, 1e-6), 0.0, 1.0);
     return flightPremultipliedOutput(vec4f(vec3f(d), flightMeshCoverage(1.0, in.objectAlpha, draw.params.y)));
   }

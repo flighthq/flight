@@ -9,8 +9,9 @@ import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 export function ensureWgpuWireframeUpload(
   state: WgpuRenderState,
   geometry: Readonly<MeshGeometry>,
+  gpuSkinned = false,
 ): WgpuWireframeUpload | null {
-  const meshUpload = ensureWgpuMeshUpload(state, geometry);
+  const meshUpload = ensureWgpuMeshUpload(state, geometry, gpuSkinned);
 
   let perState = wireframeUploads.get(state);
   if (perState === undefined) {
@@ -19,7 +20,7 @@ export function ensureWgpuWireframeUpload(
   }
 
   let upload = perState.get(geometry as MeshGeometry);
-  if (upload !== undefined && upload.version === geometry.version) {
+  if (upload !== undefined && upload.version === geometry.version && upload.vertexBuffer === meshUpload.vertexBuffer) {
     return upload;
   }
 
