@@ -36,22 +36,22 @@ export function forEachPathSegment(path: Readonly<Path>, visitor: (segment: Path
       const y = data[di + 3];
       di += 4;
       visitor({ kind: 'lineTo', x, y });
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       const controlX = data[di];
       const controlY = data[di + 1];
       const x = data[di + 2];
       const y = data[di + 3];
       di += 4;
-      visitor({ kind: 'curveTo', controlX, controlY, x, y });
+      visitor({ kind: 'quadraticCurveTo', controlX, controlY, x, y });
     } else if (command === PathCommand.CUBIC_CURVE_TO) {
-      const control1X = data[di];
-      const control1Y = data[di + 1];
-      const control2X = data[di + 2];
-      const control2Y = data[di + 3];
+      const controlX1 = data[di];
+      const controlY1 = data[di + 1];
+      const controlX2 = data[di + 2];
+      const controlY2 = data[di + 3];
       const x = data[di + 4];
       const y = data[di + 5];
       di += 6;
-      visitor({ kind: 'cubicCurveTo', control1X, control1Y, control2X, control2Y, x, y });
+      visitor({ kind: 'cubicCurveTo', controlX1, controlY1, controlX2, controlY2, x, y });
     } else if (command === PathCommand.CLOSE) {
       visitor({ kind: 'close' });
       // CLOSE consumes 0 data values.

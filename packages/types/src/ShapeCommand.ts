@@ -35,10 +35,10 @@ export interface ShapeCommandRegistry {
     controlY1: number,
     controlX2: number,
     controlY2: number,
-    anchorX: number,
-    anchorY: number,
+    x: number,
+    y: number,
   ];
-  curveTo: readonly [controlX: number, controlY: number, anchorX: number, anchorY: number];
+  quadraticCurveTo: readonly [controlX: number, controlY: number, x: number, y: number];
   drawCircle: readonly [x: number, y: number, radius: number];
   drawEllipse: readonly [x: number, y: number, width: number, height: number];
   drawPath: readonly [commands: number[], data: number[], winding: PathWinding];

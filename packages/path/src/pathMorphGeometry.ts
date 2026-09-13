@@ -128,10 +128,10 @@ function reverseClosedCubicContour(contour: CubicContour): void {
   for (let i = contour.segments.length - 1; i >= 0; i--) {
     const segment = contour.segments[i];
     reversed.push({
-      control1X: segment.control2X,
-      control1Y: segment.control2Y,
-      control2X: segment.control1X,
-      control2Y: segment.control1Y,
+      controlX1: segment.controlX2,
+      controlY1: segment.controlY2,
+      controlX2: segment.controlX1,
+      controlY2: segment.controlY1,
       x0: segment.x1,
       x1: segment.x0,
       y0: segment.y1,
@@ -156,26 +156,26 @@ function getCubicContourSignedArea(contour: Readonly<CubicContour>): number {
   for (let i = 0; i < contour.segments.length; i++) {
     const segment = contour.segments[i];
     const x0 = segment.x0 - contour.x;
-    const control1X = segment.control1X - contour.x;
-    const control2X = segment.control2X - contour.x;
+    const controlX1 = segment.controlX1 - contour.x;
+    const controlX2 = segment.controlX2 - contour.x;
     const x1 = segment.x1 - contour.x;
     const y0 = segment.y0 - contour.y;
-    const control1Y = segment.control1Y - contour.y;
-    const control2Y = segment.control2Y - contour.y;
+    const controlY1 = segment.controlY1 - contour.y;
+    const controlY2 = segment.controlY2 - contour.y;
     const y1 = segment.y1 - contour.y;
     extent = Math.max(
       extent,
       Math.abs(x0),
-      Math.abs(control1X),
-      Math.abs(control2X),
+      Math.abs(controlX1),
+      Math.abs(controlX2),
       Math.abs(x1),
       Math.abs(y0),
-      Math.abs(control1Y),
-      Math.abs(control2Y),
+      Math.abs(controlY1),
+      Math.abs(controlY2),
       Math.abs(y1),
     );
-    const x = getCubicPowerCoefficients(x0, control1X, control2X, x1);
-    const y = getCubicPowerCoefficients(y0, control1Y, control2Y, y1);
+    const x = getCubicPowerCoefficients(x0, controlX1, controlX2, x1);
+    const y = getCubicPowerCoefficients(y0, controlY1, controlY2, y1);
     for (let xi = 0; xi < 4; xi++) {
       for (let yi = 1; yi < 4; yi++) {
         twiceArea += (x[xi] * yi * y[yi] - y[xi] * yi * x[yi]) / (xi + yi);
@@ -230,26 +230,26 @@ function appendCubicContourPair(
     const a = start.segments[i];
     const b = end.segments[i];
     commands.push(PathCommand.CUBIC_CURVE_TO);
-    startData.push(a.control1X, a.control1Y, a.control2X, a.control2Y, a.x1, a.y1);
-    endData.push(b.control1X, b.control1Y, b.control2X, b.control2Y, b.x1, b.y1);
+    startData.push(a.controlX1, a.controlY1, a.controlX2, a.controlY2, a.x1, a.y1);
+    endData.push(b.controlX1, b.controlY1, b.controlX2, b.controlY2, b.x1, b.y1);
   }
   if (start.closed) commands.push(PathCommand.CLOSE);
 }
 
 function appendCubicSegment(
   contour: CubicContour,
-  control1X: number,
-  control1Y: number,
-  control2X: number,
-  control2Y: number,
+  controlX1: number,
+  controlY1: number,
+  controlX2: number,
+  controlY2: number,
   x: number,
   y: number,
 ): void {
   contour.segments.push({
-    control1X,
-    control1Y,
-    control2X,
-    control2Y,
+    controlX1,
+    controlY1,
+    controlX2,
+    controlY2,
     x0: contour.currentX,
     x1: x,
     y0: contour.currentY,
@@ -300,9 +300,9 @@ function createCubicContour(x: number, y: number): CubicContour {
 
 function cubicControlPolygonLength(segment: Readonly<CubicSegment>): number {
   return (
-    pointDistance(segment.x0, segment.y0, segment.control1X, segment.control1Y) +
-    pointDistance(segment.control1X, segment.control1Y, segment.control2X, segment.control2Y) +
-    pointDistance(segment.control2X, segment.control2Y, segment.x1, segment.y1)
+    pointDistance(segment.x0, segment.y0, segment.controlX1, segment.controlY1) +
+    pointDistance(segment.controlX1, segment.controlY1, segment.controlX2, segment.controlY2) +
+    pointDistance(segment.controlX2, segment.controlY2, segment.x1, segment.y1)
   );
 }
 
@@ -321,15 +321,15 @@ function decodeCubicContours(path: Readonly<Path>): CubicContour[] {
       contours.push(contour);
     } else if (segment.kind === 'lineTo') {
       appendLineAsCubic(ensureContour(), segment.x, segment.y);
-    } else if (segment.kind === 'curveTo') {
+    } else if (segment.kind === 'quadraticCurveTo') {
       appendQuadraticAsCubic(ensureContour(), segment.controlX, segment.controlY, segment.x, segment.y);
     } else if (segment.kind === 'cubicCurveTo') {
       appendCubicSegment(
         ensureContour(),
-        segment.control1X,
-        segment.control1Y,
-        segment.control2X,
-        segment.control2Y,
+        segment.controlX1,
+        segment.controlY1,
+        segment.controlX2,
+        segment.controlY2,
         segment.x,
         segment.y,
       );
@@ -355,12 +355,12 @@ function pointDistance(x0: number, y0: number, x1: number, y1: number): number {
 }
 
 function splitCubicSegment(segment: Readonly<CubicSegment>, t: number): [CubicSegment, CubicSegment] {
-  const x01 = segment.x0 + (segment.control1X - segment.x0) * t;
-  const y01 = segment.y0 + (segment.control1Y - segment.y0) * t;
-  const x12 = segment.control1X + (segment.control2X - segment.control1X) * t;
-  const y12 = segment.control1Y + (segment.control2Y - segment.control1Y) * t;
-  const x23 = segment.control2X + (segment.x1 - segment.control2X) * t;
-  const y23 = segment.control2Y + (segment.y1 - segment.control2Y) * t;
+  const x01 = segment.x0 + (segment.controlX1 - segment.x0) * t;
+  const y01 = segment.y0 + (segment.controlY1 - segment.y0) * t;
+  const x12 = segment.controlX1 + (segment.controlX2 - segment.controlX1) * t;
+  const y12 = segment.controlY1 + (segment.controlY2 - segment.controlY1) * t;
+  const x23 = segment.controlX2 + (segment.x1 - segment.controlX2) * t;
+  const y23 = segment.controlY2 + (segment.y1 - segment.controlY2) * t;
   const x012 = x01 + (x12 - x01) * t;
   const y012 = y01 + (y12 - y01) * t;
   const x123 = x12 + (x23 - x12) * t;
@@ -369,20 +369,20 @@ function splitCubicSegment(segment: Readonly<CubicSegment>, t: number): [CubicSe
   const y = y012 + (y123 - y012) * t;
   return [
     {
-      control1X: x01,
-      control1Y: y01,
-      control2X: x012,
-      control2Y: y012,
+      controlX1: x01,
+      controlY1: y01,
+      controlX2: x012,
+      controlY2: y012,
       x0: segment.x0,
       x1: x,
       y0: segment.y0,
       y1: y,
     },
     {
-      control1X: x123,
-      control1Y: y123,
-      control2X: x23,
-      control2Y: y23,
+      controlX1: x123,
+      controlY1: y123,
+      controlX2: x23,
+      controlY2: y23,
       x0: x,
       x1: segment.x1,
       y0: y,
@@ -402,10 +402,10 @@ function subdivideCubicSegments(
     const segments: CubicSegment[] = [];
     for (let i = 0; i < targetCount; i++) {
       segments.push({
-        control1X: pointX,
-        control1Y: pointY,
-        control2X: pointX,
-        control2Y: pointY,
+        controlX1: pointX,
+        controlY1: pointY,
+        controlX2: pointX,
+        controlY2: pointY,
         x0: pointX,
         x1: pointX,
         y0: pointY,
@@ -453,10 +453,10 @@ interface CubicContour {
 }
 
 interface CubicSegment {
-  control1X: number;
-  control1Y: number;
-  control2X: number;
-  control2Y: number;
+  controlX1: number;
+  controlY1: number;
+  controlX2: number;
+  controlY2: number;
   x0: number;
   x1: number;
   y0: number;

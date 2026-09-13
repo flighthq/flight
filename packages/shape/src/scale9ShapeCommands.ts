@@ -27,7 +27,7 @@ export function mapScale9ShapeCommands(
         out[i + 2] = mapper.mapX(out[i + 2] as number);
         out[i + 3] = mapper.mapY(out[i + 3] as number);
         break;
-      case 'curveTo':
+      case 'quadraticCurveTo':
         out[i + 2] = mapper.mapX(out[i + 2] as number);
         out[i + 3] = mapper.mapY(out[i + 3] as number);
         out[i + 4] = mapper.mapX(out[i + 4] as number);

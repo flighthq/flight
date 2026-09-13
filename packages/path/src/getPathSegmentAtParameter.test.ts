@@ -9,7 +9,13 @@ import {
   getQuadraticBezierPoint,
   getQuadraticBezierTangent,
 } from './getPathSegmentAtParameter';
-import { appendPathCubicCurveTo, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import {
+  appendPathCubicCurveTo,
+  appendPathQuadraticCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+} from './path';
 
 describe('getCubicBezierCurvature', () => {
   it('returns zero for a straight cubic', () => {
@@ -89,7 +95,7 @@ describe('getPathSegmentCurvatureAtParameter', () => {
   it('returns nonzero for a quadratic bezier segment', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 100, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 100, 100, 0);
     expect(getPathSegmentCurvatureAtParameter(path, 0, 0.5)).not.toBe(0);
   });
 
@@ -149,7 +155,7 @@ describe('getPathSegmentPointAtParameter', () => {
   it('evaluates midpoint of a quadratic bezier', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 1, 2, 2, 0); // parabola-like
+    appendPathQuadraticCurveTo(path, 1, 2, 2, 0); // parabola-like
     const out = { x: 0, y: 0 };
     expect(getPathSegmentPointAtParameter(path, 0, 0.5, out)).toBe(true);
     // B(0.5) = 0.25*(0,0) + 2*0.5*0.5*(1,2) + 0.25*(2,0) = (0,0)*0.25 + (0.5,1) + (0.5,0) = (1, 1)

@@ -27,7 +27,7 @@ export function appendShapeGeometryCommand(
     case 'lineTo':
       pushVerb(path, PathCommand.LINE_TO, commands[a] as number, commands[a + 1] as number);
       break;
-    case 'curveTo':
+    case 'quadraticCurveTo':
       pushQuadratic(
         path,
         commands[a] as number,
@@ -91,7 +91,7 @@ export function appendShapeGeometryCommand(
   }
 }
 
-// The number of `data` numbers a PathCommand verb consumes: MOVE_TO/LINE_TO = 2, CURVE_TO (quadratic)
+// The number of `data` numbers a PathCommand verb consumes: MOVE_TO/LINE_TO = 2, QUADRATIC_CURVE_TO
 // and WIDE_MOVE_TO/WIDE_LINE_TO = 4, CUBIC_CURVE_TO = 6, CLOSE/NO_OP = 0. The one place that maps a raw
 // Path verb to its operand width, so a verb/data stream (appendRawPath) and a closure scan
 // (shapeStroke) walk it without desynchronizing the data cursor.
@@ -100,7 +100,7 @@ export function getPathCommandOperandCount(verb: number): number {
     case PathCommand.MOVE_TO:
     case PathCommand.LINE_TO:
       return 2;
-    case PathCommand.CURVE_TO:
+    case PathCommand.QUADRATIC_CURVE_TO:
     case PathCommand.WIDE_MOVE_TO:
     case PathCommand.WIDE_LINE_TO:
       return 4;
@@ -246,15 +246,17 @@ function appendRoundRectangleToPath(
 ): void {
   const right = x + w;
   const bottom = y + h;
+  const kx = rx * CIRCLE_KAPPA;
+  const ky = ry * CIRCLE_KAPPA;
   pushVerb(path, PathCommand.MOVE_TO, x + rx, y);
   pushVerb(path, PathCommand.LINE_TO, right - rx, y);
-  pushQuadratic(path, right, y, right, y + ry);
+  pushCubic(path, right - rx + kx, y, right, y + ry - ky, right, y + ry);
   pushVerb(path, PathCommand.LINE_TO, right, bottom - ry);
-  pushQuadratic(path, right, bottom, right - rx, bottom);
+  pushCubic(path, right, bottom - ry + ky, right - rx + kx, bottom, right - rx, bottom);
   pushVerb(path, PathCommand.LINE_TO, x + rx, bottom);
-  pushQuadratic(path, x, bottom, x, bottom - ry);
+  pushCubic(path, x + rx - kx, bottom, x, bottom - ry + ky, x, bottom - ry);
   pushVerb(path, PathCommand.LINE_TO, x, y + ry);
-  pushQuadratic(path, x, y, x + rx, y);
+  pushCubic(path, x, y + ry - ky, x + rx - kx, y, x + rx, y);
 }
 
 function pushCubic(path: Path, c1x: number, c1y: number, c2x: number, c2y: number, ax: number, ay: number): void {
@@ -263,7 +265,7 @@ function pushCubic(path: Path, c1x: number, c1y: number, c2x: number, c2y: numbe
 }
 
 function pushQuadratic(path: Path, cx: number, cy: number, ax: number, ay: number): void {
-  path.commands.push(PathCommand.CURVE_TO);
+  path.commands.push(PathCommand.QUADRATIC_CURVE_TO);
   path.data.push(cx, cy, ax, ay);
 }
 

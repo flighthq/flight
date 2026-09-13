@@ -2,7 +2,7 @@ import type { Path } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { flattenPath } from './flattenPath';
-import { appendPathClose, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { appendPathClose, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
 
 describe('flattenPath', () => {
   it('flattens a straight line to its two endpoints', () => {
@@ -28,14 +28,14 @@ describe('flattenPath', () => {
   it('collapses a quadratic whose control lies on the chord to just the endpoint', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 0, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 0, 100, 0);
     expect(flattenPath(path)).toStrictEqual([[0, 0, 100, 0]]);
   });
 
   it('subdivides a genuinely curved quadratic, keeping the endpoints', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 50, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 50, 100, 0);
     const contour = flattenPath(path)[0];
     expect(contour.length).toBeGreaterThan(4); // more than just start + end
     expect(contour[0]).toBe(0);
@@ -57,7 +57,7 @@ describe('flattenPath', () => {
   it('emits fewer points at a coarser tolerance', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 50, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 50, 100, 0);
     const fine = flattenPath(path, 0.1)[0].length;
     const coarse = flattenPath(path, 50)[0].length;
     expect(coarse).toBeLessThan(fine);

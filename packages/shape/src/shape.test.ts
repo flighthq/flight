@@ -27,7 +27,7 @@ import {
 import {
   appendShapeCircle,
   appendShapeCubicCurveTo,
-  appendShapeCurveTo,
+  appendShapeQuadraticCurveTo,
   appendShapeEllipse,
   appendShapeLineStyle,
   appendShapeLineTo,
@@ -173,7 +173,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
     // At t=0.5: y = 0.25*0 + 2*0.25*100 + 0.25*0 = 50.
     const shape = createShape();
     appendShapeMoveTo(shape, 0, 0);
-    appendShapeCurveTo(shape, 50, 100, 100, 0);
+    appendShapeQuadraticCurveTo(shape, 50, 100, 100, 0);
     const out = createRectangle();
     computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(0);
@@ -189,7 +189,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
     // Bounds: x=[0,100], y=[25,50].
     const shape = createShape();
     appendShapeMoveTo(shape, 0, 50);
-    appendShapeCurveTo(shape, 50, 0, 100, 50);
+    appendShapeQuadraticCurveTo(shape, 50, 0, 100, 50);
     const out = createRectangle();
     computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(0);

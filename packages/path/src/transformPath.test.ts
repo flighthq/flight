@@ -1,4 +1,10 @@
-import { appendPathCubicCurveTo, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import {
+  appendPathCubicCurveTo,
+  appendPathQuadraticCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+} from './path';
 import { transformPath, translatePath } from './transformPath';
 
 const IDENTITY = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
@@ -25,7 +31,7 @@ describe('transformPath', () => {
   it('applies a scale to CURVE_TO control and anchor points', () => {
     const source = createPath();
     appendPathMoveTo(source, 0, 0);
-    appendPathCurveTo(source, 10, 20, 30, 0);
+    appendPathQuadraticCurveTo(source, 10, 20, 30, 0);
     const out = createPath();
     transformPath(source, { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 }, out);
     // MOVE_TO (0,0) scaled to (0,0); CURVE_TO (10,20,30,0) → (20,40,60,0)

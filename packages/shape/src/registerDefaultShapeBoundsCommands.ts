@@ -1,6 +1,6 @@
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
@@ -37,9 +37,9 @@ export function registerDefaultShapeBoundsCommands(): void {
     strokeBounds: defaultShapeBoundsCubicCurveTo,
   });
   registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsCurveTo,
-    key: 'curveTo',
-    strokeBounds: defaultShapeBoundsCurveTo,
+    fillBounds: defaultShapeBoundsQuadraticCurveTo,
+    key: 'quadraticCurveTo',
+    strokeBounds: defaultShapeBoundsQuadraticCurveTo,
   });
   registerShapeBoundsCommand({
     fillBounds: defaultShapeBoundsDrawCircle,

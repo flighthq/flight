@@ -14,15 +14,8 @@ export interface ShapeCommandArgumentCursor {
 // and stroke contexts, so the same command registry serves continuous fill bounds and ink bounds.
 export interface ShapeBoundsContext {
   closePath(): void;
-  cubicCurveTo(
-    controlX1: number,
-    controlY1: number,
-    controlX2: number,
-    controlY2: number,
-    anchorX: number,
-    anchorY: number,
-  ): void;
-  curveTo(controlX: number, controlY: number, anchorX: number, anchorY: number): void;
+  cubicCurveTo(controlX1: number, controlY1: number, controlX2: number, controlY2: number, x: number, y: number): void;
+  quadraticCurveTo(controlX: number, controlY: number, x: number, y: number): void;
   drawCircle(x: number, y: number, radius: number): void;
   drawEllipse(x: number, y: number, width: number, height: number): void;
   drawRectangle(x: number, y: number, width: number, height: number): void;

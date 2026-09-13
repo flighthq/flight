@@ -87,12 +87,12 @@ export function getPathSegmentCurvatureAtParameter(
 }
 
 // Evaluates the point at parameter `t` on the n-th segment of `path` (0-indexed, counting
-// segments in path-walk order: MOVE_TO does not count as a segment; LINE_TO, CURVE_TO,
+// segments in path-walk order: MOVE_TO does not count as a segment; LINE_TO, QUADRATIC_CURVE_TO,
 // CUBIC_CURVE_TO each count as one). Writes into `out`. Returns `true` on success; `false` if
 // `segmentIndex` is out of range.
 //
 // Parameter t=0 is the segment start; t=1 is the segment end. For a LINE_TO the interpolation
-// is linear; for CURVE_TO quadratic; for CUBIC_CURVE_TO cubic.
+// is linear; for QUADRATIC_CURVE_TO quadratic; for CUBIC_CURVE_TO cubic.
 export function getPathSegmentPointAtParameter(
   path: Readonly<Path>,
   segmentIndex: number,
@@ -234,7 +234,7 @@ function walkPathSegment(
       x = x1;
       y = y1;
       currentSegment++;
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       const cx = data[di];
       const cy = data[di + 1];
       const x1 = data[di + 2];
@@ -306,7 +306,7 @@ function walkPathSegmentCurvature(path: Readonly<Path>, segmentIndex: number, t:
       x = data[di - 2];
       y = data[di - 1];
       currentSegment++;
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       const cx = data[di];
       const cy = data[di + 1];
       const x1 = data[di + 2];

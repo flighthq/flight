@@ -337,7 +337,7 @@ function decodeSubpaths(path: Readonly<Path>, tolerance: number): StrokeSubpath[
       y = data[di + 3];
       di += 4;
       sp.points.push(x, y);
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       const sp = ensureCurrent();
       flattenQuadratic(sp.points, x, y, data[di], data[di + 1], data[di + 2], data[di + 3], toleranceSq, 0);
       x = data[di + 2];

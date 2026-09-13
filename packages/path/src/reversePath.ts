@@ -36,7 +36,7 @@ function decodeSubpaths(path: Readonly<Path>): Subpath[] {
       subpaths.push(current);
     } else if (segment.kind === 'lineTo') {
       ensureCurrent().points.push({ x: segment.x, y: segment.y, kind: 'line' });
-    } else if (segment.kind === 'curveTo') {
+    } else if (segment.kind === 'quadraticCurveTo') {
       ensureCurrent().points.push({
         x: segment.x,
         y: segment.y,
@@ -49,10 +49,10 @@ function decodeSubpaths(path: Readonly<Path>): Subpath[] {
         x: segment.x,
         y: segment.y,
         kind: 'cubic',
-        c1x: segment.control1X,
-        c1y: segment.control1Y,
-        c2x: segment.control2X,
-        c2y: segment.control2Y,
+        c1x: segment.controlX1,
+        c1y: segment.controlY1,
+        c2x: segment.controlX2,
+        c2y: segment.controlY2,
       });
     } else if (segment.kind === 'close') {
       if (current !== null) current.closed = true;
@@ -77,7 +77,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: Path): void {
       out.data.push(to.x, to.y);
     } else if (from.kind === 'quad') {
       // Reversed quadratic: control stays the same, anchor is now `to`.
-      out.commands.push(PathCommand.CURVE_TO);
+      out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
       out.data.push(from.cx, from.cy, to.x, to.y);
     } else if (from.kind === 'cubic') {
       // Reversed cubic: swap control points c1↔c2.

@@ -1,7 +1,7 @@
 import { getPathBounds } from './getPathBounds';
 import {
   appendPathCubicCurveTo,
-  appendPathCurveTo,
+  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
   appendPathRectangle,
@@ -45,7 +45,7 @@ describe('getPathBounds', () => {
     // The true Y maximum is at t=0.5: B(0.5)=(25+0.5*50, 50+…) = (50, 50) — 50 not 100.
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 100, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 100, 100, 0);
     const out = { x: 0, y: 0, width: 0, height: 0 };
     getPathBounds(path, out);
     expect(out.x).toBeCloseTo(0);

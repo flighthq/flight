@@ -5,7 +5,7 @@ import { forEachPathSegment } from './forEachPathSegment';
 import {
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathCurveTo,
+  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
   createPath,
@@ -28,13 +28,13 @@ describe('forEachPathSegment', () => {
       { kind: 'lineTo', x: 3, y: 4 },
     ]);
   });
-  it('yields a curveTo segment with correct coordinates', () => {
+  it('yields a quadraticCurveTo segment with correct coordinates', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 10, 20, 30, 0);
+    appendPathQuadraticCurveTo(path, 10, 20, 30, 0);
     const segments: PathSegment[] = [];
     forEachPathSegment(path, (s) => segments.push(s));
-    expect(segments[1]).toStrictEqual({ kind: 'curveTo', controlX: 10, controlY: 20, x: 30, y: 0 });
+    expect(segments[1]).toStrictEqual({ kind: 'quadraticCurveTo', controlX: 10, controlY: 20, x: 30, y: 0 });
   });
   it('yields a cubicCurveTo segment with correct coordinates', () => {
     const path = createPath();
@@ -44,10 +44,10 @@ describe('forEachPathSegment', () => {
     forEachPathSegment(path, (s) => segments.push(s));
     expect(segments[1]).toStrictEqual({
       kind: 'cubicCurveTo',
-      control1X: 10,
-      control1Y: 20,
-      control2X: 30,
-      control2Y: 40,
+      controlX1: 10,
+      controlY1: 20,
+      controlX2: 30,
+      controlY2: 40,
       x: 50,
       y: 0,
     });

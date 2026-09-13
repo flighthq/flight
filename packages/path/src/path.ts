@@ -3,13 +3,54 @@ import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding, EntityConstruction } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
+// Approximates a circle centered at (cx, cy) with the given radius using four cubic bezier segments.
+// The standard kappa constant (4*(sqrt(2)-1)/3) gives the best cubic approximation of an arc.
+// Appends a MOVE_TO before the circle and a CLOSE at the end.
+export function appendPathCircle(path: Path, cx: number, cy: number, radius: number): void {
+  appendPathEllipse(path, cx, cy, radius, radius);
+}
+
+// Closes the current contour back to the most recent MOVE_TO origin. Appends a CLOSE verb (0 data
+// values). After CLOSE, the next draw verb starts a new implicit contour unless preceded by MOVE_TO.
+export function appendPathClose(path: Path): void {
+  path.commands.push(PathCommand.CLOSE);
+}
+
+export function appendPathCubicCurveTo(
+  path: Path,
+  controlX1: number,
+  controlY1: number,
+  controlX2: number,
+  controlY2: number,
+  x: number,
+  y: number,
+): void {
+  path.commands.push(PathCommand.CUBIC_CURVE_TO);
+  path.data.push(controlX1, controlY1, controlX2, controlY2, x, y);
+}
+
+// Approximates an axis-aligned ellipse using four cubic bezier segments, each tangent handle reaching
+// CIRCLE_KAPPA = 4*(sqrt(2)-1)/3 of the radius. The error is less than 0.03% of the radius. Appends a
+// MOVE_TO at the rightmost point and a CLOSE after the fourth arc segment.
+export function appendPathEllipse(path: Path, cx: number, cy: number, radiusX: number, radiusY: number): void {
+  // kappa: the distance along each tangent handle for the optimal cubic arc approximation.
+  const kx = radiusX * CIRCLE_KAPPA;
+  const ky = radiusY * CIRCLE_KAPPA;
+  appendPathMoveTo(path, cx + radiusX, cy);
+  appendPathCubicCurveTo(path, cx + radiusX, cy - ky, cx + kx, cy - radiusY, cx, cy - radiusY);
+  appendPathCubicCurveTo(path, cx - kx, cy - radiusY, cx - radiusX, cy - ky, cx - radiusX, cy);
+  appendPathCubicCurveTo(path, cx - radiusX, cy + ky, cx - kx, cy + radiusY, cx, cy + radiusY);
+  appendPathCubicCurveTo(path, cx + kx, cy + radiusY, cx + radiusX, cy + ky, cx + radiusX, cy);
+  appendPathClose(path);
+}
+
 // Approximates an arc centered at (cx, cy) from `startAngle` to `endAngle` (radians) with the given
 // `radius`, using one or more cubic bezier segments. Each cubic segment spans at most π/2 (90°) to
 // keep the kappa approximation error under 0.03% of the radius. Appends a MOVE_TO at the arc start
 // unless `connectToCurrent` is true, in which case the arc start is reached by a LINE_TO (useful for
 // building arcs as part of a larger contour). Anticlockwise arcs are supported via the `anticlockwise`
 // flag (default false = clockwise).
-export function appendPathArc(
+export function appendPathEllipticalArc(
   path: Path,
   cx: number,
   cy: number,
@@ -46,7 +87,7 @@ export function appendPathArc(
 //
 // If radiusX or radiusY is 0, appends a LINE_TO to (endX, endY). If the current point equals
 // the endpoint, appends nothing. This matches the SVG arc spec behavior.
-export function appendPathArcTo(
+export function appendPathEllipticalArcTo(
   path: Path,
   radiusX: number,
   radiusY: number,
@@ -119,58 +160,6 @@ export function appendPathArcTo(
   appendArcCubics(path, cx, cy, rx, ry, xAxisRotation, theta1, dtheta);
 }
 
-// Approximates a circle centered at (cx, cy) with the given radius using four cubic bezier segments.
-// The standard kappa constant (4*(sqrt(2)-1)/3) gives the best cubic approximation of an arc.
-// Appends a MOVE_TO before the circle and a CLOSE at the end.
-export function appendPathCircle(path: Path, cx: number, cy: number, radius: number): void {
-  appendPathEllipse(path, cx, cy, radius, radius);
-}
-
-// Closes the current contour back to the most recent MOVE_TO origin. Appends a CLOSE verb (0 data
-// values). After CLOSE, the next draw verb starts a new implicit contour unless preceded by MOVE_TO.
-export function appendPathClose(path: Path): void {
-  path.commands.push(PathCommand.CLOSE);
-}
-
-export function appendPathCubicCurveTo(
-  path: Path,
-  control1X: number,
-  control1Y: number,
-  control2X: number,
-  control2Y: number,
-  anchorX: number,
-  anchorY: number,
-): void {
-  path.commands.push(PathCommand.CUBIC_CURVE_TO);
-  path.data.push(control1X, control1Y, control2X, control2Y, anchorX, anchorY);
-}
-
-export function appendPathCurveTo(
-  path: Path,
-  controlX: number,
-  controlY: number,
-  anchorX: number,
-  anchorY: number,
-): void {
-  path.commands.push(PathCommand.CURVE_TO);
-  path.data.push(controlX, controlY, anchorX, anchorY);
-}
-
-// Approximates an axis-aligned ellipse using four cubic bezier segments, each tangent handle reaching
-// CIRCLE_KAPPA = 4*(sqrt(2)-1)/3 of the radius. The error is less than 0.03% of the radius. Appends a
-// MOVE_TO at the rightmost point and a CLOSE after the fourth arc segment.
-export function appendPathEllipse(path: Path, cx: number, cy: number, radiusX: number, radiusY: number): void {
-  // kappa: the distance along each tangent handle for the optimal cubic arc approximation.
-  const kx = radiusX * CIRCLE_KAPPA;
-  const ky = radiusY * CIRCLE_KAPPA;
-  appendPathMoveTo(path, cx + radiusX, cy);
-  appendPathCubicCurveTo(path, cx + radiusX, cy - ky, cx + kx, cy - radiusY, cx, cy - radiusY);
-  appendPathCubicCurveTo(path, cx - kx, cy - radiusY, cx - radiusX, cy - ky, cx - radiusX, cy);
-  appendPathCubicCurveTo(path, cx - radiusX, cy + ky, cx - kx, cy + radiusY, cx, cy + radiusY);
-  appendPathCubicCurveTo(path, cx + kx, cy + radiusY, cx + radiusX, cy + ky, cx + radiusX, cy);
-  appendPathClose(path);
-}
-
 export function appendPathLineTo(path: Path, x: number, y: number): void {
   path.commands.push(PathCommand.LINE_TO);
   path.data.push(x, y);
@@ -202,6 +191,11 @@ export function appendPathPolyline(path: Path, points: Readonly<number[]>): void
   for (let i = 2; i < points.length; i += 2) {
     appendPathLineTo(path, points[i], points[i + 1]);
   }
+}
+
+export function appendPathQuadraticCurveTo(path: Path, controlX: number, controlY: number, x: number, y: number): void {
+  path.commands.push(PathCommand.QUADRATIC_CURVE_TO);
+  path.data.push(controlX, controlY, x, y);
 }
 
 // Appends a closed axis-aligned rectangle as a moveTo + three lineTo + close. The winding is CW
@@ -387,7 +381,8 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
 
 function pathCommandDataCount(cmd: PathCommand): number {
   if (cmd === PathCommand.MOVE_TO || cmd === PathCommand.LINE_TO) return 2;
-  if (cmd === PathCommand.CURVE_TO || cmd === PathCommand.WIDE_MOVE_TO || cmd === PathCommand.WIDE_LINE_TO) return 4;
+  if (cmd === PathCommand.QUADRATIC_CURVE_TO || cmd === PathCommand.WIDE_MOVE_TO || cmd === PathCommand.WIDE_LINE_TO)
+    return 4;
   if (cmd === PathCommand.CUBIC_CURVE_TO) return 6;
   return 0;
 }

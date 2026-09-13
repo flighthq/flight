@@ -25,8 +25,8 @@ export function transformPath(source: Readonly<Path>, matrix: Readonly<MatrixLik
       data[di] = a * x + c * y + tx;
       data[di + 1] = b * x + d * y + ty;
       di += 2;
-    } else if (command === PathCommand.CURVE_TO) {
-      // 4 values: controlX, controlY, anchorX, anchorY
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
+      // 4 values: controlX, controlY, x, y
       for (let k = 0; k < 4; k += 2) {
         const x = data[di + k];
         const y = data[di + k + 1];
@@ -35,7 +35,7 @@ export function transformPath(source: Readonly<Path>, matrix: Readonly<MatrixLik
       }
       di += 4;
     } else if (command === PathCommand.CUBIC_CURVE_TO) {
-      // 6 values: control1X, control1Y, control2X, control2Y, anchorX, anchorY
+      // 6 values: controlX1, controlY1, controlX2, controlY2, x, y
       for (let k = 0; k < 6; k += 2) {
         const x = data[di + k];
         const y = data[di + k + 1];

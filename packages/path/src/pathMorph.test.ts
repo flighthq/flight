@@ -4,7 +4,7 @@ import {
   appendPathClose,
   appendPathCircle,
   appendPathCubicCurveTo,
-  appendPathCurveTo,
+  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
   appendPathRectangle,
@@ -19,7 +19,7 @@ describe('createPathMorph', () => {
     appendPathLineTo(start, 6, 0);
     const end = createPath();
     appendPathMoveTo(end, 2, 2);
-    appendPathCurveTo(end, 5, 8, 8, 2);
+    appendPathQuadraticCurveTo(end, 5, 8, 8, 2);
 
     const morph = createPathMorph(start, end)!;
 
@@ -215,7 +215,7 @@ describe('samplePathMorph', () => {
     appendPathLineTo(start, 6, 8);
     const end = createPath();
     appendPathMoveTo(end, 10, 12);
-    appendPathCurveTo(end, 14, 20, 18, 16);
+    appendPathQuadraticCurveTo(end, 14, 20, 18, 16);
     const morph = createPathMorph(start, end)!;
     const out = createPath();
 
@@ -245,7 +245,7 @@ describe('samplePathMorph', () => {
     appendPathLineTo(start, 6, 0);
     const end = createPath('evenOdd');
     appendPathMoveTo(end, 2, 2);
-    appendPathCurveTo(end, 5, 8, 8, 2);
+    appendPathQuadraticCurveTo(end, 5, 8, 8, 2);
     const out = createPath('nonZero');
 
     samplePathMorph(out, createPathMorph(start, end)!, 0.5);
