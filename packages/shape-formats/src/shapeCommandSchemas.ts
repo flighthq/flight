@@ -52,6 +52,12 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
     argument('x', 'number'),
     argument('y', 'number'),
   ]),
+  quadraticCurveTo: definition(4, [
+    argument('controlX', 'number'),
+    argument('controlY', 'number'),
+    argument('x', 'number'),
+    argument('y', 'number'),
+  ]),
   drawCircle: definition(3, [
     argument('centerX', 'number'),
     argument('centerY', 'number'),
@@ -79,8 +85,8 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
     argument('y', 'number'),
     argument('width', 'number'),
     argument('height', 'number'),
-    argument('radiusX', 'number'),
-    argument('radiusY', 'number'),
+    argument('ellipseWidth', 'number'),
+    argument('ellipseHeight', 'number'),
   ]),
   drawTriangles: definition(1, [
     argument('vertices', 'numbers'),
@@ -103,12 +109,6 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
   ]),
   lineTo: definition(2, [argument('x', 'number'), argument('y', 'number')]),
   moveTo: definition(2, [argument('x', 'number'), argument('y', 'number')]),
-  quadraticCurveTo: definition(4, [
-    argument('controlX', 'number'),
-    argument('controlY', 'number'),
-    argument('x', 'number'),
-    argument('y', 'number'),
-  ]),
 } satisfies Readonly<Record<ShapeCommandKey, ShapeCommandSchemaDefinition>>;
 
 // The one runtime schema table for the built-in retained-shape vocabulary. Native shape JSON uses

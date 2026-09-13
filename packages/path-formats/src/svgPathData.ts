@@ -1,10 +1,10 @@
 import {
+  appendPathEllipticalArcTo,
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathEllipticalArcTo,
+  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
-  appendPathQuadraticCurveTo,
   createPath,
   forEachPathSegment,
 } from '@flighthq/path/contract';
@@ -20,9 +20,9 @@ import type { Path, SvgPathDataFormatOptions } from '@flighthq/types/contract';
  * unchanged; returns `true` when the whole string parses. An empty or whitespace-only string is
  * well-formed and appends nothing.
  *
- * Elliptic arcs (`A`/`a`) are appended through `appendPathEllipticalArcTo`, which approximates them
- * as cubic bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`)
- * therefore sees cubics, not an arc verb. The geometry round-trips; the arc command does not.
+ * Elliptic arcs (`A`/`a`) are appended through `appendPathEllipticalArcTo`, which approximates them as cubic
+ * bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`) therefore sees
+ * cubics, not an arc verb. The geometry round-trips; the arc command does not.
  */
 export function appendSvgPathData(path: Path, d: string): boolean {
   const scratch = createPath();
@@ -281,8 +281,8 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
         }
         const ax = relative ? currentX + x : x;
         const ay = relative ? currentY + y : y;
-        // appendPathEllipticalArcTo discovers its start through the path's last stored point. CLOSE
-        // stores no coordinates, so anchor the SVG pen at the subpath origin before building cubics.
+        // appendPathEllipticalArcTo discovers its start through the path's last stored point. CLOSE stores no
+        // coordinates, so anchor the SVG pen at the subpath origin before asking it to build cubics.
         if (lastKind === 'Z') appendPathMoveTo(path, currentX, currentY);
         appendPathEllipticalArcTo(path, rx, ry, (rotationDegrees * Math.PI) / 180, largeArc === 1, sweep === 1, ax, ay);
         currentX = ax;
@@ -303,9 +303,9 @@ function parseSvgPathDataInto(path: Path, d: string): { position: number; reason
 
 /**
  * Serializes a `Path` to an SVG path `d` string, emitting absolute commands. Each `PathSegment`
- * maps to its SVG verb: `moveTo`→`M`, `lineTo`→`L`, `quadraticCurveTo`→`Q`,
- * `cubicCurveTo`→`C`, `close`→`Z`. Arcs are not a distinct segment kind — the path stores them
- * as cubics — so no `A` command is produced.
+ * maps to its SVG verb: `moveTo`→`M`, `lineTo`→`L`, `quadraticCurveTo`→`Q`, `cubicCurveTo`→`C`,
+ * `close`→`Z`. Arcs are not a distinct segment kind — the path stores them as cubics — so no `A`
+ * command is produced.
  *
  * `options.precision`, when given, rounds every coordinate to that many decimal places and drops
  * trailing zeros; the default emits full-precision numbers (also trailing-zero-free).

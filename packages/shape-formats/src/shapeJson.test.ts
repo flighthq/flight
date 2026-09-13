@@ -5,18 +5,18 @@ import {
   appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeCubicCurveTo,
+  appendShapeQuadraticCurveTo,
   appendShapeDrawTriangles,
   appendShapeEllipse,
   appendShapeEndFill,
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTextureStyle,
+  appendShapeRectangle,
+  appendShapeRoundedRectangle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
-  appendShapeQuadraticCurveTo,
-  appendShapeRectangle,
-  appendShapeRoundedRectangle,
   createShape,
   getShapeCommandCount,
 } from '@flighthq/shape/contract';
@@ -76,7 +76,7 @@ describe('formatShapeJson', () => {
     const shape = createShape();
     appendShapeBeginFill(shape, 0x112233ff, 1);
     const parsed = JSON.parse(formatShapeJson(shape));
-    expect(parsed.shapeFormat).toBe(4);
+    expect(parsed.shapeFormat).toBe(3);
     expect(Array.isArray(parsed.commands)).toBe(true);
     expect(parsed.commands[0]).toEqual({ key: 'beginFill', args: [0x112233ff, 1] });
   });
@@ -153,35 +153,17 @@ describe('parseShapeJson', () => {
     expect(parseShapeJson(JSON.stringify({ shapeFormat: 999, commands: [] }))).toBeNull();
   });
 
-  it('rejects version 3 because its ellipse operands used bounding-box dimensions', () => {
-    const old = JSON.stringify({ shapeFormat: 3, commands: [{ key: 'drawEllipse', args: [10, 20, 100, 50] }] });
-    expect(parseShapeJson(old)).toBeNull();
-  });
-
-  it('round-trips ellipse center and radii operands without bounding-box conversion', () => {
-    const shape = createShape();
-    appendShapeEllipse(shape, 10, 20, 100, 50);
-
-    const json = formatShapeJson(shape);
-    expect(JSON.parse(json).commands).toEqual([{ key: 'drawEllipse', args: [10, 20, 100, 50] }]);
-    expect(parseShapeJson(json)?.data.commands).toEqual(['drawEllipse', 4, 10, 20, 100, 50]);
-  });
-
   it('returns null when the top level is not an object', () => {
     expect(parseShapeJson(JSON.stringify([]))).toBeNull();
   });
 
   it('returns null for an unknown command key', () => {
-    const json = JSON.stringify({ shapeFormat: 4, commands: [{ key: 'notACommand', args: [] }] });
+    const json = JSON.stringify({ shapeFormat: 3, commands: [{ key: 'notACommand', args: [] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
-  it.each(['curveTo', 'drawRoundRectangle'])('returns null for retired command key %s', (key) => {
-    expect(parseShapeJson(JSON.stringify({ shapeFormat: 4, commands: [{ key, args: [] }] }))).toBeNull();
-  });
-
   it('returns null for a malformed argument object', () => {
-    const json = JSON.stringify({ shapeFormat: 4, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
+    const json = JSON.stringify({ shapeFormat: 3, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
@@ -233,7 +215,7 @@ describe('parseShapeJson', () => {
 
 describe('parseShapeJson argument validation', () => {
   function document(commands: readonly unknown[]): string {
-    return JSON.stringify({ shapeFormat: 4, commands });
+    return JSON.stringify({ shapeFormat: 3, commands });
   }
 
   // Every rejection below used to build a Shape instead. The parser checked that an entry looked like
@@ -270,12 +252,12 @@ describe('parseShapeJson argument validation', () => {
   });
 
   it('rejects an out-of-range literal that parses as Infinity', () => {
-    expect(parseShapeJson('{"shapeFormat":4,"commands":[{"key":"moveTo","args":[1e999,2]}]}')).toBeNull();
+    expect(parseShapeJson('{"shapeFormat":3,"commands":[{"key":"moveTo","args":[1e999,2]}]}')).toBeNull();
   });
 
   it('rejects a non-finite entry inside a numeric array', () => {
     expect(
-      parseShapeJson('{"shapeFormat":4,"commands":[{"key":"drawPath","args":[[1],[1e999,0],"evenOdd"]}]}'),
+      parseShapeJson('{"shapeFormat":3,"commands":[{"key":"drawPath","args":[[1],[1e999,0],"evenOdd"]}]}'),
     ).toBeNull();
   });
 
@@ -312,7 +294,7 @@ describe('parseShapeJson argument validation', () => {
       .map(([key, value]) => `"${key}":${value}`)
       .join(',')}}`;
     const text =
-      `{"shapeFormat":4,"commands":[{"key":"beginGradientFill","args":` +
+      `{"shapeFormat":3,"commands":[{"key":"beginGradientFill","args":` +
       `["linear",[1],[1],[0],${matrix},"pad","rgb",0]}]}`;
 
     expect(parseShapeJson(text)).toBeNull();
