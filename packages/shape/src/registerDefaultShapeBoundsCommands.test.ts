@@ -1,7 +1,7 @@
 import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
@@ -33,7 +33,7 @@ describe('registerDefaultShapeBoundsCommands', () => {
       ['beginFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['beginGradientFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['cubicCurveTo', defaultShapeBoundsCubicCurveTo, defaultShapeBoundsCubicCurveTo],
-      ['curveTo', defaultShapeBoundsCurveTo, defaultShapeBoundsCurveTo],
+      ['quadraticCurveTo', defaultShapeBoundsQuadraticCurveTo, defaultShapeBoundsQuadraticCurveTo],
       ['drawCircle', defaultShapeBoundsDrawCircle, defaultShapeBoundsDrawCircle],
       ['drawEllipse', defaultShapeBoundsDrawEllipse, defaultShapeBoundsDrawEllipse],
       ['drawPath', defaultShapeBoundsDrawPath, defaultShapeBoundsDrawPath],

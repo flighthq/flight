@@ -50,7 +50,7 @@ export function flattenPath(path: Readonly<Path>, tolerance = 0.25): number[][] 
       y = data[di + 3];
       di += 4;
       contour.push(x, y);
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       contour = ensureContour(contours, contour);
       flattenQuadratic(contour, x, y, data[di], data[di + 1], data[di + 2], data[di + 3], toleranceSq, 0);
       x = data[di + 2];

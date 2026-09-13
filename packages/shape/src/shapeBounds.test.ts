@@ -6,7 +6,7 @@ import { createShape } from './shape';
 import {
   computeShapeBoundsRectangle,
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
@@ -162,12 +162,6 @@ describe('defaultShapeBoundsCubicCurveTo', () => {
   });
 });
 
-describe('defaultShapeBoundsCurveTo', () => {
-  it('is available for paired command registration', () => {
-    expect(defaultShapeBoundsCurveTo).toBeTypeOf('function');
-  });
-});
-
 describe('defaultShapeBoundsDrawCircle', () => {
   it('is available for paired command registration', () => {
     expect(defaultShapeBoundsDrawCircle).toBeTypeOf('function');
@@ -219,6 +213,12 @@ describe('defaultShapeBoundsLineTo', () => {
 describe('defaultShapeBoundsMoveTo', () => {
   it('is available for paired command registration', () => {
     expect(defaultShapeBoundsMoveTo).toBeTypeOf('function');
+  });
+});
+
+describe('defaultShapeBoundsQuadraticCurveTo', () => {
+  it('is available for paired command registration', () => {
+    expect(defaultShapeBoundsQuadraticCurveTo).toBeTypeOf('function');
   });
 });
 

@@ -58,20 +58,20 @@ export const defaultShapeBoundsCubicCurveTo: ShapeBoundsCommandHandler = (contex
   );
 };
 
-export const defaultShapeBoundsCurveTo: ShapeBoundsCommandHandler = (context, command) => {
-  context.curveTo(
-    command.getArgument(0) as number,
-    command.getArgument(1) as number,
-    command.getArgument(2) as number,
-    command.getArgument(3) as number,
-  );
-};
-
 export const defaultShapeBoundsDrawCircle: ShapeBoundsCommandHandler = (context, command) => {
   context.drawCircle(
     command.getArgument(0) as number,
     command.getArgument(1) as number,
     command.getArgument(2) as number,
+  );
+};
+
+export const defaultShapeBoundsDrawEllipse: ShapeBoundsCommandHandler = (context, command) => {
+  context.drawEllipse(
+    command.getArgument(0) as number,
+    command.getArgument(1) as number,
+    command.getArgument(2) as number,
+    command.getArgument(3) as number,
   );
 };
 
@@ -220,10 +220,9 @@ function createShapeBoundsAccumulator(): ShapeBoundsAccumulator {
 function createShapeBoundsContext(state: ShapeBoundsLaneState): ShapeBoundsContext {
   return {
     closePath: () => closeShapeBoundsPath(state),
-    cubicCurveTo: (controlX1, controlY1, controlX2, controlY2, anchorX, anchorY) =>
-      cubicShapeBoundsCurveTo(state, controlX1, controlY1, controlX2, controlY2, anchorX, anchorY),
-    curveTo: (controlX, controlY, anchorX, anchorY) =>
-      quadraticShapeBoundsCurveTo(state, controlX, controlY, anchorX, anchorY),
+    cubicCurveTo: (controlX1, controlY1, controlX2, controlY2, x, y) =>
+      cubicShapeBoundsCurveTo(state, controlX1, controlY1, controlX2, controlY2, x, y),
+    quadraticCurveTo: (controlX, controlY, x, y) => quadraticShapeBoundsCurveTo(state, controlX, controlY, x, y),
     drawCircle: (x, y, radius) => drawShapeBoundsCircle(state, x, y, radius),
     drawEllipse: (x, y, width, height) => drawShapeBoundsEllipse(state, x, y, width, height),
     drawRectangle: (x, y, width, height) => drawShapeBoundsRectangle(state, x, y, width, height),
@@ -294,8 +293,8 @@ function cubicShapeBoundsCurveTo(
   controlY1: number,
   controlX2: number,
   controlY2: number,
-  anchorX: number,
-  anchorY: number,
+  x: number,
+  y: number,
 ): void {
   ensureShapeBoundsCurrentPoint(state);
   const padding = getShapeBoundsLanePadding(state);
@@ -308,8 +307,8 @@ function cubicShapeBoundsCurveTo(
       controlY1,
       controlX2,
       controlY2,
-      anchorX,
-      anchorY,
+      x,
+      y,
       padding,
     );
   }
@@ -319,29 +318,29 @@ function cubicShapeBoundsCurveTo(
       setShapeBoundsTangent(state.tangentStart, controlX2 - state.penX, controlY2 - state.penY);
     }
     if (state.tangentStart.x === 0 && state.tangentStart.y === 0) {
-      setShapeBoundsTangent(state.tangentStart, anchorX - state.penX, anchorY - state.penY);
+      setShapeBoundsTangent(state.tangentStart, x - state.penX, y - state.penY);
     }
-    setShapeBoundsTangent(state.tangentEnd, anchorX - controlX2, anchorY - controlY2);
+    setShapeBoundsTangent(state.tangentEnd, x - controlX2, y - controlY2);
     if (state.tangentEnd.x === 0 && state.tangentEnd.y === 0) {
-      setShapeBoundsTangent(state.tangentEnd, anchorX - controlX1, anchorY - controlY1);
+      setShapeBoundsTangent(state.tangentEnd, x - controlX1, y - controlY1);
     }
     if (state.tangentEnd.x === 0 && state.tangentEnd.y === 0) {
-      setShapeBoundsTangent(state.tangentEnd, anchorX - state.penX, anchorY - state.penY);
+      setShapeBoundsTangent(state.tangentEnd, x - state.penX, y - state.penY);
     }
     appendShapeBoundsSegment(
       state,
       state.penX,
       state.penY,
-      anchorX,
-      anchorY,
+      x,
+      y,
       state.tangentStart.x,
       state.tangentStart.y,
       state.tangentEnd.x,
       state.tangentEnd.y,
     );
   }
-  state.penX = anchorX;
-  state.penY = anchorY;
+  state.penX = x;
+  state.penY = y;
 }
 
 function drawShapeBoundsCircle(state: ShapeBoundsLaneState, x: number, y: number, radius: number): void {
@@ -653,46 +652,37 @@ function quadraticShapeBoundsCurveTo(
   state: ShapeBoundsLaneState,
   controlX: number,
   controlY: number,
-  anchorX: number,
-  anchorY: number,
+  x: number,
+  y: number,
 ): void {
   ensureShapeBoundsCurrentPoint(state);
   const padding = getShapeBoundsLanePadding(state);
   if (padding >= 0) {
-    expandShapeBoundsQuadratic(
-      state.accumulator,
-      state.penX,
-      state.penY,
-      controlX,
-      controlY,
-      anchorX,
-      anchorY,
-      padding,
-    );
+    expandShapeBoundsQuadratic(state.accumulator, state.penX, state.penY, controlX, controlY, x, y, padding);
   }
   if (state.writesStroke && state.hasStroke) {
     setShapeBoundsTangent(state.tangentStart, controlX - state.penX, controlY - state.penY);
     if (state.tangentStart.x === 0 && state.tangentStart.y === 0) {
-      setShapeBoundsTangent(state.tangentStart, anchorX - state.penX, anchorY - state.penY);
+      setShapeBoundsTangent(state.tangentStart, x - state.penX, y - state.penY);
     }
-    setShapeBoundsTangent(state.tangentEnd, anchorX - controlX, anchorY - controlY);
+    setShapeBoundsTangent(state.tangentEnd, x - controlX, y - controlY);
     if (state.tangentEnd.x === 0 && state.tangentEnd.y === 0) {
-      setShapeBoundsTangent(state.tangentEnd, anchorX - state.penX, anchorY - state.penY);
+      setShapeBoundsTangent(state.tangentEnd, x - state.penX, y - state.penY);
     }
     appendShapeBoundsSegment(
       state,
       state.penX,
       state.penY,
-      anchorX,
-      anchorY,
+      x,
+      y,
       state.tangentStart.x,
       state.tangentStart.y,
       state.tangentEnd.x,
       state.tangentEnd.y,
     );
   }
-  state.penX = anchorX;
-  state.penY = anchorY;
+  state.penX = x;
+  state.penY = y;
 }
 
 function setShapeBoundsSegment(
@@ -766,15 +756,6 @@ function writeShapeBoundsRectangle(out: Rectangle, accumulator: Readonly<ShapeBo
   out.height = accumulator.maxY - accumulator.minY;
 }
 
-export const defaultShapeBoundsDrawEllipse: ShapeBoundsCommandHandler = (context, command) => {
-  context.drawEllipse(
-    command.getArgument(0) as number,
-    command.getArgument(1) as number,
-    command.getArgument(2) as number,
-    command.getArgument(3) as number,
-  );
-};
-
 export const defaultShapeBoundsDrawPath: ShapeBoundsCommandHandler = (context, command) => {
   const pathCommands = command.getArgument(0) as readonly number[];
   const data = command.getArgument(1) as readonly number[];
@@ -792,7 +773,7 @@ export const defaultShapeBoundsDrawPath: ShapeBoundsCommandHandler = (context, c
         dataIndex += 2;
         break;
       case 3:
-        context.curveTo(data[dataIndex], data[dataIndex + 1], data[dataIndex + 2], data[dataIndex + 3]);
+        context.quadraticCurveTo(data[dataIndex], data[dataIndex + 1], data[dataIndex + 2], data[dataIndex + 3]);
         dataIndex += 4;
         break;
       case 4:
@@ -854,6 +835,15 @@ export const defaultShapeBoundsLineTo: ShapeBoundsCommandHandler = (context, com
 
 export const defaultShapeBoundsMoveTo: ShapeBoundsCommandHandler = (context, command) => {
   context.moveTo(command.getArgument(0) as number, command.getArgument(1) as number);
+};
+
+export const defaultShapeBoundsQuadraticCurveTo: ShapeBoundsCommandHandler = (context, command) => {
+  context.quadraticCurveTo(
+    command.getArgument(0) as number,
+    command.getArgument(1) as number,
+    command.getArgument(2) as number,
+    command.getArgument(3) as number,
+  );
 };
 
 export function explainShapeBounds(source: Readonly<Shape>, mode: ShapeBoundsMode = 'ink'): ShapeBoundsExplanation {

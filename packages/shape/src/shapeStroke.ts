@@ -76,7 +76,7 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
       if (name === 'moveTo' || name === 'lineTo') {
         penX = commands[a] as number;
         penY = commands[a + 1] as number;
-      } else if (name === 'curveTo') {
+      } else if (name === 'quadraticCurveTo') {
         penX = commands[a + 2] as number;
         penY = commands[a + 3] as number;
       } else if (name === 'cubicCurveTo') {
@@ -114,7 +114,7 @@ function isShapeGeometryCommand(name: string): boolean {
   return (
     name === 'moveTo' ||
     name === 'lineTo' ||
-    name === 'curveTo' ||
+    name === 'quadraticCurveTo' ||
     name === 'cubicCurveTo' ||
     name === 'drawCircle' ||
     name === 'drawEllipse' ||

@@ -1,3 +1,4 @@
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import type {
   CapsStyle,
@@ -17,128 +18,6 @@ import type {
 // Canonical definition now lives in @flighthq/types (shared with @flighthq/path); re-exported here so
 // shape authoring keeps a single import surface.
 export { PathCommand } from '@flighthq/types/contract';
-
-// Appends an arc to the shape's command stream, expanding it into a moveTo followed by
-// cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn
-// from startAngle to endAngle around (cx, cy) with the given radius. Angles are in radians.
-// Set anticlockwise to true for a counter-clockwise arc.
-//
-// Always emits a moveTo to the arc start — use this as a standalone arc primitive. When connecting
-// an arc to an existing open path (e.g. inside appendShapeArcTo), use the commands buffer directly
-// via appendShapeArcSegments.
-export function appendShapeArc(
-  shape: Shape,
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-  anticlockwise = false,
-): void {
-  const cmds = shape.data.commands;
-  const sweep = normalizeArcSweep(startAngle, endAngle, anticlockwise);
-  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
-  const segmentAngle = sweep / segmentCount;
-  const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
-  cmds.push('moveTo', 2, cx + radius * Math.cos(startAngle), cy + radius * Math.sin(startAngle));
-  pushArcCubics(cmds, cx, cy, radius, startAngle, segmentCount, segmentAngle, alpha);
-  invalidateContent(shape);
-}
-
-// Appends an arc segment using SVG-style tangent-line arguments. Draws an arc from the current
-// pen position through the intersection of two tangent lines defined by (x1, y1) and (x2, y2),
-// with the given radius, using cubic bezier approximation. Equivalent to the SVG/Canvas2D
-// arcTo(x1, y1, x2, y2, radius) semantics.
-//
-// If the pen has not been moved (no prior moveTo/lineTo), the current pen is treated as (0, 0).
-// A lineTo to the tangent start point is emitted before the arc when the current point differs.
-export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: number, y2: number, radius: number): void {
-  const cmds = shape.data.commands;
-  // Recover the current pen position by scanning the command stream for the last pen-position
-  // command. The pen starts at (0, 0) if no prior command set it.
-  let penX = 0;
-  let penY = 0;
-  let i = 0;
-  while (i < cmds.length) {
-    const key = cmds[i] as string;
-    const argCount = cmds[i + 1] as number;
-    const b = i + 2;
-    switch (key) {
-      case 'moveTo':
-      case 'lineTo':
-        penX = cmds[b] as number;
-        penY = cmds[b + 1] as number;
-        break;
-      case 'curveTo':
-        penX = cmds[b + 2] as number;
-        penY = cmds[b + 3] as number;
-        break;
-      case 'cubicCurveTo':
-        penX = cmds[b + 4] as number;
-        penY = cmds[b + 5] as number;
-        break;
-    }
-    i += argCount + 2;
-  }
-  // Compute tangent direction vectors.
-  const d1x = penX - x1;
-  const d1y = penY - y1;
-  const d2x = x2 - x1;
-  const d2y = y2 - y1;
-  const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
-  const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
-  // Degenerate case: zero-length tangent → emit a plain lineTo to (x1, y1).
-  if (len1 < 1e-10 || len2 < 1e-10) {
-    cmds.push('lineTo', 2, x1, y1);
-    invalidateContent(shape);
-    return;
-  }
-  // Compute the angle between the two tangent lines.
-  const cosHalf = (d1x * d2x + d1y * d2y) / (len1 * len2);
-  const clampedCos = Math.max(-1, Math.min(1, cosHalf));
-  const halfAngle = Math.acos(clampedCos) / 2;
-  // Degenerate: tangents are parallel/anti-parallel.
-  if (Math.abs(Math.sin(halfAngle)) < 1e-10) {
-    cmds.push('lineTo', 2, x1, y1);
-    invalidateContent(shape);
-    return;
-  }
-  // Distance from the corner (x1, y1) to the tangent points.
-  const d = radius / Math.tan(halfAngle);
-  // Tangent start point (on the line from pen to x1,y1).
-  const n1x = d1x / len1;
-  const n1y = d1y / len1;
-  const tx1 = x1 + n1x * d;
-  const ty1 = y1 + n1y * d;
-  // Tangent end point (on the line from x1,y1 to x2,y2).
-  const n2x = d2x / len2;
-  const n2y = d2y / len2;
-  const tx2 = x1 + n2x * d;
-  const ty2 = y1 + n2y * d;
-  // Line to arc start.
-  cmds.push('lineTo', 2, tx1, ty1);
-  // Compute the center of the arc.
-  // The center lies on the angle bisector at distance radius / sin(halfAngle).
-  const bx = (n1x + n2x) / 2;
-  const by = (n1y + n2y) / 2;
-  const blen = Math.sqrt(bx * bx + by * by);
-  const distToCenter = radius / Math.sin(halfAngle);
-  const ocx = x1 + (bx / blen) * distToCenter;
-  const ocy = y1 + (by / blen) * distToCenter;
-  // The sweep from start tangent to end tangent.
-  const startA = Math.atan2(ty1 - ocy, tx1 - ocx);
-  const endA = Math.atan2(ty2 - ocy, tx2 - ocx);
-  // Determine direction: cross product of the two tangent vectors tells us winding.
-  const cross = d1x * d2y - d1y * d2x;
-  const isAnticlockwise = cross < 0;
-  const sweep = normalizeArcSweep(startA, endA, isAnticlockwise);
-  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
-  const segmentAngle = sweep / segmentCount;
-  const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
-  // Push arc cubics directly — no moveTo because we already emitted lineTo(tx1, ty1).
-  pushArcCubics(cmds, ocx, ocy, radius, startA, segmentCount, segmentAngle, alpha);
-  invalidateContent(shape);
-}
 
 export function appendShapeBeginFill(shape: Shape, color: number, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
@@ -187,21 +66,10 @@ export function appendShapeCubicCurveTo(
   controlY1: number,
   controlX2: number,
   controlY2: number,
-  anchorX: number,
-  anchorY: number,
+  x: number,
+  y: number,
 ): void {
-  shape.data.commands.push('cubicCurveTo', 6, controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
-  invalidateContent(shape);
-}
-
-export function appendShapeCurveTo(
-  shape: Shape,
-  controlX: number,
-  controlY: number,
-  anchorX: number,
-  anchorY: number,
-): void {
-  shape.data.commands.push('curveTo', 4, controlX, controlY, anchorX, anchorY);
+  shape.data.commands.push('cubicCurveTo', 6, controlX1, controlY1, controlX2, controlY2, x, y);
   invalidateContent(shape);
 }
 
@@ -218,6 +86,33 @@ export function appendShapeDrawTriangles(
 
 export function appendShapeEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawEllipse', 4, x, y, width, height);
+  invalidateContent(shape);
+}
+
+// Appends an arc to the shape's command stream, expanding it into a moveTo followed by
+// cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn
+// from startAngle to endAngle around (cx, cy) with the given radius. Angles are in radians.
+// Set anticlockwise to true for a counter-clockwise arc.
+//
+// Always emits a moveTo to the arc start — use this as a standalone arc primitive. When connecting
+// an arc to an existing open path (e.g. inside appendShapeTangentArcTo), use the commands buffer directly
+// via appendShapeArcSegments.
+export function appendShapeEllipticalArc(
+  shape: Shape,
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  anticlockwise = false,
+): void {
+  const cmds = shape.data.commands;
+  const sweep = normalizeArcSweep(startAngle, endAngle, anticlockwise);
+  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
+  const segmentAngle = sweep / segmentCount;
+  const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
+  cmds.push('moveTo', 2, cx + radius * Math.cos(startAngle), cy + radius * Math.sin(startAngle));
+  pushArcCubics(cmds, cx, cy, radius, startAngle, segmentCount, segmentAngle, alpha);
   invalidateContent(shape);
 }
 
@@ -323,6 +218,17 @@ export function appendShapePolyline(shape: Shape, points: number[]): void {
   invalidateContent(shape);
 }
 
+export function appendShapeQuadraticCurveTo(
+  shape: Shape,
+  controlX: number,
+  controlY: number,
+  x: number,
+  y: number,
+): void {
+  shape.data.commands.push('quadraticCurveTo', 4, controlX, controlY, x, y);
+  invalidateContent(shape);
+}
+
 export function appendShapeRectangle(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawRectangle', 4, x, y, width, height);
   invalidateContent(shape);
@@ -355,15 +261,130 @@ export function appendShapeRoundRectangleVarying(
   const r = x + width;
   const b = y + height;
   const cmds = shape.data.commands;
+  const kTR = topRightRadius * CIRCLE_KAPPA;
+  const kBR = bottomRightRadius * CIRCLE_KAPPA;
+  const kBL = bottomLeftRadius * CIRCLE_KAPPA;
+  const kTL = topLeftRadius * CIRCLE_KAPPA;
   cmds.push('moveTo', 2, x + topLeftRadius, y);
   cmds.push('lineTo', 2, r - topRightRadius, y);
-  cmds.push('curveTo', 4, r, y, r, y + topRightRadius);
+  cmds.push('cubicCurveTo', 6, r - topRightRadius + kTR, y, r, y + topRightRadius - kTR, r, y + topRightRadius);
   cmds.push('lineTo', 2, r, b - bottomRightRadius);
-  cmds.push('curveTo', 4, r, b, r - bottomRightRadius, b);
+  cmds.push(
+    'cubicCurveTo',
+    6,
+    r,
+    b - bottomRightRadius + kBR,
+    r - bottomRightRadius + kBR,
+    b,
+    r - bottomRightRadius,
+    b,
+  );
   cmds.push('lineTo', 2, x + bottomLeftRadius, b);
-  cmds.push('curveTo', 4, x, b, x, b - bottomLeftRadius);
+  cmds.push('cubicCurveTo', 6, x + bottomLeftRadius - kBL, b, x, b - bottomLeftRadius + kBL, x, b - bottomLeftRadius);
   cmds.push('lineTo', 2, x, y + topLeftRadius);
-  cmds.push('curveTo', 4, x, y, x + topLeftRadius, y);
+  cmds.push('cubicCurveTo', 6, x, y + topLeftRadius - kTL, x + topLeftRadius - kTL, y, x + topLeftRadius, y);
+  invalidateContent(shape);
+}
+
+// Appends an arc segment using tangent-line arguments. Draws an arc from the current
+// pen position through the intersection of two tangent lines defined by (x1, y1) and (x2, y2),
+// with the given radius, using cubic bezier approximation. Equivalent to the SVG/Canvas2D
+// arcTo(x1, y1, x2, y2, radius) semantics.
+//
+// If the pen has not been moved (no prior moveTo/lineTo), the current pen is treated as (0, 0).
+// A lineTo to the tangent start point is emitted before the arc when the current point differs.
+export function appendShapeTangentArcTo(
+  shape: Shape,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  radius: number,
+): void {
+  const cmds = shape.data.commands;
+  // Recover the current pen position by scanning the command stream for the last pen-position
+  // command. The pen starts at (0, 0) if no prior command set it.
+  let penX = 0;
+  let penY = 0;
+  let i = 0;
+  while (i < cmds.length) {
+    const key = cmds[i] as string;
+    const argCount = cmds[i + 1] as number;
+    const b = i + 2;
+    switch (key) {
+      case 'moveTo':
+      case 'lineTo':
+        penX = cmds[b] as number;
+        penY = cmds[b + 1] as number;
+        break;
+      case 'quadraticCurveTo':
+        penX = cmds[b + 2] as number;
+        penY = cmds[b + 3] as number;
+        break;
+      case 'cubicCurveTo':
+        penX = cmds[b + 4] as number;
+        penY = cmds[b + 5] as number;
+        break;
+    }
+    i += argCount + 2;
+  }
+  // Compute tangent direction vectors.
+  const d1x = penX - x1;
+  const d1y = penY - y1;
+  const d2x = x2 - x1;
+  const d2y = y2 - y1;
+  const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
+  const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
+  // Degenerate case: zero-length tangent → emit a plain lineTo to (x1, y1).
+  if (len1 < 1e-10 || len2 < 1e-10) {
+    cmds.push('lineTo', 2, x1, y1);
+    invalidateContent(shape);
+    return;
+  }
+  // Compute the angle between the two tangent lines.
+  const cosHalf = (d1x * d2x + d1y * d2y) / (len1 * len2);
+  const clampedCos = Math.max(-1, Math.min(1, cosHalf));
+  const halfAngle = Math.acos(clampedCos) / 2;
+  // Degenerate: tangents are parallel/anti-parallel.
+  if (Math.abs(Math.sin(halfAngle)) < 1e-10) {
+    cmds.push('lineTo', 2, x1, y1);
+    invalidateContent(shape);
+    return;
+  }
+  // Distance from the corner (x1, y1) to the tangent points.
+  const d = radius / Math.tan(halfAngle);
+  // Tangent start point (on the line from pen to x1,y1).
+  const n1x = d1x / len1;
+  const n1y = d1y / len1;
+  const tx1 = x1 + n1x * d;
+  const ty1 = y1 + n1y * d;
+  // Tangent end point (on the line from x1,y1 to x2,y2).
+  const n2x = d2x / len2;
+  const n2y = d2y / len2;
+  const tx2 = x1 + n2x * d;
+  const ty2 = y1 + n2y * d;
+  // Line to arc start.
+  cmds.push('lineTo', 2, tx1, ty1);
+  // Compute the center of the arc.
+  // The center lies on the angle bisector at distance radius / sin(halfAngle).
+  const bx = (n1x + n2x) / 2;
+  const by = (n1y + n2y) / 2;
+  const blen = Math.sqrt(bx * bx + by * by);
+  const distToCenter = radius / Math.sin(halfAngle);
+  const ocx = x1 + (bx / blen) * distToCenter;
+  const ocy = y1 + (by / blen) * distToCenter;
+  // The sweep from start tangent to end tangent.
+  const startA = Math.atan2(ty1 - ocy, tx1 - ocx);
+  const endA = Math.atan2(ty2 - ocy, tx2 - ocx);
+  // Determine direction: cross product of the two tangent vectors tells us winding.
+  const cross = d1x * d2y - d1y * d2x;
+  const isAnticlockwise = cross < 0;
+  const sweep = normalizeArcSweep(startA, endA, isAnticlockwise);
+  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
+  const segmentAngle = sweep / segmentCount;
+  const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
+  // Push arc cubics directly — no moveTo because we already emitted lineTo(tx1, ty1).
+  pushArcCubics(cmds, ocx, ocy, radius, startA, segmentCount, segmentAngle, alpha);
   invalidateContent(shape);
 }
 

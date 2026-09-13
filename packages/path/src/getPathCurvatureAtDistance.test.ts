@@ -1,6 +1,6 @@
 import { getPathCurvatureAtDistance } from './getPathCurvatureAtDistance';
 import { getPathLength } from './getPathLength';
-import { appendPathCircle, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { appendPathCircle, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
 
 describe('getPathCurvatureAtDistance', () => {
   it('returns zero for an empty path', () => {
@@ -17,7 +17,7 @@ describe('getPathCurvatureAtDistance', () => {
   it('returns nonzero curvature on a curved path', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 100, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 100, 100, 0);
     const k = getPathCurvatureAtDistance(path, 50);
     expect(k).not.toBe(0);
   });
@@ -34,7 +34,7 @@ describe('getPathCurvatureAtDistance', () => {
   it('clamps at the end of the path for distances beyond length', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 50, 100, 100, 0);
+    appendPathQuadraticCurveTo(path, 50, 100, 100, 0);
     const tolerance = 0.01;
     const length = getPathLength(path, tolerance);
     const kEnd = getPathCurvatureAtDistance(path, length, tolerance);

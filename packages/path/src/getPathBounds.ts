@@ -49,7 +49,7 @@ export function getPathBounds(path: Readonly<Path>, out: RectangleLike): boolean
       expand(nx, ny);
       x = nx;
       y = ny;
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       const cx = data[di];
       const cy = data[di + 1];
       const ax = data[di + 2];

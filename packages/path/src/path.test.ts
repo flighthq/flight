@@ -1,130 +1,23 @@
 import { PathCommand } from '@flighthq/types/contract';
 
 import {
-  appendPathArc,
-  appendPathArcTo,
   appendPathCircle,
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathCurveTo,
   appendPathEllipse,
+  appendPathEllipticalArc,
+  appendPathEllipticalArcTo,
   appendPathLineTo,
   appendPathMoveTo,
   appendPathPolygon,
   appendPathPolyline,
+  appendPathQuadraticCurveTo,
   appendPathRectangle,
   appendPathRoundRectangle,
   createPath,
   getPathLastPoint,
   initializePath,
 } from './path';
-
-describe('appendPathArc', () => {
-  it('produces a MOVE_TO and at least one CUBIC_CURVE_TO for a non-zero arc', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 50, 0, Math.PI / 2);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-  });
-
-  it('starts at the correct point on the circle (angle=0 → rightmost)', () => {
-    const path = createPath();
-    appendPathArc(path, 10, 20, 30, 0, Math.PI / 2);
-    // MOVE_TO at (cx + radius*cos(0), cy + radius*sin(0)) = (40, 20)
-    expect(path.data[0]).toBeCloseTo(40);
-    expect(path.data[1]).toBeCloseTo(20);
-  });
-
-  it('ends at the correct point for a quarter circle', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 100, 0, Math.PI / 2);
-    // The last CUBIC_CURVE_TO anchor should be near (cos(π/2)*100, sin(π/2)*100) = (0, 100)
-    const data = path.data;
-    expect(data[data.length - 2]).toBeCloseTo(0, 1);
-    expect(data[data.length - 1]).toBeCloseTo(100, 1);
-  });
-
-  it('supports anticlockwise arcs', () => {
-    const pathCW = createPath();
-    appendPathArc(pathCW, 0, 0, 50, 0, Math.PI, false);
-    const pathCCW = createPath();
-    appendPathArc(pathCCW, 0, 0, 50, 0, Math.PI, true);
-    // Both arcs should contain cubic curves but the y-extremes differ.
-    expect(pathCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-    expect(pathCCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-    // CW goes through negative y; CCW goes through positive y (in screen coords).
-    const cwMaxY = Math.max(...pathCW.data.filter((_, i) => i % 2 === 1));
-    const ccwMinY = Math.min(...pathCCW.data.filter((_, i) => i % 2 === 1));
-    expect(cwMaxY).toBeGreaterThan(0);
-    expect(ccwMinY).toBeLessThan(0);
-  });
-
-  it('connectToCurrent=true appends a LINE_TO instead of MOVE_TO', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathArc(path, 100, 0, 50, Math.PI, 0, false, true);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-  });
-
-  it('appends nothing for zero radius', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 0, 0, Math.PI);
-    expect(path.commands.length).toBe(0);
-  });
-});
-
-describe('appendPathArcTo', () => {
-  it('starts after CLOSE from the subpath origin', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 20);
-    appendPathLineTo(path, 30, 40);
-    appendPathClose(path);
-    appendPathArcTo(path, 10, 10, 0, false, true, 30, 20);
-
-    const expected = createPath();
-    appendPathMoveTo(expected, 10, 20);
-    appendPathArcTo(expected, 10, 10, 0, false, true, 30, 20);
-
-    expect(path.data.slice(4)).toStrictEqual(expected.data.slice(2));
-  });
-
-  it('appends a LINE_TO when radiusX is 0', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathArcTo(path, 0, 10, 0, false, false, 50, 50);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-    expect(path.data[path.data.length - 2]).toBeCloseTo(50);
-    expect(path.data[path.data.length - 1]).toBeCloseTo(50);
-  });
-
-  it('does nothing when start equals end', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 10);
-    const beforeLen = path.commands.length;
-    appendPathArcTo(path, 50, 50, 0, false, false, 10, 10);
-    expect(path.commands.length).toBe(beforeLen);
-  });
-
-  it('produces cubic curves for a non-degenerate arc', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 100, 0);
-    // Full circle: from (100,0) back to (100,0) via a large arc
-    appendPathArcTo(path, 50, 50, 0, true, false, 100, 1);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-  });
-
-  it('ends at the specified endpoint (non-rotated, unit circle)', () => {
-    // Quarter circle from (1,0) to (0,1) using a radius-1 circle centered at origin.
-    const path = createPath();
-    appendPathMoveTo(path, 1, 0);
-    appendPathArcTo(path, 1, 1, 0, false, true, 0, 1);
-    const data = path.data;
-    // Last anchor point of the last cubic should be close to (0,1).
-    expect(data[data.length - 2]).toBeCloseTo(0, 1);
-    expect(data[data.length - 1]).toBeCloseTo(1, 1);
-  });
-});
 
 describe('appendPathCircle', () => {
   it('produces a closed path with a MOVE_TO, four CUBIC_CURVE_TO, and a CLOSE', () => {
@@ -163,15 +56,6 @@ describe('appendPathCubicCurveTo', () => {
   });
 });
 
-describe('appendPathCurveTo', () => {
-  it('pushes the quadratic verb and its four coordinates', () => {
-    const path = createPath();
-    appendPathCurveTo(path, 1, 2, 3, 4);
-    expect(path.commands).toStrictEqual([PathCommand.CURVE_TO]);
-    expect(path.data).toStrictEqual([1, 2, 3, 4]);
-  });
-});
-
 describe('appendPathEllipse', () => {
   it('produces a closed path with four cubic segments', () => {
     const path = createPath();
@@ -186,6 +70,113 @@ describe('appendPathEllipse', () => {
     appendPathEllipse(path, 10, 20, 100, 50);
     expect(path.data[0]).toBeCloseTo(110);
     expect(path.data[1]).toBeCloseTo(20);
+  });
+});
+
+describe('appendPathEllipticalArc', () => {
+  it('produces a MOVE_TO and at least one CUBIC_CURVE_TO for a non-zero arc', () => {
+    const path = createPath();
+    appendPathEllipticalArc(path, 0, 0, 50, 0, Math.PI / 2);
+    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
+    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+  });
+
+  it('starts at the correct point on the circle (angle=0 → rightmost)', () => {
+    const path = createPath();
+    appendPathEllipticalArc(path, 10, 20, 30, 0, Math.PI / 2);
+    // MOVE_TO at (cx + radius*cos(0), cy + radius*sin(0)) = (40, 20)
+    expect(path.data[0]).toBeCloseTo(40);
+    expect(path.data[1]).toBeCloseTo(20);
+  });
+
+  it('ends at the correct point for a quarter circle', () => {
+    const path = createPath();
+    appendPathEllipticalArc(path, 0, 0, 100, 0, Math.PI / 2);
+    // The last CUBIC_CURVE_TO anchor should be near (cos(π/2)*100, sin(π/2)*100) = (0, 100)
+    const data = path.data;
+    expect(data[data.length - 2]).toBeCloseTo(0, 1);
+    expect(data[data.length - 1]).toBeCloseTo(100, 1);
+  });
+
+  it('supports anticlockwise arcs', () => {
+    const pathCW = createPath();
+    appendPathEllipticalArc(pathCW, 0, 0, 50, 0, Math.PI, false);
+    const pathCCW = createPath();
+    appendPathEllipticalArc(pathCCW, 0, 0, 50, 0, Math.PI, true);
+    // Both arcs should contain cubic curves but the y-extremes differ.
+    expect(pathCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(pathCCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    // CW goes through negative y; CCW goes through positive y (in screen coords).
+    const cwMaxY = Math.max(...pathCW.data.filter((_, i) => i % 2 === 1));
+    const ccwMinY = Math.min(...pathCCW.data.filter((_, i) => i % 2 === 1));
+    expect(cwMaxY).toBeGreaterThan(0);
+    expect(ccwMinY).toBeLessThan(0);
+  });
+
+  it('connectToCurrent=true appends a LINE_TO instead of MOVE_TO', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathEllipticalArc(path, 100, 0, 50, Math.PI, 0, false, true);
+    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
+    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
+  });
+
+  it('appends nothing for zero radius', () => {
+    const path = createPath();
+    appendPathEllipticalArc(path, 0, 0, 0, 0, Math.PI);
+    expect(path.commands.length).toBe(0);
+  });
+});
+
+describe('appendPathEllipticalArcTo', () => {
+  it('starts after CLOSE from the subpath origin', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 10, 20);
+    appendPathLineTo(path, 30, 40);
+    appendPathClose(path);
+    appendPathEllipticalArcTo(path, 10, 10, 0, false, true, 30, 20);
+
+    const expected = createPath();
+    appendPathMoveTo(expected, 10, 20);
+    appendPathEllipticalArcTo(expected, 10, 10, 0, false, true, 30, 20);
+
+    expect(path.data.slice(4)).toStrictEqual(expected.data.slice(2));
+  });
+
+  it('appends a LINE_TO when radiusX is 0', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathEllipticalArcTo(path, 0, 10, 0, false, false, 50, 50);
+    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
+    expect(path.data[path.data.length - 2]).toBeCloseTo(50);
+    expect(path.data[path.data.length - 1]).toBeCloseTo(50);
+  });
+
+  it('does nothing when start equals end', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 10, 10);
+    const beforeLen = path.commands.length;
+    appendPathEllipticalArcTo(path, 50, 50, 0, false, false, 10, 10);
+    expect(path.commands.length).toBe(beforeLen);
+  });
+
+  it('produces cubic curves for a non-degenerate arc', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 100, 0);
+    // Full circle: from (100,0) back to (100,0) via a large arc
+    appendPathEllipticalArcTo(path, 50, 50, 0, true, false, 100, 1);
+    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+  });
+
+  it('ends at the specified endpoint (non-rotated, unit circle)', () => {
+    // Quarter circle from (1,0) to (0,1) using a radius-1 circle centered at origin.
+    const path = createPath();
+    appendPathMoveTo(path, 1, 0);
+    appendPathEllipticalArcTo(path, 1, 1, 0, false, true, 0, 1);
+    const data = path.data;
+    // Last anchor point of the last cubic should be close to (0,1).
+    expect(data[data.length - 2]).toBeCloseTo(0, 1);
+    expect(data[data.length - 1]).toBeCloseTo(1, 1);
   });
 });
 
@@ -236,6 +227,15 @@ describe('appendPathPolyline', () => {
     const path = createPath();
     appendPathPolyline(path, [0, 0]);
     expect(path.commands.length).toBe(0);
+  });
+});
+
+describe('appendPathQuadraticCurveTo', () => {
+  it('pushes the quadratic verb and its four coordinates', () => {
+    const path = createPath();
+    appendPathQuadraticCurveTo(path, 1, 2, 3, 4);
+    expect(path.commands).toStrictEqual([PathCommand.QUADRATIC_CURVE_TO]);
+    expect(path.data).toStrictEqual([1, 2, 3, 4]);
   });
 });
 
@@ -333,10 +333,10 @@ describe('getPathLastPoint', () => {
     expect(getPathLastPoint(path)).toStrictEqual([30, 40]);
   });
 
-  it('returns the anchor after appendPathCurveTo', () => {
+  it('returns the anchor after appendPathQuadraticCurveTo', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
-    appendPathCurveTo(path, 5, 5, 50, 60);
+    appendPathQuadraticCurveTo(path, 5, 5, 50, 60);
     expect(getPathLastPoint(path)).toStrictEqual([50, 60]);
   });
 
@@ -361,9 +361,9 @@ describe('getPathLastPoint', () => {
     expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
   });
 
-  it('returns the endpoint after appendPathArc', () => {
+  it('returns the endpoint after appendPathEllipticalArc', () => {
     const path = createPath();
-    appendPathArc(path, 0, 0, 100, 0, Math.PI / 2);
+    appendPathEllipticalArc(path, 0, 0, 100, 0, Math.PI / 2);
     const last = getPathLastPoint(path)!;
     expect(last[0]).toBeCloseTo(0, 1);
     expect(last[1]).toBeCloseTo(100, 1);

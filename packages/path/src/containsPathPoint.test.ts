@@ -1,7 +1,13 @@
 import { PathCommand } from '@flighthq/types/contract';
 
 import { containsPathPoint } from './containsPathPoint';
-import { appendPathCubicCurveTo, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import {
+  appendPathCubicCurveTo,
+  appendPathQuadraticCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+} from './path';
 
 describe('containsPathPoint', () => {
   it('returns true for a point inside a convex polygon (nonZero)', () => {
@@ -107,7 +113,7 @@ describe('containsPathPoint', () => {
     // Approximate a quarter-circle using a single quadratic — the interior should register a hit.
     const path = createPath('nonZero');
     appendPathMoveTo(path, 100, 0);
-    appendPathCurveTo(path, 100, 100, 0, 100);
+    appendPathQuadraticCurveTo(path, 100, 100, 0, 100);
     appendPathLineTo(path, 0, 0);
     appendPathLineTo(path, 100, 0);
     expect(containsPathPoint(path, 30, 30)).toBe(true);

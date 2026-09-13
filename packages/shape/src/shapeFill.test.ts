@@ -87,7 +87,7 @@ describe('getPathCommandOperandCount', () => {
   it('reports operand width per verb (MOVE/LINE 2, CURVE/WIDE 4, CUBIC 6, CLOSE/NO_OP 0)', () => {
     expect(getPathCommandOperandCount(PathCommand.MOVE_TO)).toBe(2);
     expect(getPathCommandOperandCount(PathCommand.LINE_TO)).toBe(2);
-    expect(getPathCommandOperandCount(PathCommand.CURVE_TO)).toBe(4);
+    expect(getPathCommandOperandCount(PathCommand.QUADRATIC_CURVE_TO)).toBe(4);
     expect(getPathCommandOperandCount(PathCommand.WIDE_MOVE_TO)).toBe(4);
     expect(getPathCommandOperandCount(PathCommand.WIDE_LINE_TO)).toBe(4);
     expect(getPathCommandOperandCount(PathCommand.CUBIC_CURVE_TO)).toBe(6);
