@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap, Camera3D, Node3D, Scene3DLights } from '@flighthq/sdk';
@@ -73,6 +73,11 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 registerWgpuFunctionalTarget(state, screen, scale);
+
+const QUAD_OFFSET_X = 2.2;
+const SAMPLE_FRACTION_LEFT = 0.168;
+const SAMPLE_FRACTION_CENTRE = 0.5;
+const SAMPLE_FRACTION_RIGHT = 0.832;
 
 const material = createBlinnPhongMaterial({
   diffuse: 0xd8dde8ff,
@@ -197,8 +202,6 @@ function setVertex(vertices: Float32Array, vertex: number, x: number, y: number,
   vertices[base + 11] = v;
 }
 
-// Wide enough to absorb per-driver rasterization differences between two quads that shade identically in
-// exact arithmetic, far below the separation the tilt actually produces.
 const AGREEMENT_TOLERANCE = 24;
 // The Y-mirrored quad must differ by well over the agreement tolerance, so "agrees" and "differs" cannot
 // both be satisfied by the same pair of readings.
