@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 3,
+  "id": "c938921d-e9d6-4e66-9937-18f77094af61",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "svg-preserve-aspect-ratio",
+      "renderer": "dom",
+      "pixelSha256": "600ccd58e959307696ac57e5518f13a6afffd6094b1e3f620323b3842f0a16bb",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-preserve-aspect-ratio",
+      "renderer": "canvas",
+      "pixelSha256": "38e736c17bdc6878a7c05ef93fdc027207489e59876f51c380b12956ee42e16f",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-preserve-aspect-ratio",
+      "renderer": "webgl",
+      "pixelSha256": "7c9ae22152dc38cfeba97d5aff2c6c66280643c9d91aef2b09452a7f1bc673dc",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "svg-preserve-aspect-ratio",
+      "renderer": "webgpu",
+      "pixelSha256": "34a210b69cf62bf910a579d97dcb6db5c44f5956b91e8f5de0e85424d6980153",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review",
+  "createdAt": "2026-09-13T02:47:56.223Z"
+}

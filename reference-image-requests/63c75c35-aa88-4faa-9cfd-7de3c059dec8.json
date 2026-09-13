@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 3,
+  "id": "63c75c35-aa88-4faa-9cfd-7de3c059dec8",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "tilemap-grid",
+      "renderer": "canvas",
+      "pixelSha256": "fd3c31bb4d2987a4f58472227da9c75082b35d76699382c60d94e013938e0438",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "tilemap-grid",
+      "renderer": "webgl",
+      "pixelSha256": "fd3c31bb4d2987a4f58472227da9c75082b35d76699382c60d94e013938e0438",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "tilemap-grid",
+      "renderer": "webgpu",
+      "pixelSha256": "e9d3ac17e44de50a283360fe6e5a82a7b1f9a43cb791be0610b495d16eec2f20",
+      "build": {
+        "commit": "66b96077e028e3c2f885ece381ad8315ef28710b",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review",
+  "createdAt": "2026-09-13T02:48:01.470Z"
+}
