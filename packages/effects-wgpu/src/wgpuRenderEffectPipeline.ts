@@ -233,6 +233,14 @@ export function setWgpuRenderEffectVelocityTexture(
 
 // Presents the final effect result into the enclosing pass. Draws source into that pass's color
 // attachment (dest null → the active pass's colorView) with replace blend, overwriting its pixels.
+//
+// REPLACE, not premultiplied compositing, and the difference is visible. The scene target already holds
+// the finished frame; compositing it over the enclosing attachment lets that attachment's clear show
+// through wherever the frame's own alpha is zero. A fixed-function Darken (MIN with ONE/ONE) drives a
+// zero-coverage pixel to (0,0,0,0) by design, so a premultiplied present turned the black it had just
+// computed back into the enclosing clear — tracking the clear colour exactly, 0x10 reading 16 and 0x40
+// reading 64, while WebGL wrote black. Canvas clears then draws 1:1 and Gl presents unblended; this is
+// the same contract.
 function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<WgpuTextureRenderTarget>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) return;
@@ -241,7 +249,7 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
     state,
     linear ? 'effect.present.linear' : 'effect.present',
     linear ? LINEAR_PRESENT_FRAGMENT_WGSL : PRESENT_FRAGMENT_WGSL,
-    'premul',
+    'replace',
   );
   drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, null, pipeline, () => {});
 }
