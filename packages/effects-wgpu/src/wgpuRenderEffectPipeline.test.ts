@@ -262,6 +262,24 @@ describe('endWgpuRenderEffectPipeline', () => {
     expect(pipeline.pool.free.length).toBe(0);
   });
 
+  it('presents the final result with replace blend so transparent pixels overwrite the screen clear', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pipeline = createWgpuRenderEffectPipeline(state, { format: 'rgba16f' });
+    const createRenderPipeline = vi.spyOn(state.device, 'createRenderPipeline');
+
+    const screenPass = beginWgpuScreenRenderPassForTest(state);
+    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline, undefined, 'linear');
+    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+
+    const presentCall = createRenderPipeline.mock.calls.at(-1)![0] as GPURenderPipelineDescriptor;
+    const blend = (presentCall.fragment!.targets as GPUColorTargetState[])[0].blend!;
+    expect(blend.color.srcFactor).toBe('one');
+    expect(blend.color.dstFactor).toBe('zero');
+    expect(blend.alpha.srcFactor).toBe('one');
+    expect(blend.alpha.dstFactor).toBe('zero');
+    endWgpuRenderPass(screenPass);
+  });
+
   it('returns pooled scratch targets after running a chain', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
