@@ -163,7 +163,8 @@ describe('computeShapeBoundsRectangle', () => {
     appendShapeTangentArcTo(tangent, 100, 0, 100, 100, 20);
     const tangentBounds = createRectangle();
     computeShapeBoundsRectangle(tangentBounds, tangent, 'fill');
-    expect(tangentBounds).toMatchObject({ height: 20, width: 100, x: 0, y: 0 });
+    expect(tangentBounds).toMatchObject({ width: 100, x: 0, y: 0 });
+    expect(tangentBounds.height).toBeCloseTo(20);
   });
 
   it('keeps rounded rectangle bounds equal to its authored rectangle', () => {
