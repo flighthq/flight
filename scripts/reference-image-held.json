@@ -498,6 +498,13 @@
         "functional/swf-alpha-transform/dom": "dom has white background and is not centered"
       },
       "reason": "looks similar now"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-09-12T23:44:04.073Z",
+      "keys": ["functional/application-render-view/webgl"],
+      "reason": "single cell"
     }
   ],
   "held": {
@@ -601,6 +608,7 @@
     "functional/text-border-box/webgl": "visual weight of stroke does not agree between dom, canvas and hw",
     "functional/text-border-box/webgpu": "visual weight of stroke does not agree between dom, canvas and hw",
     "functional/material-alpha-map-pbr/webgl": "looks the same, holding to confirm after recommissioning",
-    "functional/material-alpha-map-pbr/webgpu": "looks the same, holding to confirm after recommissioning"
+    "functional/material-alpha-map-pbr/webgpu": "looks the same, holding to confirm after recommissioning",
+    "functional/application-render-view/webgl": "single cell"
   }
 }
