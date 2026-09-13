@@ -310,12 +310,55 @@ describe('appendPathTangentArcTo', () => {
     expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
   });
 
+  it('selects the short quarter-turn sweep for a clockwise right-angle corner', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathTangentArcTo(path, 100, 0, 100, 100, 20);
+    const last = getPathLastPoint(path)!;
+    expect(last[0]).toBeCloseTo(100, 6);
+    expect(last[1]).toBeCloseTo(20, 6);
+  });
+
+  it('selects the short quarter-turn sweep for a counterclockwise right-angle corner', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathTangentArcTo(path, 0, 100, 100, 100, 20);
+    const last = getPathLastPoint(path)!;
+    expect(last[0]).toBeCloseTo(20, 6);
+    expect(last[1]).toBeCloseTo(100, 6);
+  });
+
   it('falls back to a LINE_TO when the tangent has zero length', () => {
     const path = createPath();
     appendPathMoveTo(path, 100, 100);
     appendPathTangentArcTo(path, 100, 100, 0, 100, 20);
     expect(path.commands[1]).toBe(PathCommand.LINE_TO);
     expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  });
+
+  it('falls back to a LINE_TO when tangent lines are collinear', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathTangentArcTo(path, 50, 0, 100, 0, 20);
+    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
+    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  });
+
+  it('falls back to a LINE_TO when radius is zero or negative', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathTangentArcTo(path, 100, 0, 100, 100, 0);
+    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
+    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  });
+
+  it('handles an obtuse angle with a short arc', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathTangentArcTo(path, 100, 0, 150, 100, 20);
+    const last = getPathLastPoint(path)!;
+    expect(last).not.toBeNull();
+    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(1);
   });
 });
 

@@ -506,40 +506,90 @@ describe('appendShapeRoundedRectangleWithCornerRadii', () => {
 });
 
 describe('appendShapeTangentArcTo', () => {
-  it('emits a lineTo followed by cubicCurveTo commands for a right-angle corner', () => {
-    const shape = createShape();
-    // Start at (100, 0), corner at (100, 100), end direction toward (0, 100) with radius 20.
-    appendShapeMoveTo(shape, 100, 0);
-    appendShapeTangentArcTo(shape, 100, 100, 0, 100, 20);
+  function getShapeCommandKeys(shape: ReturnType<typeof createShape>): string[] {
     const keys: string[] = [];
     let i = 0;
     while (i < shape.data.commands.length) {
-      const key = shape.data.commands[i] as string;
-      const argCount = shape.data.commands[i + 1] as number;
-      keys.push(key);
+      keys.push(shape.data.commands[i] as string);
+      i += (shape.data.commands[i + 1] as number) + 2;
+    }
+    return keys;
+  }
+
+  function getShapeLastPen(shape: ReturnType<typeof createShape>): [number, number] {
+    const cmds = shape.data.commands;
+    let px = 0;
+    let py = 0;
+    let i = 0;
+    while (i < cmds.length) {
+      const key = cmds[i] as string;
+      const argCount = cmds[i + 1] as number;
+      const b = i + 2;
+      if (key === 'moveTo' || key === 'lineTo') {
+        px = cmds[b] as number;
+        py = cmds[b + 1] as number;
+      } else if (key === 'quadraticCurveTo') {
+        px = cmds[b + 2] as number;
+        py = cmds[b + 3] as number;
+      } else if (key === 'cubicCurveTo') {
+        px = cmds[b + 4] as number;
+        py = cmds[b + 5] as number;
+      }
       i += argCount + 2;
     }
-    // moveTo, lineTo (to tangent start), then cubicCurveTo arc segments.
+    return [px, py];
+  }
+
+  it('emits a lineTo followed by cubicCurveTo commands for a right-angle corner', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 100, 0);
+    appendShapeTangentArcTo(shape, 100, 100, 0, 100, 20);
+    const keys = getShapeCommandKeys(shape);
     expect(keys[0]).toBe('moveTo');
     expect(keys[1]).toBe('lineTo');
     expect(keys.slice(2).every((k) => k === 'cubicCurveTo')).toBe(true);
   });
 
+  it('selects the short quarter-turn sweep for a clockwise right-angle corner', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 100, 0, 100, 100, 20);
+    const [px, py] = getShapeLastPen(shape);
+    expect(px).toBeCloseTo(100, 6);
+    expect(py).toBeCloseTo(20, 6);
+  });
+
+  it('selects the short quarter-turn sweep for a counterclockwise right-angle corner', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 0, 100, 100, 100, 20);
+    const [px, py] = getShapeLastPen(shape);
+    expect(px).toBeCloseTo(20, 6);
+    expect(py).toBeCloseTo(100, 6);
+  });
+
   it('falls back to a lineTo when the tangent has zero length', () => {
     const shape = createShape();
-    // pen at (100, 100), corner at (100, 100) — zero-length tangent.
     appendShapeMoveTo(shape, 100, 100);
     appendShapeTangentArcTo(shape, 100, 100, 200, 100, 10);
-    const keys: string[] = [];
-    let i = 0;
-    while (i < shape.data.commands.length) {
-      const key = shape.data.commands[i] as string;
-      const argCount = shape.data.commands[i + 1] as number;
-      keys.push(key);
-      i += argCount + 2;
-    }
-    // Degenerate: should only have the original moveTo and one lineTo.
+    const keys = getShapeCommandKeys(shape);
     expect(keys).toContain('lineTo');
+    expect(keys.every((k) => k === 'moveTo' || k === 'lineTo')).toBe(true);
+  });
+
+  it('falls back to a lineTo when tangent lines are collinear', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 50, 0, 100, 0, 20);
+    const keys = getShapeCommandKeys(shape);
+    expect(keys.every((k) => k === 'moveTo' || k === 'lineTo')).toBe(true);
+  });
+
+  it('falls back to a lineTo when radius is zero or negative', () => {
+    const shape = createShape();
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeTangentArcTo(shape, 100, 0, 100, 100, 0);
+    const keys = getShapeCommandKeys(shape);
     expect(keys.every((k) => k === 'moveTo' || k === 'lineTo')).toBe(true);
   });
 });

@@ -302,7 +302,7 @@ export function appendPathTangentArcTo(
   const d2y = y2 - y1;
   const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
   const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
-  if (len1 < 1e-10 || len2 < 1e-10) {
+  if (radius <= 0 || len1 < 1e-10 || len2 < 1e-10) {
     appendPathLineTo(path, x1, y1);
     return;
   }
@@ -331,14 +331,9 @@ export function appendPathTangentArcTo(
   const ocy = y1 + (by / blen) * distToCenter;
   const startA = Math.atan2(ty1 - ocy, tx1 - ocx);
   const endA = Math.atan2(ty2 - ocy, tx2 - ocx);
-  const cross = d1x * d2y - d1y * d2x;
-  const isAnticlockwise = cross < 0;
   let sweep = endA - startA;
-  if (isAnticlockwise) {
-    if (sweep > 0) sweep -= Math.PI * 2;
-  } else {
-    if (sweep < 0) sweep += Math.PI * 2;
-  }
+  if (sweep > Math.PI) sweep -= Math.PI * 2;
+  if (sweep < -Math.PI) sweep += Math.PI * 2;
   appendArcCubics(path, ocx, ocy, radius, radius, 0, startA, sweep);
 }
 
