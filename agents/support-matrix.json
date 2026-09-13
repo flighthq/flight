@@ -497,7 +497,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -872,7 +872,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -1047,7 +1047,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -1147,7 +1147,7 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
