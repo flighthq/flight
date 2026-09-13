@@ -201,17 +201,17 @@
             "dom": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgl": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         },
@@ -4876,17 +4876,17 @@
             "dom": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgl": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             }
           }
         }
