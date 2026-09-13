@@ -113,7 +113,7 @@ placeShape(ellip, COL_START + 300, row1Y + 10);
 
 const roundedRectangle = createShape();
 appendShapeBeginFill(roundedRectangle, FILL_COLOR);
-appendShapeRoundedRectangle(roundedRectangle, 0, 0, 140, 90, 10, 10);
+appendShapeRoundedRectangle(roundedRectangle, 0, 0, 140, 90, 10);
 appendShapeEndFill(roundedRectangle);
 placeShape(roundedRectangle, COL_START + 500, row1Y + 10);
 

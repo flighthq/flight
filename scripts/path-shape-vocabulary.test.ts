@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest';
 
 const REPOSITORY_ROOT = resolve(import.meta.dirname, '..');
 const DETECTOR_FILE = 'scripts/path-shape-vocabulary.test.ts';
+const RETIRED_KEY_NEGATIVE_TEST_FILE = 'packages/shape-formats/src/shapeJson.test.ts';
+const RETIRED_KEY_NEGATIVE_TEST_SOURCE =
+  "it.each(['curveTo', 'drawRoundRectangle'])('returns null for retired command key %s', (key) => {";
 
 const RETIRED_EXPORTED_NAMES = [
   'appendPathArcTo',
@@ -64,6 +67,42 @@ describe('path and shape vocabulary', () => {
     expect(isPathShapeKindOrCommandReference('packages/example/src/fixture.ts', "['curveTo']", 'curveTo')).toBe(true);
   });
 
+  it('exempts only the explicit retired-key fixture and still catches the same keys in production', () => {
+    expect(
+      isRetiredKeyNegativeFixture(RETIRED_KEY_NEGATIVE_TEST_FILE, RETIRED_KEY_NEGATIVE_TEST_SOURCE, 'curveTo'),
+    ).toBe(true);
+    expect(
+      isRetiredKeyNegativeFixture(
+        RETIRED_KEY_NEGATIVE_TEST_FILE,
+        RETIRED_KEY_NEGATIVE_TEST_SOURCE,
+        'drawRoundRectangle',
+      ),
+    ).toBe(true);
+    expect(
+      collectMatchingLineViolations(
+        RETIRED_KIND_AND_COMMAND_NAMES,
+        [{ file: RETIRED_KEY_NEGATIVE_TEST_FILE, line: 1, text: RETIRED_KEY_NEGATIVE_TEST_SOURCE }],
+        isPathShapeKindOrCommandReference,
+      ),
+    ).toStrictEqual([]);
+    expect(
+      collectMatchingLineViolations(
+        RETIRED_KIND_AND_COMMAND_NAMES,
+        [
+          {
+            file: 'packages/shape-formats/src/shapeJson.ts',
+            line: 1,
+            text: 'const handlers = { curveTo, drawRoundRectangle };',
+          },
+        ],
+        isPathShapeKindOrCommandReference,
+      ),
+    ).toStrictEqual([
+      'packages/shape-formats/src/shapeJson.ts:1:curveTo',
+      'packages/shape-formats/src/shapeJson.ts:1:drawRoundRectangle',
+    ]);
+  });
+
   it('keeps retired exported APIs out of the repository', () => {
     expect(collectViolations(RETIRED_EXPORTED_NAMES)).toStrictEqual([]);
   }, 30_000);
@@ -84,9 +123,17 @@ function collectViolations(
   names: readonly string[],
   includesMatch: (file: string, text: string, name: string) => boolean = () => true,
 ): string[] {
+  return collectMatchingLineViolations(names, matchingLines(), includesMatch);
+}
+
+function collectMatchingLineViolations(
+  names: readonly string[],
+  lines: ReadonlyArray<{ file: string; line: number; text: string }>,
+  includesMatch: (file: string, text: string, name: string) => boolean = () => true,
+): string[] {
   const pattern = new RegExp(`\\b(?:${names.map(escapeRegularExpression).join('|')})\\b`, 'gu');
   const violations: string[] = [];
-  for (const { file, line, text } of matchingLines()) {
+  for (const { file, line, text } of lines) {
     const source = stripAllowedNativeCanvasMethods(text);
     for (const match of source.matchAll(pattern)) {
       const name = match[0];
@@ -117,9 +164,18 @@ function isPathShapeVocabularyFile(file: string): boolean {
 }
 
 function isPathShapeKindOrCommandReference(file: string, text: string, name: string): boolean {
+  if (isRetiredKeyNegativeFixture(file, text, name)) return false;
   if (isPathShapeVocabularyFile(file)) return true;
   if (name === 'CURVE_TO' && /\bPathCommand\.CURVE_TO\b/u.test(text)) return true;
   return new RegExp(`(['"\\x60])${escapeRegularExpression(name)}\\1`, 'u').test(text);
+}
+
+function isRetiredKeyNegativeFixture(file: string, text: string, name: string): boolean {
+  return (
+    file === RETIRED_KEY_NEGATIVE_TEST_FILE &&
+    text.trim() === RETIRED_KEY_NEGATIVE_TEST_SOURCE &&
+    (name === 'curveTo' || name === 'drawRoundRectangle')
+  );
 }
 
 function matchingLines(): Array<{ file: string; line: number; text: string }> {

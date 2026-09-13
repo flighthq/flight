@@ -1,6 +1,6 @@
 // shape-round-rect — validates rounded-rectangle fill rendering via appendShapeRoundedRectangle.
 //
-// Draws a cyan-filled rounded rectangle at (50,50) with width 300, height 200, and corner radii 20x20.
+// Draws a cyan-filled rounded rectangle at (50,50) with width 300, height 200, and corner radius 20.
 // The scene assertion verifies:
 //   - the center of the round rect is cyan,
 //   - a point near the flat top edge (inside) is cyan,
@@ -29,8 +29,7 @@ const RX = 50;
 const RY = 50;
 const RW = 300;
 const RH = 200;
-const RADIUS_X = 20;
-const RADIUS_Y = 20;
+const CORNER_RADIUS = 20;
 
 declareAntialiasingPolicy('aa');
 
@@ -49,7 +48,7 @@ const root = createDisplayObject();
 
 const roundedRectangle = createShape();
 appendShapeBeginFill(roundedRectangle, 0x00ccccff, 1);
-appendShapeRoundedRectangle(roundedRectangle, RX, RY, RW, RH, RADIUS_X, RADIUS_Y);
+appendShapeRoundedRectangle(roundedRectangle, RX, RY, RW, RH, CORNER_RADIUS);
 appendShapeEndFill(roundedRectangle);
 invalidateNodeAppearance(roundedRectangle);
 addNodeChild(root, roundedRectangle);
