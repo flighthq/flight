@@ -1,15 +1,15 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { appendPathLineTo, appendPathMoveTo, appendPathQuadraticCurveTo, createPath } from '@flighthq/path/contract';
+import { appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
   appendShapeBeginTextureFill,
+  appendShapeQuadraticCurveTo,
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
-  appendShapeQuadraticCurveTo,
   createShape,
 } from '@flighthq/shape/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';

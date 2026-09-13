@@ -6,6 +6,7 @@ import {
   appendShapeBeginGradientFill,
   appendShapeCircle,
   appendShapeCubicCurveTo,
+  appendShapeQuadraticCurveTo,
   appendShapeDrawTriangles,
   appendShapeEllipse,
   appendShapeEndFill,
@@ -15,7 +16,6 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapePath,
-  appendShapeQuadraticCurveTo,
   appendShapeRectangle,
   appendShapeRoundedRectangle,
   createShape,
@@ -238,13 +238,14 @@ const MALFORMED_ARG = Symbol('shapeFormats.malformedArg');
 // Sentinel returned when a texture reference cannot be resolved; the owning command is dropped.
 const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 
-const SHAPE_JSON_FORMAT = 4;
+const SHAPE_JSON_FORMAT = 3;
 
 const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = {
   beginTextureFill: appendShapeBeginTextureFill,
   beginFill: appendShapeBeginFill,
   beginGradientFill: appendShapeBeginGradientFill,
   cubicCurveTo: appendShapeCubicCurveTo,
+  quadraticCurveTo: appendShapeQuadraticCurveTo,
   drawCircle: appendShapeCircle,
   drawEllipse: appendShapeEllipse,
   drawPath: appendShapePath,
@@ -257,5 +258,4 @@ const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = 
   lineStyle: appendShapeLineStyle,
   lineTo: appendShapeLineTo,
   moveTo: appendShapeMoveTo,
-  quadraticCurveTo: appendShapeQuadraticCurveTo,
 };
