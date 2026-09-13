@@ -28,7 +28,6 @@ import {
   defaultWgpuTextureShapeCommands,
   defaultWgpuTilemapRenderer,
   enableFlightDiagnostics,
-  enableWgpuScreenRenderTargetAntialias,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
   enableWgpuRenderCache,
@@ -100,7 +99,6 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuScreenRenderTargetCapture(screen);
-  if (options.contextAttributes?.antialias !== false) enableWgpuScreenRenderTargetAntialias(screen);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
