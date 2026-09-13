@@ -505,6 +505,13 @@
       "at": "2026-09-12T23:44:04.073Z",
       "keys": ["functional/application-render-view/webgl"],
       "reason": "single cell"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-09-13T15:29:38.230Z",
+      "keys": ["functional/material-blend-modes/webgpu"],
+      "reason": "issue with test to investigate"
     }
   ],
   "held": {
@@ -542,7 +549,7 @@
     "functional/text-strikethrough/webgl": "line is in different position on dom",
     "functional/text-strikethrough/webgpu": "line is in different position on dom",
     "functional/material-blend-modes/webgl": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check",
-    "functional/material-blend-modes/webgpu": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check",
+    "functional/material-blend-modes/webgpu": "issue with test to investigate",
     "functional/text-underline/dom": "dom underline is different",
     "functional/text-underline/canvas": "dom underline is different",
     "functional/text-underline/webgl": "dom underline is different",
