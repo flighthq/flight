@@ -243,7 +243,8 @@ describe('endWgpuRenderEffectPipeline', () => {
     const present = getWgpuEffectPipeline(state, 'effect.present', '') as unknown as {
       pipeline: { __descriptor: GPURenderPipelineDescriptor };
     };
-    const blend = present.pipeline.__descriptor.fragment!.targets[0]!.blend!;
+    const [target] = [...present.pipeline.__descriptor.fragment!.targets];
+    const blend = target!.blend!;
 
     expect(blend.color.dstFactor).toBe('zero');
     expect(blend.alpha.dstFactor).toBe('zero');
