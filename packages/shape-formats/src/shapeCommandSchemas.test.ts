@@ -31,10 +31,10 @@ describe('defaultShapeCommandSchemas', () => {
     );
   });
 
-  it('names rounded-rectangle radii without Flash ellipse-width vocabulary', () => {
+  it('names the rounded-rectangle radius without Flash ellipse-width vocabulary', () => {
     expect(
       getRegistryTableEntry(defaultShapeCommandSchemas, 'drawRoundedRectangle')?.arguments.map(({ name }) => name),
-    ).toEqual(['x', 'y', 'width', 'height', 'radiusX', 'radiusY']);
+    ).toEqual(['x', 'y', 'width', 'height', 'radius']);
   });
 
   it('carries positional validation types and required arity in the same runtime entry', () => {
