@@ -63,6 +63,14 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+// Quad centres in world X, and the screen fractions they project to under the camera below. Kept as
+// constants so the assertion samples where the geometry actually is rather than at guessed thirds.
+// Identical to the WebGL counterpart because the camera is: 800x600, fovY pi/4, eye (0,0,6) on the origin.
+const QUAD_OFFSET_X = 2.2;
+const SAMPLE_FRACTION_LEFT = 0.168;
+const SAMPLE_FRACTION_CENTRE = 0.5;
+const SAMPLE_FRACTION_RIGHT = 0.832;
+
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
