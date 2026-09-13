@@ -101,13 +101,13 @@ describe('analyzeFunctionalAntialiasing', () => {
 
     expect(byRenderer.dom?.effective).toBe('aa');
     expect(byRenderer.canvas?.effective).toBe('aa');
-    expect(byRenderer.webgl?.effective).toBe('aa');
+    expect(byRenderer.webgl?.effective).toBe('no-aa');
     expect(byRenderer.webgpu).toMatchObject({ declared: 'aa', effective: 'no-aa', matches: false });
     expect(formatFunctionalAntialiasingReport(report)).toContain(
-      'Cleanup baseline: 140 mismatch cell(s) (canvas 9, webgl 66, webgpu 65).',
+      'Cleanup baseline: 131 mismatch cell(s) (canvas 0, webgl 65, webgpu 66).',
     );
     expect(formatFunctionalAntialiasingReport(report)).toContain(
-      'Current mismatches by renderer: canvas 0, dom 0, webgl 0, webgpu 1.',
+      'Current mismatches by renderer: canvas 0, dom 0, webgl 1, webgpu 1.',
     );
     expect(getFunctionalAntialiasingExitCode(report)).toBe(0);
   });

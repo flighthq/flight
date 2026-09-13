@@ -18,7 +18,7 @@ import { functionalScene3DFile } from '../packages/tool-capture/src/functionalSc
 const scriptPath = fileURLToPath(import.meta.url);
 const POLICY_CALL = 'declareAntialiasingPolicy';
 const POLICIES = new Set(['aa', 'no-aa']);
-const CLEANUP_BASELINE_MISMATCHES = { canvas: 9, webgl: 66, webgpu: 65 } as const;
+const CLEANUP_BASELINE_MISMATCHES = { canvas: 0, webgl: 65, webgpu: 66 } as const;
 
 export interface FunctionalAntialiasingCellAnalysis {
   declared: 'aa' | 'no-aa' | null;
@@ -342,14 +342,13 @@ function getEffectivePolicy(
   };
   visit(sourceFile);
 
-  // The harness applies GL's `antialias: true` default, so silence still means AA — but it is now a
-  // default observed after reading the source, not an answer given instead of reading it.
-  let contextAntialias = true;
+  // The harness applies `antialias: false` by default so GL and WGPU match at no-AA; a scene testing
+  // AA opts into `contextAttributes: { antialias: true }` explicitly.
+  let contextAntialias = false;
   for (const value of antialiasValues) {
-    if (value.kind === ts.SyntaxKind.FalseKeyword) contextAntialias = false;
-    else if (value.kind !== ts.SyntaxKind.TrueKeyword) {
-      return { policy: 'unknown', reason: 'WebGL context antialias setting is not a static boolean' };
-    }
+    if (value.kind === ts.SyntaxKind.TrueKeyword) contextAntialias = true;
+    else if (value.kind === ts.SyntaxKind.FalseKeyword) contextAntialias = false;
+    else return { policy: 'unknown', reason: 'WebGL context antialias setting is not a static boolean' };
   }
   if (contextAntialias) return { policy: 'aa', reason: 'WebGL context effective antialias is true' };
 

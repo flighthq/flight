@@ -70,7 +70,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 
   const state = createGlRenderState(
     createWebGlContext(canvas, {
-      contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true, ...options.contextAttributes },
     }),
     scene3DGlPipeline,
     {
