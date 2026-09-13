@@ -8,7 +8,7 @@ import {
   getWgpuDebugModuleSourceForKey,
 } from './wgpuDebugPrelude';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
 
 const DEPTH: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'depth' };
 const NORMAL: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'normal' };
@@ -93,5 +93,15 @@ describe('getWgpuDebugModuleSourceForKey', () => {
     expect(getWgpuDebugModuleSourceForKey(NORMAL_MAP)).toContain('const HAS_NORMAL_MAP : bool = true');
     expect(depthSource).toContain('struct Frame');
     expect(depthSource).toContain('fn fs_main');
+  });
+
+  it('includes skin attribute declarations and skinMatrix when skinned', () => {
+    const rigid = getWgpuDebugModuleSourceForKey(DEPTH);
+    const skinning = makeWgpuSkinningAdapter();
+    const skinned = getWgpuDebugModuleSourceForKey(DEPTH, true, skinning);
+    expect(rigid).not.toContain('skinMatrix');
+    expect(skinned).toContain('@location(4) joints0');
+    expect(skinned).toContain('@location(5) weights0');
+    expect(skinned).toContain('skinMatrix(joints0, weights0)');
   });
 });
