@@ -19,6 +19,33 @@ import type {
 // shape authoring keeps a single import surface.
 export { PathCommand } from '@flighthq/types/contract';
 
+// Appends an arc to the shape's command stream, expanding it into a moveTo followed by
+// cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn
+// from startAngle to endAngle around (cx, cy) with the given radius. Angles are in radians.
+// Set anticlockwise to true for a counter-clockwise arc.
+//
+// Always emits a moveTo to the arc start — use this as a standalone arc primitive. When connecting
+// an arc to an existing open path (e.g. inside appendShapeTangentArcTo), use the commands buffer directly
+// via appendShapeArcSegments.
+export function appendShapeArc(
+  shape: Shape,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  anticlockwise = false,
+): void {
+  const cmds = shape.data.commands;
+  const sweep = normalizeArcSweep(startAngle, endAngle, anticlockwise);
+  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
+  const segmentAngle = sweep / segmentCount;
+  const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
+  cmds.push('moveTo', 2, centerX + radius * Math.cos(startAngle), centerY + radius * Math.sin(startAngle));
+  pushArcCubics(cmds, centerX, centerY, radius, startAngle, segmentCount, segmentAngle, alpha);
+  invalidateContent(shape);
+}
+
 export function appendShapeBeginFill(shape: Shape, color: number, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
   invalidateContent(shape);
@@ -55,8 +82,8 @@ export function appendShapeBeginTextureFill(shape: Shape, texture: Texture, matr
   invalidateContent(shape);
 }
 
-export function appendShapeCircle(shape: Shape, x: number, y: number, radius: number): void {
-  shape.data.commands.push('drawCircle', 3, x, y, radius);
+export function appendShapeCircle(shape: Shape, centerX: number, centerY: number, radius: number): void {
+  shape.data.commands.push('drawCircle', 3, centerX, centerY, radius);
   invalidateContent(shape);
 }
 
@@ -84,35 +111,119 @@ export function appendShapeDrawTriangles(
   invalidateContent(shape);
 }
 
-export function appendShapeEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
-  shape.data.commands.push('drawEllipse', 4, x, y, width, height);
+export function appendShapeEllipse(
+  shape: Shape,
+  centerX: number,
+  centerY: number,
+  radiusX: number,
+  radiusY: number,
+): void {
+  shape.data.commands.push('drawEllipse', 4, centerX, centerY, radiusX, radiusY);
   invalidateContent(shape);
 }
 
-// Appends an arc to the shape's command stream, expanding it into a moveTo followed by
-// cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn
-// from startAngle to endAngle around (cx, cy) with the given radius. Angles are in radians.
-// Set anticlockwise to true for a counter-clockwise arc.
-//
-// Always emits a moveTo to the arc start — use this as a standalone arc primitive. When connecting
-// an arc to an existing open path (e.g. inside appendShapeTangentArcTo), use the commands buffer directly
-// via appendShapeArcSegments.
-export function appendShapeEllipticalArc(
+export function appendShapeEllipticalArcTo(
   shape: Shape,
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-  anticlockwise = false,
+  radiusX: number,
+  radiusY: number,
+  xAxisRotation: number,
+  largeArc: boolean,
+  sweep: boolean,
+  x: number,
+  y: number,
 ): void {
+  if (radiusX === 0 || radiusY === 0) {
+    shape.data.commands.push('lineTo', 2, x, y);
+    invalidateContent(shape);
+    return;
+  }
   const cmds = shape.data.commands;
-  const sweep = normalizeArcSweep(startAngle, endAngle, anticlockwise);
-  const segmentCount = Math.max(1, Math.ceil(Math.abs(sweep) / (Math.PI / 2)));
-  const segmentAngle = sweep / segmentCount;
+  let penX = 0;
+  let penY = 0;
+  let i = 0;
+  while (i < cmds.length) {
+    const key = cmds[i] as string;
+    const argCount = cmds[i + 1] as number;
+    const b = i + 2;
+    switch (key) {
+      case 'moveTo':
+      case 'lineTo':
+        penX = cmds[b] as number;
+        penY = cmds[b + 1] as number;
+        break;
+      case 'quadraticCurveTo':
+        penX = cmds[b + 2] as number;
+        penY = cmds[b + 3] as number;
+        break;
+      case 'cubicCurveTo':
+        penX = cmds[b + 4] as number;
+        penY = cmds[b + 5] as number;
+        break;
+    }
+    i += argCount + 2;
+  }
+  if (penX === x && penY === y) return;
+  let rx = Math.abs(radiusX);
+  let ry = Math.abs(radiusY);
+  const cosφ = Math.cos(xAxisRotation);
+  const sinφ = Math.sin(xAxisRotation);
+  const dx = (penX - x) / 2;
+  const dy = (penY - y) / 2;
+  const x1p = cosφ * dx + sinφ * dy;
+  const y1p = -sinφ * dx + cosφ * dy;
+  const x1pSq = x1p * x1p;
+  const y1pSq = y1p * y1p;
+  const rxSq = rx * rx;
+  const rySq = ry * ry;
+  const lambda = x1pSq / rxSq + y1pSq / rySq;
+  if (lambda > 1) {
+    const sqrtLambda = Math.sqrt(lambda);
+    rx *= sqrtLambda;
+    ry *= sqrtLambda;
+  }
+  const rxSq2 = rx * rx;
+  const rySq2 = ry * ry;
+  const num = rxSq2 * rySq2 - rxSq2 * y1pSq - rySq2 * x1pSq;
+  const den = rxSq2 * y1pSq + rySq2 * x1pSq;
+  const sq = den <= 0 ? 0 : Math.sqrt(Math.max(0, num / den));
+  const sign = largeArc === sweep ? -1 : 1;
+  const cxp = (sign * sq * (rx * y1p)) / ry;
+  const cyp = (sign * sq * (-ry * x1p)) / rx;
+  const cx = cosφ * cxp - sinφ * cyp + (penX + x) / 2;
+  const cy = sinφ * cxp + cosφ * cyp + (penY + y) / 2;
+  const ux = (x1p - cxp) / rx;
+  const uy = (y1p - cyp) / ry;
+  const vx = (-x1p - cxp) / rx;
+  const vy = (-y1p - cyp) / ry;
+  const theta1 = vectorAngle(1, 0, ux, uy);
+  let dtheta = vectorAngle(ux, uy, vx, vy);
+  if (!sweep && dtheta > 0) dtheta -= Math.PI * 2;
+  if (sweep && dtheta < 0) dtheta += Math.PI * 2;
+  if (dtheta === 0) return;
+  const segmentCount = Math.max(1, Math.ceil(Math.abs(dtheta) / (Math.PI / 2)));
+  const segmentAngle = dtheta / segmentCount;
   const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
-  cmds.push('moveTo', 2, cx + radius * Math.cos(startAngle), cy + radius * Math.sin(startAngle));
-  pushArcCubics(cmds, cx, cy, radius, startAngle, segmentCount, segmentAngle, alpha);
+  for (let seg = 0; seg < segmentCount; seg++) {
+    const t1 = theta1 + seg * segmentAngle;
+    const t2 = t1 + segmentAngle;
+    const cos1 = Math.cos(t1);
+    const sin1 = Math.sin(t1);
+    const cos2 = Math.cos(t2);
+    const sin2 = Math.sin(t2);
+    const dx1 = -rx * sin1 * alpha;
+    const dy1 = ry * cos1 * alpha;
+    const dx2 = rx * sin2 * alpha;
+    const dy2 = -ry * cos2 * alpha;
+    const p1x = cx + cosφ * rx * cos1 - sinφ * ry * sin1;
+    const p1y = cy + sinφ * rx * cos1 + cosφ * ry * sin1;
+    const p2x = cx + cosφ * rx * cos2 - sinφ * ry * sin2;
+    const p2y = cy + sinφ * rx * cos2 + cosφ * ry * sin2;
+    const c1x = p1x + cosφ * dx1 - sinφ * dy1;
+    const c1y = p1y + sinφ * dx1 + cosφ * dy1;
+    const c2x = p2x + cosφ * dx2 - sinφ * dy2;
+    const c2y = p2y + sinφ * dx2 + cosφ * dy2;
+    cmds.push('cubicCurveTo', 6, c1x, c1y, c2x, c2y, p2x, p2y);
+  }
   invalidateContent(shape);
 }
 
@@ -234,7 +345,7 @@ export function appendShapeRectangle(shape: Shape, x: number, y: number, width: 
   invalidateContent(shape);
 }
 
-export function appendShapeRoundRectangle(
+export function appendShapeRoundedRectangle(
   shape: Shape,
   x: number,
   y: number,
@@ -243,46 +354,37 @@ export function appendShapeRoundRectangle(
   ellipseWidth: number,
   ellipseHeight: number,
 ): void {
-  shape.data.commands.push('drawRoundRectangle', 6, x, y, width, height, ellipseWidth, ellipseHeight);
+  shape.data.commands.push('drawRoundedRectangle', 6, x, y, width, height, ellipseWidth, ellipseHeight);
   invalidateContent(shape);
 }
 
-export function appendShapeRoundRectangleVarying(
+export function appendShapeRoundedRectangleWithCornerRadii(
   shape: Shape,
   x: number,
   y: number,
   width: number,
   height: number,
-  topLeftRadius: number,
-  topRightRadius: number,
-  bottomLeftRadius: number,
-  bottomRightRadius: number,
+  topLeft: number,
+  topRight: number,
+  bottomRight: number,
+  bottomLeft: number,
 ): void {
   const r = x + width;
   const b = y + height;
   const cmds = shape.data.commands;
-  const kTR = topRightRadius * CIRCLE_KAPPA;
-  const kBR = bottomRightRadius * CIRCLE_KAPPA;
-  const kBL = bottomLeftRadius * CIRCLE_KAPPA;
-  const kTL = topLeftRadius * CIRCLE_KAPPA;
-  cmds.push('moveTo', 2, x + topLeftRadius, y);
-  cmds.push('lineTo', 2, r - topRightRadius, y);
-  cmds.push('cubicCurveTo', 6, r - topRightRadius + kTR, y, r, y + topRightRadius - kTR, r, y + topRightRadius);
-  cmds.push('lineTo', 2, r, b - bottomRightRadius);
-  cmds.push(
-    'cubicCurveTo',
-    6,
-    r,
-    b - bottomRightRadius + kBR,
-    r - bottomRightRadius + kBR,
-    b,
-    r - bottomRightRadius,
-    b,
-  );
-  cmds.push('lineTo', 2, x + bottomLeftRadius, b);
-  cmds.push('cubicCurveTo', 6, x + bottomLeftRadius - kBL, b, x, b - bottomLeftRadius + kBL, x, b - bottomLeftRadius);
-  cmds.push('lineTo', 2, x, y + topLeftRadius);
-  cmds.push('cubicCurveTo', 6, x, y + topLeftRadius - kTL, x + topLeftRadius - kTL, y, x + topLeftRadius, y);
+  const kTR = topRight * CIRCLE_KAPPA;
+  const kBR = bottomRight * CIRCLE_KAPPA;
+  const kBL = bottomLeft * CIRCLE_KAPPA;
+  const kTL = topLeft * CIRCLE_KAPPA;
+  cmds.push('moveTo', 2, x + topLeft, y);
+  cmds.push('lineTo', 2, r - topRight, y);
+  cmds.push('cubicCurveTo', 6, r - topRight + kTR, y, r, y + topRight - kTR, r, y + topRight);
+  cmds.push('lineTo', 2, r, b - bottomRight);
+  cmds.push('cubicCurveTo', 6, r, b - bottomRight + kBR, r - bottomRight + kBR, b, r - bottomRight, b);
+  cmds.push('lineTo', 2, x + bottomLeft, b);
+  cmds.push('cubicCurveTo', 6, x + bottomLeft - kBL, b, x, b - bottomLeft + kBL, x, b - bottomLeft);
+  cmds.push('lineTo', 2, x, y + topLeft);
+  cmds.push('cubicCurveTo', 6, x, y + topLeft - kTL, x + topLeft - kTL, y, x + topLeft, y);
   invalidateContent(shape);
 }
 
@@ -432,4 +534,14 @@ function pushArcCubics(
     );
     angle = nextAngle;
   }
+}
+
+function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
+  const dot = ux * vx + uy * vy;
+  const lenU = Math.sqrt(ux * ux + uy * uy);
+  const lenV = Math.sqrt(vx * vx + vy * vy);
+  if (lenU === 0 || lenV === 0) return 0;
+  const cosAngle = Math.max(-1, Math.min(1, dot / (lenU * lenV)));
+  const angle = Math.acos(cosAngle);
+  return ux * vy - uy * vx < 0 ? -angle : angle;
 }

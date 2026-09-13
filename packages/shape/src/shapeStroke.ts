@@ -119,7 +119,7 @@ function isShapeGeometryCommand(name: string): boolean {
     name === 'drawCircle' ||
     name === 'drawEllipse' ||
     name === 'drawRectangle' ||
-    name === 'drawRoundRectangle' ||
+    name === 'drawRoundedRectangle' ||
     name === 'drawPath'
   );
 }

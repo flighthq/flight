@@ -100,7 +100,7 @@ function computeCommandsBounds(commands: readonly unknown[]): { width: number; h
       case 'lineTo':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         break;
-      case 'curveTo':
+      case 'quadraticCurveTo':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         expand(commands[i + 4] as number, commands[i + 5] as number);
         break;
@@ -117,7 +117,15 @@ function computeCommandsBounds(commands: readonly unknown[]): { width: number; h
         expand(cx + r, cy + r);
         break;
       }
-      case 'drawEllipse':
+      case 'drawEllipse': {
+        const cx = commands[i + 2] as number;
+        const cy = commands[i + 3] as number;
+        const rx = Math.abs(commands[i + 4] as number);
+        const ry = Math.abs(commands[i + 5] as number);
+        expand(cx - rx, cy - ry);
+        expand(cx + rx, cy + ry);
+        break;
+      }
       case 'drawRectangle':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         expand(
@@ -125,7 +133,7 @@ function computeCommandsBounds(commands: readonly unknown[]): { width: number; h
           (commands[i + 3] as number) + (commands[i + 5] as number),
         );
         break;
-      case 'drawRoundRectangle':
+      case 'drawRoundedRectangle':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         expand(
           (commands[i + 2] as number) + (commands[i + 4] as number),
@@ -143,7 +151,7 @@ function computeCommandsBounds(commands: readonly unknown[]): { width: number; h
               expand(data[di], data[di + 1]);
               di += 2;
               break;
-            case 3: // CURVE_TO
+            case 3: // QUADRATIC_CURVE_TO
               expand(data[di], data[di + 1]);
               expand(data[di + 2], data[di + 3]);
               di += 4;

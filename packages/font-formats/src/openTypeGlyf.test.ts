@@ -72,7 +72,12 @@ describe('readOpenTypeGlyphOutline', () => {
       ],
     };
     const { path } = readGlyph([emptySyntheticGlyph(), glyph], 1);
-    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CURVE_TO, PathCommand.CURVE_TO, PathCommand.CLOSE]);
+    expect(path.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.QUADRATIC_CURVE_TO,
+      PathCommand.QUADRATIC_CURVE_TO,
+      PathCommand.CLOSE,
+    ]);
     // First curve ends at the midpoint of the two controls — (100,0) and (100,100) → (100,50), negated.
     expect(path.data.slice(2, 6)).toEqual([100, -0, 100, -50]);
   });
@@ -103,7 +108,7 @@ describe('readOpenTypeGlyphOutline', () => {
       ],
     };
     const { path } = readGlyph([emptySyntheticGlyph(), glyph], 1);
-    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CURVE_TO, PathCommand.CLOSE]);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.QUADRATIC_CURVE_TO, PathCommand.CLOSE]);
     expect(path.data).toEqual([0, -0, 50, -100, 100, -0]);
   });
 

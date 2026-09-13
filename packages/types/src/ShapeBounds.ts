@@ -17,7 +17,7 @@ export interface ShapeBoundsContext {
   cubicCurveTo(controlX1: number, controlY1: number, controlX2: number, controlY2: number, x: number, y: number): void;
   quadraticCurveTo(controlX: number, controlY: number, x: number, y: number): void;
   drawCircle(x: number, y: number, radius: number): void;
-  drawEllipse(x: number, y: number, width: number, height: number): void;
+  drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number): void;
   drawRectangle(x: number, y: number, width: number, height: number): void;
   expandPoint(x: number, y: number): void;
   flushPath(): void;

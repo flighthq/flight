@@ -3,11 +3,44 @@ import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding, EntityConstruction } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
+// Approximates an arc centered at (cx, cy) from `startAngle` to `endAngle` (radians) with the given
+// `radius`, using one or more cubic bezier segments. Each cubic segment spans at most π/2 (90°) to
+// keep the kappa approximation error under 0.03% of the radius. Appends a MOVE_TO at the arc start
+// unless `connectToCurrent` is true, in which case the arc start is reached by a LINE_TO (useful for
+// building arcs as part of a larger contour). Anticlockwise arcs are supported via the `anticlockwise`
+// flag (default false = clockwise).
+export function appendPathArc(
+  path: Path,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  anticlockwise = false,
+  connectToCurrent = false,
+): void {
+  if (radius <= 0) return;
+  let sweep = endAngle - startAngle;
+  if (anticlockwise) {
+    if (sweep > 0) sweep -= Math.PI * 2;
+  } else {
+    if (sweep < 0) sweep += Math.PI * 2;
+  }
+  const arcStartX = centerX + Math.cos(startAngle) * radius;
+  const arcStartY = centerY + Math.sin(startAngle) * radius;
+  if (connectToCurrent) {
+    appendPathLineTo(path, arcStartX, arcStartY);
+  } else {
+    appendPathMoveTo(path, arcStartX, arcStartY);
+  }
+  appendArcCubics(path, centerX, centerY, radius, radius, 0, startAngle, sweep);
+}
+
 // Approximates a circle centered at (cx, cy) with the given radius using four cubic bezier segments.
 // The standard kappa constant (4*(sqrt(2)-1)/3) gives the best cubic approximation of an arc.
 // Appends a MOVE_TO before the circle and a CLOSE at the end.
-export function appendPathCircle(path: Path, cx: number, cy: number, radius: number): void {
-  appendPathEllipse(path, cx, cy, radius, radius);
+export function appendPathCircle(path: Path, centerX: number, centerY: number, radius: number): void {
+  appendPathEllipse(path, centerX, centerY, radius, radius);
 }
 
 // Closes the current contour back to the most recent MOVE_TO origin. Appends a CLOSE verb (0 data
@@ -32,50 +65,53 @@ export function appendPathCubicCurveTo(
 // Approximates an axis-aligned ellipse using four cubic bezier segments, each tangent handle reaching
 // CIRCLE_KAPPA = 4*(sqrt(2)-1)/3 of the radius. The error is less than 0.03% of the radius. Appends a
 // MOVE_TO at the rightmost point and a CLOSE after the fourth arc segment.
-export function appendPathEllipse(path: Path, cx: number, cy: number, radiusX: number, radiusY: number): void {
-  // kappa: the distance along each tangent handle for the optimal cubic arc approximation.
+export function appendPathEllipse(
+  path: Path,
+  centerX: number,
+  centerY: number,
+  radiusX: number,
+  radiusY: number,
+): void {
   const kx = radiusX * CIRCLE_KAPPA;
   const ky = radiusY * CIRCLE_KAPPA;
-  appendPathMoveTo(path, cx + radiusX, cy);
-  appendPathCubicCurveTo(path, cx + radiusX, cy - ky, cx + kx, cy - radiusY, cx, cy - radiusY);
-  appendPathCubicCurveTo(path, cx - kx, cy - radiusY, cx - radiusX, cy - ky, cx - radiusX, cy);
-  appendPathCubicCurveTo(path, cx - radiusX, cy + ky, cx - kx, cy + radiusY, cx, cy + radiusY);
-  appendPathCubicCurveTo(path, cx + kx, cy + radiusY, cx + radiusX, cy + ky, cx + radiusX, cy);
+  appendPathMoveTo(path, centerX + radiusX, centerY);
+  appendPathCubicCurveTo(
+    path,
+    centerX + radiusX,
+    centerY - ky,
+    centerX + kx,
+    centerY - radiusY,
+    centerX,
+    centerY - radiusY,
+  );
+  appendPathCubicCurveTo(
+    path,
+    centerX - kx,
+    centerY - radiusY,
+    centerX - radiusX,
+    centerY - ky,
+    centerX - radiusX,
+    centerY,
+  );
+  appendPathCubicCurveTo(
+    path,
+    centerX - radiusX,
+    centerY + ky,
+    centerX - kx,
+    centerY + radiusY,
+    centerX,
+    centerY + radiusY,
+  );
+  appendPathCubicCurveTo(
+    path,
+    centerX + kx,
+    centerY + radiusY,
+    centerX + radiusX,
+    centerY + ky,
+    centerX + radiusX,
+    centerY,
+  );
   appendPathClose(path);
-}
-
-// Approximates an arc centered at (cx, cy) from `startAngle` to `endAngle` (radians) with the given
-// `radius`, using one or more cubic bezier segments. Each cubic segment spans at most π/2 (90°) to
-// keep the kappa approximation error under 0.03% of the radius. Appends a MOVE_TO at the arc start
-// unless `connectToCurrent` is true, in which case the arc start is reached by a LINE_TO (useful for
-// building arcs as part of a larger contour). Anticlockwise arcs are supported via the `anticlockwise`
-// flag (default false = clockwise).
-export function appendPathEllipticalArc(
-  path: Path,
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-  anticlockwise = false,
-  connectToCurrent = false,
-): void {
-  if (radius <= 0) return;
-  // Normalize the angle sweep to the correct winding direction.
-  let sweep = endAngle - startAngle;
-  if (anticlockwise) {
-    if (sweep > 0) sweep -= Math.PI * 2;
-  } else {
-    if (sweep < 0) sweep += Math.PI * 2;
-  }
-  const arcStartX = cx + Math.cos(startAngle) * radius;
-  const arcStartY = cy + Math.sin(startAngle) * radius;
-  if (connectToCurrent) {
-    appendPathLineTo(path, arcStartX, arcStartY);
-  } else {
-    appendPathMoveTo(path, arcStartX, arcStartY);
-  }
-  appendArcCubics(path, cx, cy, radius, radius, 0, startAngle, sweep);
 }
 
 // Appends an SVG-style elliptic arc from the current point to (endX, endY). The arc is defined
@@ -208,34 +244,102 @@ export function appendPathRectangle(path: Path, x: number, y: number, width: num
   appendPathClose(path);
 }
 
-// Appends a closed axis-aligned rounded rectangle. Corner radii are uniform when passed as a single
-// number, or per-corner when passed as [topLeft, topRight, bottomRight, bottomLeft]. Each radius is
-// clamped to half the adjacent edge so the corners never overlap. Radii of 0 produce sharp corners.
-// Corners are approximated using the kappa cubic arc method (same as `appendPathEllipse`).
-export function appendPathRoundRectangle(
+export function appendPathRoundedRectangle(
   path: Path,
   x: number,
   y: number,
   width: number,
   height: number,
-  radius: number | [number, number, number, number],
+  radius: number,
 ): void {
-  const [rtl, rtr, rbr, rbl] = normalizeCornerRadii(radius, width, height);
-  // Start at the top-left corner arc start (top edge, after top-left radius).
+  appendPathRoundedRectangleWithCornerRadii(path, x, y, width, height, radius, radius, radius, radius);
+}
+
+export function appendPathRoundedRectangleWithCornerRadii(
+  path: Path,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  topLeft: number,
+  topRight: number,
+  bottomRight: number,
+  bottomLeft: number,
+): void {
+  const [rtl, rtr, rbr, rbl] = normalizeCornerRadii([topLeft, topRight, bottomRight, bottomLeft], width, height);
   appendPathMoveTo(path, x + rtl, y);
-  // Top edge → top-right corner.
   appendPathLineTo(path, x + width - rtr, y);
   appendCornerArc(path, x + width - rtr, y + rtr, rtr, -Math.PI / 2, 0);
-  // Right edge → bottom-right corner.
   appendPathLineTo(path, x + width, y + height - rbr);
   appendCornerArc(path, x + width - rbr, y + height - rbr, rbr, 0, Math.PI / 2);
-  // Bottom edge → bottom-left corner.
   appendPathLineTo(path, x + rbl, y + height);
   appendCornerArc(path, x + rbl, y + height - rbl, rbl, Math.PI / 2, Math.PI);
-  // Left edge → top-left corner.
   appendPathLineTo(path, x, y + rtl);
   appendCornerArc(path, x + rtl, y + rtl, rtl, Math.PI, (Math.PI * 3) / 2);
   appendPathClose(path);
+}
+
+export function appendPathTangentArcTo(
+  path: Path,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  radius: number,
+): void {
+  let penX = 0;
+  let penY = 0;
+  {
+    const last = getPathLastPoint(path);
+    if (last !== null) {
+      penX = last[0];
+      penY = last[1];
+    }
+  }
+  const d1x = penX - x1;
+  const d1y = penY - y1;
+  const d2x = x2 - x1;
+  const d2y = y2 - y1;
+  const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
+  const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
+  if (len1 < 1e-10 || len2 < 1e-10) {
+    appendPathLineTo(path, x1, y1);
+    return;
+  }
+  const cosHalf = (d1x * d2x + d1y * d2y) / (len1 * len2);
+  const clampedCos = Math.max(-1, Math.min(1, cosHalf));
+  const halfAngle = Math.acos(clampedCos) / 2;
+  if (Math.abs(Math.sin(halfAngle)) < 1e-10) {
+    appendPathLineTo(path, x1, y1);
+    return;
+  }
+  const d = radius / Math.tan(halfAngle);
+  const n1x = d1x / len1;
+  const n1y = d1y / len1;
+  const tx1 = x1 + n1x * d;
+  const ty1 = y1 + n1y * d;
+  const n2x = d2x / len2;
+  const n2y = d2y / len2;
+  const tx2 = x1 + n2x * d;
+  const ty2 = y1 + n2y * d;
+  appendPathLineTo(path, tx1, ty1);
+  const bx = (n1x + n2x) / 2;
+  const by = (n1y + n2y) / 2;
+  const blen = Math.sqrt(bx * bx + by * by);
+  const distToCenter = radius / Math.sin(halfAngle);
+  const ocx = x1 + (bx / blen) * distToCenter;
+  const ocy = y1 + (by / blen) * distToCenter;
+  const startA = Math.atan2(ty1 - ocy, tx1 - ocx);
+  const endA = Math.atan2(ty2 - ocy, tx2 - ocx);
+  const cross = d1x * d2y - d1y * d2x;
+  const isAnticlockwise = cross < 0;
+  let sweep = endA - startA;
+  if (isAnticlockwise) {
+    if (sweep > 0) sweep -= Math.PI * 2;
+  } else {
+    if (sweep < 0) sweep += Math.PI * 2;
+  }
+  appendArcCubics(path, ocx, ocy, radius, radius, 0, startA, sweep);
 }
 
 export function createPath(winding: PathWinding = 'nonZero'): Path {
@@ -352,11 +456,11 @@ export function initializePath(out: EntityConstruction<Path>, winding: PathWindi
 // Normalizes corner radii for a rounded rectangle, clamping each corner radius to at most half the
 // adjacent edge length so corners never overlap. Returns [topLeft, topRight, bottomRight, bottomLeft].
 function normalizeCornerRadii(
-  radius: number | [number, number, number, number],
+  radius: [number, number, number, number],
   width: number,
   height: number,
 ): [number, number, number, number] {
-  const [rtl, rtr, rbr, rbl] = typeof radius === 'number' ? [radius, radius, radius, radius] : radius;
+  const [rtl, rtr, rbr, rbl] = radius;
   // Clamp each radius to half of the shorter adjacent edge.
   const halfW = Math.abs(width) / 2;
   const halfH = Math.abs(height) / 2;

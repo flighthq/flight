@@ -1,7 +1,7 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import {
   defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsQuadraticCurveTo,
   defaultShapeBoundsDrawCircle,
   defaultShapeBoundsDrawEllipse,
   defaultShapeBoundsDrawPath,
@@ -124,10 +124,10 @@ export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
   },
 };
 
-export const defaultCanvasCurveTo: CanvasShapeCommand<'curveTo'> = {
-  fillBounds: defaultShapeBoundsCurveTo,
-  key: 'curveTo',
-  strokeBounds: defaultShapeBoundsCurveTo,
+export const defaultCanvasQuadraticCurveTo: CanvasShapeCommand<'quadraticCurveTo'> = {
+  fillBounds: defaultShapeBoundsQuadraticCurveTo,
+  key: 'quadraticCurveTo',
+  strokeBounds: defaultShapeBoundsQuadraticCurveTo,
   draw(context, state, buf, i) {
     const controlX = buf[i] as number;
     const controlY = buf[i + 1] as number;
@@ -162,14 +162,12 @@ export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
   key: 'drawEllipse',
   strokeBounds: defaultShapeBoundsDrawEllipse,
   draw(context, state, buf, i) {
-    const x = buf[i] as number;
-    const y = buf[i + 1] as number;
-    const width = buf[i + 2] as number;
-    const height = buf[i + 3] as number;
-    const ex = x + width / 2;
-    const ey = y + height / 2;
-    context.moveTo(ex + width / 2, ey);
-    context.ellipse(ex, ey, width / 2, height / 2, 0, 0, Math.PI * 2);
+    const centerX = buf[i] as number;
+    const centerY = buf[i + 1] as number;
+    const radiusX = buf[i + 2] as number;
+    const radiusY = buf[i + 3] as number;
+    context.moveTo(centerX + radiusX, centerY);
+    context.ellipse(centerX, centerY, Math.abs(radiusX), Math.abs(radiusY), 0, 0, Math.PI * 2);
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -204,7 +202,7 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
           di += 2;
           state.hasPendingPath = true;
           break;
-        case 3: // CURVE_TO
+        case 3: // QUADRATIC_CURVE_TO
           if (!state.hasCurrentPoint) {
             context.moveTo(0, 0);
             state.hasCurrentPoint = true;
@@ -287,9 +285,9 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
   },
 };
 
-export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRectangle'> = {
+export const defaultCanvasDrawRoundedRectangle: CanvasShapeCommand<'drawRoundedRectangle'> = {
   fillBounds: defaultShapeBoundsDrawRectangle,
-  key: 'drawRoundRectangle',
+  key: 'drawRoundedRectangle',
   strokeBounds: defaultShapeBoundsDrawRectangle,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
@@ -436,12 +434,12 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
   defaultCanvasCubicCurveTo,
-  defaultCanvasCurveTo,
+  defaultCanvasQuadraticCurveTo,
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawPath,
   defaultCanvasDrawRectangle,
-  defaultCanvasDrawRoundRectangle,
+  defaultCanvasDrawRoundedRectangle,
   defaultCanvasEndFill,
   defaultCanvasLineGradientStyle,
   defaultCanvasLineStyle,

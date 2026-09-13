@@ -63,7 +63,7 @@ export function registerDefaultShapeBoundsCommands(): void {
   });
   registerShapeBoundsCommand({
     fillBounds: defaultShapeBoundsDrawRectangle,
-    key: 'drawRoundRectangle',
+    key: 'drawRoundedRectangle',
     strokeBounds: defaultShapeBoundsDrawRectangle,
   });
   registerShapeBoundsCommand({

@@ -9,8 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-// Appends one shape geometry command (moveTo/lineTo/curveTo/cubicCurveTo and the drawCircle/Ellipse/
-// Rectangle/RoundRectangle/Path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE
+// Appends one shape geometry command (moveTo/lineTo/quadraticCurveTo/cubicCurveTo and the drawCircle/Ellipse/
+// Rectangle/RoundedRectangle/Path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE
 // verbs (curves kept for the renderer to flatten). Shared by the fill-region and stroke-region walkers
 // so both expand geometry identically. Non-geometry command names are ignored (a no-op). `a` is the
 // index of the command's first argument in `commands`.
@@ -56,12 +56,15 @@ export function appendShapeGeometryCommand(
         commands[a + 2] as number,
       );
       break;
-    case 'drawEllipse': {
-      const w = commands[a + 2] as number;
-      const h = commands[a + 3] as number;
-      appendEllipseToPath(path, (commands[a] as number) + w / 2, (commands[a + 1] as number) + h / 2, w / 2, h / 2);
+    case 'drawEllipse':
+      appendEllipseToPath(
+        path,
+        commands[a] as number,
+        commands[a + 1] as number,
+        commands[a + 2] as number,
+        commands[a + 3] as number,
+      );
       break;
-    }
     case 'drawRectangle':
       appendRectangleToPath(
         path,
@@ -71,7 +74,7 @@ export function appendShapeGeometryCommand(
         commands[a + 3] as number,
       );
       break;
-    case 'drawRoundRectangle':
+    case 'drawRoundedRectangle':
       appendRoundRectangleToPath(
         path,
         commands[a] as number,

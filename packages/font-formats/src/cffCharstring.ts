@@ -6,7 +6,7 @@ import { PathCommand } from '@flighthq/types/contract';
 // WHAT MAKES IT DIFFERENT FROM THE `glyf` READER NEXT DOOR, AND WHY THEY SHARE NO CODE: `glyf` is a
 // point list to be walked, while this is a PROGRAM to be executed — with subroutine calls, a stack, and
 // operators whose argument count is variable and sometimes decided by parity. Its curves are CUBIC, so
-// they emit `CUBIC_CURVE_TO` where `glyf` emits the quadratic `CURVE_TO`.
+// they emit `CUBIC_CURVE_TO` where `glyf` emits the quadratic `QUADRATIC_CURVE_TO`.
 //
 // Operator numbers and their argument shapes are interface facts about the format — what a published
 // format exists to state. The execution model here is Flight's own.

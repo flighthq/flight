@@ -172,7 +172,7 @@ function appendGlyfContour(
 
     if (onCurve(index)) {
       if (hasControl) {
-        out.commands.push(PathCommand.CURVE_TO);
+        out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
         out.data.push(controlX, controlY, x, y);
         hasControl = false;
       } else {
@@ -185,7 +185,7 @@ function appendGlyfContour(
     // Two off-curve points in a row: the on-curve point between them was omitted because it is exactly
     // their midpoint. Emit it, then carry this point as the next control.
     if (hasControl) {
-      out.commands.push(PathCommand.CURVE_TO);
+      out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
       out.data.push(controlX, controlY, (controlX + x) / 2, (controlY + y) / 2);
     }
     controlX = x;
@@ -195,7 +195,7 @@ function appendGlyfContour(
 
   // Close back onto the start, through a trailing control point when the contour ended off-curve.
   if (hasControl) {
-    out.commands.push(PathCommand.CURVE_TO);
+    out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
     out.data.push(controlX, controlY, startX, startY);
   }
   out.commands.push(PathCommand.CLOSE);

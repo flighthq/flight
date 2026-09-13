@@ -33,7 +33,7 @@ function signedContourAreas(path: Readonly<Path>): number[] {
     if (command === PathCommand.MOVE_TO || command === PathCommand.LINE_TO) {
       points.push([path.data[at]!, path.data[at + 1]!]);
       at += 2;
-    } else if (command === PathCommand.CURVE_TO) {
+    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
       points.push([path.data[at + 2]!, path.data[at + 3]!]);
       at += 4;
     } else if (command === PathCommand.CUBIC_CURVE_TO) {
