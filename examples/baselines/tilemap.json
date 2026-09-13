@@ -4,16 +4,16 @@
     "sha256": "8db02e6076722efae81a407bcf1c45659476a634d06043769efccf1a035ef6ba",
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
     },
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
@@ -24,16 +24,16 @@
     "sha256": "90a7affdea03d839989bcdae998b3ce61af675834d64049dcbd215bb22e8d8a1",
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
     },
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
@@ -44,16 +44,16 @@
     "sha256": "7e076ff8b832dd7941610babad215670941a61573533c070b769523eb2c13fbc",
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
     },
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "a1d0c480bee5e0eae8ed4c7ae91eccdeaed3d0cc0bda8ef2aa68ca10d6addf10",
+      "frames": 0,
+      "sourceHash": "16b3b5ebadfa991e85ac147ab0936c49d9d7858e0dc4d030030d756dff1f1dd1",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0

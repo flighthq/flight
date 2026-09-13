@@ -4,16 +4,16 @@
     "sha256": "9f99f2dc6fba993e019365203c453b8744bb4721e64518e4ab15abe38fa066fc",
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "26907768f4082618e48cf5dde87813198dae02988a6860f8a9304125f1e07e65",
+      "frames": 0,
+      "sourceHash": "91cf97e017d6a2b22e33889059de5bbb2d472a82034df96fcfa24a94a7dbe886",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
     },
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "26907768f4082618e48cf5dde87813198dae02988a6860f8a9304125f1e07e65",
+      "frames": 0,
+      "sourceHash": "91cf97e017d6a2b22e33889059de5bbb2d472a82034df96fcfa24a94a7dbe886",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
@@ -24,16 +24,16 @@
     "sha256": "5d1b26a9becdcba5a02d927856406942aa2c673ec195c7a189f15a379cef0d71",
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "26907768f4082618e48cf5dde87813198dae02988a6860f8a9304125f1e07e65",
+      "frames": 0,
+      "sourceHash": "91cf97e017d6a2b22e33889059de5bbb2d472a82034df96fcfa24a94a7dbe886",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
     },
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
-      "frames": 30,
-      "sourceHash": "26907768f4082618e48cf5dde87813198dae02988a6860f8a9304125f1e07e65",
+      "frames": 0,
+      "sourceHash": "91cf97e017d6a2b22e33889059de5bbb2d472a82034df96fcfa24a94a7dbe886",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
