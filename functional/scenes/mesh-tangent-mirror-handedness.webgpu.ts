@@ -82,11 +82,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 
 registerWgpuFunctionalTarget(state, screen, scale);
 
-const QUAD_OFFSET_X = 2.2;
-const SAMPLE_FRACTION_LEFT = 0.168;
-const SAMPLE_FRACTION_CENTRE = 0.5;
-const SAMPLE_FRACTION_RIGHT = 0.832;
-
 const material = createBlinnPhongMaterial({
   diffuse: 0xd8dde8ff,
   normalMap: createTexture({

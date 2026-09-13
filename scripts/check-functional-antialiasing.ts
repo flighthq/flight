@@ -177,7 +177,7 @@ export function formatFunctionalAntialiasingReport(report: Readonly<FunctionalAn
   const mismatchesByRenderer = mismatchRenderers.map(
     (renderer) => `${renderer} ${mismatched.filter((cell) => cell.renderer === renderer).length}`,
   );
-  const cleanupBaseline = Object.values(CLEANUP_BASELINE_MISMATCHES).reduce((sum, count) => sum + count, 0);
+  const cleanupBaseline = Object.values(CLEANUP_BASELINE_MISMATCHES).reduce<number>((sum, count) => sum + count, 0);
   lines.push(
     '',
     'Effective-AA comparison (REPORT ONLY until WebGPU has an AA path):',
