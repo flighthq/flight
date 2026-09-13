@@ -1,5 +1,10 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+import {
+  createMatrix3,
+  createMatrix4,
+  getMatrix4Determinant,
+  setMatrix3NormalFromMatrix4,
+} from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareWgpuRenderTargetColorSpace,
@@ -191,6 +196,7 @@ function drawEntries(
   let boundMaterial: Readonly<Material> | undefined;
   let boundLightBlock: Readonly<Scene3DLightBlock> | null = null;
   let boundRenderer: WgpuMeshMaterialRenderer | null = null;
+  let boundMirrored: boolean | undefined;
   let boundSkinned: boolean | undefined;
   let boundColorAdjustment: boolean | undefined;
   let boundColorMatrix: boolean | undefined;
@@ -202,6 +208,10 @@ function drawEntries(
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
     const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
+    // A negative determinant means the world matrix mirrors, which reverses triangle winding. WebGPU
+    // fixes frontFace at pipeline creation, so this selects a 'cw' pipeline variant rather than a
+    // per-draw state change; without it a mirrored mesh is back-face culled and vanishes.
+    const mirrored = getMatrix4Determinant(worldMatrix) < 0;
     const colorAdjusted =
       colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
     const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
@@ -211,17 +221,20 @@ function drawEntries(
       entry.material !== boundMaterial ||
       entry.lightBlock !== boundLightBlock ||
       skinned !== boundSkinned ||
+      mirrored !== boundMirrored ||
       colorAdjusted !== boundColorAdjustment ||
       colorMatrix !== boundColorMatrix
     ) {
       runtime.activeColorAdjustmentRun = colorAdjusted;
       runtime.activeColorMatrixRun = colorMatrix;
       runtime.activeSkinnedRun = skinned;
+      runtime.activeMirroredRun = mirrored;
       entry.renderer.bind(state, entry.material, entry.lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
       boundLightBlock = entry.lightBlock;
       boundSkinned = skinned;
+      boundMirrored = mirrored;
       boundColorAdjustment = colorAdjusted;
       boundColorMatrix = colorMatrix;
     }

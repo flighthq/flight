@@ -49,8 +49,8 @@ describe('ensureWgpuWireframePipeline', () => {
     const masked = ensureWgpuWireframePipeline(state, 'bgra8unorm', true);
     expect(masked).not.toBe(base);
     expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()]).toEqual([
-      'wireframe:bgra8unorm|base|opaque|rigid',
-      'wireframe:bgra8unorm|mask|opaque|rigid',
+      'wireframe:bgra8unorm|base|opaque|rigid|direct',
+      'wireframe:bgra8unorm|mask|opaque|rigid|direct',
     ]);
   });
 });
