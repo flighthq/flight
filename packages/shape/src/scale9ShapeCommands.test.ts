@@ -34,10 +34,10 @@ describe('mapScale9ShapeCommands', () => {
     expect(out).toEqual(['drawRectangle', 4, 20, 40, 100, 60]);
   });
 
-  it('remaps drawRoundRectangle corners but leaves ellipse radii unchanged', () => {
+  it('remaps drawRoundedRectangle corners but leaves ellipse radii unchanged', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawRoundRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
-    expect(out).toEqual(['drawRoundRectangle', 6, 20, 40, 100, 60, 8, 8]);
+    mapScale9ShapeCommands(out, ['drawRoundedRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
+    expect(out).toEqual(['drawRoundedRectangle', 6, 20, 40, 100, 60, 8, 8]);
   });
 
   it('remaps drawCircle center but leaves radius unchanged', () => {

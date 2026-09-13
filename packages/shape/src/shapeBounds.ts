@@ -224,7 +224,8 @@ function createShapeBoundsContext(state: ShapeBoundsLaneState): ShapeBoundsConte
       cubicShapeBoundsCurveTo(state, controlX1, controlY1, controlX2, controlY2, x, y),
     quadraticCurveTo: (controlX, controlY, x, y) => quadraticShapeBoundsCurveTo(state, controlX, controlY, x, y),
     drawCircle: (x, y, radius) => drawShapeBoundsCircle(state, x, y, radius),
-    drawEllipse: (x, y, width, height) => drawShapeBoundsEllipse(state, x, y, width, height),
+    drawEllipse: (centerX, centerY, radiusX, radiusY) =>
+      drawShapeBoundsEllipse(state, centerX, centerY, radiusX, radiusY),
     drawRectangle: (x, y, width, height) => drawShapeBoundsRectangle(state, x, y, width, height),
     expandPoint: (x, y) => expandShapeBoundsPointForLane(state, x, y),
     flushPath: () => flushShapeBoundsPath(state),
@@ -360,20 +361,22 @@ function drawShapeBoundsCircle(state: ShapeBoundsLaneState, x: number, y: number
 
 function drawShapeBoundsEllipse(
   state: ShapeBoundsLaneState,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
+  centerX: number,
+  centerY: number,
+  radiusX: number,
+  radiusY: number,
 ): void {
   finishShapeBoundsOpenSubpath(state, false);
   const padding = getShapeBoundsLanePadding(state);
   if (padding >= 0) {
-    expandShapeBoundsPoint(state.accumulator, Math.min(x, x + width), Math.min(y, y + height), padding);
-    expandShapeBoundsPoint(state.accumulator, Math.max(x, x + width), Math.max(y, y + height), padding);
+    const rx = Math.abs(radiusX);
+    const ry = Math.abs(radiusY);
+    expandShapeBoundsPoint(state.accumulator, centerX - rx, centerY - ry, padding);
+    expandShapeBoundsPoint(state.accumulator, centerX + rx, centerY + ry, padding);
   }
   state.hasCurrentPoint = true;
-  state.penX = x + width;
-  state.penY = y + height / 2;
+  state.penX = centerX + radiusX;
+  state.penY = centerY;
   state.subpathStartX = state.penX;
   state.subpathStartY = state.penY;
 }

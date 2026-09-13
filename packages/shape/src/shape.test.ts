@@ -120,10 +120,8 @@ describe('computeShapeLocalBoundsRectangle', () => {
   });
 
   it('computes bounds from an ellipse', () => {
-    // Ellipse centered at (100,100) with radiusX=60, radiusY=30.
-    // appendShapeEllipse takes (x, y, width, height) where (x,y) is the top-left corner.
     const shape = createShape();
-    appendShapeEllipse(shape, 40, 70, 120, 60);
+    appendShapeEllipse(shape, 100, 100, 60, 30);
     const out = createRectangle();
     computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(40);

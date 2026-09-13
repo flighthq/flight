@@ -38,7 +38,7 @@ describe('registerDefaultShapeBoundsCommands', () => {
       ['drawEllipse', defaultShapeBoundsDrawEllipse, defaultShapeBoundsDrawEllipse],
       ['drawPath', defaultShapeBoundsDrawPath, defaultShapeBoundsDrawPath],
       ['drawRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
-      ['drawRoundRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
+      ['drawRoundedRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
       ['endFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
       ['lineTextureStyle', null, null],
       ['lineGradientStyle', null, null],

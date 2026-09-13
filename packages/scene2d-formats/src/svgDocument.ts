@@ -32,7 +32,7 @@ import {
   appendPathPolygon,
   appendPathPolyline,
   appendPathRectangle,
-  appendPathRoundRectangle,
+  appendPathRoundedRectangle,
   createPath,
   dashPath,
   getPathBounds,
@@ -807,7 +807,7 @@ function createSvgGeometryPath(element: Readonly<XmlElement>, winding: PathWindi
     const ry = Math.max(0, numberAttribute(element, 'ry', rx));
     if (width <= 0 || height <= 0) return path;
     if (rx > 0 || ry > 0)
-      appendPathRoundRectangle(path, x, y, width, height, Math.min(Math.max(rx, ry), width / 2, height / 2));
+      appendPathRoundedRectangle(path, x, y, width, height, Math.min(Math.max(rx, ry), width / 2, height / 2));
     else appendPathRectangle(path, x, y, width, height);
     return path;
   }

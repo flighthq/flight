@@ -8,7 +8,7 @@ import {
   appendPathMoveTo,
   appendPathPolygon,
   appendPathRectangle,
-  appendPathRoundRectangle,
+  appendPathRoundedRectangle,
   createPath,
 } from '@flighthq/path/contract';
 import type { ImportDiagnostic, Path, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
@@ -210,7 +210,7 @@ function appendRiveRectanglePath(
       ];
   const uniform = radii.every((radius) => radius === radii[0]);
   if (uniform && radii[0] > 0) {
-    appendPathRoundRectangle(path, left, top, width, height, radii[0]);
+    appendPathRoundedRectangle(path, left, top, width, height, radii[0]);
     return;
   }
   if (uniform) {

@@ -2,7 +2,8 @@ import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 
 import { createShape } from './shape';
 import {
-  appendShapeEllipticalArc,
+  appendShapeArc,
+  appendShapeEllipticalArcTo,
   appendShapeTangentArcTo,
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -22,13 +23,68 @@ import {
   appendShapePolygon,
   appendShapePolyline,
   appendShapeRectangle,
-  appendShapeRoundRectangle,
-  appendShapeRoundRectangleVarying,
+  appendShapeRoundedRectangle,
+  appendShapeRoundedRectangleWithCornerRadii,
   PathCommand,
 } from './shapeCommands';
 
 const fakeTexture = { id: 1 } as never;
 const fakeMatrix = { id: 2, a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as never;
+
+describe('appendShapeArc', () => {
+  it('emits a moveTo followed by at least one cubicCurveTo', () => {
+    const shape = createShape();
+    appendShapeArc(shape, 50, 50, 25, 0, Math.PI);
+    const keys: string[] = [];
+    let i = 0;
+    while (i < shape.data.commands.length) {
+      const key = shape.data.commands[i] as string;
+      const argCount = shape.data.commands[i + 1] as number;
+      keys.push(key);
+      i += argCount + 2;
+    }
+    expect(keys[0]).toBe('moveTo');
+    expect(keys.slice(1).every((k) => k === 'cubicCurveTo')).toBe(true);
+    expect(keys.length).toBeGreaterThan(1);
+  });
+
+  it('arc start point is on the circle at startAngle', () => {
+    const shape = createShape();
+    appendShapeArc(shape, 0, 0, 10, 0, Math.PI / 2);
+    // moveTo args are at indices [2] and [3]
+    expect(shape.data.commands[2]).toBeCloseTo(10, 5);
+    expect(shape.data.commands[3]).toBeCloseTo(0, 5);
+  });
+
+  it('a full circle uses 4 cubic segments', () => {
+    const shape = createShape();
+    appendShapeArc(shape, 0, 0, 10, 0, Math.PI * 2);
+    let count = 0;
+    let i = 0;
+    while (i < shape.data.commands.length) {
+      const key = shape.data.commands[i] as string;
+      const argCount = shape.data.commands[i + 1] as number;
+      if (key === 'cubicCurveTo') count++;
+      i += argCount + 2;
+    }
+    expect(count).toBe(4);
+  });
+
+  it('anticlockwise arc sweeps in the negative direction', () => {
+    const shape = createShape();
+    appendShapeArc(shape, 0, 0, 10, 0, Math.PI / 2, true);
+    // 3/4-circle anticlockwise; should use 3 cubicCurveTo segments.
+    let count = 0;
+    let i = 0;
+    while (i < shape.data.commands.length) {
+      const key = shape.data.commands[i] as string;
+      const argCount = shape.data.commands[i + 1] as number;
+      if (key === 'cubicCurveTo') count++;
+      i += argCount + 2;
+    }
+    expect(count).toBe(3);
+  });
+});
 
 describe('appendShapeBeginFill', () => {
   it('pushes a beginFill command with color and alpha', () => {
@@ -176,17 +232,18 @@ describe('appendShapeDrawTriangles', () => {
 });
 
 describe('appendShapeEllipse', () => {
-  it('pushes a drawEllipse command with position and dimensions', () => {
+  it('pushes a drawEllipse command with center and radii', () => {
     const shape = createShape();
     appendShapeEllipse(shape, 10, 20, 100, 50);
     expect(shape.data.commands).toEqual(['drawEllipse', 4, 10, 20, 100, 50]);
   });
 });
 
-describe('appendShapeEllipticalArc', () => {
-  it('emits a moveTo followed by at least one cubicCurveTo', () => {
+describe('appendShapeEllipticalArcTo', () => {
+  it('emits cubicCurveTo commands for a non-degenerate arc', () => {
     const shape = createShape();
-    appendShapeEllipticalArc(shape, 50, 50, 25, 0, Math.PI);
+    appendShapeMoveTo(shape, 100, 0);
+    appendShapeEllipticalArcTo(shape, 50, 50, 0, true, false, 100, 1);
     const keys: string[] = [];
     let i = 0;
     while (i < shape.data.commands.length) {
@@ -195,46 +252,30 @@ describe('appendShapeEllipticalArc', () => {
       keys.push(key);
       i += argCount + 2;
     }
-    expect(keys[0]).toBe('moveTo');
-    expect(keys.slice(1).every((k) => k === 'cubicCurveTo')).toBe(true);
-    expect(keys.length).toBeGreaterThan(1);
+    expect(keys).toContain('cubicCurveTo');
   });
 
-  it('arc start point is on the circle at startAngle', () => {
+  it('emits a lineTo when radiusX is 0', () => {
     const shape = createShape();
-    appendShapeEllipticalArc(shape, 0, 0, 10, 0, Math.PI / 2);
-    // moveTo args are at indices [2] and [3]
-    expect(shape.data.commands[2]).toBeCloseTo(10, 5);
-    expect(shape.data.commands[3]).toBeCloseTo(0, 5);
-  });
-
-  it('a full circle uses 4 cubic segments', () => {
-    const shape = createShape();
-    appendShapeEllipticalArc(shape, 0, 0, 10, 0, Math.PI * 2);
-    let count = 0;
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeEllipticalArcTo(shape, 0, 10, 0, false, false, 50, 50);
+    const keys: string[] = [];
     let i = 0;
     while (i < shape.data.commands.length) {
       const key = shape.data.commands[i] as string;
       const argCount = shape.data.commands[i + 1] as number;
-      if (key === 'cubicCurveTo') count++;
+      keys.push(key);
       i += argCount + 2;
     }
-    expect(count).toBe(4);
+    expect(keys[keys.length - 1]).toBe('lineTo');
   });
 
-  it('anticlockwise arc sweeps in the negative direction', () => {
+  it('does nothing when start equals end', () => {
     const shape = createShape();
-    appendShapeEllipticalArc(shape, 0, 0, 10, 0, Math.PI / 2, true);
-    // 3/4-circle anticlockwise; should use 3 cubicCurveTo segments.
-    let count = 0;
-    let i = 0;
-    while (i < shape.data.commands.length) {
-      const key = shape.data.commands[i] as string;
-      const argCount = shape.data.commands[i + 1] as number;
-      if (key === 'cubicCurveTo') count++;
-      i += argCount + 2;
-    }
-    expect(count).toBe(3);
+    appendShapeMoveTo(shape, 10, 10);
+    const beforeLen = shape.data.commands.length;
+    appendShapeEllipticalArcTo(shape, 50, 50, 0, false, false, 10, 10);
+    expect(shape.data.commands.length).toBe(beforeLen);
   });
 });
 
@@ -438,18 +479,18 @@ describe('appendShapeRectangle', () => {
   });
 });
 
-describe('appendShapeRoundRectangle', () => {
-  it('pushes a drawRoundRectangle command with position, dimensions, and corner radii', () => {
+describe('appendShapeRoundedRectangle', () => {
+  it('pushes a drawRoundedRectangle command with position, dimensions, and corner radii', () => {
     const shape = createShape();
-    appendShapeRoundRectangle(shape, 0, 0, 100, 50, 10, 8);
-    expect(shape.data.commands).toEqual(['drawRoundRectangle', 6, 0, 0, 100, 50, 10, 8]);
+    appendShapeRoundedRectangle(shape, 0, 0, 100, 50, 10, 8);
+    expect(shape.data.commands).toEqual(['drawRoundedRectangle', 6, 0, 0, 100, 50, 10, 8]);
   });
 });
 
-describe('appendShapeRoundRectangleVarying', () => {
+describe('appendShapeRoundedRectangleWithCornerRadii', () => {
   it('expands to moveTo/lineTo/cubicCurveTo commands using kappa arc approximation', () => {
     const shape = createShape();
-    appendShapeRoundRectangleVarying(shape, 0, 0, 100, 50, 5, 5, 5, 5);
+    appendShapeRoundedRectangleWithCornerRadii(shape, 0, 0, 100, 50, 5, 5, 5, 5);
     const knownPrimitives = ['moveTo', 'lineTo', 'cubicCurveTo'];
     const keys: string[] = [];
     let i = 0;

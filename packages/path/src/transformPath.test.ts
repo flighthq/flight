@@ -28,13 +28,13 @@ describe('transformPath', () => {
     expect(out.data).toStrictEqual([5, 3, 15, 3]);
   });
 
-  it('applies a scale to CURVE_TO control and anchor points', () => {
+  it('applies a scale to QUADRATIC_CURVE_TO control and anchor points', () => {
     const source = createPath();
     appendPathMoveTo(source, 0, 0);
     appendPathQuadraticCurveTo(source, 10, 20, 30, 0);
     const out = createPath();
     transformPath(source, { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 }, out);
-    // MOVE_TO (0,0) scaled to (0,0); CURVE_TO (10,20,30,0) → (20,40,60,0)
+    // MOVE_TO (0,0) scaled to (0,0); QUADRATIC_CURVE_TO (10,20,30,0) → (20,40,60,0)
     expect(out.data).toStrictEqual([0, 0, 20, 40, 60, 0]);
   });
 

@@ -55,7 +55,7 @@ export function mapScale9ShapeCommands(
         out[i + 5] = mapper.mapY(y + h) - my;
         break;
       }
-      case 'drawRoundRectangle': {
+      case 'drawRoundedRectangle': {
         const x = out[i + 2] as number;
         const y = out[i + 3] as number;
         const w = out[i + 4] as number;
@@ -96,7 +96,7 @@ function remapPathData(out: number[], source: readonly number[], cmds: readonly 
         out[di + 1] = mapper.mapY(out[di + 1]);
         di += 2;
         break;
-      case 3: // CURVE_TO [cx, cy, ax, ay]
+      case 3: // QUADRATIC_CURVE_TO [cx, cy, ax, ay]
         out[di] = mapper.mapX(out[di]);
         out[di + 1] = mapper.mapY(out[di + 1]);
         out[di + 2] = mapper.mapX(out[di + 2]);

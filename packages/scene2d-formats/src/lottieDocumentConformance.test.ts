@@ -695,7 +695,7 @@ function sampleShapeOutline(shape: Shape): number[][] {
         }
         current = [x, y];
         cursor += 6;
-      } else if (verb === PathCommand.CURVE_TO) {
+      } else if (verb === PathCommand.QUADRATIC_CURVE_TO) {
         cursor += 4;
       } else if (verb === PathCommand.WIDE_MOVE_TO || verb === PathCommand.WIDE_LINE_TO) {
         cursor += 4;
@@ -721,7 +721,7 @@ function pathAnchorsOf(shape: Shape): number[][] {
       } else if (verb === PathCommand.CUBIC_CURVE_TO) {
         anchors.push([data[cursor + 4], data[cursor + 5]]);
         cursor += 6;
-      } else if (verb === PathCommand.CURVE_TO) {
+      } else if (verb === PathCommand.QUADRATIC_CURVE_TO) {
         anchors.push([data[cursor + 2], data[cursor + 3]]);
         cursor += 4;
       }

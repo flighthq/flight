@@ -39,11 +39,11 @@ export interface ShapeCommandRegistry {
     y: number,
   ];
   quadraticCurveTo: readonly [controlX: number, controlY: number, x: number, y: number];
-  drawCircle: readonly [x: number, y: number, radius: number];
-  drawEllipse: readonly [x: number, y: number, width: number, height: number];
+  drawCircle: readonly [centerX: number, centerY: number, radius: number];
+  drawEllipse: readonly [centerX: number, centerY: number, radiusX: number, radiusY: number];
   drawPath: readonly [commands: number[], data: number[], winding: PathWinding];
   drawRectangle: readonly [x: number, y: number, width: number, height: number];
-  drawRoundRectangle: readonly [
+  drawRoundedRectangle: readonly [
     x: number,
     y: number,
     width: number,

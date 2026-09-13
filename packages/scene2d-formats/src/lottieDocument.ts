@@ -19,7 +19,7 @@ import {
   appendPathMoveTo,
   appendPathPolygon,
   appendPathRectangle,
-  appendPathRoundRectangle,
+  appendPathRoundedRectangle,
   createPath,
   dashPath,
   getPathLength,
@@ -987,7 +987,7 @@ function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null
     const size = numericValue(initialLottieValue(rectangle.s), 2);
     const radius = numericValue(initialLottieValue(rectangle.r), 1)[0];
     if (radius > 0) {
-      appendPathRoundRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1], radius);
+      appendPathRoundedRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1], radius);
     } else {
       appendPathRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1]);
     }
@@ -1107,7 +1107,7 @@ function bindLottieGeometryItem(
     const apply = (): void => {
       const path = createPath();
       if (radius[0] > 0) {
-        appendPathRoundRectangle(
+        appendPathRoundedRectangle(
           path,
           position[0] - size[0] / 2,
           position[1] - size[1] / 2,
