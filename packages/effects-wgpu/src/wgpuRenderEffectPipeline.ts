@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import { srgbChannelToLinear } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuTextureRenderTarget,
@@ -279,24 +280,17 @@ function reportWgpuRenderEffectPipelineSkip(state: WgpuRenderState, kind: string
   _skipGuards.get(state)?.(state, kind);
 }
 
-// sRGB → linear conversion matching the inverse of the present shader's linearToSrgb. Callers
-// specify clear colors as screen-appearance (sRGB) values; a linear scene target must store the
-// linearized form so the present shader's gamma encoding reconstructs the intended screen color.
-function srgbComponentToLinear(v: number): number {
-  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-}
-
 function linearizeClear(clear: Readonly<RenderTargetClear>): RenderTargetClear {
   const out: RenderTargetClear = {};
   if (clear.color !== undefined) {
     const [r, g, b, a] = clear.color;
-    out.color = [srgbComponentToLinear(r), srgbComponentToLinear(g), srgbComponentToLinear(b), a];
+    out.color = [srgbChannelToLinear(r), srgbChannelToLinear(g), srgbChannelToLinear(b), a];
   }
   if (clear.colors !== undefined) {
     out.colors = clear.colors.map((c) =>
       c === undefined
         ? undefined
-        : [srgbComponentToLinear(c[0]), srgbComponentToLinear(c[1]), srgbComponentToLinear(c[2]), c[3]],
+        : [srgbChannelToLinear(c[0]), srgbChannelToLinear(c[1]), srgbChannelToLinear(c[2]), c[3]],
     );
   }
   if (clear.depth !== undefined) out.depth = clear.depth;
