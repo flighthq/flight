@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 3,
+  "id": "abd4c4f2-8100-44f1-970f-35098ca2749e",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "effect-bevel",
+      "renderer": "webgl",
+      "pixelSha256": "1fb9b8e2912ff45e13c58e7e9dbb53683d7cebedd848fe0b11e9bdf8711a77bb",
+      "build": {
+        "commit": "531783425772e84a6e53a3a29d93ee722729f733",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-bevel",
+      "renderer": "webgpu",
+      "pixelSha256": "1fb9b8e2912ff45e13c58e7e9dbb53683d7cebedd848fe0b11e9bdf8711a77bb",
+      "build": {
+        "commit": "531783425772e84a6e53a3a29d93ee722729f733",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review",
+  "createdAt": "2026-09-13T03:08:01.445Z"
+}
