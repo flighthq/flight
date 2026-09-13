@@ -9,6 +9,7 @@ import {
 import type { RenderEffect } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import {
   beginWgpuRenderEffectPipeline,
   createWgpuRenderEffectPipeline,
@@ -219,6 +220,33 @@ describe('endWgpuRenderEffectPipeline', () => {
     endWgpuRenderPass(screenPass);
     expect(pipeline.sceneTarget).toBeNull();
     expect(pipeline.pool).toBe(pool);
+  });
+
+  // ★ THE PRESENT OVERWRITES, IT DOES NOT COMPOSITE. The scene target already holds the finished frame, so
+  // compositing it over the enclosing attachment lets that attachment's CLEAR show through wherever the
+  // frame's own alpha is zero. A fixed-function Darken (MIN with ONE/ONE) drives a zero-coverage pixel to
+  // (0,0,0,0) by design, and under a premultiplied present the black it had just computed came back as the
+  // enclosing clear — material-blend-modes read 16 for a 0x10 clear and 64 for a 0x40 clear, tracking the
+  // clear exactly while WebGL wrote black.
+  //
+  // dstFactor 'zero' is the whole property: it makes the destination — and therefore the clear — unable to
+  // contribute to the presented pixel at any alpha. Asserting the factors rather than a rendered pixel is
+  // what lets this run on the mock device, and it fails the moment the call site opts back into 'premul'.
+  it('presents with a blend the enclosing clear cannot contribute to', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pipeline = createWgpuRenderEffectPipeline(state);
+
+    const screenPass = beginWgpuScreenRenderPassForTest(state);
+    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuRenderPass(screenPass);
+
+    const present = getWgpuEffectPipeline(state, 'effect.present', '') as unknown as {
+      pipeline: { __descriptor: GPURenderPipelineDescriptor };
+    };
+    const blend = present.pipeline.__descriptor.fragment!.targets[0]!.blend!;
+
+    expect(blend.color.dstFactor).toBe('zero');
+    expect(blend.alpha.dstFactor).toBe('zero');
   });
 
   it('runs an empty operation list without allocating scratch targets', async () => {
