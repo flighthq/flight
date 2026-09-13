@@ -47,7 +47,7 @@ function createEveryNonBitmapCommandShape() {
   appendShapeCircle(shape, 5, 6, 7);
   appendShapeEllipse(shape, 1, 2, 3, 4);
   appendShapeRectangle(shape, 10, 11, 12, 13);
-  appendShapeRoundedRectangle(shape, 1, 2, 3, 4, 5, 6);
+  appendShapeRoundedRectangle(shape, 1, 2, 3, 4, 5);
   appendShapeDrawTriangles(shape, [0, 0, 1, 0, 0, 1], [0, 1, 2], [0, 0, 1, 0, 0, 1], 'positive');
   appendShapeDrawTriangles(shape, [0, 0, 1, 0, 0, 1], null, null, 'none');
   appendShapeLineGradientStyle(

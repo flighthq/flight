@@ -80,13 +80,12 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
     argument('width', 'number'),
     argument('height', 'number'),
   ]),
-  drawRoundedRectangle: definition(6, [
+  drawRoundedRectangle: definition(5, [
     argument('x', 'number'),
     argument('y', 'number'),
     argument('width', 'number'),
     argument('height', 'number'),
-    argument('ellipseWidth', 'number'),
-    argument('ellipseHeight', 'number'),
+    argument('radius', 'number'),
   ]),
   drawTriangles: definition(1, [
     argument('vertices', 'numbers'),
