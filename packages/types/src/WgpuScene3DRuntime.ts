@@ -87,6 +87,11 @@ export interface WgpuScene3DRuntime {
   activeBlendedRun: boolean;
   activeColorAdjustmentRun: boolean;
   activeColorMatrixRun: boolean;
+  // Whether the run currently being bound draws a mesh whose world matrix mirrors — an odd number of
+  // axis flips, which reverses triangle winding. WebGL sets frontFace per draw; WebGPU bakes it into the
+  // pipeline, so like the blend and skin variants this is part of the pipeline-cache identity, and a
+  // mirrored run compiles the 'cw' variant instead of being back-face culled out of the frame.
+  activeMirroredRun: boolean;
   activeSkinnedRun: boolean;
   activeMeshPipeline: WgpuMeshPipeline | null;
   blendedDrawList: WgpuScene3DDrawEntry[];

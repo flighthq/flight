@@ -245,7 +245,13 @@ struct VertexOutput {
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;
   out.worldNormal = draw.normalMatrix * localNormal;
-  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangent.w);
+  // tangent.w is HANDEDNESS, and a model transform that mirrors reverses it: the fragment stage rebuilds
+  // the bitangent as w * cross(N, T), so a mirrored instance shades with a flipped frame unless w flips
+  // too. normalMatrix is the inverse transpose of the model's upper 3x3, so its determinant is 1/det and
+  // carries the same sign. Compared rather than sign()-ed: sign() yields 0 for a singular matrix, and a
+  // zero w collapses the bitangent entirely, which is worse than keeping the original hand.
+  let tangentHandedness = tangent.w * select(1.0, -1.0, determinant(draw.normalMatrix) < 0.0);
+  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangentHandedness);
   // draw.uvTransform is identity for an untiled material, so this reproduces the raw uv; see the shared
   // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
   out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;

@@ -27,6 +27,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       activeBlendedRun: false,
       activeColorAdjustmentRun: false,
       activeColorMatrixRun: false,
+      activeMirroredRun: false,
       activeSkinnedRun: false,
       activeMeshPipeline: null,
       blendedDrawList: [],

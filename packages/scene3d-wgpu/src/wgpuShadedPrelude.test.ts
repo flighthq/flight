@@ -90,8 +90,8 @@ describe('ensureWgpuShadedPipeline', () => {
     getWgpuScene3DRuntime(state).activeBlendedRun = true;
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     const keys = [...getWgpuScene3DRuntime(state).pipelineCache.keys()];
-    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque|rigid'))).toBe(true);
-    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend:Normal|rigid'))).toBe(true);
+    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|opaque|rigid|direct'))).toBe(true);
+    expect(keys.some((key) => key.startsWith('shaded:') && key.endsWith('|blend:Normal|rigid|direct'))).toBe(true);
   });
 
   it('reserves alpha-map binding 5 and starts modifier textures at binding 6', () => {

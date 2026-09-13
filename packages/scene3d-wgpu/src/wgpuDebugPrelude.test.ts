@@ -68,8 +68,8 @@ describe('ensureWgpuDebugPipeline', () => {
 
     const keys = [...getWgpuScene3DRuntime(state).pipelineCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
-    expect(keys).toContain('debug:bgra8unorm|d-|single|opaque|rigid');
-    expect(keys).toContain('debug:bgra8unorm|n-|single|opaque|rigid');
+    expect(keys).toContain('debug:bgra8unorm|d-|single|opaque|rigid|direct');
+    expect(keys).toContain('debug:bgra8unorm|n-|single|opaque|rigid|direct');
   });
 
   it('caches single- and double-sided variants independently', () => {
@@ -78,8 +78,8 @@ describe('ensureWgpuDebugPipeline', () => {
     const double = ensureWgpuDebugPipeline(state, NORMAL, 'bgra8unorm', true);
     expect(double).not.toBe(single);
     expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()]).toEqual([
-      'debug:bgra8unorm|n-|single|opaque|rigid',
-      'debug:bgra8unorm|n-|double|opaque|rigid',
+      'debug:bgra8unorm|n-|single|opaque|rigid|direct',
+      'debug:bgra8unorm|n-|double|opaque|rigid|direct',
     ]);
   });
 });

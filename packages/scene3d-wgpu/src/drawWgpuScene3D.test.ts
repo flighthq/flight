@@ -158,8 +158,10 @@ describe('drawWgpuScene3D', () => {
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
     expect(runtime.blendedDrawList.map((entry) => entry.mesh)).toEqual([blended]);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque|rigid'))).toBe(true);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque|rigid|direct'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid|direct'))).toBe(
+      true,
+    );
   });
 
   it('selects a pipeline variant keyed by the surface material blendMode', () => {
@@ -172,7 +174,9 @@ describe('drawWgpuScene3D', () => {
     drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     expect(
-      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) => key.endsWith('|blend:Add|rigid')),
+      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) =>
+        key.endsWith('|blend:Add|rigid|direct'),
+      ),
     ).toBe(true);
   });
 
@@ -188,7 +192,7 @@ describe('drawWgpuScene3D', () => {
     drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     const keys = Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys());
-    expect(keys.some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
+    expect(keys.some((key) => key.endsWith('|blend:Normal|rigid|direct'))).toBe(true);
     expect(keys.some((key) => key.includes('straight') || key.includes('premultiplied'))).toBe(false);
   });
 
@@ -205,7 +209,9 @@ describe('drawWgpuScene3D', () => {
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList).toHaveLength(0);
     expect(runtime.blendedDrawList[0]!.alpha).toBeCloseTo(0.5);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid|direct'))).toBe(
+      true,
+    );
   });
 
   it('sorts blended subsets back-to-front by projected depth', () => {

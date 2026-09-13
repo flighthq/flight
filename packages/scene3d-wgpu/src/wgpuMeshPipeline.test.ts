@@ -649,8 +649,8 @@ describe('ensureWgpuScene3DPipeline', () => {
 
     expect(variants).toEqual([false, true]);
     expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|opaque|rigid',
-      'fam:bgra8unorm|-|blend:Normal|rigid',
+      'fam:bgra8unorm|-|opaque|rigid|direct',
+      'fam:bgra8unorm|-|blend:Normal|rigid|direct',
     ]);
   });
 
@@ -671,8 +671,8 @@ describe('ensureWgpuScene3DPipeline', () => {
 
     expect(compiles).toBe(2);
     expect(Array.from(runtime.pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|blend:Add|rigid',
-      'fam:bgra8unorm|-|blend:Multiply|rigid',
+      'fam:bgra8unorm|-|blend:Add|rigid|direct',
+      'fam:bgra8unorm|-|blend:Multiply|rigid|direct',
     ]);
   });
 
@@ -695,8 +695,8 @@ describe('ensureWgpuScene3DPipeline', () => {
 
     expect(compiles).toBe(2);
     expect(Array.from(runtime.pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|blend:Normal|rigid',
-      'fam:bgra8unorm|-|blend:Add|rigid',
+      'fam:bgra8unorm|-|blend:Normal|rigid|direct',
+      'fam:bgra8unorm|-|blend:Add|rigid|direct',
     ]);
   });
 
@@ -714,8 +714,8 @@ describe('ensureWgpuScene3DPipeline', () => {
 
     expect(variants).toEqual([false, true]);
     expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|opaque|rigid',
-      'fam:bgra8unorm|-|opaque|skin',
+      'fam:bgra8unorm|-|opaque|rigid|direct',
+      'fam:bgra8unorm|-|opaque|skin|direct',
     ]);
   });
 });

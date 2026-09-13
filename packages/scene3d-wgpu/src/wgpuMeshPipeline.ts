@@ -608,7 +608,11 @@ export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
   const blended = runtime.activeBlendedRun;
   const blendMode = blended ? (runtime.activeBlendMode ?? BlendMode.Normal) : null;
   const skinned = runtime.activeSkinnedRun;
-  const variantKey = `${key}|${blendMode === null ? 'opaque' : `blend:${blendMode}`}|${skinned ? 'skin' : 'rigid'}`;
+  // Mirroring joins blend and skin in the cache identity because WebGPU fixes frontFace at pipeline
+  // creation: a mirrored mesh needs its own 'cw' pipeline, and sharing one with the unmirrored variant
+  // would cull it out of the frame instead.
+  const mirrored = runtime.activeMirroredRun;
+  const variantKey = `${key}|${blendMode === null ? 'opaque' : `blend:${blendMode}`}|${skinned ? 'skin' : 'rigid'}|${mirrored ? 'mirrored' : 'direct'}`;
   let pipeline = runtime.pipelineCache.get(variantKey);
   if (pipeline === undefined) {
     pipeline = compile(blended, skinned);
@@ -817,7 +821,9 @@ export function initializeWgpuMeshPipeline(
     },
     primitive: {
       topology: options.topology ?? 'triangle-list',
-      frontFace: 'ccw',
+      // A mirrored world matrix reverses triangle winding, so the same geometry presents its other face.
+      // WebGL flips frontFace per draw; here the flip is pipeline state, keyed into the cache above.
+      frontFace: getWgpuScene3DRuntime(state).activeMirroredRun ? 'cw' : 'ccw',
       cullMode: options.doubleSided ? 'none' : 'back',
     },
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
@@ -1126,7 +1132,13 @@ struct VertexOutput {
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;
   out.worldNormal = draw.normalMatrix * localNormal;
-  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangent.w);
+  // tangent.w is HANDEDNESS, and a model transform that mirrors reverses it: the fragment stage rebuilds
+  // the bitangent as w * cross(N, T), so a mirrored instance shades with a flipped frame unless w flips
+  // too. normalMatrix is the inverse transpose of the model's upper 3x3, so its determinant is 1/det and
+  // carries the same sign. Compared rather than sign()-ed: sign() yields 0 for a singular matrix, and a
+  // zero w collapses the bitangent entirely, which is worse than keeping the original hand.
+  let tangentHandedness = tangent.w * select(1.0, -1.0, determinant(draw.normalMatrix) < 0.0);
+  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangentHandedness);
   // Apply the material's KHR_texture_transform to the uv. draw.uvTransform is identity for an untiled
   // material (writeWgpuDrawUniform's default), so this is a no-op there — applied unconditionally rather
   // than behind a pipeline const because this vs_main is shared by every family (classic/unlit/toon/
