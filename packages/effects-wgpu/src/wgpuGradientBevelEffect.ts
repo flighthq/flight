@@ -53,9 +53,7 @@ export function applyGradientBevelEffectToWgpu(
 
   // Encode bevel value from blurred alpha offset samples → s0
   const dx = (Math.cos(angle) * distance) / s1.width;
-  // Negate Y to map the screen-space-Y-down light direction into the bottom-left-origin
-  // render-target contents, matching the Gl gradient bevel.
-  const dy = -((Math.sin(angle) * distance) / s1.height);
+  const dy = (Math.sin(angle) * distance) / s1.height;
 
   const encodePipeline = getEncodePipeline(state);
   const encodeSlot = fs.acquireSlot();

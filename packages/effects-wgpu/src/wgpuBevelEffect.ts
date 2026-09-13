@@ -69,9 +69,7 @@ export function applyBevelEffectToWgpu(
 
   applyWgpuBevelCompositePass(state, blurred, src, dst, {
     offsetX: offsetX / source.width,
-    // Negate Y to map the screen-space-Y-down light direction into the bottom-left-origin
-    // render-target contents, matching the Gl bevel and Wgpu offset-blit conventions.
-    offsetY: -offsetY / source.height,
+    offsetY: offsetY / source.height,
     highlightColor,
     highlightAlpha,
     shadowColor,
