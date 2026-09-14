@@ -109,7 +109,7 @@ export function createGlyphOutlineSourcesFromSwf(
   source: Uint8Array,
   diagnostics?: ImportDiagnostic[],
 ): ReadonlyMap<number, GlyphOutlineSource> | null {
-  const file = readSwfFile(source, diagnostics);
+  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
   return file === null ? null : new Map(file.parsed.fontOutlineSources);
 }
 
@@ -137,7 +137,7 @@ export function createScene2DImportFromSwf(
   source: Uint8Array,
   diagnostics?: ImportDiagnostic[],
 ): SwfDocumentImport | null {
-  const file = readSwfFile(source, diagnostics);
+  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
   if (file === null) return null;
   return instantiateSwfFile(file, diagnostics);
 }
@@ -207,7 +207,7 @@ export function createScene2DSymbolFromSwf(
   linkageName: string,
   diagnostics?: ImportDiagnostic[],
 ): Scene2DDocument | null {
-  const file = readSwfFile(source, diagnostics);
+  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
   if (file === null) return null;
   const { frameRate, parsed } = file;
 
@@ -633,8 +633,8 @@ interface SwfFile {
 
 function readSwfFile(
   source: Uint8Array,
-  diagnostics?: ImportDiagnostic[],
-  registry?: Readonly<SwfTagHandlerRegistry>,
+  diagnostics: ImportDiagnostic[] | undefined,
+  registry: Readonly<SwfTagHandlerRegistry>,
 ): SwfFile | null {
   const uncompressed = uncompressSwfSource(source, diagnostics);
   if (uncompressed === null) return null;
@@ -1764,7 +1764,7 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
 function readSwfTags(
   reader: SwfReader,
   diagnostics: ImportDiagnostic[] | undefined,
-  registry?: Readonly<SwfTagHandlerRegistry>,
+  registry: Readonly<SwfTagHandlerRegistry>,
 ): SwfTagResult | null {
   const state: SwfParseState = {
     abcBlobs: [],
@@ -1797,7 +1797,7 @@ function readSwfTags(
     videoTextures: new Map<number, Texture2D>(),
     videos: new Map<number, SwfVideoDefinition>(),
   };
-  const timeline = readSwfTimeline(reader, state, registry ?? createSwfDefaultTagHandlerRegistry());
+  const timeline = readSwfTimeline(reader, state, registry);
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
   resolveSwfSoundClassCues(state);
@@ -3197,7 +3197,7 @@ export function initializeTimelineStreamAudioCue(
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
 // `createScene2DSymbolFromSwf` to instantiate one.
 export function readSwfExportedSymbolNames(source: Uint8Array): string[] {
-  const file = readSwfFile(source);
+  const file = readSwfFile(source, undefined, createSwfDefaultTagHandlerRegistry());
   return file === null ? [] : [...file.parsed.linkages.values()];
 }
 
