@@ -50,8 +50,8 @@ describe('explainSwfContent', () => {
   it('returns stage bounds in CSS pixels', () => {
     const swf = createSwf([createTag(TAG_END)]);
     const manifest = explainSwfContent(swf)!;
-    expect(manifest.stageBounds.width).toBe(100);
-    expect(manifest.stageBounds.height).toBe(50);
+    expect(manifest.stageBounds!.width).toBe(100);
+    expect(manifest.stageBounds!.height).toBe(50);
   });
 });
 
