@@ -113,6 +113,8 @@ describe('Host Phase 3 surface', () => {
 
     expect(publicNames).toHaveLength(105);
     expect(contractNames).toEqual(publicNames);
+    expect(canonicalWebHostNames(dialogPublic)).toEqual([]);
+    expect(canonicalWebHostNames(dialogContract)).toEqual([]);
     for (const api of [hostWebPublic, hostWebContract, dialogPublic, dialogContract]) {
       const names = Object.keys(api);
       expect(names.filter((name) => /^web[A-Z].*Backend$/u.test(name))).toEqual([]);

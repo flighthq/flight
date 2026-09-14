@@ -15,18 +15,18 @@ import type {
   HostFileSaveDialogProvider,
   FileSaveDialogResult,
   HostImageOpenDialogProvider,
+  HostMessageDialogProvider,
   ImageOpenDialogResult,
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   OpenImageDialogOptions,
   HostPhotoCaptureDialogProvider,
   PhotoCaptureDialogResult,
+  HostPromptDialogProvider,
   SaveFileDialogOptions,
   HostVideoCaptureDialogProvider,
   VideoCaptureDialogResult,
 } from '@flighthq/types/contract';
-
-export { webHostMessageDialog, webHostPromptDialog } from '@flighthq/dialog/contract';
 
 export function initializeWebDirectoryOpenDialogBackend(
   out: EntityConstruction<HostDirectoryOpenDialogProvider>,
@@ -46,8 +46,45 @@ export function initializeWebImageOpenDialogBackend(out: EntityConstruction<Host
   out.open = openImage;
 }
 
+export function initializeWebMessageDialogBackend(out: EntityConstruction<HostMessageDialogProvider>): void {
+  out.confirm = async (options) => {
+    if (options.signal?.aborted) return false;
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+    try {
+      return window.confirm(options.message) === true;
+    } catch {
+      return false;
+    }
+  };
+  out.message = async (options) => {
+    const checkboxChecked = options.checkboxChecked ?? false;
+    if (options.signal?.aborted) return { buttonIndex: options.cancelId ?? 0, cancelled: true, checkboxChecked };
+    if (typeof window === 'undefined' || typeof window.alert !== 'function') {
+      return { buttonIndex: 0, cancelled: false, checkboxChecked };
+    }
+    try {
+      window.alert(options.message);
+    } catch {
+      return { buttonIndex: 0, cancelled: false, checkboxChecked };
+    }
+    return { buttonIndex: 0, cancelled: false, checkboxChecked };
+  };
+}
+
 export function initializeWebPhotoCaptureDialogBackend(out: EntityConstruction<HostPhotoCaptureDialogProvider>): void {
   out.capture = capturePhoto;
+}
+
+export function initializeWebPromptDialogBackend(out: EntityConstruction<HostPromptDialogProvider>): void {
+  out.prompt = async (options) => {
+    if (options.signal?.aborted) return null;
+    if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
+    try {
+      return window.prompt(options.message, options.defaultValue ?? '');
+    } catch {
+      return null;
+    }
+  };
 }
 
 export function initializeWebVideoCaptureDialogBackend(out: EntityConstruction<HostVideoCaptureDialogProvider>): void {
@@ -78,9 +115,21 @@ export const webHostImageOpenDialog = (() => {
   return finishEntity(out);
 })();
 
+export const webHostMessageDialog = (() => {
+  const out = allocateEntity<HostMessageDialogProvider>();
+  initializeWebMessageDialogBackend(out);
+  return finishEntity(out);
+})();
+
 export const webHostPhotoCaptureDialog = (() => {
   const out = allocateEntity<HostPhotoCaptureDialogProvider>();
   initializeWebPhotoCaptureDialogBackend(out);
+  return finishEntity(out);
+})();
+
+export const webHostPromptDialog = (() => {
+  const out = allocateEntity<HostPromptDialogProvider>();
+  initializeWebPromptDialogBackend(out);
   return finishEntity(out);
 })();
 
