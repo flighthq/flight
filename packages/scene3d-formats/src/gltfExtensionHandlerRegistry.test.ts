@@ -16,4 +16,15 @@ describe('registerGltfExtensionHandler', () => {
 
     expect(handlers).toEqual([replacement, lights]);
   });
+
+  it('mutates only the caller-owned registry it receives', () => {
+    const first: GltfExtensionHandler[] = [];
+    const second: GltfExtensionHandler[] = [];
+    const handler: GltfExtensionHandler = { apply() {}, kind: 'KHR_materials_clearcoat' };
+
+    registerGltfExtensionHandler(first, handler);
+
+    expect(first).toEqual([handler]);
+    expect(second).toEqual([]);
+  });
 });
