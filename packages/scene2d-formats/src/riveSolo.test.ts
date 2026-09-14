@@ -2,7 +2,9 @@ import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
 import { createScene2DFromRiveDocument } from './riveScene2D';
+import { importRiveSoloComponent, registerRiveSoloHandlers } from './riveSolo';
 
 // A Solo shows exactly one of its children at a time. Imported as a plain node it would draw all of
 // its variants stacked, so the active child is resolved at import and the rest are hidden.
@@ -81,6 +83,27 @@ describe('applyRiveSolo', () => {
     );
 
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.solo-unresolved-active']);
+  });
+});
+
+describe('importRiveSoloComponent', () => {
+  it('imports the solo as an ordinary container carrying its name', () => {
+    const solo = firstChild(build([object(SOLO, [text(NAME, 'variants'), uint(PARENT_ID, 0)])]));
+
+    expect(solo.name).toBe('variants');
+    // The node is a plain container; only the pass below decides which child is visible.
+    expect(typeof importRiveSoloComponent).toBe('function');
+  });
+});
+
+describe('registerRiveSoloHandlers', () => {
+  it('claims the solo and registers hiding as a pass', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveSoloHandlers(registry);
+
+    const handler = getRiveCoreObjectHandler(registry, SOLO);
+    expect(handler?.importComponent).toBe(importRiveSoloComponent);
+    expect(handler?.applyArtboard).toBeInstanceOf(Function);
   });
 });
 

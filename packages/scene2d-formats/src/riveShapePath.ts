@@ -1,3 +1,4 @@
+import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import {
@@ -11,10 +12,21 @@ import {
   appendPathRoundedRectangle,
   createPath,
 } from '@flighthq/path/contract';
-import type { ImportDiagnostic, Path, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
+import type {
+  DisplayObject,
+  ImportDiagnostic,
+  Matrix,
+  Path,
+  RiveArtboardGraph,
+  RiveArtboardImportContext,
+  RiveCoreObject,
+  RiveImportRegistry,
+  RivePathRecord,
+} from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Builds one Rive path component's geometry in its own local space.
@@ -44,6 +56,105 @@ export function createRivePath(
     typeKey: path.typeKey,
   });
   return null;
+}
+
+/**
+ * One path's geometry in its owning shape's space, read fresh from the path's current property
+ * values.
+ *
+ * Nothing is cached: an animated vertex, radius or size shows up because the record is rebuilt rather
+ * than invalidated. The path's own transform is baked into the geometry here, because a path is not a
+ * node of its own once imported — the shape above it carries the only transform left.
+ *
+ * Returns null when the path states no geometry, which a points path is entitled to do.
+ */
+export function createRivePathRecord(
+  artboard: Readonly<RiveArtboardGraph>,
+  index: number,
+  diagnostics?: ImportDiagnostic[],
+): RivePathRecord | null {
+  const source = artboard.objects[index];
+  const path = createRivePath(source, artboard, index, diagnostics);
+  if (path === null || path.commands.length === 0) return null;
+
+  const local = createRivePathMatrix(source);
+  const data = path.data.slice();
+  for (let offset = 0; offset + 1 < data.length; offset += 2) {
+    const x = data[offset];
+    const y = data[offset + 1];
+    data[offset] = local.a * x + local.c * y + local.tx;
+    data[offset + 1] = local.b * x + local.d * y + local.ty;
+  }
+  return { commands: path.commands.slice(), data, pathIndex: index, winding: path.winding };
+}
+
+/**
+ * Files one path's geometry under the shape that owns it, and contributes no node of its own.
+ *
+ * Rive combines a shape's paths into one figure — that is how a hole cuts its parent — so a path that
+ * became its own display object would break the compositing the format states. A path with no shape
+ * ancestor has nothing to draw it, which makes it a malformed file rather than a shape of the format:
+ * it is reported, because the geometry otherwise leaves no trace.
+ */
+export function importRivePathComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
+  const owner = findRiveShapeOwner(context.artboard, index);
+  if (owner < 0) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'rive.path-outside-shape',
+      'importRivePathComponent',
+      { index },
+    );
+    return null;
+  }
+  const record = createRivePathRecord(context.artboard, index, context.diagnostics);
+  if (record === null) return null;
+  const records = context.shapePaths.get(owner) ?? [];
+  records.push(record);
+  context.shapePaths.set(owner, records);
+  return null;
+}
+
+/**
+ * Registers path geometry: `Path` and every kind derived from it — parametric rectangles, ellipses,
+ * stars, and point-authored paths alike — together with the vertices they are built from.
+ *
+ * Without this a shape imports with its paint and no geometry, so nothing draws.
+ */
+export function registerRivePathHandlers(registry: RiveImportRegistry): void {
+  const path = { importComponent: importRivePathComponent };
+  registerRiveCoreObjectHandler(registry, RIVE_PATH, path);
+  // A vertex is read by the path that owns it, so it contributes nothing on its own — but it is
+  // registered all the same, so a rigged file's vertices are not reported as types nobody reads.
+  const vertex = { importComponent: importRiveCoreObjectAsData };
+  registerRiveCoreObjectHandler(registry, RIVE_PATH_VERTEX, vertex);
+}
+
+// The nearest ancestor that is a Shape component, in artboard numbering.
+function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number): number {
+  let parent = artboard.parentIndices[index];
+  while (parent > 0) {
+    if (isRiveCoreTypeDerivedFrom(artboard.objects[parent].typeKey, RIVE_SHAPE)) return parent;
+    parent = artboard.parentIndices[parent];
+  }
+  return -1;
+}
+
+function createRivePathMatrix(source: Readonly<RiveCoreObject>): Matrix {
+  const rotation = readRiveDouble(source, RIVE_ROTATION, 0);
+  const scaleX = readRiveDouble(source, RIVE_SCALE_X, 1);
+  const scaleY = readRiveDouble(source, RIVE_SCALE_Y, 1);
+  const cosine = Math.cos(rotation);
+  const sine = Math.sin(rotation);
+  return createMatrix(
+    cosine * scaleX,
+    sine * scaleX,
+    -sine * scaleY,
+    cosine * scaleY,
+    readRiveDouble(source, RIVE_X, readRiveDouble(source, RIVE_X_LEGACY, 0)),
+    readRiveDouble(source, RIVE_Y, readRiveDouble(source, RIVE_Y_LEGACY, 0)),
+  );
 }
 
 function createRivePointsPath(
@@ -378,6 +489,8 @@ function readRiveFlag(source: Readonly<RiveCoreObject>, key: number, fallback: b
   return property === undefined || typeof property.value !== 'number' ? fallback : property.value !== 0;
 }
 
+const RIVE_SHAPE = 3;
+const RIVE_PATH = 12;
 const RIVE_PATH_VERTEX = 14;
 const RIVE_STRAIGHT_VERTEX = 5;
 const RIVE_POINTS_COMMON_PATH = 620;
@@ -391,6 +504,13 @@ const RIVE_CUBIC_DETACHED_VERTEX = 6;
 const RIVE_CUBIC_MIRRORED_VERTEX = 35;
 const RIVE_CUBIC_ASYMMETRIC_VERTEX = 34;
 
+const RIVE_X_LEGACY = 9;
+const RIVE_Y_LEGACY = 10;
+const RIVE_X = 13;
+const RIVE_Y = 14;
+const RIVE_ROTATION = 15;
+const RIVE_SCALE_X = 16;
+const RIVE_SCALE_Y = 17;
 const RIVE_PARAMETRIC_WIDTH = 20;
 const RIVE_PARAMETRIC_HEIGHT = 21;
 const RIVE_VERTEX_X = 24;

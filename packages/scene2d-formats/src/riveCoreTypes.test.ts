@@ -1,4 +1,4 @@
-import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { getRiveCoreTypeName, getRiveCoreTypeParent, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
 describe('getRiveCoreTypeName', () => {
   it('names the types a reader meets first', () => {
@@ -11,6 +11,24 @@ describe('getRiveCoreTypeName', () => {
   it('returns undefined for a key the object model does not define', () => {
     expect(getRiveCoreTypeName(0)).toBeUndefined();
     expect(getRiveCoreTypeName(999999)).toBeUndefined();
+  });
+});
+
+describe('getRiveCoreTypeParent', () => {
+  it('names the type each key extends', () => {
+    // Shape extends Drawable, and Drawable extends Node.
+    expect(getRiveCoreTypeParent(3)).toBe(13);
+    expect(getRiveCoreTypeParent(13)).toBe(2);
+  });
+
+  it('reports -1 for a root of the object model', () => {
+    expect(getRiveCoreTypeParent(10)).toBe(-1);
+  });
+
+  it('reports undefined for a key this object model does not define, which is not the same as a root', () => {
+    // A caller walking the chain stops on undefined; reading it as -1 would call an unknown type a
+    // root, making it derived from nothing rather than from something this table has not seen.
+    expect(getRiveCoreTypeParent(999999)).toBeUndefined();
   });
 });
 

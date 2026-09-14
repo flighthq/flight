@@ -5,13 +5,16 @@ import type {
   Bone2D,
   EntityConstruction,
   RiveArtboardGraph,
+  RiveArtboardImportContext,
   RiveCoreObject,
+  RiveImportRegistry,
   RiveSkeleton2DImport,
   Skeleton2D,
 } from '@flighthq/types/contract';
 import { TransformMode2D } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Flattens an artboard's bones into a `Skeleton2D`.
@@ -64,6 +67,24 @@ export function initializeRiveSkeleton2DImport(
 ): void {
   out.boneIndices = boneIndices;
   out.skeleton = skeleton;
+}
+
+/**
+ * Registers the bone rig: `SkeletalComponent` and everything derived from it, together with the skin,
+ * tendons and weights that bind a path's vertices to it.
+ *
+ * None of these is a display object — a bone is a transform, not a node — so they contribute no
+ * display nodes and the rig is flattened as a pass. Registering the family is what makes an artboard
+ * carry a skeleton at all, and animation channels bind against its setup pose.
+ */
+export function registerRiveSkeletonHandlers(registry: RiveImportRegistry): void {
+  const skeleton = {
+    applyArtboard: (context: RiveArtboardImportContext): void => {
+      context.skeleton = createRiveSkeleton2D(context.artboard);
+    },
+    importComponent: importRiveCoreObjectAsData,
+  };
+  for (const typeKey of RIVE_SKELETON_TYPE_KEYS) registerRiveCoreObjectHandler(registry, typeKey, skeleton);
 }
 
 function createRiveBone2D(
@@ -124,7 +145,14 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
   return property === undefined || typeof property.value !== 'string' ? fallback : property.value;
 }
 
+const RIVE_SKELETAL_COMPONENT = 39;
 const RIVE_BONE = 40;
+const RIVE_SKIN = 43;
+const RIVE_TENDON = 44;
+const RIVE_WEIGHT = 45;
+
+// A root bone is a bone, and a cubic weight is a weight, so four entries carry the whole rig.
+const RIVE_SKELETON_TYPE_KEYS: readonly number[] = [RIVE_SKELETAL_COMPONENT, RIVE_SKIN, RIVE_TENDON, RIVE_WEIGHT];
 const RIVE_ROOT_BONE = 41;
 
 const RIVE_NAME = 4;

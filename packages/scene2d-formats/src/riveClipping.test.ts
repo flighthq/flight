@@ -9,7 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
-import { applyRiveClipping } from './riveClipping';
+import { applyRiveClipping, registerRiveClippingHandlers } from './riveClipping';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
 
 // The coordinate transfer is what these cases exist for. Rive states the clip's geometry in the
 // SOURCE shape's chain; Flight rasterizes a clip under the CLIPPED node's transform. So the contours
@@ -239,6 +240,24 @@ interface TestScene {
   objects: RiveCoreObject[];
   parents: number[];
 }
+
+describe('registerRiveClippingHandlers', () => {
+  it('claims the clipping shape and gives it no node of its own', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveClippingHandlers(registry);
+
+    const handler = getRiveCoreObjectHandler(registry, CLIPPING_SHAPE);
+    expect(handler).not.toBeNull();
+    expect(handler?.applyArtboard).toBeDefined();
+  });
+
+  it('registers clipping as a pass, because a clip source can be read after the node it clips', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveClippingHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, CLIPPING_SHAPE)?.applyArtboard).toBeInstanceOf(Function);
+  });
+});
 
 function run(
   scene: TestScene,

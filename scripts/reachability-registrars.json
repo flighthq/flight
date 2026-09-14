@@ -938,6 +938,58 @@
       "registrar": "registerDomTextureResolver"
     },
     {
+      "packageName": "scene2d-formats",
+      "registrar": "registerAllRiveHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveAssetHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveClippingHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveCoreObjectHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveDrawOrderHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveLayoutHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRivePaintHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRivePathHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveShapeHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveSkeletonHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveSoloHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveStateMachineHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerRiveTextHandlers"
+    },
+    {
       "packageName": "scene2d-gl",
       "registrar": "registerGlColorAdjustmentMaterialFeature"
     },

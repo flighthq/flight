@@ -2,7 +2,8 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { DisplayObject, ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { FlexLayoutKind, GridLayoutKind, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveLayoutImports } from './riveLayout';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+import { createRiveLayoutImports, importRiveLayoutComponent, registerRiveLayoutHandlers } from './riveLayout';
 
 const ARTBOARD = 1;
 const SHAPE = 3;
@@ -355,6 +356,37 @@ interface TestScene {
   graph: RiveArtboardGraph;
   nodes: Array<DisplayObject | null>;
 }
+
+describe('importRiveLayoutComponent', () => {
+  it('imports a layout component as a container carrying its name', () => {
+    expect(typeof importRiveLayoutComponent).toBe('function');
+    const registry = createRiveImportRegistry();
+    registerRiveLayoutHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, LAYOUT_COMPONENT)?.importComponent).toBe(importRiveLayoutComponent);
+  });
+});
+
+describe('registerRiveLayoutHandlers', () => {
+  it('claims the layout component and the styles that describe it', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveLayoutHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, LAYOUT_COMPONENT)).not.toBeNull();
+    // LayoutComponentStyle and LayoutNodeStyle are both LayoutSizingStyles, so one registration
+    // covers the style subtree.
+    expect(getRiveCoreObjectHandler(registry, LAYOUT_COMPONENT_STYLE)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, GRID_TRACK)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, GRID_ITEM_PLACEMENT)).not.toBeNull();
+  });
+
+  it('registers the descriptors as a pass, so every target exists before a tree is built', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveLayoutHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, LAYOUT_COMPONENT)?.applyArtboard).toBeInstanceOf(Function);
+  });
+});
 
 function flexRoot(style: Readonly<Record<number, number>>): TestScene {
   return build(

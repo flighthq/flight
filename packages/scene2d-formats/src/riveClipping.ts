@@ -10,11 +10,13 @@ import type {
   Path,
   RiveArtboardGraph,
   RiveCoreObject,
+  RiveImportRegistry,
   RivePathRecord,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Applies each node's clipping shapes.
@@ -95,6 +97,21 @@ function createRiveClipPath(
  * of them. Component order is not hierarchy order — a child may precede its parent in the stream —
  * so each parent chain is resolved before its world matrices are composed.
  */
+/**
+ * Registers clipping: a `ClippingShape` names another component whose geometry masks the node the
+ * clipping shape hangs from.
+ *
+ * It resolves as a pass rather than in file order because the source it names may appear later in the
+ * stream than the node being clipped, so no node can be clipped until the whole artboard exists.
+ */
+export function registerRiveClippingHandlers(registry: RiveImportRegistry): void {
+  registerRiveCoreObjectHandler(registry, RIVE_CLIPPING_SHAPE, {
+    applyArtboard: (context) =>
+      applyRiveClipping(context.nodes, context.artboard, context.shapePaths, context.diagnostics),
+    importComponent: importRiveCoreObjectAsData,
+  });
+}
+
 function createRiveRelativeTransforms(artboard: Readonly<RiveArtboardGraph>): Matrix[] {
   if (artboard.objects.length === 0) return [];
   const transforms = new Array<Matrix>(artboard.objects.length);

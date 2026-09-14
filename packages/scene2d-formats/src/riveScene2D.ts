@@ -1,72 +1,88 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   EntityConstruction,
   ImportDiagnostic,
-  Matrix,
   RiveAdvancedBlend,
   RiveArtboardGraph,
   RiveArtboardImport,
+  RiveArtboardImportContext,
   RiveCoreObject,
   RiveDocumentImportResult,
-  RivePathRecord,
-  Shape,
+  RiveImportRegistry,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createRiveAnimationClips } from './riveAnimation';
-import { createRiveFileAssets } from './riveAssets';
-import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
-import { applyRiveDrawOrder } from './riveDrawOrder';
-import { createRiveLayoutImports } from './riveLayout';
+import { registerAllRiveHandlers } from './riveHandlers';
+import {
+  applyRiveArtboardHandlers,
+  applyRiveDocumentHandlers,
+  createRiveArtboardImportContext,
+  createRiveDocumentImportContext,
+  createRiveImportRegistry,
+  getRiveCoreObjectHandler,
+} from './riveImportRegistry';
 import { createRiveObjectGraph } from './riveObjectGraph';
-import { createRiveImageSprite, markRiveNestedArtboard } from './riveScene2DDocument';
-import { appendRiveShapePaint } from './riveShapePaint';
-import { createRivePath } from './riveShapePath';
-import { createRiveSkeleton2D } from './riveSkeleton';
-import { applyRiveSolo } from './riveSolo';
-import { createRiveStateMachines } from './riveStateMachine';
-import { createRiveRichText } from './riveText';
 
 /**
- * Imports a `.riv` into one display subtree per artboard.
+ * Imports a `.riv` into one display subtree per artboard, reading exactly the core types `registry`
+ * understands.
  *
  * A Rive file holds several artboards and names none of them "the" one, so import returns them side
- * by side and leaves the choice to the caller. Only components that are Nodes become display
- * objects; a Fill or a GradientStop is data belonging to the shape above it, not a node of its own.
+ * by side and leaves the choice to the caller. What each object in the stream becomes is the
+ * registry's answer rather than this function's: only a registered type contributes, and a type with
+ * no handler is reported instead of quietly becoming an empty container. That is what lets a caller
+ * import geometry without paint, or a document without its state machines, and pay for neither.
+ */
+export function createRiveDocumentImportResult(
+  registry: RiveImportRegistry,
+  source: Readonly<Uint8Array>,
+  diagnostics?: ImportDiagnostic[],
+): RiveDocumentImportResult {
+  const out = allocateEntity<RiveDocumentImportResult>();
+  const document = parseRiveDocument(source, diagnostics);
+  if (document === null) {
+    initializeRiveDocumentImportResult(out, [], []);
+    return finishEntity(out);
+  }
+
+  const graph = createRiveObjectGraph(document, diagnostics);
+  const file = createRiveDocumentImportContext(registry, document.objects, diagnostics);
+  applyRiveDocumentHandlers(file);
+  // A text style names its typeface by a position in the asset list, the same space an image
+  // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
+  const fontNames = file.assets.map((asset) => asset.name);
+  initializeRiveDocumentImportResult(
+    out,
+    graph.artboards.map((artboard) =>
+      createRiveArtboardImport(registry, artboard, document.objects, fontNames, diagnostics),
+    ),
+    file.assets,
+  );
+  return finishEntity(out);
+}
+
+/**
+ * Imports a `.riv` with every family this package reads — the whole format, in one call.
+ *
+ * This is the zero-configuration path and it costs the whole importer by construction. Building the
+ * registry directly and registering only the families you need is the same import with the rest shaken
+ * out; see `registerAllRiveHandlers` for what this installs and in what order.
  */
 export function createScene2DFromRiveDocument(
   source: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
 ): RiveDocumentImportResult {
-  const document = parseRiveDocument(source, diagnostics);
-  if (document === null)
-    return (() => {
-      const out = allocateEntity<RiveDocumentImportResult>();
-      initializeRiveDocumentImportResult(out, [], []);
-      return finishEntity(out);
-    })();
-
-  const graph = createRiveObjectGraph(document, diagnostics);
-  const assets = createRiveFileAssets(document.objects, diagnostics);
-  // A text style names its typeface by a position in the asset list, the same space an image
-  // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
-  const fontNames = assets.map((asset) => asset.name);
-  const out = allocateEntity<RiveDocumentImportResult>();
-  initializeRiveDocumentImportResult(
-    out,
-    graph.artboards.map((artboard) => createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics)),
-    assets,
-  );
-  return finishEntity(out);
+  const registry = createRiveImportRegistry();
+  registerAllRiveHandlers(registry);
+  return createRiveDocumentImportResult(registry, source, diagnostics);
 }
 
 export function initializeRiveDocumentImportResult(
@@ -79,6 +95,7 @@ export function initializeRiveDocumentImportResult(
 }
 
 function createRiveArtboardImport(
+  registry: RiveImportRegistry,
   artboard: Readonly<RiveArtboardGraph>,
   objects: readonly Readonly<RiveCoreObject>[],
   fontNames: readonly string[],
@@ -95,226 +112,89 @@ function createRiveArtboardImport(
   root.pivotX = readRiveNumber(source, RIVE_ORIGIN_X, 0) * width;
   root.pivotY = readRiveNumber(source, RIVE_ORIGIN_Y, 0) * height;
 
-  // A node is attached to its nearest ancestor that also became a node; components in between, such
-  // as a Shape's paint, hold no place in the display tree.
-  const advancedBlends: RiveAdvancedBlend[] = [];
-  const nodes: Array<DisplayObject | null> = [root];
-  // Paths accumulate per shape rather than drawing as they are met, because a paint covers every
-  // path of its shape and the paint list is only complete once the shape's children have been read.
-  const shapePaths = new Map<number, RivePathRecord[]>();
-  for (let index = 1; index < artboard.objects.length; index++) {
-    const object = artboard.objects[index];
-    // A path contributes geometry to the shape above it rather than a node of its own. Rive combines
-    // a shape's paths into one figure — that is how a hole cuts its parent — so splitting them into
-    // separate nodes would break the compositing the format states.
-    if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_PATH_TYPE_KEY)) {
-      nodes.push(null);
-      collectRivePathGeometry(shapePaths, artboard, index, diagnostics);
-      continue;
-    }
-    if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
-      nodes.push(null);
-      continue;
-    }
-    const node = createRiveDisplayNode(object, artboard, index, fontNames, diagnostics);
-    applyRiveTransform(node, object);
-    applyRiveBlendMode(node, object, advancedBlends);
-    nodes.push(node);
-    addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
-  }
-
-  applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
-  applyRiveDrawOrder(nodes, artboard, root, diagnostics);
-  applyRiveSolo(nodes, artboard, diagnostics);
-
-  // Every reader here reads from the core object's own properties, so animating geometry or paint is
-  // a matter of mutating those properties and running the shape's builder again. Capturing the
-  // rebuild per shape is what lets one binder serve vertices, radii, colours and stroke widths alike.
-  const rebuilds = new Map<number, () => void>();
-  for (const shapeIndex of shapePaths.keys()) {
-    const shape = nodes[shapeIndex];
-    if (shape === null || shape === undefined) continue;
-    const rebuild = (): void => rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, undefined);
-    rebuilds.set(shapeIndex, rebuild);
-    // The stored closure and the first build are the same work but not the same call: only this one
-    // carries the sink. The closure runs again per animated frame, so a sink passed there would report
-    // the same substitution once per frame — diagnostics describe the import, not the playback.
-    rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, diagnostics);
-  }
+  const context = createRiveArtboardImportContext(registry, artboard, objects, root, fontNames, diagnostics);
+  // Index 0 is the artboard itself, already standing as the root.
+  for (let index = 1; index < artboard.objects.length; index++) context.nodes.push(importRiveComponent(context, index));
+  applyRiveArtboardHandlers(context);
 
   const span = { end: artboard.streamEnd, start: artboard.streamStart };
-  // The rig is flattened before the clips because bone channels bind against its setup pose — a Rive
-  // keyframe states an absolute value and the skeleton binder composes a delta, so the setup rotation
-  // has to exist before a channel can be expressed relative to it.
-  const skeleton = createRiveSkeleton2D(artboard);
-  const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds, skeleton);
-  const layouts = createRiveLayoutImports(artboard, nodes, diagnostics);
-  const stateMachines = createRiveStateMachines(objects, span, diagnostics);
-  return { advancedBlends, animations, height, layouts, name, root, skeleton, stateMachines, width };
+  const animations = createRiveAnimationClips(
+    objects,
+    span,
+    context.nodes,
+    artboard,
+    context.rebuilds,
+    context.skeleton,
+  );
+  return {
+    advancedBlends: context.advancedBlends,
+    animations,
+    height,
+    layouts: context.layouts,
+    name,
+    root,
+    skeleton: context.skeleton,
+    stateMachines: context.stateMachines,
+    width,
+  };
 }
 
-// A shape carries a command stream and a text drawable carries a label; everything else is a plain
-// container.
-function createRiveDisplayNode(
+/**
+ * Turns one component into whatever the registry says it is, and places it in the display tree.
+ *
+ * A node is attached to its nearest ancestor that also became a node; components in between, such as
+ * a Shape's paint, hold no place in the display tree. Transform and blend mode are applied here
+ * rather than by each handler, because they are properties of the component itself and every node
+ * carries them whatever kind it is.
+ */
+function importRiveComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
+  const object = context.artboard.objects[index];
+  const handler = getRiveCoreObjectHandler(context.registry, object.typeKey);
+  const node =
+    handler === null
+      ? createRiveUnregisteredNode(context, object)
+      : (handler.importComponent?.(context, index) ?? null);
+  if (node === null) return null;
+  applyRiveTransform(node, object);
+  applyRiveBlendMode(node, object, context.advancedBlends);
+  addNodeChild(findRiveDisplayParent(context.nodes, context.artboard.parentIndices, index) ?? context.root, node);
+  return node;
+}
+
+/**
+ * What becomes of a component no registered family claims.
+ *
+ * A Node with no handler is still a container, and containers are what plain nodes are, so it imports
+ * silently and keeps its name, transform and children. Anything else is a gap worth naming: a
+ * DRAWABLE reaching here authored something that paints and becomes an empty container that still
+ * holds its place, so the tree keeps its shape and only the pixels are missing — nothing downstream
+ * can notice. A component that is not a node at all carried data — a constraint, a mesh, a binding —
+ * that this import read nothing of, and it vanishes without even an empty node to mark it.
+ */
+function createRiveUnregisteredNode(
+  context: RiveArtboardImportContext,
   object: Readonly<RiveCoreObject>,
-  artboard: Readonly<RiveArtboardGraph>,
-  index: number,
-  fontNames: readonly string[],
-  diagnostics: ImportDiagnostic[] | undefined,
-): DisplayObject {
-  const name = readRiveText(object, RIVE_NAME, '');
-  if (object.typeKey === RIVE_TEXT_TYPE_KEY) {
-    const label = createRiveRichText(artboard, index, fontNames, diagnostics);
-    label.name = name;
-    return label;
-  }
-  // An image drawable stands up a sprite waiting on its asset; a nested artboard marks a slot site.
-  // Both are recorded for the document layer, which is what turns them into resource references and
-  // slots — the display tree itself stays ignorant of the format.
-  if (object.typeKey === RIVE_IMAGE_TYPE_KEY) {
-    return createRiveImageSprite(name, readRiveNumber(object, RIVE_IMAGE_ASSET_ID, -1));
-  }
-  // Derived-from rather than equality: NestedArtboardLeaf and NestedArtboardLayout are nested
-  // artboards and carry the same slot semantics, so an equality test marks neither and they arrive at
-  // the unsupported-drawable arm instead of becoming slots. Behaviour is inherited in this object
-  // model, which is what the core type table exists to express.
-  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NESTED_ARTBOARD_TYPE_KEY)) {
-    const node = createDisplayObject({ name });
-    markRiveNestedArtboard(node, readRiveNumber(object, RIVE_NESTED_ARTBOARD_ID, -1));
-    return node;
-  }
-  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)) return createShape({ name });
-  // A nine-sliced node scales a child with fixed corners; imported as a plain container it keeps the
-  // child and loses the slicing. At the authored size the two are identical, which is what hides it —
-  // the difference only appears once a layout resizes the node, and then the corners stretch. It is a
-  // Node rather than a Drawable, so the drawable check below cannot see it.
-  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NSLICED_NODE_TYPE_KEY)) {
+): DisplayObject | null {
+  if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
     reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Recover,
-      'rive.nine-slice-substituted',
-      'createRiveDisplayNode',
-      { substitutedAs: 'container', typeKey: object.typeKey },
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'rive.core-type-unregistered',
+      'createRiveUnregisteredNode',
+      { typeKey: object.typeKey },
     );
-    return createDisplayObject({ name });
+    return null;
   }
-  // A plain node IS a container, so reaching here is ordinary and silent. A DRAWABLE reaching here is
-  // not: the file authored something that paints, and it becomes an empty container that still holds
-  // its name, transform and children. The tree keeps its shape, the artboard keeps its object count,
-  // and only the pixels are missing — so nothing downstream can notice. Layout components are excluded
-  // because a layout component is a container by design and draws nothing of its own.
-  if (
-    isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_DRAWABLE_TYPE_KEY) &&
-    !isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_LAYOUT_COMPONENT_TYPE_KEY)
-  ) {
+  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_DRAWABLE_TYPE_KEY)) {
     reportImportDiagnostic(
-      diagnostics,
+      context.diagnostics,
       ImportDiagnosticSeverity.Drop,
       'rive.drawable-kind-unsupported',
-      'createRiveDisplayNode',
+      'createRiveUnregisteredNode',
       { typeKey: object.typeKey },
     );
   }
-  return createDisplayObject({ name });
-}
-
-// Regenerates one shape's whole command stream from the current property values.
-function rebuildRiveShape(
-  shape: Shape,
-  artboard: Readonly<RiveArtboardGraph>,
-  shapeIndex: number,
-  shapePaths: Map<number, RivePathRecord[]>,
-  diagnostics: ImportDiagnostic[] | undefined,
-): void {
-  const records: RivePathRecord[] = [];
-  for (const pathIndex of shapePaths.get(shapeIndex)?.map((record) => record.pathIndex) ?? []) {
-    // No sink here on purpose. This regenerates a shape from current property values on update, so it
-    // runs again per animated frame — passing the sink would report the same unsupported path once per
-    // rebuild. The import-time call above carries it.
-    const record = createRivePathRecord(artboard, pathIndex, undefined);
-    if (record !== null) records.push(record);
-  }
-  shapePaths.set(shapeIndex, records);
-  clearShapeCommands(shape);
-  appendRiveShapePaint(shape, artboard, shapeIndex, records, diagnostics);
-}
-
-function collectRivePathGeometry(
-  shapePaths: Map<number, RivePathRecord[]>,
-  artboard: Readonly<RiveArtboardGraph>,
-  index: number,
-  diagnostics: ImportDiagnostic[] | undefined,
-): void {
-  // A path is always a shape's direct child: the shape owns the paint and the fill rule, so a path
-  // with no shape ancestor has nothing to draw it. That makes this a malformed file rather than a
-  // shape of the format. It still crumbs instead of vanishing, because the geometry leaves no trace.
-  const owner = findRiveShapeOwner(artboard, index);
-  if (owner < 0) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Drop,
-      'rive.path-outside-shape',
-      'collectRivePathGeometry',
-      { index },
-    );
-    return;
-  }
-  const record = createRivePathRecord(artboard, index, diagnostics);
-  if (record === null) return;
-  const records = shapePaths.get(owner) ?? [];
-  records.push(record);
-  shapePaths.set(owner, records);
-}
-
-// One path's geometry in its owning shape's space. Read fresh each time so an animated vertex,
-// radius or size shows up without any cached state to invalidate.
-function createRivePathRecord(
-  artboard: Readonly<RiveArtboardGraph>,
-  index: number,
-  diagnostics: ImportDiagnostic[] | undefined,
-): RivePathRecord | null {
-  const source = artboard.objects[index];
-  const path = createRivePath(source, artboard, index, diagnostics);
-  // An empty result is the file's own doing: a points path may legitimately state no vertices.
-  if (path === null || path.commands.length === 0) return null;
-
-  // A path carries its own transform, and it is no longer a node of its own, so that transform is
-  // baked into the geometry the shape receives.
-  const local = createRivePathMatrix(source);
-  const data = path.data.slice();
-  for (let offset = 0; offset + 1 < data.length; offset += 2) {
-    const x = data[offset];
-    const y = data[offset + 1];
-    data[offset] = local.a * x + local.c * y + local.tx;
-    data[offset + 1] = local.b * x + local.d * y + local.ty;
-  }
-  return { commands: path.commands.slice(), data, pathIndex: index, winding: path.winding };
-}
-
-// The nearest ancestor that is a Shape component, in artboard numbering.
-function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number): number {
-  let parent = artboard.parentIndices[index];
-  while (parent > 0) {
-    if (isRiveCoreTypeDerivedFrom(artboard.objects[parent].typeKey, RIVE_SHAPE_TYPE_KEY)) return parent;
-    parent = artboard.parentIndices[parent];
-  }
-  return -1;
-}
-
-function createRivePathMatrix(source: Readonly<RiveCoreObject>): Matrix {
-  const rotation = readRiveNumber(source, RIVE_ROTATION, 0);
-  const scaleX = readRiveNumber(source, RIVE_SCALE_X, 1);
-  const scaleY = readRiveNumber(source, RIVE_SCALE_Y, 1);
-  const cosine = Math.cos(rotation);
-  const sine = Math.sin(rotation);
-  return createMatrix(
-    cosine * scaleX,
-    sine * scaleX,
-    -sine * scaleY,
-    cosine * scaleY,
-    readRiveNumber(source, RIVE_X, readRiveNumber(source, RIVE_X_LEGACY, 0)),
-    readRiveNumber(source, RIVE_Y, readRiveNumber(source, RIVE_Y_LEGACY, 0)),
-  );
+  return createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
 }
 
 function findRiveDisplayParent(
@@ -381,16 +261,8 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 }
 
 const RIVE_NODE_TYPE_KEY = 2;
-const RIVE_SHAPE_TYPE_KEY = 3;
-const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_DRAWABLE_TYPE_KEY = 13;
-const RIVE_LAYOUT_COMPONENT_TYPE_KEY = 409;
-const RIVE_NSLICED_NODE_TYPE_KEY = 508;
-const RIVE_TEXT_TYPE_KEY = 134;
-const RIVE_IMAGE_TYPE_KEY = 100;
-const RIVE_NESTED_ARTBOARD_TYPE_KEY = 92;
-const RIVE_IMAGE_ASSET_ID = 206;
-const RIVE_NESTED_ARTBOARD_ID = 197;
+
 const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;

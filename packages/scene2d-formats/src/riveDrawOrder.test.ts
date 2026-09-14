@@ -2,6 +2,8 @@ import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { registerRiveDrawOrderHandlers } from './riveDrawOrder';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
 // A DrawRules is parented to the node it governs and names a DrawTarget, which names the drawable to
@@ -81,6 +83,25 @@ describe('applyRiveDrawOrder', () => {
     // Drop, not Skip: the feature is supported and the DATA failed, so this is lost data rather than a
     // capability gap. Pinned because a Skip here would exempt itself from every severity-based check.
     expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+  });
+});
+
+describe('registerRiveDrawOrderHandlers', () => {
+  it('claims both halves of a draw rule with one handler, so the pass runs once', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveDrawOrderHandlers(registry);
+
+    const rules = getRiveCoreObjectHandler(registry, DRAW_RULES);
+    const target = getRiveCoreObjectHandler(registry, DRAW_TARGET);
+    expect(rules).not.toBeNull();
+    expect(target).toBe(rules);
+  });
+
+  it('gives a draw rule no display object, because it reorders nodes rather than being one', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveDrawOrderHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, DRAW_RULES)?.applyArtboard).toBeInstanceOf(Function);
   });
 });
 

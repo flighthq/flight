@@ -7,12 +7,7 @@ import {
   SpriteKind,
 } from '@flighthq/types/contract';
 
-import {
-  createRiveImageSprite,
-  createScene2DDocumentFromRiveDocument,
-  initializeRiveScene2DDocumentResult,
-  markRiveNestedArtboard,
-} from './riveScene2DDocument';
+import { createScene2DDocumentFromRiveDocument, initializeRiveScene2DDocumentResult } from './riveScene2DDocument';
 
 // The document layer acquires nothing. An embedded payload becomes a resource reference carrying the
 // textures that wait on it, so resolving one binds the decoded image into every sprite at once —
@@ -35,18 +30,6 @@ const NESTED_ARTBOARD_ID = 197;
 
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const WEBP = [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00];
-
-describe('createRiveImageSprite', () => {
-  it('stands up a sprite whose texture has no source until a resource resolves', () => {
-    const sprite = createRiveImageSprite('logo', 0) as Sprite;
-
-    expect(sprite.name).toBe('logo');
-    // The texture exists but carries no pixels until a resource reference resolves into it.
-    const texture = sprite.data.texture as Texture2D;
-    expect(texture.dimension).toBe('2d');
-    expect(texture.source).toBeNull();
-  });
-});
 
 describe('createScene2DDocumentFromRiveDocument', () => {
   it('returns null for bytes that are not a Rive file', () => {
@@ -242,13 +225,3 @@ function buildRive(objects: Array<{ properties: TestProperty[]; typeKey: number 
   }
   return new Uint8Array(out);
 }
-describe('markRiveNestedArtboard', () => {
-  it('records a slot site without putting format knowledge on the node', () => {
-    const result = createScene2DDocumentFromRiveDocument(buildRive([artboard('Board')]))!;
-    const node = getNodeChildAt(result.root, 0) as Node2D;
-    markRiveNestedArtboard(node, 0);
-
-    // The mark is side data; the node itself gains no field.
-    expect(Object.keys(node)).not.toContain('nestedArtboard');
-  });
-});

@@ -2,8 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
-import { createTexture } from '@flighthq/texture/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
   EntityConstruction,
@@ -18,16 +17,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { getRiveImageAssetIndex, getRiveImageTexture, getRiveNestedArtboardIndex } from './riveAssetBinding';
 import { createScene2DFromRiveDocument } from './riveScene2D';
-
-/** Builds the sprite an image drawable stands up, and records which asset it waits on. */
-export function createRiveImageSprite(name: string, assetIndex: number): DisplayObject {
-  const texture = createTexture({ dimension: '2d', source: null });
-  const sprite = createSprite({ data: { texture }, name });
-  _imageTextures.set(sprite, texture);
-  _imageAssetIndices.set(sprite, assetIndex);
-  return sprite;
-}
 
 /**
  * A nested artboard is a named place the document does not fill itself, which is what a slot is. The
@@ -47,8 +38,8 @@ function collectRiveSlots(
   artboards: readonly Readonly<RiveArtboardImport>[],
   slots: Scene2DSlotReference[],
 ): void {
-  const nested = _nestedArtboards.get(node);
-  if (nested !== undefined) {
+  const nested = getRiveNestedArtboardIndex(node);
+  if (nested !== RIVE_NO_ARTBOARD) {
     const target = artboards[nested];
     slots.push(
       (() => {
@@ -90,8 +81,8 @@ function collectRiveTexturesForAsset(imported: Readonly<RiveDocumentImportResult
   const textures: Texture[] = [];
   for (const artboard of imported.artboards) {
     const walk = (node: Node2D): void => {
-      const texture = _imageTextures.get(node);
-      if (texture !== undefined && _imageAssetIndices.get(node) === assetIndex) textures.push(texture);
+      const texture = getRiveImageTexture(node);
+      if (texture !== null && getRiveImageAssetIndex(node) === assetIndex) textures.push(texture);
       for (let index = 0; index < getNodeChildCount(node); index++) walk(getNodeChildAt(node, index) as Node2D);
     };
     walk(artboard.root);
@@ -144,14 +135,6 @@ export function initializeRiveScene2DDocumentResult(
   out.slots = slots;
 }
 
-/**
- * Records a nested-artboard site so the document layer can turn it into a slot. Kept out of the node
- * itself: the display tree carries no knowledge of the format that produced it.
- */
-export function markRiveNestedArtboard(node: Node2D, artboardIndex: number): void {
-  _nestedArtboards.set(node, artboardIndex);
-}
-
 // Detected from the payload rather than trusted from a name, since Rive states no mime type.
 function toRiveMimeType(
   bytes: Readonly<Uint8Array>,
@@ -172,8 +155,4 @@ function toRiveMimeType(
 }
 
 const RIVE_IMAGE_ASSET_KIND = 'ImageAsset';
-
-// Side tables rather than node fields: a display object stays ignorant of the format it came from.
-const _nestedArtboards = new WeakMap<Node2D, number>();
-const _imageTextures = new WeakMap<Node2D, Texture>();
-const _imageAssetIndices = new WeakMap<Node2D, number>();
+const RIVE_NO_ARTBOARD = -1;

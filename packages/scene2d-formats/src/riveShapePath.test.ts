@@ -1,14 +1,31 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
-import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type {
+  ImportDiagnostic,
+  RiveArtboardGraph,
+  RiveArtboardImportContext,
+  RiveCoreObject,
+} from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRivePath } from './riveShapePath';
+import {
+  createRiveArtboardImportContext,
+  createRiveImportRegistry,
+  getRiveCoreObjectHandler,
+} from './riveImportRegistry';
+import {
+  createRivePath,
+  createRivePathRecord,
+  importRivePathComponent,
+  registerRivePathHandlers,
+} from './riveShapePath';
 
 // Rive stores a cubic vertex's handles in polar form and the three cubic kinds disagree on sign: a
 // mirrored or asymmetric vertex SUBTRACTS its incoming vector, a detached vertex ADDS its own. The
 // expectations below are computed from that stated relation, not read back from the builder.
 
+const ARTBOARD = 1;
 const POINTS_PATH = 16;
 const RECTANGLE = 7;
 const ELLIPSE = 4;
@@ -335,6 +352,78 @@ describe('createRivePath', () => {
     ]);
   });
 });
+
+describe('createRivePathRecord', () => {
+  it('bakes the path own transform into the geometry it hands the shape', () => {
+    // A rectangle offset by its own x/y: once imported the path is no longer a node, so the offset
+    // has nowhere left to live except in the points.
+    const graph = artboardOf([object(RECTANGLE, { 13: 100, 14: 50, 20: 10, 21: 10 })]);
+
+    const record = createRivePathRecord(graph, 0);
+
+    expect(record).not.toBeNull();
+    expect(record!.pathIndex).toBe(0);
+    expect(Math.min(...record!.data.filter((_value, index) => index % 2 === 0))).toBeGreaterThan(50);
+  });
+
+  it('returns null for a path that states no geometry', () => {
+    // A points path with no vertices is a file the editor can legitimately write.
+    expect(createRivePathRecord(artboardOf([object(POINTS_PATH, {})]), 0)).toBeNull();
+  });
+});
+
+describe('importRivePathComponent', () => {
+  it('files geometry under the shape that owns it and contributes no node', () => {
+    const objects = [object(ARTBOARD, {}), object(SHAPE, {}), object(RECTANGLE, { 20: 10, 21: 10 })];
+    const context = contextOf(objects, [-1, 0, 1]);
+
+    expect(importRivePathComponent(context, 2)).toBeNull();
+    expect(context.shapePaths.get(1)?.length).toBe(1);
+  });
+
+  it('reports a path with no shape above it, because the geometry leaves no other trace', () => {
+    const objects = [object(ARTBOARD, {}), object(RECTANGLE, { 20: 10, 21: 10 })];
+    const diagnostics: ImportDiagnostic[] = [];
+    const context = contextOf(objects, [-1, 0], diagnostics);
+
+    expect(importRivePathComponent(context, 1)).toBeNull();
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.path-outside-shape']);
+  });
+});
+
+describe('registerRivePathHandlers', () => {
+  it('claims every path kind through the base type they inherit from', () => {
+    const registry = createRiveImportRegistry();
+    registerRivePathHandlers(registry);
+
+    // Registering Path alone serves the parametric shapes, which are paths in Rive object model.
+    expect(getRiveCoreObjectHandler(registry, RECTANGLE)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, POINTS_PATH)).not.toBeNull();
+  });
+
+  it('claims the vertices a path is built from, so they are not reported as unread types', () => {
+    const registry = createRiveImportRegistry();
+    registerRivePathHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, STRAIGHT_VERTEX)?.importComponent?.(contextOf([], []), 0)).toBeNull();
+  });
+});
+
+function contextOf(
+  objects: RiveCoreObject[],
+  parentIndices: number[],
+  diagnostics?: ImportDiagnostic[],
+): RiveArtboardImportContext {
+  const graph: RiveArtboardGraph = { objects, parentIndices, streamEnd: objects.length, streamStart: 0 };
+  return createRiveArtboardImportContext(
+    createRiveImportRegistry(),
+    graph,
+    objects,
+    createDisplayObject({}),
+    [],
+    diagnostics,
+  );
+}
 
 // Anchor points only, walked through the verb stream so control points are not mistaken for them.
 function pointPairs(path: { commands: number[]; data: number[] }): number[][] {

@@ -2,6 +2,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   ImportDiagnostic,
   RiveCoreObject,
+  RiveImportRegistry,
   RiveStateMachineDescriptor,
   RiveStateMachineInput,
   RiveStateMachineLayer,
@@ -11,6 +12,7 @@ import type {
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Reads an artboard's state machines as plain data.
@@ -96,6 +98,28 @@ export function createRiveStateMachines(
     }
   }
   return machines;
+}
+
+/**
+ * Registers the artboard's state machines, read as plain data.
+ *
+ * A state machine is not a component: it shares the file stream with the artboard but sits outside
+ * its numbering, which is why this is a pass over the artboard's stream span rather than a component
+ * handler. Nothing here is interpreted or driven — the machine's runtime is a separate cell — so
+ * leaving the family unregistered costs the descriptors and nothing else.
+ */
+export function registerRiveStateMachineHandlers(registry: RiveImportRegistry): void {
+  registerRiveCoreObjectHandler(registry, RIVE_STATE_MACHINE, {
+    applyArtboard: (context) => {
+      context.stateMachines.push(
+        ...createRiveStateMachines(
+          context.objects,
+          { end: context.artboard.streamEnd, start: context.artboard.streamStart },
+          context.diagnostics,
+        ),
+      );
+    },
+  });
 }
 
 function createRiveStateMachineInput(source: Readonly<RiveCoreObject>): RiveStateMachineInput {

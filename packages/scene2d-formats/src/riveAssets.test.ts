@@ -1,12 +1,35 @@
-import type { ImportDiagnostic, RiveCoreObject } from '@flighthq/types/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type {
+  ImportDiagnostic,
+  RiveArtboardGraph,
+  RiveArtboardImportContext,
+  RiveCoreObject,
+} from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveFileAssets } from './riveAssets';
+import { getRiveNestedArtboardIndex } from './riveAssetBinding';
+import {
+  createRiveFileAssets,
+  importRiveImageComponent,
+  importRiveNestedArtboardComponent,
+  registerRiveAssetHandlers,
+} from './riveAssets';
+import {
+  createRiveArtboardImportContext,
+  createRiveDocumentImportContext,
+  createRiveImportRegistry,
+  getRiveCoreObjectHandler,
+} from './riveImportRegistry';
 
 // Assets are addressed by their POSITION in this list, not by the id they state — reading the
 // corpus's 61 image references as positions resolves all of them, and as stated ids resolves none.
 // Embedded bytes travel untouched, because decoding them is a resource-layer concern.
 
+const ARTBOARD = 1;
+const NESTED_ARTBOARD = 92;
+const IMAGE = 100;
+const FILE_ASSET = 103;
+const NESTED_ARTBOARD_LAYOUT = 452;
 const IMAGE_ASSET = 105;
 const FONT_ASSET = 141;
 const AUDIO_ASSET = 406;
@@ -100,6 +123,71 @@ describe('createRiveFileAssets', () => {
     expect(diagnostics).toEqual([]);
   });
 });
+
+describe('importRiveImageComponent', () => {
+  it('stands up a sprite named by the drawable, waiting on the asset position it states', () => {
+    const image = object(IMAGE, { 206: 2 });
+    image.properties.push({ key: 4, type: RiveFieldType.String, value: 'logo' });
+
+    const node = importRiveImageComponent(contextOf([image]), 1);
+
+    expect(node?.name).toBe('logo');
+  });
+});
+
+describe('importRiveNestedArtboardComponent', () => {
+  it('marks the site with the artboard it names, so the document layer can make a slot', () => {
+    const nested = object(NESTED_ARTBOARD, { 197: 1 });
+
+    const node = importRiveNestedArtboardComponent(contextOf([nested]), 1);
+
+    expect(node).not.toBeNull();
+    expect(getRiveNestedArtboardIndex(node!)).toBe(1);
+  });
+});
+
+describe('registerRiveAssetHandlers', () => {
+  it('reads the asset list as a document pass, because an asset is not a component', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveAssetHandlers(registry);
+
+    const asset = getRiveCoreObjectHandler(registry, FILE_ASSET);
+    expect(asset?.applyDocument).toBeInstanceOf(Function);
+    expect(asset?.importComponent).toBeUndefined();
+  });
+
+  it('claims the drawables that reference content declared elsewhere in the file', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveAssetHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, IMAGE)?.importComponent).toBe(importRiveImageComponent);
+    // NestedArtboardLayout is a NestedArtboard, so the base registration marks both kinds.
+    expect(getRiveCoreObjectHandler(registry, NESTED_ARTBOARD_LAYOUT)?.importComponent).toBe(
+      importRiveNestedArtboardComponent,
+    );
+  });
+
+  it('collects an image asset through the document pass it registers', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveAssetHandlers(registry);
+    const objects = [text(IMAGE_ASSET, 203, 'logo')];
+    const context = createRiveDocumentImportContext(registry, objects);
+    getRiveCoreObjectHandler(registry, FILE_ASSET)?.applyDocument?.(context);
+
+    expect(context.assets.map((entry) => entry.name)).toEqual(['logo']);
+  });
+});
+
+function contextOf(components: RiveCoreObject[]): RiveArtboardImportContext {
+  const objects = [object(ARTBOARD, {}), ...components];
+  const graph: RiveArtboardGraph = {
+    objects,
+    parentIndices: objects.map((_value, index) => (index === 0 ? -1 : 0)),
+    streamEnd: objects.length,
+    streamStart: 0,
+  };
+  return createRiveArtboardImportContext(createRiveImportRegistry(), graph, objects, createDisplayObject({}), []);
+}
 
 function object(typeKey: number, properties: Readonly<Record<number, number>>): RiveCoreObject {
   return {
