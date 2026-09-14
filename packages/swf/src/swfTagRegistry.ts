@@ -32,43 +32,44 @@ export function createSwfTagHandlerRegistry(): NonEntityCreateResult<SwfTagHandl
 }
 
 export function registerAllSwfTagHandlers(registry: SwfTagHandlerRegistry): void {
-  registerSwfDefinitionTagHandlers(registry);
+  registerSwfBitmapTagHandlers(registry);
+  registerSwfControlTagHandlers(registry);
+  registerSwfFontTagHandlers(registry);
   registerSwfPlacementTagHandlers(registry);
   registerSwfScriptTagHandlers(registry);
+  registerSwfShapeTagHandlers(registry);
   registerSwfSoundTagHandlers(registry);
-  registerSwfTimelineTagHandlers(registry);
+  registerSwfTextTagHandlers(registry);
+  registerSwfVideoTagHandlers(registry);
 }
 
-export function registerSwfDefinitionTagHandlers(registry: SwfTagHandlerRegistry): void {
-  registry.set(TAG_SET_BACKGROUND_COLOR, handleSwfBackgroundColorTag);
-  registry.set(TAG_DEFINE_SHAPE, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_SHAPE_2, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_SHAPE_3, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_SHAPE_4, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_TEXT, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_TEXT_2, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_EDIT_TEXT, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_MORPH_SHAPE, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_MORPH_SHAPE_2, handleSwfBoundedDefinitionTag);
-  registry.set(TAG_DEFINE_FONT, handleSwfFontDefinitionTag);
-  registry.set(TAG_DEFINE_FONT_2, handleSwfFontDefinitionTag);
-  registry.set(TAG_DEFINE_FONT_3, handleSwfFontDefinitionTag);
-  registry.set(TAG_DEFINE_FONT_INFO, handleSwfFontInfoTag);
-  registry.set(TAG_DEFINE_FONT_INFO_2, handleSwfFontInfoTag);
-  registry.set(TAG_DEFINE_BUTTON, handleSwfButtonDefinitionTag);
-  registry.set(TAG_DEFINE_BUTTON_2, handleSwfButtonDefinitionTag);
-  registry.set(TAG_JPEG_TABLES, handleSwfJpegTablesTag);
+export function registerSwfBitmapTagHandlers(registry: SwfTagHandlerRegistry): void {
   registry.set(TAG_DEFINE_BITS, handleSwfLegacyImageDefinitionTag);
   registry.set(TAG_DEFINE_BITS_JPEG_2, handleSwfEmbeddedImageDefinitionTag);
   registry.set(TAG_DEFINE_BITS_JPEG_3, handleSwfEmbeddedImageDefinitionTag);
   registry.set(TAG_DEFINE_BITS_JPEG_4, handleSwfEmbeddedImageDefinitionTag);
   registry.set(TAG_DEFINE_BITS_LOSSLESS, handleSwfLosslessBitmapDefinitionTag);
   registry.set(TAG_DEFINE_BITS_LOSSLESS_2, handleSwfLosslessBitmapDefinitionTag);
-  registry.set(TAG_DEFINE_SOUND, handleSwfSoundDefinitionTag);
-  registry.set(TAG_DEFINE_VIDEO_STREAM, handleSwfVideoStreamDefinitionTag);
-  registry.set(TAG_EXPORT_ASSETS, handleSwfExportAssetsTag);
-  registry.set(TAG_SYMBOL_CLASS, handleSwfExportAssetsTag);
+  registry.set(TAG_JPEG_TABLES, handleSwfJpegTablesTag);
+}
+
+export function registerSwfControlTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_BUTTON, handleSwfButtonDefinitionTag);
+  registry.set(TAG_DEFINE_BUTTON_2, handleSwfButtonDefinitionTag);
   registry.set(TAG_DEFINE_SCALING_GRID, handleSwfScalingGridTag);
+  registry.set(TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA, handleSwfSceneAndFrameLabelDataTag);
+  registry.set(TAG_EXPORT_ASSETS, handleSwfExportAssetsTag);
+  registry.set(TAG_FRAME_LABEL, handleSwfFrameLabelTag);
+  registry.set(TAG_SET_BACKGROUND_COLOR, handleSwfBackgroundColorTag);
+  registry.set(TAG_SYMBOL_CLASS, handleSwfExportAssetsTag);
+}
+
+export function registerSwfFontTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_FONT, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_2, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_3, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_INFO, handleSwfFontInfoTag);
+  registry.set(TAG_DEFINE_FONT_INFO_2, handleSwfFontInfoTag);
 }
 
 export function registerSwfPlacementTagHandlers(registry: SwfTagHandlerRegistry): void {
@@ -81,27 +82,42 @@ export function registerSwfPlacementTagHandlers(registry: SwfTagHandlerRegistry)
 }
 
 export function registerSwfScriptTagHandlers(registry: SwfTagHandlerRegistry): void {
-  registry.set(TAG_DO_ACTION, handleSwfDoActionTag);
   registry.set(TAG_DO_ABC, handleSwfDoAbcTag);
   registry.set(TAG_DO_ABC_ANONYMOUS, handleSwfDoAbcTag);
+  registry.set(TAG_DO_ACTION, handleSwfDoActionTag);
   registry.set(TAG_DO_INIT_ACTION, handleSwfDoInitActionTag);
 }
 
+export function registerSwfShapeTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_MORPH_SHAPE, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_MORPH_SHAPE_2, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_2, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_3, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_4, handleSwfBoundedDefinitionTag);
+}
+
 export function registerSwfSoundTagHandlers(registry: SwfTagHandlerRegistry): void {
-  registry.set(TAG_START_SOUND, handleSwfStartSoundTag);
-  registry.set(TAG_START_SOUND_2, handleSwfStartSound2Tag);
+  registry.set(TAG_DEFINE_SOUND, handleSwfSoundDefinitionTag);
+  registry.set(TAG_SOUND_STREAM_BLOCK, handleSwfSoundStreamBlockTag);
   registry.set(TAG_SOUND_STREAM_HEAD, handleSwfSoundStreamHeadTag);
   registry.set(TAG_SOUND_STREAM_HEAD_2, handleSwfSoundStreamHeadTag);
-  registry.set(TAG_SOUND_STREAM_BLOCK, handleSwfSoundStreamBlockTag);
+  registry.set(TAG_START_SOUND, handleSwfStartSoundTag);
+  registry.set(TAG_START_SOUND_2, handleSwfStartSound2Tag);
 }
 
 export function registerSwfTagHandler(registry: SwfTagHandlerRegistry, code: number, handler: SwfTagHandler): void {
   registry.set(code, handler);
 }
 
-export function registerSwfTimelineTagHandlers(registry: SwfTagHandlerRegistry): void {
-  registry.set(TAG_FRAME_LABEL, handleSwfFrameLabelTag);
-  registry.set(TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA, handleSwfSceneAndFrameLabelDataTag);
+export function registerSwfTextTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_EDIT_TEXT, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_TEXT, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_TEXT_2, handleSwfBoundedDefinitionTag);
+}
+
+export function registerSwfVideoTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_VIDEO_STREAM, handleSwfVideoStreamDefinitionTag);
 }
 
 const TAG_DEFINE_BITS = 6;

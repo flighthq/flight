@@ -3,12 +3,16 @@ import type { SwfTagHandler, SwfTagHandlerRegistry } from '@flighthq/types/contr
 import {
   createSwfTagHandlerRegistry,
   registerAllSwfTagHandlers,
-  registerSwfDefinitionTagHandlers,
+  registerSwfBitmapTagHandlers,
+  registerSwfControlTagHandlers,
+  registerSwfFontTagHandlers,
   registerSwfPlacementTagHandlers,
   registerSwfScriptTagHandlers,
+  registerSwfShapeTagHandlers,
   registerSwfSoundTagHandlers,
   registerSwfTagHandler,
-  registerSwfTimelineTagHandlers,
+  registerSwfTextTagHandlers,
+  registerSwfVideoTagHandlers,
 } from './swfTagRegistry';
 
 describe('createSwfTagHandlerRegistry', () => {
@@ -24,23 +28,63 @@ describe('registerAllSwfTagHandlers', () => {
     registerAllSwfTagHandlers(registry);
     expect(registry.size).toBeGreaterThan(0);
     const separateRegistry = createSwfTagHandlerRegistry();
-    registerSwfDefinitionTagHandlers(separateRegistry);
+    registerSwfBitmapTagHandlers(separateRegistry);
+    registerSwfControlTagHandlers(separateRegistry);
+    registerSwfFontTagHandlers(separateRegistry);
     registerSwfPlacementTagHandlers(separateRegistry);
     registerSwfScriptTagHandlers(separateRegistry);
+    registerSwfShapeTagHandlers(separateRegistry);
     registerSwfSoundTagHandlers(separateRegistry);
-    registerSwfTimelineTagHandlers(separateRegistry);
+    registerSwfTextTagHandlers(separateRegistry);
+    registerSwfVideoTagHandlers(separateRegistry);
     expect(registry.size).toBe(separateRegistry.size);
+  });
+
+  it('produces no overlapping tag codes across families', () => {
+    const families = [
+      registerSwfBitmapTagHandlers,
+      registerSwfControlTagHandlers,
+      registerSwfFontTagHandlers,
+      registerSwfPlacementTagHandlers,
+      registerSwfScriptTagHandlers,
+      registerSwfShapeTagHandlers,
+      registerSwfSoundTagHandlers,
+      registerSwfTextTagHandlers,
+      registerSwfVideoTagHandlers,
+    ];
+    const allCodes = new Set<number>();
+    let totalCodes = 0;
+    for (const register of families) {
+      const registry = createSwfTagHandlerRegistry();
+      register(registry);
+      totalCodes += registry.size;
+      for (const code of registry.keys()) allCodes.add(code);
+    }
+    expect(allCodes.size).toBe(totalCodes);
   });
 });
 
-describe('registerSwfDefinitionTagHandlers', () => {
-  it('registers definition-related tag codes', () => {
+describe('registerSwfBitmapTagHandlers', () => {
+  it('registers bitmap-related tag codes', () => {
     const registry = createSwfTagHandlerRegistry();
-    registerSwfDefinitionTagHandlers(registry);
-    expectHandlers(
-      registry,
-      [2, 6, 7, 8, 9, 10, 11, 13, 14, 20, 21, 22, 32, 33, 34, 35, 36, 37, 46, 48, 56, 60, 62, 75, 76, 78, 83, 84, 90],
-    );
+    registerSwfBitmapTagHandlers(registry);
+    expectHandlers(registry, [6, 8, 20, 21, 35, 36, 90]);
+  });
+});
+
+describe('registerSwfControlTagHandlers', () => {
+  it('registers control-related tag codes', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfControlTagHandlers(registry);
+    expectHandlers(registry, [7, 9, 34, 43, 56, 76, 78, 86]);
+  });
+});
+
+describe('registerSwfFontTagHandlers', () => {
+  it('registers font-related tag codes', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfFontTagHandlers(registry);
+    expectHandlers(registry, [10, 13, 48, 62, 75]);
   });
 });
 
@@ -60,11 +104,19 @@ describe('registerSwfScriptTagHandlers', () => {
   });
 });
 
+describe('registerSwfShapeTagHandlers', () => {
+  it('registers shape-related tag codes', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfShapeTagHandlers(registry);
+    expectHandlers(registry, [2, 22, 32, 46, 83, 84]);
+  });
+});
+
 describe('registerSwfSoundTagHandlers', () => {
   it('registers sound-related tag codes', () => {
     const registry = createSwfTagHandlerRegistry();
     registerSwfSoundTagHandlers(registry);
-    expectHandlers(registry, [15, 18, 19, 45, 89]);
+    expectHandlers(registry, [14, 15, 18, 19, 45, 89]);
   });
 });
 
@@ -86,11 +138,19 @@ describe('registerSwfTagHandler', () => {
   });
 });
 
-describe('registerSwfTimelineTagHandlers', () => {
-  it('registers timeline-related tag codes', () => {
+describe('registerSwfTextTagHandlers', () => {
+  it('registers text-related tag codes', () => {
     const registry = createSwfTagHandlerRegistry();
-    registerSwfTimelineTagHandlers(registry);
-    expectHandlers(registry, [43, 86]);
+    registerSwfTextTagHandlers(registry);
+    expectHandlers(registry, [11, 33, 37]);
+  });
+});
+
+describe('registerSwfVideoTagHandlers', () => {
+  it('registers video-related tag codes', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfVideoTagHandlers(registry);
+    expectHandlers(registry, [60]);
   });
 });
 
