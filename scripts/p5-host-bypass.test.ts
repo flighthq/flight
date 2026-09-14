@@ -1366,7 +1366,7 @@ describe('P5 host-bypass derived gate', () => {
   it.each([
     [
       'an unpaired registration',
-      `export function createWebInputIngressBackend(target: EventTarget) {
+      `export function initializeWebInputIngressBackend(target: EventTarget) {
          target.addEventListener('keydown', run);
          target.addEventListener('keyup', run);
          return () => target.removeEventListener('keydown', run);
@@ -1374,13 +1374,13 @@ describe('P5 host-bypass derived gate', () => {
     ],
     [
       'a mismatched removal name',
-      `export function createWebInputIngressBackend(target: EventTarget) {
+      `export function initializeWebInputIngressBackend(target: EventTarget) {
          target.addEventListener('keydown', run);
          return () => target.removeEventListener('keyup', run);
        }`,
     ],
   ])('mutation-proves that %s fails exact input listener pairing', (_name, source) => {
-    const report = createP5HostBypassReport(1, scanP5HostBypassSource('packages/input/src/inputIngressWeb.ts', source));
+    const report = createP5HostBypassReport(1, scanP5HostBypassSource('packages/host-web/src/webInputHost.ts', source));
     expect(p5InputIngressPairingFailures(deriveP5InputIngressListenerOperations(report))).not.toEqual([]);
   });
 

@@ -1021,7 +1021,7 @@ export function deriveP5InputIngressListenerOperations(
   report: Readonly<P5HostBypassReport>,
 ): P5InputIngressListenerOperations {
   const sites = [...report.p5, ...report.excluded].filter(
-    (site) => site.kind === 'input-ingress' && site.file.startsWith('packages/input/'),
+    (site) => site.kind === 'input-ingress' && site.file === 'packages/host-web/src/webInputHost.ts',
   );
   return {
     registrationNames: sites
