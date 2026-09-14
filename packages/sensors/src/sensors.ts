@@ -13,7 +13,6 @@ import type {
   Sensors,
   HostSensorsProvider,
   SensorsPermissionState,
-  SensorSubscribeOptions,
 } from '@flighthq/types/contract';
 
 // Begins delivering sensor readings to `sensors`'s signals by subscribing to the supplied provider's

@@ -263,7 +263,7 @@ describe('isTeardownFunctionName', () => {
   // counting it inflated the teardown denominator by functions that tear nothing down.
   it('rejects ordinary release* operations, which tear nothing down', () => {
     expect(isTeardownFunctionName('releaseSingleInstanceLock')).toBe(false);
-    expect(isTeardownFunctionName('releaseInputPointerCapture')).toBe(false);
+    expect(isTeardownFunctionName('releaseWebInputPointerCapture')).toBe(false);
     expect(isTeardownFunctionName('setKeepAwake')).toBe(false);
   });
 });
