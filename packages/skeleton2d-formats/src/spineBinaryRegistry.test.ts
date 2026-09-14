@@ -53,6 +53,13 @@ describe('registerSpineBinarySectionHandler', () => {
     expect(registry.sectionHandlers).toHaveLength(1);
     expect(getSpineBinarySectionHandler(registry, SpineBinarySectionKind.Bones)).toBe(second);
   });
+
+  it('accepts source extensions outside the built-in section vocabulary', () => {
+    const registry = createSpineBinaryRegistry();
+    const handler: SpineBinarySectionHandler = () => {};
+    registerSpineBinarySectionHandler(registry, 'vendorSection', handler);
+    expect(getSpineBinarySectionHandler(registry, 'vendorSection')).toBe(handler);
+  });
 });
 
 describe('registerSpineBinaryTimelineHandler', () => {
@@ -64,6 +71,13 @@ describe('registerSpineBinaryTimelineHandler', () => {
     registerSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Bone, second);
     expect(registry.timelineHandlers).toHaveLength(1);
     expect(getSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Bone)).toBe(second);
+  });
+
+  it('accepts source extensions outside the built-in timeline vocabulary', () => {
+    const registry = createSpineBinaryRegistry();
+    const handler: SpineBinaryTimelineHandler = () => {};
+    registerSpineBinaryTimelineHandler(registry, 'vendorTimeline', handler);
+    expect(getSpineBinaryTimelineHandler(registry, 'vendorTimeline')).toBe(handler);
   });
 });
 
