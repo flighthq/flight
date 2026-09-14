@@ -12,17 +12,17 @@ The host-boundary census initially appeared to identify a substrate below browse
 
 That shape centralised a plausible seam, but it did not solve the evidenced portability problem. The original problem is scattered **host code**: environmental behavior such as `document.createElement` in accessibility or `window.addEventListener` in application. That code is absent on Node and native targets and forces a porter to find unrelated host assumptions throughout capability packages.
 
-The proposed substrate members are different. `Intl.Segmenter`, `WebSocket`, and the fetch stack are ambient language/runtime facilities. They are used inline for the same reason as `Math` and `Promise`: the target supplies them as part of its JavaScript environment. Putting three such uses behind two packages would provision a boundary whose current volume and substitution needs do not justify it.
+The proposed substrate members are different. `Intl.Segmenter` and the fetch stack are ambient language/runtime facilities. They are used inline for the same reason as `Math` and `Promise`: the target supplies them as part of its JavaScript environment. Putting two such uses behind a package would provision a boundary whose current volume and substitution needs do not justify it. (`WebSocket` was originally classified as ambient here but was later reclassified as **host-web** and moved — the WebSocket constructor is a runtime-specific API, not a language facility.)
 
 ## Completed classification check
 
 The decision was originally conditional on rechecking every provisional host-web row. That check is complete:
 
 - 23 factories have a decisive browser-host dependency and remain host-web.
-- 3 factories use only ambient standard facilities: net (`fetch`, `Headers`, `Response`, streams, `AbortController`, `Blob`, and `TextDecoder`), socket (`WebSocket`), and textsegment (`Intl.Segmenter`).
+- 2 factories use only ambient standard facilities: net (`fetch`, `Headers`, `Response`, streams, `AbortController`, `Blob`, and `TextDecoder`) and textsegment (`Intl.Segmenter`). Socket (`WebSocket`) was originally in this group but was reclassified as host-web.
 - 12 factories remain the strict-majority no-implementation set and do not become runtime members.
 
-The recheck found one more ambient row than the two that motivated the proposal, not a hidden family of substrate backends. Three ambient uses still do not evidence a package boundary. This conclusion must be revisited if a later exhaustive census finds a materially larger family with shared ownership or lifecycle rather than merely more standard globals.
+The recheck found one more ambient row than the two that motivated the proposal, not a hidden family of substrate backends. Two ambient uses do not evidence a package boundary. This conclusion must be revisited if a later exhaustive census finds a materially larger family with shared ownership or lifecycle rather than merely more standard globals.
 
 ## The distinction that decides ownership
 
@@ -30,7 +30,7 @@ The recheck found one more ambient row than the two that motivated the proposal,
 
 **Substrate is language.** It is ambient wherever the corresponding target executes, and inline use is honest. Native substitution is the compiler's job, not a package facade's.
 
-Confusing these categories produced a package proposal for three ambient facilities while the actual portability problem remained the 23 environmental implementations.
+Confusing these categories produced a package proposal for two ambient facilities while the actual portability problem remained the environmental implementations now in host-web.
 
 ## Compiler constraint
 

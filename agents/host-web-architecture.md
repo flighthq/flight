@@ -2,7 +2,7 @@
 
 **Status:** design record — direction settled (user ruling), shape defined.
 
-Web backends are extracted from capability packages into `@flighthq/host-web`. Three capabilities (net, socket, textsegment) are ambient-language facilities — standard-JS implementations that stay inline in their capability packages, structurally unchanged. Phase 3 creates `host-web` only.
+Web backends are extracted from capability packages into `@flighthq/host-web`. Two capabilities (net, textsegment) are ambient-language facilities — standard-JS implementations that stay inline in their capability packages, structurally unchanged. Phase 3 creates `host-web` only.
 
 App vocabulary: `enableHostWeb()`, `enableHostWebClipboard()`. Host-author seam: `set*Backend`, `*Backend` interfaces in `@flighthq/types`. 108 existing `enable*` exports; zero existing `enableHost*` — no collision.
 
@@ -49,13 +49,14 @@ Zero-config moves to one explicit line (`enableHostWeb()`). The word "Backend" d
 
 ### Ambient-language facilities
 
-Three capabilities use standard ECMA/WinterCG APIs available in all modern JS runtimes. Their implementations stay inline in the capability package — they are language facilities, not host-specific code. All three remain structurally unchanged: same function names, same lazy-install pattern, same file locations.
+Two capabilities use standard ECMA/WinterCG APIs available in all modern JS runtimes. Their implementations stay inline in the capability package — they are language facilities, not host-specific code. Both remain structurally unchanged: same function names, same lazy-install pattern, same file locations.
 
 | Capability | Factory | API used | Seam rationale |
 |------------|---------|----------|----------------|
 | net | `createWebNetBackend` | WHATWG fetch/Response/Headers/AbortController/Blob/TextDecoder | Native HTTP may differ (TLS, proxy, node:http) |
-| socket | `createWebSocketBackend` | WHATWG WebSocket | Native socket stack may differ (TLS, buffers, node:net) |
 | textsegment | `createWebTextSegmenterBackend` | Intl.Segmenter (ECMA-402) | Native ICU BreakIterator for C/C++ port |
+
+Socket was previously classified as ambient (WHATWG WebSocket) but was reclassified as **host-web** and moved to `@flighthq/host-web` — the WebSocket constructor is a browser/runtime-specific API, not a language facility.
 
 The `set*Backend` seam remains so a native host can override. No `enableHostWeb*` enabler needed — the implementation is already inline.
 
@@ -69,7 +70,7 @@ Three named layers:
 | 2 | `host-web` / `host-node` | `enableHostWeb*()` / future `enableHostNode*()` | Platform-specific provider |
 | 3 (lowest) | (absent) | nothing installed | Capability sentinel serves |
 
-For the 3 ambient-language facilities, the lazy-install is the default (layer 3 is not a bare sentinel but the inline implementation). A host override via `set*Backend` still wins.
+For the 2 ambient-language facilities, the lazy-install is the default (layer 3 is not a bare sentinel but the inline implementation). A host override via `set*Backend` still wins.
 
 **Order-independent:** `enableHostWeb*` installs only if no host backend is present. A native host that calls `registerElectronBackends()` first is not clobbered.
 
@@ -108,7 +109,7 @@ export function installClipboardHostBackend(backend: ClipboardBackend): void {
 
 **Runtime viability is observed, never predicted.** Enablers install a real backend and make no availability claim. Before a real operation, `explain*` reports `unobserved`. Each host operation records whether the runtime API was actually reachable; the last real call replaces the prior observation, so loss and recovery are both visible. A legitimate negative result (permission denied, user cancellation, missing file, zero-ink glyph) is not an unavailable API. Only failure to reach or acquire the required runtime surface records `runtime-api-unavailable`; other failures remain ordinary operation results or defects.
 
-For ambient-language capabilities (3 of them), the existing pattern is structurally unchanged:
+For ambient-language capabilities (2 of them), the existing pattern is structurally unchanged:
 
 ```typescript
 let _backend: NetBackend | null = null;
@@ -141,9 +142,11 @@ The inventory must use the record's exact current headings as its schema: `Manda
 
 ### Three outcomes
 
-1. **host-web** (24): genuinely browser-required. Extracted to `@flighthq/host-web`.
-2. **ambient-language** (3): standard-JS implementations. Stay inline, structurally unchanged.
+1. **host-web** (25): genuinely browser-required. Extracted to `@flighthq/host-web`.
+2. **ambient-language** (2): standard-JS implementations. Stay inline, structurally unchanged.
 3. **none** (10): 6 strict-majority no-op + 4 all-sentinel.
+
+Note: the original count was 24 host-web + 3 ambient + 1 facade + 10 none = 38. Socket was reclassified from ambient to host-web, and permissions from facade to host-web, yielding 25 + 2 + 10 = 37 (+ 1 log correction = 38 rows).
 
 ### Complete table
 
@@ -171,7 +174,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
 | 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
 | 22 | notification | createWebNotificationBackend | 14/4 | **host-web** | window | Notification instances/permission/timers |
-| 23 | permissions | — | 0/0 | **facade/projector** | explicit Host | Notification and persistent storage use only their capability-owned Host slots; six interim native holdings remain ledgered in Permissions |
+| 23 | permissions | createWebPermissionsBackend | 5/0 | **host-web** | window+nav | `navigator.permissions.query`, `navigator.mediaDevices.getUserMedia`, `navigator.wakeLock.request`, `Notification.requestPermission`. Reclassified from facade/projector: now a proper `HostPermissionsProvider` with browser API calls moved to host-web. |
 | 24 | platform | createWebPlatformBackend | 1/0 | **host-web** | window+nav | navigator UA/language/touch |
 | 25 | power | createWebPowerBackend | 6/7 | **none** | — | 53.8% false. |
 | 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
@@ -180,7 +183,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 29 | share | webShareContentBackend / webShareFilesBackend | 3/0 + 3/0 | **host-web** | nav | navigator.canShare/share |
 | 30 | shell | webShellExternalBackend | 1/0 | **host-web** | window | Stable Entity over window.open; the eight native-only aggregate methods were deleted. |
 | 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
-| 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
+| 32 | socket | createWebSocketBackend | 1/0 | **host-web** | window | WHATWG WebSocket. Reclassified from ambient and moved to host-web — WebSocket is a runtime API, not a language facility. |
 | 33 | statusbar | createWebStatusBarBackend | 2/4 | **none** | — | 66.7% false. |
 | 34 | storage | webStorageBackend + injected persistence factories | 9/0 | **host-web** | DOM+window+worker | localStorage, Window storage events, StorageManager persisted/persist, Permissions query |
 | 35 | textsegment | createWebTextSegmenterBackend | 1/0 | **ambient** | — | Intl.Segmenter (ECMA-402). Stays inline, unchanged. |
@@ -192,9 +195,8 @@ The inventory must use the record's exact current headings as its schema: `Manda
 
 | Outcome | Count | Modules |
 |---------|-------|---------|
-| **host-web** | 23 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, platform, screen, sensors, share, shell, storage, webcam |
-| **explicit facade/projector** | 1 | permissions |
-| **ambient-language** | 3 | net, socket, textsegment |
+| **host-web** | 25 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, shell, socket, storage, webcam |
+| **ambient-language** | 2 | net, textsegment |
 | **none / strict-majority** | 6 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), statusbar (2G/4S) |
 | **none / all-sentinel** | 4 | ipc (0/4), shortcut (0/7), tray (0/19), updater (0/21) |
 
@@ -478,7 +480,7 @@ Promise settlement is not a viability predicate. An absent API or failure to acq
 
 Every report additionally carries `operation`, `conflict`, and `retainedPreviousProviderResources`. `operation` is `null` in states 1, 2, and 5 and names the observing call in states 3 and 4. `conflict` is an independent boolean on every state; it never changes `layer`, `operation`, or `viability`. `retainedPreviousProviderResources` is likewise independent: normally zero, and nonzero only for accepted caller-held resources such as filesystem streams that remain open on an originating provider after a swap.
 
-For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`.
+For ambient-language capabilities (net, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`.
 
 ---
 
