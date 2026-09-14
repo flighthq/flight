@@ -1,4 +1,4 @@
-import type { SwfTagHandler, SwfTagHandlerRegistry } from '@flighthq/types/contract';
+import type { NonEntityCreateResult, SwfTagHandler, SwfTagHandlerRegistry } from '@flighthq/types/contract';
 
 import {
   handleSwfBackgroundColorTag,
@@ -27,7 +27,7 @@ import {
   handleSwfVideoStreamDefinitionTag,
 } from './swfDocument';
 
-export function createSwfTagHandlerRegistry(): SwfTagHandlerRegistry {
+export function createSwfTagHandlerRegistry(): NonEntityCreateResult<SwfTagHandlerRegistry, 'type-only'> {
   return new Map();
 }
 
