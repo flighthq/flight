@@ -566,6 +566,37 @@ describe('parseSpineSkeletonBinaryWithRegistry', () => {
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-truncated');
   });
 
+  it.each([
+    ['Bone', SpineBinaryTimelineKind.Bone],
+    ['Deform', SpineBinaryTimelineKind.Deform],
+    ['DrawOrder', SpineBinaryTimelineKind.DrawOrder],
+    ['Event', SpineBinaryTimelineKind.Event],
+    ['Ik', SpineBinaryTimelineKind.Ik],
+    ['Path', SpineBinaryTimelineKind.Path],
+    ['Slot', SpineBinaryTimelineKind.Slot],
+    ['Transform', SpineBinaryTimelineKind.Transform],
+  ] as const)('walks a nonempty unregistered %s timeline byte-exactly', (_label, kind) => {
+    const registry = createSpineBinaryRegistry();
+    registerAllSpineBinaryHandlers(registry);
+    unregisterSpineBinaryTimelineHandler(registry, kind);
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const result = parseSpineSkeletonBinaryWithRegistry(
+      buildSpineBinary({ allTimelineFamilies: true }),
+      registry,
+      diagnostics,
+    )!;
+
+    expect(result.animations).toHaveLength(1);
+    expect(diagnostics.filter((diagnostic) => diagnostic.kind === 'spine.binary-timeline-unregistered')).toEqual([
+      expect.objectContaining({
+        detail: { timeline: kind, timelines: 1 },
+      }),
+    ]);
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-tail-unparsed');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-truncated');
+  });
+
   it('matches the batteries-included parser when all handlers are registered', () => {
     const bytes = buildSpineBinary({ animations: true, bezier: true, ikConstraints: 2, weightedMesh: true });
     const registry = createSpineBinaryRegistry();
@@ -625,6 +656,7 @@ function buildSpineBinary(
     ikConstraints?: number;
     weightedMesh?: boolean;
     animations?: boolean;
+    allTimelineFamilies?: boolean;
     boneTimelineType?: number;
     secondBoneTimelineType?: number;
     bezier?: boolean;
@@ -733,9 +765,18 @@ function buildSpineBinary(
   // Animations. One clip driving the hip bone, so the bone-timeline path is exercised end to end.
   writeVarint(out, options.animations === false ? 0 : 1);
   if (options.animations !== false) {
+    const allTimelineFamilies = options.allTimelineFamilies === true;
     writeString(out, 'walk');
-    writeVarint(out, 1); // total timeline count
-    writeVarint(out, 0); // slot timelines
+    writeVarint(out, allTimelineFamilies ? 8 : 1); // total timeline count
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // slot timeline groups
+    if (allTimelineFamilies) {
+      writeVarint(out, 0); // slot index
+      writeVarint(out, 1); // timelines on it
+      out.push(0); // attachment timeline
+      writeVarint(out, 1); // frame count
+      writeFloat(out, 0); // time
+      writeVarint(out, 1); // 'body-attachment'
+    }
     writeVarint(out, 1); // bone timelines
     writeVarint(out, 1); // bone index
     writeVarint(out, options.secondBoneTimelineType === undefined ? 1 : 2); // timelines on it
@@ -770,12 +811,58 @@ function buildSpineBinary(
       writeFloat(out, 40);
       out.push(0); // CURVE_LINEAR
     }
-    writeVarint(out, 0); // ik timelines
-    writeVarint(out, 0); // transform timelines
-    writeVarint(out, 0); // path timelines
-    writeVarint(out, 0); // deform timelines
-    writeVarint(out, 0); // draw order frames
-    writeVarint(out, 0); // event frames
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // ik timelines
+    if (allTimelineFamilies) {
+      writeVarint(out, 0); // constraint index
+      writeVarint(out, 1); // frame count
+      writeVarint(out, 0); // bezier count
+      writeFloat(out, 0); // time
+      writeFloat(out, 1); // mix
+      writeFloat(out, 0); // softness
+      out.push(1, 0, 0); // bendDirection, compress, stretch
+    }
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // transform timelines
+    if (allTimelineFamilies) {
+      writeVarint(out, 0); // constraint index
+      writeVarint(out, 1); // frame count
+      writeVarint(out, 0); // bezier count
+      for (let value = 0; value < 7; value++) writeFloat(out, 0); // time plus six values
+    }
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // path timeline groups
+    if (allTimelineFamilies) {
+      writeVarint(out, 0); // constraint index
+      writeVarint(out, 1); // timelines on it
+      out.push(2); // mix timeline
+      writeVarint(out, 1); // frame count
+      writeVarint(out, 0); // bezier count
+      for (let value = 0; value < 4; value++) writeFloat(out, 0); // time plus three mix values
+    }
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // deform timeline skins
+    if (allTimelineFamilies) {
+      writeVarint(out, 0); // skin index
+      writeVarint(out, 1); // slots
+      writeVarint(out, 0); // slot index
+      writeVarint(out, 1); // attachments
+      writeVarint(out, 1); // 'body-attachment'
+      out.push(1); // attachment-sequence timeline
+      writeVarint(out, 1); // frame count
+      writeFloat(out, 0); // time
+      writeInt(out, 0); // packed mode and index
+      writeFloat(out, 0); // delay
+    }
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // draw order frames
+    if (allTimelineFamilies) {
+      writeFloat(out, 0); // time
+      writeVarint(out, 0); // slot offsets
+    }
+    writeVarint(out, allTimelineFamilies ? 1 : 0); // event frames
+    if (allTimelineFamilies) {
+      writeFloat(out, 0); // time
+      writeVarint(out, 0); // event index
+      writeVarint(out, 0); // int value
+      writeFloat(out, 0); // float value
+      out.push(0); // no string override
+    }
   }
   return Uint8Array.from(out);
 }
