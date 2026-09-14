@@ -1,7 +1,16 @@
 import type { SpineBinaryRegistry, SpineBinaryTimelineContext } from '@flighthq/types/contract';
 import { SpineBinaryTimelineKind } from '@flighthq/types/contract';
 
-import { spineBinaryTimelineReaders } from './spineBinaryParse';
+import {
+  spineBinaryBoneTimelineReader,
+  spineBinaryDeformTimelineReader,
+  spineBinaryDrawOrderTimelineReader,
+  spineBinaryEventTimelineReader,
+  spineBinaryIkTimelineReader,
+  spineBinaryPathTimelineReader,
+  spineBinarySlotTimelineReader,
+  spineBinaryTransformTimelineReader,
+} from './spineBinaryParse';
 import { registerSpineBinaryTimelineHandler } from './spineBinaryRegistry';
 
 /** Registers all eight animation timeline-family handlers. */
@@ -17,33 +26,33 @@ export function registerSpineBinaryTimelineHandlers(registry: SpineBinaryRegistr
 }
 
 export function spineBinaryBoneTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.bone(context);
+  spineBinaryBoneTimelineReader(context);
 }
 
 export function spineBinaryDeformTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.deform(context);
+  spineBinaryDeformTimelineReader(context);
 }
 
 export function spineBinaryDrawOrderTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.drawOrder(context);
+  spineBinaryDrawOrderTimelineReader(context);
 }
 
 export function spineBinaryEventTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.event(context);
+  spineBinaryEventTimelineReader(context);
 }
 
 export function spineBinaryIkTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.ik(context);
+  spineBinaryIkTimelineReader(context);
 }
 
 export function spineBinaryPathTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.path(context);
+  spineBinaryPathTimelineReader(context);
 }
 
 export function spineBinarySlotTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.slot(context);
+  spineBinarySlotTimelineReader(context);
 }
 
 export function spineBinaryTransformTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTimelineReaders.transform(context);
+  spineBinaryTransformTimelineReader(context);
 }
