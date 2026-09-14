@@ -82,6 +82,35 @@ const SPINE_TIMELINE_READER_SYMBOLS = [
   'readSpineBinaryTransformTimelines',
 ] as const;
 
+const SWF_DEFINITION_HANDLER_SYMBOLS = [
+  'handleSwfBackgroundColorTag',
+  'handleSwfBoundedDefinitionTag',
+  'handleSwfButtonDefinitionTag',
+  'handleSwfEmbeddedImageDefinitionTag',
+  'handleSwfExportAssetsTag',
+  'handleSwfFontDefinitionTag',
+  'handleSwfFontInfoTag',
+  'handleSwfJpegTablesTag',
+  'handleSwfLegacyImageDefinitionTag',
+  'handleSwfLosslessBitmapDefinitionTag',
+  'handleSwfScalingGridTag',
+  'handleSwfSoundDefinitionTag',
+  'handleSwfVideoStreamDefinitionTag',
+] as const;
+
+const SWF_PLACEMENT_HANDLER_SYMBOLS = ['handleSwfPlaceObjectTag', 'handleSwfRemoveObjectTag'] as const;
+
+const SWF_SCRIPT_HANDLER_SYMBOLS = ['handleSwfDoAbcTag', 'handleSwfDoActionTag', 'handleSwfDoInitActionTag'] as const;
+
+const SWF_SOUND_HANDLER_SYMBOLS = [
+  'handleSwfSoundStreamBlockTag',
+  'handleSwfSoundStreamHeadTag',
+  'handleSwfStartSound2Tag',
+  'handleSwfStartSoundTag',
+] as const;
+
+const SWF_TIMELINE_HANDLER_SYMBOLS = ['handleSwfFrameLabelTag', 'handleSwfSceneAndFrameLabelDataTag'] as const;
+
 const CASES: readonly FormatParserTreeShakingCase[] = [
   {
     allRegistrar: 'registerAllGltfHandlers',
@@ -316,6 +345,64 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     name: 'Rive',
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: ['createRiveImportRegistry', 'registerRiveCoreObjectHandler'],
+  },
+  {
+    allRegistrar: 'registerAllSwfTagHandlers',
+    contractOnlyExports: [
+      ...SWF_DEFINITION_HANDLER_SYMBOLS,
+      ...SWF_PLACEMENT_HANDLER_SYMBOLS,
+      ...SWF_SCRIPT_HANDLER_SYMBOLS,
+      ...SWF_SOUND_HANDLER_SYMBOLS,
+      ...SWF_TIMELINE_HANDLER_SYMBOLS,
+    ],
+    families: [
+      {
+        modules: [],
+        name: 'definitions',
+        registrar: 'registerSwfDefinitionTagHandlers',
+        symbols: SWF_DEFINITION_HANDLER_SYMBOLS,
+      },
+      {
+        modules: [],
+        name: 'placement',
+        registrar: 'registerSwfPlacementTagHandlers',
+        symbols: SWF_PLACEMENT_HANDLER_SYMBOLS,
+      },
+      {
+        modules: [],
+        name: 'scripts',
+        registrar: 'registerSwfScriptTagHandlers',
+        symbols: SWF_SCRIPT_HANDLER_SYMBOLS,
+      },
+      {
+        modules: [],
+        name: 'sound',
+        registrar: 'registerSwfSoundTagHandlers',
+        symbols: SWF_SOUND_HANDLER_SYMBOLS,
+      },
+      {
+        modules: [],
+        name: 'timeline',
+        registrar: 'registerSwfTimelineTagHandlers',
+        symbols: SWF_TIMELINE_HANDLER_SYMBOLS,
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['createScene2DFromSwf'],
+        families: ['definitions', 'placement', 'scripts', 'sound', 'timeline'],
+        name: 'zero-config document importer',
+      },
+      {
+        exports: ['createScene2DImportFromSwf'],
+        families: ['definitions', 'placement', 'scripts', 'sound', 'timeline'],
+        name: 'zero-config detailed importer',
+      },
+    ],
+    leanExports: ['createScene2DFromSwfWithTagHandlers', 'createScene2DImportFromSwfWithTagHandlers'],
+    name: 'SWF',
+    packageDirectory: 'swf',
+    publicInfrastructureExports: ['createSwfTagHandlerRegistry', 'registerSwfTagHandler'],
   },
 ];
 
