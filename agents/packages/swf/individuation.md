@@ -44,17 +44,21 @@ Run `npm run capabilities:individuation`. On the tree that produced this doc:
 
 | Reading | Total | Composition |
 | --- | --- | --- |
-| A — discriminated | **80** | 40 non-tag rows + 40 tag classes |
-| B — same dispatch arm | **66** | 40 non-tag rows + 26 tag classes |
+| A — discriminated | **81** | 62 non-tag rows + 19 tag classes |
+| B — same dispatch arm | **80** | 62 non-tag rows + 18 tag classes |
 | committed | 82 | — |
 
-Reading A merges two row pairs the importer genuinely cannot tell apart: `ExportAssets`/`SymbolClass`
-and `PlaceObject3`/`PlaceObject4`. Reading B additionally collapses the fonts, the JPEG family, the
-buttons, and — in one class — shapes 1–4, both texts, both morph shapes, and edit text.
+Reading A merges one row pair the importer genuinely cannot tell apart: `PlaceObject3`/`PlaceObject4`.
+Reading B additionally collapses `DefineText`/`DefineText2` and `DefineBitsJpeg3`/`DefineBitsJpeg4`.
 
-**Neither is 85.** The prediction that splitting the three collapsed entries would raise 82 to 85 applied
-the rule to the collapsed rows only; the rule applies to the split rows too, and there it *merges*. Both
-measured numbers are below the committed one.
+The format parser registry refactor moved most tag dispatch from source-level switch arms into registered
+handlers, which is why the non-tag row count rose from 40 to 62 and the tag class count dropped from 40
+to 19 (A) / 18 (B). The readings converged because the registry gives each handler one arm — the coarse
+multi-tag collapses Reading B used to produce (fonts, shapes 1–4, both morph shapes) no longer occur in
+source. **This is the refactor-instability finding from below, at scale**: the same importer, the same
+files, the same behaviour, and both readings moved because the dispatch *style* changed.
+
+**Neither reading matches the committed 82.** Both measured numbers are below it.
 
 ## The finding that outranks both numbers
 
@@ -89,7 +93,7 @@ decided; it does not show the rule decides.
 `npm run capabilities:tag-dispatch` cross-checks the declared list against the tags the importer actually
 dispatches on. **It reports and does not enforce, and it is deliberately absent from `npm run check`.**
 
-**The ceiling is 42 of 82.** Only capabilities whose identity is a tag can be checked this way;
+**The ceiling is 20 of 82.** Only capabilities whose identity is a tag can be checked this way;
 everything individuated by a fill kind, a stroke property, a placement flag bit or a backend axis is
 invisible to it. The script measures and prints that number on every run rather than carrying it in
 prose, so it cannot go stale while looking authoritative.
@@ -133,7 +137,7 @@ one site and cannot see that two writers converge; the silent-drop sweep sees a 
 value is later consumed. This one names the convergence and still cannot see the consumer, so it reports
 where a distinction was *available to lose*, not where losing it cost anything.
 
-**Measured: 192 candidates, of which 21 of 31 multi-cause sentinels report nothing at any of their
+**Measured: 202 candidates, of which 24 of 33 multi-cause sentinels report nothing at any of their
 returns.** The remaining ten are already resolved or partly resolved by diagnostic wiring.
 
 **That number moved under this doc without the doc noticing, which is why the check exists.** It read 23
