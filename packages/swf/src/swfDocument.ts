@@ -64,6 +64,11 @@ import type {
   SwfDocumentImport,
   SwfJpegAlphaPayload,
   SwfNodeAppearance,
+  SwfTagHandler,
+  SwfTagHandlerRegistry,
+  SwfTagParseState,
+  SwfTagReader,
+  SwfTagTimelineState,
   Scale9Shape,
   Shape,
   ShapeData,
@@ -114,6 +119,14 @@ export function createScene2DFromSwf(source: Uint8Array, diagnostics?: ImportDia
   return createScene2DImportFromSwf(source, diagnostics)?.document ?? null;
 }
 
+export function createScene2DFromSwfWithTagHandlers(
+  source: Uint8Array,
+  registry: Readonly<SwfTagHandlerRegistry>,
+  diagnostics?: ImportDiagnostic[],
+): Scene2DDocument | null {
+  return createScene2DImportFromSwfWithTagHandlers(source, registry, diagnostics)?.document ?? null;
+}
+
 // The full import: the document, plus the placement appearance no node can carry. SWF puts a blend mode
 // and a filter list on the same record as the matrix, and Flight expresses neither on a node — an
 // advanced blend needs a BlendEffect and an effect is a descriptor a caller runs explicitly, since
@@ -125,8 +138,21 @@ export function createScene2DImportFromSwf(
 ): SwfDocumentImport | null {
   const file = readSwfFile(source, diagnostics);
   if (file === null) return null;
-  const { frameRate, parsed, stageBounds } = file;
+  return instantiateSwfFile(file, diagnostics);
+}
 
+export function createScene2DImportFromSwfWithTagHandlers(
+  source: Uint8Array,
+  registry: Readonly<SwfTagHandlerRegistry>,
+  diagnostics?: ImportDiagnostic[],
+): SwfDocumentImport | null {
+  const file = readSwfFile(source, diagnostics, registry);
+  if (file === null) return null;
+  return instantiateSwfFile(file, diagnostics);
+}
+
+function instantiateSwfFile(file: SwfFile, diagnostics: ImportDiagnostic[] | undefined): SwfDocumentImport | null {
+  const { frameRate, parsed, stageBounds } = file;
   const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
@@ -147,7 +173,6 @@ export function createScene2DImportFromSwf(
     return null;
   }
   const imageResources = createSwfImageResources(parsed);
-
   const out = allocateEntity<SwfDocumentImport>();
   initializeSwfDocumentImport(
     out,
@@ -226,38 +251,73 @@ export function createScene2DSymbolFromSwf(
   );
 }
 
-export function initializeSwfDocumentImport(
-  out: EntityConstruction<SwfDocumentImport>,
-  appearances: SwfNodeAppearance[],
-  document: Scene2DDocument,
-  jpegAlphaPayloads: SwfJpegAlphaPayload[],
-): void {
-  out.appearances = appearances;
-  out.document = document;
-  out.jpegAlphaPayloads = jpegAlphaPayloads;
+export function createSwfDefaultTagHandlerRegistry(): SwfTagHandlerRegistry {
+  const registry: SwfTagHandlerRegistry = new Map<number, SwfTagHandler>();
+  // Placement tags
+  registry.set(TAG_PLACE_OBJECT, handleSwfPlaceObjectTag);
+  registry.set(TAG_PLACE_OBJECT_2, handleSwfPlaceObjectTag);
+  registry.set(TAG_PLACE_OBJECT_3, handleSwfPlaceObjectTag);
+  registry.set(TAG_PLACE_OBJECT_4, handleSwfPlaceObjectTag);
+  registry.set(TAG_REMOVE_OBJECT, handleSwfRemoveObjectTag);
+  registry.set(TAG_REMOVE_OBJECT_2, handleSwfRemoveObjectTag);
+  // Frame control tags
+  registry.set(TAG_FRAME_LABEL, handleSwfFrameLabelTag);
+  registry.set(TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA, handleSwfSceneAndFrameLabelDataTag);
+  // Script tags
+  registry.set(TAG_DO_ABC, handleSwfDoAbcTag);
+  registry.set(TAG_DO_ABC_ANONYMOUS, handleSwfDoAbcTag);
+  registry.set(TAG_DO_ACTION, handleSwfDoActionTag);
+  registry.set(TAG_DO_INIT_ACTION, handleSwfDoInitActionTag);
+  // Definition tags
+  registry.set(TAG_SET_BACKGROUND_COLOR, handleSwfBackgroundColorTag);
+  registry.set(TAG_DEFINE_SCALING_GRID, handleSwfScalingGridTag);
+  registry.set(TAG_JPEG_TABLES, handleSwfJpegTablesTag);
+  registry.set(TAG_DEFINE_BITS, handleSwfLegacyImageDefinitionTag);
+  registry.set(TAG_DEFINE_BITS_JPEG_2, handleSwfEmbeddedImageDefinitionTag);
+  registry.set(TAG_DEFINE_BITS_JPEG_3, handleSwfEmbeddedImageDefinitionTag);
+  registry.set(TAG_DEFINE_BITS_JPEG_4, handleSwfEmbeddedImageDefinitionTag);
+  registry.set(TAG_DEFINE_BITS_LOSSLESS, handleSwfLosslessBitmapDefinitionTag);
+  registry.set(TAG_DEFINE_BITS_LOSSLESS_2, handleSwfLosslessBitmapDefinitionTag);
+  registry.set(TAG_DEFINE_BUTTON, handleSwfButtonDefinitionTag);
+  registry.set(TAG_DEFINE_BUTTON_2, handleSwfButtonDefinitionTag);
+  registry.set(TAG_DEFINE_FONT, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_2, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_3, handleSwfFontDefinitionTag);
+  registry.set(TAG_DEFINE_FONT_INFO, handleSwfFontInfoTag);
+  registry.set(TAG_DEFINE_FONT_INFO_2, handleSwfFontInfoTag);
+  registry.set(TAG_EXPORT_ASSETS, handleSwfExportAssetsTag);
+  registry.set(TAG_SYMBOL_CLASS, handleSwfExportAssetsTag);
+  // Bounded definitions (shapes, text, morph shapes)
+  registry.set(TAG_DEFINE_SHAPE, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_2, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_3, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_SHAPE_4, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_TEXT, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_TEXT_2, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_EDIT_TEXT, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_MORPH_SHAPE, handleSwfBoundedDefinitionTag);
+  registry.set(TAG_DEFINE_MORPH_SHAPE_2, handleSwfBoundedDefinitionTag);
+  // Sound tags
+  registry.set(TAG_DEFINE_SOUND, handleSwfSoundDefinitionTag);
+  registry.set(TAG_START_SOUND, handleSwfStartSoundTag);
+  registry.set(TAG_START_SOUND_2, handleSwfStartSound2Tag);
+  registry.set(TAG_SOUND_STREAM_HEAD, handleSwfSoundStreamHeadTag);
+  registry.set(TAG_SOUND_STREAM_HEAD_2, handleSwfSoundStreamHeadTag);
+  registry.set(TAG_SOUND_STREAM_BLOCK, handleSwfSoundStreamBlockTag);
+  // Video tags
+  registry.set(TAG_DEFINE_VIDEO_STREAM, handleSwfVideoStreamDefinitionTag);
+  return registry;
 }
 
-export function initializeTimelineAudioCue(
-  out: EntityConstruction<TimelineAudioCue>,
-  duration: number | null,
-  envelope: readonly TimelineAudioEnvelopePoint[],
-  frame: number,
-  loops: number,
-  offset: number,
-  resource: AudioResource,
-  skipIfPlaying: boolean,
-  stop: boolean,
-): void {
-  out.duration = duration;
-  out.envelope = envelope;
-  out.frame = frame;
-  out.gain = 1;
-  out.kind = TimelineAudioCueKind;
-  out.loops = loops;
-  out.offset = offset;
-  out.resource = resource;
-  out.skipIfPlaying = skipIfPlaying;
-  out.stop = stop;
+export function handleSwfBackgroundColorTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfBackgroundColor(body as SwfReader, state as SwfParseState);
+  return true;
 }
 
 function assignTimelineSourceFields(
@@ -275,26 +335,39 @@ function assignTimelineSourceFields(
   out.totalFrames = totalFrames;
 }
 
-export function initializeTimelineStreamAudioCue(
-  out: EntityConstruction<TimelineStreamAudioCue>,
-  frame: number,
-  resource: AudioResource,
-): void {
-  out.frame = frame;
-  out.gain = 1;
-  out.kind = TimelineStreamAudioCueKind;
-  out.resource = resource;
+export function handleSwfBoundedDefinitionTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  return readSwfBoundedDefinition(body as SwfReader, state as SwfParseState, tag);
 }
 
-// Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
-// `createScene2DSymbolFromSwf` to instantiate one.
-export function readSwfExportedSymbolNames(source: Uint8Array): string[] {
-  const file = readSwfFile(source);
-  return file === null ? [] : [...file.parsed.linkages.values()];
+export function handleSwfButtonDefinitionTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfButtonDefinition(body as SwfReader, state as SwfParseState, tag === TAG_DEFINE_BUTTON_2 ? 2 : 1);
+  return true;
 }
 
-export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
-  registerScene2DDocumentImporter(registry, 'swf', matchesSwfDocument, (source) => createScene2DFromSwf(source));
+export function handleSwfDoAbcTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  state.abcBlobs.push({
+    bytes: readSwfAbcPayload(body as SwfReader, tag === TAG_DO_ABC),
+    named: tag === TAG_DO_ABC,
+  });
+  return true;
 }
 
 interface SwfMatrix {
@@ -557,7 +630,11 @@ interface SwfFile {
   stageBounds: SwfRectangle;
 }
 
-function readSwfFile(source: Uint8Array, diagnostics?: ImportDiagnostic[]): SwfFile | null {
+function readSwfFile(
+  source: Uint8Array,
+  diagnostics?: ImportDiagnostic[],
+  registry?: Readonly<SwfTagHandlerRegistry>,
+): SwfFile | null {
   const uncompressed = uncompressSwfSource(source, diagnostics);
   if (uncompressed === null) return null;
 
@@ -608,116 +685,30 @@ function readSwfFile(source: Uint8Array, diagnostics?: ImportDiagnostic[]): SwfF
     return null;
   }
 
-  const parsed = readSwfTags(body, diagnostics);
+  const parsed = readSwfTags(body, diagnostics, registry);
   return parsed === null ? null : { frameRate, parsed, stageBounds };
 }
 
-// Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
-// that and is returned as-is, with no copy. `CWS` and `ZWS` compress everything after the 8-byte header,
-// so the body is inflated through the registered decompressor and spliced back behind a header rewritten
-// to `FWS` — the declared length already counts uncompressed bytes, so it carries over untouched.
-// Compression the caller has not registered a decompressor for is reported as the document's null
-// sentinel, exactly like a malformed file: the bytes are unreadable either way.
-function uncompressSwfSource(source: Uint8Array, diagnostics: ImportDiagnostic[] | undefined): Uint8Array | null {
-  if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) {
+export function handleSwfDoActionTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
+  if (script !== null) {
+    timeline.actions.set(timeline.frames.length + 1, script);
+  } else {
     reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.invalid-signature',
-      'uncompressSwfSource',
-      {
-        length: source.length,
-      },
+      state.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'swf.frame-script-declined',
+      'readSwfTimeline',
+      { capability: 'swf.script.do-action', frame: timeline.frames.length + 1 },
     );
-    return null;
   }
-  const signature = source[0];
-  if (signature === FWS_SIGNATURE) return source;
-
-  const compression =
-    signature === CWS_SIGNATURE ? Compression.Deflate : signature === ZWS_SIGNATURE ? Compression.Lzma : null;
-  if (compression === null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.unknown-container',
-      'uncompressSwfSource',
-      {
-        signature,
-      },
-    );
-    return null;
-  }
-  const decompress = getDecompressor(compression);
-  // Distinct from a malformed body on purpose. Both return the same null sentinel, but a caller that
-  // never registered a decompressor has a file it could read after one registration, while a corrupt
-  // stream is unreadable however the caller is configured — and only the crumb can tell them apart.
-  if (decompress === null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.no-decompressor-registered',
-      'uncompressSwfSource',
-      { compression },
-    );
-    return null;
-  }
-
-  const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
-  header.readUint32();
-  const fileLength = header.readUint32();
-  if (fileLength < MIN_SWF_LENGTH) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.declared-length-too-small',
-      'uncompressSwfSource',
-      {
-        fileLength,
-      },
-    );
-    return null;
-  }
-
-  // LZMA puts a compressed length and the 5 property bytes between the header and its stream; zlib starts
-  // its stream immediately. Either way the decompressor receives the stream itself.
-  const bodyLength = fileLength - SWF_PREFIX_LENGTH;
-  const streamStart = compression === Compression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
-  if (streamStart > source.length) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.truncated-container',
-      'uncompressSwfSource',
-      {
-        length: source.length,
-        streamStart,
-      },
-    );
-    return null;
-  }
-  const framing = compression === Compression.Deflate ? CompressionFraming.Rfc1950 : CompressionFraming.Raw;
-  const body = decompress(source.subarray(streamStart), bodyLength, framing);
-  if (body === null || body.length < bodyLength) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.decompression-failed',
-      'uncompressSwfSource',
-      {
-        compression,
-        expected: bodyLength,
-        received: body === null ? -1 : body.length,
-      },
-    );
-    return null;
-  }
-
-  const uncompressed = new Uint8Array(SWF_PREFIX_LENGTH + bodyLength);
-  uncompressed.set(source.subarray(0, SWF_PREFIX_LENGTH));
-  uncompressed[0] = FWS_SIGNATURE;
-  uncompressed.set(body.subarray(0, bodyLength), SWF_PREFIX_LENGTH);
-  return uncompressed;
+  return true;
 }
 
 function matchesSwfDocument(source: Uint8Array, context: Readonly<Scene2DDocumentImportContext>): boolean {
@@ -1769,7 +1760,11 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
   };
 }
 
-function readSwfTags(reader: SwfReader, diagnostics: ImportDiagnostic[] | undefined): SwfTagResult | null {
+function readSwfTags(
+  reader: SwfReader,
+  diagnostics: ImportDiagnostic[] | undefined,
+  registry?: Readonly<SwfTagHandlerRegistry>,
+): SwfTagResult | null {
   const state: SwfParseState = {
     abcBlobs: [],
     backgroundColor: null,
@@ -1801,7 +1796,7 @@ function readSwfTags(reader: SwfReader, diagnostics: ImportDiagnostic[] | undefi
     videoTextures: new Map<number, Texture2D>(),
     videos: new Map<number, SwfVideoDefinition>(),
   };
-  const timeline = readSwfTimeline(reader, state);
+  const timeline = readSwfTimeline(reader, state, registry ?? createSwfDefaultTagHandlerRegistry());
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
   resolveSwfSoundClassCues(state);
@@ -1909,15 +1904,21 @@ function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): vo
   }
 }
 
-function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
-  const placements = new Map<number, SwfPlacement>();
-  const actions = new Map<number, FrameScript>();
-  const cues: TimelineCue[] = [];
-  const frames: Map<number, SwfPlacement>[] = [];
-  const labels: TimelineLabel[] = [];
-  const streamChunks: Uint8Array[] = [];
-  let streamFormat = -1;
-  let streamStartFrame = 1;
+function readSwfTimeline(
+  reader: SwfReader,
+  state: SwfParseState,
+  registry: Readonly<SwfTagHandlerRegistry>,
+): SwfTimeline | null {
+  const timeline: SwfTagTimelineState = {
+    actions: new Map<number, FrameScript>(),
+    cues: [],
+    frames: [],
+    labels: [],
+    placements: new Map<number, SwfPlacement>(),
+    streamChunks: [],
+    streamFormat: -1,
+    streamStartFrame: 1,
+  };
 
   while (reader.pos < reader.end && reader.valid) {
     const tagHeader = reader.readUint16();
@@ -1931,147 +1932,37 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     reader.pos = bodyEnd;
     if (code === TAG_END) break;
     if (code === TAG_SHOW_FRAME) {
-      state.remainingFrameEntries -= placements.size + 1;
+      state.remainingFrameEntries -= timeline.placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
-      frames.push(new Map(placements));
-    } else if (code === TAG_DO_ABC || code === TAG_DO_ABC_ANONYMOUS) {
-      state.abcBlobs.push({ bytes: readSwfAbcPayload(body, code === TAG_DO_ABC), named: code === TAG_DO_ABC });
-    } else if (code === TAG_DO_INIT_ACTION) {
-      // An init action runs once for the sprite it names, before that sprite's own first frame, so a
-      // recognized block belongs to frame 1 of that sprite rather than to the timeline reading the tag.
-      const spriteId = body.readUint16();
-      const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
-      if (script === null) {
-        // Same decline as DoAction below and the same Skip reasoning: the bytecode is outside this
-        // importer's scope by charter rather than data it failed to read. It reports the sprite it names
-        // rather than a frame, because an init action runs before that sprite's first frame.
-        reportImportDiagnostic(
-          state.diagnostics,
-          ImportDiagnosticSeverity.Skip,
-          'swf.frame-script-declined',
-          'readSwfTimeline',
-          { capability: 'swf.script.do-init-action', characterId: spriteId },
-        );
-      } else {
-        state.pendingInitActions.push({ characterId: spriteId, script });
-      }
-    } else if (code === TAG_DO_ACTION) {
-      // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
-      const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
-      if (script !== null) actions.set(frames.length + 1, script);
-      // A block is recognized only when EVERY action in it is a playback command, because honouring the
-      // legible half would misrepresent what the frame does. Skip rather than Drop: the bytecode is
-      // outside this importer's scope by charter, not data it failed to read.
-      else {
-        reportImportDiagnostic(
-          state.diagnostics,
-          ImportDiagnosticSeverity.Skip,
-          'swf.frame-script-declined',
-          'readSwfTimeline',
-          {
-            capability: 'swf.script.do-action',
-            frame: frames.length + 1,
-          },
-        );
-      }
-    } else if (code === TAG_FRAME_LABEL) {
-      addSwfTimelineLabel(labels, frames.length + 1, body.readString());
-    } else if (code === TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA) {
-      readSwfSceneAndFrameLabelData(body, labels, state.diagnostics);
-    } else if (code === TAG_DEFINE_SCALING_GRID) {
-      readSwfScalingGrid(body, state);
-    } else if (code === TAG_PLACE_OBJECT) {
-      readLegacyPlaceObject(body, placements);
-    } else if (code === TAG_PLACE_OBJECT_2) {
-      readPlaceObject(body, placements, false, state.diagnostics);
-    } else if (code === TAG_REMOVE_OBJECT) {
-      readLegacyRemoveObject(body, placements);
-    } else if (code === TAG_REMOVE_OBJECT_2) {
-      placements.delete(body.readUint16());
-    } else if (code === TAG_JPEG_TABLES) {
-      state.jpegTables = body.source.subarray(body.pos, body.end);
-    } else if (code === TAG_DEFINE_BITS) {
-      readSwfLegacyImageDefinition(body, state);
-    } else if (code === TAG_DEFINE_BUTTON || code === TAG_DEFINE_BUTTON_2) {
-      readSwfButtonDefinition(body, state, code === TAG_DEFINE_BUTTON_2 ? 2 : 1);
-    } else if (code === TAG_DEFINE_FONT || code === TAG_DEFINE_FONT_2 || code === TAG_DEFINE_FONT_3) {
-      readSwfFontDefinition(body, state, code);
-    } else if (code === TAG_DEFINE_FONT_INFO || code === TAG_DEFINE_FONT_INFO_2) {
-      readSwfFontInfo(body, state, code === TAG_DEFINE_FONT_INFO_2);
-    } else if (code === TAG_SET_BACKGROUND_COLOR) {
-      readSwfBackgroundColor(body, state);
-    } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
-      readSwfLinkages(body, state.linkages);
-    } else if (code === TAG_DEFINE_BITS_JPEG_2 || code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
-      readSwfEmbeddedImageDefinition(body, state, code);
-    } else if (code === TAG_DEFINE_BITS_LOSSLESS || code === TAG_DEFINE_BITS_LOSSLESS_2) {
-      if (!readSwfLosslessBitmapDefinition(body, state, code === TAG_DEFINE_BITS_LOSSLESS_2)) return null;
-    } else if (code === TAG_DEFINE_SOUND) {
-      readSwfSoundDefinition(body, state);
-    } else if (code === TAG_DEFINE_VIDEO_STREAM) {
-      if (!readSwfVideoDefinition(body, state)) return null;
-    } else if (isSwfBoundedDefinitionTag(code)) {
-      if (!readSwfBoundedDefinition(body, state, code)) return null;
+      timeline.frames.push(new Map(timeline.placements));
     } else if (code === TAG_DEFINE_SPRITE) {
       const spriteId = body.readUint16();
       body.readUint16();
       if (!body.valid || spriteId === 0 || state.definedCharacters.has(spriteId)) return null;
       state.definedCharacters.add(spriteId);
       const spriteReader = new SwfReader(body.source, body.pos, body.end);
-      const spriteTimeline = readSwfTimeline(spriteReader, state);
+      const spriteTimeline = readSwfTimeline(spriteReader, state, registry);
       if (spriteTimeline === null || spriteReader.pos !== spriteReader.end) {
         return null;
       }
       state.sprites.set(spriteId, spriteTimeline);
-    } else if (code === TAG_PLACE_OBJECT_3 || code === TAG_PLACE_OBJECT_4) {
-      readPlaceObject(body, placements, true, state.diagnostics);
-    } else if (code === TAG_START_SOUND) {
-      readSwfStartSound(body, state, cues, frames.length + 1);
-    } else if (code === TAG_START_SOUND_2) {
-      readSwfStartSound2(body, state, cues, frames.length + 1);
-    } else if (code === TAG_SOUND_STREAM_HEAD || code === TAG_SOUND_STREAM_HEAD_2) {
-      const declared = readSwfSoundStreamHead(body);
-      // A header declaring no samples per frame is the empty one an authoring tool writes into every
-      // sprite. Only a header that promises samples starts a stream.
-      if (declared >= 0) {
-        streamFormat = declared;
-        streamStartFrame = frames.length + 1;
-      }
-    } else if (code === TAG_SOUND_STREAM_BLOCK) {
-      if (streamFormat === SOUND_FORMAT_MP3) {
-        // Each MP3 block leads with its own sample count and seek offset; only the frames concatenate.
-        body.readUint16();
-        body.readUint16();
-        if (body.valid && body.pos < body.end) streamChunks.push(body.source.subarray(body.pos, body.end));
-      } else if (streamFormat >= 0) {
-        reportImportDiagnostic(
-          state.diagnostics,
-          ImportDiagnosticSeverity.Skip,
-          'swf.stream-sound-format',
-          'readSwfTimeline',
-          {
-            capability: 'swf.axis.sound-format-non-mp3',
-            format: streamFormat,
-          },
-        );
-      }
     } else {
-      reportSwfDeclinedTag(state.diagnostics, code);
+      const handler = registry.get(code);
+      if (handler !== undefined) {
+        if (!handler(body, code, state as SwfTagParseState, timeline, state.diagnostics)) return null;
+      } else {
+        reportSwfDeclinedTag(state.diagnostics, code);
+      }
     }
     if (!body.valid) return null;
   }
 
   if (!reader.valid) return null;
-  // A timeline that never shows a frame still has the one display list its tags built.
-  if (frames.length === 0) frames.push(placements);
-  appendSwfStreamSoundCue(state, cues, streamChunks, streamStartFrame);
-  // A label or cue authored after the last ShowFrame names a frame the timeline never reaches, so it is
-  // dropped rather than bound to a frame that does not exist. Found by auditing the claim rather than the
-  // wire: `swf.scene-names` covered only the scene table, while THIS is the other way that tag's data is
-  // lost, and silence about it was being reported as trustworthy.
-  const reachableCues = cues.filter((cue) => cue.frame <= frames.length);
-  const reachableLabels = labels.filter((label) => label.frame <= frames.length);
-  if (reachableLabels.length !== labels.length) {
+  if (timeline.frames.length === 0) timeline.frames.push(timeline.placements);
+  appendSwfStreamSoundCue(state, timeline.cues, timeline.streamChunks, timeline.streamStartFrame);
+  const reachableCues = timeline.cues.filter((cue) => cue.frame <= timeline.frames.length);
+  const reachableLabels = timeline.labels.filter((label) => label.frame <= timeline.frames.length);
+  if (reachableLabels.length !== timeline.labels.length) {
     reportImportDiagnostic(
       state.diagnostics,
       ImportDiagnosticSeverity.Drop,
@@ -2079,27 +1970,27 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       'readSwfTimeline',
       {
         capability: 'swf.timeline.frame-label',
-        dropped: labels.length - reachableLabels.length,
-        frames: frames.length,
+        dropped: timeline.labels.length - reachableLabels.length,
+        frames: timeline.frames.length,
       },
     );
   }
-  if (reachableCues.length !== cues.length) {
+  if (reachableCues.length !== timeline.cues.length) {
     reportImportDiagnostic(
       state.diagnostics,
       ImportDiagnosticSeverity.Drop,
       'swf.cue-past-last-frame',
       'readSwfTimeline',
       {
-        dropped: cues.length - reachableCues.length,
-        frames: frames.length,
+        dropped: timeline.cues.length - reachableCues.length,
+        frames: timeline.frames.length,
       },
     );
   }
   return {
-    actions,
+    actions: timeline.actions,
     cues: reachableCues,
-    frames,
+    frames: timeline.frames,
     labels: reachableLabels.sort(compareSwfTimelineLabelFrame),
   };
 }
@@ -2348,20 +2239,6 @@ function readSwfSceneAndFrameLabelData(
     const name = body.readString();
     if (body.valid) addSwfTimelineLabel(labels, frame + 1, name);
   }
-}
-
-function isSwfBoundedDefinitionTag(code: number): boolean {
-  return (
-    code === TAG_DEFINE_SHAPE ||
-    code === TAG_DEFINE_SHAPE_2 ||
-    code === TAG_DEFINE_SHAPE_3 ||
-    code === TAG_DEFINE_SHAPE_4 ||
-    code === TAG_DEFINE_TEXT ||
-    code === TAG_DEFINE_TEXT_2 ||
-    code === TAG_DEFINE_EDIT_TEXT ||
-    code === TAG_DEFINE_MORPH_SHAPE ||
-    code === TAG_DEFINE_MORPH_SHAPE_2
-  );
 }
 
 function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
@@ -3014,6 +2891,418 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
     width,
   });
   return true;
+}
+
+// ── Tag handlers ──────────────────────────────────────────────────────────────
+// Each handler matches the SwfTagHandler signature and delegates to the internal helpers above.
+// Exported through the contract lane so callers can assemble custom registries.
+
+export function handleSwfDoInitActionTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  const spriteId = body.readUint16();
+  const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
+  if (script === null) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'swf.frame-script-declined',
+      'readSwfTimeline',
+      { capability: 'swf.script.do-init-action', characterId: spriteId },
+    );
+  } else {
+    state.pendingInitActions.push({ characterId: spriteId, script });
+  }
+  return true;
+}
+
+export function handleSwfEmbeddedImageDefinitionTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfEmbeddedImageDefinition(body as SwfReader, state as SwfParseState, tag);
+  return true;
+}
+
+export function handleSwfExportAssetsTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfLinkages(body as SwfReader, state.linkages);
+  return true;
+}
+
+export function handleSwfFontDefinitionTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfFontDefinition(body as SwfReader, state as SwfParseState, tag);
+  return true;
+}
+
+export function handleSwfFontInfoTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfFontInfo(body as SwfReader, state as SwfParseState, tag === TAG_DEFINE_FONT_INFO_2);
+  return true;
+}
+
+export function handleSwfFrameLabelTag(
+  body: SwfTagReader,
+  _tag: number,
+  _state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  addSwfTimelineLabel(timeline.labels, timeline.frames.length + 1, body.readString());
+  return true;
+}
+
+export function handleSwfJpegTablesTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  state.jpegTables = body.source.subarray(body.pos, body.end);
+  return true;
+}
+
+export function handleSwfLegacyImageDefinitionTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfLegacyImageDefinition(body as SwfReader, state as SwfParseState);
+  return true;
+}
+
+export function handleSwfLosslessBitmapDefinitionTag(
+  body: SwfTagReader,
+  tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  return readSwfLosslessBitmapDefinition(body as SwfReader, state as SwfParseState, tag === TAG_DEFINE_BITS_LOSSLESS_2);
+}
+
+export function handleSwfPlaceObjectTag(
+  body: SwfTagReader,
+  tag: number,
+  _state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  if (tag === TAG_PLACE_OBJECT) {
+    readLegacyPlaceObject(body as SwfReader, timeline.placements as Map<number, SwfPlacement>);
+  } else {
+    const extended = tag === TAG_PLACE_OBJECT_3 || tag === TAG_PLACE_OBJECT_4;
+    readPlaceObject(body as SwfReader, timeline.placements as Map<number, SwfPlacement>, extended, diagnostics);
+  }
+  return true;
+}
+
+export function handleSwfRemoveObjectTag(
+  body: SwfTagReader,
+  tag: number,
+  _state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  if (tag === TAG_REMOVE_OBJECT) {
+    readLegacyRemoveObject(body as SwfReader, timeline.placements as Map<number, SwfPlacement>);
+  } else {
+    timeline.placements.delete(body.readUint16());
+  }
+  return true;
+}
+
+export function handleSwfScalingGridTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfScalingGrid(body as SwfReader, state as SwfParseState);
+  return true;
+}
+
+export function handleSwfSceneAndFrameLabelDataTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfSceneAndFrameLabelData(body as SwfReader, timeline.labels, state.diagnostics);
+  return true;
+}
+
+export function handleSwfSoundDefinitionTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfSoundDefinition(body as SwfReader, state as SwfParseState);
+  return true;
+}
+
+export function handleSwfSoundStreamBlockTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  if (timeline.streamFormat === SOUND_FORMAT_MP3) {
+    body.readUint16();
+    body.readUint16();
+    if (body.valid && body.pos < body.end) timeline.streamChunks.push(body.source.subarray(body.pos, body.end));
+  } else if (timeline.streamFormat >= 0) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'swf.stream-sound-format',
+      'readSwfTimeline',
+      { capability: 'swf.axis.sound-format-non-mp3', format: timeline.streamFormat },
+    );
+  }
+  return true;
+}
+
+export function handleSwfSoundStreamHeadTag(
+  body: SwfTagReader,
+  _tag: number,
+  _state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  const declared = readSwfSoundStreamHead(body as SwfReader);
+  if (declared >= 0) {
+    timeline.streamFormat = declared;
+    timeline.streamStartFrame = timeline.frames.length + 1;
+  }
+  return true;
+}
+
+export function handleSwfStartSound2Tag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfStartSound2(body as SwfReader, state as SwfParseState, timeline.cues, timeline.frames.length + 1);
+  return true;
+}
+
+export function handleSwfStartSoundTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  readSwfStartSound(body as SwfReader, state as SwfParseState, timeline.cues, timeline.frames.length + 1);
+  return true;
+}
+
+export function handleSwfVideoStreamDefinitionTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  return readSwfVideoDefinition(body as SwfReader, state as SwfParseState);
+}
+
+export function initializeSwfDocumentImport(
+  out: EntityConstruction<SwfDocumentImport>,
+  appearances: SwfNodeAppearance[],
+  document: Scene2DDocument,
+  jpegAlphaPayloads: SwfJpegAlphaPayload[],
+): void {
+  out.appearances = appearances;
+  out.document = document;
+  out.jpegAlphaPayloads = jpegAlphaPayloads;
+}
+
+export function initializeTimelineAudioCue(
+  out: EntityConstruction<TimelineAudioCue>,
+  duration: number | null,
+  envelope: readonly TimelineAudioEnvelopePoint[],
+  frame: number,
+  loops: number,
+  offset: number,
+  resource: AudioResource,
+  skipIfPlaying: boolean,
+  stop: boolean,
+): void {
+  out.duration = duration;
+  out.envelope = envelope;
+  out.frame = frame;
+  out.gain = 1;
+  out.kind = TimelineAudioCueKind;
+  out.loops = loops;
+  out.offset = offset;
+  out.resource = resource;
+  out.skipIfPlaying = skipIfPlaying;
+  out.stop = stop;
+}
+
+export function initializeTimelineStreamAudioCue(
+  out: EntityConstruction<TimelineStreamAudioCue>,
+  frame: number,
+  resource: AudioResource,
+): void {
+  out.frame = frame;
+  out.gain = 1;
+  out.kind = TimelineStreamAudioCueKind;
+  out.resource = resource;
+}
+
+// Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
+// `createScene2DSymbolFromSwf` to instantiate one.
+export function readSwfExportedSymbolNames(source: Uint8Array): string[] {
+  const file = readSwfFile(source);
+  return file === null ? [] : [...file.parsed.linkages.values()];
+}
+
+export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
+  registerScene2DDocumentImporter(registry, 'swf', matchesSwfDocument, (source) => createScene2DFromSwf(source));
+}
+
+// Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
+// that and is returned as-is, with no copy. `CWS` and `ZWS` compress everything after the 8-byte header,
+// so the body is inflated through the registered decompressor and spliced back behind a header rewritten
+// to `FWS` — the declared length already counts uncompressed bytes, so it carries over untouched.
+// Compression the caller has not registered a decompressor for is reported as the document's null
+// sentinel, exactly like a malformed file: the bytes are unreadable either way.
+export function uncompressSwfSource(source: Uint8Array, diagnostics?: ImportDiagnostic[]): Uint8Array | null {
+  if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.invalid-signature',
+      'uncompressSwfSource',
+      {
+        length: source.length,
+      },
+    );
+    return null;
+  }
+  const signature = source[0];
+  if (signature === FWS_SIGNATURE) return source;
+
+  const compression =
+    signature === CWS_SIGNATURE ? Compression.Deflate : signature === ZWS_SIGNATURE ? Compression.Lzma : null;
+  if (compression === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.unknown-container',
+      'uncompressSwfSource',
+      {
+        signature,
+      },
+    );
+    return null;
+  }
+  const decompress = getDecompressor(compression);
+  // Distinct from a malformed body on purpose. Both return the same null sentinel, but a caller that
+  // never registered a decompressor has a file it could read after one registration, while a corrupt
+  // stream is unreadable however the caller is configured — and only the crumb can tell them apart.
+  if (decompress === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.no-decompressor-registered',
+      'uncompressSwfSource',
+      { compression },
+    );
+    return null;
+  }
+
+  const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
+  header.readUint32();
+  const fileLength = header.readUint32();
+  if (fileLength < MIN_SWF_LENGTH) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.declared-length-too-small',
+      'uncompressSwfSource',
+      {
+        fileLength,
+      },
+    );
+    return null;
+  }
+
+  // LZMA puts a compressed length and the 5 property bytes between the header and its stream; zlib starts
+  // its stream immediately. Either way the decompressor receives the stream itself.
+  const bodyLength = fileLength - SWF_PREFIX_LENGTH;
+  const streamStart = compression === Compression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
+  if (streamStart > source.length) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.truncated-container',
+      'uncompressSwfSource',
+      {
+        length: source.length,
+        streamStart,
+      },
+    );
+    return null;
+  }
+  const framing = compression === Compression.Deflate ? CompressionFraming.Rfc1950 : CompressionFraming.Raw;
+  const body = decompress(source.subarray(streamStart), bodyLength, framing);
+  if (body === null || body.length < bodyLength) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.decompression-failed',
+      'uncompressSwfSource',
+      {
+        compression,
+        expected: bodyLength,
+        received: body === null ? -1 : body.length,
+      },
+    );
+    return null;
+  }
+
+  const uncompressed = new Uint8Array(SWF_PREFIX_LENGTH + bodyLength);
+  uncompressed.set(source.subarray(0, SWF_PREFIX_LENGTH));
+  uncompressed[0] = FWS_SIGNATURE;
+  uncompressed.set(body.subarray(0, bodyLength), SWF_PREFIX_LENGTH);
+  return uncompressed;
 }
 
 const CWS_SIGNATURE = 0x43;
