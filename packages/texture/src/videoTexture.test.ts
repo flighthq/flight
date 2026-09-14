@@ -1,5 +1,5 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { ImageResource, VideoResource } from '@flighthq/types/contract';
+import type { HostVideoProvider, ImageResource, VideoResource } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getTextureSource } from './texture';
@@ -19,6 +19,13 @@ import {
   setVideoTextureSource,
 } from './videoTexture';
 
+const testVideoHost = {
+  canPlayType: () => true,
+  getHeight: (source) => (source as HTMLVideoElement).videoHeight,
+  getWidth: (source) => (source as HTMLVideoElement).videoWidth,
+  isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
+} satisfies HostVideoProvider;
+
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
   return createVideoResource({
     readyState,
@@ -29,10 +36,10 @@ function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240):
 
 describe('advanceVideoTexture', () => {
   it('bumps the source and Texture versions and returns the new value', () => {
-    const vt = createVideoTexture(makeVideoResource());
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
     expect(vt.version).toBe(0xffffffff);
-    expect(advanceVideoTexture(vt)).toBe(0);
-    expect(advanceVideoTexture(vt)).toBe(1);
+    expect(advanceVideoTexture(testVideoHost, vt)).toBe(0);
+    expect(advanceVideoTexture(testVideoHost, vt)).toBe(1);
     expect(vt.version).toBe(1);
     expect(getTextureSource(vt)?.version).toBe(1);
   });
@@ -41,8 +48,8 @@ describe('advanceVideoTexture', () => {
 describe('cloneVideoTexture', () => {
   it('shares the source but deep-clones sampler and uv vectors', () => {
     const source = makeVideoResource();
-    const vt = createVideoTexture(source, { uvOffset: createVector2(2, 3) });
-    advanceVideoTexture(vt);
+    const vt = createVideoTexture(testVideoHost, source, { uvOffset: createVector2(2, 3) });
+    advanceVideoTexture(testVideoHost, vt);
     const clone = cloneVideoTexture(vt);
     expect(getTextureSource(clone)).toBe(getTextureSource(vt));
     expect(clone.sampler).not.toBe(vt.sampler);
@@ -54,9 +61,12 @@ describe('cloneVideoTexture', () => {
 
 describe('copyVideoTexture', () => {
   it('copies fields into out and is safe when out aliases source', () => {
-    const a = createVideoTexture(makeVideoResource(), { colorSpace: 'linear', uvScale: createVector2(4, 5) });
-    advanceVideoTexture(a);
-    const b = createVideoTexture(makeVideoResource());
+    const a = createVideoTexture(testVideoHost, makeVideoResource(), {
+      colorSpace: 'linear',
+      uvScale: createVector2(4, 5),
+    });
+    advanceVideoTexture(testVideoHost, a);
+    const b = createVideoTexture(testVideoHost, makeVideoResource());
     copyVideoTexture(b, a);
     expect(b.colorSpace).toBe('linear');
     expect(b.version).toBe(0);
@@ -70,7 +80,7 @@ describe('copyVideoTexture', () => {
 describe('createVideoTexture', () => {
   it('returns a universal srgb Texture with a borrowed host-image source', () => {
     const source = makeVideoResource();
-    const vt = createVideoTexture(source);
+    const vt = createVideoTexture(testVideoHost, source);
     expect(vt.colorSpace).toBe('srgb');
     expect((getTextureSource(vt) as ImageResource).source).toBe(source.element);
     expect(vt.version).toBe(0xffffffff);
@@ -78,12 +88,47 @@ describe('createVideoTexture', () => {
     expect(vt.uvScale.x).toBe(1);
     expect(vt.uvRotation).toBe(0);
   });
+
+  it('reads dimensions and readiness only through the supplied host provider', () => {
+    const resource = makeVideoResource(0, 320, 240);
+    const getHeight = vi.fn(() => 12);
+    const getWidth = vi.fn(() => 34);
+    const isReady = vi.fn(() => true);
+    const hostVideo = {
+      canPlayType: () => true,
+      getHeight,
+      getWidth,
+      isReady,
+    } satisfies HostVideoProvider;
+
+    const texture = createVideoTexture(hostVideo, resource);
+
+    expect(getTextureSource(texture)?.height).toBe(12);
+    expect(getTextureSource(texture)?.width).toBe(34);
+    expect(getVideoTextureHeight(hostVideo, texture)).toBe(12);
+    expect(getVideoTextureWidth(hostVideo, texture)).toBe(34);
+    expect(isVideoTextureFrameReady(hostVideo, texture)).toBe(true);
+    expect(getHeight).toHaveBeenCalledWith(resource.element);
+    expect(getWidth).toHaveBeenCalledWith(resource.element);
+    expect(isReady).toHaveBeenCalledWith(resource.element);
+  });
+
+  it('uses dimension and readiness sentinels when the provider omits inspection methods', () => {
+    const hostVideo = { canPlayType: () => false } satisfies HostVideoProvider;
+    const texture = createVideoTexture(hostVideo, makeVideoResource());
+
+    expect(getTextureSource(texture)?.height).toBe(0);
+    expect(getTextureSource(texture)?.width).toBe(0);
+    expect(getVideoTextureHeight(hostVideo, texture)).toBe(-1);
+    expect(getVideoTextureWidth(hostVideo, texture)).toBe(-1);
+    expect(isVideoTextureFrameReady(hostVideo, texture)).toBe(false);
+  });
 });
 
 describe('destroyVideoTexture', () => {
   it('nulls the texture source and resets the version', () => {
-    const vt = createVideoTexture(makeVideoResource());
-    advanceVideoTexture(vt);
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
+    advanceVideoTexture(testVideoHost, vt);
     expect(getTextureSource(vt)).not.toBeNull();
     destroyVideoTexture(vt);
     expect(getTextureSource(vt)).toBeNull();
@@ -93,39 +138,46 @@ describe('destroyVideoTexture', () => {
   it('does not modify the borrowed video resource', () => {
     const resource = makeVideoResource();
     const element = resource.element;
-    const vt = createVideoTexture(resource);
+    const vt = createVideoTexture(testVideoHost, resource);
     destroyVideoTexture(vt);
     expect(resource.element).toBe(element);
   });
 
   it('is idempotent', () => {
-    const vt = createVideoTexture(makeVideoResource());
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
     destroyVideoTexture(vt);
     destroyVideoTexture(vt);
     expect(getTextureSource(vt)).toBeNull();
   });
 
   it('makes subsequent accessor calls return sentinel values', () => {
-    const vt = createVideoTexture(makeVideoResource());
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
     destroyVideoTexture(vt);
-    expect(getVideoTextureWidth(vt)).toBe(-1);
-    expect(getVideoTextureHeight(vt)).toBe(-1);
-    expect(isVideoTextureFrameReady(vt)).toBe(false);
-    expect(advanceVideoTexture(vt)).toBe(0xffffffff);
+    expect(getVideoTextureWidth(testVideoHost, vt)).toBe(-1);
+    expect(getVideoTextureHeight(testVideoHost, vt)).toBe(-1);
+    expect(isVideoTextureFrameReady(testVideoHost, vt)).toBe(false);
+    expect(advanceVideoTexture(testVideoHost, vt)).toBe(0xffffffff);
   });
 });
 
 describe('getVideoTextureHeight', () => {
   it('returns the element videoHeight when a frame is decoded, else -1', () => {
-    expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(240);
-    expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureHeight(createVideoTexture(createVideoResource()))).toBe(-1);
+    expect(
+      getVideoTextureHeight(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(4, 320, 240))),
+    ).toBe(240);
+    expect(getVideoTextureHeight(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(0, 0, 0)))).toBe(
+      -1,
+    );
+    expect(getVideoTextureHeight(testVideoHost, createVideoTexture(testVideoHost, createVideoResource()))).toBe(-1);
   });
 });
 
 describe('getVideoTextureInverseUvMatrix', () => {
   it('inverts the forward uv-transform', () => {
-    const vt = createVideoTexture(makeVideoResource(), { uvScale: createVector2(2, 2), uvOffset: createVector2(1, 0) });
+    const vt = createVideoTexture(testVideoHost, makeVideoResource(), {
+      uvScale: createVector2(2, 2),
+      uvOffset: createVector2(1, 0),
+    });
     const forward = createMatrix3();
     const inverse = createMatrix3();
     getVideoTextureUvMatrix(forward, vt);
@@ -144,7 +196,7 @@ describe('getVideoTextureInverseUvMatrix', () => {
 
 describe('getVideoTextureUvMatrix', () => {
   it('composes scale, rotation, and offset in column-major layout', () => {
-    const vt = createVideoTexture(makeVideoResource(), {
+    const vt = createVideoTexture(testVideoHost, makeVideoResource(), {
       uvScale: createVector2(2, 3),
       uvOffset: createVector2(5, 7),
     });
@@ -160,9 +212,11 @@ describe('getVideoTextureUvMatrix', () => {
 
 describe('getVideoTextureWidth', () => {
   it('returns the element videoWidth when a frame is decoded, else -1', () => {
-    expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(320);
-    expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureWidth(createVideoTexture(createVideoResource()))).toBe(-1);
+    expect(getVideoTextureWidth(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(4, 320, 240)))).toBe(
+      320,
+    );
+    expect(getVideoTextureWidth(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(0, 0, 0)))).toBe(-1);
+    expect(getVideoTextureWidth(testVideoHost, createVideoTexture(testVideoHost, createVideoResource()))).toBe(-1);
   });
 });
 
@@ -174,18 +228,26 @@ describe('initializeVideoImageResource', () => {
 
 describe('isVideoTextureFrameReady', () => {
   it('is true only when the element has a decoded frame with known dimensions', () => {
-    expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(true);
-    expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(1, 320, 240)))).toBe(false);
-    expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 0, 0)))).toBe(false);
-    expect(isVideoTextureFrameReady(createVideoTexture(createVideoResource()))).toBe(false);
+    expect(
+      isVideoTextureFrameReady(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(4, 320, 240))),
+    ).toBe(true);
+    expect(
+      isVideoTextureFrameReady(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(1, 320, 240))),
+    ).toBe(false);
+    expect(isVideoTextureFrameReady(testVideoHost, createVideoTexture(testVideoHost, makeVideoResource(4, 0, 0)))).toBe(
+      false,
+    );
+    expect(isVideoTextureFrameReady(testVideoHost, createVideoTexture(testVideoHost, createVideoResource()))).toBe(
+      false,
+    );
   });
 });
 
 describe('resetVideoTextureFrame', () => {
   it('sets the shared revision to the u32 pre-first-frame sentinel', () => {
-    const vt = createVideoTexture(makeVideoResource());
-    advanceVideoTexture(vt);
-    advanceVideoTexture(vt);
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
+    advanceVideoTexture(testVideoHost, vt);
+    advanceVideoTexture(testVideoHost, vt);
     resetVideoTextureFrame(vt);
     expect(vt.version).toBe(0xffffffff);
     expect(getTextureSource(vt)?.version).toBe(0xffffffff);
@@ -193,12 +255,12 @@ describe('resetVideoTextureFrame', () => {
 });
 describe('setVideoTextureSource', () => {
   it('swaps the borrowed host handle and resets the version', () => {
-    const vt = createVideoTexture(makeVideoResource());
-    advanceVideoTexture(vt);
+    const vt = createVideoTexture(testVideoHost, makeVideoResource());
+    advanceVideoTexture(testVideoHost, vt);
     const next = makeVideoResource(4, 640, 480);
-    setVideoTextureSource(vt, next);
+    setVideoTextureSource(testVideoHost, vt, next);
     expect((getTextureSource(vt) as ImageResource).source).toBe(next.element);
     expect(vt.version).toBe(0xffffffff);
-    expect(getVideoTextureWidth(vt)).toBe(640);
+    expect(getVideoTextureWidth(testVideoHost, vt)).toBe(640);
   });
 });

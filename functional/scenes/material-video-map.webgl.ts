@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, enableHostWebGlRenderSurface, webHostVideo } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
@@ -62,10 +62,10 @@ Object.defineProperties(frame, {
   videoWidth: { value: 2 },
 });
 
-const videoMap = createVideoTexture(createVideoResource(frame as unknown as HTMLVideoElement));
+const videoMap = createVideoTexture(webHostVideo, createVideoResource(frame as unknown as HTMLVideoElement));
 videoMap.sampler.magFilter = 'nearest';
 videoMap.sampler.minFilter = 'nearest';
-advanceVideoTexture(videoMap);
+advanceVideoTexture(webHostVideo, videoMap);
 
 const scene = createScene3D().root;
 addNodeChild(

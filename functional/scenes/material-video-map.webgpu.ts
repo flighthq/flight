@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement, webHostVideo } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
@@ -65,10 +65,10 @@ Object.defineProperties(frame, {
   videoWidth: { value: 2 },
 });
 
-const videoMap = createVideoTexture(createVideoResource(frame as unknown as HTMLVideoElement));
+const videoMap = createVideoTexture(webHostVideo, createVideoResource(frame as unknown as HTMLVideoElement));
 videoMap.sampler.magFilter = 'nearest';
 videoMap.sampler.minFilter = 'nearest';
-advanceVideoTexture(videoMap);
+advanceVideoTexture(webHostVideo, videoMap);
 
 const scene = createScene3D().root;
 addNodeChild(

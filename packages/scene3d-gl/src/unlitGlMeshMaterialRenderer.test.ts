@@ -8,7 +8,7 @@ import {
   registerGlRenderTextureResolver,
 } from '@flighthq/render-gl/contract';
 import { advanceVideoTexture, createRenderTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, HostVideoProvider, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
@@ -33,6 +33,13 @@ const NO_LIGHTS: Scene3DLightBlock = {
   spotCount: 0,
   version: 1,
 };
+
+const testVideoHost = {
+  canPlayType: () => true,
+  getHeight: (source) => (source as HTMLVideoElement).videoHeight,
+  getWidth: (source) => (source as HTMLVideoElement).videoWidth,
+  isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
+} satisfies HostVideoProvider;
 
 function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
@@ -66,6 +73,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
     material.baseColorMap = createVideoTexture(
+      testVideoHost,
       createVideoResource({
         readyState: 4,
         videoHeight: 120,
@@ -73,7 +81,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
       } as HTMLVideoElement),
     );
     material.baseColorMap.sampler.mipmaps = false;
-    advanceVideoTexture(material.baseColorMap);
+    advanceVideoTexture(testVideoHost, material.baseColorMap);
     registerGlUnlitMaterial(state);
     registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).context.anisotropyExt = null;

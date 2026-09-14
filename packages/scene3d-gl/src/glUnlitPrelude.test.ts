@@ -14,7 +14,7 @@ import {
   createTexture,
   createVideoTexture,
 } from '@flighthq/texture/contract';
-import type { GlUnlitDefineKey, LinearColor } from '@flighthq/types/contract';
+import type { GlUnlitDefineKey, HostVideoProvider, LinearColor } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -45,6 +45,12 @@ const FLAT: GlUnlitDefineKey = {
   vertexColor: false,
 };
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
+const testVideoHost = {
+  canPlayType: () => true,
+  getHeight: (source) => (source as HTMLVideoElement).videoHeight,
+  getWidth: (source) => (source as HTMLVideoElement).videoWidth,
+  isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
+} satisfies HostVideoProvider;
 
 describe('bindGlUnlitSurface', () => {
   it('uploads the color, intensity, and alpha cutoff', () => {
@@ -94,6 +100,7 @@ describe('bindGlUnlitSurface', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture(
+      testVideoHost,
       createVideoResource({
         readyState: 4,
         videoWidth: 320,
@@ -101,7 +108,7 @@ describe('bindGlUnlitSurface', () => {
       } as HTMLVideoElement),
     );
     videoMap.sampler.mipmaps = false;
-    advanceVideoTexture(videoMap);
+    advanceVideoTexture(testVideoHost, videoMap);
     registerGlImageTextureResolver(state);
     registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).context.anisotropyExt = null;
@@ -118,6 +125,7 @@ describe('bindGlUnlitSurface', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture(
+      testVideoHost,
       createVideoResource({
         readyState: 4,
         videoWidth: 320,
@@ -125,7 +133,7 @@ describe('bindGlUnlitSurface', () => {
       } as HTMLVideoElement),
     );
     videoMap.sampler.mipmaps = false;
-    advanceVideoTexture(videoMap);
+    advanceVideoTexture(testVideoHost, videoMap);
     registerGlImageTextureResolver(state);
     registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).context.anisotropyExt = null;
