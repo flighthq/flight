@@ -48,6 +48,7 @@ import type {
   ImportDiagnostic,
   MorphShape,
   MovieClip,
+  NonEntityCreateResult,
   MovieClipData,
   Node2D,
   NodeData,
@@ -252,7 +253,7 @@ export function createScene2DSymbolFromSwf(
   );
 }
 
-export function createSwfDefaultTagHandlerRegistry(): SwfTagHandlerRegistry {
+export function createSwfDefaultTagHandlerRegistry(): NonEntityCreateResult<SwfTagHandlerRegistry, 'type-only'> {
   const registry: SwfTagHandlerRegistry = new Map<number, SwfTagHandler>();
   // Placement tags
   registry.set(TAG_PLACE_OBJECT, handleSwfPlaceObjectTag);
