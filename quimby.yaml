@@ -47,7 +47,7 @@ roles:
       You are in a sandbox and can install dependencies.
 
   manager:
-    directs: [foreman, auditor, integration]
+    directs: [auditor, integration]
     agents:
       read: true
       write: true
