@@ -68,6 +68,7 @@ export * from './webTextHost';
 export * from './webTextureAtlas';
 export * from './webUiHost';
 export * from './webVideoCapability';
+export * from './webVideoResource';
 export * from './webWindow';
 export * from './webWgpuCanvasElement';
 export { initializeWebPageNotificationCapabilities } from './webNotification';

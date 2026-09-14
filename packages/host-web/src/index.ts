@@ -168,6 +168,7 @@ export {
   webHostStoragePersistenceRequest,
 } from './webStoragePersistence';
 export { createWebVideoCapabilityBackend, webHostVideo } from './webVideoCapability';
+export { createWebVideoResourceFromMediaStream } from './webVideoResource';
 export { webHost } from './webHost';
 export { webHostNetGroup } from './webHostNet';
 export { webHostSystem } from './webSystemHost';

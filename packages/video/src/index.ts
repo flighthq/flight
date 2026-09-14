@@ -1,7 +1,6 @@
 export {
   canPlayVideoType,
   createVideoResource,
-  createVideoResourceFromMediaStream,
   destroyVideoResource,
   detectVideoMimeType,
   disposeVideoResource,

@@ -32,7 +32,7 @@ export interface VideoResource extends Entity {
   // Ownership lives on the resource so destroyVideoResource can release it — a resource built over a
   // caller's own URL leaves this null and destruction touches nothing.
   objectUrl: string | null;
-  // True when this resource created and owns the element (via createVideoResourceFromMediaStream or
+  // True when this resource created and owns the element (via createWebVideoResourceFromMediaStream or
   // loadVideoResourceFromUrl). False when the element was provided by the caller (createVideoResource
   // wrapping an existing element). destroyVideoResource releases the element's decoder only for owned
   // elements; a borrowed element is the caller's to manage.

@@ -1,227 +1,142 @@
-import type { HostVideoProvider } from '@flighthq/types/contract';
+import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
 
-import {
-  createVideoResourceFromMediaStream,
-  loadVideoResourceFromBlob,
-  loadVideoResourceFromUrl,
-  loadVideoResourceFromUrls,
-} from './videoResourceFrom';
+import { loadVideoResourceFromBlob, loadVideoResourceFromUrl, loadVideoResourceFromUrls } from './videoResourceFrom';
 
-let created: HTMLVideoElement[];
+const element = {} as HostImageSource;
 
-// The web host's share of the work, which is where element teardown lives now: portable code asks
-// the provider to release a source and the provider is what touches the DOM. Modelled faithfully
-// rather than stubbed, so the abandonment cases below still assert the real effect — src detached and
-// the decoder reloaded — instead of merely asserting that a release was requested.
-function trackingBackend(canPlay = false): HostVideoProvider {
+function hostWithLoad(loadUrl = vi.fn(async () => element), canPlay = false): HostVideoProvider {
   return {
     canPlayType: () => canPlay,
-    createVideoElement() {
-      const element = document.createElement('video');
-      created.push(element);
-      return element;
-    },
-    releaseElement(element) {
-      const video = element as HTMLVideoElement;
-      if (video.srcObject !== null) video.srcObject = null;
-      video.removeAttribute('src');
-      video.load();
-    },
+    loadUrl,
   };
 }
 
-const noElementBackend: HostVideoProvider = { canPlayType: () => false };
-
-beforeEach(() => {
-  created = [];
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-function lastVideo(): HTMLVideoElement {
-  return created[created.length - 1];
+function hostWithObjectUrls(loadUrl = vi.fn(async () => element)): HostVideoProvider {
+  return {
+    canPlayType: () => false,
+    createObjectUrl: vi.fn(() => 'blob:mock'),
+    loadUrl,
+    revokeObjectUrl: vi.fn(),
+  };
 }
 
-describe('createVideoResourceFromMediaStream', () => {
-  it('wraps a MediaStream by assigning it to srcObject and marks the element as owned', () => {
-    const stream = {} as MediaStream;
-    const resource = createVideoResourceFromMediaStream(trackingBackend(), stream);
-    expect(resource).not.toBeNull();
-    expect(resource!.element).not.toBeNull();
-    expect((resource!.element as HTMLVideoElement).srcObject).toBe(stream);
-    expect(resource!.ownsElement).toBe(true);
-  });
-
-  it('returns null when the backend cannot create a video element', () => {
-    const resource = createVideoResourceFromMediaStream(noElementBackend, {} as MediaStream);
-    expect(resource).toBeNull();
-  });
-});
-
 describe('loadVideoResourceFromBlob', () => {
-  it('returns a resource still holding its live object URL after the load settles', async () => {
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
-    const promise = loadVideoResourceFromBlob(trackingBackend(), new Blob([], { type: 'video/mp4' }));
-    lastVideo().dispatchEvent(new Event('canplay'));
-    const resource = await promise;
-    expect(resource.objectUrl).toBe('blob:mock');
-    expect(resource.ownsElement).toBe(true);
-    expect(revokeSpy).not.toHaveBeenCalled();
+  it('returns an owned resource that keeps its object URL live after loading', async () => {
+    const hostVideo = hostWithObjectUrls();
+
+    const resource = await loadVideoResourceFromBlob(hostVideo, new Blob([], { type: 'video/mp4' }));
+
+    expect(hostVideo.createObjectUrl).toHaveBeenCalledOnce();
+    expect(hostVideo.loadUrl).toHaveBeenCalledWith('blob:mock', undefined, undefined);
+    expect(hostVideo.revokeObjectUrl).not.toHaveBeenCalled();
+    expect(resource).toMatchObject({ element, objectUrl: 'blob:mock', ownsElement: true });
   });
 
-  it('keeps the object URL live when the load settles at metadata readiness', async () => {
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
-    const promise = loadVideoResourceFromBlob(trackingBackend(), new Blob([], { type: 'video/mp4' }), {
-      readiness: 'metadata',
-    });
-    lastVideo().dispatchEvent(new Event('loadedmetadata'));
-    const resource = await promise;
-    expect(resource.objectUrl).toBe('blob:mock');
-    expect(revokeSpy).not.toHaveBeenCalled();
+  it('forwards loading options and the abort signal through the URL loader', async () => {
+    const hostVideo = hostWithObjectUrls();
+    const options = { muted: true, readiness: 'metadata' } as const;
+    const signal = new AbortController().signal;
+
+    await loadVideoResourceFromBlob(hostVideo, new Blob(), options, signal);
+
+    expect(hostVideo.loadUrl).toHaveBeenCalledWith('blob:mock', options, signal);
   });
 
-  it('revokes the object URL when the load fails, since no resource is returned to own it', async () => {
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
-    const promise = loadVideoResourceFromBlob(trackingBackend(), new Blob([], { type: 'video/mp4' }));
-    lastVideo().dispatchEvent(new Event('error'));
-    await expect(promise).rejects.toThrow('Failed to load video');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:mock');
+  it('revokes the object URL when loading fails because no resource takes ownership', async () => {
+    const error = new Error('Failed to load video');
+    const hostVideo = hostWithObjectUrls(vi.fn().mockRejectedValue(error));
+
+    await expect(loadVideoResourceFromBlob(hostVideo, new Blob())).rejects.toBe(error);
+    expect(hostVideo.revokeObjectUrl).toHaveBeenCalledWith('blob:mock');
   });
 
-  it('revokes the object URL when the load is aborted, since no resource is returned to own it', async () => {
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+  it('revokes the object URL when loading is aborted because no resource takes ownership', async () => {
+    const error = new Error('cancelled');
+    const hostVideo = hostWithObjectUrls(vi.fn().mockRejectedValue(error));
     const controller = new AbortController();
-    const promise = loadVideoResourceFromBlob(
-      trackingBackend(),
-      new Blob([], { type: 'video/mp4' }),
-      undefined,
-      controller.signal,
+    controller.abort(error);
+
+    await expect(loadVideoResourceFromBlob(hostVideo, new Blob(), undefined, controller.signal)).rejects.toBe(error);
+    expect(hostVideo.revokeObjectUrl).toHaveBeenCalledWith('blob:mock');
+  });
+
+  it.each(['createObjectUrl', 'revokeObjectUrl'] as const)('rejects before loading without %s', async (missing) => {
+    const hostVideo = hostWithObjectUrls();
+    hostVideo[missing] = undefined;
+
+    await expect(loadVideoResourceFromBlob(hostVideo, new Blob())).rejects.toThrow(
+      'No video object URL backend available',
     );
-    controller.abort(new Error('cancelled'));
-    await expect(promise).rejects.toThrow('cancelled');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:mock');
+    expect(hostVideo.loadUrl).not.toHaveBeenCalled();
   });
 });
 
 describe('loadVideoResourceFromUrl', () => {
-  it('returns a Promise', () => {
-    const result = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4');
-    result.catch(() => {});
+  it('returns a Promise and wraps the provider result as an owned resource', async () => {
+    const hostVideo = hostWithLoad();
+
+    const result = loadVideoResourceFromUrl(hostVideo, 'test.mp4');
+
     expect(result).toBeInstanceOf(Promise);
+    await expect(result).resolves.toMatchObject({ element, objectUrl: null, ownsElement: true });
   });
 
-  it('defaults preload to auto and resolves on canplay when options are omitted', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4');
-    const element = lastVideo();
-    expect(element.preload).toBe('auto');
-    element.dispatchEvent(new Event('canplay'));
-    const resource = await promise;
-    expect(resource.element).toBe(element);
-    expect(resource.ownsElement).toBe(true);
+  it('forwards the URL, options, and abort signal to the provider', async () => {
+    const hostVideo = hostWithLoad();
+    const options = { crossOrigin: 'anonymous', muted: true, playsInline: true, preload: 'metadata' } as const;
+    const signal = new AbortController().signal;
+
+    await loadVideoResourceFromUrl(hostVideo, 'test.mp4', options, signal);
+
+    expect(hostVideo.loadUrl).toHaveBeenCalledWith('test.mp4', options, signal);
   });
 
-  it('rejects when the backend cannot create a video element', async () => {
-    await expect(loadVideoResourceFromUrl(noElementBackend, 'test.mp4')).rejects.toThrow(
-      'No video element backend available',
-    );
+  it('rejects when the provider has no URL loader', async () => {
+    const hostVideo: HostVideoProvider = { canPlayType: () => false };
+
+    await expect(loadVideoResourceFromUrl(hostVideo, 'test.mp4')).rejects.toThrow('No video element backend available');
   });
 
-  it('applies crossOrigin, muted, and preload from options', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4', {
-      crossOrigin: 'anonymous',
-      muted: true,
-      preload: 'metadata',
-    });
-    const element = lastVideo();
-    expect(element.crossOrigin).toBe('anonymous');
-    expect(element.muted).toBe(true);
-    expect(element.preload).toBe('metadata');
-    element.dispatchEvent(new Event('canplay'));
-    await promise;
+  it('preserves provider load failures', async () => {
+    const error = new Error('Failed to load video: bad.mp4');
+    const hostVideo = hostWithLoad(vi.fn().mockRejectedValue(error));
+
+    await expect(loadVideoResourceFromUrl(hostVideo, 'bad.mp4')).rejects.toBe(error);
   });
 
-  it('resolves on loadedmetadata when readiness is "metadata"', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4', { readiness: 'metadata' });
-    const element = lastVideo();
-    element.dispatchEvent(new Event('loadedmetadata'));
-    const resource = await promise;
-    expect(resource.element).toBe(element);
-  });
-
-  it('resolves on canplaythrough when readiness is "canplaythrough"', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4', { readiness: 'canplaythrough' });
-    const element = lastVideo();
-    element.dispatchEvent(new Event('canplaythrough'));
-    const resource = await promise;
-    expect(resource.element).toBe(element);
-  });
-
-  it('rejects when the element emits an error', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'bad.mp4');
-    lastVideo().dispatchEvent(new Event('error'));
-    await expect(promise).rejects.toThrow('Failed to load video: bad.mp4');
-  });
-
-  it('rejects immediately when the signal is already aborted', async () => {
+  it('preserves provider abort failures', async () => {
+    const error = new Error('cancelled');
+    const hostVideo = hostWithLoad(vi.fn().mockRejectedValue(error));
     const controller = new AbortController();
-    controller.abort(new Error('pre-aborted'));
-    await expect(loadVideoResourceFromUrl(trackingBackend(), 'test.mp4', undefined, controller.signal)).rejects.toThrow(
-      'pre-aborted',
-    );
-  });
+    controller.abort(error);
 
-  it('rejects when the signal is aborted after the call', async () => {
-    const controller = new AbortController();
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'test.mp4', undefined, controller.signal);
-    controller.abort(new Error('cancelled'));
-    await expect(promise).rejects.toThrow('cancelled');
-  });
-
-  it('detaches the src and reloads the element it abandons when the load fails', async () => {
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'bad.mp4');
-    const element = lastVideo();
-    const loadSpy = vi.spyOn(element, 'load').mockImplementation(() => {});
-    element.dispatchEvent(new Event('error'));
-    await expect(promise).rejects.toThrow('Failed to load video');
-    expect(element.hasAttribute('src')).toBe(false);
-    expect(loadSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('detaches the src and reloads the element it abandons when the signal is aborted', async () => {
-    const controller = new AbortController();
-    const promise = loadVideoResourceFromUrl(trackingBackend(), 'clip.mp4', undefined, controller.signal);
-    const element = lastVideo();
-    const loadSpy = vi.spyOn(element, 'load').mockImplementation(() => {});
-    controller.abort(new Error('cancelled'));
-    await expect(promise).rejects.toThrow('cancelled');
-    expect(element.hasAttribute('src')).toBe(false);
-    expect(loadSpy).toHaveBeenCalledTimes(1);
+    await expect(loadVideoResourceFromUrl(hostVideo, 'test.mp4', undefined, controller.signal)).rejects.toBe(error);
+    expect(hostVideo.loadUrl).toHaveBeenCalledWith('test.mp4', undefined, controller.signal);
   });
 });
 
 describe('loadVideoResourceFromUrls', () => {
   it('resolves immediately with a null-element resource when sources is empty', async () => {
-    const resource = await loadVideoResourceFromUrls(noElementBackend, []);
+    const resource = await loadVideoResourceFromUrls(hostWithLoad(), []);
+
     expect(resource.element).toBeNull();
   });
 
   it('resolves to a null-element resource when no source is playable', async () => {
-    const resource = await loadVideoResourceFromUrls(noElementBackend, [{ url: 'test.mp4' }]);
+    const resource = await loadVideoResourceFromUrls(hostWithLoad(), [{ url: 'test.mp4' }]);
+
     expect(resource.element).toBeNull();
   });
 
-  it('loads the first playable source', async () => {
-    const backend = trackingBackend(true);
-    const promise = loadVideoResourceFromUrls(backend, [{ url: 'clip.mp4' }]);
-    const element = lastVideo();
-    element.dispatchEvent(new Event('canplay'));
-    const resource = await promise;
+  it('loads the first playable source through the provider', async () => {
+    const hostVideo = hostWithLoad(
+      vi.fn(async () => element),
+      true,
+    );
+
+    const resource = await loadVideoResourceFromUrls(hostVideo, [{ url: 'clip.mp4' }]);
+
+    expect(hostVideo.loadUrl).toHaveBeenCalledWith('clip.mp4', undefined, undefined);
     expect(resource.element).toBe(element);
   });
 });
