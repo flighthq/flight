@@ -14,12 +14,26 @@ describe('registerAllGltfHandlers', () => {
 
     registerAllGltfHandlers(coreFeatureHandlers, extensionHandlers);
 
+    expect(coreFeatureHandlers.map((handler) => handler.kind)).toEqual(['cameras', 'animations', 'skins']);
+    expect(extensionHandlers.map((handler) => handler.kind)).toEqual([
+      'KHR_materials_anisotropy',
+      'KHR_materials_clearcoat',
+      'KHR_materials_emissive_strength',
+      'KHR_materials_iridescence',
+      'KHR_materials_sheen',
+      'KHR_materials_specular',
+      'KHR_materials_pbrSpecularGlossiness',
+      'KHR_materials_ior',
+      'KHR_materials_transmission',
+      'KHR_materials_volume',
+      'KHR_materials_unlit',
+      'KHR_lights_punctual',
+    ]);
     expect(coreFeatureHandlers).toEqual([
       GltfCamerasCoreFeatureHandler,
       GltfAnimationsCoreFeatureHandler,
       GltfSkinsCoreFeatureHandler,
     ]);
-    expect(extensionHandlers).toHaveLength(12);
     expect(extensionHandlers.at(-1)).toBe(GltfPunctualLightsExtensionHandler);
   });
 });

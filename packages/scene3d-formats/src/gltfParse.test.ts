@@ -2124,9 +2124,13 @@ describe('gltf diagnostics coverage', () => {
   });
 
   it('recovers and reports gltf.duplicate-extension-handler for two handlers of one kind', () => {
-    const handler = { apply() {}, kind: 'VENDOR_x' };
+    let applied = '';
+    const first = { apply: () => (applied = 'first'), kind: 'VENDOR_x' };
+    const last = { apply: () => (applied = 'last'), kind: 'VENDOR_x' };
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromGltf(makeTriangleGltf(), diagnostics, { extensionHandlers: [handler, handler] });
+    createScene3DFromGltf(makeTriangleGltf(), diagnostics, { extensionHandlers: [first, last] });
+
+    expect(applied).toBe('last');
     const crumb = findGltfDiagnostic(diagnostics, 'gltf.duplicate-extension-handler');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
@@ -2934,6 +2938,16 @@ describe('parseGltfWithCoreFeatureHandlers', () => {
     source.skins = [{ joints: [0] }];
     return source;
   }
+
+  it('keeps every built-in core feature selected on the zero-config path', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const document = parseGltf(makeOptionalCoreFeatureGltf(), diagnostics);
+
+    expect(document.cameras).toHaveLength(1);
+    expect(document.skins).toHaveLength(1);
+    expect(findGltfDiagnostic(diagnostics, 'gltf.core-feature-handler-missing')).toBeUndefined();
+  });
 
   it('keeps bedrock document facts and reports each unregistered optional section as skipped', () => {
     const source = makeOptionalCoreFeatureGltf();

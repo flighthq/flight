@@ -34,6 +34,19 @@ describe('glTF core feature tree shaking', () => {
     expect(output).not.toContain('gltf.skin-ibm-count-mismatch');
   });
 
+  it.each(['registerGltfCoreFeatureHandler', 'registerGltfExtensionHandler'])(
+    'keeps the public %s door independent of every built-in handler family',
+    async (name) => {
+      const output = await bundleExport(name, 'index');
+
+      expect(output).not.toContain('gltf.animation-target-unresolved');
+      expect(output).not.toContain('gltf.camera-invalid-perspective');
+      expect(output).not.toContain('gltf.skin-ibm-count-mismatch');
+      expect(output).not.toContain('KHR_materials_anisotropy');
+      expect(output).not.toContain('KHR_lights_punctual');
+    },
+  );
+
   it.each([
     ['registerGltfAnimationHandlers', 'gltf.animation-target-unresolved', 'gltf.camera-invalid-perspective'],
     ['registerGltfCameraHandlers', 'gltf.camera-invalid-perspective', 'gltf.animation-target-unresolved'],
@@ -77,7 +90,12 @@ describe('glTF extension tree shaking', () => {
     expect(output).toContain('KHR_lights_punctual');
   });
 
-  it('keeps specific extension handler atoms off the public lane', () => {
+  it('publishes generic registration doors without promoting built-in handler atoms', () => {
+    expect(publicApi.registerGltfCoreFeatureHandler).toBeTypeOf('function');
+    expect(publicApi.registerGltfExtensionHandler).toBeTypeOf('function');
+    expect('GltfAnimationsCoreFeatureHandler' in publicApi).toBe(false);
+    expect('GltfCamerasCoreFeatureHandler' in publicApi).toBe(false);
+    expect('GltfSkinsCoreFeatureHandler' in publicApi).toBe(false);
     expect('GltfPunctualLightsExtensionHandler' in publicApi).toBe(false);
     expect('GltfAnisotropyExtensionHandler' in publicApi).toBe(false);
   });

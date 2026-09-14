@@ -16,4 +16,15 @@ describe('registerGltfCoreFeatureHandler', () => {
 
     expect(handlers).toEqual([replacement, cameras]);
   });
+
+  it('mutates only the caller-owned registry it receives', () => {
+    const first: GltfCoreFeatureHandler[] = [];
+    const second: GltfCoreFeatureHandler[] = [];
+    const handler: GltfCoreFeatureHandler = { apply() {}, kind: 'animations' };
+
+    registerGltfCoreFeatureHandler(first, handler);
+
+    expect(first).toEqual([handler]);
+    expect(second).toEqual([]);
+  });
 });
