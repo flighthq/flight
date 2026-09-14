@@ -1,2 +1,2 @@
 export * from './lifecycle';
-export { initializeAppLifecycle, initializeWebLifecycleBackend } from './lifecycle';
+export { initializeAppLifecycle } from './lifecycle';

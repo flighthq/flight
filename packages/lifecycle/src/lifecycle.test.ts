@@ -12,7 +12,6 @@ import type {
 import {
   attachAppLifecycle,
   createAppLifecycle,
-  createWebLifecycleBackend,
   detachAppLifecycle,
   disposeAppLifecycle,
   explainLifecycleOperation,
@@ -20,7 +19,6 @@ import {
   getAppLifecycleState,
   hasLifecycleOperation,
   initializeAppLifecycle,
-  initializeWebLifecycleBackend,
   isAppActive,
   isAppBackground,
   isAppInactive,
@@ -321,88 +319,6 @@ describe('createAppLifecycle', () => {
   });
 });
 
-describe('createWebLifecycleBackend', () => {
-  it("getLaunchKind returns 'cold' when no performance navigation entries", () => {
-    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
-    const backend = createWebLifecycleBackend();
-    expect(backend.getLaunchKind?.()).toBe('cold');
-    vi.restoreAllMocks();
-  });
-
-  it("getLaunchKind returns 'warm' for back_forward navigation type", () => {
-    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
-      { type: 'back_forward' } as PerformanceNavigationTiming,
-    ]);
-    const backend = createWebLifecycleBackend();
-    expect(backend.getLaunchKind?.()).toBe('warm');
-    vi.restoreAllMocks();
-  });
-
-  it("getLaunchKind returns 'cold' for reload navigation type", () => {
-    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ type: 'reload' } as PerformanceNavigationTiming]);
-    const backend = createWebLifecycleBackend();
-    expect(backend.getLaunchKind?.()).toBe('cold');
-    vi.restoreAllMocks();
-  });
-
-  it("getLaunchKind returns 'cold' for navigate navigation type", () => {
-    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ type: 'navigate' } as PerformanceNavigationTiming]);
-    const backend = createWebLifecycleBackend();
-    expect(backend.getLaunchKind?.()).toBe('cold');
-    vi.restoreAllMocks();
-  });
-
-  it('reads a state without throwing', () => {
-    expect(typeof createWebLifecycleBackend().getState()).toBe('string');
-  });
-
-  it('subscribeMemoryWarning fires critical when memory-pressure event fires', () => {
-    const backend = createWebLifecycleBackend();
-    const levels: AppMemoryPressure[] = [];
-    const unsubscribe = backend.subscribeMemoryWarning?.((level) => levels.push(level));
-    // Simulate a memory-pressure event with 'critical' pressure detail.
-    const event = new CustomEvent('memory-pressure', { detail: { pressure: 'critical' } });
-    window.dispatchEvent(event);
-    expect(levels).toEqual(['critical']);
-    unsubscribe?.();
-  });
-
-  it('subscribeMemoryWarning fires moderate when memory-pressure event fires with moderate pressure', () => {
-    const backend = createWebLifecycleBackend();
-    const levels: AppMemoryPressure[] = [];
-    const unsubscribe = backend.subscribeMemoryWarning?.((level) => levels.push(level));
-    const event = new CustomEvent('memory-pressure', { detail: { pressure: 'moderate' } });
-    window.dispatchEvent(event);
-    expect(levels).toEqual(['moderate']);
-    unsubscribe?.();
-  });
-
-  it('subscribeMemoryWarning fires normal when memory-pressure-relieved event fires', () => {
-    const backend = createWebLifecycleBackend();
-    const levels: AppMemoryPressure[] = [];
-    const unsubscribe = backend.subscribeMemoryWarning?.((level) => levels.push(level));
-    const event = new CustomEvent('memory-pressure-relieved');
-    window.dispatchEvent(event);
-    expect(levels).toEqual(['normal']);
-    unsubscribe?.();
-  });
-
-  it('subscribeMemoryWarning stops delivering after unsubscribe', () => {
-    const backend = createWebLifecycleBackend();
-    const levels: AppMemoryPressure[] = [];
-    const unsubscribe = backend.subscribeMemoryWarning?.((level) => levels.push(level));
-    unsubscribe?.();
-    const event = new CustomEvent('memory-pressure', { detail: { pressure: 'critical' } });
-    window.dispatchEvent(event);
-    expect(levels).toHaveLength(0);
-  });
-
-  it('subscribes and unsubscribes without throwing', () => {
-    const unsubscribe = createWebLifecycleBackend().subscribe(() => {});
-    expect(() => unsubscribe()).not.toThrow();
-  });
-});
-
 describe('detachAppLifecycle', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
@@ -541,12 +457,6 @@ describe('hasLifecycleOperation', () => {
 describe('initializeAppLifecycle', () => {
   it('is the construction initializer of createAppLifecycle', () => {
     expect(typeof initializeAppLifecycle).toBe('function');
-  });
-});
-
-describe('initializeWebLifecycleBackend', () => {
-  it('is the construction initializer of createWebLifecycleBackend', () => {
-    expect(typeof initializeWebLifecycleBackend).toBe('function');
   });
 });
 

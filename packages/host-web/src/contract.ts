@@ -77,6 +77,8 @@ export { initializeWebMediaSessionActionBackend, initializeWebMediaSessionBacken
 export { initializeWebBitmapEncodeBackend } from './webBitmapEncode';
 export { initializeWebConnectivityBackend } from './webConnectivity';
 export { initializeWebFontLoadingBackend } from './webFontLoading';
+export { initializeWebGeolocationBackend } from './webGeolocation';
+export { initializeWebLifecycleBackend } from './webLifecycle';
 export { initializeWebDeviceBackend } from './webDevice';
 export { initializeWebImageBackend } from './webImage';
 export { initializeWebCursorBackend } from './webCursor';
