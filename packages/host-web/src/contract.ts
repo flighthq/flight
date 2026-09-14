@@ -45,6 +45,7 @@ export * from './webMenu';
 export * from './webMenuHost';
 export * from './webNet';
 export * from './webNotification';
+export * from './webPermissions';
 export * from './webPlatform';
 export * from './webPower';
 export * from './webProtocol';

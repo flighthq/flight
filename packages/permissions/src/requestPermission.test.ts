@@ -1,6 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationPermissionProvider,
+  HostPermissionsProvider,
   HostStoragePersistenceRequestProvider,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +17,7 @@ describe('requestPermission', () => {
     ['dismissed', 'prompt'],
   ] as const)('projects the Notification %s outcome without erasing its owner reason', async (reason, state) => {
     const request = vi.fn(async () => ({ reason }));
-    const provider = notificationProvider({ getPermission: vi.fn(), requestPermission: request });
+    const provider = permissionsProvider({ notification: { getPermission: vi.fn(), requestPermission: request } });
     forbidNativeNotificationOwner();
 
     await expect(requestPermission(provider, undefined, undefined, 'notifications')).resolves.toEqual({
@@ -27,9 +28,11 @@ describe('requestPermission', () => {
   });
 
   it('preserves an owner request failure instead of translating it to denial', async () => {
-    const provider = notificationProvider({
-      getPermission: vi.fn(),
-      requestPermission: vi.fn(async () => ({ reason: 'operation-failed' as const })),
+    const provider = permissionsProvider({
+      notification: {
+        getPermission: vi.fn(),
+        requestPermission: vi.fn(async () => ({ reason: 'operation-failed' as const })),
+      },
     });
 
     await expect(requestPermission(provider, undefined, undefined, 'notifications')).resolves.toEqual({
@@ -37,79 +40,50 @@ describe('requestPermission', () => {
     });
   });
 
-  it('attempts every acquired media-track cleanup and reports cleanup failure as operational, not denial', async () => {
-    const stopped: string[] = [];
-    vi.stubGlobal('navigator', {
-      mediaDevices: {
-        getUserMedia: async () => ({
-          getTracks: () => [
-            { stop: () => stopped.push('first') },
-            {
-              stop: () => {
-                stopped.push('second');
-                throw new Error('second stop failed');
-              },
-            },
-            { stop: () => stopped.push('third') },
-          ],
-        }),
-      },
-    });
+  it('delegates media acquisition and preserves its cleanup failure outcome', async () => {
+    const requestMediaAccess = vi.fn(async () => ({ reason: 'cleanup-failed' as const, state: 'granted' as const }));
+    const provider = permissionsProvider({ requestMediaAccess });
+    forbidNativePermissionOwner();
 
-    await expect(requestPermission(undefined, undefined, undefined, 'camera')).resolves.toEqual({
+    await expect(requestPermission(provider, undefined, undefined, 'camera')).resolves.toEqual({
       reason: 'cleanup-failed',
       state: 'granted',
     });
-    expect(stopped).toEqual(['first', 'second', 'third']);
+    expect(requestMediaAccess).toHaveBeenCalledWith('camera');
   });
 
-  it('reports a wake-lock release failure as cleanup failure after the request succeeded', async () => {
-    vi.stubGlobal('navigator', {
-      wakeLock: {
-        request: async () => ({
-          release: async () => {
-            throw new Error('release failed');
-          },
-        }),
-      },
-    });
+  it('delegates wake-lock acquisition and preserves its cleanup failure outcome', async () => {
+    const requestWakeLock = vi.fn(async () => ({ reason: 'cleanup-failed' as const, state: 'granted' as const }));
+    const provider = permissionsProvider({ requestWakeLock });
+    forbidNativePermissionOwner();
 
-    await expect(requestPermission(undefined, undefined, undefined, 'screen-wake-lock')).resolves.toEqual({
+    await expect(requestPermission(provider, undefined, undefined, 'screen-wake-lock')).resolves.toEqual({
       reason: 'cleanup-failed',
       state: 'granted',
     });
+    expect(requestWakeLock).toHaveBeenCalledOnce();
   });
 
-  it('reports the Wake Lock API as unavailable when the standard property is absent at runtime', async () => {
-    vi.stubGlobal('navigator', {});
-
-    await expect(requestPermission(undefined, undefined, undefined, 'screen-wake-lock')).resolves.toEqual({
-      reason: 'runtime-unavailable',
-    });
-  });
-
-  it('keeps acquisition failure separate from user denial', async () => {
-    vi.stubGlobal('navigator', {
-      mediaDevices: {
-        getUserMedia: async () => {
-          throw new Error('device disconnected');
-        },
+  it('projects a thrown host permission request as an operational failure', async () => {
+    const provider = permissionsProvider({
+      requestMediaAccess: async () => {
+        throw new Error('provider failed');
       },
     });
 
-    await expect(requestPermission(undefined, undefined, undefined, 'camera')).resolves.toEqual({
+    await expect(requestPermission(provider, undefined, undefined, 'camera')).resolves.toEqual({
       reason: 'operation-failed',
     });
   });
 
   it('reports an absent request route without silently degrading to a read', async () => {
-    const query = vi.fn(async () => ({ state: 'granted' }));
-    vi.stubGlobal('navigator', { permissions: { query } });
+    const queryPermission = vi.fn(async () => ({ reason: 'ok' as const, state: 'granted' as const }));
+    const provider = permissionsProvider({ queryPermission });
 
-    await expect(requestPermission(undefined, undefined, undefined, 'push')).resolves.toEqual({
+    await expect(requestPermission(provider, undefined, undefined, 'push')).resolves.toEqual({
       reason: 'no-request-route',
     });
-    expect(query).not.toHaveBeenCalled();
+    expect(queryPermission).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -141,7 +115,9 @@ describe('requestPermission', () => {
       const provider = persistenceProvider({ requestPersistence });
       forbidNativeStorageOwner();
 
-      await expect(requestPermission(undefined, provider, undefined, 'persistent-storage')).resolves.toEqual(expected);
+      await expect(
+        requestPermission(permissionsProvider(), provider, undefined, 'persistent-storage'),
+      ).resolves.toEqual(expected);
       expect(requestPersistence).toHaveBeenCalledOnce();
     },
   );
@@ -150,9 +126,11 @@ describe('requestPermission', () => {
     const getPersistence = vi.fn(async () => ({ outcome: 'persistent' as const, permissionState: 'granted' as const }));
     forbidNativeStorageOwner();
 
-    await expect(requestPermission(undefined, undefined, undefined, 'persistent-storage')).resolves.toEqual({
-      reason: 'unsupported',
-    });
+    await expect(requestPermission(permissionsProvider(), undefined, undefined, 'persistent-storage')).resolves.toEqual(
+      {
+        reason: 'unsupported',
+      },
+    );
     expect(getPersistence).not.toHaveBeenCalled();
   });
 
@@ -160,7 +138,7 @@ describe('requestPermission', () => {
     const requestMIDIAccess = vi.fn();
     vi.stubGlobal('navigator', { requestMIDIAccess });
 
-    await expect(requestPermission(undefined, undefined, undefined, 'midi')).resolves.toEqual({
+    await expect(requestPermission(permissionsProvider(), undefined, undefined, 'midi')).resolves.toEqual({
       reason: 'no-request-route',
     });
     expect(requestMIDIAccess).not.toHaveBeenCalled();
@@ -190,6 +168,20 @@ function forbidNativeNotificationOwner(): void {
   );
 }
 
+function forbidNativePermissionOwner(): void {
+  vi.stubGlobal(
+    'navigator',
+    new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('Permissions must delegate to HostPermissionsProvider');
+        },
+      },
+    ),
+  );
+}
+
 function forbidNativeStorageOwner(): void {
   vi.stubGlobal(
     'navigator',
@@ -208,6 +200,22 @@ function persistenceProvider(provider: object): HostStoragePersistenceRequestPro
   return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceRequestProvider;
 }
 
-function notificationProvider(provider: object): HostNotificationPermissionProvider {
-  return provider as HostNotificationPermissionProvider;
+interface PermissionsProviderOverrides {
+  readonly notification?: HostNotificationPermissionProvider;
+  readonly queryPermission?: HostPermissionsProvider['queryPermission'];
+  readonly requestMediaAccess?: HostPermissionsProvider['requestMediaAccess'];
+  readonly requestWakeLock?: HostPermissionsProvider['requestWakeLock'];
+}
+
+function permissionsProvider(overrides: Readonly<PermissionsProviderOverrides> = {}): HostPermissionsProvider {
+  return {
+    [EntityRuntimeKey]: undefined,
+    notification: overrides.notification ?? {
+      getPermission: async () => ({ permission: 'default', reason: 'ok' }),
+      requestPermission: async () => ({ reason: 'dismissed' }),
+    },
+    queryPermission: overrides.queryPermission ?? (async () => ({ reason: 'unsupported' })),
+    requestMediaAccess: overrides.requestMediaAccess ?? (async () => ({ reason: 'runtime-unavailable' })),
+    requestWakeLock: overrides.requestWakeLock ?? (async () => ({ reason: 'runtime-unavailable' })),
+  };
 }

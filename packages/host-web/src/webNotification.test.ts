@@ -41,12 +41,22 @@ function fakeWebPage(permission: NotificationPermission = 'granted') {
   return {
     api: { Notification: Api } as WebPageNotificationApi,
     notifications,
+    permission: {
+      async getPermission() {
+        return { permission: Api.permission, reason: 'ok' as const };
+      },
+      async requestPermission() {
+        const requested = await Api.requestPermission();
+        return { reason: requested === 'default' ? ('dismissed' as const) : requested };
+      },
+    },
   };
 }
 
 describe('createWebPageNotificationCapabilities', () => {
   it('constructs the exact page profile without scheduling, reply, or update', () => {
-    const capabilities = createWebPageNotificationCapabilities(fakeWebPage().api);
+    const { api, permission } = fakeWebPage();
+    const capabilities = createWebPageNotificationCapabilities(api, permission);
     expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual([
       'click',
@@ -57,10 +67,12 @@ describe('createWebPageNotificationCapabilities', () => {
       'permission',
       'received',
     ]);
+    expect(capabilities.permission).toBe(permission);
   });
 
   it('reports rejected profile fields instead of silently dropping them', async () => {
-    const capabilities = createWebPageNotificationCapabilities(fakeWebPage().api);
+    const { api, permission } = fakeWebPage();
+    const capabilities = createWebPageNotificationCapabilities(api, permission);
     await expect(
       capabilities.delivery.notify({
         actions: [{ id: 'open', title: 'Open' }],
@@ -70,8 +82,8 @@ describe('createWebPageNotificationCapabilities', () => {
   });
 
   it('publishes an Entity only after constructor acceptance and pins close', async () => {
-    const { api, notifications } = fakeWebPage();
-    const capabilities = createWebPageNotificationCapabilities(api);
+    const { api, notifications, permission } = fakeWebPage();
+    const capabilities = createWebPageNotificationCapabilities(api, permission);
     const outcome = await capabilities.delivery.notify({
       data: { caller: true },
       id: 'n1',
@@ -87,8 +99,8 @@ describe('createWebPageNotificationCapabilities', () => {
   });
 
   it('attempts all closes and retries only failures', async () => {
-    const { api, notifications } = fakeWebPage();
-    const capabilities = createWebPageNotificationCapabilities(api);
+    const { api, notifications, permission } = fakeWebPage();
+    const capabilities = createWebPageNotificationCapabilities(api, permission);
     await capabilities.delivery.notify({ id: 'first', title: 'First' });
     await capabilities.delivery.notify({ id: 'second', title: 'Second' });
     let firstCloses = 0;

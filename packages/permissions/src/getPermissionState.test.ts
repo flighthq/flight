@@ -2,6 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostMidiPermissionProvider,
   HostNotificationPermissionProvider,
+  HostPermissionsProvider,
   HostStoragePersistenceQueryProvider,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +19,7 @@ describe('getPermissionState', () => {
   ] as const)('projects Notification %s to the common %s state', async (permission, state) => {
     const getPermission = vi.fn(async () => ({ permission, reason: 'ok' as const }));
     const requestPermission = vi.fn();
-    const provider = notificationProvider({ getPermission, requestPermission });
+    const provider = permissionsProvider({ getPermission, requestPermission });
     forbidNativeNotificationOwner();
 
     await expect(getPermissionState(provider, undefined, undefined, 'notifications')).resolves.toEqual({
@@ -30,21 +31,13 @@ describe('getPermissionState', () => {
   });
 
   it('preserves an owner query failure instead of returning a plausible state', async () => {
-    const provider = notificationProvider({
+    const provider = permissionsProvider({
       getPermission: vi.fn(async () => ({ reason: 'operation-failed' as const })),
       requestPermission: vi.fn(),
     });
 
     await expect(getPermissionState(provider, undefined, undefined, 'notifications')).resolves.toEqual({
       reason: 'operation-failed',
-    });
-  });
-
-  it('reports an absent Notification owner structurally instead of falling back to a native global', async () => {
-    forbidNativeNotificationOwner();
-
-    await expect(getPermissionState(undefined, undefined, undefined, 'notifications')).resolves.toEqual({
-      reason: 'unsupported',
     });
   });
 
@@ -75,14 +68,18 @@ describe('getPermissionState', () => {
     const provider = persistenceProvider({ getPersistence });
     forbidNativeStorageOwner();
 
-    await expect(getPermissionState(undefined, undefined, provider, 'persistent-storage')).resolves.toEqual(expected);
+    await expect(getPermissionState(permissionsProvider(), undefined, provider, 'persistent-storage')).resolves.toEqual(
+      expected,
+    );
     expect(getPersistence).toHaveBeenCalledOnce();
   });
 
   it('reports an absent persistence-query owner structurally', async () => {
     forbidNativeStorageOwner();
 
-    await expect(getPermissionState(undefined, undefined, undefined, 'persistent-storage')).resolves.toEqual({
+    await expect(
+      getPermissionState(permissionsProvider(), undefined, undefined, 'persistent-storage'),
+    ).resolves.toEqual({
       reason: 'unsupported',
     });
   });
@@ -102,11 +99,23 @@ describe('getPermissionState', () => {
       ),
     );
 
-    await expect(getPermissionState(undefined, provider, undefined, 'midi')).resolves.toEqual({
+    await expect(getPermissionState(permissionsProvider(), provider, undefined, 'midi')).resolves.toEqual({
       reason: 'ok',
       state: 'prompt',
     });
     expect(getPermission).toHaveBeenCalledOnce();
+  });
+
+  it('delegates native queries to the explicit permissions provider without reading Web globals', async () => {
+    const queryPermission = vi.fn(async () => ({ reason: 'ok' as const, state: 'granted' as const }));
+    forbidNativePermissionQuery();
+    const provider = permissionsProvider(undefined, queryPermission);
+
+    await expect(getPermissionState(provider, undefined, undefined, 'camera')).resolves.toEqual({
+      reason: 'ok',
+      state: 'granted',
+    });
+    expect(queryPermission).toHaveBeenCalledWith('camera');
   });
 
   it('requires explicit providers at the caller boundary', () => {
@@ -133,6 +142,20 @@ function forbidNativeNotificationOwner(): void {
   );
 }
 
+function forbidNativePermissionQuery(): void {
+  vi.stubGlobal(
+    'navigator',
+    new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('Permissions must delegate to HostPermissionsProvider');
+        },
+      },
+    ),
+  );
+}
+
 function forbidNativeStorageOwner(): void {
   vi.stubGlobal(
     'navigator',
@@ -151,6 +174,18 @@ function persistenceProvider(provider: object): HostStoragePersistenceQueryProvi
   return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceQueryProvider;
 }
 
-function notificationProvider(provider: object): HostNotificationPermissionProvider {
-  return provider as HostNotificationPermissionProvider;
+function permissionsProvider(
+  notification: HostNotificationPermissionProvider = {
+    getPermission: async () => ({ permission: 'default', reason: 'ok' }),
+    requestPermission: async () => ({ reason: 'dismissed' }),
+  },
+  queryPermission: HostPermissionsProvider['queryPermission'] = async () => ({ reason: 'unsupported' }),
+): HostPermissionsProvider {
+  return {
+    [EntityRuntimeKey]: undefined,
+    notification,
+    queryPermission,
+    requestMediaAccess: async () => ({ reason: 'runtime-unavailable' }),
+    requestWakeLock: async () => ({ reason: 'runtime-unavailable' }),
+  };
 }

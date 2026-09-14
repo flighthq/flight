@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   EntityConstruction,
+  HostNotificationPermissionProvider,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -16,15 +17,17 @@ import type {
 
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
 ): WebPageNotificationCapabilities {
   const out = allocateEntity<WebPageNotificationCapabilities>();
-  initializeWebPageNotificationCapabilities(out, api);
+  initializeWebPageNotificationCapabilities(out, api, hostNotificationPermission);
   return finishEntity(out);
 }
 
 export function initializeWebPageNotificationCapabilities(
   out: EntityConstruction<WebPageNotificationCapabilities>,
   api: Readonly<WebPageNotificationApi>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
 ): void {
   const nativeByNotification = new Map<Notification, WebPageNotificationInstance>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();
@@ -59,7 +62,13 @@ export function initializeWebPageNotificationCapabilities(
       if (destroyed) return { reason: 'operation-failed' };
       const invalid = getWebPageInvalidNotificationRequestFields(request);
       if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
-      if (api.Notification.permission !== 'granted') return { reason: 'permission-denied' };
+      try {
+        const outcome = await hostNotificationPermission.getPermission();
+        if (outcome.reason !== 'ok') return { reason: 'operation-failed' };
+        if (outcome.permission !== 'granted') return { reason: 'permission-denied' };
+      } catch {
+        return { reason: 'operation-failed' };
+      }
       const id = request.id ?? `web-notification-${nextId++}`;
       const tag = request.tag ?? `flight-web-notification-${nextId++}`;
       let native: WebPageNotificationInstance;
@@ -100,25 +109,7 @@ export function initializeWebPageNotificationCapabilities(
       return outcome;
     },
   };
-  out.permission = {
-    async getPermission() {
-      try {
-        return { permission: api.Notification.permission, reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    },
-    async requestPermission() {
-      try {
-        const permission = await api.Notification.requestPermission();
-        return {
-          reason: permission === 'default' ? 'dismissed' : permission,
-        };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    },
-  };
+  out.permission = hostNotificationPermission;
   out.received = makeWebNotificationEventBackend(receivedListeners, () => destroyed);
 }
 
