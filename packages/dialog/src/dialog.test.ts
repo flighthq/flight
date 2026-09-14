@@ -2,8 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostMessageDialogProvider } from '@flighthq/types/contract';
 
 import {
-  initializeWebMessageDialogBackend,
-  initializeWebPromptDialogBackend,
   showConfirmDialog,
   showErrorBox,
   showErrorDialog,
@@ -11,8 +9,6 @@ import {
   showMessageDialog,
   showPromptDialog,
   showWarningDialog,
-  webHostMessageDialog,
-  webHostPromptDialog,
 } from './dialog';
 
 function fakeHost() {
@@ -56,18 +52,6 @@ function severityHost(observed: string[]) {
     },
   };
 }
-
-describe('initializeWebMessageDialogBackend', () => {
-  it('is the construction initializer of createWebMessageDialogBackend', () => {
-    expect(typeof initializeWebMessageDialogBackend).toBe('function');
-  });
-});
-
-describe('initializeWebPromptDialogBackend', () => {
-  it('is the construction initializer of createWebPromptDialogBackend', () => {
-    expect(typeof initializeWebPromptDialogBackend).toBe('function');
-  });
-});
 
 describe('showConfirmDialog', () => {
   it('delegates confirmation through the explicit message slot', async () => {
@@ -124,19 +108,6 @@ describe('showMessageDialog', () => {
 describe('showPromptDialog', () => {
   it('delegates prompts through the explicit prompt slot', async () => {
     expect(await showPromptDialog(fakeHost().dialog.prompt, { message: 'name?' })).toBe('typed');
-  });
-
-  it('keeps the existing browser message and prompt providers callable', async () => {
-    expect(typeof (await webHostMessageDialog.confirm({ message: 'sure?' }))).toBe('boolean');
-    expect(webHostPromptDialog.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
-  });
-
-  it('does not open the synchronous browser prompt when already aborted', async () => {
-    const prompt = vi.spyOn(window, 'prompt');
-    const controller = new AbortController();
-    controller.abort();
-    await expect(webHostPromptDialog.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
-    expect(prompt).not.toHaveBeenCalled();
   });
 });
 

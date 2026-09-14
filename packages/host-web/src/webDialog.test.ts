@@ -6,7 +6,9 @@ import {
   initializeWebFileOpenDialogBackend,
   initializeWebFileSaveDialogBackend,
   initializeWebImageOpenDialogBackend,
+  initializeWebMessageDialogBackend,
   initializeWebPhotoCaptureDialogBackend,
+  initializeWebPromptDialogBackend,
   initializeWebVideoCaptureDialogBackend,
   webHostDirectoryOpenDialog,
   webHostFileOpenDialog,
@@ -25,13 +27,6 @@ afterEach(() => {
   delete (window as Window & { showDirectoryPicker?: unknown }).showDirectoryPicker;
   delete (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker;
   delete (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
-});
-
-describe('existing web message providers', () => {
-  it('remain exported from the host package', () => {
-    expect(typeof webHostMessageDialog.message).toBe('function');
-    expect(typeof webHostPromptDialog.prompt).toBe('function');
-  });
 });
 
 describe('initializeWebDirectoryOpenDialogBackend', () => {
@@ -58,9 +53,21 @@ describe('initializeWebImageOpenDialogBackend', () => {
   });
 });
 
+describe('initializeWebMessageDialogBackend', () => {
+  it('is the construction initializer of webHostMessageDialog', () => {
+    expect(typeof initializeWebMessageDialogBackend).toBe('function');
+  });
+});
+
 describe('initializeWebPhotoCaptureDialogBackend', () => {
   it('is the construction initializer of createWebPhotoCaptureDialogBackend', () => {
     expect(typeof initializeWebPhotoCaptureDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebPromptDialogBackend', () => {
+  it('is the construction initializer of webHostPromptDialog', () => {
+    expect(typeof initializeWebPromptDialogBackend).toBe('function');
   });
 });
 
@@ -338,6 +345,27 @@ describe('webHostImageOpenDialog', () => {
   });
 });
 
+describe('webHostMessageDialog', () => {
+  it('is an Entity installed in the message slot', () => {
+    expect(EntityRuntimeKey in webHostMessageDialog).toBe(true);
+    expect(webHost.dialog.message).toBe(webHostMessageDialog);
+  });
+
+  it('uses the browser confirmation and message surfaces', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    await expect(webHostMessageDialog.confirm({ message: 'sure?' })).resolves.toBe(true);
+    await expect(webHostMessageDialog.message({ message: 'hello' })).resolves.toEqual({
+      buttonIndex: 0,
+      cancelled: false,
+      checkboxChecked: false,
+    });
+    expect(confirm).toHaveBeenCalledWith('sure?');
+    expect(alert).toHaveBeenCalledWith('hello');
+  });
+});
+
 describe('webHostPhotoCaptureDialog', () => {
   it('is a distinct Entity installed in the photo-capture slot', () => {
     expect(EntityRuntimeKey in webHostPhotoCaptureDialog).toBe(true);
@@ -370,6 +398,28 @@ describe('webHostPhotoCaptureDialog', () => {
     await expect(pending).resolves.toEqual({ outcome: 'cancelled' });
     expect(remove).toHaveBeenCalledWith('change', expect.any(Function));
     expect(remove).toHaveBeenCalledWith('cancel', expect.any(Function));
+  });
+});
+
+describe('webHostPromptDialog', () => {
+  it('is an Entity installed in the prompt slot', () => {
+    expect(EntityRuntimeKey in webHostPromptDialog).toBe(true);
+    expect(webHost.dialog.prompt).toBe(webHostPromptDialog);
+  });
+
+  it('uses the browser prompt surface', async () => {
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue('typed');
+
+    await expect(webHostPromptDialog.prompt({ defaultValue: 'initial', message: 'name?' })).resolves.toBe('typed');
+    expect(prompt).toHaveBeenCalledWith('name?', 'initial');
+  });
+
+  it('does not open the synchronous browser prompt when already aborted', async () => {
+    const prompt = vi.spyOn(window, 'prompt');
+    const controller = new AbortController();
+    controller.abort();
+    await expect(webHostPromptDialog.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
+    expect(prompt).not.toHaveBeenCalled();
   });
 });
 
