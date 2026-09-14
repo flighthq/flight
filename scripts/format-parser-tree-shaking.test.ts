@@ -3,87 +3,343 @@
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-interface FormatParserTreeShakingCase {
-  coreExports: readonly string[];
-  name: string;
-  optionalExports: readonly { module: string; name: string }[];
-  packageDirectory: string;
+interface BundleSnapshot {
+  code: string;
+  contributedBytes: ReadonlyMap<string, number>;
+  exports: ReadonlySet<string>;
 }
+
+interface FormatHandlerFamily {
+  modules: readonly string[];
+  name: string;
+  registrar: string;
+  symbols: readonly string[];
+}
+
+interface FormatParserAssembly {
+  exports: readonly string[];
+  families: readonly string[];
+  name: string;
+}
+
+interface FormatParserTreeShakingCase {
+  allRegistrar: string;
+  contractOnlyExports: readonly string[];
+  families: readonly FormatHandlerFamily[];
+  fullAssemblies: readonly FormatParserAssembly[];
+  leanExports: readonly string[];
+  name: string;
+  packageDirectory: string;
+  publicConstructionExports: readonly string[];
+}
+
+const GLTF_MATERIAL_MODULES = [
+  'gltfAnisotropy.ts',
+  'gltfClearcoat.ts',
+  'gltfEmissiveStrength.ts',
+  'gltfIridescence.ts',
+  'gltfSheen.ts',
+  'gltfSpecular.ts',
+  'gltfSpecularGlossiness.ts',
+  'gltfTransmissionVolume.ts',
+  'gltfUnlit.ts',
+] as const;
+
+const GLTF_MATERIAL_HANDLER_SYMBOLS = [
+  'GltfAnisotropyExtensionHandler',
+  'GltfClearcoatExtensionHandler',
+  'GltfEmissiveStrengthExtensionHandler',
+  'GltfIridescenceExtensionHandler',
+  'GltfSheenExtensionHandler',
+  'GltfSpecularExtensionHandler',
+  'GltfSpecularGlossinessExtensionHandler',
+  'GltfIorExtensionHandler',
+  'GltfTransmissionExtensionHandler',
+  'GltfVolumeExtensionHandler',
+  'GltfUnlitExtensionHandler',
+] as const;
+
+const SPINE_SECTION_READER_SYMBOLS = [
+  'readSpineBinaryAnimationsSection',
+  'readSpineBinaryBonesSection',
+  'readSpineBinaryEventsSection',
+  'readSpineBinaryIkConstraintsSection',
+  'readSpineBinaryPathConstraintsSection',
+  'readSpineBinarySkinsSection',
+  'readSpineBinarySlotsSection',
+  'readSpineBinaryTransformConstraintsSection',
+] as const;
+
+const SPINE_TIMELINE_READER_SYMBOLS = [
+  'readSpineBinaryBoneTimelines',
+  'readSpineBinaryDeformTimelines',
+  'readSpineBinaryDrawOrderTimeline',
+  'readSpineBinaryEventTimelines',
+  'readSpineBinaryIkTimelines',
+  'readSpineBinaryPathTimelines',
+  'readSpineBinarySlotTimelines',
+  'readSpineBinaryTransformTimelines',
+] as const;
 
 const CASES: readonly FormatParserTreeShakingCase[] = [
   {
-    coreExports: ['parseGltf'],
-    name: 'glTF',
-    optionalExports: [
-      { module: 'gltfAnisotropy.ts', name: 'GltfAnisotropyExtensionHandler' },
-      { module: 'gltfClearcoat.ts', name: 'GltfClearcoatExtensionHandler' },
-      { module: 'gltfEmissiveStrength.ts', name: 'GltfEmissiveStrengthExtensionHandler' },
-      { module: 'gltfIridescence.ts', name: 'GltfIridescenceExtensionHandler' },
-      { module: 'gltfPunctualLights.ts', name: 'GltfPunctualLightsExtensionHandler' },
-      { module: 'gltfSheen.ts', name: 'GltfSheenExtensionHandler' },
-      { module: 'gltfSpecular.ts', name: 'GltfSpecularExtensionHandler' },
-      { module: 'gltfSpecularGlossiness.ts', name: 'GltfSpecularGlossinessExtensionHandler' },
-      { module: 'gltfTransmissionVolume.ts', name: 'GltfIorExtensionHandler' },
-      { module: 'gltfTransmissionVolume.ts', name: 'GltfTransmissionExtensionHandler' },
-      { module: 'gltfUnlit.ts', name: 'GltfUnlitExtensionHandler' },
-      { module: 'gltfTransmissionVolume.ts', name: 'GltfVolumeExtensionHandler' },
+    allRegistrar: 'registerAllGltfHandlers',
+    contractOnlyExports: [
+      'GltfAnimationsCoreFeatureHandler',
+      'GltfCamerasCoreFeatureHandler',
+      'GltfSkinsCoreFeatureHandler',
+      ...GLTF_MATERIAL_HANDLER_SYMBOLS,
+      'GltfPunctualLightsExtensionHandler',
+      'registerGltfCoreFeatureHandler',
+      'registerGltfExtensionHandler',
     ],
+    families: [
+      {
+        modules: ['gltfAnimations.ts'],
+        name: 'animation',
+        registrar: 'registerGltfAnimationHandlers',
+        symbols: [],
+      },
+      {
+        modules: ['gltfCameras.ts'],
+        name: 'camera',
+        registrar: 'registerGltfCameraHandlers',
+        symbols: [],
+      },
+      {
+        modules: ['gltfSkins.ts'],
+        name: 'skin',
+        registrar: 'registerGltfSkinHandlers',
+        symbols: [],
+      },
+      {
+        modules: GLTF_MATERIAL_MODULES,
+        name: 'material extensions',
+        registrar: 'registerGltfMaterialExtensionHandlers',
+        symbols: [],
+      },
+      {
+        modules: ['gltfPunctualLights.ts'],
+        name: 'lighting extensions',
+        registrar: 'registerGltfLightingExtensionHandlers',
+        symbols: [],
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['parseGltf'],
+        families: ['animation', 'camera', 'skin'],
+        name: 'zero-config JSON parser',
+      },
+      {
+        exports: ['parseGlb'],
+        families: ['animation', 'camera', 'skin'],
+        name: 'zero-config binary parser',
+      },
+    ],
+    leanExports: ['parseGltfWithCoreFeatureHandlers', 'parseGlbWithCoreFeatureHandlers'],
+    name: 'glTF',
     packageDirectory: 'scene3d-formats',
+    publicConstructionExports: [],
+  },
+  {
+    allRegistrar: 'registerAllSpineBinaryHandlers',
+    contractOnlyExports: [
+      'getSpineBinarySectionHandler',
+      'getSpineBinaryTimelineHandler',
+      'initializeSpineBinaryRegistry',
+      'registerSpineBinarySectionHandler',
+      'registerSpineBinaryTimelineHandler',
+      'spineBinaryAnimationsSectionHandler',
+      'spineBinaryBonesSectionHandler',
+      'spineBinaryEventsSectionHandler',
+      'spineBinaryIkConstraintsSectionHandler',
+      'spineBinaryPathConstraintsSectionHandler',
+      'spineBinarySkinsSectionHandler',
+      'spineBinarySlotsSectionHandler',
+      'spineBinaryTransformConstraintsSectionHandler',
+      'spineBinaryBoneTimelineHandler',
+      'spineBinaryDeformTimelineHandler',
+      'spineBinaryDrawOrderTimelineHandler',
+      'spineBinaryEventTimelineHandler',
+      'spineBinaryIkTimelineHandler',
+      'spineBinaryPathTimelineHandler',
+      'spineBinarySlotTimelineHandler',
+      'spineBinaryTransformTimelineHandler',
+      'unregisterSpineBinarySectionHandler',
+      'unregisterSpineBinaryTimelineHandler',
+    ],
+    families: [
+      {
+        modules: ['spineBinarySectionHandlers.ts'],
+        name: 'sections',
+        registrar: 'registerSpineBinarySectionHandlers',
+        symbols: SPINE_SECTION_READER_SYMBOLS,
+      },
+      {
+        modules: ['spineBinaryTimelineHandlers.ts'],
+        name: 'timelines',
+        registrar: 'registerSpineBinaryTimelineHandlers',
+        symbols: SPINE_TIMELINE_READER_SYMBOLS,
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['parseSpineSkeletonBinary'],
+        families: ['sections', 'timelines'],
+        name: 'zero-config parser',
+      },
+    ],
+    leanExports: ['parseSpineSkeletonBinaryWithRegistry'],
+    name: 'Spine binary',
+    packageDirectory: 'skeleton2d-formats',
+    publicConstructionExports: ['createSpineBinaryRegistry'],
   },
 ];
 
-describe('format parser tree shaking', () => {
+describe('format parser handler export lanes', () => {
   for (const testCase of CASES) {
-    for (const entry of testCase.optionalExports) {
-      it(`keeps ${testCase.name} ${entry.name} reachable without sibling handlers`, async () => {
-        const bundle = await bundlePublicExports(testCase.packageDirectory, [entry.name]);
+    it(`keeps ${testCase.name} handler atoms and low-level registration in contract`, async () => {
+      const [publicExports, contractExports] = await Promise.all([
+        getEntrypointExports(testCase.packageDirectory, 'index.ts'),
+        getEntrypointExports(testCase.packageDirectory, 'contract.ts'),
+      ]);
+      const intendedPublicExports = [
+        ...testCase.publicConstructionExports,
+        ...testCase.leanExports,
+        ...testCase.families.map((family) => family.registrar),
+        testCase.allRegistrar,
+        ...testCase.fullAssemblies.flatMap((assembly) => assembly.exports),
+      ];
 
-        expect(getContributedBytes(bundle, testCase.packageDirectory, entry.module), entry.name).toBeGreaterThan(0);
-        for (const sibling of testCase.optionalExports) {
-          if (sibling.module === entry.module) continue;
-          expect(getContributedBytes(bundle, testCase.packageDirectory, sibling.module), sibling.name).toBe(0);
-        }
-      });
-    }
-
-    it(`keeps the ${testCase.name} core parser independent of optional handler modules`, async () => {
-      const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.coreExports);
-
-      for (const entry of testCase.optionalExports) {
-        expect(getContributedBytes(bundle, testCase.packageDirectory, entry.module), entry.name).toBe(0);
+      for (const name of intendedPublicExports) {
+        expect(publicExports, `${name} public`).toContain(name);
+        expect(contractExports, `${name} contract`).toContain(name);
       }
+      for (const name of testCase.contractOnlyExports) {
+        expect(contractExports, `${name} contract`).toContain(name);
+        expect(publicExports, `${name} public`).not.toContain(name);
+      }
+      for (const family of testCase.families) expect(family.registrar).toMatch(/Handlers$/);
+      expect(testCase.allRegistrar).toMatch(/^registerAll.*Handlers$/);
     });
   }
 });
 
-async function bundlePublicExports(
+describe('format parser handler tree shaking', () => {
+  for (const testCase of CASES) {
+    for (const family of testCase.families) {
+      it(`isolates the ${testCase.name} ${family.name} family`, async () => {
+        const bundle = await bundlePublicExports(testCase.packageDirectory, [family.registrar]);
+
+        expectFamilyReachable(bundle, testCase, family);
+        for (const sibling of testCase.families) {
+          if (sibling === family) continue;
+          expectFamilyAbsent(bundle, testCase, sibling);
+        }
+      });
+    }
+
+    it(`keeps the ${testCase.name} lean parser independent of built-in handler families`, async () => {
+      const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.leanExports);
+
+      for (const family of testCase.families) expectFamilyAbsent(bundle, testCase, family);
+    });
+
+    it(`makes ${testCase.name} all-handler registration explicit`, async () => {
+      const bundle = await bundlePublicExports(testCase.packageDirectory, [testCase.allRegistrar]);
+
+      for (const family of testCase.families) expectFamilyReachable(bundle, testCase, family);
+    });
+
+    for (const assembly of testCase.fullAssemblies) {
+      it(`preserves the ${testCase.name} ${assembly.name} handler set`, async () => {
+        const bundle = await bundlePublicExports(testCase.packageDirectory, assembly.exports);
+
+        for (const family of testCase.families) {
+          if (assembly.families.includes(family.name)) expectFamilyReachable(bundle, testCase, family);
+          else expectFamilyAbsent(bundle, testCase, family);
+        }
+      });
+    }
+  }
+});
+
+function expectFamilyAbsent(
+  bundle: Readonly<BundleSnapshot>,
+  testCase: Readonly<FormatParserTreeShakingCase>,
+  family: Readonly<FormatHandlerFamily>,
+): void {
+  for (const module of family.modules) {
+    expect(getContributedBytes(bundle, testCase.packageDirectory, module), `${family.name}: ${module}`).toBe(0);
+  }
+  for (const symbol of family.symbols) {
+    expect(bundle.code, `${family.name}: ${symbol}`).not.toContain(getKeptFunctionNameMarker(symbol));
+  }
+}
+
+function expectFamilyReachable(
+  bundle: Readonly<BundleSnapshot>,
+  testCase: Readonly<FormatParserTreeShakingCase>,
+  family: Readonly<FormatHandlerFamily>,
+): void {
+  for (const module of family.modules) {
+    expect(getContributedBytes(bundle, testCase.packageDirectory, module), `${family.name}: ${module}`).toBeGreaterThan(
+      0,
+    );
+  }
+  for (const symbol of family.symbols) {
+    expect(bundle.code, `${family.name}: ${symbol}`).toContain(getKeptFunctionNameMarker(symbol));
+  }
+}
+
+function getKeptFunctionNameMarker(symbol: string): string {
+  return `,"${symbol}")`;
+}
+
+async function bundlePublicExports(packageDirectory: string, names: readonly string[]): Promise<BundleSnapshot> {
+  return bundleEntrypoint(packageDirectory, 'index.ts', `export { ${names.join(', ')} } from './index.ts';`);
+}
+
+async function getEntrypointExports(packageDirectory: string, entrypoint: string): Promise<readonly string[]> {
+  const bundle = await bundleEntrypoint(packageDirectory, entrypoint, `export * from './${entrypoint}';`);
+  return [...bundle.exports];
+}
+
+async function bundleEntrypoint(
   packageDirectory: string,
-  names: readonly string[],
-): Promise<ReadonlyMap<string, number>> {
+  entrypoint: string,
+  contents: string,
+): Promise<BundleSnapshot> {
   const result = await build({
     bundle: true,
     format: 'esm',
+    keepNames: true,
     logLevel: 'silent',
     metafile: true,
     minify: true,
     packages: 'external',
     stdin: {
-      contents: `export { ${names.join(', ')} } from './index.ts';`,
+      contents,
       resolveDir: getPackageSourceDirectory(packageDirectory),
-      sourcefile: `${packageDirectory}-public-exports.ts`,
+      sourcefile: `${packageDirectory}-${entrypoint}`,
     },
     treeShaking: true,
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];
-  return new Map(
-    Object.entries(output.inputs).map(([file, contribution]) => [normalizePath(file), contribution.bytesInOutput]),
-  );
+  return {
+    code: result.outputFiles[0].text,
+    contributedBytes: new Map(
+      Object.entries(output.inputs).map(([file, contribution]) => [normalizePath(file), contribution.bytesInOutput]),
+    ),
+    exports: new Set(output.exports),
+  };
 }
 
-function getContributedBytes(bundle: ReadonlyMap<string, number>, packageDirectory: string, module: string): number {
+function getContributedBytes(bundle: Readonly<BundleSnapshot>, packageDirectory: string, module: string): number {
   const suffix = `/packages/${packageDirectory}/src/${module}`;
-  for (const [file, bytes] of bundle) {
+  for (const [file, bytes] of bundle.contributedBytes) {
     if (`/${file}`.endsWith(suffix)) return bytes;
   }
   return 0;
