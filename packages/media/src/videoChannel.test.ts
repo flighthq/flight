@@ -30,6 +30,9 @@ import {
 // caller-owned tracks, then release the decoder.
 const webVideoHost: HostVideoProvider = {
   canPlayType: () => true,
+  getHeight: (element) => (element as HTMLVideoElement).videoHeight,
+  getWidth: (element) => (element as HTMLVideoElement).videoWidth,
+  isReady: (element) => (element as HTMLVideoElement).readyState >= 2,
   releaseElement(element) {
     const video = element as HTMLVideoElement;
     if (video.srcObject !== null) video.srcObject = null;
@@ -120,9 +123,9 @@ describe('destroyVideoChannel', () => {
     (element as unknown as Record<string, unknown>).readyState = 4;
     const resource = createVideoResource(element, undefined, true);
     const channel = playVideoResource(resource)!;
-    const texture = createVideoTexture(resource);
+    const texture = createVideoTexture(webVideoHost, resource);
     expect(element.listenerCount('ended')).toBe(1);
-    expect(getVideoTextureWidth(texture)).toBe(320);
+    expect(getVideoTextureWidth(webVideoHost, texture)).toBe(320);
     destroyVideoResource(webVideoHost, resource);
     destroyVideoTexture(texture);
     destroyVideoChannel(channel);
@@ -131,7 +134,7 @@ describe('destroyVideoChannel', () => {
     expect(element.listenerCount('ended')).toBe(0);
     expect(element.paused).toBe(true);
     expect(getTextureSource(texture)).toBeNull();
-    expect(getVideoTextureWidth(texture)).toBe(-1);
+    expect(getVideoTextureWidth(webVideoHost, texture)).toBe(-1);
     expect(track.stop).not.toHaveBeenCalled();
   });
 
@@ -143,7 +146,7 @@ describe('destroyVideoChannel', () => {
     (element as unknown as Record<string, unknown>).readyState = 4;
     const resource = createVideoResource(element, undefined, true);
     const channel = playVideoResource(resource)!;
-    const texture = createVideoTexture(resource);
+    const texture = createVideoTexture(webVideoHost, resource);
     destroyVideoChannel(channel);
     destroyVideoTexture(texture);
     destroyVideoResource(webVideoHost, resource);
@@ -152,7 +155,7 @@ describe('destroyVideoChannel', () => {
     expect(element.paused).toBe(true);
     expect(resource.element).toBeNull();
     expect(getTextureSource(texture)).toBeNull();
-    expect(getVideoTextureWidth(texture)).toBe(-1);
+    expect(getVideoTextureWidth(webVideoHost, texture)).toBe(-1);
     expect(track.stop).not.toHaveBeenCalled();
   });
 });

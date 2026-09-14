@@ -1,6 +1,6 @@
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
+import type { HostVideoProvider, LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -16,6 +16,12 @@ import {
 
 const FLAT: WgpuUnlitDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasColorMap: false };
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
+const testVideoHost = {
+  canPlayType: () => true,
+  getHeight: (source) => (source as HTMLVideoElement).videoHeight,
+  getWidth: (source) => (source as HTMLVideoElement).videoWidth,
+  isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
+} satisfies HostVideoProvider;
 
 describe('bindWgpuUnlitSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {
@@ -40,8 +46,8 @@ describe('bindWgpuUnlitVideoSurface', () => {
       videoHeight: { value: 120 },
       videoWidth: { value: 160 },
     });
-    const video = createVideoTexture(createVideoResource(element));
-    advanceVideoTexture(video);
+    const video = createVideoTexture(testVideoHost, createVideoResource(element));
+    advanceVideoTexture(testVideoHost, video);
     registerWgpuImageTextureResolver(state);
     bindWgpuUnlitVideoSurface(state, pipeline, {}, COLOR, 1, 0.5, video);
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);

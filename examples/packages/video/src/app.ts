@@ -90,7 +90,7 @@ function enterFrame(): void {
 }
 
 function renderFrame(): void {
-  for (const texture of videoTextures) advanceVideoTexture(texture);
+  for (const texture of videoTextures) advanceVideoTexture(webHostVideo, texture);
   invalidateNodeAppearance(videoNode);
   invalidateNodeAppearance(secondVideoNode);
   invalidateNodeAppearance(thirdVideoNode);
@@ -98,13 +98,13 @@ function renderFrame(): void {
 }
 
 function setVideoSources(
-  resource1: Parameters<typeof createVideoTexture>[0],
-  resource2: Parameters<typeof createVideoTexture>[0],
-  resource3: Parameters<typeof createVideoTexture>[0],
+  resource1: Parameters<typeof createVideoTexture>[1],
+  resource2: Parameters<typeof createVideoTexture>[1],
+  resource3: Parameters<typeof createVideoTexture>[1],
 ): void {
-  const texture1 = createVideoTexture(resource1);
-  const texture2 = createVideoTexture(resource2);
-  const texture3 = createVideoTexture(resource3);
+  const texture1 = createVideoTexture(webHostVideo, resource1);
+  const texture2 = createVideoTexture(webHostVideo, resource2);
+  const texture3 = createVideoTexture(webHostVideo, resource3);
   videoTextures.push(texture1, texture2, texture3);
   videoNode.data.texture = texture1;
   secondVideoNode.data.texture = texture2;

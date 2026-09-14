@@ -4,7 +4,7 @@ import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, HostVideoProvider, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
@@ -29,6 +29,13 @@ const NO_LIGHTS: Scene3DLightBlock = {
   spotCount: 0,
   version: 1,
 };
+
+const testVideoHost = {
+  canPlayType: () => true,
+  getHeight: (source) => (source as HTMLVideoElement).videoHeight,
+  getWidth: (source) => (source as HTMLVideoElement).videoWidth,
+  isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
+} satisfies HostVideoProvider;
 
 function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();
@@ -66,8 +73,8 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
       videoHeight: { value: 120 },
       videoWidth: { value: 160 },
     });
-    material.baseColorMap = createVideoTexture(createVideoResource(element));
-    advanceVideoTexture(material.baseColorMap);
+    material.baseColorMap = createVideoTexture(testVideoHost, createVideoResource(element));
+    advanceVideoTexture(testVideoHost, material.baseColorMap);
     registerWgpuImageTextureResolver(state);
     unlitWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(fake.calls.some((c) => c.name === 'copyExternalImageToTexture')).toBe(true);

@@ -7,6 +7,7 @@
 // blue) and given the videoWidth/videoHeight/readyState a video element exposes, so every backend uploads
 // and draws a deterministic, known frame. (This mirrors how video.test.ts stands in a fake element.) The
 // scene assertion samples each half â€” a renderer that ignored the source, mis-sized it, or skipped the frame fails.
+import { webHostVideo } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -63,7 +64,7 @@ Object.defineProperty(frame, 'readyState', { value: 2 }); // HAVE_CURRENT_DATA â
 const root = createDisplayObject();
 
 const videoNode = createSprite();
-videoNode.data.texture = createVideoTexture(createVideoResource(frame as unknown as HTMLVideoElement), {
+videoNode.data.texture = createVideoTexture(webHostVideo, createVideoResource(frame as unknown as HTMLVideoElement), {
   sampler: createPixelArtSampler(),
 });
 videoNode.x = VIDEO_X;
