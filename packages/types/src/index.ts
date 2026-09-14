@@ -680,6 +680,7 @@ export * from './Statechart';
 export * from './StatechartSignals';
 export * from './SwfDocumentImport';
 export * from './SwfFilterListGuard';
+export * from './SwfTagHandler';
 export * from './Sprite';
 export * from './SwfDocumentImport';
 export type { SpriteIdentityRendererData } from './SpriteIdentityRendererData';
