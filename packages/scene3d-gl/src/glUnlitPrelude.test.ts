@@ -94,7 +94,11 @@ describe('bindGlUnlitSurface', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture(
-      createVideoResource({ readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement),
+      createVideoResource({
+        readyState: 4,
+        videoWidth: 320,
+        videoHeight: 240,
+      } as HTMLVideoElement),
     );
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
@@ -114,7 +118,11 @@ describe('bindGlUnlitSurface', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
     const videoMap = createVideoTexture(
-      createVideoResource({ readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement),
+      createVideoResource({
+        readyState: 4,
+        videoWidth: 320,
+        videoHeight: 240,
+      } as HTMLVideoElement),
     );
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);

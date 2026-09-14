@@ -4,6 +4,7 @@ import {
   getTextureSource,
   getVideoTextureWidth,
 } from '@flighthq/texture/contract';
+import type { HostVideoProvider } from '@flighthq/types/contract';
 import { createVideoResource, destroyVideoResource } from '@flighthq/video/contract';
 
 import {
@@ -23,6 +24,19 @@ import {
   setVideoChannelPlaybackRate,
   stopVideoChannel,
 } from './videoChannel';
+
+// The element teardown destroyVideoResource used to perform inline now belongs to the host provider,
+// so these cases supply the one the mock element expects: detach a live stream without stopping its
+// caller-owned tracks, then release the decoder.
+const webVideoHost: HostVideoProvider = {
+  canPlayType: () => true,
+  releaseElement(element) {
+    const video = element as HTMLVideoElement;
+    if (video.srcObject !== null) video.srcObject = null;
+    video.removeAttribute('src');
+    video.load();
+  },
+};
 
 describe('destroyVideoChannel', () => {
   it('nulls source and sets state to stopped', () => {
@@ -90,7 +104,7 @@ describe('destroyVideoChannel', () => {
     const resource = createVideoResource(element, undefined, true);
     const channel = playVideoResource(resource)!;
     expect(element.listenerCount('ended')).toBe(1);
-    destroyVideoResource(resource);
+    destroyVideoResource(webVideoHost, resource);
     expect(resource.element).toBeNull();
     destroyVideoChannel(channel);
     expect(element.listenerCount('ended')).toBe(0);
@@ -109,7 +123,7 @@ describe('destroyVideoChannel', () => {
     const texture = createVideoTexture(resource);
     expect(element.listenerCount('ended')).toBe(1);
     expect(getVideoTextureWidth(texture)).toBe(320);
-    destroyVideoResource(resource);
+    destroyVideoResource(webVideoHost, resource);
     destroyVideoTexture(texture);
     destroyVideoChannel(channel);
     expect(resource.element).toBeNull();
@@ -132,7 +146,7 @@ describe('destroyVideoChannel', () => {
     const texture = createVideoTexture(resource);
     destroyVideoChannel(channel);
     destroyVideoTexture(texture);
-    destroyVideoResource(resource);
+    destroyVideoResource(webVideoHost, resource);
     expect(channel.source).toBeNull();
     expect(element.listenerCount('ended')).toBe(0);
     expect(element.paused).toBe(true);

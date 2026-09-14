@@ -59,13 +59,13 @@ export function loadVideoResourceFromUrl(
 
     const onError = (): void => {
       cleanup();
-      disposeVideoResource(createVideoResource(element));
+      disposeVideoResource(backend, createVideoResource(element));
       reject(new Error(`Failed to load video: ${url}`));
     };
 
     const onAbort = (): void => {
       cleanup();
-      disposeVideoResource(createVideoResource(element));
+      disposeVideoResource(backend, createVideoResource(element));
       reject(signal!.reason);
     };
 

@@ -66,7 +66,11 @@ describe('unlitGlMeshMaterialRenderer', () => {
     const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
     material.baseColorMap = createVideoTexture(
-      createVideoResource({ readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement),
+      createVideoResource({
+        readyState: 4,
+        videoHeight: 120,
+        videoWidth: 160,
+      } as HTMLVideoElement),
     );
     material.baseColorMap.sampler.mipmaps = false;
     advanceVideoTexture(material.baseColorMap);

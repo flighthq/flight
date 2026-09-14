@@ -1,3 +1,5 @@
+import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
+
 import {
   createVideoResource,
   destroyVideoResource,
@@ -24,242 +26,202 @@ describe('createVideoResource', () => {
     expect(resource.ownsElement).toBe(false);
   });
 
-  it('stores the provided video element as borrowed by default', () => {
-    const element = document.createElement('video');
-    const resource = createVideoResource(element);
-    expect(resource.element).toBe(element);
+  it('stores the provided host video source as borrowed by default', () => {
+    const source = videoSource();
+    const resource = createVideoResource(source);
+    expect(resource.element).toBe(source);
     expect(resource.ownsElement).toBe(false);
   });
 
-  it('marks element as owned when explicitly requested', () => {
-    const element = document.createElement('video');
-    const resource = createVideoResource(element, undefined, true);
-    expect(resource.element).toBe(element);
+  it('marks the source as owned when explicitly requested', () => {
+    const source = videoSource();
+    const resource = createVideoResource(source, undefined, true);
+    expect(resource.element).toBe(source);
     expect(resource.ownsElement).toBe(true);
   });
 });
 
 describe('destroyVideoResource', () => {
-  it('releases an owned element by detaching src and reloading to free the decoder', () => {
-    const removeAttribute = vi.fn();
-    const load = vi.fn();
-    const element = { removeAttribute, load, srcObject: null } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, undefined, true);
+  it('asks the host to release an owned source, detaching a live stream with it', () => {
+    const host = fakeVideoHost();
+    const source = videoSource();
+    const resource = createVideoResource(source, undefined, true);
 
-    destroyVideoResource(resource);
+    destroyVideoResource(host.provider, resource);
 
-    expect(removeAttribute).toHaveBeenCalledWith('src');
-    expect(load).toHaveBeenCalledOnce();
+    // releaseElement is what drops a live capture stream without stopping caller-owned tracks.
+    expect(host.released).toEqual([source]);
     expect(resource.element).toBeNull();
     expect(resource.ownsElement).toBe(false);
   });
 
-  it('does not release a borrowed element — the caller manages its lifecycle', () => {
-    const removeAttribute = vi.fn();
-    const load = vi.fn();
-    const element = { removeAttribute, load, srcObject: null } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element);
+  it('does not release a borrowed source — the caller manages its lifecycle', () => {
+    const host = fakeVideoHost();
+    const resource = createVideoResource(videoSource());
 
-    destroyVideoResource(resource);
+    destroyVideoResource(host.provider, resource);
 
-    expect(removeAttribute).not.toHaveBeenCalled();
-    expect(load).not.toHaveBeenCalled();
+    expect(host.released).toEqual([]);
     expect(resource.element).toBeNull();
     expect(resource.ownsElement).toBe(false);
   });
 
-  it('clears srcObject on an owned MediaStream element without stopping caller-owned tracks', () => {
-    const track = { stop: vi.fn() } as unknown as MediaStreamTrack;
-    const stream = { getTracks: () => [track] } as unknown as MediaStream;
-    const element = {
-      removeAttribute: vi.fn(),
-      load: vi.fn(),
-      srcObject: stream,
-    } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, undefined, true);
+  it('revokes an owned object URL after the host has released the element', () => {
+    const host = fakeVideoHost();
 
-    destroyVideoResource(resource);
+    destroyVideoResource(host.provider, createVideoResource(videoSource(), 'blob:owned', true));
 
-    expect(element.srcObject).toBeNull();
-    expect(track.stop).not.toHaveBeenCalled();
+    // Order matters: the element must let go of its src before the URL behind it is revoked.
+    expect(host.order).toEqual(['release', 'revoke']);
   });
 
-  it('does not touch srcObject on a borrowed element', () => {
-    const stream = {} as MediaStream;
-    const element = {
-      removeAttribute: vi.fn(),
-      load: vi.fn(),
-      srcObject: stream,
-    } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element);
+  it('revokes an object URL even when the source is borrowed', () => {
+    const host = fakeVideoHost();
+    const resource = createVideoResource(videoSource(), 'blob:owned');
 
-    destroyVideoResource(resource);
+    destroyVideoResource(host.provider, resource);
 
-    expect(element.srcObject).toBe(stream);
-  });
-
-  it('revokes an owned object URL after the element has released its src', () => {
-    const order: string[] = [];
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => void order.push('revoke'));
-    const element = {
-      removeAttribute: vi.fn(() => void order.push('removeAttribute')),
-      load: vi.fn(() => void order.push('load')),
-      srcObject: null,
-    } as unknown as HTMLVideoElement;
-
-    destroyVideoResource(createVideoResource(element, 'blob:owned', true));
-
-    expect(order).toEqual(['removeAttribute', 'load', 'revoke']);
-  });
-
-  it('revokes an object URL even when the element is borrowed', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const element = { srcObject: null } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, 'blob:owned');
-
-    destroyVideoResource(resource);
-
-    expect(revokeSpy).toHaveBeenCalledWith('blob:owned');
+    expect(host.revoked).toEqual(['blob:owned']);
     expect(resource.objectUrl).toBeNull();
   });
 
   it('is idempotent — a second destruction is a no-op', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const element = {
-      removeAttribute: vi.fn(),
-      load: vi.fn(),
-      srcObject: null,
-    } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, 'blob:owned', true);
+    const host = fakeVideoHost();
+    const resource = createVideoResource(videoSource(), 'blob:owned', true);
 
-    destroyVideoResource(resource);
-    destroyVideoResource(resource);
+    destroyVideoResource(host.provider, resource);
+    destroyVideoResource(host.provider, resource);
 
-    expect(element.removeAttribute).toHaveBeenCalledTimes(1);
-    expect(revokeSpy).toHaveBeenCalledTimes(1);
+    expect(host.released).toHaveLength(1);
+    expect(host.revoked).toEqual(['blob:owned']);
   });
 
-  it('nulls the element so VideoChannel queries degrade to sentinels', () => {
-    const element = {
-      removeAttribute: vi.fn(),
-      load: vi.fn(),
-      srcObject: null,
-    } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, undefined, true);
+  // A host that carries no video capability answers by absence. Teardown must still drop the
+  // resource's own state rather than throwing on the missing member.
+  it('still clears the resource when the host carries no release capability', () => {
+    const resource = createVideoResource(videoSource(), 'blob:owned', true);
 
-    destroyVideoResource(resource);
-
+    expect(() => destroyVideoResource(emptyVideoHost(), resource)).not.toThrow();
     expect(resource.element).toBeNull();
+    // The URL is forgotten even when no host can revoke it — the resource must not keep claiming it.
+    expect(resource.objectUrl).toBeNull();
   });
 });
 
 describe('disposeVideoResource', () => {
-  it('clears the src, reloads to release the decoder, and drops the element', () => {
-    const removeAttribute = vi.fn();
-    const load = vi.fn();
-    const element = { removeAttribute, load } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element);
+  it('releases the source regardless of ownership and drops it', () => {
+    const host = fakeVideoHost();
+    const source = videoSource();
+    const resource = createVideoResource(source);
 
-    disposeVideoResource(resource);
+    disposeVideoResource(host.provider, resource);
 
-    expect(removeAttribute).toHaveBeenCalledWith('src');
-    expect(load).toHaveBeenCalledOnce();
+    // The unconditional legacy path releases regardless of ownership.
+    expect(host.released).toEqual([source]);
     expect(resource.element).toBeNull();
     expect(resource.ownsElement).toBe(false);
   });
 
   it('is a no-op on an already element-less resource', () => {
+    const host = fakeVideoHost();
     const resource = createVideoResource();
-    disposeVideoResource(resource);
+
+    disposeVideoResource(host.provider, resource);
+
+    expect(host.released).toEqual([]);
     expect(resource.element).toBeNull();
   });
 
   it('revokes an owned object URL and clears it', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, 'blob:owned');
+    const host = fakeVideoHost();
+    const resource = createVideoResource(videoSource(), 'blob:owned');
 
-    disposeVideoResource(resource);
+    disposeVideoResource(host.provider, resource);
 
-    expect(revokeSpy).toHaveBeenCalledWith('blob:owned');
+    expect(host.revoked).toEqual(['blob:owned']);
     expect(resource.objectUrl).toBeNull();
   });
 
   // Revoking is what makes the Blob GC-eligible, so it must survive a second disposal without
   // double-revoking a URL the resource no longer owns.
   it('does not revoke again when disposed twice', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
-    const resource = createVideoResource(element, 'blob:owned');
+    const host = fakeVideoHost();
+    const resource = createVideoResource(videoSource(), 'blob:owned');
 
-    disposeVideoResource(resource);
-    disposeVideoResource(resource);
+    disposeVideoResource(host.provider, resource);
+    disposeVideoResource(host.provider, resource);
 
-    expect(revokeSpy).toHaveBeenCalledTimes(1);
+    expect(host.revoked).toEqual(['blob:owned']);
   });
 
   // A resource built over a URL the caller manages must not have it revoked out from under them.
   it('revokes nothing when the resource owns no object URL', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const element = { removeAttribute: vi.fn(), load: vi.fn() } as unknown as HTMLVideoElement;
+    const host = fakeVideoHost();
 
-    disposeVideoResource(createVideoResource(element));
+    disposeVideoResource(host.provider, createVideoResource(videoSource()));
 
-    expect(revokeSpy).not.toHaveBeenCalled();
+    expect(host.revoked).toEqual([]);
   });
 
-  // The element must let go of the src before the URL behind it is revoked, not after.
-  it('revokes the object URL only after the element has released its src', () => {
-    const order: string[] = [];
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => void order.push('revoke'));
-    const element = {
-      removeAttribute: vi.fn(() => void order.push('removeAttribute')),
-      load: vi.fn(() => void order.push('load')),
-    } as unknown as HTMLVideoElement;
+  // The host must let go of the source before the URL behind it is revoked, not after.
+  it('revokes the object URL only after the host has released the element', () => {
+    const host = fakeVideoHost();
 
-    disposeVideoResource(createVideoResource(element, 'blob:owned'));
+    disposeVideoResource(host.provider, createVideoResource(videoSource(), 'blob:owned'));
 
-    expect(order).toEqual(['removeAttribute', 'load', 'revoke']);
+    expect(host.order).toEqual(['release', 'revoke']);
   });
 });
 
 describe('getVideoResourceDuration', () => {
   it('returns 0 when there is no element', () => {
-    expect(getVideoResourceDuration(createVideoResource())).toBe(0);
+    expect(getVideoResourceDuration(fakeVideoHost().provider, createVideoResource())).toBe(0);
   });
 
-  it('reads duration from the element', () => {
-    const element = { duration: 12.5 } as HTMLVideoElement;
-    expect(getVideoResourceDuration(createVideoResource(element))).toBe(12.5);
+  it('reads duration from the host', () => {
+    const host = fakeVideoHost({ duration: 12.5 });
+    expect(getVideoResourceDuration(host.provider, createVideoResource(videoSource()))).toBe(12.5);
+  });
+
+  it('returns 0 when the host cannot report a duration', () => {
+    expect(getVideoResourceDuration(emptyVideoHost(), createVideoResource(videoSource()))).toBe(0);
   });
 });
 
 describe('getVideoResourceHeight', () => {
   it('returns 0 when there is no element', () => {
-    expect(getVideoResourceHeight(createVideoResource())).toBe(0);
+    expect(getVideoResourceHeight(fakeVideoHost().provider, createVideoResource())).toBe(0);
   });
 
-  it('reads videoHeight from the element', () => {
-    const element = { videoHeight: 480 } as HTMLVideoElement;
-    expect(getVideoResourceHeight(createVideoResource(element))).toBe(480);
+  it('reads the decoded height from the host', () => {
+    const host = fakeVideoHost({ height: 480 });
+    expect(getVideoResourceHeight(host.provider, createVideoResource(videoSource()))).toBe(480);
+  });
+
+  it('returns 0 when the host cannot report dimensions', () => {
+    expect(getVideoResourceHeight(emptyVideoHost(), createVideoResource(videoSource()))).toBe(0);
   });
 });
 
 describe('getVideoResourceWidth', () => {
   it('returns 0 when there is no element', () => {
-    expect(getVideoResourceWidth(createVideoResource())).toBe(0);
+    expect(getVideoResourceWidth(fakeVideoHost().provider, createVideoResource())).toBe(0);
   });
 
-  it('reads videoWidth from the element', () => {
-    const element = { videoWidth: 640 } as HTMLVideoElement;
-    expect(getVideoResourceWidth(createVideoResource(element))).toBe(640);
+  it('reads the decoded width from the host', () => {
+    const host = fakeVideoHost({ width: 640 });
+    expect(getVideoResourceWidth(host.provider, createVideoResource(videoSource()))).toBe(640);
+  });
+
+  it('returns 0 when the host cannot report dimensions', () => {
+    expect(getVideoResourceWidth(emptyVideoHost(), createVideoResource(videoSource()))).toBe(0);
   });
 });
 
 describe('hasVideoResourceElement', () => {
   it('is false without an element and true with one', () => {
     expect(hasVideoResourceElement(createVideoResource())).toBe(false);
-    expect(hasVideoResourceElement(createVideoResource(document.createElement('video')))).toBe(true);
+    expect(hasVideoResourceElement(createVideoResource(videoSource()))).toBe(true);
   });
 });
 
@@ -271,31 +233,88 @@ describe('initializeVideoResource', () => {
 
 describe('isVideoResourceEmpty', () => {
   it('is true when there is no element', () => {
-    expect(isVideoResourceEmpty(createVideoResource())).toBe(true);
+    expect(isVideoResourceEmpty(fakeVideoHost({ height: 480, width: 640 }).provider, createVideoResource())).toBe(true);
   });
 
-  it('is true when the element has no decoded dimensions', () => {
-    const element = { videoWidth: 0, videoHeight: 0 } as HTMLVideoElement;
-    expect(isVideoResourceEmpty(createVideoResource(element))).toBe(true);
+  it('is true when the host reports no decoded dimensions', () => {
+    const host = fakeVideoHost({ height: 0, width: 0 });
+    expect(isVideoResourceEmpty(host.provider, createVideoResource(videoSource()))).toBe(true);
   });
 
-  it('is false once the element reports dimensions', () => {
-    const element = { videoWidth: 640, videoHeight: 480 } as HTMLVideoElement;
-    expect(isVideoResourceEmpty(createVideoResource(element))).toBe(false);
+  it('is false once the host reports dimensions', () => {
+    const host = fakeVideoHost({ height: 480, width: 640 });
+    expect(isVideoResourceEmpty(host.provider, createVideoResource(videoSource()))).toBe(false);
+  });
+
+  // One dimension at a time, because an `||` that tested only one of them would still pass a test
+  // that zeroed both.
+  it('is true when only one dimension is zero', () => {
+    const wide = fakeVideoHost({ height: 0, width: 640 });
+    const tall = fakeVideoHost({ height: 480, width: 0 });
+    expect(isVideoResourceEmpty(wide.provider, createVideoResource(videoSource()))).toBe(true);
+    expect(isVideoResourceEmpty(tall.provider, createVideoResource(videoSource()))).toBe(true);
+  });
+
+  it('is true when the host cannot report dimensions at all', () => {
+    expect(isVideoResourceEmpty(emptyVideoHost(), createVideoResource(videoSource()))).toBe(true);
   });
 });
+
 describe('isVideoResourceReady', () => {
   it('is false when there is no element', () => {
-    expect(isVideoResourceReady(createVideoResource())).toBe(false);
+    expect(isVideoResourceReady(fakeVideoHost({ ready: true }).provider, createVideoResource())).toBe(false);
   });
 
-  it('is false while readyState is below HAVE_CURRENT_DATA', () => {
-    const element = { readyState: 1 } as HTMLVideoElement;
-    expect(isVideoResourceReady(createVideoResource(element))).toBe(false);
+  it('is false while the host reports no decoded frame', () => {
+    const host = fakeVideoHost({ ready: false });
+    expect(isVideoResourceReady(host.provider, createVideoResource(videoSource()))).toBe(false);
   });
 
-  it('is true once readyState reaches HAVE_CURRENT_DATA', () => {
-    const element = { readyState: 2 } as HTMLVideoElement;
-    expect(isVideoResourceReady(createVideoResource(element))).toBe(true);
+  it('is true once the host reports a decoded frame', () => {
+    const host = fakeVideoHost({ ready: true });
+    expect(isVideoResourceReady(host.provider, createVideoResource(videoSource()))).toBe(true);
+  });
+
+  it('is false when the host cannot answer readiness', () => {
+    expect(isVideoResourceReady(emptyVideoHost(), createVideoResource(videoSource()))).toBe(false);
   });
 });
+
+interface FakeVideoHost {
+  order: string[];
+  provider: HostVideoProvider;
+  released: HostImageSource[];
+  revoked: string[];
+}
+
+// A host that answers every video capability and records what it was asked to release. `order` is
+// shared with the URL spy in the ordering cases, so release-before-revoke is observable.
+function fakeVideoHost(state?: Readonly<{ duration?: number; height?: number; ready?: boolean; width?: number }>) {
+  const host: FakeVideoHost = { order: [], provider: null as unknown as HostVideoProvider, released: [], revoked: [] };
+  host.provider = {
+    canPlayType: () => true,
+    getDuration: () => state?.duration ?? 0,
+    getHeight: () => state?.height ?? 0,
+    getWidth: () => state?.width ?? 0,
+    isReady: () => state?.ready ?? false,
+    releaseElement: (element) => {
+      host.order.push('release');
+      host.released.push(element);
+    },
+    revokeObjectUrl: (url) => {
+      host.order.push('revoke');
+      host.revoked.push(url);
+    },
+  };
+  return host;
+}
+
+// A host with a video slot that carries none of the optional capabilities — the shape a non-browser
+// host takes. Every query must fall to its documented sentinel rather than throwing.
+function emptyVideoHost(): HostVideoProvider {
+  return { canPlayType: () => false };
+}
+
+function videoSource(): HostImageSource {
+  return {} as HostImageSource;
+}
