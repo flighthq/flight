@@ -108,6 +108,7 @@ import {
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
 import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
+import { createSwfTagHandlerRegistry, registerSwfTagHandler } from './swfTagRegistry';
 
 beforeEach(() => {
   clearImageDecoders();
@@ -3973,6 +3974,135 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
     const doc = createScene2DFromSwfWithTagHandlers(swf, registry);
     expect(doc).not.toBeNull();
   });
+
+  it('reports a known content tag whose handler was not registered', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwfWithTagHandlers(
+          createSwf([
+            createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0, 0])),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          createSwfTagHandlerRegistry(),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { tag: TAG_SET_BACKGROUND_COLOR },
+        kind: 'swf.tag-handler-unregistered',
+        origin: 'readSwfTimeline',
+        severity: ImportDiagnosticSeverity.Skip,
+      },
+    ]);
+  });
+
+  it('reports an unknown tag code separately from an unregistered known handler', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwfWithTagHandlers(
+          createSwf([createTag(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+          createSwfTagHandlerRegistry(),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { tag: TAG_UNKNOWN },
+        kind: 'swf.tag-unknown',
+        origin: 'readSwfTimeline',
+        severity: ImportDiagnosticSeverity.Skip,
+      },
+    ]);
+  });
+
+  it('uses a registered override without reporting a registry miss', () => {
+    const registry = createSwfDefaultTagHandlerRegistry();
+    const seen: number[] = [];
+    registerSwfTagHandler(registry, TAG_SET_BACKGROUND_COLOR, (body, tag) => {
+      seen.push(tag, body.readUint8(), body.readUint8(), body.readUint8());
+      return body.valid;
+    });
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwfWithTagHandlers(
+          createSwf([
+            createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x11, 0x22, 0x33])),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          registry,
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(seen).toEqual([TAG_SET_BACKGROUND_COLOR, 0x11, 0x22, 0x33]);
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('skips missed payloads to bodyEnd before dispatching the next registered tag', () => {
+    const registry = createSwfTagHandlerRegistry();
+    const seen: number[] = [];
+    registerSwfTagHandler(registry, TAG_SET_BACKGROUND_COLOR, (body) => {
+      seen.push(body.readUint8(), body.readUint8(), body.readUint8());
+      return body.valid;
+    });
+    const opaqueLongPayload = new Uint8Array(64);
+    opaqueLongPayload.fill(0xff);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwfWithTagHandlers(
+          createSwf([
+            createTag(TAG_DEFINE_SHAPE, new Uint8Array([0xff, 0xff, 0xff])),
+            createTag(TAG_UNKNOWN, opaqueLongPayload),
+            createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x11, 0x22, 0x33])),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          registry,
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(seen).toEqual([0x11, 0x22, 0x33]);
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.tag-handler-unregistered', 'swf.tag-unknown']);
+  });
+
+  it('keeps deliberate decline diagnostics distinct from missing registration', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwfWithTagHandlers(
+          createSwf([createTag(TAG_DEFINE_BINARY_DATA, new Uint8Array([1, 2, 3])), createTag(TAG_END)]),
+          createSwfTagHandlerRegistry(),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.define-binary-data']);
+    expect(diagnostics[0].detail).toEqual({ tag: TAG_DEFINE_BINARY_DATA });
+  });
+
+  it('skips unhandled payloads without requiring a diagnostics collector', () => {
+    expect(
+      createScene2DFromSwfWithTagHandlers(
+        createSwf([
+          createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0, 0])),
+          createTag(TAG_UNKNOWN, new Uint8Array([1, 2, 3])),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        createSwfTagHandlerRegistry(),
+      ),
+    ).not.toBeNull();
+  });
 });
 
 describe('createScene2DImportFromSwf', () => {
@@ -4777,6 +4907,7 @@ const SWF_BLEND_MULTIPLY = 3;
 const SWF_BLEND_OVERLAY = 13;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_BINARY_DATA = 87;
 const TAG_DEFINE_BITS_JPEG_2 = 21;
 const TAG_DEFINE_BITS_JPEG_3 = 35;
 const TAG_DEFINE_BITS_JPEG_4 = 90;
@@ -4821,6 +4952,7 @@ const TAG_REMOVE_OBJECT_2 = 28;
 const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
+const TAG_UNKNOWN = 100;
 const _encoder = new TextEncoder();
 
 function losslessPayload(format: number, width: number, height: number, pixels: readonly number[]): Uint8Array {

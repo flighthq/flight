@@ -99,6 +99,7 @@ import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImage
 import { createSwfMorphShape } from './swfMorphShape';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
+import { SWF_TAG_NAMES } from './swfTagVocabulary';
 import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
@@ -1951,7 +1952,7 @@ function readSwfTimeline(
       if (handler !== undefined) {
         if (!handler(body, code, state as SwfTagParseState, timeline, state.diagnostics)) return null;
       } else {
-        reportSwfDeclinedTag(state.diagnostics, code);
+        reportSwfUnhandledTag(state.diagnostics, code);
       }
     }
     if (!body.valid) return null;
@@ -1995,23 +1996,30 @@ function readSwfTimeline(
   };
 }
 
-// Reports the tags this importer deliberately reads past that cost a real capability, and stays silent on
-// the ones that cost nothing. The line matters: a document is not worse off for having skipped
-// `FileAttributes` or a font's hinting table, so reporting those would bury the entries that do mean
-// something under noise a caller has to filter. Every code below is a decision recorded in
-// `agents/packages/swf/tag-coverage.md`, not an unrecognized tag.
-function reportSwfDeclinedTag(diagnostics: ImportDiagnostic[] | undefined, code: number): void {
+// A registry miss has three different remedies, so it has three different outcomes: a deliberately
+// declined capability keeps its specific diagnostic, a known content tag can be restored by installing
+// its handler, and an unknown tag cannot be handled until this package learns its identity. Metadata that
+// costs no scene content stays silent. The reader has already advanced to bodyEnd before this function is
+// called, so every outcome preserves the tag stream alignment without inspecting the payload.
+function reportSwfUnhandledTag(diagnostics: ImportDiagnostic[] | undefined, code: number): void {
+  // The no-collector path does no vocabulary lookup and allocates no diagnostic detail.
   if (diagnostics === undefined) return;
-  const kind = SWF_DECLINED_TAG_KINDS.get(code);
-  if (kind === undefined) return;
-  const capability = SWF_DECLINED_TAG_CAPABILITIES.get(code);
-  reportImportDiagnostic(
-    diagnostics,
-    ImportDiagnosticSeverity.Skip,
-    kind,
-    'readSwfTimeline',
-    capability === undefined ? { tag: code } : { capability, tag: code },
-  );
+  const declinedKind = SWF_DECLINED_TAG_KINDS.get(code);
+  if (declinedKind !== undefined) {
+    const capability = SWF_DECLINED_TAG_CAPABILITIES.get(code);
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      declinedKind,
+      'readSwfTimeline',
+      capability === undefined ? { tag: code } : { capability, tag: code },
+    );
+    return;
+  }
+  if (SWF_SILENT_TAGS.has(code)) return;
+
+  const kind = SWF_TAG_NAMES.has(code) ? 'swf.tag-handler-unregistered' : 'swf.tag-unknown';
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'readSwfTimeline', { tag: code });
 }
 
 // The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
@@ -3394,6 +3402,8 @@ const SWF_DECLINED_TAG_KINDS = new Map<number, string>([
   [87, 'swf.define-binary-data'],
   [91, 'swf.define-font-4'],
 ]);
+
+const SWF_SILENT_TAGS = new Set<number>([23, 24, 41, 58, 63, 64, 65, 66, 69, 73, 74, 77, 88, 93]);
 
 const TAG_DEFINE_SCALING_GRID = 78;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
