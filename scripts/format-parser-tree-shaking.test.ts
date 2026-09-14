@@ -34,16 +34,17 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
 
 describe('format parser tree shaking', () => {
   for (const testCase of CASES) {
-    it(`keeps ${testCase.name} optional handlers reachable through the public lane`, async () => {
-      const bundle = await bundlePublicExports(
-        testCase.packageDirectory,
-        testCase.optionalExports.map((entry) => entry.name),
-      );
+    for (const entry of testCase.optionalExports) {
+      it(`keeps ${testCase.name} ${entry.name} reachable without sibling handlers`, async () => {
+        const bundle = await bundlePublicExports(testCase.packageDirectory, [entry.name]);
 
-      for (const entry of testCase.optionalExports) {
         expect(getContributedBytes(bundle, testCase.packageDirectory, entry.module), entry.name).toBeGreaterThan(0);
-      }
-    });
+        for (const sibling of testCase.optionalExports) {
+          if (sibling.module === entry.module) continue;
+          expect(getContributedBytes(bundle, testCase.packageDirectory, sibling.module), sibling.name).toBe(0);
+        }
+      });
+    }
 
     it(`keeps the ${testCase.name} core parser independent of optional handler modules`, async () => {
       const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.coreExports);
