@@ -8,6 +8,10 @@ import {
   webHostVideo,
 } from './webVideoCapability';
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('createWebVideoCapabilityBackend', () => {
   it('constructs a backend with canPlayType and createVideoElement', () => {
     const backend = createWebVideoCapabilityBackend();
@@ -128,10 +132,12 @@ describe('createWebVideoCapabilityBackend', () => {
   });
 
   it('loadUrl rejects immediately when signal is already aborted', async () => {
+    const createElement = vi.spyOn(document, 'createElement');
     const backend = createWebVideoCapabilityBackend();
     const controller = new AbortController();
     controller.abort(new Error('cancelled'));
     await expect(backend.loadUrl!('test.mp4', undefined, controller.signal)).rejects.toThrow('cancelled');
+    expect(createElement).not.toHaveBeenCalled();
   });
 
   it('loadUrl rejects when DOM is unavailable', async () => {
@@ -141,6 +147,90 @@ describe('createWebVideoCapabilityBackend', () => {
     const backend = createWebVideoCapabilityBackend();
     await expect(backend.loadUrl!('test.mp4')).rejects.toThrow('No video element available');
     vi.restoreAllMocks();
+  });
+
+  it('loadUrl applies defaults and releases its listeners after the default readiness event', async () => {
+    const element = document.createElement('video');
+    const removeEventListener = vi.spyOn(element, 'removeEventListener');
+    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    const backend = createWebVideoCapabilityBackend();
+
+    const promise = backend.loadUrl!('test.mp4');
+    expect(element.preload).toBe('auto');
+    element.dispatchEvent(new Event('canplay'));
+
+    await expect(promise).resolves.toBe(element);
+    expect(removeEventListener).toHaveBeenCalledWith('canplay', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
+  });
+
+  it('loadUrl applies options before resolving at the requested readiness event', async () => {
+    const element = document.createElement('video');
+    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    const backend = createWebVideoCapabilityBackend();
+
+    const promise = backend.loadUrl!('test.mp4', {
+      crossOrigin: 'anonymous',
+      muted: true,
+      playsInline: true,
+      preload: 'metadata',
+      readiness: 'metadata',
+    });
+
+    expect(element.crossOrigin).toBe('anonymous');
+    expect(element.muted).toBe(true);
+    expect(element.playsInline).toBe(true);
+    expect(element.preload).toBe('metadata');
+    element.dispatchEvent(new Event('loadedmetadata'));
+    await expect(promise).resolves.toBe(element);
+  });
+
+  it('loadUrl supports canplaythrough readiness', async () => {
+    const element = document.createElement('video');
+    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    const backend = createWebVideoCapabilityBackend();
+
+    const promise = backend.loadUrl!('test.mp4', { readiness: 'canplaythrough' });
+    element.dispatchEvent(new Event('canplaythrough'));
+
+    await expect(promise).resolves.toBe(element);
+  });
+
+  it('loadUrl releases the element and paired listeners after a media error', async () => {
+    const element = document.createElement('video');
+    const load = vi.spyOn(element, 'load').mockImplementation(() => {});
+    const removeEventListener = vi.spyOn(element, 'removeEventListener');
+    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    const backend = createWebVideoCapabilityBackend();
+
+    const promise = backend.loadUrl!('bad.mp4');
+    element.dispatchEvent(new Event('error'));
+
+    await expect(promise).rejects.toThrow('Failed to load video: bad.mp4');
+    expect(element.hasAttribute('src')).toBe(false);
+    expect(load).toHaveBeenCalledOnce();
+    expect(removeEventListener).toHaveBeenCalledWith('canplay', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
+  });
+
+  it('loadUrl releases the element and every paired listener after abort', async () => {
+    const element = document.createElement('video');
+    const load = vi.spyOn(element, 'load').mockImplementation(() => {});
+    const removeEventListener = vi.spyOn(element, 'removeEventListener');
+    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    const backend = createWebVideoCapabilityBackend();
+    const controller = new AbortController();
+    const removeAbortListener = vi.spyOn(controller.signal, 'removeEventListener');
+
+    const promise = backend.loadUrl!('test.mp4', undefined, controller.signal);
+    controller.abort(new Error('cancelled'));
+
+    await expect(promise).rejects.toThrow('cancelled');
+    expect(element.hasAttribute('src')).toBe(false);
+    expect(load).toHaveBeenCalledOnce();
+    expect(removeEventListener).toHaveBeenCalledWith('canplay', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
+    expect(removeAbortListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });
 
