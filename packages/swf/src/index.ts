@@ -14,10 +14,14 @@ export {
 export {
   createSwfTagHandlerRegistry,
   registerAllSwfTagHandlers,
-  registerSwfDefinitionTagHandlers,
-  registerSwfTagHandler,
+  registerSwfBitmapTagHandlers,
+  registerSwfControlTagHandlers,
+  registerSwfFontTagHandlers,
   registerSwfPlacementTagHandlers,
   registerSwfScriptTagHandlers,
+  registerSwfShapeTagHandlers,
   registerSwfSoundTagHandlers,
-  registerSwfTimelineTagHandlers,
+  registerSwfTagHandler,
+  registerSwfTextTagHandlers,
+  registerSwfVideoTagHandlers,
 } from './swfTagRegistry';

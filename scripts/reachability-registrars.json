@@ -1407,7 +1407,15 @@
     },
     {
       "packageName": "swf",
-      "registrar": "registerSwfDefinitionTagHandlers"
+      "registrar": "registerSwfBitmapTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfControlTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfFontTagHandlers"
     },
     {
       "packageName": "swf",
@@ -1427,6 +1435,10 @@
     },
     {
       "packageName": "swf",
+      "registrar": "registerSwfShapeTagHandlers"
+    },
+    {
+      "packageName": "swf",
       "registrar": "registerSwfSoundTagHandlers"
     },
     {
@@ -1435,7 +1447,11 @@
     },
     {
       "packageName": "swf",
-      "registrar": "registerSwfTimelineTagHandlers"
+      "registrar": "registerSwfTextTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfVideoTagHandlers"
     },
     {
       "packageName": "text-markup",
