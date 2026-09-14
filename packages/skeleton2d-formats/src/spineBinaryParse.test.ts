@@ -16,6 +16,7 @@ import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers';
 import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
 import {
   createSpineBinaryRegistry,
+  registerSpineBinarySectionHandler,
   unregisterSpineBinarySectionHandler,
   unregisterSpineBinaryTimelineHandler,
 } from './spineBinaryRegistry';
@@ -490,6 +491,50 @@ describe('parseSpineSkeletonBinary', () => {
 });
 
 describe('parseSpineSkeletonBinaryWithRegistry', () => {
+  it('rejects an unreadable header before consulting the section registry', () => {
+    const registry = createSpineBinaryRegistry();
+    registerSpineBinarySectionHandler(registry, SpineBinarySectionKind.Bones, () => {
+      throw new Error('section dispatch must not run before the header is readable');
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+
+    expect(parseSpineSkeletonBinaryWithRegistry(new Uint8Array([1, 2, 3]), registry, diagnostics)).toBeNull();
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['spine.binary-header-unreadable']);
+  });
+
+  it('rejects an unsupported version before consulting the section registry', () => {
+    const registry = createSpineBinaryRegistry();
+    registerSpineBinarySectionHandler(registry, SpineBinarySectionKind.Bones, () => {
+      throw new Error('section dispatch must not run before the version gate passes');
+    });
+    const diagnostics: ImportDiagnostic[] = [];
+
+    expect(
+      parseSpineSkeletonBinaryWithRegistry(buildSpineBinary({ version: '4.2.22' }), registry, diagnostics),
+    ).toBeNull();
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({ kind: 'spine.binary-version-unsupported' });
+    expect(diagnostics[0].detail).toMatchObject({ version: '4.2.22' });
+  });
+
+  it('contains every truncation while the fallback readers skip every handler family', () => {
+    const complete = buildSpineBinary({
+      allTimelineFamilies: true,
+      bezier: true,
+      ikConstraints: 2,
+      nonessential: true,
+      weightedMesh: true,
+    });
+    const registry = createSpineBinaryRegistry();
+
+    for (let length = 0; length <= complete.length; length++) {
+      expect(
+        () => parseSpineSkeletonBinaryWithRegistry(complete.subarray(0, length), registry),
+        `fallback-only parse truncated to ${length} of ${complete.length} bytes`,
+      ).not.toThrow();
+    }
+  });
+
   it('cleanly consumes every unregistered top-level section and reports the omitted families', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = parseSpineSkeletonBinaryWithRegistry(
