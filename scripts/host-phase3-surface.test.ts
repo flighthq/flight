@@ -107,11 +107,11 @@ describe('Host Phase 3 surface', () => {
     expect(declarations).toEqual([]);
   });
 
-  it('publishes exactly the same 102 canonical webHost values from both package lanes', () => {
+  it('publishes exactly the same 104 canonical webHost values from both package lanes', () => {
     const publicNames = canonicalWebHostNames(hostWebPublic);
     const contractNames = canonicalWebHostNames(hostWebContract);
 
-    expect(publicNames).toHaveLength(102);
+    expect(publicNames).toHaveLength(104);
     expect(contractNames).toEqual(publicNames);
     for (const api of [hostWebPublic, hostWebContract, dialogPublic, dialogContract]) {
       const names = Object.keys(api);

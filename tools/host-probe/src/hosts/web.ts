@@ -1,8 +1,9 @@
 import {
   createWebCursorBackend,
   createWebPageNotificationCapabilities,
-  webHostGlyphRasterizer,
   webHost,
+  webHostGlyphRasterizer,
+  webHostNotificationPermission,
 } from '@flighthq/host-web';
 import type { WebPageNotificationApi } from '@flighthq/types/contract';
 
@@ -12,9 +13,12 @@ import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contra
 import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 export async function installWebHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
-  const notification = createWebPageNotificationCapabilities({
-    Notification: globalThis.Notification as unknown as WebPageNotificationApi['Notification'],
-  });
+  const notification = createWebPageNotificationCapabilities(
+    {
+      Notification: globalThis.Notification as unknown as WebPageNotificationApi['Notification'],
+    },
+    webHostNotificationPermission,
+  );
   const results = await Promise.all([
     probeWebAccessibility(),
     probeWebCursor(),

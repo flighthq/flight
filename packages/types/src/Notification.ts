@@ -299,8 +299,6 @@ export interface WebPageNotificationInstance {
 export interface WebPageNotificationApi {
   readonly Notification: {
     new (title: string, options?: Readonly<WebNotificationOptions>): WebPageNotificationInstance;
-    readonly permission: NotificationPermission;
-    requestPermission(): Promise<NotificationPermission>;
   };
 }
 
