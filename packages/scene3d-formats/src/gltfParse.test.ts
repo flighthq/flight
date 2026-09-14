@@ -14,6 +14,7 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
+  GltfCoreFeatureHandler,
   ImportDiagnostic,
   Mesh,
   Scene3DAnimationTarget,
@@ -23,13 +24,16 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
+import { GltfCamerasCoreFeatureHandler } from './gltfCameras';
 import {
   createScene3DFromGlb,
   createScene3DFromGltf,
   createScene3DsFromGlb,
   createScene3DsFromGltf,
   parseGlb,
+  parseGlbWithCoreFeatureHandlers,
   parseGltf,
+  parseGltfWithCoreFeatureHandlers,
 } from './gltfParse';
 import { getTestTextureResource } from './scene3DFormatsTestHelper';
 
@@ -2675,6 +2679,87 @@ describe('gltf diagnostics coverage', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('buildGltfDocument');
     expect(crumb!.detail?.firstImage).toBe(0);
+  });
+});
+
+describe('glTF optional core feature handlers', () => {
+  function makeOptionalCoreFeatureGltf(): GltfDocument {
+    const source = makeTriangleGltf();
+    source.animations = [{ channels: [], samplers: [] }];
+    source.cameras = [{ perspective: { yfov: 1, znear: 0.1 }, type: 'perspective' }];
+    source.materials = [{}];
+    source.meshes![0].primitives[0].material = 0;
+    source.nodes![0].camera = 0;
+    source.nodes![0].skin = 0;
+    source.skins = [{ joints: [0] }];
+    return source;
+  }
+
+  it('keeps bedrock document facts and reports each unregistered optional section as skipped', () => {
+    const source = makeOptionalCoreFeatureGltf();
+    source.extensionsRequired = ['VENDOR_unknown'];
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const document = parseGltfWithCoreFeatureHandlers(source, [], diagnostics);
+
+    expect(document.meshes).toHaveLength(1);
+    expect(document.materials).toHaveLength(1);
+    expect(document.nodes).toHaveLength(1);
+    expect(document.scenes).toHaveLength(1);
+    expect(document.animations).toEqual([]);
+    expect(document.cameras).toEqual([]);
+    expect(document.skins).toEqual([]);
+    expect(document.meshes[0].skin).toBeUndefined();
+    const missing = diagnostics.filter((diagnostic) => diagnostic.kind === 'gltf.core-feature-handler-missing');
+    expect(missing).toHaveLength(3);
+    expect(missing.map((diagnostic) => diagnostic.detail?.firstKind)).toEqual(['animations', 'cameras', 'skins']);
+    expect(missing.every((diagnostic) => diagnostic.severity === ImportDiagnosticSeverity.Skip)).toBe(true);
+    expect(findGltfDiagnostic(diagnostics, 'gltf.unsupported-required-extension')).toBeDefined();
+  });
+
+  it('imports only selected families and reports the other present sections', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const document = parseGltfWithCoreFeatureHandlers(
+      makeOptionalCoreFeatureGltf(),
+      [GltfCamerasCoreFeatureHandler],
+      diagnostics,
+    );
+
+    expect(document.cameras).toHaveLength(1);
+    expect(document.animations).toEqual([]);
+    expect(document.skins).toEqual([]);
+    expect(
+      diagnostics
+        .filter((diagnostic) => diagnostic.kind === 'gltf.core-feature-handler-missing')
+        .map((diagnostic) => diagnostic.detail?.firstKind),
+    ).toEqual(['animations', 'skins']);
+  });
+
+  it('uses the last duplicate source-kind handler and reports the recovery', () => {
+    let applied = '';
+    const first: GltfCoreFeatureHandler = { apply: () => (applied = 'first'), kind: 'cameras' };
+    const last: GltfCoreFeatureHandler = { apply: () => (applied = 'last'), kind: 'cameras' };
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseGltfWithCoreFeatureHandlers(makeOptionalCoreFeatureGltf(), [first, last], diagnostics);
+
+    expect(applied).toBe('last');
+    const duplicate = findGltfDiagnostic(diagnostics, 'gltf.duplicate-core-feature-handler');
+    expect(duplicate).toBeDefined();
+    expect(duplicate!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(duplicate!.detail?.firstKind).toBe('cameras');
+  });
+
+  it('supports the same explicit feature selection for GLB containers', () => {
+    const document = parseGlbWithCoreFeatureHandlers(buildGlb(makeOptionalCoreFeatureGltf(), new Uint8Array(0)), [
+      GltfCamerasCoreFeatureHandler,
+    ]);
+
+    expect(document.meshes).toHaveLength(1);
+    expect(document.cameras).toHaveLength(1);
+    expect(document.animations).toEqual([]);
+    expect(document.skins).toEqual([]);
   });
 });
 
