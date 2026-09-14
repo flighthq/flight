@@ -30,7 +30,7 @@ interface FormatParserTreeShakingCase {
   leanExports: readonly string[];
   name: string;
   packageDirectory: string;
-  publicConstructionExports: readonly string[];
+  publicInfrastructureExports: readonly string[];
 }
 
 const GLTF_MATERIAL_MODULES = [
@@ -90,8 +90,6 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
       'GltfSkinsCoreFeatureHandler',
       ...GLTF_MATERIAL_HANDLER_SYMBOLS,
       'GltfPunctualLightsExtensionHandler',
-      'registerGltfCoreFeatureHandler',
-      'registerGltfExtensionHandler',
     ],
     families: [
       {
@@ -140,7 +138,7 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     leanExports: ['parseGltfWithCoreFeatureHandlers', 'parseGlbWithCoreFeatureHandlers'],
     name: 'glTF',
     packageDirectory: 'scene3d-formats',
-    publicConstructionExports: [],
+    publicInfrastructureExports: ['registerGltfCoreFeatureHandler', 'registerGltfExtensionHandler'],
   },
   {
     allRegistrar: 'registerAllSpineBinaryHandlers',
@@ -148,8 +146,6 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
       'getSpineBinarySectionHandler',
       'getSpineBinaryTimelineHandler',
       'initializeSpineBinaryRegistry',
-      'registerSpineBinarySectionHandler',
-      'registerSpineBinaryTimelineHandler',
       'spineBinaryAnimationsSectionHandler',
       'spineBinaryBonesSectionHandler',
       'spineBinaryEventsSectionHandler',
@@ -193,7 +189,132 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     leanExports: ['parseSpineSkeletonBinaryWithRegistry'],
     name: 'Spine binary',
     packageDirectory: 'skeleton2d-formats',
-    publicConstructionExports: ['createSpineBinaryRegistry'],
+    publicInfrastructureExports: [
+      'createSpineBinaryRegistry',
+      'registerSpineBinarySectionHandler',
+      'registerSpineBinaryTimelineHandler',
+    ],
+  },
+  {
+    allRegistrar: 'registerAllRiveHandlers',
+    contractOnlyExports: [
+      'applyRiveArtboardHandlers',
+      'applyRiveClipping',
+      'applyRiveDocumentHandlers',
+      'applyRiveDrawOrder',
+      'applyRiveSolo',
+      'createRiveArtboardImportContext',
+      'createRiveDocumentImportContext',
+      'createRiveFileAssets',
+      'createRiveLayoutImports',
+      'createRiveSkeleton2D',
+      'createRiveStateMachines',
+      'getRiveCoreObjectHandler',
+      'importRiveCoreObjectAsData',
+      'importRiveImageComponent',
+      'importRiveLayoutComponent',
+      'importRiveNestedArtboardComponent',
+      'importRiveNSlicedNodeComponent',
+      'importRivePathComponent',
+      'importRiveShapeComponent',
+      'importRiveSoloComponent',
+      'importRiveTextComponent',
+      'initializeRiveArtboardImportContext',
+      'initializeRiveDocumentImportContext',
+      'initializeRiveImportRegistry',
+      'rebuildRiveShapes',
+    ],
+    families: [
+      {
+        modules: [],
+        name: 'shape',
+        registrar: 'registerRiveShapeHandlers',
+        symbols: ['registerRiveShapeHandlers'],
+      },
+      {
+        modules: [],
+        name: 'path',
+        registrar: 'registerRivePathHandlers',
+        symbols: ['registerRivePathHandlers'],
+      },
+      {
+        modules: [],
+        name: 'paint',
+        registrar: 'registerRivePaintHandlers',
+        symbols: ['registerRivePaintHandlers'],
+      },
+      {
+        modules: [],
+        name: 'clipping',
+        registrar: 'registerRiveClippingHandlers',
+        symbols: ['registerRiveClippingHandlers'],
+      },
+      {
+        modules: [],
+        name: 'draw order',
+        registrar: 'registerRiveDrawOrderHandlers',
+        symbols: ['registerRiveDrawOrderHandlers'],
+      },
+      {
+        modules: [],
+        name: 'solo',
+        registrar: 'registerRiveSoloHandlers',
+        symbols: ['registerRiveSoloHandlers'],
+      },
+      {
+        modules: [],
+        name: 'layout',
+        registrar: 'registerRiveLayoutHandlers',
+        symbols: ['registerRiveLayoutHandlers'],
+      },
+      {
+        modules: [],
+        name: 'text',
+        registrar: 'registerRiveTextHandlers',
+        symbols: ['registerRiveTextHandlers'],
+      },
+      {
+        modules: [],
+        name: 'skeleton',
+        registrar: 'registerRiveSkeletonHandlers',
+        symbols: ['registerRiveSkeletonHandlers'],
+      },
+      {
+        modules: [],
+        name: 'state machine',
+        registrar: 'registerRiveStateMachineHandlers',
+        symbols: ['registerRiveStateMachineHandlers'],
+      },
+      {
+        modules: [],
+        name: 'assets',
+        registrar: 'registerRiveAssetHandlers',
+        symbols: ['registerRiveAssetHandlers'],
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['createScene2DFromRiveDocument'],
+        families: [
+          'shape',
+          'path',
+          'paint',
+          'clipping',
+          'draw order',
+          'solo',
+          'layout',
+          'text',
+          'skeleton',
+          'state machine',
+          'assets',
+        ],
+        name: 'zero-config importer',
+      },
+    ],
+    leanExports: ['createRiveDocumentImportResult'],
+    name: 'Rive',
+    packageDirectory: 'scene2d-formats',
+    publicInfrastructureExports: ['createRiveImportRegistry', 'registerRiveCoreObjectHandler'],
   },
 ];
 
@@ -205,7 +326,7 @@ describe('format parser handler export lanes', () => {
         getEntrypointExports(testCase.packageDirectory, 'contract.ts'),
       ]);
       const intendedPublicExports = [
-        ...testCase.publicConstructionExports,
+        ...testCase.publicInfrastructureExports,
         ...testCase.leanExports,
         ...testCase.families.map((family) => family.registrar),
         testCase.allRegistrar,
