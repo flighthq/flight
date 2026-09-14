@@ -20,7 +20,11 @@ import {
 } from './videoTexture';
 
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
-  return createVideoResource({ readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement);
+  return createVideoResource({
+    readyState,
+    videoWidth,
+    videoHeight,
+  } as unknown as HTMLVideoElement);
 }
 
 describe('advanceVideoTexture', () => {

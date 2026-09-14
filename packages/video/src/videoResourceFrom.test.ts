@@ -9,6 +9,10 @@ import {
 
 let created: HTMLVideoElement[];
 
+// The web host's share of the work, which is where element teardown lives now: portable code asks
+// the provider to release a source and the provider is what touches the DOM. Modelled faithfully
+// rather than stubbed, so the abandonment cases below still assert the real effect — src detached and
+// the decoder reloaded — instead of merely asserting that a release was requested.
 function trackingBackend(canPlay = false): HostVideoProvider {
   return {
     canPlayType: () => canPlay,
@@ -16,6 +20,12 @@ function trackingBackend(canPlay = false): HostVideoProvider {
       const element = document.createElement('video');
       created.push(element);
       return element;
+    },
+    releaseElement(element) {
+      const video = element as HTMLVideoElement;
+      if (video.srcObject !== null) video.srcObject = null;
+      video.removeAttribute('src');
+      video.load();
     },
   };
 }
