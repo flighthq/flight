@@ -17,11 +17,6 @@ interface FakeWebNotification extends WebPageNotificationInstance {
 function fakeWebPage(permission: NotificationPermission = 'granted') {
   const notifications: FakeWebNotification[] = [];
   const Api = class implements FakeWebNotification {
-    static permission = permission;
-    static async requestPermission() {
-      return Api.permission;
-    }
-
     onclick: (() => void) | null = null;
     onclose: (() => void) | null = null;
     onerror: (() => void) | null = null;
@@ -39,15 +34,14 @@ function fakeWebPage(permission: NotificationPermission = 'granted') {
     }
   };
   return {
-    api: { Notification: Api } as WebPageNotificationApi,
+    api: { Notification: Api } satisfies WebPageNotificationApi,
     notifications,
     permission: {
       async getPermission() {
-        return { permission: Api.permission, reason: 'ok' as const };
+        return { permission, reason: 'ok' as const };
       },
       async requestPermission() {
-        const requested = await Api.requestPermission();
-        return { reason: requested === 'default' ? ('dismissed' as const) : requested };
+        return { reason: permission === 'default' ? ('dismissed' as const) : permission };
       },
     },
   };
