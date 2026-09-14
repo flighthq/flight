@@ -1,11 +1,26 @@
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
-import type { RegionAttachment2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RegionAttachment2D } from '@flighthq/types/contract';
+import {
+  ImportDiagnosticSeverity,
+  RegionAttachment2DKind,
+  SpineBinarySectionKind,
+  SpineBinaryTimelineKind,
+  TransformMode2D,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSpineSkeletonBinary } from './spineBinaryParse';
+import { parseSpineSkeletonBinary } from './spineBinaryFull';
+import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers';
+import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
+import {
+  createSpineBinaryRegistry,
+  unregisterSpineBinarySectionHandler,
+  unregisterSpineBinaryTimelineHandler,
+} from './spineBinaryRegistry';
+import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
+import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';
 
 describe('parseSpineSkeletonBinary', () => {
   // ★ PER-RECORD, AND THAT IS THE WHOLE POINT. The all-five fixture below backs a PER-RECORD claim with a
@@ -471,6 +486,125 @@ describe('parseSpineSkeletonBinary', () => {
       (c) => c.kind,
     );
     expect(plain).not.toContain('spine.slot-dark-color-unsupported');
+  });
+});
+
+describe('parseSpineSkeletonBinaryWithRegistry', () => {
+  it('cleanly consumes every unregistered top-level section and reports the omitted families', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = parseSpineSkeletonBinaryWithRegistry(
+      buildSpineBinary({ animations: true, ikConstraints: 2, weightedMesh: true }),
+      createSpineBinaryRegistry(),
+      diagnostics,
+    )!;
+
+    expect(result.skeleton.bones).toEqual([]);
+    expect(result.skeleton.slots).toEqual([]);
+    expect(result.animations).toEqual([]);
+    expect(
+      diagnostics
+        .filter((diagnostic) => diagnostic.kind === 'spine.binary-section-unregistered')
+        .map((diagnostic) => diagnostic.detail?.section),
+    ).toEqual([
+      SpineBinarySectionKind.Bones,
+      SpineBinarySectionKind.Slots,
+      SpineBinarySectionKind.IkConstraints,
+      SpineBinarySectionKind.TransformConstraints,
+      SpineBinarySectionKind.PathConstraints,
+      SpineBinarySectionKind.Skins,
+      SpineBinarySectionKind.Events,
+      SpineBinarySectionKind.Animations,
+    ]);
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-tail-unparsed');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-truncated');
+  });
+
+  it('skips an unregistered section without desynchronizing the registered section after it', () => {
+    const registry = createSpineBinaryRegistry();
+    registerAllSpineBinaryHandlers(registry);
+    unregisterSpineBinarySectionHandler(registry, SpineBinarySectionKind.IkConstraints);
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const result = parseSpineSkeletonBinaryWithRegistry(buildSpineBinary({ ikConstraints: 2 }), registry, diagnostics)!;
+
+    expect(result.skeleton.slots![0].attachment).toMatchObject({
+      height: 32,
+      name: 'body-attachment',
+      width: 64,
+    });
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        detail: { section: SpineBinarySectionKind.IkConstraints },
+        kind: 'spine.binary-section-unregistered',
+      }),
+    );
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.ik-constraint-unsupported');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-tail-unparsed');
+  });
+
+  it('skips an unregistered timeline family and preserves the animation record boundary', () => {
+    const registry = createSpineBinaryRegistry();
+    registerAllSpineBinaryHandlers(registry);
+    unregisterSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Bone);
+    const diagnostics: ImportDiagnostic[] = [];
+
+    const result = parseSpineSkeletonBinaryWithRegistry(
+      buildSpineBinary({ boneTimelineType: 2, secondBoneTimelineType: 3 }),
+      registry,
+      diagnostics,
+    )!;
+
+    expect(result.animations).toHaveLength(1);
+    expect(result.animations[0].clip.channels).toEqual([]);
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        detail: { timeline: SpineBinaryTimelineKind.Bone, timelines: 2 },
+        kind: 'spine.binary-timeline-unregistered',
+      }),
+    );
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-tail-unparsed');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).not.toContain('spine.binary-truncated');
+  });
+
+  it('matches the batteries-included parser when all handlers are registered', () => {
+    const bytes = buildSpineBinary({ animations: true, bezier: true, ikConstraints: 2, weightedMesh: true });
+    const registry = createSpineBinaryRegistry();
+    registerAllSpineBinaryHandlers(registry);
+    const existingDiagnostics: ImportDiagnostic[] = [];
+    const configuredDiagnostics: ImportDiagnostic[] = [];
+
+    const configured = parseSpineSkeletonBinaryWithRegistry(bytes, registry, configuredDiagnostics);
+    const existing = parseSpineSkeletonBinary(bytes, existingDiagnostics);
+    // Entity instances carry fresh identity metadata, so compare their complete serializable import content.
+    expect(JSON.stringify(configured)).toBe(JSON.stringify(existing));
+    expect(configuredDiagnostics).toEqual(existingDiagnostics);
+  });
+});
+
+describe('registerAllSpineBinaryHandlers', () => {
+  it('registers both handler families', () => {
+    const registry = createSpineBinaryRegistry();
+    registerAllSpineBinaryHandlers(registry);
+    expect(registry.sectionHandlers).toHaveLength(8);
+    expect(registry.timelineHandlers).toHaveLength(8);
+  });
+});
+
+describe('registerSpineBinarySectionHandlers', () => {
+  it('registers only the six top-level section handlers', () => {
+    const registry = createSpineBinaryRegistry();
+    registerSpineBinarySectionHandlers(registry);
+    expect(registry.sectionHandlers).toHaveLength(8);
+    expect(registry.timelineHandlers).toEqual([]);
+  });
+});
+
+describe('registerSpineBinaryTimelineHandlers', () => {
+  it('registers only the eight animation timeline-family handlers', () => {
+    const registry = createSpineBinaryRegistry();
+    registerSpineBinaryTimelineHandlers(registry);
+    expect(registry.sectionHandlers).toEqual([]);
+    expect(registry.timelineHandlers).toHaveLength(8);
   });
 });
 

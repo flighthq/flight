@@ -25,6 +25,11 @@ import type {
   Skin2D,
   SkinAttachment2D,
   Slot2D,
+  SpineBinaryRegistry,
+  SpineBinarySectionContext,
+  SpineBinarySectionKind,
+  SpineBinaryTimelineContext,
+  SpineBinaryTimelineKind,
 } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
@@ -34,6 +39,8 @@ import {
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
+  SpineBinarySectionKind as SectionKind,
+  SpineBinaryTimelineKind as TimelineKind,
   TransformMode2D,
 } from '@flighthq/types/contract';
 
@@ -50,6 +57,7 @@ import {
   readSpineBinaryVarint,
   skipSpineBinaryBytes,
 } from './spineBinaryReader';
+import { getSpineBinarySectionHandler, getSpineBinaryTimelineHandler } from './spineBinaryRegistry';
 import { resolveSpineDrawOrdering } from './spineDrawOrder';
 
 function initializeMeshAttachment2D(
@@ -112,8 +120,16 @@ function initializeRegionAttachment2D(
 // (see the package status). Spine changed record layouts across major versions, so a file outside 4.x is
 // REJECTED with its version in the crumb instead of being decoded by a layout that does not describe it —
 // a wrong layout does not fail loudly, it silently yields plausible garbage.
-export function parseSpineSkeletonBinary(
+/**
+ * Parses a Spine binary with exactly the section and timeline handlers registered by the caller.
+ *
+ * Header decoding and the fallback walks stay in this core path: omitting a handler drops that family's
+ * modeled output, reports a `Skip` diagnostic, and still consumes its bytes so every later registered
+ * family remains readable.
+ */
+export function parseSpineSkeletonBinaryWithRegistry(
   bytes: Readonly<Uint8Array>,
+  registry: Readonly<SpineBinaryRegistry>,
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImport | null {
   const reader = createSpineBinaryReader(bytes);
@@ -152,22 +168,36 @@ export function parseSpineSkeletonBinary(
     readSpineBinaryString(reader); // audio path
   }
   const strings = readSpineBinaryStringTable(reader);
-  const bones = parseSpineBinaryBones(reader, nonessential, diagnostics);
-  const { attachmentNames, slots } = parseSpineBinarySlots(reader, strings, diagnostics);
-  skipSpineBinaryConstraints(reader, diagnostics);
-  const skins = parseSpineBinarySkins(reader, strings, nonessential, diagnostics);
+  const context: SpineBinarySectionContext = {
+    animations: [],
+    attachmentNames: [],
+    bones: [],
+    diagnostics,
+    nonessential,
+    reader,
+    registry,
+    skins: [],
+    slots: [],
+    strings,
+  };
+  dispatchSpineBinarySection(context, SectionKind.Bones, skipSpineBinaryBonesSection);
+  dispatchSpineBinarySection(context, SectionKind.Slots, skipSpineBinarySlotsSection);
+  dispatchSpineBinarySection(context, SectionKind.IkConstraints, skipSpineBinaryIkConstraintsSection);
+  dispatchSpineBinarySection(context, SectionKind.TransformConstraints, skipSpineBinaryTransformConstraintsSection);
+  dispatchSpineBinarySection(context, SectionKind.PathConstraints, skipSpineBinaryPathConstraintsSection);
+  dispatchSpineBinarySection(context, SectionKind.Skins, skipSpineBinarySkinsSection);
   // A slot names its setup attachment BEFORE the skin that defines it has been read, so resolution waits
   // until here — the file orders slots first, but the name only means something once the skins exist.
-  const setup = skins.find((skin) => skin.name === SPINE_BINARY_DEFAULT_SKIN_NAME);
+  const setup = context.skins.find((skin) => skin.name === SPINE_BINARY_DEFAULT_SKIN_NAME);
   if (setup !== undefined) {
     for (const entry of setup.attachments) {
-      if (entry.slotIndex < slots.length && attachmentNames[entry.slotIndex] === entry.name) {
-        slots[entry.slotIndex].attachment = entry.attachment;
+      if (entry.slotIndex < context.slots.length && context.attachmentNames[entry.slotIndex] === entry.name) {
+        context.slots[entry.slotIndex].attachment = entry.attachment;
       }
     }
   }
-  skipSpineBinaryEvents(reader, diagnostics);
-  const animations = parseSpineBinaryAnimations(reader, strings, setup, slots.length, diagnostics);
+  dispatchSpineBinarySection(context, SectionKind.Events, skipSpineBinaryEventsSection);
+  dispatchSpineBinarySection(context, SectionKind.Animations, skipSpineBinaryAnimationsSection);
   if (isSpineBinaryReaderOverrun(reader)) {
     reportImportDiagnostic(
       diagnostics,
@@ -176,7 +206,7 @@ export function parseSpineSkeletonBinary(
       ImportDiagnosticSeverity.Drop,
       'spine.binary-truncated',
       'parseSpineSkeletonBinary',
-      { bones: bones.length, slots: slots.length },
+      { bones: context.bones.length, slots: context.slots.length },
     );
   } else if (reader.offset < bytes.byteLength) {
     // The distinction is load-bearing: a Skip here would exempt itself from every "did the parser complain"
@@ -198,15 +228,39 @@ export function parseSpineSkeletonBinary(
       { bytes: bytes.byteLength - reader.offset },
     );
   }
-  const skeleton = createSkeleton2D(bones, slots);
-  if (skins.length > 0) skeleton.skins = skins;
-  return { animations, skeleton };
+  const skeleton = createSkeleton2D(context.bones, context.slots);
+  if (context.skins.length > 0) skeleton.skins = context.skins;
+  return { animations: context.animations, skeleton };
+}
+
+function dispatchSpineBinarySection(
+  context: SpineBinarySectionContext,
+  kind: SpineBinarySectionKind,
+  skip: (context: SpineBinarySectionContext) => void,
+): void {
+  const handle = getSpineBinarySectionHandler(context.registry, kind);
+  if (handle !== null) {
+    handle(context);
+    return;
+  }
+  skip(context);
+  reportImportDiagnostic(
+    context.diagnostics,
+    ImportDiagnosticSeverity.Skip,
+    'spine.binary-section-unregistered',
+    'parseSpineSkeletonBinaryWithRegistry',
+    { section: kind },
+  );
 }
 
 // The event DEFINITIONS a file declares (name plus default int/float/string/audio payload). Flight's
 // Skeleton2DImport carries no event vocabulary, so these are consumed and Skip-crumbed — but consumed they
 // must be, since the animation section follows them in a stream with no keys or lengths.
-function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
+function readSpineBinaryEventsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryEvents(context.reader, context.diagnostics);
+}
+
+function consumeSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader); // name reference
@@ -219,6 +273,10 @@ function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnosti
   reportSpineBinaryCrumb(diagnostics, count, 'spine.event-unsupported', 'skipSpineBinaryEvents', 'events');
 }
 
+function skipSpineBinaryEventsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryEvents(context.reader);
+}
+
 // Builds one AnimationClip per animation from its BONE timelines, mirroring what `parseSpineSkeleton` does
 // for `.json` — relative deltas over `Skeleton2DAnimationTarget`, composed onto the setup pose by
 // `applyAnimationClipToSkeleton2D`.
@@ -227,49 +285,92 @@ function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnosti
 // unmodeled, yet each is still walked field-for-field: the animation record is positional, so reaching the
 // NEXT animation requires consuming this one completely. An animation opens with its total timeline count,
 // which this importer does not need but must read.
-function parseSpineBinaryAnimations(
-  reader: ByteReader,
-  strings: readonly (string | null)[],
-  setup: Readonly<AttachmentSkin2D> | undefined,
-  slotCount: number,
-  diagnostics?: ImportDiagnostic[],
+function readSpineBinaryAnimationsSection(context: SpineBinarySectionContext): void {
+  context.animations.push(...consumeSpineBinaryAnimations(context, true));
+}
+
+function consumeSpineBinaryAnimations(
+  section: SpineBinarySectionContext,
+  dispatchRegisteredTimelines: boolean,
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
-  const count = readSpineBinaryVarint(reader);
+  const count = readSpineBinaryVarint(section.reader);
   const unmodeled = new Map<string, number>();
-  for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
-    const name = readSpineBinaryString(reader);
-    readSpineBinaryVarint(reader); // total timeline count across all families
-    const channels: AnimationChannel[] = [];
-    parseSpineBinarySlotTimelines(reader, channels, strings, setup, unmodeled, diagnostics);
-    parseSpineBinaryBoneTimelines(reader, channels, diagnostics);
-    skipSpineBinaryConstraintTimelines(reader, unmodeled);
-    skipSpineBinaryDeformTimelines(reader, unmodeled);
-    const drawOrder = readSpineBinaryDrawOrderTimeline(reader, slotCount, diagnostics);
-    skipSpineBinaryEventTimelines(reader, unmodeled);
-    animations.push({ clip: createAnimationClip(channels), drawOrder, name: name ?? '' });
+  const unregistered = new Map<SpineBinaryTimelineKind, number>();
+  for (let i = 0; i < count && !isSpineBinaryReaderOverrun(section.reader); i++) {
+    const name = readSpineBinaryString(section.reader);
+    readSpineBinaryVarint(section.reader); // total timeline count across all families
+    const timeline: SpineBinaryTimelineContext = {
+      channels: [],
+      drawOrder: null,
+      section,
+      unmodeledTimelineCounts: unmodeled,
+      unregisteredTimelineCounts: unregistered,
+    };
+    if (dispatchRegisteredTimelines) {
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Slot, skipSpineBinarySlotTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Bone, skipSpineBinaryBoneTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Ik, skipSpineBinaryIkTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Transform, skipSpineBinaryTransformTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Path, skipSpineBinaryPathTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Deform, skipSpineBinaryDeformTimelines);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.DrawOrder, skipSpineBinaryDrawOrderTimeline);
+      dispatchSpineBinaryTimeline(timeline, TimelineKind.Event, skipSpineBinaryEventTimelines);
+    } else {
+      skipSpineBinarySlotTimelines(timeline);
+      skipSpineBinaryBoneTimelines(timeline);
+      skipSpineBinaryIkTimelines(timeline);
+      skipSpineBinaryTransformTimelines(timeline);
+      skipSpineBinaryPathTimelines(timeline);
+      skipSpineBinaryDeformTimelines(timeline);
+      skipSpineBinaryDrawOrderTimeline(timeline);
+      skipSpineBinaryEventTimelines(timeline);
+    }
+    animations.push({ clip: createAnimationClip(timeline.channels), drawOrder: timeline.drawOrder, name: name ?? '' });
   }
   for (const [kind, tally] of unmodeled) {
     reportImportDiagnostic(
-      diagnostics,
+      section.diagnostics,
       ImportDiagnosticSeverity.Skip,
       `spine.${kind}-timeline-unsupported`,
       'parseSpineSkeletonBinary',
       { timelines: tally },
     );
   }
+  if (dispatchRegisteredTimelines) {
+    for (const [kind, tally] of unregistered) {
+      reportImportDiagnostic(
+        section.diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'spine.binary-timeline-unregistered',
+        'parseSpineSkeletonBinaryWithRegistry',
+        { timeline: kind, timelines: tally },
+      );
+    }
+  }
   return animations;
+}
+
+function dispatchSpineBinaryTimeline(
+  context: SpineBinaryTimelineContext,
+  kind: SpineBinaryTimelineKind,
+  skip: (context: SpineBinaryTimelineContext) => void,
+): void {
+  const handle = getSpineBinaryTimelineHandler(context.section.registry, kind);
+  if (handle === null) skip(context);
+  else handle(context);
+}
+
+function skipSpineBinaryAnimationsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryAnimations(context, false);
 }
 
 // The bone timelines of one animation. Spine splits each transform group into a combined form and per-axis
 // forms (`translate` vs `translateX`/`translateY`); a per-axis timeline becomes a two-component channel
 // whose OTHER axis holds the identity delta — 0 for translate/shear, 1 for the scale multiplier — so it
 // composes onto the setup pose as "this axis moves, the other does not".
-function parseSpineBinaryBoneTimelines(
-  reader: ByteReader,
-  channels: AnimationChannel[],
-  diagnostics?: ImportDiagnostic[],
-): void {
+function readSpineBinaryBoneTimelines(context: SpineBinaryTimelineContext): void {
+  const reader = context.section.reader;
   const bones = readSpineBinaryVarint(reader);
   for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) {
     const boneIndex = readSpineBinaryVarint(reader);
@@ -285,7 +386,28 @@ function parseSpineBinaryBoneTimelines(
         return;
       }
       const timeline = readSpineBinaryValueTimeline(reader, frameCount, kind.values);
-      channels.push(buildSpineBinaryBoneChannel(timeline, kind, boneIndex, diagnostics));
+      context.channels.push(buildSpineBinaryBoneChannel(timeline, kind, boneIndex, context.section.diagnostics));
+    }
+  }
+}
+
+function skipSpineBinaryBoneTimelines(context: SpineBinaryTimelineContext): void {
+  const reader = context.section.reader;
+  const bones = readSpineBinaryVarint(reader);
+  for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader); // bone index
+    const timelines = readSpineBinaryVarint(reader);
+    for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
+      tally(context.unregisteredTimelineCounts, TimelineKind.Bone);
+      const ordinal = readSpineBinaryByte(reader);
+      const frameCount = readSpineBinaryVarint(reader);
+      readSpineBinaryVarint(reader); // bezier count
+      const kind = ordinal < SPINE_BINARY_BONE_TIMELINES.length ? SPINE_BINARY_BONE_TIMELINES[ordinal] : null;
+      if (kind === null) {
+        skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
+        return;
+      }
+      skipSpineBinaryCurveFrames(reader, frameCount, kind.values * 4, kind.values);
     }
   }
 }
@@ -432,14 +554,9 @@ function buildSpineBinarySegmentEasings(
 // Colour components are stored as single BYTES here while the bezier control points around them are floats
 // already in 0..1 (Spine divides by 255 before recording a curve), so the bytes are normalized on read and
 // the curve rebase then matches the `.json` path exactly.
-function parseSpineBinarySlotTimelines(
-  reader: ByteReader,
-  channels: AnimationChannel[],
-  strings: readonly (string | null)[],
-  setup: Readonly<AttachmentSkin2D> | undefined,
-  unmodeled: Map<string, number>,
-  diagnostics?: ImportDiagnostic[],
-): void {
+function readSpineBinarySlotTimelines(context: SpineBinaryTimelineContext): void {
+  const { reader, strings } = context.section;
+  const setup = context.section.skins.find((skin) => skin.name === SPINE_BINARY_DEFAULT_SKIN_NAME);
   const slots = readSpineBinaryVarint(reader);
   for (let i = 0; i < slots && !isSpineBinaryReaderOverrun(reader); i++) {
     const slotIndex = readSpineBinaryVarint(reader);
@@ -448,13 +565,13 @@ function parseSpineBinarySlotTimelines(
       const type = readSpineBinaryByte(reader);
       const frameCount = readSpineBinaryVarint(reader);
       if (type === SPINE_BINARY_SLOT_ATTACHMENT) {
-        addSpineBinaryAttachmentChannel(reader, channels, strings, setup, slotIndex, frameCount);
+        addSpineBinaryAttachmentChannel(reader, context.channels, strings, setup, slotIndex, frameCount);
         continue;
       }
       readSpineBinaryVarint(reader); // bezier count
       const count = SPINE_BINARY_SLOT_COLOR_CHANNELS[type] ?? 1;
       if (type !== SPINE_BINARY_SLOT_RGBA) {
-        tally(unmodeled, 'slot-color');
+        tally(context.unmodeledTimelineCounts, 'slot-color');
         skipSpineBinaryCurveFrames(reader, frameCount, count, count);
         continue;
       }
@@ -462,16 +579,40 @@ function parseSpineBinarySlotTimelines(
       const track = createAnimationTrack({
         components: count,
         interpolation: AnimationInterpolationLinear,
-        segmentEasings: buildSpineBinarySegmentEasings(timeline, count, diagnostics),
+        segmentEasings: buildSpineBinarySegmentEasings(timeline, count, context.section.diagnostics),
         times: timeline.times,
         values: timeline.values,
       });
-      channels.push(
+      context.channels.push(
         createAnimationChannel(
           track,
           createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Color),
         ),
       );
+    }
+  }
+}
+
+function skipSpineBinarySlotTimelines(context: SpineBinaryTimelineContext): void {
+  const reader = context.section.reader;
+  const slots = readSpineBinaryVarint(reader);
+  for (let i = 0; i < slots && !isSpineBinaryReaderOverrun(reader); i++) {
+    readSpineBinaryVarint(reader); // slot index
+    const timelines = readSpineBinaryVarint(reader);
+    for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
+      tally(context.unregisteredTimelineCounts, TimelineKind.Slot);
+      const type = readSpineBinaryByte(reader);
+      const frameCount = readSpineBinaryVarint(reader);
+      if (type === SPINE_BINARY_SLOT_ATTACHMENT) {
+        for (let frame = 0; frame < frameCount && !isSpineBinaryReaderOverrun(reader); frame++) {
+          skipSpineBinaryBytes(reader, 4);
+          readSpineBinaryVarint(reader);
+        }
+        continue;
+      }
+      readSpineBinaryVarint(reader); // bezier count
+      const channels = SPINE_BINARY_SLOT_COLOR_CHANNELS[type] ?? 1;
+      skipSpineBinaryCurveFrames(reader, frameCount, channels, channels);
     }
   }
 }
@@ -543,11 +684,25 @@ function readSpineBinaryColorTimeline(
   return { curves, times, values };
 }
 
-// IK, transform, and path constraint timelines.
-function skipSpineBinaryConstraintTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+// IK, transform, and path constraint timelines are separate registry entries even though all three are
+// currently consumed without modeled output. A future solver importer can therefore replace one without
+// pulling either sibling into the assembly.
+function readSpineBinaryIkTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryIkTimelines(context.section.reader, context.unmodeledTimelineCounts, 'ik');
+}
+
+function readSpineBinaryPathTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryPathTimelines(context.section.reader, context.unmodeledTimelineCounts, 'path');
+}
+
+function readSpineBinaryTransformTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryTransformTimelines(context.section.reader, context.unmodeledTimelineCounts, 'transform');
+}
+
+function consumeSpineBinaryIkTimelines(reader: ByteReader, counts: Map<string, number>, tallyKind: string): void {
   const ik = readSpineBinaryVarint(reader);
   for (let i = 0; i < ik && !isSpineBinaryReaderOverrun(reader); i++) {
-    tally(unmodeled, 'ik');
+    tally(counts, tallyKind);
     readSpineBinaryVarint(reader); // constraint index
     const frameCount = readSpineBinaryVarint(reader);
     readSpineBinaryVarint(reader); // bezier count
@@ -559,20 +714,30 @@ function skipSpineBinaryConstraintTimelines(reader: ByteReader, unmodeled: Map<s
       skipSpineBinaryCurveTag(reader, 2);
     }
   }
+}
+
+function consumeSpineBinaryTransformTimelines(
+  reader: ByteReader,
+  counts: Map<string, number>,
+  tallyKind: string,
+): void {
   const transform = readSpineBinaryVarint(reader);
   for (let i = 0; i < transform && !isSpineBinaryReaderOverrun(reader); i++) {
-    tally(unmodeled, 'transform');
+    tally(counts, tallyKind);
     readSpineBinaryVarint(reader);
     const frameCount = readSpineBinaryVarint(reader);
     readSpineBinaryVarint(reader);
     skipSpineBinaryCurveFrames(reader, frameCount, 24, 6);
   }
+}
+
+function consumeSpineBinaryPathTimelines(reader: ByteReader, counts: Map<string, number>, tallyKind: string): void {
   const path = readSpineBinaryVarint(reader);
   for (let i = 0; i < path && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
     const timelines = readSpineBinaryVarint(reader);
     for (let j = 0; j < timelines && !isSpineBinaryReaderOverrun(reader); j++) {
-      tally(unmodeled, 'path');
+      tally(counts, tallyKind);
       const type = readSpineBinaryByte(reader);
       const frameCount = readSpineBinaryVarint(reader);
       readSpineBinaryVarint(reader);
@@ -582,8 +747,38 @@ function skipSpineBinaryConstraintTimelines(reader: ByteReader, unmodeled: Map<s
   }
 }
 
+function skipSpineBinaryIkTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryIkTimelines(context.section.reader, context.unregisteredTimelineCounts, TimelineKind.Ik);
+}
+
+function skipSpineBinaryPathTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryPathTimelines(context.section.reader, context.unregisteredTimelineCounts, TimelineKind.Path);
+}
+
+function skipSpineBinaryTransformTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryTransformTimelines(
+    context.section.reader,
+    context.unregisteredTimelineCounts,
+    TimelineKind.Transform,
+  );
+}
+
 // Deform (mesh vertex offset) and attachment-sequence timelines, nested skin → slot → attachment.
-function skipSpineBinaryDeformTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+function readSpineBinaryDeformTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryDeformTimelines(
+    context.section.reader,
+    context.unmodeledTimelineCounts,
+    'deform',
+    'attachment-sequence',
+  );
+}
+
+function consumeSpineBinaryDeformTimelines(
+  reader: ByteReader,
+  counts: Map<string, number>,
+  deformKind: string,
+  sequenceKind: string,
+): void {
   const skins = readSpineBinaryVarint(reader);
   for (let i = 0; i < skins && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader); // skin index
@@ -596,11 +791,11 @@ function skipSpineBinaryDeformTimelines(reader: ByteReader, unmodeled: Map<strin
         const type = readSpineBinaryByte(reader);
         const frameCount = readSpineBinaryVarint(reader);
         if (type === SPINE_BINARY_ATTACHMENT_SEQUENCE) {
-          tally(unmodeled, 'attachment-sequence');
+          tally(counts, sequenceKind);
           skipSpineBinaryBytes(reader, frameCount * 12); // time, packed mode+index, delay
           continue;
         }
-        tally(unmodeled, 'deform');
+        tally(counts, deformKind);
         readSpineBinaryVarint(reader); // bezier count
         skipSpineBinaryBytes(reader, 4); // first time
         for (let f = 0; f < frameCount && !isSpineBinaryReaderOverrun(reader); f++) {
@@ -619,17 +814,37 @@ function skipSpineBinaryDeformTimelines(reader: ByteReader, unmodeled: Map<strin
   }
 }
 
+function skipSpineBinaryDeformTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryDeformTimelines(
+    context.section.reader,
+    context.unregisteredTimelineCounts,
+    TimelineKind.Deform,
+    TimelineKind.Deform,
+  );
+}
+
 // The draw-order timeline: per frame, a time and a list of slot-index/offset pairs.
 // The draw-order timeline: per frame, a time and a list of slot-index/offset pairs. Resolved into whole
 // orderings through the SAME function the JSON reader uses, so the two encodings cannot disagree about
 // what an offset list means — a second implementation would agree only by inspection, and only until
 // one of them was edited.
-function readSpineBinaryDrawOrderTimeline(
+function readSpineBinaryDrawOrderTimeline(context: SpineBinaryTimelineContext): void {
+  context.drawOrder = consumeSpineBinaryDrawOrderTimeline(
+    context.section.reader,
+    context.section.slots.length,
+    context.section.diagnostics,
+  );
+}
+
+function consumeSpineBinaryDrawOrderTimeline(
   reader: ByteReader,
   slotCount: number,
   diagnostics?: ImportDiagnostic[],
+  counts?: Map<string, number>,
+  tallyKind?: string,
 ): Skeleton2DDrawOrderTimeline | null {
   const frames = readSpineBinaryVarint(reader);
+  if (frames > 0 && counts !== undefined && tallyKind !== undefined) tally(counts, tallyKind);
   const times: number[] = [];
   const orderings: number[] = [];
 
@@ -662,10 +877,24 @@ function readSpineBinaryDrawOrderTimeline(
   return times.length === 0 ? null : { orderings, times };
 }
 
+function skipSpineBinaryDrawOrderTimeline(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryDrawOrderTimeline(
+    context.section.reader,
+    context.section.slots.length,
+    undefined,
+    context.unregisteredTimelineCounts,
+    TimelineKind.DrawOrder,
+  );
+}
+
 // The event timeline: per frame, a time, the event it fires, and any values overriding the definition.
-function skipSpineBinaryEventTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+function readSpineBinaryEventTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryEventTimelines(context.section.reader, context.unmodeledTimelineCounts, 'event');
+}
+
+function consumeSpineBinaryEventTimelines(reader: ByteReader, counts: Map<string, number>, tallyKind: string): void {
   const frames = readSpineBinaryVarint(reader);
-  if (frames > 0) tally(unmodeled, 'event');
+  if (frames > 0) tally(counts, tallyKind);
   for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
     skipSpineBinaryBytes(reader, 4); // time
     readSpineBinaryVarint(reader); // event index
@@ -674,6 +903,10 @@ function skipSpineBinaryEventTimelines(reader: ByteReader, unmodeled: Map<string
     // A flag says whether this frame overrides the definition's string; only then is one written.
     if (readSpineBinaryBoolean(reader)) readSpineBinaryString(reader);
   }
+}
+
+function skipSpineBinaryEventTimelines(context: SpineBinaryTimelineContext): void {
+  consumeSpineBinaryEventTimelines(context.section.reader, context.unregisteredTimelineCounts, TimelineKind.Event);
 }
 
 // Walks a curve timeline whose values are consumed rather than kept. `payloadBytes` is the per-keyframe
@@ -735,6 +968,10 @@ function isSupportedSpineBinaryVersion(version: string): boolean {
 // Spine's bone records, in file order — the order weighted-mesh influences and slot bone references index
 // into, and the order that guarantees a parent precedes its children (bone 0 is the root and writes no
 // parent index at all).
+function readSpineBinaryBonesSection(context: SpineBinarySectionContext): void {
+  context.bones.push(...parseSpineBinaryBones(context.reader, context.nonessential, context.diagnostics));
+}
+
 function parseSpineBinaryBones(reader: ByteReader, nonessential: boolean, diagnostics?: ImportDiagnostic[]): Bone2D[] {
   const count = readSpineBinaryVarint(reader);
   const bones: Bone2D[] = [];
@@ -774,10 +1011,20 @@ function parseSpineBinaryBones(reader: ByteReader, nonessential: boolean, diagno
   return bones;
 }
 
+function skipSpineBinaryBonesSection(context: SpineBinarySectionContext): void {
+  parseSpineBinaryBones(context.reader, context.nonessential);
+}
+
 // Spine's slot records, in draw order. `color`/`darkColor` are rgba8888 ints, matching `Slot2D.color`'s
 // packed convention directly; a dark color of -1 means "none". The setup attachment is a STRING-TABLE
 // REFERENCE naming an attachment inside a skin, which the file has not written yet — so the NAME is returned
 // alongside the slots and the caller resolves it once the skin is read.
+function readSpineBinarySlotsSection(context: SpineBinarySectionContext): void {
+  const result = parseSpineBinarySlots(context.reader, context.strings, context.diagnostics);
+  context.attachmentNames.push(...result.attachmentNames);
+  context.slots.push(...result.slots);
+}
+
 function parseSpineBinarySlots(
   reader: ByteReader,
   strings: readonly (string | null)[],
@@ -809,11 +1056,19 @@ function parseSpineBinarySlots(
   return { attachmentNames, slots };
 }
 
+function skipSpineBinarySlotsSection(context: SpineBinarySectionContext): void {
+  parseSpineBinarySlots(context.reader, context.strings);
+}
+
 // The IK, transform, and path constraint sections. Flight models no constraint solvers (a skeleton2d P2
 // concern), but the stream is positional — these records carry no keys and no lengths — so they must be
 // CONSUMED field-for-field to reach the skins that follow. Reading them is not optional the way ignoring a
 // JSON key is; a single miscounted field desynchronizes every later section.
-function skipSpineBinaryConstraints(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
+function readSpineBinaryIkConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryIkConstraints(context.reader, context.diagnostics);
+}
+
+function consumeSpineBinaryIkConstraints(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
   const ik = readSpineBinaryVarint(reader);
   for (let i = 0; i < ik && !isSpineBinaryReaderOverrun(reader); i++) {
     skipSpineBinaryConstraintHead(reader);
@@ -821,6 +1076,20 @@ function skipSpineBinaryConstraints(reader: ByteReader, diagnostics?: ImportDiag
     skipSpineBinaryBytes(reader, 8); // mix, softness
     skipSpineBinaryBytes(reader, 4); // bendDirection byte + compress/stretch/uniform booleans
   }
+  reportSpineBinaryCrumb(
+    diagnostics,
+    ik,
+    'spine.ik-constraint-unsupported',
+    'skipSpineBinaryConstraints',
+    'constraints',
+  );
+}
+
+function readSpineBinaryTransformConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryTransformConstraints(context.reader, context.diagnostics);
+}
+
+function consumeSpineBinaryTransformConstraints(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
   const transform = readSpineBinaryVarint(reader);
   for (let i = 0; i < transform && !isSpineBinaryReaderOverrun(reader); i++) {
     skipSpineBinaryConstraintHead(reader);
@@ -828,6 +1097,20 @@ function skipSpineBinaryConstraints(reader: ByteReader, diagnostics?: ImportDiag
     skipSpineBinaryBytes(reader, 2); // local, relative
     skipSpineBinaryBytes(reader, 48); // six offsets + six mix weights
   }
+  reportSpineBinaryCrumb(
+    diagnostics,
+    transform,
+    'spine.transform-constraint-unsupported',
+    'skipSpineBinaryConstraints',
+    'constraints',
+  );
+}
+
+function readSpineBinaryPathConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryPathConstraints(context.reader, context.diagnostics);
+}
+
+function consumeSpineBinaryPathConstraints(reader: ByteReader, diagnostics?: ImportDiagnostic[]): void {
   const path = readSpineBinaryVarint(reader);
   for (let i = 0; i < path && !isSpineBinaryReaderOverrun(reader); i++) {
     skipSpineBinaryConstraintHead(reader);
@@ -839,25 +1122,23 @@ function skipSpineBinaryConstraints(reader: ByteReader, diagnostics?: ImportDiag
   }
   reportSpineBinaryCrumb(
     diagnostics,
-    ik,
-    'spine.ik-constraint-unsupported',
-    'skipSpineBinaryConstraints',
-    'constraints',
-  );
-  reportSpineBinaryCrumb(
-    diagnostics,
-    transform,
-    'spine.transform-constraint-unsupported',
-    'skipSpineBinaryConstraints',
-    'constraints',
-  );
-  reportSpineBinaryCrumb(
-    diagnostics,
     path,
     'spine.path-constraint-unsupported',
     'skipSpineBinaryConstraints',
     'constraints',
   );
+}
+
+function skipSpineBinaryIkConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryIkConstraints(context.reader);
+}
+
+function skipSpineBinaryPathConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryPathConstraints(context.reader);
+}
+
+function skipSpineBinaryTransformConstraintsSection(context: SpineBinarySectionContext): void {
+  consumeSpineBinaryTransformConstraints(context.reader);
 }
 
 // The head every constraint record shares: name, ordering index, skin-required flag, then its bone list.
@@ -875,6 +1156,12 @@ function skipSpineBinaryConstraintHead(reader: ByteReader): void {
 //
 // Region and mesh attachments are modeled; bounding-box, path, point, clipping, and linked-mesh entries are
 // recognized — and still fully consumed, since skipping their bytes is not possible — then Skip-crumbed.
+function readSpineBinarySkinsSection(context: SpineBinarySectionContext): void {
+  context.skins.push(
+    ...parseSpineBinarySkins(context.reader, context.strings, context.nonessential, context.diagnostics),
+  );
+}
+
 function parseSpineBinarySkins(
   reader: ByteReader,
   strings: readonly (string | null)[],
@@ -915,6 +1202,10 @@ function parseSpineBinarySkins(
     );
   }
   return skins;
+}
+
+function skipSpineBinarySkinsSection(context: SpineBinarySectionContext): void {
+  parseSpineBinarySkins(context.reader, context.strings, context.nonessential);
 }
 
 // One skin's slot → attachment body, shared by the default and named forms. Entries carry an explicit slot
@@ -1250,3 +1541,28 @@ const SPINE_BINARY_TRANSFORM_MODES = [
   TransformMode2D.NoScale,
   TransformMode2D.NoScaleOrReflection,
 ] as const;
+
+// Internal implementation tables imported by the two handler-family leaves. Keeping them as separate
+// exported values lets a section-only assembly omit the timeline leaf (and vice versa) without making the
+// reader functions themselves package contract exports.
+export const spineBinarySectionReaders = {
+  animations: readSpineBinaryAnimationsSection,
+  bones: readSpineBinaryBonesSection,
+  events: readSpineBinaryEventsSection,
+  ikConstraints: readSpineBinaryIkConstraintsSection,
+  pathConstraints: readSpineBinaryPathConstraintsSection,
+  skins: readSpineBinarySkinsSection,
+  slots: readSpineBinarySlotsSection,
+  transformConstraints: readSpineBinaryTransformConstraintsSection,
+} as const;
+
+export const spineBinaryTimelineReaders = {
+  bone: readSpineBinaryBoneTimelines,
+  deform: readSpineBinaryDeformTimelines,
+  drawOrder: readSpineBinaryDrawOrderTimeline,
+  event: readSpineBinaryEventTimelines,
+  ik: readSpineBinaryIkTimelines,
+  path: readSpineBinaryPathTimelines,
+  slot: readSpineBinarySlotTimelines,
+  transform: readSpineBinaryTransformTimelines,
+} as const;
