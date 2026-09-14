@@ -38,6 +38,7 @@ const GLTF_MATERIAL_MODULES = [
   'gltfClearcoat.ts',
   'gltfEmissiveStrength.ts',
   'gltfIridescence.ts',
+  'gltfMaterialExtension.ts',
   'gltfSheen.ts',
   'gltfSpecular.ts',
   'gltfSpecularGlossiness.ts',
@@ -363,6 +364,12 @@ describe('format parser handler tree shaking', () => {
 
     it(`keeps the ${testCase.name} lean parser independent of built-in handler families`, async () => {
       const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.leanExports);
+
+      for (const family of testCase.families) expectFamilyAbsent(bundle, testCase, family);
+    });
+
+    it(`keeps the ${testCase.name} public registry seams independent of built-in handler families`, async () => {
+      const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.publicInfrastructureExports);
 
       for (const family of testCase.families) expectFamilyAbsent(bundle, testCase, family);
     });
