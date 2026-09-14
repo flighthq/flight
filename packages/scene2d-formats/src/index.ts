@@ -10,6 +10,7 @@ export {
   registerAllRiveHandlers,
   registerRiveAssetHandlers,
   registerRiveClippingHandlers,
+  registerRiveCoreObjectHandler,
   registerRiveDrawOrderHandlers,
   registerRiveLayoutHandlers,
   registerRivePaintHandlers,
