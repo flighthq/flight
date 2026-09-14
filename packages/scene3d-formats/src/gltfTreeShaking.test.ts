@@ -37,6 +37,8 @@ describe('glTF core feature tree shaking', () => {
   it.each([
     ['registerGltfAnimationHandlers', 'gltf.animation-target-unresolved', 'gltf.camera-invalid-perspective'],
     ['registerGltfCameraHandlers', 'gltf.camera-invalid-perspective', 'gltf.animation-target-unresolved'],
+    ['registerGltfLightingExtensionHandlers', 'KHR_lights_punctual', 'KHR_materials_anisotropy'],
+    ['registerGltfMaterialExtensionHandlers', 'KHR_materials_anisotropy', 'KHR_lights_punctual'],
     ['registerGltfSkinHandlers', 'gltf.skin-ibm-count-mismatch', 'gltf.animation-target-unresolved'],
   ])('keeps %s independently bundleable', async (name, included, excluded) => {
     const output = await bundleExport(name, 'index');
@@ -46,12 +48,19 @@ describe('glTF core feature tree shaking', () => {
   });
 
   it('keeps the all registrar and zero-config parser batteries-included', async () => {
-    for (const name of ['registerAllGltfCoreFeatureHandlers', 'parseGltf']) {
-      const output = await bundleExport(name, 'index');
-      expect(output).toContain('gltf.animation-target-unresolved');
-      expect(output).toContain('gltf.camera-invalid-perspective');
-      expect(output).toContain('gltf.skin-ibm-count-mismatch');
-    }
+    const allOutput = await bundleExport('registerAllGltfHandlers', 'index');
+    expect(allOutput).toContain('gltf.animation-target-unresolved');
+    expect(allOutput).toContain('gltf.camera-invalid-perspective');
+    expect(allOutput).toContain('gltf.skin-ibm-count-mismatch');
+    expect(allOutput).toContain('KHR_materials_anisotropy');
+    expect(allOutput).toContain('KHR_lights_punctual');
+
+    const parserOutput = await bundleExport('parseGltf', 'index');
+    expect(parserOutput).toContain('gltf.animation-target-unresolved');
+    expect(parserOutput).toContain('gltf.camera-invalid-perspective');
+    expect(parserOutput).toContain('gltf.skin-ibm-count-mismatch');
+    expect(parserOutput).not.toContain('KHR_materials_anisotropy');
+    expect(parserOutput).not.toContain('KHR_lights_punctual');
   });
 });
 

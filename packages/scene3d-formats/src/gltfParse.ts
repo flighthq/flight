@@ -64,7 +64,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
-import { registerAllGltfCoreFeatureHandlers } from './registerAllGltfCoreFeatureHandlers';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
+import { registerGltfCameraHandlers } from './registerGltfCameraHandlers';
+import { registerGltfSkinHandlers } from './registerGltfSkinHandlers';
 
 // Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
 // Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an
@@ -185,7 +187,9 @@ export function parseGltfWithCoreFeatureHandlers(
 
 function getFullGltfCoreFeatureHandlers(): GltfCoreFeatureHandler[] {
   const handlers: GltfCoreFeatureHandler[] = [];
-  registerAllGltfCoreFeatureHandlers(handlers);
+  registerGltfAnimationHandlers(handlers);
+  registerGltfCameraHandlers(handlers);
+  registerGltfSkinHandlers(handlers);
   return handlers;
 }
 
