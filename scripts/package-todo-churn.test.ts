@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -47,6 +47,17 @@ describe('readLastCommitDates', () => {
 });
 
 describe('readPackageChurn', () => {
+  it('keeps automatic git maintenance attached to fixture commits', () => {
+    const repo = createRepo();
+    const trace = join(repo, '.git', 'commit-trace.json');
+
+    commit(repo, [['packages/mesh/src/mesh.ts', 'a\n']], 'feat(mesh): add', trace);
+
+    // Git normally starts detached maintenance after a commit. The commit process can then exit
+    // while maintenance is still writing under .git, racing this file's recursive teardown.
+    expect(readFileSync(trace, 'utf8')).not.toContain('"--detach"');
+  });
+
   it('attributes line deltas to the owning package', () => {
     const repo = createRepo();
     commit(repo, [['packages/mesh/src/mesh.ts', 'a\nb\nc\n']], 'feat(mesh): add');
@@ -196,14 +207,17 @@ describe('sumChurnSince', () => {
   });
 });
 
-function commit(repo: string, files: readonly (readonly [string, string])[], message: string): void {
+function commit(repo: string, files: readonly (readonly [string, string])[], message: string, trace?: string): void {
   for (const [path, contents] of files) {
     const full = join(repo, path);
     mkdirSync(join(full, '..'), { recursive: true });
     writeFileSync(full, contents);
   }
   execFileSync('git', ['add', '-A'], { cwd: repo });
-  execFileSync('git', ['commit', '-m', message], { cwd: repo });
+  execFileSync('git', ['commit', '-m', message], {
+    cwd: repo,
+    env: trace === undefined ? undefined : { ...process.env, GIT_TRACE2_EVENT: trace },
+  });
 }
 
 function createRepo(): string {
@@ -212,6 +226,7 @@ function createRepo(): string {
   execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: repo });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo });
   execFileSync('git', ['config', 'user.name', 'Test'], { cwd: repo });
+  execFileSync('git', ['config', 'maintenance.autoDetach', 'false'], { cwd: repo });
   return repo;
 }
 
