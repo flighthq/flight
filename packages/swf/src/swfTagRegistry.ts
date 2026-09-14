@@ -4,6 +4,7 @@ import {
   handleSwfBackgroundColorTag,
   handleSwfBoundedDefinitionTag,
   handleSwfButtonDefinitionTag,
+  handleSwfDefineSpriteTag,
   handleSwfDoAbcTag,
   handleSwfDoActionTag,
   handleSwfDoInitActionTag,
@@ -39,6 +40,7 @@ export function registerAllSwfTagHandlers(registry: SwfTagHandlerRegistry): void
   registerSwfScriptTagHandlers(registry);
   registerSwfShapeTagHandlers(registry);
   registerSwfSoundTagHandlers(registry);
+  registerSwfSpriteTagHandlers(registry);
   registerSwfTextTagHandlers(registry);
   registerSwfVideoTagHandlers(registry);
 }
@@ -106,6 +108,10 @@ export function registerSwfSoundTagHandlers(registry: SwfTagHandlerRegistry): vo
   registry.set(TAG_START_SOUND_2, handleSwfStartSound2Tag);
 }
 
+export function registerSwfSpriteTagHandlers(registry: SwfTagHandlerRegistry): void {
+  registry.set(TAG_DEFINE_SPRITE, handleSwfDefineSpriteTag);
+}
+
 export function registerSwfTagHandler(registry: SwfTagHandlerRegistry, code: number, handler: SwfTagHandler): void {
   registry.set(code, handler);
 }
@@ -143,6 +149,7 @@ const TAG_DEFINE_SHAPE_2 = 22;
 const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SHAPE_4 = 83;
 const TAG_DEFINE_SOUND = 14;
+const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;

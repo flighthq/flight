@@ -21,6 +21,7 @@ export {
   registerSwfScriptTagHandlers,
   registerSwfShapeTagHandlers,
   registerSwfSoundTagHandlers,
+  registerSwfSpriteTagHandlers,
   registerSwfTagHandler,
   registerSwfTextTagHandlers,
   registerSwfVideoTagHandlers,

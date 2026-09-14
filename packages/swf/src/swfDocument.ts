@@ -299,6 +299,8 @@ export function createSwfDefaultTagHandlerRegistry(): NonEntityCreateResult<SwfT
   registry.set(TAG_DEFINE_EDIT_TEXT, handleSwfBoundedDefinitionTag);
   registry.set(TAG_DEFINE_MORPH_SHAPE, handleSwfBoundedDefinitionTag);
   registry.set(TAG_DEFINE_MORPH_SHAPE_2, handleSwfBoundedDefinitionTag);
+  // Sprite tags
+  registry.set(TAG_DEFINE_SPRITE, handleSwfDefineSpriteTag);
   // Sound tags
   registry.set(TAG_DEFINE_SOUND, handleSwfSoundDefinitionTag);
   registry.set(TAG_START_SOUND, handleSwfStartSoundTag);
@@ -355,6 +357,26 @@ export function handleSwfButtonDefinitionTag(
   _diagnostics: ImportDiagnostic[] | undefined,
 ): boolean {
   readSwfButtonDefinition(body as SwfReader, state as SwfParseState, tag === TAG_DEFINE_BUTTON_2 ? 2 : 1);
+  return true;
+}
+
+export function handleSwfDefineSpriteTag(
+  body: SwfTagReader,
+  _tag: number,
+  state: SwfTagParseState,
+  _timeline: SwfTagTimelineState,
+  _diagnostics: ImportDiagnostic[] | undefined,
+): boolean {
+  const reader = body as SwfReader;
+  const internal = state as SwfParseState;
+  const spriteId = reader.readUint16();
+  reader.readUint16();
+  if (!reader.valid || spriteId === 0 || internal.definedCharacters.has(spriteId)) return false;
+  internal.definedCharacters.add(spriteId);
+  const spriteReader = new SwfReader(reader.source, reader.pos, reader.end);
+  const spriteTimeline = readSwfTimeline(spriteReader, internal, internal.registry);
+  if (spriteTimeline === null || spriteReader.pos !== spriteReader.end) return false;
+  internal.sprites.set(spriteId, spriteTimeline);
   return true;
 }
 
@@ -583,6 +605,7 @@ interface SwfParseState {
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
+  registry: Readonly<SwfTagHandlerRegistry>;
   remainingFrameEntries: number;
   morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
   morphShapes: Map<number, () => MorphShape | null>;
@@ -1784,6 +1807,7 @@ function readSwfTags(
     jpegTables: null,
     pendingTexts: [],
     linkages: new Map<number, string>(),
+    registry,
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
     morphBounds: new Map<number, { end: SwfRectangle; start: SwfRectangle }>(),
     morphShapes: new Map<number, () => MorphShape | null>(),
@@ -1937,17 +1961,6 @@ function readSwfTimeline(
       state.remainingFrameEntries -= timeline.placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
       timeline.frames.push(new Map(timeline.placements));
-    } else if (code === TAG_DEFINE_SPRITE) {
-      const spriteId = body.readUint16();
-      body.readUint16();
-      if (!body.valid || spriteId === 0 || state.definedCharacters.has(spriteId)) return null;
-      state.definedCharacters.add(spriteId);
-      const spriteReader = new SwfReader(body.source, body.pos, body.end);
-      const spriteTimeline = readSwfTimeline(spriteReader, state, registry);
-      if (spriteTimeline === null || spriteReader.pos !== spriteReader.end) {
-        return null;
-      }
-      state.sprites.set(spriteId, spriteTimeline);
     } else {
       const handler = registry.get(code);
       if (handler !== undefined) {
