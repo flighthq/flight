@@ -97,10 +97,10 @@ import { readSwfEditTextFactory } from './swfEditText';
 import { readSwfFilterList } from './swfFilter';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
+import { isKnownSwfTag } from './swfKnownTags';
 import { createSwfMorphShape } from './swfMorphShape';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
-import { SWF_TAG_NAMES } from './swfTagVocabulary';
 import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
@@ -2019,7 +2019,7 @@ function reportSwfUnhandledTag(diagnostics: ImportDiagnostic[] | undefined, code
   }
   if (SWF_SILENT_TAGS.has(code)) return;
 
-  const kind = SWF_TAG_NAMES.has(code) ? 'swf.tag-handler-unregistered' : 'swf.tag-unknown';
+  const kind = isKnownSwfTag(code) ? 'swf.tag-handler-unregistered' : 'swf.tag-unknown';
   reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'readSwfTimeline', { tag: code });
 }
 
