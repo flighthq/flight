@@ -16,6 +16,7 @@ import type {
   DisplayObject,
   ImportDiagnostic,
   Matrix,
+  NonEntityCreateResult,
   Path,
   RiveArtboardGraph,
   RiveArtboardImportContext,
@@ -72,7 +73,7 @@ export function createRivePathRecord(
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
   diagnostics?: ImportDiagnostic[],
-): RivePathRecord | null {
+): NonEntityCreateResult<RivePathRecord, 'descriptor'> | null {
   const source = artboard.objects[index];
   const path = createRivePath(source, artboard, index, diagnostics);
   if (path === null || path.commands.length === 0) return null;
