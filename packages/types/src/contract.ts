@@ -533,7 +533,6 @@ export * from './PathOffsetJoin';
 export * from './PathOffsetOptions';
 export * from './PathSegment';
 export * from './Permission';
-export * from './PermissionNativeHolding';
 export * from './PhongMaterial';
 export * from './PixelateEffect';
 export * from './PixelFormat';

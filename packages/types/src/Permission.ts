@@ -1,6 +1,7 @@
-// Shared vocabulary projected by @flighthq/permissions from explicit Host capability owners. The
-// package is a facade, not a native permission provider: Notification permission, in particular, is
-// owned exclusively by Host.notification.permission.
+import type { Entity } from './Entity';
+import type { HostNotificationPermissionProvider } from './Notification';
+
+// Shared vocabulary projected by @flighthq/permissions from explicit Host capability providers.
 
 // A named OS/runtime permission. The listed names are the interim shared vocabulary; the open string
 // tail lets a caller receive an honest unsupported outcome for a host-specific name.
@@ -51,3 +52,13 @@ export type PermissionRequestOutcome =
   // This arm records storage policy state, not a human decision.
   | { readonly reason: 'best-effort'; readonly state: PermissionState | null }
   | { readonly reason: PermissionRequestFailureReason };
+
+// The narrow host seam for permission operations that require native platform APIs. Notification
+// retains its method-tight provider shape behind this aggregate; persistence, MIDI, and geolocation
+// remain separate because their capability owners expose distinct outcomes.
+export interface HostPermissionsProvider extends Entity {
+  readonly notification: HostNotificationPermissionProvider;
+  queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;
+  requestMediaAccess(name: 'camera' | 'microphone'): Promise<PermissionRequestOutcome>;
+  requestWakeLock(): Promise<PermissionRequestOutcome>;
+}

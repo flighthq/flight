@@ -111,6 +111,7 @@ import type {
   HostNotificationSchedulingProvider,
 } from './Notification';
 import type { HostPathBooleanProvider } from './PathBooleanBackend';
+import type { HostPermissionsProvider } from './Permission';
 import type { HostPhotoCaptureDialogProvider } from './PhotoCaptureDialogBackend';
 import type { HostPlatformProvider } from './Platform';
 import type {
@@ -423,6 +424,7 @@ export interface HostSystemCapabilities {
   readonly device?: HostDeviceProvider;
   readonly geolocation?: HostGeolocationProvider;
   readonly lifecycle?: HostLifecycleProvider;
+  readonly permissions?: HostPermissionsProvider;
   readonly platform?: HostPlatformProvider;
   readonly sensors?: HostSensorsProvider;
 }

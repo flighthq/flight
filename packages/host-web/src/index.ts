@@ -119,6 +119,7 @@ export { webHostMenu } from './webMenuHost';
 export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
 export { createWebNetBackend, webHostNet } from './webNet';
 export { createWebPageNotificationCapabilities } from './webNotification';
+export { createWebPermissionsBackend, webHostNotificationPermission, webHostPermissions } from './webPermissions';
 export {
   createWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,

@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostMidiPermissionProvider,
-  HostNotificationPermissionProvider,
+  HostPermissionsProvider,
   HostStoragePersistenceQueryProvider,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
@@ -14,8 +14,8 @@ describe('getPermissionStates', () => {
 
   it('pins repeated names to the direct provider passed by the caller', async () => {
     const events: string[] = [];
-    const second = permissionProvider('denied', events, 'second');
-    const first = permissionProvider('granted', events, 'first', () => {
+    const second = permissionsProvider('denied', events, 'second');
+    const first = permissionsProvider('granted', events, 'first', () => {
       active = second;
     });
     let active = first;
@@ -30,29 +30,20 @@ describe('getPermissionStates', () => {
     expect(events).toEqual(['work:first', 'work:first']);
   });
 
-  it('captures the interim Web-query owner before starting provider work', async () => {
+  it('pins native queries to the permissions provider captured before work starts', async () => {
     const events: string[] = [];
-    const provider = permissionProvider('granted', events, 'notification');
-    const permissions = {
-      query: async () => {
-        events.push('work:web-query');
-        return { state: 'denied' };
-      },
-    };
-    const navigatorValue: object = {};
-    Object.defineProperty(navigatorValue, 'permissions', {
-      get() {
-        events.push('capture:web-query');
-        return permissions;
-      },
+    const second = permissionsProvider('denied', events, 'second');
+    const first = permissionsProvider('granted', events, 'first', () => {
+      active = second;
     });
-    vi.stubGlobal('navigator', navigatorValue);
+    let active = first;
 
-    await expect(getPermissionStates(provider, undefined, undefined, ['notifications', 'camera'])).resolves.toEqual([
+    await expect(getPermissionStates(first, undefined, undefined, ['notifications', 'camera'])).resolves.toEqual([
       { reason: 'ok', state: 'granted' },
-      { reason: 'ok', state: 'denied' },
+      { reason: 'ok', state: 'granted' },
     ]);
-    expect(events.slice(0, 2)).toEqual(['capture:web-query', 'work:notification']);
+    expect(active).toBe(second);
+    expect(events).toEqual(['work:first', 'query:first:camera']);
   });
 
   it('keeps repeated MIDI queries pinned to the direct provider', async () => {
@@ -86,7 +77,7 @@ describe('getPermissionStates', () => {
       ),
     );
 
-    await expect(getPermissionStates(undefined, provider, undefined, ['midi', 'midi'])).resolves.toEqual([
+    await expect(getPermissionStates(permissionsProvider(), provider, undefined, ['midi', 'midi'])).resolves.toEqual([
       { reason: 'ok', state: 'granted' },
       { reason: 'ok', state: 'granted' },
     ]);
@@ -96,12 +87,23 @@ describe('getPermissionStates', () => {
 
   it('keeps input order and repeated entries when work resolves out of order', async () => {
     const resolvers: Array<(state: { state: string }) => void> = [];
-    vi.stubGlobal('navigator', {
-      permissions: {
-        query: () => new Promise((resolve) => resolvers.push(resolve)),
-      },
-    });
-    const result = getPermissionStates(undefined, undefined, undefined, ['camera', 'microphone', 'camera']);
+    const provider = permissionsProvider(
+      'granted',
+      [],
+      'query',
+      undefined,
+      () =>
+        new Promise((resolve) =>
+          resolvers.push(({ state }) =>
+            resolve(
+              state === 'denied' || state === 'granted' || state === 'prompt'
+                ? { reason: 'ok', state }
+                : { reason: 'operation-failed' },
+            ),
+          ),
+        ),
+    );
+    const result = getPermissionStates(provider, undefined, undefined, ['camera', 'microphone', 'camera']);
     await vi.waitFor(() => expect(resolvers).toHaveLength(3));
     resolvers[2]({ state: 'prompt' });
     resolvers[0]({ state: 'granted' });
@@ -122,18 +124,7 @@ describe('getPermissionStates', () => {
           throw new Error('empty batch resolved an owner');
         },
       },
-    ) as HostNotificationPermissionProvider;
-    vi.stubGlobal(
-      'navigator',
-      new Proxy(
-        {},
-        {
-          get() {
-            throw new Error('empty batch resolved Web');
-          },
-        },
-      ),
-    );
+    ) as HostPermissionsProvider;
 
     await expect(getPermissionStates(provider, undefined, undefined, [])).resolves.toEqual([]);
   });
@@ -168,7 +159,7 @@ describe('getPermissionStates', () => {
     );
 
     await expect(
-      getPermissionStates(undefined, undefined, provider, ['persistent-storage', 'persistent-storage']),
+      getPermissionStates(permissionsProvider(), undefined, provider, ['persistent-storage', 'persistent-storage']),
     ).resolves.toEqual([
       { reason: 'best-effort', state: null },
       { reason: 'best-effort', state: null },
@@ -178,21 +169,36 @@ describe('getPermissionStates', () => {
   });
 });
 
-function permissionProvider(
-  permission: 'denied' | 'granted',
-  events: string[],
-  label: string,
+function permissionsProvider(
+  permission: 'denied' | 'granted' = 'granted',
+  events: string[] = [],
+  label = 'permission',
   beforeReturn?: () => void,
-): HostNotificationPermissionProvider {
+  queryPermission?: HostPermissionsProvider['queryPermission'],
+): HostPermissionsProvider {
   return {
     [EntityRuntimeKey]: undefined,
-    async getPermission() {
-      events.push(`work:${label}`);
-      beforeReturn?.();
-      return { permission, reason: 'ok' as const };
+    notification: {
+      async getPermission() {
+        events.push(`work:${label}`);
+        beforeReturn?.();
+        return { permission, reason: 'ok' as const };
+      },
+      async requestPermission() {
+        return { reason: permission };
+      },
     },
-    async requestPermission() {
-      return { reason: permission };
+    queryPermission:
+      queryPermission ??
+      (async (name) => {
+        events.push(`query:${label}:${name}`);
+        return { reason: 'ok', state: permission };
+      }),
+    async requestMediaAccess() {
+      return { reason: 'runtime-unavailable' };
     },
-  } as HostNotificationPermissionProvider;
+    async requestWakeLock() {
+      return { reason: 'runtime-unavailable' };
+    },
+  };
 }
