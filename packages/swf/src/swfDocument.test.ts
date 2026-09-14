@@ -109,7 +109,7 @@ import {
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
 import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
-import { createSwfTagHandlerRegistry, registerSwfTagHandler } from './swfTagRegistry';
+import { createSwfTagHandlerRegistry, registerAllSwfTagHandlers, registerSwfTagHandler } from './swfTagRegistry';
 
 beforeEach(() => {
   clearImageDecoders();
@@ -4104,6 +4104,58 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
       ),
     ).not.toBeNull();
   });
+
+  it('reports DefineSprite as unregistered when the Sprite handler is omitted', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfTagHandler(registry, TAG_SET_BACKGROUND_COLOR, handleSwfBackgroundColorTag);
+    registerSwfTagHandler(registry, TAG_PLACE_OBJECT_2, handleSwfPlaceObjectTag);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      createScene2DFromSwfWithTagHandlers(
+        createSwf([
+          createTag(TAG_DEFINE_SPRITE, joinBytes(uint16(10), uint16(1), createTag(TAG_SHOW_FRAME), createTag(TAG_END))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        registry,
+        sink,
+      );
+    });
+    expect(diagnostics).toMatchObject([{ detail: { tag: TAG_DEFINE_SPRITE }, kind: 'swf.tag-handler-unregistered' }]);
+  });
+
+  it('uses the caller registry for recursive sprite timeline parsing', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfTagHandler(registry, TAG_SET_BACKGROUND_COLOR, handleSwfBackgroundColorTag);
+    registerSwfTagHandler(registry, TAG_PLACE_OBJECT_2, handleSwfPlaceObjectTag);
+    registerSwfTagHandler(registry, TAG_DEFINE_SPRITE, handleSwfDefineSpriteTag);
+    const seen: number[] = [];
+    registerSwfTagHandler(registry, TAG_FRAME_LABEL, (body, tag) => {
+      seen.push(tag);
+      return body.valid;
+    });
+    const diagnostics = collectImportDiagnostics((sink) => {
+      createScene2DFromSwfWithTagHandlers(
+        createSwf([
+          createTag(
+            TAG_DEFINE_SPRITE,
+            joinBytes(
+              uint16(10),
+              uint16(1),
+              createTag(TAG_FRAME_LABEL, joinBytes(new Uint8Array([0x61, 0]))),
+              createTag(TAG_SHOW_FRAME),
+              createTag(TAG_END),
+            ),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        registry,
+        sink,
+      );
+    });
+    expect(seen).toEqual([TAG_FRAME_LABEL]);
+    expect(diagnostics).toEqual([]);
+  });
 });
 
 describe('createScene2DImportFromSwf', () => {
@@ -4472,6 +4524,16 @@ describe('createSwfDefaultTagHandlerRegistry', () => {
     expect(registry.has(TAG_DEFINE_SHAPE)).toBe(true);
     expect(registry.has(TAG_PLACE_OBJECT_2)).toBe(true);
     expect(registry.has(TAG_DO_ACTION)).toBe(true);
+  });
+
+  it('matches registerAllSwfTagHandlers in tag codes and handler references', () => {
+    const defaultRegistry = createSwfDefaultTagHandlerRegistry();
+    const familyRegistry = createSwfTagHandlerRegistry();
+    registerAllSwfTagHandlers(familyRegistry);
+    expect(defaultRegistry.size).toBe(familyRegistry.size);
+    for (const [code, handler] of defaultRegistry) {
+      expect(familyRegistry.get(code)).toBe(handler);
+    }
   });
 });
 
