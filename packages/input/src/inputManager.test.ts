@@ -34,7 +34,6 @@ import {
   getGamepadButtonName,
   getInputGamepadAxis,
   getInputIngressBackend,
-  getMouseWheelModeFromDomWheelEvent,
   initializeInputKeyRepeatTimer,
   initializeInputManager,
   initializeInputSignals,
@@ -43,10 +42,8 @@ import {
   isInputGamepadButtonDown,
   isInputKeyDown,
   isInputPointerButtonDown,
-  releaseInputPointerCapture,
   resetInputIngressBackendForTest,
   setInputIngressBackend,
-  setInputPointerCapture,
   wasInputGamepadButtonPressed,
   wasInputGamepadButtonReleased,
   wasInputKeyPressed,
@@ -538,17 +535,6 @@ describe('getInputIngressBackend', () => {
   });
 });
 
-describe('getMouseWheelModeFromDomWheelEvent', () => {
-  it('maps DOM wheel delta modes', () => {
-    expect(getMouseWheelModeFromDomWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PIXEL }))).toBe(
-      'pixels',
-    );
-    expect(getMouseWheelModeFromDomWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PAGE }))).toBe(
-      'pages',
-    );
-  });
-});
-
 describe('initializeInputKeyRepeatTimer', () => {
   it('is the construction initializer of createInputKeyRepeatTimer', () => {
     expect(typeof initializeInputKeyRepeatTimer).toBe('function');
@@ -600,26 +586,6 @@ describe('isInputPointerButtonDown', () => {
   it('returns false when no buttons are held', () => {
     const state = createInputState();
     expect(isInputPointerButtonDown(state, 0, 0)).toBe(false);
-  });
-});
-
-describe('releaseInputPointerCapture', () => {
-  it('calls releasePointerCapture on the element', () => {
-    const element = document.createElement('div');
-    let capturedId = -1;
-    element.releasePointerCapture = (id) => {
-      capturedId = id;
-    };
-    releaseInputPointerCapture(element, 5);
-    expect(capturedId).toBe(5);
-  });
-
-  it('does not throw when the pointer was already released', () => {
-    const element = document.createElement('div');
-    element.releasePointerCapture = () => {
-      throw new DOMException('No pointer');
-    };
-    expect(() => releaseInputPointerCapture(element, 0)).not.toThrow();
   });
 });
 
@@ -779,30 +745,6 @@ function createInputPointerData(pointerId: number, button: number): InputPointer
     y: 0,
   };
 }
-
-function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
-  return new WheelEvent('wheel', {
-    bubbles: true,
-    cancelable: true,
-    clientX: 0,
-    clientY: 0,
-    deltaX: 0,
-    deltaY: 0,
-    ...options,
-  });
-}
-
-describe('setInputPointerCapture', () => {
-  it('calls setPointerCapture on the element', () => {
-    const element = document.createElement('div');
-    let capturedId = -1;
-    element.setPointerCapture = (id) => {
-      capturedId = id;
-    };
-    setInputPointerCapture(element, 7);
-    expect(capturedId).toBe(7);
-  });
-});
 
 describe('wasInputGamepadButtonPressed', () => {
   it('returns true when a button was pressed this frame', () => {

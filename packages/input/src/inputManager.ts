@@ -18,7 +18,6 @@ import type {
   InputPointerData,
   InputSignals,
   InputState,
-  MouseWheelMode,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import {
@@ -328,13 +327,6 @@ export function getInputIngressBackend(): HostInputIngressProvider {
   return _customInputIngressBackend ?? _hostInputIngressBackend ?? _inputIngressSentinel;
 }
 
-export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
-  if (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL) return 'pixels';
-  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
-  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
-  return 'unknown';
-}
-
 /**
  * Creates a key-repeat timer for non-DOM sources (gamepad d-pad buttons,
  * virtual on-screen keys, native backends) that do not generate their own
@@ -456,23 +448,10 @@ export function isInputKeyDown(state: Readonly<InputState>, keyCode: number): bo
 
 /**
  * Returns `true` if the given pointer button is currently held for the given `pointerId`.
- * `button` corresponds to `MouseEvent.button` (0 = primary, 1 = middle, 2 = secondary, …).
+ * `button` is the source-provided button index (0 = primary, 1 = middle, 2 = secondary, …).
  */
 export function isInputPointerButtonDown(state: Readonly<InputState>, pointerId: number, button: number): boolean {
   return ((state.pointerButtonsDown.get(pointerId) ?? 0) & (1 << button)) !== 0;
-}
-
-/**
- * Releases pointer capture for `pointerId` from `element`, allowing pointer
- * events to fire on the element under the pointer again.
- * No-op if `element` does not have capture for this pointer.
- */
-export function releaseInputPointerCapture(element: HTMLElement, pointerId: number): void {
-  try {
-    element.releasePointerCapture(pointerId);
-  } catch {
-    // Ignore — the pointer may have already been released.
-  }
 }
 
 export function resetInputIngressBackendForTest(): void {
@@ -482,15 +461,6 @@ export function resetInputIngressBackendForTest(): void {
 
 export function setInputIngressBackend(backend: HostInputIngressProvider | null): void {
   _customInputIngressBackend = backend;
-}
-
-/**
- * Explicitly captures all pointer events for `pointerId` to `element`,
- * regardless of where the pointer moves. Useful for drag operations.
- * Automatically released on `pointerup` or `pointercancel` per the spec.
- */
-export function setInputPointerCapture(element: HTMLElement, pointerId: number): void {
-  element.setPointerCapture(pointerId);
 }
 
 /**

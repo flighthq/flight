@@ -20,7 +20,10 @@ const LEGACY_WEB_INPUT_INGRESS_EXPORTS = [
   'getCoalescedInputPointerEvents',
   'getKeyCodeFromDomKeyboardEvent',
   'getKeyModifierFromDomKeyboardEvent',
+  'getMouseWheelModeFromDomWheelEvent',
   'initializeWebInputIngressBackend',
+  'releaseInputPointerCapture',
+  'setInputPointerCapture',
 ] as const;
 
 describe('input exports', () => {

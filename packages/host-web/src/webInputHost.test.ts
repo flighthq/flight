@@ -26,7 +26,10 @@ import {
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
   getWebKeyModifierFromKeyboardEvent,
+  getWebMouseWheelModeFromWheelEvent,
   initializeWebInputIngressBackend,
+  releaseWebInputPointerCapture,
+  setWebInputPointerCapture,
   webHostInput,
   webHostInputIngress,
 } from './webInputHost';
@@ -247,9 +250,50 @@ describe('getWebKeyModifierFromKeyboardEvent', () => {
   });
 });
 
+describe('getWebMouseWheelModeFromWheelEvent', () => {
+  it('maps Web wheel delta modes', () => {
+    expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PIXEL }))).toBe(
+      'pixels',
+    );
+    expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PAGE }))).toBe(
+      'pages',
+    );
+  });
+});
+
 describe('initializeWebInputIngressBackend', () => {
   it('is the construction initializer of createWebInputIngressBackend', () => {
     expect(typeof initializeWebInputIngressBackend).toBe('function');
+  });
+});
+
+describe('releaseWebInputPointerCapture', () => {
+  it('releases pointer capture from the Web element', () => {
+    const element = document.createElement('div');
+    element.releasePointerCapture = vi.fn();
+
+    releaseWebInputPointerCapture(element, 5);
+
+    expect(element.releasePointerCapture).toHaveBeenCalledWith(5);
+  });
+
+  it('does not throw when the pointer was already released', () => {
+    const element = document.createElement('div');
+    element.releasePointerCapture = () => {
+      throw new DOMException('No pointer');
+    };
+    expect(() => releaseWebInputPointerCapture(element, 0)).not.toThrow();
+  });
+});
+
+describe('setWebInputPointerCapture', () => {
+  it('captures pointer events to the Web element', () => {
+    const element = document.createElement('div');
+    element.setPointerCapture = vi.fn();
+
+    setWebInputPointerCapture(element, 7);
+
+    expect(element.setPointerCapture).toHaveBeenCalledWith(7);
   });
 });
 
@@ -379,9 +423,15 @@ describe('webHostInputIngress', () => {
     expect(inputContract).not.toHaveProperty('getCoalescedInputPointerEvents');
     expect(inputContract).not.toHaveProperty('getKeyCodeFromDomKeyboardEvent');
     expect(inputContract).not.toHaveProperty('getKeyModifierFromDomKeyboardEvent');
+    expect(inputContract).not.toHaveProperty('getMouseWheelModeFromDomWheelEvent');
+    expect(inputContract).not.toHaveProperty('releaseInputPointerCapture');
+    expect(inputContract).not.toHaveProperty('setInputPointerCapture');
     expect(hostWebPublic.getWebCoalescedPointerEvents).toBe(getWebCoalescedPointerEvents);
     expect(hostWebPublic.getWebKeyCodeFromKeyboardEvent).toBe(getWebKeyCodeFromKeyboardEvent);
     expect(hostWebPublic.getWebKeyModifierFromKeyboardEvent).toBe(getWebKeyModifierFromKeyboardEvent);
+    expect(hostWebPublic.getWebMouseWheelModeFromWheelEvent).toBe(getWebMouseWheelModeFromWheelEvent);
+    expect(hostWebPublic.releaseWebInputPointerCapture).toBe(releaseWebInputPointerCapture);
+    expect(hostWebPublic.setWebInputPointerCapture).toBe(setWebInputPointerCapture);
   });
 });
 

@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getMouseWheelModeFromDomWheelEvent } from '@flighthq/input/contract';
 import type {
   Entity,
   EntityConstruction,
@@ -12,6 +11,7 @@ import type {
   InputKeyboardData,
   InputPointerData,
   InputTextData,
+  MouseWheelMode,
 } from '@flighthq/types/contract';
 import { KeyCode, KeyModifier } from '@flighthq/types/contract';
 
@@ -73,6 +73,13 @@ export function getWebKeyModifierFromKeyboardEvent(event: Readonly<KeyboardEvent
   if (event.getModifierState?.('CapsLock') === true) modifier |= KeyModifier.CAPS_LOCK;
   if (event.getModifierState?.('NumLock') === true) modifier |= KeyModifier.NUM_LOCK;
   return modifier;
+}
+
+export function getWebMouseWheelModeFromWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL) return 'pixels';
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
+  return 'unknown';
 }
 
 /** Explicit browser adapter for input ingress. */
@@ -278,7 +285,7 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
       const wheelEvent = event as WheelEvent;
       if (preventDefault) wheelEvent.preventDefault();
       setWebInputPointerData(_pointerData, wheelEvent, wheelEvent.deltaX, wheelEvent.deltaY);
-      _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(wheelEvent);
+      _pointerData.wheelMode = getWebMouseWheelModeFromWheelEvent(wheelEvent);
       sink.wheel(_pointerData);
     };
 
@@ -300,6 +307,20 @@ export const webHostInput = {
   softKeyboardVisibility: webHostSoftKeyboardVisibility,
   target: webHostInputTarget,
 } satisfies HostInputCapabilities;
+
+/** Releases Web pointer capture, tolerating an already-released pointer. */
+export function releaseWebInputPointerCapture(element: HTMLElement, pointerId: number): void {
+  try {
+    element.releasePointerCapture(pointerId);
+  } catch {
+    // The pointer may have already been released.
+  }
+}
+
+/** Captures Web pointer events for `pointerId` to `element`. */
+export function setWebInputPointerCapture(element: HTMLElement, pointerId: number): void {
+  element.setPointerCapture(pointerId);
+}
 
 function getWebInputEventTarget(source: InputIngressSource): EventTarget | null {
   const candidate = source as Partial<EventTarget>;
