@@ -489,7 +489,7 @@ function expectFamilyAbsent(
     expect(getContributedBytes(bundle, testCase.packageDirectory, module), `${family.name}: ${module}`).toBe(0);
   }
   for (const symbol of family.symbols) {
-    expect(bundle.code, `${family.name}: ${symbol}`).not.toContain(getKeptFunctionNameMarker(symbol));
+    expect(bundle.code.includes(getKeptFunctionNameMarker(symbol)), `${family.name}: ${symbol}`).toBe(false);
   }
 }
 
@@ -504,7 +504,7 @@ function expectFamilyReachable(
     );
   }
   for (const symbol of family.symbols) {
-    expect(bundle.code, `${family.name}: ${symbol}`).toContain(getKeptFunctionNameMarker(symbol));
+    expect(bundle.code.includes(getKeptFunctionNameMarker(symbol)), `${family.name}: ${symbol}`).toBe(true);
   }
 }
 
