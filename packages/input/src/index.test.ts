@@ -15,6 +15,14 @@ const LEGACY_INPUT_POINTER_LOCK_EXPORTS = [
   'requestInputPointerLock',
 ] as const;
 
+const LEGACY_WEB_INPUT_INGRESS_EXPORTS = [
+  'createWebInputIngressBackend',
+  'getCoalescedInputPointerEvents',
+  'getKeyCodeFromDomKeyboardEvent',
+  'getKeyModifierFromDomKeyboardEvent',
+  'initializeWebInputIngressBackend',
+] as const;
+
 describe('input exports', () => {
   it('excludes the legacy pointer-lock surface from both export lanes', () => {
     for (const name of LEGACY_INPUT_POINTER_LOCK_EXPORTS) {
@@ -26,5 +34,12 @@ describe('input exports', () => {
   it('excludes legacy pointer-lock operations from listener ingress', () => {
     const hasNoLegacyOperations: LegacyInputPointerLockIngressOperation extends never ? true : false = true;
     expect(hasNoLegacyOperations).toBe(true);
+  });
+
+  it('excludes Web ingress construction and DOM helpers from both export lanes', () => {
+    for (const name of LEGACY_WEB_INPUT_INGRESS_EXPORTS) {
+      expect(name in inputPublic).toBe(false);
+      expect(name in inputContract).toBe(false);
+    }
   });
 });

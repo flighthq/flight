@@ -541,7 +541,7 @@ const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [];
 const ACCESSOR_ALLOWLIST: ReadonlySet<string> = new Set<string>([
   // get* returning void, delivering results through a visitor callback rather
   // than a return value or an out parameter.
-  '@flighthq/input getCoalescedInputPointerEvents',
+  '@flighthq/host-web getWebCoalescedPointerEvents',
 ]);
 
 interface ApiCheckIssue {

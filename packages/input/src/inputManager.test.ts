@@ -4,9 +4,10 @@ import type {
   HostInputIngressProvider,
   InputIngressSink,
   InputIngressSource,
+  InputKeyboardData,
   InputPointerData,
 } from '@flighthq/types/contract';
-import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types/contract';
+import { GamepadAxisKind, GamepadButtonKind, KeyCode } from '@flighthq/types/contract';
 
 import {
   applyGamepadAxisDeadZone,
@@ -22,7 +23,6 @@ import {
   createInputManager,
   createInputSignals,
   createInputState,
-  createWebInputIngressBackend,
   detachGamepadInput,
   detachKeyboardInput,
   detachPointerInput,
@@ -30,19 +30,15 @@ import {
   detachTextInput,
   detachWheelInput,
   endInputStateFrame,
-  getCoalescedInputPointerEvents,
   getGamepadAxisName,
   getGamepadButtonName,
   getInputGamepadAxis,
   getInputIngressBackend,
-  getKeyCodeFromDomKeyboardEvent,
-  getKeyModifierFromDomKeyboardEvent,
   getMouseWheelModeFromDomWheelEvent,
   initializeInputKeyRepeatTimer,
   initializeInputManager,
   initializeInputSignals,
   initializeInputState,
-  initializeWebInputIngressBackend,
   installInputIngressHostBackend,
   isInputGamepadButtonDown,
   isInputKeyDown,
@@ -76,6 +72,37 @@ function createTestInputIngressBackend(
     attachText: (source, sink) => attach('text', source, sink),
     attachWheel: (source, sink) => attach('wheel', source, sink),
   };
+}
+
+function expectInputAttachment(attach: typeof attachGamepadInput, expectedKind: InputIngressAttachmentKind): void {
+  const attachments: Array<Readonly<{ kind: InputIngressAttachmentKind; source: InputIngressSource }>> = [];
+  setInputIngressBackend(
+    createTestInputIngressBackend((kind, source) => {
+      attachments.push({ kind, source });
+      return () => {};
+    }),
+  );
+  const source = {};
+
+  attach(createInputManager(), source);
+
+  expect(attachments).toEqual([{ kind: expectedKind, source }]);
+}
+
+function expectInputDetachment(
+  attach: typeof attachGamepadInput,
+  detach: typeof detachGamepadInput,
+  expectedKind: InputIngressAttachmentKind,
+): void {
+  const release = vi.fn();
+  setInputIngressBackend(createTestInputIngressBackend((kind) => (kind === expectedKind ? release : () => {})));
+  const manager = createInputManager();
+  const source = {};
+  attach(manager, source);
+
+  detach(manager, source);
+
+  expect(release).toHaveBeenCalledOnce();
 }
 
 describe('applyGamepadAxisDeadZone', () => {
@@ -137,44 +164,6 @@ describe('applyGamepadStickDeadZone', () => {
 });
 
 describe('attachGamepadInput', () => {
-  it('emits onGamepadConnect when a gamepad connects', () => {
-    const manager = createInputManager();
-    attachGamepadInput(manager, window);
-
-    let received: { gamepad: number; id: string } | null = null;
-    connectSignal(manager.onGamepadConnect, (data) => {
-      received = { gamepad: data.gamepad, id: data.id };
-    });
-
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Xbox Controller'));
-    expect(received).toEqual({ gamepad: 0, id: 'Xbox Controller' });
-  });
-
-  it('emits onGamepadDisconnect when a gamepad disconnects', () => {
-    const manager = createInputManager();
-    attachGamepadInput(manager, window);
-
-    let received: { gamepad: number } | null = null;
-    connectSignal(manager.onGamepadDisconnect, (data) => {
-      received = { gamepad: data.gamepad };
-    });
-
-    window.dispatchEvent(createGamepadEvent('gamepaddisconnected', 1, 'Generic Gamepad'));
-    expect(received).toEqual({ gamepad: 1 });
-  });
-
-  it('respects the enabled flag', () => {
-    const manager = createInputManager();
-    attachGamepadInput(manager, window);
-
-    let fired = 0;
-    connectSignal(manager.onGamepadConnect, () => fired++);
-
-    manager.enabled = false;
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
-    expect(fired).toBe(0);
-  });
-
   it('accepts native axis and button pushes without browser polling globals', () => {
     let sink: InputIngressSink | null = null;
     setInputIngressBackend(
@@ -213,268 +202,72 @@ describe('attachGamepadInput', () => {
 });
 
 describe('attachKeyboardInput', () => {
-  it('emits keyboard signals from the configured keyboard target', () => {
-    const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
-
-    let received = 0;
-    connectSignal(manager.onKeyDown, (data) => {
-      received = data.keyCode;
-    });
-
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
-    expect(received).toBe(KeyCode.A);
-  });
-
-  it('populates timeStamp on keyboard data', () => {
-    const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
-
-    let receivedTimeStamp = -1;
-    connectSignal(manager.onKeyDown, (data) => {
-      receivedTimeStamp = data.timeStamp;
-    });
-
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
-    expect(receivedTimeStamp).toBeGreaterThanOrEqual(0);
+  it('binds the source through the selected ingress provider', () => {
+    expectInputAttachment(attachKeyboardInput, 'keyboard');
   });
 });
 
 describe('attachPointerInput', () => {
-  it('emits pointer signals from the element', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
-
-    let receivedX = 0;
-    let receivedY = 0;
-    let receivedPointerId = 0;
-    connectSignal(manager.onPointerDown, (data) => {
-      receivedX = data.x;
-      receivedY = data.y;
-      receivedPointerId = data.pointerId;
-    });
-
-    element.dispatchEvent(createPointerEvent('pointerdown', { clientX: 20, clientY: 30, pointerId: 4 }));
-    expect(receivedX).toBe(20);
-    expect(receivedY).toBe(30);
-    expect(receivedPointerId).toBe(4);
-  });
-
-  it('populates pressure and tilt on pointer data', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
-
-    let receivedPressure = -1;
-    let receivedTiltX = -1;
-    connectSignal(manager.onPointerDown, (data) => {
-      receivedPressure = data.pressure;
-      receivedTiltX = data.tiltX;
-    });
-
-    element.dispatchEvent(createPointerEvent('pointerdown', { pressure: 0.5, tiltX: 10 }));
-    expect(receivedPressure).toBe(0.5);
-    expect(receivedTiltX).toBe(10);
-  });
-
-  it('respects the enabled flag', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerDown, () => fired++);
-
-    manager.enabled = false;
-    element.dispatchEvent(createPointerEvent('pointerdown'));
-    expect(fired).toBe(0);
+  it('binds the source through the selected ingress provider', () => {
+    expectInputAttachment(attachPointerInput, 'pointer');
   });
 });
 
 describe('attachRelativePointerInput', () => {
-  it('emits onPointerMoveRelative with movement deltas from document mousemove', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element);
-
-    let receivedDeltaX = 0;
-    let receivedDeltaY = 0;
-    connectSignal(manager.onPointerMoveRelative, (data) => {
-      receivedDeltaX = data.deltaX;
-      receivedDeltaY = data.deltaY;
-    });
-
-    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove', { movementX: 5, movementY: -3 }));
-    expect(receivedDeltaX).toBe(5);
-    expect(receivedDeltaY).toBe(-3);
-    detachRelativePointerInput(manager, element);
-  });
-
-  it('populates the canonical pointer fields routed through the shared writer', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element);
-
-    let received: Readonly<InputPointerData> | null = null;
-    connectSignal(manager.onPointerMoveRelative, (data) => {
-      received = { ...data };
-    });
-
-    element.ownerDocument.dispatchEvent(
-      new MouseEvent('mousemove', { clientX: 7, clientY: 9, ctrlKey: true, movementX: 2, movementY: 4 }),
-    );
-    expect(received).not.toBeNull();
-    const data = received!;
-    expect(data.x).toBe(7);
-    expect(data.y).toBe(9);
-    expect(data.ctrlKey).toBe(true);
-    expect(data.pointerType).toBe('mouse');
-    expect(data.isPrimary).toBe(true);
-    expect(data.width).toBe(1);
-    expect(data.height).toBe(1);
-    expect(data.wheelMode).toBe('unknown');
-    detachRelativePointerInput(manager, element);
-  });
-
-  it('honors preventDefault from options', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element, { preventDefault: true });
-
-    const event = new MouseEvent('mousemove', { cancelable: true });
-    element.ownerDocument.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(true);
-    detachRelativePointerInput(manager, element);
-  });
-
-  it('leaves the event un-prevented when preventDefault is false', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element, { preventDefault: false });
-
-    const event = new MouseEvent('mousemove', { cancelable: true });
-    element.ownerDocument.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(false);
-    detachRelativePointerInput(manager, element);
-  });
-
-  it('respects the enabled flag', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerMoveRelative, () => fired++);
-
-    manager.enabled = false;
-    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
-    expect(fired).toBe(0);
-    detachRelativePointerInput(manager, element);
+  it('binds the source through the selected ingress provider', () => {
+    expectInputAttachment(attachRelativePointerInput, 'relativePointer');
   });
 });
 
 describe('attachTextInput', () => {
-  it('emits text input from beforeinput with isComposing false', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachTextInput(manager, element);
-
-    let received = '';
-    let receivedComposing = true;
-    connectSignal(manager.onTextInput, (data) => {
-      received = data.text;
-      receivedComposing = data.isComposing;
-    });
-
-    element.dispatchEvent(createInputEvent('beforeinput', 'x'));
-    expect(received).toBe('x');
-    expect(receivedComposing).toBe(false);
-  });
-
-  it('emits text edit from compositionupdate with isComposing true', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachTextInput(manager, element);
-
-    let receivedComposing = false;
-    connectSignal(manager.onTextEdit, (data) => {
-      receivedComposing = data.isComposing;
-    });
-
-    element.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'hi' }));
-    expect(receivedComposing).toBe(true);
+  it('binds the source through the selected ingress provider', () => {
+    expectInputAttachment(attachTextInput, 'text');
   });
 });
 
 describe('attachWheelInput', () => {
-  it('emits wheel signals with deltas and wheel mode', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachWheelInput(manager, element);
-
-    let receivedDeltaY = 0;
-    let receivedMode = '';
-    connectSignal(manager.onWheel, (data) => {
-      receivedDeltaY = data.deltaY;
-      receivedMode = data.wheelMode;
-    });
-
-    element.dispatchEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_LINE, deltaY: -3 }));
-    expect(receivedDeltaY).toBe(-3);
-    expect(receivedMode).toBe('lines');
+  it('binds the source through the selected ingress provider', () => {
+    expectInputAttachment(attachWheelInput, 'wheel');
   });
 });
 
 describe('connectInputStateToInputManager', () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [],
-    });
-  });
-
   it('tracks held keys via isInputKeyDown', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     expect(isInputKeyDown(state, KeyCode.A)).toBe(true);
 
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyUp, data);
     expect(isInputKeyDown(state, KeyCode.A)).toBe(false);
   });
 
   it('tracks held pointer buttons via isInputPointerButtonDown', () => {
     const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputPointerData(1, 0);
 
-    element.dispatchEvent(createPointerEvent('pointerdown', { pointerId: 1, button: 0, buttons: 1 }));
+    emitSignal(manager.onPointerDown, data);
     expect(isInputPointerButtonDown(state, 1, 0)).toBe(true);
 
-    element.dispatchEvent(createPointerEvent('pointerup', { pointerId: 1, button: 0, buttons: 0 }));
+    emitSignal(manager.onPointerUp, data);
     expect(isInputPointerButtonDown(state, 1, 0)).toBe(false);
   });
 
   it('clears pointer state on pointercancel', () => {
     const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputPointerData(2, 0);
 
-    element.dispatchEvent(createPointerEvent('pointerdown', { pointerId: 2, button: 0, buttons: 1 }));
+    emitSignal(manager.onPointerDown, data);
     expect(isInputPointerButtonDown(state, 2, 0)).toBe(true);
 
-    element.dispatchEvent(createPointerEvent('pointercancel', { pointerId: 2, button: 0, buttons: 0 }));
+    emitSignal(manager.onPointerCancel, data);
     expect(isInputPointerButtonDown(state, 2, 0)).toBe(false);
   });
 
@@ -500,19 +293,18 @@ describe('connectInputStateToInputManager', () => {
 
   it('returns a disposer that stops tracking', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     const dispose = connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     expect(isInputKeyDown(state, KeyCode.A)).toBe(true);
 
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyUp, data);
     dispose();
 
     // After dispose, subsequent events should not update state.
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     expect(isInputKeyDown(state, KeyCode.A)).toBe(false);
   });
 });
@@ -621,294 +413,49 @@ describe('createInputState', () => {
   });
 });
 
-describe('createWebInputIngressBackend', () => {
-  it('owns gamepad polling and emits only changed Web state', () => {
-    const frames = installManualAnimationFrames();
-    const getGamepads = vi.fn<() => Gamepad[]>();
-    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
-    const manager = createInputManager();
-    const axes: number[] = [];
-    const buttons: number[] = [];
-    connectSignal(manager.onGamepadAxisMove, (data) => axes.push(data.value));
-    connectSignal(manager.onGamepadButtonUp, (data) => buttons.push(data.value));
-    attachGamepadInput(manager, window);
-
-    const initial = createGamepad(0, 'Pad', [0.25], [{ pressed: true, touched: true, value: 1 }]);
-    getGamepads.mockReturnValue([initial]);
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', initial));
-    frames.runAllCurrent();
-    expect(axes).toEqual([]);
-    expect(buttons).toEqual([]);
-
-    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [{ pressed: false, touched: false, value: 0 }])]);
-    frames.runAllCurrent();
-    expect(axes).toEqual([0.75]);
-    expect(buttons).toEqual([0]);
-    frames.runAllCurrent();
-    expect(axes).toEqual([0.75]);
-    expect(buttons).toEqual([0]);
-    detachGamepadInput(manager, window);
-  });
-
-  it('keeps Web polling state and releases independent per source', () => {
-    const frames = installManualAnimationFrames();
-    const getGamepads = vi.fn<() => Gamepad[]>().mockReturnValue([createGamepad(0, 'Pad', [0.5], [])]);
-    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
-    const firstSource = new EventTarget();
-    const secondSource = new EventTarget();
-    const firstManager = createInputManager();
-    const secondManager = createInputManager();
-    let firstMoves = 0;
-    let secondMoves = 0;
-    connectSignal(firstManager.onGamepadAxisMove, () => firstMoves++);
-    connectSignal(secondManager.onGamepadAxisMove, () => secondMoves++);
-    attachGamepadInput(firstManager, firstSource);
-    attachGamepadInput(secondManager, secondSource);
-
-    frames.runAllCurrent();
-    expect([firstMoves, secondMoves]).toEqual([1, 1]);
-    detachGamepadInput(firstManager, firstSource);
-    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [])]);
-    frames.runAllCurrent();
-    expect([firstMoves, secondMoves]).toEqual([1, 2]);
-    detachGamepadInput(secondManager, secondSource);
-    expect(frames.pending.size).toBe(0);
-  });
-
-  it('routes two window identities only to their corresponding managers', () => {
-    const firstFrame = document.createElement('iframe');
-    const secondFrame = document.createElement('iframe');
-    document.body.append(firstFrame, secondFrame);
-    const firstWindow = firstFrame.contentWindow!;
-    const secondWindow = secondFrame.contentWindow!;
-    const firstManager = createInputManager();
-    const secondManager = createInputManager();
-    const firstEvents: number[] = [];
-    const secondEvents: number[] = [];
-    connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
-    connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
-    attachKeyboardInput(firstManager, firstWindow);
-    attachKeyboardInput(secondManager, secondWindow);
-
-    firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([]);
-
-    secondWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([KeyCode.B]);
-
-    detachKeyboardInput(firstManager, firstWindow);
-    detachKeyboardInput(secondManager, secondWindow);
-    firstFrame.remove();
-    secondFrame.remove();
-  });
-
-  it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
-    const frames = installManualAnimationFrames();
-    const backend = createWebInputIngressBackend();
-    const source = {};
-    const sink = {} as InputIngressSink;
-    expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
-    expect(() => backend.attachGamepad(source, sink)()).not.toThrow();
-    expect(frames.request).not.toHaveBeenCalled();
-  });
-});
-
-describe('createWebInputIngressBackend gamepad polling', () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [],
-    });
-  });
-
-  it('emits onGamepadButtonDown when a button transitions to pressed', () => {
-    const frames = installManualAnimationFrames();
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    let received: { button: number; gamepad: number } | null = null;
-    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
-      received = { button: data.button, gamepad: data.gamepad };
-    });
-
-    attachGamepadInput(manager, window);
-    frames.runAllCurrent();
-    expect(received).toEqual({ button: 0, gamepad: 0 });
-    detachGamepadInput(manager, window);
-  });
-
-  it('populates timeStamp on gamepad button data', () => {
-    const frames = installManualAnimationFrames();
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    let receivedTimeStamp = -1;
-    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
-      receivedTimeStamp = data.timeStamp;
-    });
-
-    attachGamepadInput(manager, window);
-    frames.runAllCurrent();
-    expect(receivedTimeStamp).toBeGreaterThanOrEqual(0);
-    detachGamepadInput(manager, window);
-  });
-
-  it('does not emit when state is unchanged', () => {
-    const frames = installManualAnimationFrames();
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    attachGamepadInput(manager, window);
-    frames.runAllCurrent();
-
-    let fired = 0;
-    connectSignal(manager.onGamepadButtonDown, () => fired++);
-    frames.runAllCurrent();
-    expect(fired).toBe(0);
-    detachGamepadInput(manager, window);
-  });
-});
-
 describe('detachGamepadInput', () => {
-  it('removes listeners so signals stop firing', () => {
-    const manager = createInputManager();
-    attachGamepadInput(manager, window);
-
-    let fired = 0;
-    connectSignal(manager.onGamepadConnect, () => fired++);
-
-    detachGamepadInput(manager, window);
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
-    expect(fired).toBe(0);
-  });
-
-  it('is a no-op when nothing is attached', () => {
-    const manager = createInputManager();
-    expect(() => detachGamepadInput(manager, window)).not.toThrow();
-  });
-
-  it('cannot resurrect Web polling when detached from a sink callback', () => {
-    const frames = installManualAnimationFrames();
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [createGamepad(0, 'Pad', [0.5], [])],
-    });
-    const manager = createInputManager();
-    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, window));
-    attachGamepadInput(manager, window);
-
-    frames.runAllCurrent();
-    expect(frames.pending.size).toBe(0);
-    expect(frames.cancel).toHaveBeenCalledOnce();
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachGamepadInput, detachGamepadInput, 'gamepad');
   });
 });
 
 describe('detachKeyboardInput', () => {
-  it('removes listeners so signals stop firing', () => {
-    const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
-
-    let fired = 0;
-    connectSignal(manager.onKeyDown, () => fired++);
-
-    detachKeyboardInput(manager, target);
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
-    expect(fired).toBe(0);
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachKeyboardInput, detachKeyboardInput, 'keyboard');
   });
 });
 
 describe('detachPointerInput', () => {
-  it('removes listeners so signals stop firing', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachPointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerDown, () => fired++);
-
-    detachPointerInput(manager, element);
-    element.dispatchEvent(createPointerEvent('pointerdown'));
-    expect(fired).toBe(0);
-  });
-
-  it('detaches one target without affecting another bound to the same manager', () => {
-    const manager = createInputManager();
-    const first = document.createElement('div');
-    const second = document.createElement('div');
-    attachPointerInput(manager, first);
-    attachPointerInput(manager, second);
-
-    let fired = 0;
-    connectSignal(manager.onPointerDown, () => fired++);
-
-    detachPointerInput(manager, first);
-    first.dispatchEvent(createPointerEvent('pointerdown'));
-    expect(fired).toBe(0);
-    second.dispatchEvent(createPointerEvent('pointerdown'));
-    expect(fired).toBe(1);
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachPointerInput, detachPointerInput, 'pointer');
   });
 });
 
 describe('detachRelativePointerInput', () => {
-  it('removes the listener so signals stop firing', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachRelativePointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerMoveRelative, () => fired++);
-
-    detachRelativePointerInput(manager, element);
-    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
-    expect(fired).toBe(0);
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachRelativePointerInput, detachRelativePointerInput, 'relativePointer');
   });
 });
 
 describe('detachTextInput', () => {
-  it('removes listeners so signals stop firing', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachTextInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onTextInput, () => fired++);
-
-    detachTextInput(manager, element);
-    element.dispatchEvent(createInputEvent('beforeinput', 'x'));
-    expect(fired).toBe(0);
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachTextInput, detachTextInput, 'text');
   });
 });
 
 describe('detachWheelInput', () => {
-  it('removes listeners so signals stop firing', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    attachWheelInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onWheel, () => fired++);
-
-    detachWheelInput(manager, element);
-    element.dispatchEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_LINE, deltaY: -3 }));
-    expect(fired).toBe(0);
+  it('releases the matching ingress binding', () => {
+    expectInputDetachment(attachWheelInput, detachWheelInput, 'wheel');
   });
 });
 
 describe('endInputStateFrame', () => {
   it('clears all frame-edge sets', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, createInputKeyboardData(KeyCode.A));
     expect(state.justPressedKeys.size).toBe(1);
 
     endInputStateFrame(state);
@@ -920,42 +467,13 @@ describe('endInputStateFrame', () => {
 
   it('does not affect held-state sets', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, createInputKeyboardData(KeyCode.A));
     endInputStateFrame(state);
     // Key is still held even after frame roll
     expect(state.keysDown.has(KeyCode.A)).toBe(true);
-  });
-});
-
-describe('getCoalescedInputPointerEvents', () => {
-  it('falls back to a single event when getCoalescedEvents is unavailable', () => {
-    const event = createPointerEvent('pointermove', { clientX: 10, clientY: 20 });
-    const received: number[] = [];
-    getCoalescedInputPointerEvents(event, (data) => {
-      received.push(data.x);
-    });
-    expect(received).toEqual([10]);
-  });
-
-  it('iterates coalesced events when available', () => {
-    const coalesced = [
-      createPointerEvent('pointermove', { clientX: 1, clientY: 0 }),
-      createPointerEvent('pointermove', { clientX: 2, clientY: 0 }),
-    ];
-    const event = createPointerEvent('pointermove', { clientX: 3, clientY: 0 });
-    Object.defineProperty(event, 'getCoalescedEvents', {
-      value: () => coalesced,
-    });
-    const received: number[] = [];
-    getCoalescedInputPointerEvents(event, (data) => {
-      received.push(data.x);
-    });
-    expect(received).toEqual([1, 2]);
   });
 });
 
@@ -1002,73 +520,21 @@ describe('getInputGamepadAxis', () => {
 });
 
 describe('getInputIngressBackend', () => {
-  it('uses one stable Web fallback', () => {
+  it('uses one stable portable fallback', () => {
     const fallback = getInputIngressBackend();
     expect(getInputIngressBackend()).toBe(fallback);
   });
-});
 
-describe('getKeyCodeFromDomKeyboardEvent', () => {
-  it('maps printable keys to SDL-compatible lower-case codes', () => {
-    expect(getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { key: 'A' }))).toBe(KeyCode.A);
-  });
-
-  it('maps named keys', () => {
-    expect(
-      getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { code: 'ArrowLeft', key: 'ArrowLeft' })),
-    ).toBe(KeyCode.LEFT);
-  });
-
-  it('maps numpad keys by location', () => {
-    expect(
-      getKeyCodeFromDomKeyboardEvent(
-        createKeyboardEvent('keydown', {
-          code: 'Numpad1',
-          key: '1',
-          location: KeyboardEvent.DOM_KEY_LOCATION_NUMPAD,
-        }),
-      ),
-    ).toBe(KeyCode.NUMPAD_1);
-  });
-
-  it.each([
-    ['Again', KeyCode.AGAIN],
-    ['Copy', KeyCode.COPY],
-    ['Cut', KeyCode.CUT],
-    ['Undo', KeyCode.UNDO],
-  ])('maps editing code %s', (code, expected) => {
-    expect(getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { code, key: '' }))).toBe(expected);
-  });
-
-  it.each([
-    ['NumpadBackspace', KeyCode.NUMPAD_BACKSPACE],
-    ['NumpadClear', KeyCode.NUMPAD_CLEAR],
-    ['NumpadClearEntry', KeyCode.NUMPAD_CLEAR_ENTRY],
-    ['NumpadComma', KeyCode.NUMPAD_COMMA],
-    ['NumpadHash', KeyCode.NUMPAD_HASH],
-    ['NumpadMemoryAdd', KeyCode.NUMPAD_MEM_ADD],
-    ['NumpadMemoryClear', KeyCode.NUMPAD_MEM_CLEAR],
-    ['NumpadMemoryRecall', KeyCode.NUMPAD_MEM_RECALL],
-    ['NumpadMemoryStore', KeyCode.NUMPAD_MEM_STORE],
-    ['NumpadMemorySubtract', KeyCode.NUMPAD_MEM_SUBTRACT],
-    ['NumpadParenLeft', KeyCode.NUMPAD_LEFT_PARENTHESIS],
-    ['NumpadParenRight', KeyCode.NUMPAD_RIGHT_PARENTHESIS],
-  ])('maps numpad code %s by location', (code, expected) => {
-    expect(
-      getKeyCodeFromDomKeyboardEvent(
-        createKeyboardEvent('keydown', { code, key: '', location: KeyboardEvent.DOM_KEY_LOCATION_NUMPAD }),
-      ),
-    ).toBe(expected);
-  });
-});
-
-describe('getKeyModifierFromDomKeyboardEvent', () => {
-  it('maps DOM modifier flags to Lime-compatible bit flags', () => {
-    const modifier = getKeyModifierFromDomKeyboardEvent(
-      createKeyboardEvent('keydown', { ctrlKey: true, shiftKey: true }),
-    );
-    expect((modifier & KeyModifier.CTRL) !== 0).toBe(true);
-    expect((modifier & KeyModifier.SHIFT) !== 0).toBe(true);
+  it('returns inert releases for every attachment family when no provider is installed', () => {
+    const fallback = getInputIngressBackend();
+    const source = {};
+    const sink = {} as InputIngressSink;
+    expect(() => fallback.attachGamepad(source, sink)()).not.toThrow();
+    expect(() => fallback.attachKeyboard(source, sink)()).not.toThrow();
+    expect(() => fallback.attachPointer(source, sink)()).not.toThrow();
+    expect(() => fallback.attachRelativePointer(source, sink)()).not.toThrow();
+    expect(() => fallback.attachText(source, sink)()).not.toThrow();
+    expect(() => fallback.attachWheel(source, sink)()).not.toThrow();
   });
 });
 
@@ -1104,12 +570,6 @@ describe('initializeInputSignals', () => {
 describe('initializeInputState', () => {
   it('is the construction initializer of createInputState', () => {
     expect(typeof initializeInputState).toBe('function');
-  });
-});
-
-describe('initializeWebInputIngressBackend', () => {
-  it('is the construction initializer of createWebInputIngressBackend', () => {
-    expect(typeof initializeWebInputIngressBackend).toBe('function');
   });
 });
 
@@ -1164,7 +624,7 @@ describe('releaseInputPointerCapture', () => {
 });
 
 describe('resetInputIngressBackendForTest', () => {
-  it('clears custom and host slots back to the Web fallback', () => {
+  it('clears custom and host slots back to the portable fallback', () => {
     const fallback = getInputIngressBackend();
     installInputIngressHostBackend(createTestInputIngressBackend());
     setInputIngressBackend(createTestInputIngressBackend());
@@ -1276,43 +736,48 @@ describe('setInputIngressBackend', () => {
   });
 });
 
-function createInputEvent(type: string, data: string): InputEvent {
-  return new InputEvent(type, { bubbles: true, data });
+function createInputKeyboardData(keyCode: number): InputKeyboardData {
+  return {
+    altKey: false,
+    capsLock: false,
+    code: '',
+    ctrlKey: false,
+    key: '',
+    keyCode,
+    location: 0,
+    metaKey: false,
+    modifier: 0,
+    numLock: false,
+    repeat: false,
+    shiftKey: false,
+    timeStamp: 0,
+  };
 }
 
-function createKeyboardEvent(type: string, options: KeyboardEventInit = {}): KeyboardEvent {
-  return new KeyboardEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    ...options,
-  });
-}
-
-function createPointerEvent(
-  type: string,
-  options: Partial<PointerEvent> & { pressure?: number; tiltX?: number; tiltY?: number } = {},
-): PointerEvent {
-  const event = new Event(type, { bubbles: true, cancelable: true }) as PointerEvent;
-  Object.defineProperties(event, {
-    altKey: { value: options.altKey ?? false },
-    button: { value: options.button ?? 0 },
-    buttons: { value: options.buttons ?? 1 },
-    clientX: { value: options.clientX ?? 0 },
-    clientY: { value: options.clientY ?? 0 },
-    ctrlKey: { value: options.ctrlKey ?? false },
-    height: { value: 1 },
-    isPrimary: { value: options.isPrimary ?? true },
-    metaKey: { value: options.metaKey ?? false },
-    pointerId: { value: options.pointerId ?? 0 },
-    pointerType: { value: options.pointerType ?? 'mouse' },
-    pressure: { value: options.pressure ?? 0 },
-    shiftKey: { value: options.shiftKey ?? false },
-    tiltX: { value: options.tiltX ?? 0 },
-    tiltY: { value: options.tiltY ?? 0 },
-    twist: { value: 0 },
-    width: { value: 1 },
-  });
-  return event;
+function createInputPointerData(pointerId: number, button: number): InputPointerData {
+  return {
+    altKey: false,
+    button,
+    buttons: 0,
+    ctrlKey: false,
+    deltaX: 0,
+    deltaY: 0,
+    height: 1,
+    isPrimary: true,
+    metaKey: false,
+    pointerId,
+    pointerType: 'mouse',
+    pressure: 0,
+    shiftKey: false,
+    tiltX: 0,
+    tiltY: 0,
+    timeStamp: 0,
+    twist: 0,
+    wheelMode: 'unknown',
+    width: 1,
+    x: 0,
+    y: 0,
+  };
 }
 
 function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
@@ -1327,61 +792,6 @@ function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
   });
 }
 
-function createGamepad(
-  index: number,
-  id: string,
-  axes: readonly number[] = [],
-  buttons: readonly GamepadButton[] = [],
-): Gamepad {
-  return {
-    axes,
-    buttons,
-    connected: true,
-    id,
-    index,
-    mapping: 'standard',
-    timestamp: 0,
-  } as unknown as Gamepad;
-}
-
-function createGamepadEvent(type: string, gamepadOrIndex: Gamepad | number, id?: string): Event {
-  const event = new Event(type, { bubbles: false }) as GamepadEvent;
-  const gamepad = typeof gamepadOrIndex === 'number' ? createGamepad(gamepadOrIndex, id ?? '') : gamepadOrIndex;
-  Object.defineProperty(event, 'gamepad', { value: gamepad });
-  return event;
-}
-
-function installManualAnimationFrames(): Readonly<{
-  cancel: ReturnType<typeof vi.fn>;
-  pending: Map<number, FrameRequestCallback>;
-  request: ReturnType<typeof vi.fn>;
-  runAllCurrent(): void;
-}> {
-  let nextHandle = 1;
-  const pending = new Map<number, FrameRequestCallback>();
-  const request = vi.fn((callback: FrameRequestCallback): number => {
-    const handle = nextHandle++;
-    pending.set(handle, callback);
-    return handle;
-  });
-  const cancel = vi.fn((handle: number): void => {
-    pending.delete(handle);
-  });
-  vi.stubGlobal('requestAnimationFrame', request);
-  vi.stubGlobal('cancelAnimationFrame', cancel);
-  return {
-    cancel,
-    pending,
-    request,
-    runAllCurrent(): void {
-      const current = [...pending.entries()];
-      for (const [handle, callback] of current) {
-        if (!pending.delete(handle)) continue;
-        callback(performance.now());
-      }
-    },
-  };
-}
 describe('setInputPointerCapture', () => {
   it('calls setPointerCapture on the element', () => {
     const element = document.createElement('div');
@@ -1395,13 +805,6 @@ describe('setInputPointerCapture', () => {
 });
 
 describe('wasInputGamepadButtonPressed', () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [],
-    });
-  });
-
   it('returns true when a button was pressed this frame', () => {
     const manager = createInputManager();
     const state = createInputState();
@@ -1457,13 +860,6 @@ describe('wasInputGamepadButtonPressed', () => {
 });
 
 describe('wasInputGamepadButtonReleased', () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [],
-    });
-  });
-
   it('returns true when a button was released this frame', () => {
     const manager = createInputManager();
     const state = createInputState();
@@ -1483,12 +879,10 @@ describe('wasInputGamepadButtonReleased', () => {
 describe('wasInputKeyPressed', () => {
   it('returns true when a key was pressed this frame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, createInputKeyboardData(KeyCode.A));
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
   });
 
@@ -1499,12 +893,10 @@ describe('wasInputKeyPressed', () => {
 
   it('returns false after endInputStateFrame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, createInputKeyboardData(KeyCode.A));
     endInputStateFrame(state);
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(false);
   });
@@ -1513,16 +905,15 @@ describe('wasInputKeyPressed', () => {
   // key must not keep reporting a press — otherwise anything that fires on press autofires.
   it('returns false for the auto-repeat keydowns of a key that is still held', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
 
     endInputStateFrame(state);
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a', repeat: true }));
+    emitSignal(manager.onKeyDown, { ...data, repeat: true });
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(false);
     expect(isInputKeyDown(state, KeyCode.A)).toBe(true);
   });
@@ -1531,13 +922,12 @@ describe('wasInputKeyPressed', () => {
   // release would swallow the input rather than delay it.
   it('returns true for a key pressed and released within the same frame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
+    emitSignal(manager.onKeyUp, data);
 
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
     expect(wasInputKeyReleased(state, KeyCode.A)).toBe(true);
@@ -1548,15 +938,14 @@ describe('wasInputKeyPressed', () => {
   // held — so the frame reports a press, a release, and a key that is still down.
   it('returns true for a key released and pressed again within the same frame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     endInputStateFrame(state);
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyUp, data);
+    emitSignal(manager.onKeyDown, data);
 
     expect(wasInputKeyPressed(state, KeyCode.A)).toBe(true);
     expect(wasInputKeyReleased(state, KeyCode.A)).toBe(true);
@@ -1567,14 +956,13 @@ describe('wasInputKeyPressed', () => {
 describe('wasInputKeyReleased', () => {
   it('returns true when a key was released this frame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
     endInputStateFrame(state);
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyUp, data);
     expect(wasInputKeyReleased(state, KeyCode.A)).toBe(true);
   });
 
@@ -1585,13 +973,12 @@ describe('wasInputKeyReleased', () => {
 
   it('returns false after endInputStateFrame', () => {
     const manager = createInputManager();
-    const target = document.createElement('input');
-    attachKeyboardInput(manager, target);
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
+    const data = createInputKeyboardData(KeyCode.A);
 
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    target.dispatchEvent(createKeyboardEvent('keyup', { code: 'KeyA', key: 'a' }));
+    emitSignal(manager.onKeyDown, data);
+    emitSignal(manager.onKeyUp, data);
     endInputStateFrame(state);
     expect(wasInputKeyReleased(state, KeyCode.A)).toBe(false);
   });

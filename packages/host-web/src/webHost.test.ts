@@ -67,6 +67,7 @@ const LEAVES = [
   ['input', 'dropFile', 'webHostInputDropFile'],
   ['input', 'focus', 'webHostInputFocus'],
   ['input', 'haptics', 'webHostHaptics'],
+  ['input', 'ingress', 'webHostInputIngress'],
   ['input', 'pointerLock', 'webHostInputPointerLock'],
   ['input', 'softKeyboardChange', 'webHostSoftKeyboardChange'],
   ['input', 'softKeyboardInfo', 'webHostSoftKeyboardInfo'],
@@ -124,9 +125,9 @@ describe('webHost', () => {
     }
   });
 
-  it('composes all 78 supported leaves from their separately exported identities', () => {
+  it('composes all 79 supported leaves from their separately exported identities', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
-    expect(LEAVES).toHaveLength(78);
+    expect(LEAVES).toHaveLength(79);
     for (const [group, path, exportName] of LEAVES) {
       const groupValue = host[group] as Record<string, unknown>;
       const composed = group === 'window' ? groupValue : groupValue[path];
@@ -146,7 +147,7 @@ describe('webHost', () => {
       .filter((name) => /^webHost(?:$|[A-Z])/u.test(name))
       .sort();
 
-    expect(expected).toHaveLength(104);
+    expect(expected).toHaveLength(105);
     expect(publicNames).toEqual(expected);
     expect(contractNames).toEqual(expected);
   });
