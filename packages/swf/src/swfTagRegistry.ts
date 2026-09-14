@@ -1,4 +1,4 @@
-import type { SwfTagHandlerRegistry } from '@flighthq/types/contract';
+import type { SwfTagHandler, SwfTagHandlerRegistry } from '@flighthq/types/contract';
 
 import {
   handleSwfBackgroundColorTag,
@@ -93,6 +93,10 @@ export function registerSwfSoundTagHandlers(registry: SwfTagHandlerRegistry): vo
   registry.set(TAG_SOUND_STREAM_HEAD, handleSwfSoundStreamHeadTag);
   registry.set(TAG_SOUND_STREAM_HEAD_2, handleSwfSoundStreamHeadTag);
   registry.set(TAG_SOUND_STREAM_BLOCK, handleSwfSoundStreamBlockTag);
+}
+
+export function registerSwfTagHandler(registry: SwfTagHandlerRegistry, code: number, handler: SwfTagHandler): void {
+  registry.set(code, handler);
 }
 
 export function registerSwfTimelineTagHandlers(registry: SwfTagHandlerRegistry): void {

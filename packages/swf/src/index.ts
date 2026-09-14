@@ -15,6 +15,7 @@ export {
   createSwfTagHandlerRegistry,
   registerAllSwfTagHandlers,
   registerSwfDefinitionTagHandlers,
+  registerSwfTagHandler,
   registerSwfPlacementTagHandlers,
   registerSwfScriptTagHandlers,
   registerSwfSoundTagHandlers,
