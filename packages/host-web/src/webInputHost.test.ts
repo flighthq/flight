@@ -251,13 +251,17 @@ describe('getWebKeyModifierFromKeyboardEvent', () => {
 });
 
 describe('getWebMouseWheelModeFromWheelEvent', () => {
-  it('maps Web wheel delta modes', () => {
+  it('maps every DOM wheel delta mode without leaking that mapping into portable input', () => {
     expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PIXEL }))).toBe(
       'pixels',
+    );
+    expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_LINE }))).toBe(
+      'lines',
     );
     expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PAGE }))).toBe(
       'pages',
     );
+    expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: 99 }))).toBe('unknown');
   });
 });
 
