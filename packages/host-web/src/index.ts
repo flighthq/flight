@@ -101,6 +101,9 @@ export {
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
   getWebKeyModifierFromKeyboardEvent,
+  getWebMouseWheelModeFromWheelEvent,
+  releaseWebInputPointerCapture,
+  setWebInputPointerCapture,
   webHostInput,
   webHostInputIngress,
 } from './webInputHost';
