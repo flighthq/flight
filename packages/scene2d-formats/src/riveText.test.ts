@@ -2,7 +2,8 @@ import { packColor } from '@flighthq/color/contract';
 import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveRichText } from './riveText';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+import { createRiveRichText, importRiveTextComponent, registerRiveTextHandlers } from './riveText';
 
 // A run's styleId indexes the artboard's component numbering — the same space parentId uses — rather
 // than styles in declaration order. Rive's TextAlign is left=0, right=1, center=2.
@@ -302,6 +303,33 @@ describe('createRiveRichText', () => {
     const label = build([object(TEXT, {}), run('x', -1)], [-1, 0]);
 
     expect(label.data.textFormat?.color).toBe(packColor(0, 0, 0, 1));
+  });
+});
+
+describe('importRiveTextComponent', () => {
+  it('is what the text drawable registers, so a Text becomes a rich text node', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveTextHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, TEXT)?.importComponent).toBe(importRiveTextComponent);
+  });
+});
+
+describe('registerRiveTextHandlers', () => {
+  it('claims the drawable, its runs, and the styles those runs name', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveTextHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, TEXT)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, RUN)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, AXIS)).not.toBeNull();
+  });
+
+  it('gives a run no node of its own, because the words belong to the drawable above it', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveTextHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, RUN)?.applyArtboard).toBeUndefined();
   });
 });
 

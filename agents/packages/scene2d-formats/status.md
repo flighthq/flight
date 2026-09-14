@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-08
-by: principal
+updated: 2026-09-14
+by: builder2
 ---
 
 # scene2d-formats — Status
@@ -46,6 +46,12 @@ a day — both times by the same author's later commits, silently, with nothing 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-09-14** — Rive import is driven by a registry keyed by the format's own core object type id
+  (`riveImportRegistry.ts`); eleven family registrars replace the closed dispatch in
+  `createRiveDisplayNode`, `registerAllRiveHandlers` installs them in pass order, and
+  `createRiveDocumentImportResult(registry, …)` imports only what is registered. An unclaimed
+  component type now crumbs `rive.core-type-unregistered` instead of vanishing.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Two headline gaps checked out **false**:
   the blend-mode shortfall ("Rive states sixteen, Flight carries six; 93 of 144 non-default uses have

@@ -6,14 +6,18 @@ import type {
   FontVariation,
   ImportDiagnostic,
   RichText,
+  DisplayObject,
   RiveArtboardGraph,
+  RiveArtboardImportContext,
   RiveCoreObject,
+  RiveImportRegistry,
   TextFormat,
   TextFormatRange,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Builds a rich text node from a Rive text drawable.
@@ -91,6 +95,34 @@ export function createRiveRichText(
   node.data.textFormatRanges = formatRanges;
   node.data.width = readRiveNumber(source, RIVE_TEXT_WIDTH, 0);
   return node;
+}
+
+/** A text drawable becomes a rich text node; its runs and styles are read as part of building it. */
+export function importRiveTextComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
+  const label = createRiveRichText(context.artboard, index, context.fontNames, context.diagnostics);
+  label.name = readRiveTextName(context.artboard.objects[index]);
+  return label;
+}
+
+/**
+ * Registers text: the `Text` drawable, the value runs that carry its words, and the styles and
+ * variable-font axes those runs name.
+ *
+ * A run and a style are data belonging to the drawable above them, so only the drawable becomes a
+ * node. Without this family a text drawable imports as an empty container that still holds its name,
+ * transform and children — the shape survives and only the words are missing.
+ */
+export function registerRiveTextHandlers(registry: RiveImportRegistry): void {
+  registerRiveCoreObjectHandler(registry, RIVE_TEXT, { importComponent: importRiveTextComponent });
+  const part = { importComponent: importRiveCoreObjectAsData };
+  registerRiveCoreObjectHandler(registry, RIVE_TEXT_VALUE_RUN, part);
+  registerRiveCoreObjectHandler(registry, RIVE_TEXT_STYLE, part);
+  registerRiveCoreObjectHandler(registry, RIVE_TEXT_STYLE_AXIS, part);
+}
+
+function readRiveTextName(source: Readonly<RiveCoreObject>): string {
+  const property = source.properties.find((candidate) => candidate.key === RIVE_NAME);
+  return property === undefined || typeof property.value !== 'string' ? '' : property.value;
 }
 
 function createRiveTextFormat(
@@ -204,7 +236,10 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
   return property === undefined || typeof property.value !== 'string' ? fallback : property.value;
 }
 
+const RIVE_NAME = 4;
+const RIVE_TEXT = 134;
 const RIVE_TEXT_VALUE_RUN = 135;
+const RIVE_TEXT_STYLE = 573;
 const RIVE_TEXT_STYLE_AXIS = 144;
 const RIVE_SOLID_COLOR = 18;
 

@@ -15,8 +15,12 @@ import type {
   Node2DTraits,
   NodeOrderList,
   RiveArtboardGraph,
+  RiveArtboardImportContext,
+  RiveImportRegistry,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 /**
  * Applies the artboard's draw rules, which override hierarchy order for the nodes they govern.
@@ -85,6 +89,23 @@ export function applyRiveDrawOrder(
     applyNodeOrderList(parent === root ? root : parent, list);
     disposeNodeOrderList(list);
   }
+}
+
+/**
+ * Registers draw rules: a `DrawRules` on a node, and the `DrawTarget` it names.
+ *
+ * Both are data hanging off the nodes they reorder, and the reordering itself is a pass — a rule can
+ * name a drawable that has not been read yet, and reordering siblings means the siblings must all
+ * exist. Without this a file's authored paint order is silently replaced by hierarchy order.
+ */
+export function registerRiveDrawOrderHandlers(registry: RiveImportRegistry): void {
+  const drawOrder = {
+    applyArtboard: (context: RiveArtboardImportContext): void =>
+      applyRiveDrawOrder(context.nodes, context.artboard, context.root, context.diagnostics),
+    importComponent: importRiveCoreObjectAsData,
+  };
+  registerRiveCoreObjectHandler(registry, RIVE_DRAW_TARGET_TYPE_KEY, drawOrder);
+  registerRiveCoreObjectHandler(registry, RIVE_DRAW_RULES_TYPE_KEY, drawOrder);
 }
 
 function readRiveDrawId(object: Readonly<RiveArtboardGraph['objects'][number]>, key: number): number | null {

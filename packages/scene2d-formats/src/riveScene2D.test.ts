@@ -3,7 +3,17 @@ import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { createScene2DFromRiveDocument, initializeRiveDocumentImportResult } from './riveScene2D';
+import {
+  createRiveImportRegistry,
+  getRiveCoreObjectHandler,
+  registerRiveCoreObjectHandler,
+} from './riveImportRegistry';
+import {
+  createRiveDocumentImportResult,
+  createScene2DFromRiveDocument,
+  initializeRiveDocumentImportResult,
+} from './riveScene2D';
+import { registerRiveShapeHandlers } from './riveShapeNode';
 
 // Rive states rotation in RADIANS, established from the corpus: 1,299 rotation values with a maximum
 // of 6.93 and exact landmarks at 3PI/2 and 2PI, where degrees would show 90/180/360. Node2D.rotation
@@ -40,6 +50,70 @@ const LAYOUT_COMPONENT_STYLE = 420;
 const LAYOUT_PARTICIPANT = 1066;
 const LAYOUT_STYLE_ID = 494;
 const LAYOUT_FLEX_DIRECTION = 598;
+
+describe('createRiveDocumentImportResult', () => {
+  it('imports only what the registry claims, leaving an unregistered kind out', () => {
+    const registry = createRiveImportRegistry();
+    const source = buildRive([
+      object(ARTBOARD, [text(NAME, 'Board'), float(WIDTH, 100), float(HEIGHT, 100)]),
+      object(SHAPE, [text(NAME, 'box'), uint(PARENT_ID, 0)]),
+    ]);
+
+    const imported = createRiveDocumentImportResult(registry, source);
+
+    // No family is registered, so the shape falls to the unregistered arm and imports as a plain
+    // container rather than a Shape.
+    const child = getNodeChildAt(imported.artboards[0].root, 0) as Node2D;
+    expect(child.kind).toBe(DisplayObjectKind);
+  });
+
+  it('imports the kind a registered family claims', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveShapeHandlers(registry);
+    const source = buildRive([
+      object(ARTBOARD, [text(NAME, 'Board'), float(WIDTH, 100), float(HEIGHT, 100)]),
+      object(SHAPE, [text(NAME, 'box'), uint(PARENT_ID, 0)]),
+    ]);
+
+    const imported = createRiveDocumentImportResult(registry, source);
+
+    expect((getNodeChildAt(imported.artboards[0].root, 0) as Node2D).kind).not.toBe(DisplayObjectKind);
+  });
+
+  it('reports a component type no family claims rather than losing it silently', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const source = buildRive([
+      object(ARTBOARD, [text(NAME, 'Board'), float(WIDTH, 100), float(HEIGHT, 100)]),
+      object(SHAPE, [text(NAME, 'box'), uint(PARENT_ID, 0)]),
+      object(FILL, [uint(PARENT_ID, 1)]),
+    ]);
+
+    createRiveDocumentImportResult(createRiveImportRegistry(), source, diagnostics);
+
+    // A Fill is not a Node, so it becomes nothing at all; that is the case worth naming.
+    expect(diagnostics.map((entry) => entry.kind)).toContain('rive.core-type-unregistered');
+  });
+
+  it('returns an empty result for a file it cannot parse, without consulting the registry', () => {
+    const registry = createRiveImportRegistry();
+    registerRiveCoreObjectHandler(registry, SHAPE, {
+      importComponent: () => {
+        throw new Error('the registry must not be consulted for an unparsable file');
+      },
+    });
+
+    const imported = createRiveDocumentImportResult(registry, new Uint8Array([0, 1, 2, 3]));
+
+    expect(imported.artboards).toEqual([]);
+    expect(imported.assets).toEqual([]);
+    expect(getRiveCoreObjectHandler(registry, SHAPE)).not.toBeNull();
+  });
+});
+
+interface TestProperty {
+  key: number;
+  raw: number[];
+}
 
 describe('createScene2DFromRiveDocument', () => {
   it('returns no artboards for bytes that are not a Rive file', () => {
@@ -397,11 +471,6 @@ describe('createScene2DFromRiveDocument', () => {
     expect(getNodeChildCount(result.artboards[0].root)).toBe(0);
   });
 });
-
-interface TestProperty {
-  key: number;
-  raw: number[];
-}
 
 function encodeVarUint(value: number): number[] {
   const bytes: number[] = [];

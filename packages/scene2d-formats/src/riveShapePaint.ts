@@ -17,12 +17,26 @@ import type {
   PathWinding,
   RiveArtboardGraph,
   RiveCoreObject,
+  RiveImportRegistry,
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+
+/**
+ * Draws a shape's paths with no paint at all — the shape a caller gets when it imports geometry
+ * without registering the paint family.
+ *
+ * Each path keeps its own winding, which is what a shape's fill rule would otherwise override, so the
+ * figure still composites the way the file states it: a hole cut by an opposite-winding path stays a
+ * hole.
+ */
+export function appendRiveShapeGeometry(shape: Shape, paths: readonly RivePathRecord[]): void {
+  appendRivePaths(shape, paths, null);
+}
 
 /**
  * Reads a Rive shape's paint and draws its paths under each one.
@@ -60,6 +74,19 @@ export function appendRiveShapePaint(
     }
     appendRivePaths(shape, paintedPaths, null);
   }
+}
+
+/**
+ * Registers shape paint: fills and strokes, the gradients and solid colours they are painted with,
+ * the stops of those gradients, and the trim and dash effects a stroke carries.
+ *
+ * Every one of these is data belonging to the shape above it rather than a node, so they share one
+ * handler; what they buy is the shape's paint list, which `appendRiveShapePaint` reads directly from
+ * the object stream.
+ */
+export function registerRivePaintHandlers(registry: RiveImportRegistry): void {
+  const paint = { importComponent: importRiveCoreObjectAsData };
+  for (const typeKey of RIVE_PAINT_TYPE_KEYS) registerRiveCoreObjectHandler(registry, typeKey, paint);
 }
 
 function appendRivePaths(shape: Shape, paths: readonly RivePathRecord[], winding: 'evenOdd' | 'nonZero' | null): void {
@@ -549,6 +576,18 @@ const RIVE_STROKE = 24;
 const RIVE_TRIM_PATH = 47;
 const RIVE_DASH_PATH = 506;
 const RIVE_DASH = 507;
+
+// A fill and a stroke are both ShapePaints, and a radial gradient is a linear one with a focal point,
+// so five of the seven entries here carry their whole subtree with them.
+const RIVE_PAINT_TYPE_KEYS: readonly number[] = [
+  RIVE_SOLID_COLOR,
+  RIVE_GRADIENT_STOP,
+  RIVE_SHAPE_PAINT,
+  RIVE_LINEAR_GRADIENT,
+  RIVE_TRIM_PATH,
+  RIVE_DASH_PATH,
+  RIVE_DASH,
+];
 
 const RIVE_GRADIENT_STOP_COLOR = 38;
 const RIVE_GRADIENT_STOP_POSITION = 39;

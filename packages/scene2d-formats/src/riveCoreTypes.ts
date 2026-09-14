@@ -15,6 +15,15 @@ export function getRiveCoreTypeName(typeKey: number): string | undefined {
 }
 
 /**
+ * The key of the type `typeKey` extends, `-1` when it is a root, or `undefined` for a key this object
+ * model does not define. A caller walking the chain itself needs the undefined case to stop on: an
+ * unknown key is a type from a newer editor, not a root.
+ */
+export function getRiveCoreTypeParent(typeKey: number): number | undefined {
+  return _typesByKey.get(typeKey)?.parent;
+}
+
+/**
  * Whether `typeKey` is `ancestorTypeKey` or inherits from it. A type is derived from itself, so this
  * reads as the "is a" test a caller means: a Rectangle is a Shape, and a Shape is a Shape.
  */

@@ -3,7 +3,8 @@ import { createShape } from '@flighthq/shape/contract';
 import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RivePathRecord } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
-import { appendRiveShapePaint } from './riveShapePaint';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+import { appendRiveShapeGeometry, appendRiveShapePaint, registerRivePaintHandlers } from './riveShapePaint';
 
 // A Rive shape states a LIST of paints and each one covers every path of that shape. Modelling it as
 // one slot per kind is the bug that had to be retrofitted out of the Lottie importer, so these cases
@@ -19,6 +20,31 @@ const STROKE = 24;
 const TRIM_PATH = 47;
 const DASH_PATH = 506;
 const DASH = 507;
+
+describe('appendRiveShapeGeometry', () => {
+  it('draws the paths with no paint around them', () => {
+    const shape = createShape();
+    appendRiveShapeGeometry(shape, [squarePath()]);
+
+    expect(paintTokens(shape)).toEqual([]);
+    expect(drawCount(shape)).toBe(1);
+  });
+
+  it('keeps each path own winding, so a hole stays a hole', () => {
+    const shape = createShape();
+    const hole = { ...squarePath(), winding: 'evenOdd' as const };
+    appendRiveShapeGeometry(shape, [hole]);
+
+    expect(windingOf(shape)).toBe('evenOdd');
+  });
+
+  it('draws nothing for an empty path list', () => {
+    const shape = createShape();
+    appendRiveShapeGeometry(shape, []);
+
+    expect(shape.data.commands).toEqual([]);
+  });
+});
 
 describe('appendRiveShapePaint', () => {
   it('draws nothing when the shape has no paths', () => {
@@ -377,6 +403,35 @@ describe('appendRiveShapePaint', () => {
     expect(tokens[at + 8]).toBe('bevel');
   });
 });
+
+describe('registerRivePaintHandlers', () => {
+  it('claims fills and strokes through the shape paint they share', () => {
+    const registry = createRiveImportRegistry();
+    registerRivePaintHandlers(registry);
+
+    expect(getRiveCoreObjectHandler(registry, FILL)).not.toBeNull();
+    expect(getRiveCoreObjectHandler(registry, STROKE)).not.toBeNull();
+  });
+
+  it('claims gradients, their stops, and the stroke effects, and gives none of them a node', () => {
+    const registry = createRiveImportRegistry();
+    registerRivePaintHandlers(registry);
+
+    for (const typeKey of [SOLID_COLOR, LINEAR_GRADIENT, RADIAL_GRADIENT, GRADIENT_STOP, TRIM_PATH, DASH_PATH, DASH]) {
+      const handler = getRiveCoreObjectHandler(registry, typeKey);
+      expect(handler, String(typeKey)).not.toBeNull();
+    }
+  });
+});
+
+function squarePath(): RivePathRecord {
+  return {
+    commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+    data: [0, 0, 10, 0, 10, 10, 0, 10],
+    pathIndex: 0,
+    winding: 'nonZero',
+  };
+}
 
 function strokedLengths(shape: { data: { commands: unknown[] } }): number[] {
   const tokens = shape.data.commands;

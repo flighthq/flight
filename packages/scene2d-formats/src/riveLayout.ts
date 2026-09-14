@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
   FlexLayoutAlign,
@@ -12,12 +13,15 @@ import type {
   ImportDiagnostic,
   LayoutNode,
   RiveArtboardGraph,
+  RiveArtboardImportContext,
   RiveCoreObject,
+  RiveImportRegistry,
   RiveLayoutImport,
 } from '@flighthq/types/contract';
 import { FlexLayoutKind, GridLayoutKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
 
 interface RiveLayoutProvider {
   sourceIndex: number;
@@ -126,6 +130,41 @@ export function createRiveLayoutImports(
     if (layoutNodes.length > 0) imports.push({ targets, tree: { nodes: layoutNodes } });
   }
   return imports;
+}
+
+/**
+ * A `LayoutComponent` is a container that arranges its children; the arrangement itself is described
+ * by the style objects hanging off it, and resolved once the whole artboard exists.
+ */
+export function importRiveLayoutComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
+  return createDisplayObject({ name: readRiveLayoutName(context.artboard.objects[index]) });
+}
+
+/**
+ * Registers authored layout: the `LayoutComponent` container, the sizing styles that describe it, and
+ * the grid tracks and placements a grid layout is built from.
+ *
+ * The descriptors are produced rather than applied — the caller measures each target's natural size
+ * and owns the resolved rectangles — so this pass only builds the trees and the node lists paired
+ * with them. Without it a layout component still imports as a container holding its children, at the
+ * size and position they were authored at.
+ */
+export function registerRiveLayoutHandlers(registry: RiveImportRegistry): void {
+  registerRiveCoreObjectHandler(registry, RIVE_LAYOUT_COMPONENT_TYPE_KEY, {
+    applyArtboard: (context) => {
+      context.layouts.push(...createRiveLayoutImports(context.artboard, context.nodes, context.diagnostics));
+    },
+    importComponent: importRiveLayoutComponent,
+  });
+  const style = { importComponent: importRiveCoreObjectAsData };
+  registerRiveCoreObjectHandler(registry, RIVE_LAYOUT_SIZING_STYLE_TYPE_KEY, style);
+  registerRiveCoreObjectHandler(registry, RIVE_GRID_TRACK_TYPE_KEY, style);
+  registerRiveCoreObjectHandler(registry, RIVE_GRID_ITEM_PLACEMENT_TYPE_KEY, style);
+}
+
+function readRiveLayoutName(source: Readonly<RiveCoreObject>): string {
+  const property = source.properties.find((candidate) => candidate.key === RIVE_NAME);
+  return property === undefined || typeof property.value !== 'string' ? '' : property.value;
 }
 
 function findRiveLayoutComponents(
@@ -588,11 +627,13 @@ const RIVE_NODE_TYPE_KEY = 2;
 const RIVE_SOLO_TYPE_KEY = 147;
 const RIVE_LAYOUT_COMPONENT_TYPE_KEY = 409;
 const RIVE_LAYOUT_COMPONENT_STYLE_TYPE_KEY = 420;
+const RIVE_LAYOUT_SIZING_STYLE_TYPE_KEY = 1056;
 const RIVE_NESTED_ARTBOARD_LAYOUT_TYPE_KEY = 452;
 const RIVE_LAYOUT_PARTICIPANT_TYPE_KEY = 1066;
 const RIVE_GRID_TRACK_TYPE_KEY = 1058;
 const RIVE_GRID_ITEM_PLACEMENT_TYPE_KEY = 1068;
 
+const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;
 const RIVE_LAYOUT_STYLE_ID = 494;
