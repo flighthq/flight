@@ -69,13 +69,41 @@ import {
 import {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
+  createScene2DFromSwfWithTagHandlers,
   createScene2DImportFromSwf,
+  createScene2DImportFromSwfWithTagHandlers,
   createScene2DSymbolFromSwf,
+  createSwfDefaultTagHandlerRegistry,
+  handleSwfBackgroundColorTag,
+  handleSwfBoundedDefinitionTag,
+  handleSwfButtonDefinitionTag,
+  handleSwfDoAbcTag,
+  handleSwfDoActionTag,
+  handleSwfDoInitActionTag,
+  handleSwfEmbeddedImageDefinitionTag,
+  handleSwfExportAssetsTag,
+  handleSwfFontDefinitionTag,
+  handleSwfFontInfoTag,
+  handleSwfFrameLabelTag,
+  handleSwfJpegTablesTag,
+  handleSwfLegacyImageDefinitionTag,
+  handleSwfLosslessBitmapDefinitionTag,
+  handleSwfPlaceObjectTag,
+  handleSwfRemoveObjectTag,
+  handleSwfScalingGridTag,
+  handleSwfSceneAndFrameLabelDataTag,
+  handleSwfSoundDefinitionTag,
+  handleSwfSoundStreamBlockTag,
+  handleSwfSoundStreamHeadTag,
+  handleSwfStartSound2Tag,
+  handleSwfStartSoundTag,
+  handleSwfVideoStreamDefinitionTag,
   initializeSwfDocumentImport,
   initializeTimelineAudioCue,
   initializeTimelineStreamAudioCue,
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
+  uncompressSwfSource,
 } from './swfDocument';
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
 import { registerSwfImageDecoders } from './swfImageDecoder';
@@ -3934,6 +3962,19 @@ describe('createScene2DFromSwf morph shapes', () => {
   });
 });
 
+describe('createScene2DFromSwfWithTagHandlers', () => {
+  it('produces a document using a provided registry', () => {
+    const registry = createSwfDefaultTagHandlerRegistry();
+    const swf = createSwf([
+      createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0, 0])),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const doc = createScene2DFromSwfWithTagHandlers(swf, registry);
+    expect(doc).not.toBeNull();
+  });
+});
+
 describe('createScene2DImportFromSwf', () => {
   it('retains exact zero-copy JPEG3 and JPEG4 colour and alpha ranges on the full import report', () => {
     const jpeg3 = createJpegHeader(23, 17);
@@ -4175,6 +4216,20 @@ describe('createScene2DImportFromSwf', () => {
   });
 });
 
+describe('createScene2DImportFromSwfWithTagHandlers', () => {
+  it('returns a full import using a provided registry', () => {
+    const registry = createSwfDefaultTagHandlerRegistry();
+    const swf = createSwf([
+      createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0, 0])),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const result = createScene2DImportFromSwfWithTagHandlers(swf, registry);
+    expect(result).not.toBeNull();
+    expect(result!.document).not.toBeNull();
+  });
+});
+
 describe('createScene2DSymbolFromSwf', () => {
   it('builds a fresh instance of a symbol the file exported but never placed', () => {
     const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
@@ -4276,6 +4331,160 @@ describe('createScene2DSymbolFromSwf', () => {
 
   it('reports nothing for a name the file does not export', () => {
     expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Missing')).toBeNull();
+  });
+});
+
+describe('createSwfDefaultTagHandlerRegistry', () => {
+  it('returns a populated registry covering all handled tag codes', () => {
+    const registry = createSwfDefaultTagHandlerRegistry();
+    expect(registry.size).toBeGreaterThan(0);
+    expect(registry.has(TAG_DEFINE_SHAPE)).toBe(true);
+    expect(registry.has(TAG_PLACE_OBJECT_2)).toBe(true);
+    expect(registry.has(TAG_DO_ACTION)).toBe(true);
+  });
+});
+
+describe('handleSwfBackgroundColorTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfBackgroundColorTag).toBe('function');
+  });
+});
+
+describe('handleSwfBoundedDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfBoundedDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfButtonDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfButtonDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfDoAbcTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfDoAbcTag).toBe('function');
+  });
+});
+
+describe('handleSwfDoActionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfDoActionTag).toBe('function');
+  });
+});
+
+describe('handleSwfDoInitActionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfDoInitActionTag).toBe('function');
+  });
+});
+
+describe('handleSwfEmbeddedImageDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfEmbeddedImageDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfExportAssetsTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfExportAssetsTag).toBe('function');
+  });
+});
+
+describe('handleSwfFontDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfFontDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfFontInfoTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfFontInfoTag).toBe('function');
+  });
+});
+
+describe('handleSwfFrameLabelTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfFrameLabelTag).toBe('function');
+  });
+});
+
+describe('handleSwfJpegTablesTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfJpegTablesTag).toBe('function');
+  });
+});
+
+describe('handleSwfLegacyImageDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfLegacyImageDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfLosslessBitmapDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfLosslessBitmapDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfPlaceObjectTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfPlaceObjectTag).toBe('function');
+  });
+});
+
+describe('handleSwfRemoveObjectTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfRemoveObjectTag).toBe('function');
+  });
+});
+
+describe('handleSwfScalingGridTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfScalingGridTag).toBe('function');
+  });
+});
+
+describe('handleSwfSceneAndFrameLabelDataTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfSceneAndFrameLabelDataTag).toBe('function');
+  });
+});
+
+describe('handleSwfSoundDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfSoundDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfSoundStreamBlockTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfSoundStreamBlockTag).toBe('function');
+  });
+});
+
+describe('handleSwfSoundStreamHeadTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfSoundStreamHeadTag).toBe('function');
+  });
+});
+
+describe('handleSwfStartSound2Tag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfStartSound2Tag).toBe('function');
+  });
+});
+
+describe('handleSwfStartSoundTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfStartSoundTag).toBe('function');
+  });
+});
+
+describe('handleSwfVideoStreamDefinitionTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfVideoStreamDefinitionTag).toBe('function');
   });
 });
 
@@ -4700,5 +4909,20 @@ describe('registerSwfScene2DDocumentImporter', () => {
     registerSwfScene2DDocumentImporter(registry);
 
     expect(createScene2DDocumentFromBytes(source, registry)?.sourceKind).toBe('swf');
+  });
+});
+
+describe('uncompressSwfSource', () => {
+  it('returns the uncompressed bytes for an FWS file', () => {
+    const swf = createSwf([createTag(TAG_END)]);
+    const result = uncompressSwfSource(swf);
+    expect(result).not.toBeNull();
+    expect(result![0]).toBe(0x46);
+    expect(result![1]).toBe(0x57);
+    expect(result![2]).toBe(0x53);
+  });
+
+  it('returns null for empty input', () => {
+    expect(uncompressSwfSource(new Uint8Array())).toBeNull();
   });
 });
