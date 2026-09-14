@@ -1287,7 +1287,27 @@
     },
     {
       "packageName": "skeleton2d-formats",
+      "registrar": "registerAllSpineBinaryHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
       "registrar": "registerSkeleton2DFormat"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineBinarySectionHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineBinarySectionHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineBinaryTimelineHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineBinaryTimelineHandlers"
     },
     {
       "packageName": "skeleton2d-formats",

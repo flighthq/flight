@@ -953,5 +953,6 @@ export * from './SvgDocumentImport';
 export * from './SvgPathDataFormatOptions';
 export * from './Skeleton2DImport';
 export * from './SpineBinaryVersion';
+export * from './SpineBinaryRegistry';
 export * from './Scene2DDocument';
 export * from './Scene2DResources';
