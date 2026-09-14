@@ -1,4 +1,4 @@
-import type { SwfTagHandlerRegistry } from '@flighthq/types/contract';
+import type { SwfTagHandler, SwfTagHandlerRegistry } from '@flighthq/types/contract';
 
 import {
   createSwfTagHandlerRegistry,
@@ -7,6 +7,7 @@ import {
   registerSwfPlacementTagHandlers,
   registerSwfScriptTagHandlers,
   registerSwfSoundTagHandlers,
+  registerSwfTagHandler,
   registerSwfTimelineTagHandlers,
 } from './swfTagRegistry';
 
@@ -64,6 +65,24 @@ describe('registerSwfSoundTagHandlers', () => {
     const registry = createSwfTagHandlerRegistry();
     registerSwfSoundTagHandlers(registry);
     expectHandlers(registry, [15, 18, 19, 45, 89]);
+  });
+});
+
+describe('registerSwfTagHandler', () => {
+  it('registers a custom handler for a given tag code', () => {
+    const registry = createSwfTagHandlerRegistry();
+    const handler: SwfTagHandler = () => true;
+    registerSwfTagHandler(registry, 999, handler);
+    expect(registry.get(999)).toBe(handler);
+  });
+
+  it('overwrites a previously registered handler for the same code', () => {
+    const registry = createSwfTagHandlerRegistry();
+    const first: SwfTagHandler = () => true;
+    const second: SwfTagHandler = () => false;
+    registerSwfTagHandler(registry, 42, first);
+    registerSwfTagHandler(registry, 42, second);
+    expect(registry.get(42)).toBe(second);
   });
 });
 
