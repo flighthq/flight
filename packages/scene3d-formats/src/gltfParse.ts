@@ -1,5 +1,3 @@
-import { createAnimationTrack } from '@flighthq/animation/contract';
-import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { packLinearToColor } from '@flighthq/color/contract';
 import {
   composeMatrix4FromTransform3D,
@@ -23,9 +21,14 @@ import {
 } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Scene3D } from '@flighthq/types/contract';
 import type {
-  AnimationInterpolation,
+  GltfAccessorData,
+  GltfAccessorFault,
+  GltfCoreFeatureContext,
+  GltfCoreFeatureHandler,
+  Scene3D,
+} from '@flighthq/types/contract';
+import type {
   ImageResourceReference,
   ImportDiagnostic,
   Material,
@@ -34,14 +37,9 @@ import type {
   MeshMorph,
   MorphTarget,
   PrimitiveTopology,
-  Scene3DAnimationPath,
   Scene3DDocument,
-  Scene3DDocumentAnimation,
-  Scene3DDocumentAnimationChannel,
-  Scene3DDocumentCamera,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
-  Scene3DDocumentSkin,
   Texture,
   TextureColorSpace,
   TextureFilter,
@@ -64,15 +62,9 @@ import type {
   GltfSampler,
   GltfTextureInfo,
 } from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  MeshKind,
-  Scene3DAnimationPathRotation,
-  Scene3DAnimationPathScale,
-  Scene3DAnimationPathTranslation,
-  Scene3DAnimationPathWeights,
-  Node3DKind,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
+
+import { registerAllGltfCoreFeatureHandlers } from './registerAllGltfCoreFeatureHandlers';
 
 // Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
 // Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an
@@ -85,7 +77,7 @@ export function createScene3DFromGlb(
   const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createScene3DFromDocument(createEmptyGltfDocument());
   return createScene3DFromDocument(
-    buildGltfDocument(container.document, container.binary, options, diagnostics),
+    buildGltfDocument(container.document, container.binary, getFullGltfCoreFeatureHandlers(), options, diagnostics),
     container.document.scene ?? 0,
   );
 }
@@ -100,7 +92,10 @@ export function createScene3DFromGltf(
 ): Scene3D {
   const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createScene3DFromDocument(createEmptyGltfDocument());
-  return createScene3DFromDocument(buildGltfDocument(doc, null, options, diagnostics), doc.scene ?? 0);
+  return createScene3DFromDocument(
+    buildGltfDocument(doc, null, getFullGltfCoreFeatureHandlers(), options, diagnostics),
+    doc.scene ?? 0,
+  );
 }
 
 // Parses a binary glTF (`.glb`) container into every scene it declares (`Scene3D[]`), each carrying its
@@ -136,9 +131,21 @@ export function parseGlb(
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene3DDocument {
+  return parseGlbWithCoreFeatureHandlers(bytes, getFullGltfCoreFeatureHandlers(), diagnostics, options);
+}
+
+// Parses a GLB with exactly the optional core feature handlers the caller registered. An empty list keeps
+// the bedrock mesh/material/texture/node/scene decomposition and reports each present optional section as
+// skipped when diagnostics are collected. The explicit list is what lets that build shed every unused handler.
+export function parseGlbWithCoreFeatureHandlers(
+  bytes: Readonly<Uint8Array>,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
+  diagnostics?: ImportDiagnostic[],
+  options?: Readonly<GltfImportOptions>,
+): Scene3DDocument {
   const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createEmptyGltfDocument();
-  return buildGltfDocument(container.document, container.binary, options, diagnostics);
+  return buildGltfDocument(container.document, container.binary, coreFeatureHandlers, options, diagnostics);
 }
 
 // Parses a glTF 2.0 document (JSON string or already-parsed object) into a format-neutral Scene3DDocument:
@@ -159,9 +166,27 @@ export function parseGltf(
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene3DDocument {
+  return parseGltfWithCoreFeatureHandlers(source, getFullGltfCoreFeatureHandlers(), diagnostics, options);
+}
+
+// Parses a glTF document with exactly the optional core feature handlers the caller registered. Meshes,
+// materials, textures, nodes, scenes, and morph data remain bedrock; animations, cameras, and skins are
+// appended only by their named handlers. An empty list is therefore a valid minimal parser configuration.
+export function parseGltfWithCoreFeatureHandlers(
+  source: GltfDocument | string,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
+  diagnostics?: ImportDiagnostic[],
+  options?: Readonly<GltfImportOptions>,
+): Scene3DDocument {
   const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createEmptyGltfDocument();
-  return buildGltfDocument(doc, null, options, diagnostics);
+  return buildGltfDocument(doc, null, coreFeatureHandlers, options, diagnostics);
+}
+
+function getFullGltfCoreFeatureHandlers(): GltfCoreFeatureHandler[] {
+  const handlers: GltfCoreFeatureHandler[] = [];
+  registerAllGltfCoreFeatureHandlers(handlers);
+  return handlers;
 }
 
 // Parses the JSON string or accepts the already-parsed object, returning null (with a warning) on invalid
@@ -210,6 +235,7 @@ function createEmptyGltfDocument(): Scene3DDocument {
 function buildGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
   options: Readonly<GltfImportOptions> | undefined,
   diagnostics?: ImportDiagnostic[],
 ): Scene3DDocument {
@@ -313,34 +339,15 @@ function buildGltfDocument(
     for (let c = 0; c < children.length; c++) parent.children.push(gltfNodeToDocNode[children[c]]);
   }
 
-  const skins = buildGltfSkins(doc, buffers, gltfNodeToDocNode, gltfDrops);
-  // Bind each glTF node's skin onto the document mesh(es) it produced (mesh.skin = skin index).
-  for (let i = 0; i < gltfNodes.length; i++) {
-    const skinIndex = gltfNodes[i].skin;
-    if (skinIndex === undefined || gltfNodes[i].mesh === undefined) continue;
-    const meshIndicesForNode = gltfMeshToDocMeshes[gltfNodes[i].mesh as number] ?? [];
-    for (let m = 0; m < meshIndicesForNode.length; m++) meshes[meshIndicesForNode[m]].skin = skinIndex;
-  }
-
   const scenes = (doc.scenes ?? [{ nodes: topLevelNodeIndices(gltfNodes) }]).map((scene) => ({
     name: scene.name,
     rootNodes: (scene.nodes ?? []).map((n) => gltfNodeToDocNode[n]),
   }));
 
-  const animations = buildGltfAnimations(
-    doc,
-    buffers,
-    gltfNodeToDocNode,
-    gltfNodePrimitiveNodes,
-    nodes,
-    meshes,
-    gltfDrops,
-  );
   const nodeWorldTransforms = buildGltfNodeWorldTransforms(gltfNodes, gltfDrops);
-  const cameras = buildGltfCameras(doc, gltfNodes, gltfNodeToDocNode, nodeWorldTransforms, gltfDrops);
   const document: Scene3DDocument = {
-    animations,
-    cameras,
+    animations: [],
+    cameras: [],
     lights: [],
     materials,
     meshes,
@@ -348,8 +355,19 @@ function buildGltfDocument(
     nodes,
     resources,
     scenes,
-    skins,
+    skins: [],
   };
+  applyGltfCoreFeatureHandlers(
+    document,
+    doc,
+    buffers,
+    gltfMeshToDocMeshes,
+    gltfNodeToDocNode,
+    gltfNodePrimitiveNodes,
+    nodeWorldTransforms,
+    coreFeatureHandlers,
+    gltfDrops,
+  );
   applyGltfExtensionHandlers(
     document,
     doc,
@@ -372,82 +390,66 @@ function buildGltfDocument(
   return document;
 }
 
-// Builds one placed document camera per glTF node that references a camera definition. Clip distances
-// remain explicit document facts; an omitted perspective zfar is retained as the glTF infinite-far model.
-// The projection's stored aspect is only the authored fallback—the draw-time viewport remains authoritative.
-function buildGltfCameras(
-  doc: Readonly<GltfDocument>,
-  nodes: readonly GltfNode[],
+function applyGltfCoreFeatureHandlers(
+  document: Scene3DDocument,
+  source: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  meshIndices: readonly (readonly number[])[],
   nodeIndices: readonly number[],
+  primitiveNodeIndices: readonly (readonly number[])[],
   nodeWorldTransforms: readonly Transform3D[],
+  handlers: readonly GltfCoreFeatureHandler[],
   gltfDrops: Map<string, GltfDropTally> | null,
-): Scene3DDocumentCamera[] {
-  const cameras: Scene3DDocumentCamera[] = [];
-  const definitions = doc.cameras ?? [];
-  for (let node = 0; node < nodes.length; node++) {
-    const cameraIndex = nodes[node].camera;
-    if (cameraIndex === undefined) continue;
-    const definition = definitions[cameraIndex];
-    if (definition === undefined) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-missing', '', {
-        firstCamera: cameraIndex,
-        firstNode: node,
+): void {
+  const selected = new Map<string, GltfCoreFeatureHandler>();
+  for (const handler of handlers) {
+    if (selected.has(handler.kind)) {
+      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.duplicate-core-feature-handler', '', {
+        firstKind: handler.kind,
       });
-      continue;
     }
-    if (definition.type === 'perspective' && definition.perspective !== undefined) {
-      const perspective = definition.perspective;
-      if (
-        !(perspective.yfov > 0) ||
-        perspective.yfov >= Math.PI ||
-        !(perspective.znear > 0) ||
-        (perspective.zfar !== undefined && !(perspective.zfar > perspective.znear)) ||
-        (perspective.aspectRatio !== undefined && !(perspective.aspectRatio > 0))
-      ) {
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-invalid-perspective', '', {
-          firstCamera: cameraIndex,
-        });
-        continue;
-      }
-      cameras.push({
-        far: perspective.zfar ?? Number.POSITIVE_INFINITY,
-        name: definition.name,
-        near: perspective.znear,
-        node: nodeIndices[node],
-        projection: createPerspectiveProjection({ aspect: perspective.aspectRatio ?? 1, fovY: perspective.yfov }),
-        transform: cloneGltfTransform(nodeWorldTransforms[node]),
-      });
-      continue;
-    }
-    if (definition.type === 'orthographic' && definition.orthographic !== undefined) {
-      const orthographic = definition.orthographic;
-      if (
-        !(orthographic.xmag > 0) ||
-        !(orthographic.ymag > 0) ||
-        !(orthographic.znear >= 0) ||
-        !(orthographic.zfar > orthographic.znear)
-      ) {
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-invalid-orthographic', '', {
-          firstCamera: cameraIndex,
-        });
-        continue;
-      }
-      cameras.push({
-        far: orthographic.zfar,
-        name: definition.name,
-        near: orthographic.znear,
-        node: nodeIndices[node],
-        projection: createOrthographicProjection({ halfHeight: orthographic.ymag, halfWidth: orthographic.xmag }),
-        transform: cloneGltfTransform(nodeWorldTransforms[node]),
-      });
-      continue;
-    }
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.camera-missing-descriptor', '', {
-      firstCamera: cameraIndex,
-      firstType: definition.type,
+    selected.set(handler.kind, handler);
+  }
+  for (const kind of GLTF_OPTIONAL_CORE_FEATURES) {
+    if (getGltfCoreFeatureLength(source, kind) === 0 || selected.has(kind)) continue;
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Skip, 'gltf.core-feature-handler-missing', kind, {
+      firstKind: kind,
     });
   }
-  return cameras;
+
+  const context: GltfCoreFeatureContext = {
+    buildNodeTransform(node) {
+      return cloneGltfTransform(nodeWorldTransforms[node] ?? createIdentityTransform());
+    },
+    document,
+    meshIndices,
+    nodeIndices,
+    primitiveNodeIndices,
+    readAccessor(accessor, expectedType) {
+      return readAccessor(source, buffers, accessor, gltfDrops, expectedType);
+    },
+    reportAccessorFault(severity, fault) {
+      reportGltfAccessorFault(gltfDrops, severity, fault);
+    },
+    reportDiagnostic(severity, kind, detail = {}, discriminator = '') {
+      tallyGltfDrop(gltfDrops, severity, kind, discriminator, detail);
+    },
+    source,
+  };
+  for (const handler of selected.values()) handler.apply(context);
+}
+
+function getGltfCoreFeatureLength(source: Readonly<GltfDocument>, kind: string): number {
+  switch (kind) {
+    case 'animations':
+      return source.animations?.length ?? 0;
+    case 'cameras':
+      return source.cameras?.length ?? 0;
+    case 'skins':
+      return source.skins?.length ?? 0;
+    default:
+      return 0;
+  }
 }
 
 function applyGltfExtensionHandlers(
@@ -584,215 +586,6 @@ function cloneGltfTransform(source: Readonly<Transform3D>): Transform3D {
   return transform;
 }
 
-// Builds the document's skin table: each glTF `skins[]` entry becomes a Scene3DDocumentSkin whose `joints` are
-// document node indices and whose `inverseBind` is one Matrix4 per joint (identity per the spec when the
-// accessor is absent).
-function buildGltfSkins(
-  doc: Readonly<GltfDocument>,
-  buffers: readonly Uint8Array[],
-  gltfNodeToDocNode: readonly number[],
-  gltfDrops: Map<string, GltfDropTally> | null,
-): Scene3DDocumentSkin[] {
-  return (doc.skins ?? []).map((gltfSkin) => {
-    const joints = gltfSkin.joints.map((jointNodeIndex) => gltfNodeToDocNode[jointNodeIndex]);
-    const inverseBind: { m: Float32Array }[] = [];
-    if (gltfSkin.inverseBindMatrices !== undefined) {
-      const ibm = readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, gltfDrops, 'MAT4');
-      if (ibm.fault !== null) {
-        // The IBM accessor is unreadable. glTF treats absent inverse-bind matrices as identity, so fall
-        // back to identity per joint — the skin survives in bind pose rather than collapsing to a zero
-        // matrix (which would send the mesh to the origin). Degraded-but-usable = Recover.
-        reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, ibm.fault);
-        for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
-      } else if (ibm.count < joints.length) {
-        // Present but too few matrices to cover every joint: filling the missing joints with a zero matrix
-        // would collapse the mesh, so recover to identity for ALL joints (bind pose) rather than a partial,
-        // corrupt palette. Recover — the skin stays usable.
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.skin-ibm-count-mismatch', '', {
-          firstActual: ibm.count,
-          firstExpected: joints.length,
-        });
-        for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
-      } else {
-        const flat = ibm.data;
-        for (let j = 0; j < joints.length; j++) {
-          inverseBind.push({ m: Float32Array.from({ length: 16 }, (_, k) => flat[j * 16 + k] ?? 0) });
-        }
-      }
-    } else {
-      for (let j = 0; j < joints.length; j++) inverseBind.push({ m: identityMatrix16() });
-    }
-    return { inverseBind, joints };
-  });
-}
-
-// Builds the document's animation table. Each glTF animation becomes a Scene3DDocumentAnimation whose channels
-// carry a document node index + Scene3DAnimationPath + a sampled AnimationTrack. A `weights` (morph) channel
-// fans out to each morphable mesh node the target produced (the group's per-primitive children, or the leaf
-// mesh node itself), its track width set to that mesh's morph-target count.
-function buildGltfAnimations(
-  doc: Readonly<GltfDocument>,
-  buffers: readonly Uint8Array[],
-  gltfNodeToDocNode: readonly number[],
-  gltfNodePrimitiveNodes: readonly number[][],
-  nodes: readonly Scene3DDocumentNode[],
-  meshes: readonly Scene3DDocumentMesh[],
-  gltfDrops: Map<string, GltfDropTally> | null,
-): Scene3DDocumentAnimation[] {
-  const animations: Scene3DDocumentAnimation[] = [];
-  const gltfAnimations = doc.animations ?? [];
-  for (let a = 0; a < gltfAnimations.length; a++) {
-    const animation = gltfAnimations[a];
-    const channels: Scene3DDocumentAnimationChannel[] = [];
-    let duration = 0;
-    for (const channel of animation.channels) {
-      const targetNodeIndex = channel.target.node;
-      if (targetNodeIndex === undefined || gltfNodeToDocNode[targetNodeIndex] === undefined) {
-        // The channel targets no node, or a node index outside the table — it cannot be bound, so the
-        // channel is omitted (Drop). If every channel of an animation drops this way the animation vanishes
-        // (see the channels.length > 0 guard below), which the crumb makes visible.
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-target-unresolved', '', {
-          firstTarget: targetNodeIndex ?? -1,
-        });
-        continue;
-      }
-      const sampler = animation.samplers[channel.sampler];
-      if (sampler === undefined) {
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-missing-sampler', '', {
-          firstSampler: channel.sampler,
-        });
-        continue;
-      }
-      // Time keys are SCALAR; the output element type is fixed by the path (rotation VEC4, translation/scale
-      // VEC3, weights SCALAR). readAccessor faults on a type mismatch, so a VEC3 "rotation" output is caught
-      // here as a fault rather than silently sampled as a 4-component quaternion.
-      const inputResult = readAccessor(doc, buffers, sampler.input, gltfDrops, 'SCALAR');
-      const outputResult = readAccessor(
-        doc,
-        buffers,
-        sampler.output,
-        gltfDrops,
-        GLTF_ANIMATION_OUTPUT_TYPES[channel.target.path],
-      );
-      if (inputResult.fault !== null || outputResult.fault !== null) {
-        // A sampler whose time or value accessor is unreadable or the wrong type cannot produce a track — drop
-        // this channel (Drop), consistent with the unresolved-target and missing-sampler channel drops above.
-        // No partial track survives, so this is not a Recover.
-        reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, inputResult.fault ?? outputResult.fault!);
-        continue;
-      }
-      const times = inputResult.data;
-      const values = outputResult.data;
-      if (inputResult.count === 0 || outputResult.count === 0) {
-        // A usable track needs at least one keyframe — an empty sampler yields no usable track, so drop the
-        // channel (Drop) rather than create an animation with an empty channel.
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-sampler-empty', '', {
-          firstSampler: channel.sampler,
-        });
-        continue;
-      }
-      // Validate output cardinality against the keyframe count by INTERPOLATION (element counts, not flattened
-      // lengths — a VEC4 output with 1 element against 2 keys has length 4, which a `% keys` check wrongly
-      // admits). LINEAR/STEP: one output element per key; CUBICSPLINE: three (in-tangent, value, out-tangent).
-      // A mismatch is a malformed track → drop the channel. Weights are SCALAR but target-width-scaled, so
-      // their cardinality is validated per-mesh in appendGltfWeightsChannels where the target count is known.
-      const cubic = sampler.interpolation === 'CUBICSPLINE';
-      if (channel.target.path !== 'weights' && outputResult.count !== (cubic ? 3 : 1) * inputResult.count) {
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.animation-sampler-cardinality', '', {
-          firstSampler: channel.sampler,
-        });
-        continue;
-      }
-      duration = Math.max(duration, times.length > 0 ? times[times.length - 1] : 0);
-
-      if (channel.target.path === 'weights') {
-        // A multi-primitive mesh's morphable mesh nodes are its per-primitive children; a single-primitive
-        // mesh is the target's own document node. Fan the per-mesh glTF weights channel to each.
-        const meshNodeIndices =
-          gltfNodePrimitiveNodes[targetNodeIndex].length > 0
-            ? gltfNodePrimitiveNodes[targetNodeIndex]
-            : [gltfNodeToDocNode[targetNodeIndex]];
-        appendGltfWeightsChannels(
-          channels,
-          meshNodeIndices,
-          nodes,
-          meshes,
-          times,
-          values,
-          sampler.interpolation,
-          gltfDrops,
-        );
-        continue;
-      }
-      const path = GLTF_ANIMATION_PATHS[channel.target.path];
-      if (path === undefined) {
-        tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Skip, 'gltf.animation-unsupported-path', '', {
-          firstPath: channel.target.path,
-        });
-        continue;
-      }
-      const quaternion = path === Scene3DAnimationPathRotation;
-      const track = createAnimationTrack({
-        components: quaternion ? 4 : 3,
-        interpolation: GLTF_SAMPLER_INTERPOLATIONS[sampler.interpolation ?? 'LINEAR'],
-        quaternion,
-        times,
-        values,
-      });
-      channels.push({ node: gltfNodeToDocNode[targetNodeIndex], path, track });
-    }
-    if (channels.length > 0) animations.push({ channels, duration, name: animation.name ?? `animation${a}` });
-  }
-  return animations;
-}
-
-// Appends a Weights (morph) animation channel for each morphable mesh node the target produced (already
-// resolved to document node indices: a single-primitive mesh's own node, or a multi-primitive mesh's
-// per-primitive child mesh nodes — glTF weights are per-mesh and applied to every primitive). Each channel's
-// track width is that mesh's morph-target count so the per-keyframe value block samples straight into the
-// mesh's weight array. A target with no morphable mesh yields no channel (silently dropped).
-function appendGltfWeightsChannels(
-  channels: Scene3DDocumentAnimationChannel[],
-  meshNodeIndices: readonly number[],
-  nodes: readonly Scene3DDocumentNode[],
-  meshes: readonly Scene3DDocumentMesh[],
-  times: ArrayLike<number>,
-  values: ArrayLike<number>,
-  interpolation: string | undefined,
-  gltfDrops: Map<string, GltfDropTally> | null,
-): void {
-  // SCALAR weight keys, so `times.length` is the keyframe count and `values.length` packs the per-key weights.
-  // Each key carries one weight per morph target (×3 for CUBICSPLINE tangents), so the output must be exactly
-  // (perKey · keys · targetWidth) long; a mismatch cannot drive that mesh's morph and its channel is dropped.
-  const perKey = interpolation === 'CUBICSPLINE' ? 3 : 1;
-  let bound = 0;
-  let cardinalityDropped = false;
-  for (let i = 0; i < meshNodeIndices.length; i++) {
-    const meshIndex = nodes[meshNodeIndices[i]]?.mesh;
-    const morph = meshIndex !== undefined ? meshes[meshIndex]?.morph : null;
-    if (morph == null || morph.targets.length === 0) continue;
-    if (values.length !== perKey * times.length * morph.targets.length) {
-      tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.weights-cardinality-mismatch', '', {
-        firstExpected: perKey * times.length * morph.targets.length,
-        firstActual: values.length,
-      });
-      cardinalityDropped = true;
-      continue;
-    }
-    const track = createAnimationTrack({
-      components: morph.targets.length,
-      interpolation: GLTF_SAMPLER_INTERPOLATIONS[interpolation ?? 'LINEAR'],
-      times,
-      values,
-    });
-    channels.push({ node: meshNodeIndices[i], path: Scene3DAnimationPathWeights, track });
-    bound++;
-  }
-  if (bound === 0 && !cardinalityDropped) {
-    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.weights-no-morphable-mesh', '', {});
-  }
-}
-
 // The document metadata for a glTF file — currently null, since the imported glTF schema subset carries no
 // provenance fields (asset.generator/copyright are not read). Kept as a named seam so a future asset-block
 // read populates it in one place.
@@ -835,16 +628,6 @@ function gltfNodeTransform(gltfNode: Readonly<GltfNode>): Transform3D {
     transform.scale.z = s[2] ?? 1;
   }
   return transform;
-}
-
-// A fresh 16-float identity matrix for a skin joint with no inverse-bind accessor (spec default).
-function identityMatrix16(): Float32Array {
-  const m = new Float32Array(16);
-  m[0] = 1;
-  m[5] = 1;
-  m[10] = 1;
-  m[15] = 1;
-  return m;
 }
 
 // Converts a glTF material to Flight's StandardPbrMaterial — glTF's own metallic-roughness model. The
@@ -1117,6 +900,10 @@ function isSupportedGltfExtension(extension: string, handlers: readonly GltfExte
 // integer width and applies the spec normalization exactly when `normalized` is set — a non-normalized
 // quantized position passes through raw, which is correct, because its scale rides the node transform.
 const CORE_GLTF_EXTENSIONS = new Set(['KHR_mesh_quantization', 'KHR_texture_transform']);
+
+// Core glTF sections whose realization is handler-owned. This list detects a present-but-unregistered
+// source section without importing any handler implementation; arbitrary extra handler kinds stay open.
+const GLTF_OPTIONAL_CORE_FEATURES = ['animations', 'cameras', 'skins'] as const;
 
 // Normalizes a raw integer component to its float range per the glTF spec: unsigned types map onto
 // [0, 1] by dividing by their max; signed types map onto [-1, 1] via max(c / MAX, -1). Float
@@ -1519,21 +1306,6 @@ function buildGltfMorph(
   return { targets, weights };
 }
 
-// A decoded accessor plus the fault that made it unreadable, if any. readAccessor never decides the
-// severity of a fault — the meaning of an unreadable accessor depends on its call-site role (a failed
-// POSITION drops the primitive; a failed optional normal degrades it). So it returns the fault kind and
-// leaves severity + recovery to the caller (reportGltfAccessorFault). `fault` is null on success.
-interface GltfAccessorResult {
-  count: number;
-  data: ArrayLike<number>;
-  fault: GltfAccessorFault | null;
-}
-
-interface GltfAccessorFault {
-  detail: Record<string, number>;
-  kind: string;
-}
-
 // Emits an accessor fault at the severity its call-site role dictates: Drop where the fault leaves no
 // usable survivor (mandatory POSITION/indices, an unsamplable animation channel), Recover where a
 // non-empty, non-NaN, drawable element remains after substituting a sane default (optional attributes,
@@ -1614,7 +1386,7 @@ function readGltfAttribute(
   index: number,
   gltfDrops: Map<string, GltfDropTally> | null,
   expectedType: string,
-): GltfAccessorResult {
+): GltfAccessorData {
   const decoded = draco?.attributes[semantic];
   if (decoded !== undefined) {
     return { count: draco?.vertexCount ?? 0, data: decoded, fault: null };
@@ -1659,7 +1431,7 @@ function readAccessor(
   accessorIndex: number,
   gltfDrops: Map<string, GltfDropTally> | null,
   expectedType?: string,
-): GltfAccessorResult {
+): GltfAccessorData {
   const accessor = doc.accessors?.[accessorIndex];
   if (accessor === undefined) {
     return {
@@ -2024,33 +1796,6 @@ function createComponentArray(componentType: GltfComponentType, length: number):
 
 const COMPONENT_BYTE_SIZE: Record<GltfComponentType, number> = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 };
 const TYPE_COMPONENTS: Record<string, number> = { MAT2: 4, MAT3: 9, MAT4: 16, SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
-
-// glTF TRS animation target paths → Flight Scene3DAnimationPath. The 'weights' (morph) path is handled
-// separately by the caller (appendGltfWeightsChannels), because it binds to a mesh's weight array with a
-// mesh-specific track width rather than a fixed-width transform component, so it is not in this map.
-const GLTF_ANIMATION_PATHS: Record<string, Scene3DAnimationPath | undefined> = {
-  rotation: Scene3DAnimationPathRotation,
-  scale: Scene3DAnimationPathScale,
-  translation: Scene3DAnimationPathTranslation,
-};
-
-// The required output-accessor element type per animated path (glTF spec). rotation is a VEC4 quaternion,
-// translation/scale are VEC3, weights are SCALAR (target-width-scaled by element count). An output whose type
-// disagrees would be silently reinterpreted at the wrong stride, so a mismatch faults the channel.
-const GLTF_ANIMATION_OUTPUT_TYPES: Record<string, string | undefined> = {
-  rotation: 'VEC4',
-  scale: 'VEC3',
-  translation: 'VEC3',
-  weights: 'SCALAR',
-};
-
-// glTF sampler interpolation → Flight AnimationInterpolation (same three modes, same CUBICSPLINE
-// in-tangent/value/out-tangent layout).
-const GLTF_SAMPLER_INTERPOLATIONS: Record<string, AnimationInterpolation> = {
-  CUBICSPLINE: 'Cubic',
-  LINEAR: 'Linear',
-  STEP: 'Step',
-};
 
 // glTF sampler min/mag filter GL enums → Flight TextureFilter. glTF's mip-aware min filters
 // (LINEAR_MIPMAP_LINEAR etc.) map onto Flight's mip-aware filter names; the mag filter is always a

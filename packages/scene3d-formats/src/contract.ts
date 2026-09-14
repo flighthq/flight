@@ -1,6 +1,10 @@
 export * from './awd2Parse';
 export * from './colladaParse';
+export * from './gltfAnimations';
+export * from './gltfCameras';
+export * from './gltfCoreFeatureRegistry';
 export * from './gltfParse';
+export * from './gltfSkins';
 export { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
 export { GltfClearcoatExtensionHandler } from './gltfClearcoat';
 export {
@@ -27,5 +31,9 @@ export * from './md5AnimParse';
 export * from './md5Parse';
 export * from './mtlParse';
 export * from './objParse';
+export * from './registerAllGltfCoreFeatureHandlers';
+export * from './registerGltfAnimationHandlers';
+export * from './registerGltfCameraHandlers';
+export * from './registerGltfSkinHandlers';
 export * from './sceneSkeleton';
 export * from './threeDsParse';

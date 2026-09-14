@@ -1,8 +1,51 @@
 import type { GltfDocument, GltfTextureInfo } from './GltfSchema';
-import type { ImportDiagnostic } from './ImportDiagnostic';
+import type { ImportDiagnostic, ImportDiagnosticSeverity } from './ImportDiagnostic';
 import type { Scene3DDocument } from './Scene3DDocument';
 import type { Texture, TextureColorSpace } from './Texture';
 import type { Transform3D } from './Transform3D';
+
+// One accessor result exposed to an optional core-feature handler. The parser retains ownership of byte
+// decoding and diagnostic aggregation; a handler receives only the flat values, authored element count,
+// and any recoverable decoding fault its feature needs.
+export interface GltfAccessorData {
+  count: number;
+  data: ArrayLike<number>;
+  fault: GltfAccessorFault | null;
+}
+
+export interface GltfAccessorFault {
+  detail: Record<string, number>;
+  kind: string;
+}
+
+// The core document decomposition shared by the three optional glTF section handlers. Meshes, materials,
+// textures, nodes, and scenes already exist when a handler runs. The index maps preserve the source file's
+// identities across multi-primitive mesh expansion, while readAccessor/reportDiagnostic keep parser-private
+// byte/tally machinery out of each independently bundled handler.
+export interface GltfCoreFeatureContext {
+  buildNodeTransform(node: number): Transform3D;
+  document: Scene3DDocument;
+  meshIndices: readonly (readonly number[])[];
+  nodeIndices: readonly number[];
+  primitiveNodeIndices: readonly (readonly number[])[];
+  readAccessor(accessor: number, expectedType?: string): GltfAccessorData;
+  reportAccessorFault(severity: ImportDiagnosticSeverity, fault: Readonly<GltfAccessorFault>): void;
+  reportDiagnostic(
+    severity: ImportDiagnosticSeverity,
+    kind: string,
+    detail?: Record<string, boolean | number | string>,
+    discriminator?: string,
+  ): void;
+  source: Readonly<GltfDocument>;
+}
+
+// One open, source-section-keyed glTF core feature. `kind` is the canonical JSON member identity
+// (`animations`, `cameras`, or `skins` for Flight's built-ins), so custom handlers and diagnostics use the
+// same name the asset author sees. Registration is caller-owned and duplicate kinds resolve last-write-wins.
+export interface GltfCoreFeatureHandler {
+  apply(context: Readonly<GltfCoreFeatureContext>): void;
+  kind: string;
+}
 
 // The deliberately small context an individually imported glTF extension handler receives. Core parsing
 // has already decomposed nodes/materials/meshes before handlers run. Handlers append only the document
@@ -25,7 +68,7 @@ export interface GltfExtensionContext {
 }
 
 // One open glTF extension atom. Callers import only the handlers their asset pipeline accepts and pass
-// them through GltfImportOptions.extensionHandlers. No global registry or registerAll assembly exists.
+// them through GltfImportOptions.extensionHandlers. No global registry exists.
 export interface GltfExtensionHandler {
   apply(context: Readonly<GltfExtensionContext>): void;
   kind: string;
