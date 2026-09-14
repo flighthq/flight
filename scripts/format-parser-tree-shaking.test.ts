@@ -10,6 +10,7 @@ interface BundleSnapshot {
 }
 
 interface FormatHandlerFamily {
+  isolationSymbols?: readonly string[];
   modules: readonly string[];
   name: string;
   registrar: string;
@@ -25,6 +26,7 @@ interface FormatParserAssembly {
 interface FormatParserTreeShakingCase {
   allRegistrar: string;
   contractOnlyExports: readonly string[];
+  excludedExports?: readonly string[];
   families: readonly FormatHandlerFamily[];
   fullAssemblies: readonly FormatParserAssembly[];
   leanExports: readonly string[];
@@ -82,34 +84,47 @@ const SPINE_TIMELINE_READER_SYMBOLS = [
   'readSpineBinaryTransformTimelines',
 ] as const;
 
-const SWF_DEFINITION_HANDLER_SYMBOLS = [
-  'handleSwfBackgroundColorTag',
-  'handleSwfBoundedDefinitionTag',
-  'handleSwfButtonDefinitionTag',
+const SWF_BITMAP_HANDLER_SYMBOLS = [
   'handleSwfEmbeddedImageDefinitionTag',
-  'handleSwfExportAssetsTag',
-  'handleSwfFontDefinitionTag',
-  'handleSwfFontInfoTag',
   'handleSwfJpegTablesTag',
   'handleSwfLegacyImageDefinitionTag',
   'handleSwfLosslessBitmapDefinitionTag',
-  'handleSwfScalingGridTag',
-  'handleSwfSoundDefinitionTag',
-  'handleSwfVideoStreamDefinitionTag',
 ] as const;
+
+const SWF_CONTROL_HANDLER_SYMBOLS = [
+  'handleSwfBackgroundColorTag',
+  'handleSwfButtonDefinitionTag',
+  'handleSwfExportAssetsTag',
+  'handleSwfFrameLabelTag',
+  'handleSwfScalingGridTag',
+  'handleSwfSceneAndFrameLabelDataTag',
+] as const;
+
+const SWF_FONT_HANDLER_SYMBOLS = ['handleSwfFontDefinitionTag', 'handleSwfFontInfoTag'] as const;
 
 const SWF_PLACEMENT_HANDLER_SYMBOLS = ['handleSwfPlaceObjectTag', 'handleSwfRemoveObjectTag'] as const;
 
 const SWF_SCRIPT_HANDLER_SYMBOLS = ['handleSwfDoAbcTag', 'handleSwfDoActionTag', 'handleSwfDoInitActionTag'] as const;
 
 const SWF_SOUND_HANDLER_SYMBOLS = [
+  'handleSwfSoundDefinitionTag',
   'handleSwfSoundStreamBlockTag',
   'handleSwfSoundStreamHeadTag',
   'handleSwfStartSound2Tag',
   'handleSwfStartSoundTag',
 ] as const;
 
-const SWF_TIMELINE_HANDLER_SYMBOLS = ['handleSwfFrameLabelTag', 'handleSwfSceneAndFrameLabelDataTag'] as const;
+const SWF_HANDLER_SYMBOLS = [
+  ...SWF_BITMAP_HANDLER_SYMBOLS,
+  ...SWF_CONTROL_HANDLER_SYMBOLS,
+  ...SWF_FONT_HANDLER_SYMBOLS,
+  ...SWF_PLACEMENT_HANDLER_SYMBOLS,
+  ...SWF_SCRIPT_HANDLER_SYMBOLS,
+  'handleSwfBoundedDefinitionTag',
+  ...SWF_SOUND_HANDLER_SYMBOLS,
+  'handleSwfDefineSpriteTag',
+  'handleSwfVideoStreamDefinitionTag',
+] as const;
 
 const CASES: readonly FormatParserTreeShakingCase[] = [
   {
@@ -348,54 +363,89 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
   },
   {
     allRegistrar: 'registerAllSwfTagHandlers',
-    contractOnlyExports: [
-      ...SWF_DEFINITION_HANDLER_SYMBOLS,
-      ...SWF_PLACEMENT_HANDLER_SYMBOLS,
-      ...SWF_SCRIPT_HANDLER_SYMBOLS,
-      ...SWF_SOUND_HANDLER_SYMBOLS,
-      ...SWF_TIMELINE_HANDLER_SYMBOLS,
-    ],
+    contractOnlyExports: SWF_HANDLER_SYMBOLS,
+    excludedExports: ['registerSwfDefinitionTagHandlers', 'registerSwfTimelineTagHandlers'],
     families: [
       {
+        isolationSymbols: ['registerSwfBitmapTagHandlers', ...SWF_BITMAP_HANDLER_SYMBOLS],
         modules: [],
-        name: 'definitions',
-        registrar: 'registerSwfDefinitionTagHandlers',
-        symbols: SWF_DEFINITION_HANDLER_SYMBOLS,
+        name: 'bitmap',
+        registrar: 'registerSwfBitmapTagHandlers',
+        symbols: SWF_BITMAP_HANDLER_SYMBOLS,
       },
       {
+        isolationSymbols: ['registerSwfControlTagHandlers', ...SWF_CONTROL_HANDLER_SYMBOLS],
+        modules: [],
+        name: 'control',
+        registrar: 'registerSwfControlTagHandlers',
+        symbols: SWF_CONTROL_HANDLER_SYMBOLS,
+      },
+      {
+        isolationSymbols: ['registerSwfFontTagHandlers', ...SWF_FONT_HANDLER_SYMBOLS],
+        modules: [],
+        name: 'font',
+        registrar: 'registerSwfFontTagHandlers',
+        symbols: SWF_FONT_HANDLER_SYMBOLS,
+      },
+      {
+        isolationSymbols: ['registerSwfPlacementTagHandlers', ...SWF_PLACEMENT_HANDLER_SYMBOLS],
         modules: [],
         name: 'placement',
         registrar: 'registerSwfPlacementTagHandlers',
         symbols: SWF_PLACEMENT_HANDLER_SYMBOLS,
       },
       {
+        isolationSymbols: ['registerSwfScriptTagHandlers', ...SWF_SCRIPT_HANDLER_SYMBOLS],
         modules: [],
         name: 'scripts',
         registrar: 'registerSwfScriptTagHandlers',
         symbols: SWF_SCRIPT_HANDLER_SYMBOLS,
       },
       {
+        isolationSymbols: ['registerSwfShapeTagHandlers'],
+        modules: [],
+        name: 'shape',
+        registrar: 'registerSwfShapeTagHandlers',
+        symbols: ['handleSwfBoundedDefinitionTag'],
+      },
+      {
+        isolationSymbols: ['registerSwfSoundTagHandlers', ...SWF_SOUND_HANDLER_SYMBOLS],
         modules: [],
         name: 'sound',
         registrar: 'registerSwfSoundTagHandlers',
         symbols: SWF_SOUND_HANDLER_SYMBOLS,
       },
       {
+        isolationSymbols: ['registerSwfSpriteTagHandlers', 'handleSwfDefineSpriteTag'],
         modules: [],
-        name: 'timeline',
-        registrar: 'registerSwfTimelineTagHandlers',
-        symbols: SWF_TIMELINE_HANDLER_SYMBOLS,
+        name: 'sprite',
+        registrar: 'registerSwfSpriteTagHandlers',
+        symbols: ['handleSwfDefineSpriteTag'],
+      },
+      {
+        isolationSymbols: ['registerSwfTextTagHandlers'],
+        modules: [],
+        name: 'text',
+        registrar: 'registerSwfTextTagHandlers',
+        symbols: ['handleSwfBoundedDefinitionTag'],
+      },
+      {
+        isolationSymbols: ['registerSwfVideoTagHandlers', 'handleSwfVideoStreamDefinitionTag'],
+        modules: [],
+        name: 'video',
+        registrar: 'registerSwfVideoTagHandlers',
+        symbols: ['handleSwfVideoStreamDefinitionTag'],
       },
     ],
     fullAssemblies: [
       {
         exports: ['createScene2DFromSwf'],
-        families: ['definitions', 'placement', 'scripts', 'sound', 'timeline'],
+        families: ['bitmap', 'control', 'font', 'placement', 'scripts', 'shape', 'sound', 'sprite', 'text', 'video'],
         name: 'zero-config document importer',
       },
       {
         exports: ['createScene2DImportFromSwf'],
-        families: ['definitions', 'placement', 'scripts', 'sound', 'timeline'],
+        families: ['bitmap', 'control', 'font', 'placement', 'scripts', 'shape', 'sound', 'sprite', 'text', 'video'],
         name: 'zero-config detailed importer',
       },
     ],
@@ -429,6 +479,10 @@ describe('format parser handler export lanes', () => {
         expect(contractExports, `${name} contract`).toContain(name);
         expect(publicExports, `${name} public`).not.toContain(name);
       }
+      for (const name of testCase.excludedExports ?? []) {
+        expect(contractExports, `${name} contract`).not.toContain(name);
+        expect(publicExports, `${name} public`).not.toContain(name);
+      }
       for (const family of testCase.families) expect(family.registrar).toMatch(/Handlers$/);
       expect(testCase.allRegistrar).toMatch(/^registerAll.*Handlers$/);
     });
@@ -441,10 +495,10 @@ describe('format parser handler tree shaking', () => {
       it(`isolates the ${testCase.name} ${family.name} family`, async () => {
         const bundle = await bundlePublicExports(testCase.packageDirectory, [family.registrar]);
 
-        expectFamilyReachable(bundle, testCase, family);
+        expectFamilyReachable(bundle, testCase, family, true);
         for (const sibling of testCase.families) {
           if (sibling === family) continue;
-          expectFamilyAbsent(bundle, testCase, sibling);
+          expectFamilyAbsent(bundle, testCase, sibling, true);
         }
       });
     }
@@ -452,19 +506,28 @@ describe('format parser handler tree shaking', () => {
     it(`keeps the ${testCase.name} lean parser independent of built-in handler families`, async () => {
       const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.leanExports);
 
-      for (const family of testCase.families) expectFamilyAbsent(bundle, testCase, family);
+      for (const family of testCase.families) {
+        expectFamilyAbsent(bundle, testCase, family);
+        expectFamilyAbsent(bundle, testCase, family, true);
+      }
     });
 
     it(`keeps the ${testCase.name} public registry seams independent of built-in handler families`, async () => {
       const bundle = await bundlePublicExports(testCase.packageDirectory, testCase.publicInfrastructureExports);
 
-      for (const family of testCase.families) expectFamilyAbsent(bundle, testCase, family);
+      for (const family of testCase.families) {
+        expectFamilyAbsent(bundle, testCase, family);
+        expectFamilyAbsent(bundle, testCase, family, true);
+      }
     });
 
     it(`makes ${testCase.name} all-handler registration explicit`, async () => {
       const bundle = await bundlePublicExports(testCase.packageDirectory, [testCase.allRegistrar]);
 
-      for (const family of testCase.families) expectFamilyReachable(bundle, testCase, family);
+      for (const family of testCase.families) {
+        expectFamilyReachable(bundle, testCase, family);
+        expectFamilyReachable(bundle, testCase, family, true);
+      }
     });
 
     for (const assembly of testCase.fullAssemblies) {
@@ -484,11 +547,12 @@ function expectFamilyAbsent(
   bundle: Readonly<BundleSnapshot>,
   testCase: Readonly<FormatParserTreeShakingCase>,
   family: Readonly<FormatHandlerFamily>,
+  isolation = false,
 ): void {
   for (const module of family.modules) {
     expect(getContributedBytes(bundle, testCase.packageDirectory, module), `${family.name}: ${module}`).toBe(0);
   }
-  for (const symbol of family.symbols) {
+  for (const symbol of isolation ? (family.isolationSymbols ?? family.symbols) : family.symbols) {
     expect(bundle.code.includes(getKeptFunctionNameMarker(symbol)), `${family.name}: ${symbol}`).toBe(false);
   }
 }
@@ -497,13 +561,14 @@ function expectFamilyReachable(
   bundle: Readonly<BundleSnapshot>,
   testCase: Readonly<FormatParserTreeShakingCase>,
   family: Readonly<FormatHandlerFamily>,
+  isolation = false,
 ): void {
   for (const module of family.modules) {
     expect(getContributedBytes(bundle, testCase.packageDirectory, module), `${family.name}: ${module}`).toBeGreaterThan(
       0,
     );
   }
-  for (const symbol of family.symbols) {
+  for (const symbol of isolation ? (family.isolationSymbols ?? family.symbols) : family.symbols) {
     expect(bundle.code.includes(getKeptFunctionNameMarker(symbol)), `${family.name}: ${symbol}`).toBe(true);
   }
 }
