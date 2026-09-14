@@ -25,10 +25,12 @@ export {
   parseMd5Mesh,
   parseObj,
   parseObjMaterialLibrary,
-  registerAllGltfCoreFeatureHandlers,
+  registerAllGltfHandlers,
   registerGltfAnimationHandlers,
   registerGltfCameraHandlers,
   registerGltfDracoDecoder,
+  registerGltfLightingExtensionHandlers,
+  registerGltfMaterialExtensionHandlers,
   registerGltfSkinHandlers,
   unregisterGltfDracoDecoder,
 } from './contract';
