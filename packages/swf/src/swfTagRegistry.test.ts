@@ -10,6 +10,7 @@ import {
   registerSwfScriptTagHandlers,
   registerSwfShapeTagHandlers,
   registerSwfSoundTagHandlers,
+  registerSwfSpriteTagHandlers,
   registerSwfTagHandler,
   registerSwfTextTagHandlers,
   registerSwfVideoTagHandlers,
@@ -35,6 +36,7 @@ describe('registerAllSwfTagHandlers', () => {
     registerSwfScriptTagHandlers(separateRegistry);
     registerSwfShapeTagHandlers(separateRegistry);
     registerSwfSoundTagHandlers(separateRegistry);
+    registerSwfSpriteTagHandlers(separateRegistry);
     registerSwfTextTagHandlers(separateRegistry);
     registerSwfVideoTagHandlers(separateRegistry);
     expect(registry.size).toBe(separateRegistry.size);
@@ -49,6 +51,7 @@ describe('registerAllSwfTagHandlers', () => {
       registerSwfScriptTagHandlers,
       registerSwfShapeTagHandlers,
       registerSwfSoundTagHandlers,
+      registerSwfSpriteTagHandlers,
       registerSwfTextTagHandlers,
       registerSwfVideoTagHandlers,
     ];
@@ -117,6 +120,14 @@ describe('registerSwfSoundTagHandlers', () => {
     const registry = createSwfTagHandlerRegistry();
     registerSwfSoundTagHandlers(registry);
     expectHandlers(registry, [14, 15, 18, 19, 45, 89]);
+  });
+});
+
+describe('registerSwfSpriteTagHandlers', () => {
+  it('registers sprite-related tag codes', () => {
+    const registry = createSwfTagHandlerRegistry();
+    registerSwfSpriteTagHandlers(registry);
+    expectHandlers(registry, [39]);
   });
 });
 

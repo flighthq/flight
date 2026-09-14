@@ -77,6 +77,7 @@ import {
   handleSwfBackgroundColorTag,
   handleSwfBoundedDefinitionTag,
   handleSwfButtonDefinitionTag,
+  handleSwfDefineSpriteTag,
   handleSwfDoAbcTag,
   handleSwfDoActionTag,
   handleSwfDoInitActionTag,
@@ -4489,6 +4490,12 @@ describe('handleSwfBoundedDefinitionTag', () => {
 describe('handleSwfButtonDefinitionTag', () => {
   it('is registered as a handler function', () => {
     expect(typeof handleSwfButtonDefinitionTag).toBe('function');
+  });
+});
+
+describe('handleSwfDefineSpriteTag', () => {
+  it('is registered as a handler function', () => {
+    expect(typeof handleSwfDefineSpriteTag).toBe('function');
   });
 });
 

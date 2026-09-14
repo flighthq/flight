@@ -1443,6 +1443,10 @@
     },
     {
       "packageName": "swf",
+      "registrar": "registerSwfSpriteTagHandlers"
+    },
+    {
+      "packageName": "swf",
       "registrar": "registerSwfTagHandler"
     },
     {
