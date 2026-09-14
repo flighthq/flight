@@ -18,6 +18,10 @@ import {
   createScene3DsFromGlb,
   createScene3DsFromGltf,
   findScene3DSkeletonJoints,
+  parseMd5Anim,
+  parseObjMaterialLibrary,
+} from '@flighthq/scene3d-formats';
+import {
   GltfAnisotropyExtensionHandler,
   GltfClearcoatExtensionHandler,
   GltfEmissiveStrengthExtensionHandler,
@@ -30,9 +34,7 @@ import {
   GltfTransmissionExtensionHandler,
   GltfUnlitExtensionHandler,
   GltfVolumeExtensionHandler,
-  parseMd5Anim,
-  parseObjMaterialLibrary,
-} from '@flighthq/scene3d-formats';
+} from '@flighthq/scene3d-formats/contract';
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
 import { createScene2DImportFromSwf } from '@flighthq/swf';
 import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
