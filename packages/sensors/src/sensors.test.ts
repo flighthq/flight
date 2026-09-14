@@ -29,7 +29,6 @@ import {
   createQuaternionReading,
   createRotationRateReading,
   createSensors,
-  createWebSensorsBackend,
   detachSensors,
   disposeSensors,
   getSensorsPermissionState,
@@ -607,34 +606,6 @@ describe('createSensors', () => {
     expect(sensors.onOrientation).toBeDefined();
     expect(sensors.onProximity).toBeDefined();
     expect(sensors.onQuaternion).toBeDefined();
-  });
-});
-
-describe('createWebSensorsBackend', () => {
-  it('subscribes to all streams without throwing', () => {
-    const backend = createWebSensorsBackend();
-    const unsubs = [
-      backend.subscribeMotion(() => {}),
-      backend.subscribeLinearAcceleration(() => {}),
-      backend.subscribeGravity(() => {}),
-      backend.subscribeOrientation(() => {}),
-      backend.subscribeAbsoluteOrientation(() => {}),
-      backend.subscribeMagnetometer(() => {}),
-      backend.subscribeAmbientLight(() => {}),
-      backend.subscribeBarometer(() => {}),
-      backend.subscribeProximity(() => {}),
-      backend.subscribeQuaternion(() => {}),
-    ];
-    expect(() => unsubs.forEach((u) => u())).not.toThrow();
-  });
-
-  it('resolves a permission request without throwing', async () => {
-    expect(typeof (await createWebSensorsBackend().requestPermission())).toBe('boolean');
-  });
-
-  it('resolves permission state without throwing', async () => {
-    const state = await createWebSensorsBackend().getPermissionState();
-    expect(['granted', 'denied', 'prompt', 'unsupported']).toContain(state);
   });
 });
 

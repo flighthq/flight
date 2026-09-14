@@ -142,7 +142,7 @@ export {
   webHostScreenPermissionChange,
   webHostScreenQuery,
 } from './webScreen';
-export { webHostSensors } from './webSensors';
+export { createWebSensorsBackend, webHostSensors } from './webSensors';
 export { webHostShareContent, webHostShareFiles } from './webShare';
 export { webHostShare } from './webShareHost';
 export { webHostShellExternal } from './webShell';
@@ -169,4 +169,4 @@ export {
   webHostWindow,
 } from './webWindow';
 export { createWebWgpuCanvasElement } from './webWgpuCanvasElement';
-export { webHostSocket } from './webSocket';
+export { createWebSocketBackend, webHostSocket } from './webSocket';

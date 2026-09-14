@@ -37,7 +37,6 @@
     { "path": "../render-wgpu" },
     { "path": "../screen" },
     { "path": "../sensors" },
-    { "path": "../socket" },
     { "path": "../share" },
     { "path": "../signals" },
     { "path": "../statusbar" },
