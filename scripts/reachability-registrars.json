@@ -995,7 +995,39 @@
     },
     {
       "packageName": "scene3d-formats",
+      "registrar": "registerAllGltfHandlers"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfAnimationHandlers"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfCameraHandlers"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfCoreFeatureHandler"
+    },
+    {
+      "packageName": "scene3d-formats",
       "registrar": "registerGltfDracoDecoder"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfExtensionHandler"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfLightingExtensionHandlers"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfMaterialExtensionHandlers"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfSkinHandlers"
     },
     {
       "packageName": "scene3d-gl",
