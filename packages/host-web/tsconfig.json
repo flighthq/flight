@@ -24,6 +24,7 @@
     { "path": "../haptics" },
     { "path": "../image" },
     { "path": "../image-codec" },
+    { "path": "../input" },
     { "path": "../lifecycle" },
     { "path": "../media" },
     { "path": "../menu" },

@@ -4,5 +4,4 @@ export {
   initializeInputManager,
   initializeInputSignals,
   initializeInputState,
-  initializeWebInputIngressBackend,
 } from './inputManager';

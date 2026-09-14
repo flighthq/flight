@@ -96,7 +96,14 @@ export {
   webHostRenderContext,
   webHostRenderSurface,
 } from './webInputTarget';
-export { webHostInput } from './webInputHost';
+export {
+  createWebInputIngressBackend,
+  getWebCoalescedPointerEvents,
+  getWebKeyCodeFromKeyboardEvent,
+  getWebKeyModifierFromKeyboardEvent,
+  webHostInput,
+  webHostInputIngress,
+} from './webInputHost';
 export { createWebLifecycleBackend, webHostLifecycle } from './webLifecycle';
 export {
   createWebSoftKeyboardChangeBackend,
