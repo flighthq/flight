@@ -3,41 +3,44 @@ import type { SwfContentEntry, SwfContentManifest, SwfTagRectangle } from '@flig
 import { uncompressSwfSource } from './swfDocument';
 
 const SWF_EXPLAIN_PREFIX_LENGTH = 8;
+const SWF_EXPLAIN_MIN_LENGTH = 12;
+const SWF_FIXED_8_8_ONE = 0x100;
 
 export function explainSwfContent(source: Uint8Array): SwfContentManifest | null {
   const uncompressed = uncompressSwfSource(source);
   if (uncompressed === null) return null;
-  if (uncompressed.length < SWF_EXPLAIN_PREFIX_LENGTH + 4) return null;
+  if (uncompressed.length < SWF_EXPLAIN_MIN_LENGTH) return null;
+  const version = uncompressed[3];
+  const fileLength = readSwfExplainUint32(uncompressed, 4);
+  if (version === 0 || fileLength < SWF_EXPLAIN_MIN_LENGTH || fileLength > uncompressed.length) return null;
+  const data = uncompressed.subarray(0, fileLength);
   let pos = SWF_EXPLAIN_PREFIX_LENGTH;
-  const stageBounds = readSwfExplainRectangle(uncompressed, pos);
+  const stageBounds = readSwfExplainRectangle(data, pos);
   if (stageBounds === null) return null;
   pos = stageBounds.nextPos;
-  if (pos + 4 > uncompressed.length) return null;
-  const frameRateRaw = uncompressed[pos] | (uncompressed[pos + 1] << 8);
-  const frameRate = frameRateRaw >> 8;
+  if (pos + 4 > data.length) return null;
+  const frameRateRaw = data[pos] + data[pos + 1] * 0x100;
+  const frameRate = frameRateRaw / SWF_FIXED_8_8_ONE;
   pos += 2;
   pos += 2;
 
   const counts = new Map<number, number>();
   let totalTags = 0;
-  while (pos + 2 <= uncompressed.length) {
-    const tagHeader = uncompressed[pos] | (uncompressed[pos + 1] << 8);
+  while (pos < data.length) {
+    if (pos + 2 > data.length) return null;
+    const tagHeader = data[pos] + data[pos + 1] * 0x100;
     pos += 2;
     const code = tagHeader >> 6;
     const shortLength = tagHeader & 0x3f;
     let length: number;
     if (shortLength === 0x3f) {
-      if (pos + 4 > uncompressed.length) break;
-      length =
-        uncompressed[pos] |
-        (uncompressed[pos + 1] << 8) |
-        (uncompressed[pos + 2] << 16) |
-        ((uncompressed[pos + 3] << 24) >>> 0);
+      if (pos + 4 > data.length) return null;
+      length = readSwfExplainUint32(data, pos);
       pos += 4;
     } else {
       length = shortLength;
     }
-    if (pos + length > uncompressed.length) break;
+    if (length > data.length - pos) return null;
     pos += length;
     if (code === 0) break;
     totalTags++;
@@ -61,6 +64,10 @@ export function explainSwfContent(source: Uint8Array): SwfContentManifest | null
     stageBounds: stageBounds.rect,
     totalTags,
   };
+}
+
+function readSwfExplainUint32(data: Uint8Array, offset: number): number {
+  return data[offset] + data[offset + 1] * 0x100 + data[offset + 2] * 0x10000 + data[offset + 3] * 0x1000000;
 }
 
 interface SwfExplainRectangleResult {
@@ -95,8 +102,8 @@ function readSwfExplainRectangle(data: Uint8Array, offset: number): SwfExplainRe
   return {
     nextPos: offset + totalBytes,
     rect: {
-      height: (yMax - yMin) / 20,
-      width: (xMax - xMin) / 20,
+      height: Math.max(0, yMax - yMin) / 20,
+      width: Math.max(0, xMax - xMin) / 20,
       x: xMin / 20,
       y: yMin / 20,
     },
