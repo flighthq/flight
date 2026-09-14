@@ -1,7 +1,16 @@
 import type { SpineBinaryRegistry, SpineBinarySectionContext } from '@flighthq/types/contract';
 import { SpineBinarySectionKind } from '@flighthq/types/contract';
 
-import { spineBinarySectionReaders } from './spineBinaryParse';
+import {
+  spineBinaryAnimationsSectionReader,
+  spineBinaryBonesSectionReader,
+  spineBinaryEventsSectionReader,
+  spineBinaryIkConstraintsSectionReader,
+  spineBinaryPathConstraintsSectionReader,
+  spineBinarySkinsSectionReader,
+  spineBinarySlotsSectionReader,
+  spineBinaryTransformConstraintsSectionReader,
+} from './spineBinaryParse';
 import { registerSpineBinarySectionHandler } from './spineBinaryRegistry';
 
 /** Registers all eight top-level Spine 4.1 section handlers. */
@@ -29,33 +38,33 @@ export function registerSpineBinarySectionHandlers(registry: SpineBinaryRegistry
 }
 
 export function spineBinaryAnimationsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.animations(context);
+  spineBinaryAnimationsSectionReader(context);
 }
 
 export function spineBinaryBonesSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.bones(context);
+  spineBinaryBonesSectionReader(context);
 }
 
 export function spineBinaryEventsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.events(context);
+  spineBinaryEventsSectionReader(context);
 }
 
 export function spineBinaryIkConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.ikConstraints(context);
+  spineBinaryIkConstraintsSectionReader(context);
 }
 
 export function spineBinaryPathConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.pathConstraints(context);
+  spineBinaryPathConstraintsSectionReader(context);
 }
 
 export function spineBinarySkinsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.skins(context);
+  spineBinarySkinsSectionReader(context);
 }
 
 export function spineBinarySlotsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.slots(context);
+  spineBinarySlotsSectionReader(context);
 }
 
 export function spineBinaryTransformConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySectionReaders.transformConstraints(context);
+  spineBinaryTransformConstraintsSectionReader(context);
 }

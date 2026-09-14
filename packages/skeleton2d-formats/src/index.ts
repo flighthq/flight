@@ -6,6 +6,7 @@ export {
   unregisterSkeleton2DFormat,
 } from './contract';
 export { parseSpineSkeleton } from './contract';
+export { registerSpineBinarySectionHandler, registerSpineBinaryTimelineHandler } from './contract';
 export {
   parseSpineSkeletonBinary,
   parseSpineSkeletonBinaryWithRegistry,

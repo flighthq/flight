@@ -326,7 +326,11 @@ function consumeSpineBinaryAnimations(
       skipSpineBinaryDrawOrderTimeline(timeline);
       skipSpineBinaryEventTimelines(timeline);
     }
-    animations.push({ clip: createAnimationClip(timeline.channels), drawOrder: timeline.drawOrder, name: name ?? '' });
+    animations.push({
+      clip: createAnimationClip(timeline.channels),
+      drawOrder: timeline.drawOrder,
+      name: name ?? '',
+    });
   }
   for (const [kind, tally] of unmodeled) {
     reportImportDiagnostic(
@@ -647,7 +651,12 @@ function addSpineBinaryAttachmentChannel(
     values.push(index);
   }
   if (times.length === 0) return;
-  const track = createAnimationTrack({ components: 1, interpolation: AnimationInterpolationStep, times, values });
+  const track = createAnimationTrack({
+    components: 1,
+    interpolation: AnimationInterpolationStep,
+    times,
+    values,
+  });
   channels.push(
     createAnimationChannel(
       track,
@@ -1006,7 +1015,19 @@ function parseSpineBinaryBones(reader: ByteReader, nonessential: boolean, diagno
     const transformMode = spineBinaryTransformMode(readSpineBinaryVarint(reader));
     readSpineBinaryBoolean(reader); // skinRequired — a skin-set feature, not modeled
     if (nonessential) skipSpineBinaryBytes(reader, SPINE_BINARY_COLOR_BYTES); // editor bone color
-    bones.push({ length, name, parentIndex, rotation, scaleX, scaleY, shearX, shearY, transformMode, x, y });
+    bones.push({
+      length,
+      name,
+      parentIndex,
+      rotation,
+      scaleX,
+      scaleY,
+      shearX,
+      shearY,
+      transformMode,
+      x,
+      y,
+    });
   }
   return bones;
 }
@@ -1297,7 +1318,12 @@ function rejectSpineBinaryMesh(
     ImportDiagnosticSeverity.Drop,
     'spine.binary-count-unsatisfiable',
     'readSpineBinaryMeshAttachment',
-    { attachment: name ?? '', declared, field, remaining: reader.view.byteLength - reader.offset },
+    {
+      attachment: name ?? '',
+      declared,
+      field,
+      remaining: reader.view.byteLength - reader.offset,
+    },
   );
   skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
   const out = allocateEntity<MeshAttachment2D>();
@@ -1407,7 +1433,10 @@ function readSpineBinaryVertices(
       );
     }
   }
-  return { skin: createSkin2D(influenceCounts, Float32Array.from(influences)), vertices: null };
+  return {
+    skin: createSkin2D(influenceCounts, Float32Array.from(influences)),
+    vertices: null,
+  };
 }
 
 // Consumes a vertex stream whose geometry is not kept (an unmodeled attachment type still occupies bytes).
@@ -1542,27 +1571,22 @@ const SPINE_BINARY_TRANSFORM_MODES = [
   TransformMode2D.NoScaleOrReflection,
 ] as const;
 
-// Internal implementation tables imported by the two handler-family leaves. Keeping them as separate
-// exported values lets a section-only assembly omit the timeline leaf (and vice versa) without making the
-// reader functions themselves package contract exports.
-export const spineBinarySectionReaders = {
-  animations: readSpineBinaryAnimationsSection,
-  bones: readSpineBinaryBonesSection,
-  events: readSpineBinaryEventsSection,
-  ikConstraints: readSpineBinaryIkConstraintsSection,
-  pathConstraints: readSpineBinaryPathConstraintsSection,
-  skins: readSpineBinarySkinsSection,
-  slots: readSpineBinarySlotsSection,
-  transformConstraints: readSpineBinaryTransformConstraintsSection,
-} as const;
-
-export const spineBinaryTimelineReaders = {
-  bone: readSpineBinaryBoneTimelines,
-  deform: readSpineBinaryDeformTimelines,
-  drawOrder: readSpineBinaryDrawOrderTimeline,
-  event: readSpineBinaryEventTimelines,
-  ik: readSpineBinaryIkTimelines,
-  path: readSpineBinaryPathTimelines,
-  slot: readSpineBinarySlotTimelines,
-  transform: readSpineBinaryTransformTimelines,
-} as const;
+// One direct edge per built-in atom: importing one handler can now retain one reader without the shared
+// all-family object making its seven siblings reachable. These aliases are relative imports only; neither
+// package barrel exports them.
+export const spineBinaryAnimationsSectionReader = readSpineBinaryAnimationsSection;
+export const spineBinaryBonesSectionReader = readSpineBinaryBonesSection;
+export const spineBinaryBoneTimelineReader = readSpineBinaryBoneTimelines;
+export const spineBinaryDeformTimelineReader = readSpineBinaryDeformTimelines;
+export const spineBinaryDrawOrderTimelineReader = readSpineBinaryDrawOrderTimeline;
+export const spineBinaryEventsSectionReader = readSpineBinaryEventsSection;
+export const spineBinaryEventTimelineReader = readSpineBinaryEventTimelines;
+export const spineBinaryIkConstraintsSectionReader = readSpineBinaryIkConstraintsSection;
+export const spineBinaryIkTimelineReader = readSpineBinaryIkTimelines;
+export const spineBinaryPathConstraintsSectionReader = readSpineBinaryPathConstraintsSection;
+export const spineBinaryPathTimelineReader = readSpineBinaryPathTimelines;
+export const spineBinarySkinsSectionReader = readSpineBinarySkinsSection;
+export const spineBinarySlotsSectionReader = readSpineBinarySlotsSection;
+export const spineBinarySlotTimelineReader = readSpineBinarySlotTimelines;
+export const spineBinaryTransformConstraintsSectionReader = readSpineBinaryTransformConstraintsSection;
+export const spineBinaryTransformTimelineReader = readSpineBinaryTransformTimelines;
