@@ -31,7 +31,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { setWgpuHostBackend } from './wgpuHost';
+import { createWebWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
@@ -72,6 +72,7 @@ beforeAll(() => {
 });
 
 const _testPipeline = createWgpuPipeline(createEmptyWgpuRegistries());
+const _webBackend = createWebWgpuHostBackend();
 
 function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
   return createWgpuRenderStateWithPipeline(device, _testPipeline, options);
@@ -126,30 +127,27 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Ren
 
 describe('createWgpuAcquisition', () => {
   it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
-    const acquisition = await createWgpuAcquisition(document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
 
     expect(acquisition).not.toBeNull();
     expect(acquisition!.ownership).toBe('caller');
     expect(acquisition!.surface).toBeDefined();
-    releaseWgpuAcquisition(acquisition!);
+    releaseWgpuAcquisition(_webBackend, acquisition!);
   });
 
   // ★ NULL, NOT THROW. "This environment cannot give me WebGPU" is an expected outcome, not API misuse, so
   // it reports through the return value like every other expected failure in this SDK.
   it('returns null when the host cannot acquire, rather than rejecting', async () => {
-    setWgpuHostBackend(
-      entityHostBackend({
-        acquire: vi.fn(async () => {
-          throw new Error('no adapter');
-        }),
-        attachSurface: vi.fn(() => null),
-        isSupported: vi.fn(() => false),
-        release: vi.fn(),
+    const failingBackend = entityHostBackend({
+      acquire: vi.fn(async () => {
+        throw new Error('no adapter');
       }),
-    );
+      attachSurface: vi.fn(() => null),
+      isSupported: vi.fn(() => false),
+      release: vi.fn(),
+    });
 
-    await expect(createWgpuAcquisition(document.createElement('canvas'))).resolves.toBeNull();
-    setWgpuHostBackend(null);
+    await expect(createWgpuAcquisition(failingBackend, document.createElement('canvas'))).resolves.toBeNull();
   });
 });
 
@@ -456,7 +454,7 @@ describe('createWgpuRenderState', () => {
     // The state is "how to talk to the GPU" and the screen target is "which surface a frame lands on".
     // Keeping them apart is what lets one state render to several windows, and lets an offscreen state
     // exist without inventing a canvas for it.
-    const acquisition = await createWgpuAcquisition(document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
     const state = createWgpuRenderState(acquisition!.device, { format: acquisition!.format });
 
     expect(state.device).toBe(acquisition!.device);
@@ -465,7 +463,7 @@ describe('createWgpuRenderState', () => {
     expect('surface' in state).toBe(false);
 
     destroyWgpuRenderState(state);
-    releaseWgpuAcquisition(acquisition!);
+    releaseWgpuAcquisition(_webBackend, acquisition!);
   });
 
   it('sets allowSmoothing to true by default', async () => {
@@ -838,7 +836,7 @@ describe('initializeWgpuOffscreenRenderStateOkResult', () => {
 
 describe('isWgpuSupported', () => {
   it('returns true when navigator.gpu is present', () => {
-    expect(isWgpuSupported()).toBe(true);
+    expect(isWgpuSupported(_webBackend)).toBe(true);
   });
 
   it('returns false when navigator.gpu throws', () => {
@@ -849,7 +847,8 @@ describe('isWgpuSupported', () => {
       },
     });
     try {
-      expect(isWgpuSupported()).toBe(false);
+      const unsupportedBackend = createWebWgpuHostBackend();
+      expect(isWgpuSupported(unsupportedBackend)).toBe(false);
     } finally {
       installWgpuMock();
     }
@@ -885,22 +884,19 @@ describe('releaseWgpuAcquisition', () => {
   // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
   // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
   it('releases caller-owned handles, which Flight itself never does', async () => {
-    const acquired = await createWgpuAcquisition(document.createElement('canvas'));
+    const acquired = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
     const acquisition = acquired!;
     const released: Readonly<WgpuHostAcquisition>[] = [];
-    setWgpuHostBackend(
-      entityHostBackend({
-        acquire: vi.fn(async () => acquisition),
-        attachSurface: vi.fn(() => null),
-        isSupported: vi.fn(() => true),
-        release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
-      }),
-    );
+    const recordingBackend = entityHostBackend({
+      acquire: vi.fn(async () => acquisition),
+      attachSurface: vi.fn(() => null),
+      isSupported: vi.fn(() => true),
+      release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
+    });
 
-    releaseWgpuAcquisition(acquisition);
+    releaseWgpuAcquisition(recordingBackend, acquisition);
 
     expect(released).toEqual([acquisition]);
-    setWgpuHostBackend(null);
   });
 });
 
