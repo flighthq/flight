@@ -33,6 +33,10 @@ describe('applyMutantText', () => {
     // chaining, nullish coalescing, `as` casts, generics, template literals, and regex bodies full of
     // characters that look like operators. Three of them, weighted toward the largest gate scripts, so the
     // sweep is wide enough that a whole missing guard cannot hide in the gap between hand-written cases.
+    //
+    // The sweep is ~170 synchronous whole-file parses: under 200ms on an idle machine, but it shares the CPU
+    // with every other worker in the aggregate run, and a busy host has pushed it past the 5s default. The
+    // explicit budget below is contention headroom, not a performance deadline.
     let swept = 0;
     for (const name of ['order.ts', 'select.ts', 'untested.ts']) {
       const path = resolve(import.meta.dirname, name);
@@ -47,7 +51,7 @@ describe('applyMutantText', () => {
       }
     }
     expect(swept).toBeGreaterThan(150);
-  });
+  }, 30_000);
 });
 
 describe('collectExecutedLines', () => {
