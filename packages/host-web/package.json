@@ -50,6 +50,7 @@
     "@flighthq/geolocation": "*",
     "@flighthq/glyphatlas": "*",
     "@flighthq/haptics": "*",
+    "@flighthq/host": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
     "@flighthq/input": "*",

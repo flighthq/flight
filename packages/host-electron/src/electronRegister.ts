@@ -1,4 +1,4 @@
-import { createHost } from '@flighthq/entity/contract';
+import { createHost } from '@flighthq/host/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,

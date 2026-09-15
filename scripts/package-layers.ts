@@ -58,6 +58,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/gui',
     '@flighthq/gizmo',
     '@flighthq/haptics',
+    '@flighthq/host',
     '@flighthq/image',
     '@flighthq/input',
     '@flighthq/interaction',

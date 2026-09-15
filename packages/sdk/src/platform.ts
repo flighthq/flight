@@ -6,6 +6,7 @@ export * from '@flighthq/dialog';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/geolocation';
 export * from '@flighthq/haptics';
+export * from '@flighthq/host';
 export * from '@flighthq/ipc';
 export * from '@flighthq/keyboard';
 export * from '@flighthq/lifecycle';

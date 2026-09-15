@@ -1,4 +1,4 @@
-import { createHost } from '@flighthq/entity/contract';
+import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as contractApi from './contract';

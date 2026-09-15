@@ -43,6 +43,7 @@
     "@flighthq/clipboard": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
+    "@flighthq/host": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
     "@flighthq/platform": "*",

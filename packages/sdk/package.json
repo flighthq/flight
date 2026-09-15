@@ -135,6 +135,7 @@
     "@flighthq/glyphatlas": "*",
     "@flighthq/gui": "*",
     "@flighthq/haptics": "*",
+    "@flighthq/host": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
     "@flighthq/importdiagnostics": "*",

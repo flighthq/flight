@@ -35,6 +35,9 @@
       "path": "../haptics"
     },
     {
+      "path": "../host"
+    },
+    {
       "path": "../notification"
     },
     {
