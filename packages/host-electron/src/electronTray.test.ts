@@ -194,7 +194,7 @@ describe('electronHostTray', () => {
     } as const;
     for (const profile of ['linux', 'macos', 'windows'] as const) {
       const slots = Object.keys(electronHostTray(electron, profile));
-      const exclusiveElsewhere = Object.entries(supported)
+      const exclusiveElsewhere: readonly string[] = Object.entries(supported)
         .filter(([other]) => other !== profile)
         .flatMap(([, others]) => others)
         .filter((slot) => !(supported[profile] as readonly string[]).includes(slot));
