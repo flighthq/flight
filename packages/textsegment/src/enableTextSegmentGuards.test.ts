@@ -4,6 +4,9 @@ import { vi } from 'vitest';
 
 import { disableTextSegmentGuards, enableTextSegmentGuards } from './enableTextSegmentGuards';
 import { segmentGraphemes } from './textSegment';
+import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
+
+const backend = createDefaultTextSegmenterBackend();
 
 let entries: LogEntry[];
 
@@ -24,24 +27,24 @@ describe('disableTextSegmentGuards', () => {
     enableTextSegmentGuards();
     disableTextSegmentGuards();
     vi.stubGlobal('Intl', { Segmenter: undefined });
-    segmentGraphemes('text');
+    segmentGraphemes(backend, 'text');
     expect(entries).toEqual([]);
   });
 });
 
 describe('enableTextSegmentGuards', () => {
-  it('warns once and names the backend fixing call when Intl.Segmenter is absent', () => {
+  it('warns once and names the provider type when Intl.Segmenter is absent', () => {
     enableTextSegmentGuards();
     vi.stubGlobal('Intl', { Segmenter: undefined });
-    segmentGraphemes('first');
-    segmentGraphemes('second');
+    segmentGraphemes(backend, 'first');
+    segmentGraphemes(backend, 'second');
     expect(entries).toHaveLength(1);
-    expect(String((entries[0].data as { message?: unknown }).message)).toContain('setTextSegmenterBackend');
+    expect(String((entries[0].data as { message?: unknown }).message)).toContain('HostTextSegmenterProvider');
   });
 
   it('stays silent when the bundled Intl provider is available', () => {
     enableTextSegmentGuards();
-    segmentGraphemes('text');
+    segmentGraphemes(backend, 'text');
     expect(entries).toEqual([]);
   });
 });

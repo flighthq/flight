@@ -9,6 +9,14 @@ import type {
 
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
+export function createDefaultTextSegmenterBackend(): HostTextSegmenterProvider {
+  return createWebTextSegmenterBackend();
+}
+
+// Stable bundled web provider. Hosts can import this directly when composing their explicit
+// capability object.
+export const webTextSegmenterBackend: HostTextSegmenterProvider = createWebTextSegmenterBackend();
+
 // Builds the default web backend: a wrapper over the browser-native Intl.Segmenter. It ships no
 // Unicode tables — the engine already carries them — so the common path costs nothing in bundle
 // weight. Intl.Segmenter instances are cached by (locale, granularity) because constructing one is
@@ -21,16 +29,11 @@ export function createWebTextSegmenterBackend(): HostTextSegmenterProvider {
   return finishEntity(out);
 }
 
-// Stable bundled web provider. Hosts can import this directly when composing their explicit
-// capability object; callers that omit a host receive it as the final fallback.
-export const webTextSegmenterBackend: HostTextSegmenterProvider = createWebTextSegmenterBackend();
-
 /** Describes which provider an operation would use and whether Intl.Segmenter is present. */
 export function explainTextSegmenterBackend(
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
 ): TextSegmenterBackendExplanation {
-  const backend = getTextSegmenterBackend(hostTextSegmenter);
-  const web = backend === webTextSegmenterBackend;
+  const web = textSegmenter === webTextSegmenterBackend;
   const intlSegmenterAvailable = hasIntlSegmenter();
   return {
     available: !web || intlSegmenterAvailable,
@@ -39,31 +42,9 @@ export function explainTextSegmenterBackend(
   };
 }
 
-// Returns the explicit host's provider when supplied, then the legacy installed backend, and
-// finally the bundled web provider. The explicit dependency always wins, so independent callers
-// can interleave different hosts without mutating shared capability state.
-export function getTextSegmenterBackend(
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
-): HostTextSegmenterProvider {
-  return hostTextSegmenter ?? _backend ?? webTextSegmenterBackend;
-}
-
 export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTextSegmenterProvider>): void {
   out.segment = segmentWithIntlSegmenter;
 }
-
-/**
- * Installs the backend used by calls that omit an explicit host; pass null to restore the stable
- * bundled web default.
- *
- * @deprecated Pass a HostTextSegmenterProvider to the segmentation or boundary operation. Retained
- * for source compatibility until the legacy global path is removed.
- */
-export function setTextSegmenterBackend(backend: HostTextSegmenterProvider | null): void {
-  _backend = backend;
-}
-
-let _backend: HostTextSegmenterProvider | null = null;
 
 // Cached Intl.Segmenter instances keyed by `locale|granularity`. A Map preserves insertion order, so
 // the first key is the oldest and drives simple FIFO eviction once the cache is full. Instances are

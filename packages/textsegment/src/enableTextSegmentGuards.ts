@@ -19,7 +19,7 @@ function warnOnMissingIntlSegmenter(): void {
     LogLevel.Warn,
     {
       message:
-        'segmentGraphemes: Intl.Segmenter is unavailable and no replacement provider was supplied, so segmentation returned no results. Install a backend with setTextSegmenterBackend(backend), or pass a HostTextSegmenterProvider directly to the operation.',
+        'segmentGraphemes: Intl.Segmenter is unavailable and no replacement provider was supplied, so segmentation returned no results. Pass a HostTextSegmenterProvider with full Unicode coverage to the operation.',
     },
     'textsegment',
   );

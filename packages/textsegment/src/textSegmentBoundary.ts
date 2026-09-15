@@ -5,95 +5,75 @@ import type {
   TextSegmentRange,
 } from '@flighthq/types/contract';
 
-import { getTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend';
+import { webTextSegmenterBackend } from './textSegmenterBackend';
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
-// Returns the next grapheme-cluster boundary at or after `index` — the offset a caret lands on when
-// stepping right by one user-perceived character, so an emoji or combining sequence is crossed in a
-// single step. `index` is clamped into [0, text.length]; at or past the end it returns text.length.
 export function getNextGraphemeBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getNextTextSegmentBoundary(text, index, 'grapheme', locale, hostTextSegmenter);
+  return getNextTextSegmentBoundary(textSegmenter, text, index, 'grapheme', locale);
 }
 
-// Returns the next sentence boundary at or after `index`. The bundled Intl path stops its iterator as
-// soon as the answer is known and does not materialize the sentence strings or a segment array.
 export function getNextSentenceBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getNextTextSegmentBoundary(text, index, 'sentence', locale, hostTextSegmenter);
+  return getNextTextSegmentBoundary(textSegmenter, text, index, 'sentence', locale);
 }
 
-// Returns the next word boundary at or after `index` — the offset a caret lands on when jumping right
-// by one word (Ctrl/Alt-Right). `index` is clamped into [0, text.length]; at or past the end it
-// returns text.length.
 export function getNextWordBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getNextTextSegmentBoundary(text, index, 'word', locale, hostTextSegmenter);
+  return getNextTextSegmentBoundary(textSegmenter, text, index, 'word', locale);
 }
 
-// Returns the previous grapheme-cluster boundary at or before `index` — the offset a caret lands on
-// when stepping left by one user-perceived character. `index` is clamped into [0, text.length]; at or
-// before the start it returns 0.
 export function getPreviousGraphemeBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getPreviousTextSegmentBoundary(text, index, 'grapheme', locale, hostTextSegmenter);
+  return getPreviousTextSegmentBoundary(textSegmenter, text, index, 'grapheme', locale);
 }
 
-// Returns the previous sentence boundary at or before `index`. The bundled Intl path walks offsets
-// directly and avoids building TextSegment records; custom backends retain their existing array seam.
 export function getPreviousSentenceBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getPreviousTextSegmentBoundary(text, index, 'sentence', locale, hostTextSegmenter);
+  return getPreviousTextSegmentBoundary(textSegmenter, text, index, 'sentence', locale);
 }
 
-// Returns the previous word boundary at or before `index` — the offset a caret lands on when jumping
-// left by one word. `index` is clamped into [0, text.length]; at or before the start it returns 0.
 export function getPreviousWordBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): number {
-  return getPreviousTextSegmentBoundary(text, index, 'word', locale, hostTextSegmenter);
+  return getPreviousTextSegmentBoundary(textSegmenter, text, index, 'word', locale);
 }
 
-// Returns the word-like segment's range covering `index`, for double-click / word-select. `index` is
-// clamped into [0, text.length]; at the very end it resolves against the last character. Returns null
-// when the covered segment is not word-like (whitespace or punctuation) or the text is empty — the
-// caller should then select nothing, mirroring how a double-click on a space selects no word.
 export function getWordRangeAt(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   locale?: string,
-  hostTextSegmenter?: Readonly<HostTextSegmenterProvider>,
 ): TextSegmentRange | null {
   if (text.length === 0) return null;
   const clamped = clampIndex(index, text.length);
   // At the trailing boundary there is no segment starting at text.length; resolve against the last
   // character so a double-click at the end still selects the final word.
   const lookup = clamped === text.length ? text.length - 1 : clamped;
-  const backend = getTextSegmenterBackend(hostTextSegmenter);
-  if (backend === webTextSegmenterBackend) {
+  if (textSegmenter === webTextSegmenterBackend) {
     const segmenter = getBoundarySegmenter(locale, 'word');
     if (segmenter === null) return null;
     for (const segment of segmenter.segment(text)) {
@@ -104,7 +84,7 @@ export function getWordRangeAt(
     }
     return null;
   }
-  const segments = backend.segment(text, 'word', locale);
+  const segments = textSegmenter.segment(text, 'word', locale);
   for (const segment of segments) {
     if (lookup >= segment.start && lookup < segment.end) {
       return segment.isWordLike === true ? { start: segment.start, end: segment.end } : null;
@@ -131,17 +111,16 @@ function getBoundarySegmenter(locale: string | undefined, granularity: TextSegme
 }
 
 function getNextTextSegmentBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   granularity: TextSegmentGranularity,
   locale: string | undefined,
-  hostTextSegmenter: Readonly<HostTextSegmenterProvider> | undefined,
 ): number {
   const from = clampIndex(index, text.length);
   if (from >= text.length) return text.length;
-  const backend = getTextSegmenterBackend(hostTextSegmenter);
-  if (backend !== webTextSegmenterBackend) {
-    return nextSegmentBoundary(backend.segment(text, granularity, locale), from, text.length);
+  if (textSegmenter !== webTextSegmenterBackend) {
+    return nextSegmentBoundary(textSegmenter.segment(text, granularity, locale), from, text.length);
   }
   const segmenter = getBoundarySegmenter(locale, granularity);
   if (segmenter === null) return text.length;
@@ -152,17 +131,16 @@ function getNextTextSegmentBoundary(
 }
 
 function getPreviousTextSegmentBoundary(
+  textSegmenter: Readonly<HostTextSegmenterProvider>,
   text: string,
   index: number,
   granularity: TextSegmentGranularity,
   locale: string | undefined,
-  hostTextSegmenter: Readonly<HostTextSegmenterProvider> | undefined,
 ): number {
   const from = clampIndex(index, text.length);
   if (from <= 0) return 0;
-  const backend = getTextSegmenterBackend(hostTextSegmenter);
-  if (backend !== webTextSegmenterBackend)
-    return previousSegmentBoundary(backend.segment(text, granularity, locale), from);
+  if (textSegmenter !== webTextSegmenterBackend)
+    return previousSegmentBoundary(textSegmenter.segment(text, granularity, locale), from);
   const segmenter = getBoundarySegmenter(locale, granularity);
   if (segmenter === null) return 0;
   let previous = 0;
@@ -173,8 +151,6 @@ function getPreviousTextSegmentBoundary(
   return previous;
 }
 
-// The boundary offsets are every segment start plus text.length (segments cover the string in order
-// with strictly increasing starts). Clamping keeps out-of-range indices from throwing per house rules.
 function clampIndex(index: number, length: number): number {
   if (index < 0) return 0;
   if (index > length) return length;

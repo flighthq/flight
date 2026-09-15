@@ -1,4 +1,5 @@
 export {
+  createDefaultTextSegmenterBackend,
   disableTextSegmentGuards,
   enableTextSegmentGuards,
   explainTextSegmenterBackend,
