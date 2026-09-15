@@ -1,4 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
@@ -8,6 +9,8 @@ import {
 } from '@flighthq/types/contract';
 
 import { createScene2DDocumentFromRiveDocument, initializeRiveScene2DDocumentResult } from './riveScene2DDocument';
+
+const backend = createDefaultPathBooleanBackend();
 
 // The document layer acquires nothing. An embedded payload becomes a resource reference carrying the
 // textures that wait on it, so resolving one binds the decoded image into every sprite at once —
@@ -33,11 +36,11 @@ const WEBP = [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00];
 
 describe('createScene2DDocumentFromRiveDocument', () => {
   it('returns null for bytes that are not a Rive file', () => {
-    expect(createScene2DDocumentFromRiveDocument(new Uint8Array([1, 2, 3, 4]))).toBeNull();
+    expect(createScene2DDocumentFromRiveDocument(backend, new Uint8Array([1, 2, 3, 4]))).toBeNull();
   });
 
   it('roots every artboard under one container rather than picking one', () => {
-    const result = createScene2DDocumentFromRiveDocument(buildRive([artboard('First'), artboard('Second')]))!;
+    const result = createScene2DDocumentFromRiveDocument(backend, buildRive([artboard('First'), artboard('Second')]))!;
 
     expect(getNodeChildCount(result.root)).toBe(2);
     expect((getNodeChildAt(result.root, 0) as Node2D).name).toBe('First');
@@ -46,6 +49,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('turns an embedded image asset into an unresolved reference with its detected type', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([
         object(IMAGE_ASSET, [text(ASSET_NAME, 'sky')]),
         object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, PNG)]),
@@ -60,6 +64,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('detects webp, which Rive ships more of than png', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([object(IMAGE_ASSET, []), object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, WEBP)]), artboard('Board')]),
     )!;
 
@@ -69,6 +74,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
   it('reports an embedded image whose mime type cannot be detected', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([
         object(IMAGE_ASSET, []),
         object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, [1, 2, 3, 4])]),
@@ -91,6 +97,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
   it('stays silent for an embedded image whose mime type is detected', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([object(IMAGE_ASSET, []), object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, PNG)]), artboard('Board')]),
       diagnostics,
     );
@@ -100,6 +107,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('lists every texture waiting on an asset, so one decode binds them all', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([
         object(IMAGE_ASSET, []),
         object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, PNG)]),
@@ -122,6 +130,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('leaves an asset with no bytes out of the resource list', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([object(IMAGE_ASSET, [text(ASSET_NAME, 'external')]), artboard('Board')]),
     )!;
 
@@ -130,6 +139,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('makes a slot of a nested artboard, named for the artboard it references', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([
         artboard('Host'),
         object(NESTED_ARTBOARD, [uint(PARENT_ID, 0), uint(NESTED_ARTBOARD_ID, 1)]),
@@ -148,6 +158,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
 
   it('prefers the site name over the referenced artboard name when the file states one', () => {
     const result = createScene2DDocumentFromRiveDocument(
+      backend,
       buildRive([
         artboard('Host'),
         object(NESTED_ARTBOARD, [uint(PARENT_ID, 0), uint(NESTED_ARTBOARD_ID, 1), text(NAME, 'slotA')]),
@@ -160,7 +171,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
   });
 
   it('carries the import alongside, since clips and state machines are not document data', () => {
-    const result = createScene2DDocumentFromRiveDocument(buildRive([artboard('Board')]))!;
+    const result = createScene2DDocumentFromRiveDocument(backend, buildRive([artboard('Board')]))!;
 
     expect(result.imported.artboards).toHaveLength(1);
     expect(result.imported.artboards[0].name).toBe('Board');

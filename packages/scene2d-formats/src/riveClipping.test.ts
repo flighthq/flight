@@ -1,4 +1,5 @@
 import { clipRegionContainsPoint } from '@flighthq/clip/contract';
+import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
@@ -11,6 +12,8 @@ import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
 import { applyRiveClipping, registerRiveClippingHandlers } from './riveClipping';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+
+const backend = createDefaultPathBooleanBackend();
 
 // The coordinate transfer is what these cases exist for. Rive states the clip's geometry in the
 // SOURCE shape's chain; Flight rasterizes a clip under the CLIPPED node's transform. So the contours
@@ -244,7 +247,7 @@ interface TestScene {
 describe('registerRiveClippingHandlers', () => {
   it('claims the clipping shape and gives it no node of its own', () => {
     const registry = createRiveImportRegistry();
-    registerRiveClippingHandlers(registry);
+    registerRiveClippingHandlers(backend, registry);
 
     const handler = getRiveCoreObjectHandler(registry, CLIPPING_SHAPE);
     expect(handler).not.toBeNull();
@@ -253,7 +256,7 @@ describe('registerRiveClippingHandlers', () => {
 
   it('registers clipping as a pass, because a clip source can be read after the node it clips', () => {
     const registry = createRiveImportRegistry();
-    registerRiveClippingHandlers(registry);
+    registerRiveClippingHandlers(backend, registry);
 
     expect(getRiveCoreObjectHandler(registry, CLIPPING_SHAPE)?.applyArtboard).toBeInstanceOf(Function);
   });
@@ -277,7 +280,7 @@ function run(
   const shapePaths = new Map<number, RivePathRecord[]>(
     Object.entries(paths).map(([key, value]) => [Number(key), value]),
   );
-  applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
+  applyRiveClipping(backend, nodes, artboard, shapePaths, diagnostics);
   return nodes[clipped]!.clip;
 }
 

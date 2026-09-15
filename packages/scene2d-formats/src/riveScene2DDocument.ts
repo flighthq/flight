@@ -6,6 +6,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
   EntityConstruction,
+  HostPathBooleanProvider,
   ImageResourceReference,
   ImportDiagnostic,
   Node2D,
@@ -102,10 +103,11 @@ function collectRiveTexturesForAsset(imported: Readonly<RiveDocumentImportResult
  * that is `resolveScene2DResources`' job, and the seam is what keeps import free of I/O.
  */
 export function createScene2DDocumentFromRiveDocument(
+  pathBoolean: Readonly<HostPathBooleanProvider>,
   source: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
 ): RiveScene2DDocumentResult | null {
-  const imported = createScene2DFromRiveDocument(source, diagnostics);
+  const imported = createScene2DFromRiveDocument(pathBoolean, source, diagnostics);
   if (imported.artboards.length === 0) return null;
 
   const root = createDisplayObject({ name: 'Rive' });

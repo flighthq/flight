@@ -1,10 +1,13 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
 import { createScene2DFromRiveDocument } from './riveScene2D';
 import { importRiveSoloComponent, registerRiveSoloHandlers } from './riveSolo';
+
+const backend = createDefaultPathBooleanBackend();
 
 // A Solo shows exactly one of its children at a time. Imported as a plain node it would draw all of
 // its variants stacked, so the active child is resolved at import and the rest are hidden.
@@ -122,7 +125,7 @@ function visibility(node: Node2D): Array<[string, boolean]> {
 
 function build(objects: TestObject[], diagnostics?: ImportDiagnostic[]): Node2D {
   const artboard = object(ARTBOARD, [text(NAME, 'Board'), float(WIDTH, 100), float(HEIGHT, 100)]);
-  return createScene2DFromRiveDocument(encodeRive([artboard, ...objects]), diagnostics).artboards[0].root;
+  return createScene2DFromRiveDocument(backend, encodeRive([artboard, ...objects]), diagnostics).artboards[0].root;
 }
 
 interface TestProperty {

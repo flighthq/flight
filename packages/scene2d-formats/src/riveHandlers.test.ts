@@ -1,5 +1,9 @@
+import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+
 import { registerAllRiveHandlers } from './riveHandlers';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+
+const backend = createDefaultPathBooleanBackend();
 
 // One entry per family, named by the Rive core type that family is anchored on. A type that resolves
 // to no handler is a family this registrar forgot to install.
@@ -20,7 +24,7 @@ const FAMILY_ANCHORS: ReadonlyArray<readonly [string, number]> = [
 describe('registerAllRiveHandlers', () => {
   it('installs every family this package reads', () => {
     const registry = createRiveImportRegistry();
-    registerAllRiveHandlers(registry);
+    registerAllRiveHandlers(backend, registry);
 
     const missing = FAMILY_ANCHORS.filter(([, typeKey]) => getRiveCoreObjectHandler(registry, typeKey) === null);
     expect(missing.map(([name]) => name)).toEqual([]);
@@ -28,7 +32,7 @@ describe('registerAllRiveHandlers', () => {
 
   it('runs clipping before the shape pass, which replaces the records clipping reads', () => {
     const registry = createRiveImportRegistry();
-    registerAllRiveHandlers(registry);
+    registerAllRiveHandlers(backend, registry);
 
     const passes = [...registry.handlers.entries()]
       .filter(([, handler]) => handler.applyArtboard !== undefined)
@@ -39,7 +43,7 @@ describe('registerAllRiveHandlers', () => {
 
   it('runs the skeleton pass before layout, so a rigged artboard is flattened first', () => {
     const registry = createRiveImportRegistry();
-    registerAllRiveHandlers(registry);
+    registerAllRiveHandlers(backend, registry);
 
     const passes = [...registry.handlers.entries()]
       .filter(([, handler]) => handler.applyArtboard !== undefined)
