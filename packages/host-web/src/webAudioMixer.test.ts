@@ -34,9 +34,8 @@ describe('createWebAudioMixerBackend', () => {
     ]);
   });
 
-  it('exports an entity singleton and its construction initializer', () => {
+  it('exports an entity singleton', () => {
     expect(EntityRuntimeKey in webHostAudioMixer).toBe(true);
-    expect(initializeWebAudioMixerBackend).toBeTypeOf('function');
   });
 
   it('creates and destroys a master graph for the device context', () => {
@@ -115,6 +114,12 @@ describe('createWebAudioMixerBackend', () => {
     expect(graph).toBe(0);
     expect(backend.createBusNode(graph, 1, 0)).toBe(0);
     expect(() => backend.destroyMixerGraph(graph)).not.toThrow();
+  });
+});
+
+describe('initializeWebAudioMixerBackend', () => {
+  it('is the construction initializer of createWebAudioMixerBackend', () => {
+    expect(initializeWebAudioMixerBackend).toBeTypeOf('function');
   });
 });
 
