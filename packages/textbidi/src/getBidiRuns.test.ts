@@ -1,8 +1,11 @@
-import type { HostBidiClassProvider, BidiDirection, BidiRun } from '@flighthq/types/contract';
+import type { HostBidiClassProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { createDefaultBidiClassBackend } from './bidiClassBackend';
 import { getBidiRuns } from './getBidiRuns';
+
+const backend = createDefaultBidiClassBackend();
 
 const LEFT_TO_RIGHT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
 const RIGHT_TO_LEFT_BACKEND: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
@@ -18,31 +21,26 @@ const RLE = '‫';
 const PDF = '‬';
 
 describe('getBidiRuns', () => {
-  it('preserves the two-argument source-compatible signature while accepting an explicit backend', () => {
-    expectTypeOf(getBidiRuns).toEqualTypeOf<
-      (text: string, baseDirection: BidiDirection, bidiClassBackend?: HostBidiClassProvider) => readonly BidiRun[]
-    >();
-    expect(getBidiRuns('abc', 'ltr')).toEqual([{ start: 0, end: 3, level: 0, direction: 'ltr' }]);
+  it('routes class lookups through an explicit backend', () => {
+    expect(getBidiRuns(RIGHT_TO_LEFT_BACKEND, 'abc', 'ltr')).toEqual([
+      { start: 0, end: 3, level: 1, direction: 'rtl' },
+    ]);
   });
 
   it('isolates interleaved callers that pass different backends', () => {
-    expect(getBidiRuns('abc', 'ltr', RIGHT_TO_LEFT_BACKEND)).toEqual([
+    expect(getBidiRuns(RIGHT_TO_LEFT_BACKEND, 'abc', 'ltr')).toEqual([
       { start: 0, end: 3, level: 1, direction: 'rtl' },
     ]);
-    expect(getBidiRuns('abc', 'ltr', LEFT_TO_RIGHT_BACKEND)).toEqual([
+    expect(getBidiRuns(LEFT_TO_RIGHT_BACKEND, 'abc', 'ltr')).toEqual([
       { start: 0, end: 3, level: 0, direction: 'ltr' },
     ]);
-    expect(getBidiRuns('abc', 'ltr', RIGHT_TO_LEFT_BACKEND)).toEqual([
+    expect(getBidiRuns(RIGHT_TO_LEFT_BACKEND, 'abc', 'ltr')).toEqual([
       { start: 0, end: 3, level: 1, direction: 'rtl' },
     ]);
   });
 
   it('produces distinct level runs for Arabic text with embedded European numbers', () => {
-    // RTL paragraph (Arabic leads). Arabic at level 1. European digits: W2 converts EN after AL
-    // to AN, I2 bumps AN to level 2. This creates an RTL run, an LTR run for the digits, and
-    // another RTL run.
-    // ابتثج 123 ابتثج → Arabic(1) space(1) digits(2) space(1) Arabic(1)
-    const runs = getBidiRuns(`${ARABIC} 123 ${ARABIC}`, 'auto');
+    const runs = getBidiRuns(backend, `${ARABIC} 123 ${ARABIC}`, 'auto');
     expect(runs).toEqual([
       { start: 0, end: 6, level: 1, direction: 'rtl' },
       { start: 6, end: 9, level: 2, direction: 'ltr' },
@@ -51,11 +49,8 @@ describe('getBidiRuns', () => {
   });
 
   it('produces distinct runs from an explicit RLE embedding in an LTR paragraph', () => {
-    // LTR paragraph. RLE pushes next-odd = 1. Embedded Hebrew gets level 1. PDF pops.
-    // "ab" + RLE + שלום + PDF + "cd"
     const text = `ab${RLE}${HEBREW}${PDF}cd`;
-    const runs = getBidiRuns(text, 'auto');
-    // ab(0) + RLE(0) = run level 0. Then שלום at level 1 = RTL run. Then PDF(0) + cd(0) = run level 0.
+    const runs = getBidiRuns(backend, text, 'auto');
     expect(runs).toEqual([
       { start: 0, end: 3, level: 0, direction: 'ltr' },
       { start: 3, end: 7, level: 1, direction: 'rtl' },
@@ -64,11 +59,8 @@ describe('getBidiRuns', () => {
   });
 
   it('produces distinct runs from an explicit LRE embedding in an RTL paragraph', () => {
-    // RTL paragraph. LRE pushes next-even above 1 = 2. Embedded Latin gets level 2. PDF pops.
-    // שלום + LRE + "ab" + PDF + שלום
     const text = `${HEBREW}${LRE}ab${PDF}${HEBREW}`;
-    const runs = getBidiRuns(text, 'auto');
-    // שלום(1) + LRE(1) = run level 1. Then "ab" at level 2 = LTR run. Then PDF(1) + שלום(1) = run level 1.
+    const runs = getBidiRuns(backend, text, 'auto');
     expect(runs).toEqual([
       { start: 0, end: 5, level: 1, direction: 'rtl' },
       { start: 5, end: 7, level: 2, direction: 'ltr' },
@@ -77,20 +69,19 @@ describe('getBidiRuns', () => {
   });
 
   it('returns a single rtl run for pure-RTL text', () => {
-    expect(getBidiRuns(ARABIC, 'auto')).toEqual([{ start: 0, end: 5, level: 1, direction: 'rtl' }]);
+    expect(getBidiRuns(backend, ARABIC, 'auto')).toEqual([{ start: 0, end: 5, level: 1, direction: 'rtl' }]);
   });
 
   it('returns a single ltr run for pure-LTR text', () => {
-    expect(getBidiRuns('hello', 'auto')).toEqual([{ start: 0, end: 5, level: 0, direction: 'ltr' }]);
+    expect(getBidiRuns(backend, 'hello', 'auto')).toEqual([{ start: 0, end: 5, level: 0, direction: 'ltr' }]);
   });
 
   it('returns no runs for empty text', () => {
-    expect(getBidiRuns('', 'auto')).toEqual([]);
+    expect(getBidiRuns(backend, '', 'auto')).toEqual([]);
   });
 
   it('splits a mixed string into ltr / rtl / ltr runs with correct ranges', () => {
-    // "hello שלום world" — the joining spaces stay at level 0, so they attach to the Latin runs.
-    expect(getBidiRuns(`hello ${HEBREW} world`, 'auto')).toEqual([
+    expect(getBidiRuns(backend, `hello ${HEBREW} world`, 'auto')).toEqual([
       { start: 0, end: 6, level: 0, direction: 'ltr' },
       { start: 6, end: 10, level: 1, direction: 'rtl' },
       { start: 10, end: 16, level: 0, direction: 'ltr' },

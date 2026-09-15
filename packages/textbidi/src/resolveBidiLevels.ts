@@ -1,34 +1,15 @@
 import type { BidiClass, HostBidiClassProvider, BidiDirection } from '@flighthq/types/contract';
 
-import { getBidiClassBackend } from './bidiClassBackend';
-
-// Resolves the per-code-unit embedding levels of `text` under the Unicode Bidirectional Algorithm
-// (UAX #9), returning one level per UTF-16 code unit. This is the substance of the package: the full
-// explicit/weak/neutral/implicit resolution a shaper and line-layout consume.
-//
-// Rules implemented: P2/P3 (paragraph base level for 'auto'), X1–X8 explicit embeddings/overrides,
-// X5a–X6a directional isolates (LRI/RLI/FSI/PDI with the overflow/valid isolate counters), X9 (the
-// explicit formatting characters and BN are removed from weak/neutral resolution — retained here as BN
-// so they keep a level for reordering), X10/BD13 (isolating run sequences with sos/eos), W1–W7 (weak
-// types), N0/BD16 (paired brackets), N1–N2 (neutral runs), and I1–I2 (implicit levels), then L1
-// (reset separators and trailing whitespace to the paragraph level). L2 visual reordering lives in
-// reorderBidiLine.
-//
-// Astral characters occupy two UTF-16 code units; both units are assigned the code point's class and
-// therefore resolve to the same level. `baseDirection` fixes the paragraph level ('ltr' → 0, 'rtl' →
-// 1) or derives it from the first strong character ('auto', rules P2/P3). Pass `bidiClassBackend`
-// to make class resolution explicit and caller-local; when omitted, the legacy installed backend or
-// compact bundled fallback is used for source compatibility.
 export function resolveBidiLevels(
+  bidiClassBackend: Readonly<HostBidiClassProvider>,
   text: string,
   baseDirection: BidiDirection,
-  bidiClassBackend?: HostBidiClassProvider,
 ): Uint8Array {
   const length = text.length;
   const levels = new Uint8Array(length);
   if (length === 0) return levels;
 
-  const backend = bidiClassBackend ?? getBidiClassBackend();
+  const backend = bidiClassBackend;
   const codepoints: number[] = new Array(length);
   const original: BidiClass[] = new Array(length);
   for (let i = 0; i < length; i++) {

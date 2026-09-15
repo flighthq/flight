@@ -25,10 +25,15 @@ export function createCompactBidiClassBackend(): HostBidiClassProvider {
   return backend;
 }
 
+export function createDefaultBidiClassBackend(): HostBidiClassProvider {
+  return createCompactBidiClassBackend();
+}
+
 /** Describes the selected provider and the coverage boundary Flight can state for it. */
-export function explainBidiClassBackend(bidiClassBackend?: HostBidiClassProvider): BidiClassBackendExplanation {
-  const backend = bidiClassBackend ?? getBidiClassBackend();
-  const compact = _compactBackends.has(backend);
+export function explainBidiClassBackend(
+  bidiClassBackend: Readonly<HostBidiClassProvider>,
+): BidiClassBackendExplanation {
+  const compact = _compactBackends.has(bidiClassBackend);
   return {
     backend: compact ? 'compact' : 'custom',
     coverage: compact ? 'common-script-ranges' : 'provider-defined',
@@ -38,30 +43,9 @@ export function explainBidiClassBackend(bidiClassBackend?: HostBidiClassProvider
   };
 }
 
-// Returns the legacy installed bidi-class backend, lazily creating the compact default the first time
-// so omitted-backend calls always have an answer. New callers pass their backend directly to
-// resolveBidiLevels or getBidiRuns.
-export function getBidiClassBackend(): HostBidiClassProvider {
-  if (_backend === null) _backend = createCompactBidiClassBackend();
-  return _backend;
-}
-
 export function initializeCompactBidiClassBackend(out: EntityConstruction<HostBidiClassProvider>): void {
   out.getBidiClass = getCompactBidiClass;
 }
-
-/**
- * Installs the backend used by calls that omit an explicit backend; pass null to restore the lazily
- * created compact default.
- *
- * @deprecated Pass a HostBidiClassProvider directly to resolveBidiLevels or getBidiRuns. Retained for
- * source compatibility until the legacy path is removed.
- */
-export function setBidiClassBackend(backend: HostBidiClassProvider | null): void {
-  _backend = backend;
-}
-
-let _backend: HostBidiClassProvider | null = null;
 
 // Looks up `codepoint` in the sorted, non-overlapping range table by binary search. Each entry is
 // three flat numbers [start, end, classOrdinal]; a hit returns the range's class, a miss the common

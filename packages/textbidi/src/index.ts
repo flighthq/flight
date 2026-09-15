@@ -1,4 +1,5 @@
 export {
+  createDefaultBidiClassBackend,
   disableTextBidiGuards,
   enableTextBidiGuards,
   explainBidiClassBackend,
