@@ -5,6 +5,7 @@ export * from './webApp';
 export * from './webAppHost';
 export * from './webAudio';
 export * from './webAudioDevice';
+export * from './webAudioMixer';
 export * from './webBitmapDraw';
 export * from './webBitmapEncode';
 export * from './webBitmapFrom';
