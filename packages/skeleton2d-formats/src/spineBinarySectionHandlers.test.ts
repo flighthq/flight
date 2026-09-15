@@ -22,10 +22,10 @@ function expectRegisteredSection(kind: SpineBinarySectionKind, handler: SpineBin
 }
 
 describe('registerSpineBinarySectionHandlers', () => {
-  it('registers only the six top-level section handlers', () => {
+  it('registers exactly one handler for every section kind and no timeline handlers', () => {
     const registry = createSpineBinaryRegistry();
     registerSpineBinarySectionHandlers(registry);
-    expect(registry.sectionHandlers).toHaveLength(8);
+    expect(registry.sectionHandlers.map((entry) => entry.kind).sort()).toEqual(Object.values(SectionKind).sort());
     expect(registry.timelineHandlers).toEqual([]);
   });
 });

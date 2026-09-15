@@ -661,26 +661,34 @@ describe('registerAllSpineBinaryHandlers', () => {
   it('registers both handler families', () => {
     const registry = createSpineBinaryRegistry();
     registerAllSpineBinaryHandlers(registry);
-    expect(registry.sectionHandlers).toHaveLength(8);
-    expect(registry.timelineHandlers).toHaveLength(8);
+    const sections = createSpineBinaryRegistry();
+    registerSpineBinarySectionHandlers(sections);
+    const timelines = createSpineBinaryRegistry();
+    registerSpineBinaryTimelineHandlers(timelines);
+    expect(registry.sectionHandlers).toEqual(sections.sectionHandlers);
+    expect(registry.timelineHandlers).toEqual(timelines.timelineHandlers);
   });
 });
 
 describe('registerSpineBinarySectionHandlers', () => {
-  it('registers only the six top-level section handlers', () => {
+  it('registers exactly one handler for every section kind and no timeline handlers', () => {
     const registry = createSpineBinaryRegistry();
     registerSpineBinarySectionHandlers(registry);
-    expect(registry.sectionHandlers).toHaveLength(8);
+    expect(registry.sectionHandlers.map((entry) => entry.kind).sort()).toEqual(
+      Object.values(SpineBinarySectionKind).sort(),
+    );
     expect(registry.timelineHandlers).toEqual([]);
   });
 });
 
 describe('registerSpineBinaryTimelineHandlers', () => {
-  it('registers only the eight animation timeline-family handlers', () => {
+  it('registers exactly one handler for every timeline family and no section handlers', () => {
     const registry = createSpineBinaryRegistry();
     registerSpineBinaryTimelineHandlers(registry);
     expect(registry.sectionHandlers).toEqual([]);
-    expect(registry.timelineHandlers).toHaveLength(8);
+    expect(registry.timelineHandlers.map((entry) => entry.kind).sort()).toEqual(
+      Object.values(SpineBinaryTimelineKind).sort(),
+    );
   });
 });
 

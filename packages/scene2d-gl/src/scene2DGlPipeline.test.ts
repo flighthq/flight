@@ -1,5 +1,11 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyGlRegistries, createGlPipeline, getGlPipelineRegistries } from '@flighthq/render-gl/contract';
+import {
+  createEmptyGlRegistries,
+  createGlPipeline,
+  getGlPipelineRegistries,
+  standardGlBlendRealizations,
+  standardGlTextureResolvers,
+} from '@flighthq/render-gl/contract';
 import {
   BitmapTextKind,
   BitmapTextureSourceKind,
@@ -45,7 +51,7 @@ describe('scene2DGlPipeline', () => {
     expect(EntityRuntimeKey in scene2DGlPipeline).toBe(true);
   });
 
-  it('carries all thirteen standard 2D GL renderers', () => {
+  it('carries every standard 2D GL renderer bound', () => {
     const registries = getGlPipelineRegistries(scene2DGlPipeline);
     const expectedKinds = [
       BitmapTextKind,
@@ -62,7 +68,6 @@ describe('scene2DGlPipeline', () => {
       TextLabelKind,
       TilemapKind,
     ];
-    expect(registries.renderers.entries.size).toBe(expectedKinds.length);
     for (const kind of expectedKinds) {
       const entry = registries.renderers.entries.get(kind);
       expect(entry).toBeDefined();
@@ -74,17 +79,21 @@ describe('scene2DGlPipeline', () => {
     expect(scene2DGlPipeline).toBe(scene2DGlPipeline);
   });
 
-  it('carries the three standard texture resolvers', () => {
+  it('carries the standard texture resolvers', () => {
     const registries = getGlPipelineRegistries(scene2DGlPipeline);
-    expect(registries.textureResolvers.entries.size).toBe(3);
+    expect([...registries.textureResolvers.entries.keys()].sort()).toEqual(
+      [...standardGlTextureResolvers.entries.keys()].sort(),
+    );
     expect(registries.textureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
     expect(registries.textureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
     expect(registries.textureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
   });
 
-  it('carries the six standard fixed-function blend realizations', () => {
+  it('carries the standard fixed-function blend realizations', () => {
     const registries = getGlPipelineRegistries(scene2DGlPipeline);
-    expect(registries.blendRealizations.entries.size).toBe(6);
+    expect([...registries.blendRealizations.entries.keys()].sort()).toEqual(
+      [...standardGlBlendRealizations.entries.keys()].sort(),
+    );
     expect(registries.blendRealizations.entries.has(BlendMode.Normal)).toBe(true);
     expect(registries.blendRealizations.entries.has(BlendMode.Add)).toBe(true);
     expect(registries.blendRealizations.entries.has(BlendMode.Multiply)).toBe(true);

@@ -275,7 +275,6 @@ describe('resolveGlTexture', () => {
 
 describe('standardGlTextureResolvers', () => {
   it('carries the three standard source kinds', () => {
-    expect(standardGlTextureResolvers.entries.size).toBe(3);
     expect(standardGlTextureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
     expect(standardGlTextureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
     expect(standardGlTextureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);

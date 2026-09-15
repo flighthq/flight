@@ -2,9 +2,11 @@ import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from '.
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
 
 describe('canvasShapeCommandTable', () => {
-  it('returns a table with all 16 standard shape commands (14 default + 2 texture)', () => {
+  it('holds exactly the default and texture shape commands, one entry per key', () => {
     const table = canvasShapeCommandTable();
-    expect(table.entries.size).toBe(16);
+    const keys = [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands].map((command) => command.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(table.entries.size).toBe(keys.length);
   });
 
   it('includes every default shape command by key', () => {

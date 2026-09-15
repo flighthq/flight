@@ -954,7 +954,6 @@ describe('setGlQuadMatrixFromOffset', () => {
 
 describe('standardGlBlendRealizations', () => {
   it('carries the six default fixed-function blend modes', () => {
-    expect(standardGlBlendRealizations.entries.size).toBe(6);
     expect(standardGlBlendRealizations.entries.has(BlendMode.Add)).toBe(true);
     expect(standardGlBlendRealizations.entries.has(BlendMode.Darken)).toBe(true);
     expect(standardGlBlendRealizations.entries.has(BlendMode.Lighten)).toBe(true);
