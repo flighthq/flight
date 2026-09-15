@@ -37,12 +37,16 @@ export function createWebAudioDeviceBackend(): HostAudioDeviceProvider {
  * The sibling of the two source-node resolvers, and the seam a web-bound caller needs to build its own
  * node graph on the same context — a mixer, an analyser, a worklet. Portable code never calls it: it
  * holds a handle and has no type to receive the result into.
+ *
+ * Note the near-twin below it: this exported helper is `getAudioDeviceContext` and takes the provider
+ * first, while the runtime extension property it narrows to is `getDeviceAudioContext` and takes only
+ * the handle. Use this one unless you are already narrowing the singleton structurally.
  */
 export function getAudioDeviceContext(
   backend: Readonly<HostAudioDeviceProvider>,
   device: AudioDeviceHandle,
 ): AudioContext | null {
-  if (isWebExtendedBackend(backend)) return backend.getDeviceContext(device);
+  if (isWebExtendedBackend(backend)) return backend.getDeviceAudioContext(device);
   return null;
 }
 
@@ -169,7 +173,7 @@ export function initializeWebAudioDeviceBackend(
     return context !== undefined ? context.currentTime : 0;
   };
 
-  out.getDeviceContext = (device: AudioDeviceHandle): AudioContext | null => {
+  out.getDeviceAudioContext = (device: AudioDeviceHandle): AudioContext | null => {
     return devices.get(device as number) ?? null;
   };
 
@@ -253,8 +257,11 @@ export function initializeWebAudioDeviceBackend(
   };
 }
 
+// The web-only surface the backend carries as runtime properties. A caller already bound to the web
+// may narrow the singleton to this and call the methods directly; everyone else goes through the
+// exported resolvers above, which perform the same narrowing and answer null when it fails.
 interface AudioDeviceBackendWebExtension extends HostAudioDeviceProvider {
-  getDeviceContext(device: AudioDeviceHandle): AudioContext | null;
+  getDeviceAudioContext(device: AudioDeviceHandle): AudioContext | null;
   getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null;
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
