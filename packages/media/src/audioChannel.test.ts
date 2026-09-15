@@ -3,15 +3,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostAudioDeviceProvider, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
-  connectAudioChannelToNode,
   destroyAudioChannel,
   fadeAudioChannelGain,
   getAudioChannelCurrentTime,
   getAudioChannelDuration,
-  getAudioChannelInputNode,
-  getAudioChannelOutputNode,
+  getAudioChannelSourceHandle,
   hasAudioChannelFade,
-  hasAudioChannelNodeAccess,
   clearAudioChannelLoopRegion,
   isAudioChannelMuted,
   isAudioChannelPlaying,
@@ -24,6 +21,7 @@ import {
   setAudioChannelMuted,
   setAudioChannelPan,
   setAudioChannelPlaybackRate,
+  setAudioChannelSourceRoute,
   stopAudioChannel,
 } from './audioChannel';
 
@@ -43,65 +41,20 @@ function createMockAudioBuffer(): AudioBuffer {
   } as unknown as AudioBuffer;
 }
 
-class MockGainNode {
-  gain = {
-    cancelScheduledValues: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    setValueAtTime: vi.fn(),
-    value: 1,
-  };
-  connect = vi.fn();
-  disconnect = vi.fn();
-}
-
-class MockAudioBufferSourceNode {
-  buffer: AudioBuffer | null = null;
-  playbackRate = { value: 1 };
-  onended: (() => void) | null = null;
-  connect = vi.fn();
-  disconnect = vi.fn();
-  start = vi.fn();
-  stop = vi.fn();
-}
-
 function createWebMockBackend() {
-  const gainNodes = new Map<number, MockGainNode>();
-  const sourceNodes = new Map<number, MockAudioBufferSourceNode>();
-
   return {
     backend: (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<HostAudioDeviceProvider>();
       out.createBuffer = vi.fn().mockReturnValue(1);
       out.createDevice = vi.fn().mockReturnValue(1);
-      out.createSource = vi.fn(() => {
-        const h = nextSourceHandle++;
-        const gainNode = new MockGainNode();
-        gainNodes.set(h, gainNode);
-        return h as unknown as AudioSourceHandle;
-      });
+      out.createSource = vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle);
       out.destroyBuffer = vi.fn();
       out.destroyDevice = vi.fn();
       out.destroySource = vi.fn((source: AudioSourceHandle) => {
-        gainNodes.delete(source as number);
-        sourceNodes.delete(source as number);
         onEndedCallbacks.delete(source as number);
       });
+      out.fadeSourceGain = vi.fn();
       out.getDeviceTime = vi.fn(() => deviceTime);
-      // The mock stands in for the web host, so it schedules the ramp the way that host does. Modelled
-      // rather than stubbed: these cases assert the RAMP, not merely that a fade was requested.
-      out.fadeSourceGain = vi.fn((source: AudioSourceHandle, targetGain: number, durationMs: number) => {
-        const gainNode = gainNodes.get(source as number);
-        if (gainNode === undefined) return;
-        gainNode.gain.cancelScheduledValues(deviceTime);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, deviceTime);
-        gainNode.gain.linearRampToValueAtTime(targetGain, deviceTime + durationMs / 1000);
-      });
-      out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
-        return (sourceNodes.get(source as number) as unknown as AudioBufferSourceNode) ?? null;
-      };
-      out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
-        return (gainNodes.get(source as number) as unknown as GainNode) ?? null;
-      };
       out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
         onEndedCallbacks.set(source as number, cb);
       });
@@ -109,15 +62,10 @@ function createWebMockBackend() {
       out.setSourceGain = vi.fn();
       out.setSourcePan = vi.fn();
       out.setSourcePlaybackRate = vi.fn();
-      out.startSource = vi.fn((source: AudioSourceHandle) => {
-        const srcNode = new MockAudioBufferSourceNode();
-        sourceNodes.set(source as number, srcNode);
-      });
+      out.startSource = vi.fn();
       out.stopSource = vi.fn();
       return finishEntity(out);
     })(),
-    gainNodes,
-    sourceNodes,
   };
 }
 
@@ -143,28 +91,6 @@ describe('clearAudioChannelLoopRegion', () => {
     stopAudioChannel(channel);
     resumeAudioChannel(channel);
     expect(webMock.backend.startSource).toHaveBeenLastCalledWith(expect.anything(), 0, 0);
-  });
-});
-
-describe('connectAudioChannelToNode', () => {
-  it('redirects the gain node to the provided destination', () => {
-    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    const destination = {} as AudioNode;
-    connectAudioChannelToNode(channel, destination);
-    const gainNode = webMock.gainNodes.get(1)!;
-    expect(gainNode.disconnect).toHaveBeenCalled();
-    expect(gainNode.connect).toHaveBeenCalledWith(destination);
-  });
-
-  it('preserves routing across stop/restart cycles', () => {
-    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    const busNode = {} as AudioNode;
-    connectAudioChannelToNode(channel, busNode);
-    pauseAudioChannel(channel);
-    resumeAudioChannel(channel);
-    const newGainNode = webMock.gainNodes.get(2)!;
-    expect(newGainNode.disconnect).toHaveBeenCalled();
-    expect(newGainNode.connect).toHaveBeenCalledWith(busNode);
   });
 });
 
@@ -206,13 +132,12 @@ describe('destroyAudioChannel', () => {
 });
 
 describe('fadeAudioChannelGain', () => {
-  it('schedules a linear gain ramp on the web gain node', () => {
+  it('delegates gain automation to the selected host provider', () => {
     const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    fadeAudioChannelGain(channel, 0.5, 500);
-    const gainNode = webMock.gainNodes.get(1)!;
-    expect(gainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
-    expect(gainNode.gain.setValueAtTime).toHaveBeenCalledWith(1, 0);
-    expect(gainNode.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.5, 0.5);
+    const selectedHost = createWebMockBackend().backend;
+    fadeAudioChannelGain(selectedHost, channel, 0.5, 500);
+    expect(selectedHost.fadeSourceGain).toHaveBeenCalledWith(1, 0.5, 500);
+    expect(webMock.backend.fadeSourceGain).not.toHaveBeenCalled();
     expect(channel.gain).toBe(0.5);
   });
 
@@ -220,7 +145,7 @@ describe('fadeAudioChannelGain', () => {
   // host a handle, a target and MILLISECONDS, and converts nothing itself.
   it('delegates to the host in milliseconds rather than converting units itself', () => {
     const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    fadeAudioChannelGain(channel, 0.25, 750);
+    fadeAudioChannelGain(webMock.backend, channel, 0.25, 750);
     expect(webMock.backend.fadeSourceGain).toHaveBeenCalledWith(expect.anything(), 0.25, 750);
   });
 
@@ -243,7 +168,7 @@ describe('fadeAudioChannelGain', () => {
     plainMock.startSource = vi.fn();
     plainMock.stopSource = vi.fn();
     const channel = playAudioResource(plainMock, device, createAudioResource(createMockAudioBuffer()))!;
-    fadeAudioChannelGain(channel, 0.3, 200);
+    fadeAudioChannelGain(plainMock, channel, 0.3, 200);
     expect(plainMock.setSourceGain).toHaveBeenCalledWith(expect.anything(), 0.3);
     expect(channel.gain).toBe(0.3);
   });
@@ -272,33 +197,16 @@ describe('getAudioChannelDuration', () => {
   });
 });
 
-describe('getAudioChannelInputNode', () => {
-  it('returns the buffer source node when web backend is active', () => {
+describe('getAudioChannelSourceHandle', () => {
+  it('returns the active opaque source handle', () => {
     const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    const inputNode = getAudioChannelInputNode(channel);
-    expect(inputNode).not.toBeNull();
-    expect(inputNode).toBe(webMock.sourceNodes.get(1));
+    expect(getAudioChannelSourceHandle(channel)).toBe(1);
   });
 
-  it('returns null when the source is inactive', () => {
+  it('returns the invalid handle sentinel when the source is inactive', () => {
     const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
     pauseAudioChannel(channel);
-    expect(getAudioChannelInputNode(channel)).toBeNull();
-  });
-});
-
-describe('getAudioChannelOutputNode', () => {
-  it('returns the gain node when web backend is active', () => {
-    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    const outputNode = getAudioChannelOutputNode(channel);
-    expect(outputNode).not.toBeNull();
-    expect(outputNode).toBe(webMock.gainNodes.get(1));
-  });
-
-  it('returns null when the source is inactive', () => {
-    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
-    pauseAudioChannel(channel);
-    expect(getAudioChannelOutputNode(channel)).toBeNull();
+    expect(getAudioChannelSourceHandle(channel)).toBe(0);
   });
 });
 
@@ -324,31 +232,6 @@ describe('hasAudioChannelFade', () => {
     plainBackend.startSource = vi.fn();
     plainBackend.stopSource = vi.fn();
     expect(hasAudioChannelFade(plainBackend)).toBe(false);
-  });
-});
-
-describe('hasAudioChannelNodeAccess', () => {
-  it('returns true when web backend is active', () => {
-    expect(hasAudioChannelNodeAccess(webMock.backend)).toBe(true);
-  });
-
-  it('returns false when no web backend is active', () => {
-    const plainBackend = allocateEntity<HostAudioDeviceProvider>();
-    plainBackend.createBuffer = vi.fn().mockReturnValue(1);
-    plainBackend.createDevice = vi.fn().mockReturnValue(1);
-    plainBackend.createSource = vi.fn().mockReturnValue(1);
-    plainBackend.destroyBuffer = vi.fn();
-    plainBackend.destroyDevice = vi.fn();
-    plainBackend.destroySource = vi.fn();
-    plainBackend.getDeviceTime = vi.fn().mockReturnValue(0);
-    plainBackend.onSourceEnded = vi.fn();
-    plainBackend.resumeDevice = vi.fn();
-    plainBackend.setSourceGain = vi.fn();
-    plainBackend.setSourcePan = vi.fn();
-    plainBackend.setSourcePlaybackRate = vi.fn();
-    plainBackend.startSource = vi.fn();
-    plainBackend.stopSource = vi.fn();
-    expect(hasAudioChannelNodeAccess(plainBackend)).toBe(false);
   });
 });
 
@@ -649,6 +532,42 @@ describe('setAudioChannelPlaybackRate', () => {
     expect(setAudioChannelPlaybackRate(channel, 2)).toBe(2);
     expect(channel.playbackRate).toBe(2);
     expect(webMock.backend.setSourcePlaybackRate).toHaveBeenCalledWith(expect.anything(), 2);
+  });
+});
+
+describe('setAudioChannelSourceRoute', () => {
+  it('applies the route immediately to the active source', () => {
+    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
+    const route = vi.fn();
+    setAudioChannelSourceRoute(channel, route);
+    expect(route).toHaveBeenCalledWith(1);
+  });
+
+  it('reapplies the route after resume, seek, and loop source replacement', () => {
+    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()), {
+      loops: 1,
+    })!;
+    const route = vi.fn();
+    setAudioChannelSourceRoute(channel, route);
+    pauseAudioChannel(channel);
+    resumeAudioChannel(channel);
+    setAudioChannelCurrentTime(channel, 250);
+    onEndedCallbacks.get(3)!();
+    expect(route.mock.calls).toEqual([[1], [2], [3], [4]]);
+  });
+
+  it('retains an inactive route until the next source and allows clearing it', () => {
+    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
+    pauseAudioChannel(channel);
+    const route = vi.fn();
+    setAudioChannelSourceRoute(channel, route);
+    expect(route).not.toHaveBeenCalled();
+    resumeAudioChannel(channel);
+    expect(route).toHaveBeenCalledWith(2);
+    setAudioChannelSourceRoute(channel, null);
+    pauseAudioChannel(channel);
+    resumeAudioChannel(channel);
+    expect(route).toHaveBeenCalledTimes(1);
   });
 });
 
