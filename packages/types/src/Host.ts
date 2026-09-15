@@ -37,6 +37,7 @@ import type {
 } from './ApplicationWindowTargetBackend';
 import type { HostAudioProvider } from './AudioBackend';
 import type { HostAudioDeviceProvider } from './AudioDeviceBackend';
+import type { HostAudioMixerProvider } from './AudioMixerBackend';
 import type { HostBidiClassProvider } from './Bidi';
 import type { HostBitmapEncodeProvider } from './BitmapEncodeBackend';
 import type { HostBitmapReadbackProvider } from './BitmapReadbackBackend';
@@ -323,6 +324,7 @@ export interface HostIpcCapabilities {
 export interface HostMediaCapabilities {
   readonly audioCodec?: HostAudioProvider;
   readonly audioDevice?: HostAudioDeviceProvider;
+  readonly audioMixer?: HostAudioMixerProvider;
   readonly session?: HostMediaSessionProvider;
   readonly sessionAction?: HostMediaSessionActionProvider;
   readonly video?: HostVideoProvider;
