@@ -152,7 +152,7 @@ describe('createWebVideoCapabilityBackend', () => {
   it('loadUrl applies defaults and releases its listeners after the default readiness event', async () => {
     const element = document.createElement('video');
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
-    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    vi.spyOn(document, 'createElement').mockReturnValue(element as never);
     const backend = createWebVideoCapabilityBackend();
 
     const promise = backend.loadUrl!('test.mp4');
@@ -166,7 +166,7 @@ describe('createWebVideoCapabilityBackend', () => {
 
   it('loadUrl applies options before resolving at the requested readiness event', async () => {
     const element = document.createElement('video');
-    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    vi.spyOn(document, 'createElement').mockReturnValue(element as never);
     const backend = createWebVideoCapabilityBackend();
 
     const promise = backend.loadUrl!('test.mp4', {
@@ -187,7 +187,7 @@ describe('createWebVideoCapabilityBackend', () => {
 
   it('loadUrl supports canplaythrough readiness', async () => {
     const element = document.createElement('video');
-    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    vi.spyOn(document, 'createElement').mockReturnValue(element as never);
     const backend = createWebVideoCapabilityBackend();
 
     const promise = backend.loadUrl!('test.mp4', { readiness: 'canplaythrough' });
@@ -200,7 +200,7 @@ describe('createWebVideoCapabilityBackend', () => {
     const element = document.createElement('video');
     const load = vi.spyOn(element, 'load').mockImplementation(() => {});
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
-    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    vi.spyOn(document, 'createElement').mockReturnValue(element as never);
     const backend = createWebVideoCapabilityBackend();
 
     const promise = backend.loadUrl!('bad.mp4');
@@ -217,7 +217,7 @@ describe('createWebVideoCapabilityBackend', () => {
     const element = document.createElement('video');
     const load = vi.spyOn(element, 'load').mockImplementation(() => {});
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
-    vi.spyOn(document, 'createElement').mockReturnValue(element);
+    vi.spyOn(document, 'createElement').mockReturnValue(element as never);
     const backend = createWebVideoCapabilityBackend();
     const controller = new AbortController();
     const removeAbortListener = vi.spyOn(controller.signal, 'removeEventListener');
