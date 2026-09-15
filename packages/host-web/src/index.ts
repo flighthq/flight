@@ -13,7 +13,12 @@ export {
 } from './webApp';
 export { webHostApp } from './webAppHost';
 export { webHostAudio } from './webAudio';
-export { webHostAudioDevice } from './webAudioDevice';
+export {
+  createWebAudioDeviceBackend,
+  getAudioDeviceContext,
+  hasAudioDeviceWebNodeAccess,
+  webHostAudioDevice,
+} from './webAudioDevice';
 export { drawWebBitmap } from './webBitmapDraw';
 export { createWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapFromCanvas } from './webBitmapFrom';
