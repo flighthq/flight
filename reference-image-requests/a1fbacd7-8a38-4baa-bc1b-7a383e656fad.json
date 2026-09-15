@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "964beb05-b46b-4cc6-a6ed-6e668d3f474f",
+  "id": "a1fbacd7-8a38-4baa-bc1b-7a383e656fad",
   "subject": "functional",
   "targets": [
     {
-      "entry": "mesh-mirrored-facing",
+      "entry": "mesh-tangent-mirror-handedness",
       "renderer": "webgl",
-      "pixelSha256": "e4c7f277d72f4c3bd40ad6750ebc4c57b14648a1c93a427c1299468c4d8d8af2",
+      "pixelSha256": "98e1dac9922628d44d4fe52861d2ec16577c6ba4591ee107b73c39eae5596bd8",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "mesh-mirrored-facing",
+      "entry": "mesh-tangent-mirror-handedness",
       "renderer": "webgpu",
-      "pixelSha256": "0a2e34d6a3c78548e8e9f5e68742247d944a670601d4b9be995c7e6368e979d4",
+      "pixelSha256": "b98562dd3cf83ca4c5fa007580062a9871908900b0b1c3454eb6bdddbae3eb7b",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T15:28:05.758Z"
+  "createdAt": "2026-09-15T08:18:28.628Z"
 }

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "b0109ca3-0109-46f0-bd9d-258458a7957c",
+  "id": "fbca78dd-3f41-4060-a1bf-9e051a395ae6",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-tilt-shift",
+      "entry": "particle-emitter",
       "renderer": "canvas",
-      "pixelSha256": "e83730cbc08149aefcd2a07184300504002ad224d627693af49509293dc6a6f3",
+      "pixelSha256": "63ccd83b3113f13fbffdd0ecaab01f0288c3a8683a5632779a374b0601a2fbf9",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-tilt-shift",
+      "entry": "particle-emitter",
       "renderer": "webgl",
-      "pixelSha256": "1f6f8ac048b4f302d2a4578a8bd6d48bca0a723a3cf1fdc38f48daaee91a3b25",
+      "pixelSha256": "41e2698be232e56d8924238cc1903639ccb9a99597f97a740928d921e1edc33d",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "effect-tilt-shift",
+      "entry": "particle-emitter",
       "renderer": "webgpu",
-      "pixelSha256": "3be70aaf82438cd7a1a326b46300bf73f57ee311699c2763e28affa17a474eeb",
+      "pixelSha256": "41e2698be232e56d8924238cc1903639ccb9a99597f97a740928d921e1edc33d",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -48,5 +48,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:44.532Z"
+  "createdAt": "2026-09-15T08:17:14.497Z"
 }

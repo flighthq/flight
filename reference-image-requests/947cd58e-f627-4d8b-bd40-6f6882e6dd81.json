@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "f4b8c6c6-95c9-49de-89f2-3c3d57837359",
+  "id": "947cd58e-f627-4d8b-bd40-6f6882e6dd81",
   "subject": "functional",
   "targets": [
     {
-      "entry": "shape-circle-fill",
+      "entry": "shape-arc-fill",
       "renderer": "dom",
-      "pixelSha256": "786e70e8cb884f98c1c8e6b92c38d91e0f02239206cf07f9f3c5c7a0228018bd",
+      "pixelSha256": "0ce16bdb9be3550eb9c097573d129c8612afac46e808eecd7f77eed6aadce72b",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "shape-circle-fill",
+      "entry": "shape-arc-fill",
       "renderer": "canvas",
-      "pixelSha256": "5db0c72da11f7c432296902d6259d0b8cea8b7921bd7ce09ea92a5cdaa41f9df",
+      "pixelSha256": "0ce16bdb9be3550eb9c097573d129c8612afac46e808eecd7f77eed6aadce72b",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "shape-circle-fill",
+      "entry": "shape-arc-fill",
       "renderer": "webgl",
-      "pixelSha256": "246672e6e75d6f580be287a6aafea9663fa1a50ae7da0659dd9dbfe677b01bad",
+      "pixelSha256": "940afa0ff942060ab0776ec8fea718989fa49b20b96cea14d9871e30e9bc2179",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -46,11 +46,11 @@
       }
     },
     {
-      "entry": "shape-circle-fill",
+      "entry": "shape-arc-fill",
       "renderer": "webgpu",
-      "pixelSha256": "246672e6e75d6f580be287a6aafea9663fa1a50ae7da0659dd9dbfe677b01bad",
+      "pixelSha256": "940afa0ff942060ab0776ec8fea718989fa49b20b96cea14d9871e30e9bc2179",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -62,5 +62,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:06:39.765Z"
+  "createdAt": "2026-09-15T08:19:32.385Z"
 }

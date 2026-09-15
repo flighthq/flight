@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "009134a4-cfc9-456d-885d-0b4868966354",
+  "id": "88deb3dc-7045-4be4-9dae-c383586c72f1",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-drop-shadow",
+      "entry": "mesh-mirrored-facing",
       "renderer": "webgl",
-      "pixelSha256": "0f78df954c46edc651f28561f469f75f0a3fcaee660b2df8d43411d247e1182b",
+      "pixelSha256": "e4c7f277d72f4c3bd40ad6750ebc4c57b14648a1c93a427c1299468c4d8d8af2",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-drop-shadow",
+      "entry": "mesh-mirrored-facing",
       "renderer": "webgpu",
-      "pixelSha256": "0f78df954c46edc651f28561f469f75f0a3fcaee660b2df8d43411d247e1182b",
+      "pixelSha256": "0a2e34d6a3c78548e8e9f5e68742247d944a670601d4b9be995c7e6368e979d4",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:36.838Z"
+  "createdAt": "2026-09-15T08:18:21.905Z"
 }

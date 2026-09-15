@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "1e2d387f-4e97-4d5a-add6-c884b29a9f01",
+  "id": "b6476876-6260-40bf-b515-254f9caed5ad",
   "subject": "functional",
   "targets": [
     {
-      "entry": "particle-emitter-color",
+      "entry": "scene-skin-material-families",
       "renderer": "webgl",
-      "pixelSha256": "bafe1c1d1ebaf5e048a735c52dcb61633788081402e43d9527ae042917cc002c",
+      "pixelSha256": "ae852533c3be42438a56300097141082d93c63d278a75dee3a0b85d227d576df",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "particle-emitter-color",
+      "entry": "scene-skin-material-families",
       "renderer": "webgpu",
-      "pixelSha256": "bafe1c1d1ebaf5e048a735c52dcb61633788081402e43d9527ae042917cc002c",
+      "pixelSha256": "bb2fc72669e8c7b995dc956a320ac67687e0e9208a4d5c50a4fd35d91392525a",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:53.178Z"
+  "createdAt": "2026-09-15T08:19:05.393Z"
 }

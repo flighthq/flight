@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "ef42b07b-476b-4644-a4f0-520db4ee19c2",
+  "id": "f90d043a-f845-413b-98f6-0848a0bd0c44",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-bevel",
+      "entry": "scene-transparent-depth-write",
       "renderer": "webgl",
-      "pixelSha256": "1fb9b8e2912ff45e13c58e7e9dbb53683d7cebedd848fe0b11e9bdf8711a77bb",
+      "pixelSha256": "3c3f6555232f5f5a0944aa6c6a953c8512ac25e9a42b79caf32f3e34f25e814a",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-bevel",
+      "entry": "scene-transparent-depth-write",
       "renderer": "webgpu",
-      "pixelSha256": "1fb9b8e2912ff45e13c58e7e9dbb53683d7cebedd848fe0b11e9bdf8711a77bb",
+      "pixelSha256": "3c3f6555232f5f5a0944aa6c6a953c8512ac25e9a42b79caf32f3e34f25e814a",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:32.924Z"
+  "createdAt": "2026-09-15T08:19:16.609Z"
 }
