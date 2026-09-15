@@ -14,8 +14,11 @@
 // independently routed projects. Vitest's graph is finer-grained (per test file, by real imports) and
 // needs no maintenance as packages are added; a module-graph edge it can't see (e.g. a computed dynamic
 // import) only means that test slips to CI, never to production.
-// Set FLIGHT_PREPUSH_VITEST_WORKERS to a positive integer to cap this hook's Vitest run on a constrained
-// machine. Unset, Vitest receives no worker argument and retains its current default scheduling behavior.
+// The hook runs on the developer's machine while they keep working on it, so it defaults to half the
+// available cores and below-normal scheduling priority instead of Vitest's run-mode default of every core
+// but one. Over the full shared project on a 16-core machine, half the workers finished in the same wall
+// time with about a third less peak memory: the extra workers bought only a saturated CPU. Set
+// FLIGHT_PREPUSH_VITEST_WORKERS to a positive integer to choose a different count.
 //
 // <base> is what the push is measured against. In the hook, git hands us on stdin the sha the
 // remote already has (see readPushBase) — the exact "what am I newly pushing" boundary, so we never
@@ -25,6 +28,7 @@
 
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { availableParallelism, constants, setPriority } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -88,9 +92,15 @@ export function affectsSharedPackageTests(changedFiles: readonly string[]): bool
   );
 }
 
-export function resolveChangedTestArguments(base: string, workerCount?: string): string[] {
+export function resolveChangedTestArguments(
+  base: string,
+  workerCount: string | undefined,
+  parallelism: number,
+): string[] {
   const args = ['--project', 'shared', '--changed', base];
-  if (workerCount === undefined || workerCount === '') return args;
+  if (workerCount === undefined || workerCount === '') {
+    return [...args, '--maxWorkers', String(Math.max(1, Math.floor(parallelism / 2)))];
+  }
 
   if (!/^[1-9]\d*$/.test(workerCount)) {
     throw new Error(
@@ -101,6 +111,12 @@ export function resolveChangedTestArguments(base: string, workerCount?: string):
 }
 
 function main(): void {
+  // Children inherit the lowered priority, so typecheck and every Vitest worker yield to interactive work.
+  try {
+    setPriority(constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {
+    // A platform that refuses the change still runs the hook at normal priority.
+  }
   const base = readPushBase() ?? resolveBase();
   const changed =
     base === null
@@ -127,7 +143,9 @@ function main(): void {
 
   if (affectsSharedPackageTests(changed)) {
     // Route through the repository wrapper so the structured completion gate also judges worker loss.
-    run(`npm run test -- ${resolveChangedTestArguments(base, process.env.FLIGHT_PREPUSH_VITEST_WORKERS).join(' ')}`);
+    run(
+      `npm run test -- ${resolveChangedTestArguments(base, process.env.FLIGHT_PREPUSH_VITEST_WORKERS, availableParallelism()).join(' ')}`,
+    );
   } else {
     console.log(pc.dim('pre-push: no shared-project package source changed — skipping vitest'));
   }

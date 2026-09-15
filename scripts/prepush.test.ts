@@ -22,17 +22,24 @@ describe('shouldRunPrepushTypecheck', () => {
 });
 
 describe('resolveChangedTestArguments', () => {
-  it('leaves Vitest worker selection at its default when the override is unset', () => {
-    expect(resolveChangedTestArguments('origin/main', undefined)).toEqual([
+  it('defaults to half the available parallelism when the override is unset', () => {
+    expect(resolveChangedTestArguments('origin/main', undefined, 16)).toEqual([
       '--project',
       'shared',
       '--changed',
       'origin/main',
+      '--maxWorkers',
+      '8',
     ]);
+    expect(resolveChangedTestArguments('origin/main', '', 7).slice(-2)).toEqual(['--maxWorkers', '3']);
   });
 
-  it('adds the opt-in worker limit', () => {
-    expect(resolveChangedTestArguments('origin/main', '4')).toEqual([
+  it('never defaults below one worker', () => {
+    expect(resolveChangedTestArguments('origin/main', undefined, 1).slice(-2)).toEqual(['--maxWorkers', '1']);
+  });
+
+  it('uses the explicit worker override over the default', () => {
+    expect(resolveChangedTestArguments('origin/main', '4', 16)).toEqual([
       '--project',
       'shared',
       '--changed',
@@ -43,7 +50,7 @@ describe('resolveChangedTestArguments', () => {
   });
 
   it.each(['0', '-1', '1.5', 'many'])('rejects invalid worker count %s', (workerCount) => {
-    expect(() => resolveChangedTestArguments('origin/main', workerCount)).toThrow(
+    expect(() => resolveChangedTestArguments('origin/main', workerCount, 16)).toThrow(
       'FLIGHT_PREPUSH_VITEST_WORKERS must be a positive integer',
     );
   });
