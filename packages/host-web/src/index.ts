@@ -19,6 +19,7 @@ export {
   hasAudioDeviceWebNodeAccess,
   webHostAudioDevice,
 } from './webAudioDevice';
+export { createWebAudioMixerBackend, webHostAudioMixer } from './webAudioMixer';
 export { drawWebBitmap } from './webBitmapDraw';
 export { createWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapFromCanvas } from './webBitmapFrom';
