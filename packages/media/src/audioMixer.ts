@@ -117,7 +117,7 @@ export function initializeAudioBus(out: EntityConstruction<AudioBus>, options?: 
 export function pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  // Actually stop each source node (not just flip the flag) so audio halts on pause. Only channels
+  // Actually release each active source (not just flip the flag) so audio halts on pause. Only channels
   // that were playing are recorded: one already paused by the caller is not this mixer's to resume.
   for (const channel of runtime.activeChannels) {
     if (channel.state !== 'playing') continue;
@@ -129,8 +129,8 @@ export function pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
 export function resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  // Restart the source node for channels this mixer paused; bus routing survives the restart because
-  // the channel's destination node is preserved across stop/start. Resuming every paused channel
+  // Restart the source for channels this mixer paused; the channel reapplies its opaque bus route after
+  // every replacement source handle is created. Resuming every paused channel
   // instead would resurrect one the caller had deliberately paused on its own — a mixer-wide pause and
   // resume around a menu would silently un-pause it. The state re-check covers a channel resumed or
   // stopped individually while the mixer was paused.
@@ -159,7 +159,7 @@ export function routeAudioChannelToMixerBus(
   }
 }
 
-// Sets the bus gain and pushes it to the gain node of every mixer holding this bus, found by reverse
+// Sets the bus gain and pushes it to the bus node of every mixer holding this bus, found by reverse
 // lookup through busToMixerRuntimes.
 //
 // A bus that belongs to NO mixer has no node to push to, so the new value is stored and returned while
@@ -236,7 +236,7 @@ export function stopAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   if (runtime === undefined) return;
   // Delegating rather than flipping the fields by hand is the fix: the previous version set state and
   // currentTime directly and never stopped the source, so every channel reported 'stopped' while its
-  // Web Audio node kept emitting. The snapshot is defensive rather than load-bearing —
+  // host source kept emitting. The snapshot is defensive rather than load-bearing —
   // stopAudioChannel does not currently reach into activeChannels, and destroyAudioMixer iterates the
   // live set for the same walk — but it makes this loop safe if that stops being true.
   const stopping = [...runtime.activeChannels];
@@ -264,7 +264,7 @@ interface AudioMixerRuntime {
 const mixerRuntimes = new WeakMap<AudioMixer, AudioMixerRuntime>();
 
 // Reverse map from AudioBus to all mixer runtimes that contain it.
-// This allows setAudioBusGain/setAudioBusMuted/setAudioBusPan to update the Web Audio graph
+// This allows setAudioBusGain/setAudioBusMuted/setAudioBusPan to update each host graph
 // without requiring the caller to pass the mixer.
 const busToMixerRuntimes = new Map<AudioBus, Set<AudioMixerRuntime>>();
 
