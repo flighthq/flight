@@ -80,10 +80,10 @@ export function itemizeText(
 // This is the primary convenience entry point for multi-script strings: `itemizeText` handles the
 // script/direction split, then `shapeTextRun` produces glyph ids and positions for each sub-run.
 export function shapeTextRuns(
+  hostTextShaper: Readonly<HostTextShaperProvider>,
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<TextShaperOptions>,
-  hostTextShaper?: Readonly<HostTextShaperProvider>,
 ): readonly ShapedRun[] {
   if (text.length === 0) return [];
   const items = itemizeText(text, format, options);
@@ -97,7 +97,7 @@ export function shapeTextRuns(
       direction: item.direction === 'TopToBottom' ? undefined : item.direction,
       script: item.script,
     };
-    const run = shapeTextRun(sub, format, runOptions, hostTextShaper);
+    const run = shapeTextRun(hostTextShaper, sub, format, runOptions);
     if (run !== null) result.push(run);
   }
   return result;

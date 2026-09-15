@@ -1,6 +1,5 @@
 import type { FontMetrics, GlyphExtents, HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
 
-import { setTextShaperBackend } from './textShaper';
 import {
   clearShapedRun,
   createShapedRun,
@@ -47,7 +46,6 @@ const _testExtents: GlyphExtents = { height: 10, width: 6, xBearing: 0, yBearing
 
 function _makeFullBackend(): HostTextShaperProvider {
   return {
-    // Code point 65 ('A') maps to glyph 10 and back; everything else is unknown.
     getCodePointForGlyph: (id) => (id === 10 ? 65 : -1),
     getFontMetrics: () => ({ ..._testMetrics }),
     getGlyphExtents: (id) => (id === 10 ? { ..._testExtents } : null),
@@ -58,9 +56,12 @@ function _makeFullBackend(): HostTextShaperProvider {
   };
 }
 
-afterEach(() => {
-  setTextShaperBackend(null);
-});
+function _makeAdvancesOnlyBackend(): HostTextShaperProvider {
+  return { measureText: (t) => t.length };
+}
+
+const _backend = _makeFullBackend();
+const _advancesOnly = _makeAdvancesOnlyBackend();
 
 describe('clearShapedRun', () => {
   it('resets all fields and empties the glyphs array', () => {
@@ -102,39 +103,26 @@ describe('createShapedRun', () => {
 });
 
 describe('getCodePointForGlyph', () => {
-  it('returns -1 when no backend is set', () => {
-    expect(getCodePointForGlyph(10, {})).toBe(-1);
-  });
-
   it('returns -1 when the backend does not implement getCodePointForGlyph', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(getCodePointForGlyph(10, {})).toBe(-1);
+    expect(getCodePointForGlyph(_advancesOnly, 10, {})).toBe(-1);
   });
 
   it('delegates to the backend and returns the resolved code point', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getCodePointForGlyph(10, {})).toBe(65);
+    expect(getCodePointForGlyph(_backend, 10, {})).toBe(65);
   });
 
   it('returns -1 for glyph ids the backend cannot reverse-map', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getCodePointForGlyph(999, {})).toBe(-1);
+    expect(getCodePointForGlyph(_backend, 999, {})).toBe(-1);
   });
 });
 
 describe('getFontMetrics', () => {
-  it('returns null when no backend is set', () => {
-    expect(getFontMetrics({})).toBeNull();
-  });
-
   it('returns null when the backend is advances-only (no getFontMetrics)', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(getFontMetrics({})).toBeNull();
+    expect(getFontMetrics(_advancesOnly, {})).toBeNull();
   });
 
   it('delegates to the backend', () => {
-    setTextShaperBackend(_makeFullBackend());
-    const m = getFontMetrics({ size: 16 });
+    const m = getFontMetrics(_backend, { size: 16 });
     expect(m).not.toBeNull();
     expect(m!.ascent).toBe(10);
     expect(m!.unitsPerEm).toBe(1000);
@@ -142,106 +130,85 @@ describe('getFontMetrics', () => {
 });
 
 describe('getFontMetricsInto', () => {
-  it('returns false and does not modify out when no backend is set', () => {
+  it('returns false and does not modify out when the backend has no getFontMetrics', () => {
     const out: FontMetrics = { ..._testMetrics, ascent: 99 };
-    expect(getFontMetricsInto({}, out)).toBe(false);
+    expect(getFontMetricsInto(_advancesOnly, {}, out)).toBe(false);
     expect(out.ascent).toBe(99);
   });
 
   it('writes all fields into out and returns true on success', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out = { ..._testMetrics };
-    expect(getFontMetricsInto({}, out)).toBe(true);
+    expect(getFontMetricsInto(_backend, {}, out)).toBe(true);
     expect(out.ascent).toBe(_testMetrics.ascent);
     expect(out.capHeight).toBe(_testMetrics.capHeight);
   });
 });
 
 describe('getFontUnitScale', () => {
-  it('returns -1 when no backend is set', () => {
-    expect(getFontUnitScale({})).toBe(-1);
+  it('returns -1 when the backend has no getFontMetrics', () => {
+    expect(getFontUnitScale(_advancesOnly, {})).toBe(-1);
   });
 
   it('returns size / unitsPerEm', () => {
-    setTextShaperBackend(_makeFullBackend());
-    // default size is 12 per the function; unitsPerEm is 1000.
-    expect(getFontUnitScale({})).toBeCloseTo(12 / 1000);
-    expect(getFontUnitScale({ size: 20 })).toBeCloseTo(20 / 1000);
+    expect(getFontUnitScale(_backend, {})).toBeCloseTo(12 / 1000);
+    expect(getFontUnitScale(_backend, { size: 20 })).toBeCloseTo(20 / 1000);
   });
 });
 
 describe('getGlyphExtents', () => {
-  it('returns null when no backend is set', () => {
-    expect(getGlyphExtents(10, {})).toBeNull();
-  });
-
   it('returns null when the backend is advances-only', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(getGlyphExtents(10, {})).toBeNull();
+    expect(getGlyphExtents(_advancesOnly, 10, {})).toBeNull();
   });
 
   it('delegates to the backend', () => {
-    setTextShaperBackend(_makeFullBackend());
-    const e = getGlyphExtents(10, {});
+    const e = getGlyphExtents(_backend, 10, {});
     expect(e).not.toBeNull();
     expect(e!.width).toBe(6);
   });
 
   it('returns null for unknown glyph ids', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getGlyphExtents(999, {})).toBeNull();
+    expect(getGlyphExtents(_backend, 999, {})).toBeNull();
   });
 });
 
 describe('getGlyphExtentsBatch', () => {
-  it('returns 0 and writes nothing when no backend is set', () => {
-    const out: GlyphExtents[] = [];
-    expect(getGlyphExtentsBatch([10, 20], {}, out)).toBe(0);
-  });
-
   it('returns 0 when the backend is advances-only', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
     const out: GlyphExtents[] = [];
-    expect(getGlyphExtentsBatch([10], {}, out)).toBe(0);
+    expect(getGlyphExtentsBatch(_advancesOnly, [10], {}, out)).toBe(0);
   });
 
   it('resolves known glyphs and counts only those that resolved', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out: GlyphExtents[] = [];
-    // 10 resolves; 999 is unknown.
-    const resolved = getGlyphExtentsBatch([10, 999], {}, out);
+    const resolved = getGlyphExtentsBatch(_backend, [10, 999], {}, out);
     expect(resolved).toBe(1);
     expect(out).toHaveLength(2);
     expect(out[0].width).toBe(_testExtents.width);
   });
 
   it('writes zeroed extents for unknown glyphs so out is fully populated', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out: GlyphExtents[] = [];
-    getGlyphExtentsBatch([999, 10], {}, out);
+    getGlyphExtentsBatch(_backend, [999, 10], {}, out);
     expect(out[0]).toEqual({ height: 0, width: 0, xBearing: 0, yBearing: 0 });
     expect(out[1].height).toBe(_testExtents.height);
   });
 
   it('returns 0 for an empty glyph id list without touching the backend', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out: GlyphExtents[] = [];
-    expect(getGlyphExtentsBatch([], {}, out)).toBe(0);
+    expect(getGlyphExtentsBatch(_backend, [], {}, out)).toBe(0);
     expect(out).toHaveLength(0);
   });
 });
 
 describe('getGlyphExtentsInto', () => {
-  it('returns false and does not modify out when no backend is set', () => {
+  it('returns false and does not modify out when the backend has no getGlyphExtents', () => {
     const out: GlyphExtents = { height: 1, width: 1, xBearing: 1, yBearing: 1 };
-    expect(getGlyphExtentsInto(10, {}, out)).toBe(false);
+    expect(getGlyphExtentsInto(_advancesOnly, 10, {}, out)).toBe(false);
     expect(out.width).toBe(1);
   });
 
   it('writes all fields into out and returns true on success', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out: GlyphExtents = { height: 0, width: 0, xBearing: 0, yBearing: 0 };
-    expect(getGlyphExtentsInto(10, {}, out)).toBe(true);
+    expect(getGlyphExtentsInto(_backend, 10, {}, out)).toBe(true);
     expect(out.width).toBe(_testExtents.width);
     expect(out.height).toBe(_testExtents.height);
     expect(out.yBearing).toBe(_testExtents.yBearing);
@@ -249,44 +216,30 @@ describe('getGlyphExtentsInto', () => {
 });
 
 describe('getGlyphIndexForCodePoint', () => {
-  it('returns -1 when no backend is set', () => {
-    expect(getGlyphIndexForCodePoint(65, {})).toBe(-1);
-  });
-
   it('returns -1 when the backend does not implement getGlyphIndexForCodePoint', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(getGlyphIndexForCodePoint(65, {})).toBe(-1);
+    expect(getGlyphIndexForCodePoint(_advancesOnly, 65, {})).toBe(-1);
   });
 
   it('delegates to the backend and returns the glyph id', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getGlyphIndexForCodePoint(65, {})).toBe(10);
+    expect(getGlyphIndexForCodePoint(_backend, 65, {})).toBe(10);
   });
 
   it('returns -1 for code points with no glyph in the font', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getGlyphIndexForCodePoint(0x2603, {})).toBe(-1);
+    expect(getGlyphIndexForCodePoint(_backend, 0x2603, {})).toBe(-1);
   });
 });
 
 describe('getGlyphName', () => {
-  it('returns an empty string when no backend is set', () => {
-    expect(getGlyphName(10, {})).toBe('');
-  });
-
   it('returns an empty string when the backend does not implement getGlyphName', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(getGlyphName(10, {})).toBe('');
+    expect(getGlyphName(_advancesOnly, 10, {})).toBe('');
   });
 
   it('delegates to the backend and returns the PostScript glyph name', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getGlyphName(10, {})).toBe('A');
+    expect(getGlyphName(_backend, 10, {})).toBe('A');
   });
 
   it('returns an empty string for glyph ids the backend cannot name', () => {
-    setTextShaperBackend(_makeFullBackend());
-    expect(getGlyphName(999, {})).toBe('');
+    expect(getGlyphName(_backend, 999, {})).toBe('');
   });
 });
 
@@ -297,26 +250,12 @@ describe('initializeShapedRun', () => {
 });
 
 describe('shapeTextRun', () => {
-  it('uses the explicitly supplied host instead of the legacy installed backend', () => {
-    setTextShaperBackend({ measureText: () => 0 });
-    const host: { readonly text: { readonly shaper: HostTextShaperProvider } } = {
-      text: { shaper: _makeFullBackend() },
-    };
-    expect(shapeTextRun('ab', {}, undefined, host.text.shaper)?.glyphCount).toBe(2);
-  });
-
-  it('returns null when no backend is set', () => {
-    expect(shapeTextRun('hi', {})).toBeNull();
-  });
-
   it('returns null when the backend is advances-only (no shapeRun)', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
-    expect(shapeTextRun('hi', {})).toBeNull();
+    expect(shapeTextRun(_advancesOnly, 'hi', {})).toBeNull();
   });
 
   it('delegates to backend.shapeRun', () => {
-    setTextShaperBackend(_makeFullBackend());
-    const run = shapeTextRun('ab', {});
+    const run = shapeTextRun(_backend, 'ab', {});
     expect(run).not.toBeNull();
     expect(run!.glyphCount).toBe(2);
     expect(run!.direction).toBe('LeftToRight');
@@ -324,28 +263,28 @@ describe('shapeTextRun', () => {
 
   it('passes options to the backend', () => {
     let capturedOptions: unknown;
-    setTextShaperBackend({
+    const backend: HostTextShaperProvider = {
       measureText: () => 0,
       shapeRun: (_t, _f, opts) => {
         capturedOptions = opts;
         return { ..._testRun, glyphs: [] };
       },
-    });
-    shapeTextRun('x', {}, { direction: 'RightToLeft', script: 'Arab' });
+    };
+    shapeTextRun(backend, 'x', {}, { direction: 'RightToLeft', script: 'Arab' });
     expect(capturedOptions).toMatchObject({ direction: 'RightToLeft', script: 'Arab' });
   });
 });
+
 describe('shapeTextRunInto', () => {
-  it('returns false and does not modify out when no backend is set', () => {
+  it('returns false and does not modify out when the backend has no shapeRun', () => {
     const out = createShapedRun();
-    expect(shapeTextRunInto('hi', {}, out)).toBe(false);
+    expect(shapeTextRunInto(_advancesOnly, 'hi', {}, out)).toBe(false);
     expect(out.glyphCount).toBe(0);
   });
 
   it('writes run fields and glyphs into out, returns true', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out = createShapedRun();
-    expect(shapeTextRunInto('ab', {}, out)).toBe(true);
+    expect(shapeTextRunInto(_backend, 'ab', {}, out)).toBe(true);
     expect(out.advanceWidth).toBe(15);
     expect(out.glyphCount).toBe(2);
     expect(out.glyphs).toHaveLength(2);
@@ -355,23 +294,22 @@ describe('shapeTextRunInto', () => {
 
   it('forwards options to the backend', () => {
     let capturedOptions: unknown;
-    setTextShaperBackend({
+    const backend: HostTextShaperProvider = {
       measureText: () => 0,
       shapeRun: (_t, _f, opts) => {
         capturedOptions = opts;
         return { ..._testRun, glyphs: [..._testGlyphs] };
       },
-    });
+    };
     const out = createShapedRun();
-    shapeTextRunInto('x', {}, out, { direction: 'RightToLeft', script: 'Arab' });
+    shapeTextRunInto(backend, 'x', {}, out, { direction: 'RightToLeft', script: 'Arab' });
     expect(capturedOptions).toMatchObject({ direction: 'RightToLeft', script: 'Arab' });
   });
 
   it('retains the existing glyphs array reference', () => {
-    setTextShaperBackend(_makeFullBackend());
     const out = createShapedRun();
     const originalGlyphs = out.glyphs;
-    shapeTextRunInto('ab', {}, out);
+    shapeTextRunInto(_backend, 'ab', {}, out);
     expect(out.glyphs).toBe(originalGlyphs);
   });
 });

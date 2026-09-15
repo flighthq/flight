@@ -10,7 +10,6 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { getTextShaperBackend } from './textShaper';
 import { shapeTextRun } from './textShaperRun';
 
 // Clears all cached ShapedRuns from `cache`, releasing their references. The cache remains valid
@@ -44,24 +43,22 @@ export function initializeTextShaperCache(out: EntityConstruction<TextShaperCach
 
 // Shapes `text` in `format` with `options`, returning a cached ShapedRun when an equivalent call
 // was made earlier in this cache's lifetime. Calls `shapeTextRun` on miss and stores the result.
-// Returns null when no backend is registered or the backend is advances-only (same as
-// `shapeTextRun`); null results are NOT cached so a later backend registration can succeed. Cache
-// keys include provider identity so callers can safely share a cache while interleaving hosts.
+// Returns null when the backend does not support shaping (same as `shapeTextRun`); null results
+// are NOT cached so a different backend can succeed. Cache keys include provider identity so
+// callers can safely share a cache while interleaving hosts.
 export function shapeTextRunCached(
+  hostTextShaper: Readonly<HostTextShaperProvider>,
   cache: TextShaperCache,
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<ShapeRunOptions>,
-  hostTextShaper?: Readonly<HostTextShaperProvider>,
 ): ShapedRun | null {
   const runtime = _getTextShaperCacheRuntime(cache);
   if (runtime === null) return null;
-  const backend = getTextShaperBackend(hostTextShaper);
-  if (backend === null) return null;
-  const key = `${_getBackendCacheId(backend)}\x00${_makeCacheKey(text, format, options)}`;
+  const key = `${_getBackendCacheId(hostTextShaper)}\x00${_makeCacheKey(text, format, options)}`;
   const existing = runtime.entries.get(key);
   if (existing !== undefined) return existing;
-  const result = shapeTextRun(text, format, options, hostTextShaper);
+  const result = shapeTextRun(hostTextShaper, text, format, options);
   if (result !== null) runtime.entries.set(key, result);
   return result;
 }

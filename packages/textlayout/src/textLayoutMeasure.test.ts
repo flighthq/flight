@@ -1,27 +1,28 @@
-import { measureText, setTextShaperBackend } from '@flighthq/textshaper/contract';
+import type { HostTextShaperProvider } from '@flighthq/types/contract';
 
 import { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 
 afterEach(() => {
   setTextLayoutMeasureProvider(null);
-  setTextShaperBackend(null);
 });
 
 describe('getTextLayoutMeasureProvider', () => {
-  it('returns null before a provider or shaper backend is set', () => {
+  it('returns null before a provider or host text shaper is supplied', () => {
     expect(getTextLayoutMeasureProvider()).toBeNull();
   });
 
-  it('falls back to the textshaper seam when a backend is registered', () => {
-    setTextShaperBackend({ measureText: (text) => text.length });
-    expect(getTextLayoutMeasureProvider()).toBe(measureText);
+  it('returns a bound measure function when a host text shaper is provided', () => {
+    const backend: HostTextShaperProvider = { measureText: (text) => text.length };
+    const measure = getTextLayoutMeasureProvider(backend);
+    expect(measure).not.toBeNull();
+    expect(measure!('abc', {})).toBe(3);
   });
 
-  it('prefers an explicitly set provider over the shaper backend', () => {
-    const measure = (text: string) => text.length;
-    setTextShaperBackend({ measureText: () => 99 });
-    setTextLayoutMeasureProvider(measure);
-    expect(getTextLayoutMeasureProvider()).toBe(measure);
+  it('prefers an explicitly set provider over the host text shaper', () => {
+    const explicit = (text: string) => text.length * 10;
+    const backend: HostTextShaperProvider = { measureText: () => 99 };
+    setTextLayoutMeasureProvider(explicit);
+    expect(getTextLayoutMeasureProvider(backend)).toBe(explicit);
   });
 });
 
