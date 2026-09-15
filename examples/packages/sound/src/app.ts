@@ -1,4 +1,4 @@
-import { createWebCursorBackend, webHostAudioDevice } from '@flighthq/host-web';
+import { createWebCursorBackend, webHostAudioDevice, webHostAudioMixer } from '@flighthq/host-web';
 import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -90,17 +90,17 @@ const inputManager = createInputManager();
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
-// Audio mixer with two buses: sfx and music. The mixer stays web-only (AudioContext) for now;
-// bus routing is a no-op when channels are managed through a HostAudioDeviceProvider (Option A).
+// Audio mixer with two buses: sfx and music. The Web host resolves the opaque device, graph, source,
+// and bus handles while the example keeps only portable mixer/channel state.
 let mixer: ReturnType<typeof createAudioMixer> | null = null;
 const sfxBus = createAudioBus({ name: 'sfx', gain: 0.8 });
 const musicBus = createAudioBus({ name: 'music', gain: 0.6 });
 
 function ensureMixer(): ReturnType<typeof createAudioMixer> {
   if (mixer === null) {
-    mixer = createAudioMixer(new AudioContext({ sampleRate: SAMPLE_RATE }));
-    addAudioBusToMixer(mixer, sfxBus);
-    addAudioBusToMixer(mixer, musicBus);
+    mixer = createAudioMixer(webHostAudioMixer, getAudioDevice());
+    addAudioBusToMixer(webHostAudioMixer, mixer, sfxBus);
+    addAudioBusToMixer(webHostAudioMixer, mixer, musicBus);
   }
   return mixer;
 }
@@ -109,7 +109,7 @@ function playSfx(resource: AudioResource, gain: number, pan: number): AudioChann
   const dev = getAudioDevice();
   const channel = playAudioResource(webHostAudioDevice, dev, resource, { gain });
   if (channel !== null) {
-    routeAudioChannelToMixerBus(ensureMixer(), channel, sfxBus);
+    routeAudioChannelToMixerBus(webHostAudioMixer, ensureMixer(), channel, sfxBus);
   }
   void pan;
   return channel;
@@ -471,7 +471,7 @@ for (const btn of buttons) {
 connectInteractionSignal(interactionManager, sliderTrack, 'onPointerDown', (data) => {
   const localX = data.localX - SLIDER_X;
   masterGain = Math.max(0, Math.min(1, localX / SLIDER_W));
-  if (mixer !== null) setAudioMixerMasterGain(mixer, masterGain);
+  if (mixer !== null) setAudioMixerMasterGain(webHostAudioMixer, mixer, masterGain);
   drawMasterSlider();
   updateMasterValueLabel();
   updateStatus('Master volume: ' + Math.round(masterGain * 100) + '%');
@@ -481,7 +481,7 @@ connectInteractionSignal(interactionManager, sliderTrack, 'onPointerDown', (data
 connectInteractionSignal(interactionManager, sfxSliderTrack, 'onPointerDown', (data) => {
   const localX = data.localX - SLIDER_X;
   const gain = Math.max(0, Math.min(1, localX / BUS_SLIDER_W));
-  setAudioBusGain(sfxBus, gain);
+  setAudioBusGain(webHostAudioMixer, sfxBus, gain);
   drawBusSliders();
   updateStatus('SFX bus gain: ' + Math.round(gain * 100) + '%');
 });
@@ -489,7 +489,7 @@ connectInteractionSignal(interactionManager, sfxSliderTrack, 'onPointerDown', (d
 connectInteractionSignal(interactionManager, musicSliderTrack, 'onPointerDown', (data) => {
   const localX = data.localX - (SLIDER_X + BUS_SLIDER_W + 80);
   const gain = Math.max(0, Math.min(1, localX / BUS_SLIDER_W));
-  setAudioBusGain(musicBus, gain);
+  setAudioBusGain(webHostAudioMixer, musicBus, gain);
   drawBusSliders();
   updateStatus('Music bus gain: ' + Math.round(gain * 100) + '%');
 });
@@ -498,7 +498,7 @@ connectInteractionSignal(interactionManager, musicSliderTrack, 'onPointerDown', 
 connectInteractionSignal(interactionManager, sfxPanTrack, 'onPointerDown', (data) => {
   const localX = data.localX - SLIDER_X;
   const pan = Math.max(-1, Math.min(1, (localX / BUS_SLIDER_W) * 2 - 1));
-  setAudioBusPan(sfxBus, pan);
+  setAudioBusPan(webHostAudioMixer, sfxBus, pan);
   drawPanSliders();
   updateStatus('SFX bus pan: ' + pan.toFixed(2));
 });
@@ -506,7 +506,7 @@ connectInteractionSignal(interactionManager, sfxPanTrack, 'onPointerDown', (data
 connectInteractionSignal(interactionManager, musicPanTrack, 'onPointerDown', (data) => {
   const localX = data.localX - (SLIDER_X + BUS_SLIDER_W + 80);
   const pan = Math.max(-1, Math.min(1, (localX / BUS_SLIDER_W) * 2 - 1));
-  setAudioBusPan(musicBus, pan);
+  setAudioBusPan(webHostAudioMixer, musicBus, pan);
   drawPanSliders();
   updateStatus('Music bus pan: ' + pan.toFixed(2));
 });

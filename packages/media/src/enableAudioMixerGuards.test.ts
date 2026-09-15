@@ -1,29 +1,34 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type {
+  AudioBusNodeHandle,
+  AudioDeviceHandle,
+  AudioMixerGraphHandle,
+  HostAudioMixerProvider,
+  LogEntry,
+} from '@flighthq/types/contract';
 
 import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer';
 import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards';
 
-// The narrowest Web Audio stand-in a mixer + bus needs; the guard under test never touches audio itself.
-class MockGainNode {
-  gain = { value: 1 };
-  connect(): void {}
-  disconnect(): void {}
-}
-
-class MockAudioContext {
-  currentTime = 0;
-  destination = {};
-  state = 'running';
-  createGain(): GainNode {
-    return new MockGainNode() as unknown as GainNode;
-  }
-  createStereoPanner(): StereoPannerNode {
-    return { connect() {}, disconnect() {}, pan: { value: 0 } } as unknown as StereoPannerNode;
-  }
-}
-
-const ctx = new MockAudioContext() as unknown as AudioContext;
+const device = 1 as AudioDeviceHandle;
+const graph = 1 as AudioMixerGraphHandle;
+const busNode = 1 as AudioBusNodeHandle;
+const mixerProvider = (() => {
+  const out = allocateEntity<HostAudioMixerProvider>();
+  out.createMixerGraph = () => graph;
+  out.destroyMixerGraph = () => {};
+  out.createBusNode = () => busNode;
+  out.destroyBusNode = () => {};
+  out.setBusNodeGain = () => {};
+  out.setBusNodePan = () => {};
+  out.fadeBusNodeGain = () => {};
+  out.setMasterGain = () => {};
+  out.routeSourceToBus = () => {};
+  out.unrouteSource = () => {};
+  out.routeSourceToDefault = () => {};
+  return finishEntity(out);
+})();
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
@@ -46,7 +51,7 @@ describe('disableAudioMixerGuards', () => {
     const entries = captureLog(() => {
       enableAudioMixerGuards();
       disableAudioMixerGuards();
-      setAudioBusGain(createAudioBus({ name: 'orphan' }), 0.25);
+      setAudioBusGain(mixerProvider, createAudioBus({ name: 'orphan' }), 0.25);
     });
     expect(entries.length).toBe(0);
   });
@@ -58,7 +63,7 @@ describe('enableAudioMixerGuards', () => {
       enableAudioMixerGuards();
       try {
         // Returns the value it set, which is exactly why the failure is invisible without the guard.
-        expect(setAudioBusGain(createAudioBus({ name: 'orphan' }), 0.25)).toBe(0.25);
+        expect(setAudioBusGain(mixerProvider, createAudioBus({ name: 'orphan' }), 0.25)).toBe(0.25);
       } finally {
         disableAudioMixerGuards();
       }
@@ -71,10 +76,10 @@ describe('enableAudioMixerGuards', () => {
     const entries = captureLog(() => {
       enableAudioMixerGuards();
       try {
-        const mixer = createAudioMixer(ctx);
+        const mixer = createAudioMixer(mixerProvider, device);
         const bus = createAudioBus({ name: 'music' });
-        addAudioBusToMixer(mixer, bus);
-        setAudioBusGain(bus, 0.5);
+        addAudioBusToMixer(mixerProvider, mixer, bus);
+        setAudioBusGain(mixerProvider, bus, 0.5);
       } finally {
         disableAudioMixerGuards();
       }
