@@ -126,6 +126,20 @@ export function initializeWebAudioDeviceBackend(
     sources.delete(source as number);
   };
 
+  out.fadeSourceGain = (source: AudioSourceHandle, targetGain: number, durationMs: number): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    // Read the clock here rather than taking it as a parameter: the context that schedules the ramp is
+    // the one that owns the timebase, so a caller can neither supply a useful value nor get it wrong.
+    const now = s.context.currentTime;
+    const gain = s.gainNode.gain;
+    // Cancel then pin: without setValueAtTime the ramp would start from whatever value a previously
+    // cancelled automation left behind, which is not necessarily what is audible right now.
+    gain.cancelScheduledValues(now);
+    gain.setValueAtTime(gain.value, now);
+    gain.linearRampToValueAtTime(targetGain, now + durationMs / 1000);
+  };
+
   out.getDeviceTime = (device: AudioDeviceHandle): number => {
     const context = devices.get(device as number);
     return context !== undefined ? context.currentTime : 0;
