@@ -2,9 +2,11 @@ import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flatte
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
 import { unionAllPaths } from './unionAllPaths';
 
-// Builds a closed square path with lower-left corner (x, y) and side s.
+const backend = createDefaultPathBooleanBackend();
+
 function squarePath(x: number, y: number, s: number): Path {
   const path = createPath('nonZero');
   appendPathMoveTo(path, x, y);
@@ -15,7 +17,6 @@ function squarePath(x: number, y: number, s: number): Path {
   return path;
 }
 
-// Total absolute filled area of a path's flattened outline (sum of signed ring areas).
 function pathArea(path: Readonly<Path>): number {
   let total = 0;
   for (const ring of flattenPath(path)) {
@@ -27,14 +28,13 @@ function pathArea(path: Readonly<Path>): number {
   return Math.abs(total);
 }
 
-// Number of contours in a path's flattened outline.
 function ringCount(path: Readonly<Path>): number {
   return flattenPath(path).length;
 }
 
 describe('unionAllPaths', () => {
   it('returns an empty path for an empty list', () => {
-    const result = unionAllPaths([]);
+    const result = unionAllPaths(backend, []);
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });
@@ -51,22 +51,20 @@ describe('unionAllPaths', () => {
     appendPathLineTo(overlap, 6, 6);
     appendPathLineTo(overlap, 2, 6);
     appendPathClose(overlap);
-    const result = unionAllPaths([overlap]);
-    // The two overlapping same-wound squares resolve to one solid outline of area 16 + 16 - 4 = 28.
+    const result = unionAllPaths(backend, [overlap]);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
 
   it('merges a list of overlapping squares into one outline', () => {
-    const result = unionAllPaths([squarePath(0, 0, 10), squarePath(5, 5, 10), squarePath(8, 8, 10)]);
-    // A connected chain of overlapping squares merges to a single ring; assert connectivity, not exact area.
+    const result = unionAllPaths(backend, [squarePath(0, 0, 10), squarePath(5, 5, 10), squarePath(8, 8, 10)]);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeGreaterThan(100);
     expect(pathArea(result)).toBeLessThan(300);
   });
 
   it('keeps disjoint squares as separate rings summing their areas', () => {
-    const result = unionAllPaths([squarePath(0, 0, 10), squarePath(20, 20, 10), squarePath(40, 0, 10)]);
+    const result = unionAllPaths(backend, [squarePath(0, 0, 10), squarePath(20, 20, 10), squarePath(40, 0, 10)]);
     expect(ringCount(result)).toBe(3);
     expect(pathArea(result)).toBeCloseTo(300, 6);
   });
@@ -75,8 +73,8 @@ describe('unionAllPaths', () => {
     const a = squarePath(0, 0, 10);
     const b = squarePath(5, 5, 10);
     const c = squarePath(2, 8, 10);
-    const forward = unionAllPaths([a, b, c]);
-    const reversed = unionAllPaths([c, b, a]);
+    const forward = unionAllPaths(backend, [a, b, c]);
+    const reversed = unionAllPaths(backend, [c, b, a]);
     expect(pathArea(forward)).toBeCloseTo(pathArea(reversed), 6);
     expect(ringCount(forward)).toBe(ringCount(reversed));
   });
@@ -84,7 +82,7 @@ describe('unionAllPaths', () => {
   it('writes into a provided out path that aliases an input', () => {
     const a = squarePath(0, 0, 10);
     const b = squarePath(5, 5, 10);
-    const result = unionAllPaths([a, b], a);
+    const result = unionAllPaths(backend, [a, b], a);
     expect(result).toBe(a);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(175, 6);

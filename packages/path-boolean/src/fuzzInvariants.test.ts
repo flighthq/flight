@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { differencePaths, unionPaths } from './booleanPaths';
 import { offsetPath } from './offsetPath';
+import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
 import { simplifyPath } from './simplifyPath';
 import { unionAllPaths } from './unionAllPaths';
 
-// Deterministic xorshift32 PRNG. Seeded by a constant so every fuzz case is reproducible run to run — a
-// failing invariant always reproduces from the same seed. Never uses Math.random.
+const backend = createDefaultPathBooleanBackend();
+
 function makeRandom(seed: number): () => number {
   let state = seed >>> 0 || 1;
   return () => {
@@ -21,7 +22,6 @@ function makeRandom(seed: number): () => number {
   };
 }
 
-// Builds a closed polygon path from a flat [x0, y0, ...] vertex list.
 function polygonPath(vertices: readonly number[]): Path {
   const path = createPath('nonZero');
   appendPathMoveTo(path, vertices[0], vertices[1]);
@@ -30,8 +30,6 @@ function polygonPath(vertices: readonly number[]): Path {
   return path;
 }
 
-// A simple (non-self-intersecting) star-shaped polygon: distinct sorted angles about a center, each at a
-// random radius. Sorting the angles guarantees the boundary never crosses itself.
 function randomSimplePolygon(random: () => number, count: number): number[] {
   const angles: number[] = [];
   for (let i = 0; i < count; i++) angles.push(random() * Math.PI * 2);
@@ -44,21 +42,18 @@ function randomSimplePolygon(random: () => number, count: number): number[] {
   return vertices;
 }
 
-// A random convex polygon: the convex hull of random points, always simple and convex.
 function randomConvexPolygon(random: () => number, count: number): number[] {
   const points: [number, number][] = [];
   for (let i = 0; i < count; i++) points.push([10 + random() * 80, 10 + random() * 80]);
   return convexHull(points);
 }
 
-// An arbitrary, possibly self-intersecting polygon: random points visited in random order.
 function randomMessyPolygon(random: () => number, count: number): number[] {
   const vertices: number[] = [];
   for (let i = 0; i < count; i++) vertices.push(random() * 100, random() * 100);
   return vertices;
 }
 
-// Counter-clockwise convex hull (Andrew's monotone chain) of a point set, as a flat vertex list.
 function convexHull(points: readonly (readonly [number, number])[]): number[] {
   const sorted = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cross = (o: readonly number[], a: readonly number[], b: readonly number[]): number =>
@@ -82,7 +77,6 @@ function convexHull(points: readonly (readonly [number, number])[]): number[] {
   return flat;
 }
 
-// Total absolute filled area of a path's flattened outline (sum of signed ring areas).
 function pathArea(path: Readonly<Path>): number {
   let total = 0;
   for (const ring of flattenPath(path)) {
@@ -94,12 +88,10 @@ function pathArea(path: Readonly<Path>): number {
   return Math.abs(total);
 }
 
-// Number of contours in a path's flattened outline.
 function ringCount(path: Readonly<Path>): number {
   return flattenPath(path).length;
 }
 
-// Whether two areas agree within a combined absolute + relative tolerance.
 function areasClose(a: number, b: number, relative = 1e-3, absolute = 1e-3): boolean {
   return Math.abs(a - b) <= absolute + relative * Math.max(Math.abs(a), Math.abs(b));
 }
@@ -117,8 +109,8 @@ describe('fuzz invariants', () => {
         for (let i = start; i < vertices.length; i += 2) appendPathLineTo(path, vertices[i], vertices[i + 1]);
       }
       appendPathClose(path);
-      const nonZero = simplifyPath(path, { fillRule: 'nonZero' });
-      const evenOdd = simplifyPath(path, { fillRule: 'evenOdd' });
+      const nonZero = simplifyPath(backend, path, { fillRule: 'nonZero' });
+      const evenOdd = simplifyPath(backend, path, { fillRule: 'evenOdd' });
       expect(pathArea(nonZero)).toBeGreaterThan(0);
       expect(pathArea(evenOdd)).toBeCloseTo(0, 6);
     }
@@ -129,8 +121,8 @@ describe('fuzz invariants', () => {
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 3 + (iteration % 6)));
       const b = polygonPath(randomSimplePolygon(random, 3 + ((iteration + 3) % 6)));
-      const ab = unionPaths(a, b);
-      const ba = unionPaths(b, a);
+      const ab = unionPaths(backend, a, b);
+      const ba = unionPaths(backend, b, a);
       expect(areasClose(pathArea(ab), pathArea(ba))).toBe(true);
       expect(ringCount(ab)).toBe(ringCount(ba));
     }
@@ -140,7 +132,7 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x55aa33cc);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 5)));
-      const result = differencePaths(a, a);
+      const result = differencePaths(backend, a, a);
       expect(pathArea(result)).toBeCloseTo(0, 6);
     }
   });
@@ -149,8 +141,8 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x0f0f0f0f);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 3 + (iteration % 6)));
-      const union = unionPaths(a, a);
-      const simplified = simplifyPath(a);
+      const union = unionPaths(backend, a, a);
+      const simplified = simplifyPath(backend, a);
       expect(areasClose(pathArea(union), pathArea(simplified))).toBe(true);
       expect(ringCount(union)).toBe(ringCount(simplified));
     }
@@ -160,8 +152,8 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x7e577e57);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 6)));
-      const once = simplifyPath(a);
-      const twice = simplifyPath(once);
+      const once = simplifyPath(backend, a);
+      const twice = simplifyPath(backend, once);
       expect(areasClose(pathArea(once), pathArea(twice))).toBe(true);
       expect(ringCount(once)).toBe(ringCount(twice));
     }
@@ -171,8 +163,8 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x13571357);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 6)));
-      const union = unionAllPaths([a]);
-      const simplified = simplifyPath(a);
+      const union = unionAllPaths(backend, [a]);
+      const simplified = simplifyPath(backend, a);
       expect(areasClose(pathArea(union), pathArea(simplified))).toBe(true);
       expect(ringCount(union)).toBe(ringCount(simplified));
     }
@@ -183,7 +175,7 @@ describe('fuzz invariants', () => {
     for (let iteration = 0; iteration < 40; iteration++) {
       const vertices = randomSimplePolygon(random, 3 + (iteration % 6));
       const a = polygonPath(vertices);
-      const zeroOffset = offsetPath(a, 0);
+      const zeroOffset = offsetPath(backend, a, 0);
       expect(areasClose(pathArea(zeroOffset), pathArea(a), 1e-2, 1e-2)).toBe(true);
       expect(ringCount(zeroOffset)).toBe(1);
     }
@@ -193,15 +185,12 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x0badf00d);
     for (let iteration = 0; iteration < 40; iteration++) {
       const vertices = randomConvexPolygon(random, 5 + (iteration % 8));
-      if (vertices.length < 8) continue; // need at least a quad after hull dedup
+      if (vertices.length < 8) continue;
       const a = polygonPath(vertices);
       const baseArea = pathArea(a);
-      if (baseArea < 50) continue; // skip near-degenerate hulls where the erosion tolerance dominates
-      // For a convex polygon, inflating by d then deflating by d with a miter join recovers the polygon:
-      // the corner miters added on the grow are exactly removed on the shrink. A high miter limit keeps
-      // sharp corners from falling back to a bevel (which would not fully recover).
-      const grown = offsetPath(a, 3, { join: 'miter', miterLimit: 100 });
-      const recovered = offsetPath(grown, -3, { join: 'miter', miterLimit: 100 });
+      if (baseArea < 50) continue;
+      const grown = offsetPath(backend, a, 3, { join: 'miter', miterLimit: 100 });
+      const recovered = offsetPath(backend, grown, -3, { join: 'miter', miterLimit: 100 });
       expect(ringCount(recovered)).toBe(1);
       expect(areasClose(pathArea(recovered), baseArea, 3e-2, 1)).toBe(true);
     }
@@ -211,10 +200,9 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x0c0ffee0);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 5 + (iteration % 8)));
-      const offset = offsetPath(a, 4);
+      const offset = offsetPath(backend, a, 4);
       if (offset.commands.length === 0) continue;
-      // A self-intersection-free outline is unchanged by a non-zero simplify: its area and ring count hold.
-      const simplified = simplifyPath(offset, { fillRule: 'nonZero' });
+      const simplified = simplifyPath(backend, offset, { fillRule: 'nonZero' });
       expect(areasClose(pathArea(simplified), pathArea(offset), 1e-2, 1e-2)).toBe(true);
       expect(ringCount(simplified)).toBe(ringCount(offset));
     }

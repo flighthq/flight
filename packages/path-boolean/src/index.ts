@@ -1,5 +1,6 @@
 export {
   booleanPaths,
+  createDefaultPathBooleanBackend,
   differencePaths,
   explainOffsetPath,
   explainSimplifyPath,

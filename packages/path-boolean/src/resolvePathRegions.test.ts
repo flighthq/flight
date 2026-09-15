@@ -2,9 +2,11 @@ import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
 import { resolvePathRegions } from './resolvePathRegions';
 
-// Total absolute filled area of a path's flattened outline (sum of signed ring areas).
+const backend = createDefaultPathBooleanBackend();
+
 function pathArea(path: Readonly<Path>): number {
   let total = 0;
   for (const ring of flattenPath(path)) {
@@ -16,7 +18,6 @@ function pathArea(path: Readonly<Path>): number {
   return Math.abs(total);
 }
 
-// Number of contours in a path's flattened outline.
 function ringCount(path: Readonly<Path>): number {
   return flattenPath(path).length;
 }
@@ -26,22 +27,20 @@ const SQUARE_B = [2, 2, 6, 2, 6, 6, 2, 6];
 
 describe('resolvePathRegions', () => {
   it('returns an empty path for no rings', () => {
-    const result = resolvePathRegions([], 'nonZero');
+    const result = resolvePathRegions(backend, [], 'nonZero');
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
     expect(result.winding).toBe('nonZero');
   });
 
   it('self-unions overlapping rings into one outline under nonZero', () => {
-    const result = resolvePathRegions([SQUARE_A, SQUARE_B], 'nonZero');
-    // Two 4x4 squares overlapping in a 2x2 corner: 16 + 16 - 4 = 28.
+    const result = resolvePathRegions(backend, [SQUARE_A, SQUARE_B], 'nonZero');
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
 
   it('applies the fill rule to self-overlap under evenOdd', () => {
-    const result = resolvePathRegions([SQUARE_A, SQUARE_B], 'evenOdd');
-    // Even-odd punches the doubly-covered 2x2 corner out: (16 - 4) + (16 - 4) = 24.
+    const result = resolvePathRegions(backend, [SQUARE_A, SQUARE_B], 'evenOdd');
     expect(pathArea(result)).toBeCloseTo(24, 6);
     expect(ringCount(result)).toBeGreaterThan(1);
   });
