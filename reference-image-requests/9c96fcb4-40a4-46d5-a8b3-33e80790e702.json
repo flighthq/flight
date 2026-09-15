@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "77db6a75-2074-4256-a89e-943f74b98554",
+  "id": "9c96fcb4-40a4-46d5-a8b3-33e80790e702",
   "subject": "functional",
   "targets": [
     {
-      "entry": "shape-stroke",
+      "entry": "path-boolean-xor",
       "renderer": "dom",
-      "pixelSha256": "79de6e9460c1b41e9617ff9ec0004e6937ae2f26a7f1e402bfc14ee97d0165d5",
+      "pixelSha256": "c0de0537acc80f6c73b85a6ac0d8acedecbd19eef162f54758c83bb1850d0c94",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "shape-stroke",
+      "entry": "path-boolean-xor",
       "renderer": "canvas",
-      "pixelSha256": "a95df5212b702f765270401feb7b4c1bf3fa8a086dd35467e50fc44142ea3660",
+      "pixelSha256": "c0de0537acc80f6c73b85a6ac0d8acedecbd19eef162f54758c83bb1850d0c94",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "shape-stroke",
+      "entry": "path-boolean-xor",
       "renderer": "webgl",
-      "pixelSha256": "723aa2dd05e9827eff3b949c1b528d8a052f9ab0eb8488b9eec5e8b05cf9b362",
+      "pixelSha256": "c0de0537acc80f6c73b85a6ac0d8acedecbd19eef162f54758c83bb1850d0c94",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -46,11 +46,11 @@
       }
     },
     {
-      "entry": "shape-stroke",
+      "entry": "path-boolean-xor",
       "renderer": "webgpu",
-      "pixelSha256": "79de6e9460c1b41e9617ff9ec0004e6937ae2f26a7f1e402bfc14ee97d0165d5",
+      "pixelSha256": "c0de0537acc80f6c73b85a6ac0d8acedecbd19eef162f54758c83bb1850d0c94",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -62,5 +62,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:05:08.164Z"
+  "createdAt": "2026-09-15T08:18:58.730Z"
 }

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "261770c9-5a1c-4e5d-a9a6-6240f1764948",
+  "id": "1b6c0ab8-69d2-4c09-a782-c781bcb77468",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-inner-shadow",
+      "entry": "shading-normal-map",
       "renderer": "webgl",
-      "pixelSha256": "7920bd92a234c80504302adc755ce1451ebda688362e619bb49c8fd2a8d8c0e8",
+      "pixelSha256": "f544124922ff2396f01138630089e8184dd016f512f8ad2264636c4ece536c9b",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-inner-shadow",
+      "entry": "shading-normal-map",
       "renderer": "webgpu",
-      "pixelSha256": "7920bd92a234c80504302adc755ce1451ebda688362e619bb49c8fd2a8d8c0e8",
+      "pixelSha256": "f544124922ff2396f01138630089e8184dd016f512f8ad2264636c4ece536c9b",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:41.265Z"
+  "createdAt": "2026-09-15T08:19:26.421Z"
 }

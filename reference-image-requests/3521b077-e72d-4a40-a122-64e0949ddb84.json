@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "9799f3f8-488a-447e-998a-039f592fd1f0",
+  "id": "3521b077-e72d-4a40-a122-64e0949ddb84",
   "subject": "functional",
   "targets": [
     {
-      "entry": "mesh-tangent-mirror-handedness",
+      "entry": "scene-transparent-orthographic",
       "renderer": "webgl",
-      "pixelSha256": "98e1dac9922628d44d4fe52861d2ec16577c6ba4591ee107b73c39eae5596bd8",
+      "pixelSha256": "ffbfdab52ba55c9df42eca5e6ab0a0daf62c77b34733b8b1e87a862660cb8b94",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "mesh-tangent-mirror-handedness",
+      "entry": "scene-transparent-orthographic",
       "renderer": "webgpu",
-      "pixelSha256": "b98562dd3cf83ca4c5fa007580062a9871908900b0b1c3454eb6bdddbae3eb7b",
+      "pixelSha256": "ffbfdab52ba55c9df42eca5e6ab0a0daf62c77b34733b8b1e87a862660cb8b94",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T15:28:46.070Z"
+  "createdAt": "2026-09-15T08:19:20.839Z"
 }

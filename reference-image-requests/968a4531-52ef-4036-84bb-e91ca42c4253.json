@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "332a2dc4-982d-4bdf-9e48-97a624808f1f",
+  "id": "968a4531-52ef-4036-84bb-e91ca42c4253",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-gradient-bevel",
+      "entry": "particle-emitter-color",
       "renderer": "webgl",
-      "pixelSha256": "c3a2d1cf50902f07042f05365be2fdb2654bd3f0450c775f5d455ac285ef2b0e",
+      "pixelSha256": "bafe1c1d1ebaf5e048a735c52dcb61633788081402e43d9527ae042917cc002c",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-gradient-bevel",
+      "entry": "particle-emitter-color",
       "renderer": "webgpu",
-      "pixelSha256": "7bb2edd239b2c82a8093b395abd9a0bf18e5cc5aca31ccc21afa9833a7e2d6af",
+      "pixelSha256": "bafe1c1d1ebaf5e048a735c52dcb61633788081402e43d9527ae042917cc002c",
       "build": {
-        "commit": "6f5cae081ff4932b3fa962abc0b3ad2cb83a1510",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -34,5 +34,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T04:04:38.640Z"
+  "createdAt": "2026-09-15T08:17:16.115Z"
 }

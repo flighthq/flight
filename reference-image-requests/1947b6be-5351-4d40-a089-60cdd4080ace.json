@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "e0f19f3c-283f-4670-baf9-7995c93994e9",
+  "id": "1947b6be-5351-4d40-a089-60cdd4080ace",
   "subject": "functional",
   "targets": [
     {
-      "entry": "rive-import",
+      "entry": "shape-stroke",
       "renderer": "dom",
-      "pixelSha256": "747fcf98d34bd259d9a462bfcefce5d6443ae9a25007473a770da73a3c8d7000",
+      "pixelSha256": "79de6e9460c1b41e9617ff9ec0004e6937ae2f26a7f1e402bfc14ee97d0165d5",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "rive-import",
+      "entry": "shape-stroke",
       "renderer": "canvas",
-      "pixelSha256": "ea54601123f8ba24edad48b4df9871a0cdf69002f1da5ed9c32d757ec473eed4",
+      "pixelSha256": "a95df5212b702f765270401feb7b4c1bf3fa8a086dd35467e50fc44142ea3660",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "rive-import",
+      "entry": "shape-stroke",
       "renderer": "webgl",
-      "pixelSha256": "f8c30e58fa3cf38f5f519d8dc449d3d3493720f1238053a89f8a7546a85b4b04",
+      "pixelSha256": "723aa2dd05e9827eff3b949c1b528d8a052f9ab0eb8488b9eec5e8b05cf9b362",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -46,11 +46,11 @@
       }
     },
     {
-      "entry": "rive-import",
+      "entry": "shape-stroke",
       "renderer": "webgpu",
-      "pixelSha256": "f8c30e58fa3cf38f5f519d8dc449d3d3493720f1238053a89f8a7546a85b4b04",
+      "pixelSha256": "79de6e9460c1b41e9617ff9ec0004e6937ae2f26a7f1e402bfc14ee97d0165d5",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -62,5 +62,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T15:27:32.123Z"
+  "createdAt": "2026-09-15T08:17:23.445Z"
 }

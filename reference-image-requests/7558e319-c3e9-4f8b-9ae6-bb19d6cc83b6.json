@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "id": "920e9dc8-2d97-4fb5-aac3-ab69c4ec60c9",
+  "id": "7558e319-c3e9-4f8b-9ae6-bb19d6cc83b6",
   "subject": "functional",
   "targets": [
     {
@@ -8,7 +8,7 @@
       "renderer": "dom",
       "pixelSha256": "6a482fe09fdfcc3c0c70e0890df5a14316a8940b1fb065ebe61028e2bc2bceba",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -22,7 +22,7 @@
       "renderer": "canvas",
       "pixelSha256": "1299d2f8e95da8f1bc94f64c1509de6829ae10fd773f5275eaf58f8a9a1269c2",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -36,7 +36,7 @@
       "renderer": "webgl",
       "pixelSha256": "2bc949723f33504ac38e157fbbfe97913214e5cb6cfed1704f39a668fe4e021b",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -50,7 +50,7 @@
       "renderer": "webgpu",
       "pixelSha256": "2bc949723f33504ac38e157fbbfe97913214e5cb6cfed1704f39a668fe4e021b",
       "build": {
-        "commit": "12290e1f9b322ecdc5d521dc3c3597796c75045a",
+        "commit": "b88acc1d080c49af69bcc979eb38073d63c72ba2",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -62,5 +62,5 @@
   ],
   "frames": 1,
   "reason": "Commissioned from review",
-  "createdAt": "2026-09-13T15:28:31.240Z"
+  "createdAt": "2026-09-15T08:19:46.765Z"
 }
