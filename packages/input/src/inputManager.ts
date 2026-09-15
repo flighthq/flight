@@ -74,56 +74,62 @@ export function applyGamepadStickDeadZone(out: { x: number; y: number }, x: numb
 }
 
 export function attachGamepadInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachGamepad(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachGamepad(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kGamepadInput, release);
 }
 
 export function attachKeyboardInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachKeyboard(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachKeyboard(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kKeyboardInput, release);
 }
 
 export function attachPointerInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachPointer(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachPointer(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kPointerInput, release);
 }
 
 export function attachRelativePointerInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachRelativePointer(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachRelativePointer(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kRelativePointerInput, release);
 }
 
 export function attachTextInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachText(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachText(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kTextInput, release);
 }
 
 export function attachWheelInput(
+  inputIngress: Readonly<HostInputIngressProvider>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = getInputIngressBackend().attachWheel(source, getInputIngressSink(manager), options);
+  const release = inputIngress.attachWheel(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kWheelInput, release);
 }
 
@@ -323,10 +329,6 @@ export function getInputGamepadAxis(state: Readonly<InputState>, gamepad: number
   return state.axisValues.get(gamepad * MAX_GAMEPAD_AXES + axis) ?? 0;
 }
 
-export function getInputIngressBackend(): HostInputIngressProvider {
-  return _customInputIngressBackend ?? _hostInputIngressBackend ?? _inputIngressSentinel;
-}
-
 /**
  * Creates a key-repeat timer for non-DOM sources (gamepad d-pad buttons,
  * virtual on-screen keys, native backends) that do not generate their own
@@ -426,11 +428,6 @@ export function initializeInputState(out: EntityConstruction<InputState>): void 
   out.pointerButtonsDown = new Map();
 }
 
-// First host wins; a custom backend installed through setInputIngressBackend always takes precedence.
-export function installInputIngressHostBackend(backend: HostInputIngressProvider): void {
-  if (_hostInputIngressBackend === null) _hostInputIngressBackend = backend;
-}
-
 /**
  * Returns `true` if the given gamepad button is currently held.
  * `gamepad` is the gamepad index; `button` is the button index.
@@ -452,15 +449,6 @@ export function isInputKeyDown(state: Readonly<InputState>, keyCode: number): bo
  */
 export function isInputPointerButtonDown(state: Readonly<InputState>, pointerId: number, button: number): boolean {
   return ((state.pointerButtonsDown.get(pointerId) ?? 0) & (1 << button)) !== 0;
-}
-
-export function resetInputIngressBackendForTest(): void {
-  _customInputIngressBackend = null;
-  _hostInputIngressBackend = null;
-}
-
-export function setInputIngressBackend(backend: HostInputIngressProvider | null): void {
-  _customInputIngressBackend = backend;
 }
 
 /**
@@ -585,19 +573,6 @@ function getInputIngressSink(manager: InputManager): InputIngressSink {
   _inputIngressSinks.set(manager, sink);
   return sink;
 }
-
-function noopInputIngressRelease(): void {}
-
-const _inputIngressSentinel: HostInputIngressProvider = {
-  attachGamepad: () => noopInputIngressRelease,
-  attachKeyboard: () => noopInputIngressRelease,
-  attachPointer: () => noopInputIngressRelease,
-  attachRelativePointer: () => noopInputIngressRelease,
-  attachText: () => noopInputIngressRelease,
-  attachWheel: () => noopInputIngressRelease,
-};
-let _customInputIngressBackend: HostInputIngressProvider | null = null;
-let _hostInputIngressBackend: HostInputIngressProvider | null = null;
 
 // Internal teardown registry: maps a manager to its per-source, per-input-kind origin release.
 // Kept off the public InputManager entity so attach/detach track bindings internally and callers hold
