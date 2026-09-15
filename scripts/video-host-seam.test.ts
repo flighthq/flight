@@ -47,17 +47,31 @@ const MINIMUM_ARGUMENTS: ReadonlyMap<string, number> = new Map(
 // This explicit list makes operation loss visible even if the web provider and the interface drift
 // together. Constructors only store HostImageSource and deliberately remain outside this provider.
 const EXPECTED_PROVIDER_METHODS = [
+  'addEndedListener',
   'attachStream',
   'canPlayType',
   'createObjectUrl',
   'createVideoElement',
+  'getCurrentTime',
   'getDuration',
   'getHeight',
+  'getLoop',
+  'getMuted',
+  'getPlaybackRate',
+  'getVolume',
   'getWidth',
   'isReady',
   'loadUrl',
+  'pause',
+  'play',
   'releaseElement',
+  'removeEndedListener',
   'revokeObjectUrl',
+  'setCurrentTime',
+  'setLoop',
+  'setMuted',
+  'setPlaybackRate',
+  'setVolume',
 ] as const;
 
 describe('video host-seam closure', () => {
