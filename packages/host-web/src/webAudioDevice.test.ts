@@ -25,7 +25,7 @@ describe('createWebAudioDeviceBackend', () => {
       'destroyDevice',
       'destroySource',
       'fadeSourceGain',
-      'getDeviceContext',
+      'getDeviceAudioContext',
       'getDeviceTime',
       'getSourceBufferSourceNode',
       'getSourceGainNode',
