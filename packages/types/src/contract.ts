@@ -96,6 +96,7 @@ export * from './AudioBackend';
 export * from './AudioDeviceBackend';
 export * from './AudioDeviceHandle';
 export * from './AudioBus';
+export * from './AudioMixerBackend';
 export * from './AudioResource';
 export * from './AudioResourceReference';
 export * from './AutoExposureEffect';
