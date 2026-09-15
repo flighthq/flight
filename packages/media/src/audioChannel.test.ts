@@ -87,6 +87,15 @@ function createWebMockBackend() {
         onEndedCallbacks.delete(source as number);
       });
       out.getDeviceTime = vi.fn(() => deviceTime);
+      // The mock stands in for the web host, so it schedules the ramp the way that host does. Modelled
+      // rather than stubbed: these cases assert the RAMP, not merely that a fade was requested.
+      out.fadeSourceGain = vi.fn((source: AudioSourceHandle, targetGain: number, durationMs: number) => {
+        const gainNode = gainNodes.get(source as number);
+        if (gainNode === undefined) return;
+        gainNode.gain.cancelScheduledValues(deviceTime);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, deviceTime);
+        gainNode.gain.linearRampToValueAtTime(targetGain, deviceTime + durationMs / 1000);
+      });
       out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
         return (sourceNodes.get(source as number) as unknown as AudioBufferSourceNode) ?? null;
       };
@@ -205,6 +214,14 @@ describe('fadeAudioChannelGain', () => {
     expect(gainNode.gain.setValueAtTime).toHaveBeenCalledWith(1, 0);
     expect(gainNode.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.5, 0.5);
     expect(channel.gain).toBe(0.5);
+  });
+
+  // The portable unit's own contract, separate from what the host then does with it: it hands the
+  // host a handle, a target and MILLISECONDS, and converts nothing itself.
+  it('delegates to the host in milliseconds rather than converting units itself', () => {
+    const channel = playAudioResource(webMock.backend, device, createAudioResource(createMockAudioBuffer()))!;
+    fadeAudioChannelGain(channel, 0.25, 750);
+    expect(webMock.backend.fadeSourceGain).toHaveBeenCalledWith(expect.anything(), 0.25, 750);
   });
 
   it('falls back to setSourceGain when no web nodes are available', () => {

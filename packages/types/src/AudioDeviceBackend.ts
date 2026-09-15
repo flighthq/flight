@@ -14,6 +14,16 @@ export interface HostAudioDeviceProvider extends Entity {
   destroyBuffer(buffer: AudioBufferHandle): void;
   destroyDevice(device: AudioDeviceHandle): void;
   destroySource(source: AudioSourceHandle): void;
+  /**
+   * Ramps a source's gain to `targetGain` over `durationMs`, cancelling any ramp already scheduled on
+   * it and starting from the value in effect now.
+   *
+   * Optional, because scheduling is a capability a host either has or does not: one that cannot
+   * schedule omits this, and the caller falls back to `setSourceGain`, so a fade still lands — it just
+   * lands instantly rather than over time. Duration is milliseconds to match the authoring verbs;
+   * converting to whatever clock the host schedules on is the host's job, not the caller's.
+   */
+  fadeSourceGain?(source: AudioSourceHandle, targetGain: number, durationMs: number): void;
   getDeviceTime(device: AudioDeviceHandle): number;
   onSourceEnded(source: AudioSourceHandle, callback: (() => void) | null): void;
   resumeDevice(device: AudioDeviceHandle): void;

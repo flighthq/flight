@@ -48,12 +48,10 @@ export function fadeAudioChannelGain(channel: AudioChannel, targetGain: number, 
     channel.gain = targetGain;
     return;
   }
-  const gainNode = getAudioSourceGainNode(runtime.backend, runtime.sourceHandle);
-  if (gainNode !== null) {
-    const deviceTime = runtime.backend.getDeviceTime(runtime.device);
-    gainNode.gain.cancelScheduledValues(deviceTime);
-    gainNode.gain.setValueAtTime(gainNode.gain.value, deviceTime);
-    gainNode.gain.linearRampToValueAtTime(targetGain, deviceTime + durationMs / 1000);
+  // The ramp is the host's to schedule — it owns the clock the automation runs on. A host that cannot
+  // schedule omits the member, and the fade still lands, instantly, through the plain gain setter.
+  if (runtime.backend.fadeSourceGain !== undefined) {
+    runtime.backend.fadeSourceGain(runtime.sourceHandle, targetGain, durationMs);
   } else {
     runtime.backend.setSourceGain(runtime.sourceHandle, targetGain);
   }
