@@ -2,13 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
 import type { EntityConstruction, HostTextShaperProvider, TextShaperSignals } from '@flighthq/types/contract';
 
-import { _setTextShaperBackendHook } from './_textShaperHooks';
-
 export function disposeTextShaperSignals(): void {
   if (_signals === null) return;
   clearSignal(_signals.onBackendChanged);
   _signals = null;
-  _setTextShaperBackendHook(null);
 }
 
 export function enableTextShaperSignals(): TextShaperSignals {
@@ -18,11 +15,6 @@ export function enableTextShaperSignals(): TextShaperSignals {
     initializeTextShaperSignals(out);
     return finishEntity(out);
   })();
-  _setTextShaperBackendHook((backend) => {
-    if (_signals !== null) {
-      _signals.onBackendChanged.emit(backend);
-    }
-  });
   return _signals;
 }
 

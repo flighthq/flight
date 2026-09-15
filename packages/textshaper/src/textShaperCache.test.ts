@@ -1,6 +1,5 @@
 import type { HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
 
-import { setTextShaperBackend } from './textShaper';
 import {
   clearTextShaperCache,
   createTextShaperCache,
@@ -34,30 +33,26 @@ function _makeCountingBackend(): { backend: HostTextShaperProvider; readonly cal
   };
 }
 
-afterEach(() => {
-  setTextShaperBackend(null);
-});
+const _advancesOnly: HostTextShaperProvider = { measureText: (t) => t.length };
 
 describe('clearTextShaperCache', () => {
   it('removes all cached entries', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {});
-    shapeTextRunCached(cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
     expect(tracker.calls).toBe(1);
     clearTextShaperCache(cache);
-    shapeTextRunCached(cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
     expect(tracker.calls).toBe(2);
   });
 
   it('cache remains usable after clearing', () => {
     const { backend } = _makeCountingBackend();
-    setTextShaperBackend(backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {});
+    shapeTextRunCached(backend, cache, 'hi', {});
     clearTextShaperCache(cache);
-    expect(shapeTextRunCached(cache, 'hi', {})).not.toBeNull();
+    expect(shapeTextRunCached(backend, cache, 'hi', {})).not.toBeNull();
   });
 });
 
@@ -70,11 +65,10 @@ describe('createTextShaperCache', () => {
 describe('disposeTextShaperCache', () => {
   it('makes the cache unusable without calling the backend again', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
     disposeTextShaperCache(cache);
-    expect(shapeTextRunCached(cache, 'hi', {})).toBeNull();
+    expect(shapeTextRunCached(tracker.backend, cache, 'hi', {})).toBeNull();
     expect(tracker.calls).toBe(1);
   });
 
@@ -91,99 +85,80 @@ describe('initializeTextShaperCache', () => {
   });
 });
 
-function _hostWithAdvance(advanceWidth: number): { readonly text: { readonly shaper: HostTextShaperProvider } } {
-  return {
-    text: {
-      shaper: {
-        measureText: () => advanceWidth,
-        shapeRun: () => ({ ..._stubRun, advanceWidth }),
-      },
-    },
-  };
-}
 describe('shapeTextRunCached', () => {
-  it('keeps cache entries isolated when callers interleave explicit hosts', () => {
+  it('keeps cache entries isolated when callers interleave different hosts', () => {
     const cache = createTextShaperCache();
-    const first = _hostWithAdvance(1);
-    const second = _hostWithAdvance(2);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first.text.shaper)?.advanceWidth).toBe(1);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, second.text.shaper)?.advanceWidth).toBe(2);
-    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first.text.shaper)?.advanceWidth).toBe(1);
-  });
-
-  it('returns null when no backend is set', () => {
-    const cache = createTextShaperCache();
-    expect(shapeTextRunCached(cache, 'hi', {})).toBeNull();
+    const first: HostTextShaperProvider = {
+      measureText: () => 1,
+      shapeRun: () => ({ ..._stubRun, advanceWidth: 1 }),
+    };
+    const second: HostTextShaperProvider = {
+      measureText: () => 2,
+      shapeRun: () => ({ ..._stubRun, advanceWidth: 2 }),
+    };
+    expect(shapeTextRunCached(first, cache, 'hi', {})?.advanceWidth).toBe(1);
+    expect(shapeTextRunCached(second, cache, 'hi', {})?.advanceWidth).toBe(2);
+    expect(shapeTextRunCached(first, cache, 'hi', {})?.advanceWidth).toBe(1);
   });
 
   it('returns null when the backend is advances-only', () => {
-    setTextShaperBackend({ measureText: (t) => t.length });
     const cache = createTextShaperCache();
-    expect(shapeTextRunCached(cache, 'hi', {})).toBeNull();
+    expect(shapeTextRunCached(_advancesOnly, cache, 'hi', {})).toBeNull();
   });
 
   it('returns a ShapedRun on success', () => {
     const { backend } = _makeCountingBackend();
-    setTextShaperBackend(backend);
     const cache = createTextShaperCache();
-    const run = shapeTextRunCached(cache, 'hi', {});
+    const run = shapeTextRunCached(backend, cache, 'hi', {});
     expect(run).not.toBeNull();
     expect(run!.glyphCount).toBe(2);
   });
 
   it('returns the same object on the second call (cache hit)', () => {
     const { backend } = _makeCountingBackend();
-    setTextShaperBackend(backend);
     const cache = createTextShaperCache();
-    const r1 = shapeTextRunCached(cache, 'hi', {});
-    const r2 = shapeTextRunCached(cache, 'hi', {});
+    const r1 = shapeTextRunCached(backend, cache, 'hi', {});
+    const r2 = shapeTextRunCached(backend, cache, 'hi', {});
     expect(r1).toBe(r2);
   });
 
   it('calls the backend once for repeated identical inputs', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {});
-    shapeTextRunCached(cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
     expect(tracker.calls).toBe(1);
   });
 
   it('calls the backend again for different text', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {});
-    shapeTextRunCached(cache, 'bye', {});
+    shapeTextRunCached(tracker.backend, cache, 'hi', {});
+    shapeTextRunCached(tracker.backend, cache, 'bye', {});
     expect(tracker.calls).toBe(2);
   });
 
   it('calls the backend again for different format', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', { size: 12 });
-    shapeTextRunCached(cache, 'hi', { size: 16 });
+    shapeTextRunCached(tracker.backend, cache, 'hi', { size: 12 });
+    shapeTextRunCached(tracker.backend, cache, 'hi', { size: 16 });
     expect(tracker.calls).toBe(2);
   });
 
   it('calls the backend again for different options direction', () => {
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
     const cache = createTextShaperCache();
-    shapeTextRunCached(cache, 'hi', {}, { direction: 'LeftToRight' });
-    shapeTextRunCached(cache, 'hi', {}, { direction: 'RightToLeft' });
+    shapeTextRunCached(tracker.backend, cache, 'hi', {}, { direction: 'LeftToRight' });
+    shapeTextRunCached(tracker.backend, cache, 'hi', {}, { direction: 'RightToLeft' });
     expect(tracker.calls).toBe(2);
   });
 
-  it('does not cache null results (no backend)', () => {
+  it('does not cache null results (advances-only backend)', () => {
     const cache = createTextShaperCache();
-    // First call: no backend, returns null, should not be cached.
-    expect(shapeTextRunCached(cache, 'hi', {})).toBeNull();
-    // Install a backend; now the same call should succeed.
+    expect(shapeTextRunCached(_advancesOnly, cache, 'hi', {})).toBeNull();
     const tracker = _makeCountingBackend();
-    setTextShaperBackend(tracker.backend);
-    expect(shapeTextRunCached(cache, 'hi', {})).not.toBeNull();
+    expect(shapeTextRunCached(tracker.backend, cache, 'hi', {})).not.toBeNull();
     expect(tracker.calls).toBe(1);
   });
 });

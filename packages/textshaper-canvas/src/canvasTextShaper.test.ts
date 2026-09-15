@@ -1,4 +1,3 @@
-import { getTextShaperBackend, setTextShaperBackend } from '@flighthq/textshaper/contract';
 import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 
 import {
@@ -6,10 +5,6 @@ import {
   createCanvasTextShaperBackend,
   initializeCanvasTextShaperBackend,
 } from './canvasTextShaper';
-
-afterEach(() => {
-  setTextShaperBackend(null);
-});
 
 describe('CanvasTextShaperBackend', () => {
   it('satisfies the TextShaperBackend interface', () => {
@@ -76,10 +71,9 @@ describe('createCanvasTextShaperBackend', () => {
     expect(widthB2).toBeCloseTo(widthB, 5);
   });
 
-  it('installs into the textshaper seam', () => {
+  it('satisfies the HostTextShaperProvider contract', () => {
     const backend = createCanvasTextShaperBackend();
-    setTextShaperBackend(backend);
-    expect(getTextShaperBackend()).toBe(backend);
+    expect(typeof backend.measureText).toBe('function');
   });
 
   it('measureText uses the advance cache — same key returns immediately', () => {

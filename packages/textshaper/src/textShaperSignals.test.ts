@@ -1,6 +1,3 @@
-import type { HostTextShaperProvider } from '@flighthq/types/contract';
-
-import { setTextShaperBackend } from './textShaper';
 import {
   disposeTextShaperSignals,
   enableTextShaperSignals,
@@ -8,27 +5,13 @@ import {
   initializeTextShaperSignals,
 } from './textShaperSignals';
 
-const _stubBackend: HostTextShaperProvider = { measureText: () => 0 };
-const _stubBackend2: HostTextShaperProvider = { measureText: () => 1 };
-
 afterEach(() => {
   disposeTextShaperSignals();
-  setTextShaperBackend(null);
 });
 
 describe('disposeTextShaperSignals', () => {
   it('is a no-op when signals have not been enabled', () => {
     expect(() => disposeTextShaperSignals()).not.toThrow();
-  });
-  it('clears all listeners after dispose', () => {
-    const sigs = enableTextShaperSignals();
-    let fired = false;
-    sigs.onBackendChanged.emit = () => {
-      fired = true;
-    };
-    disposeTextShaperSignals();
-    setTextShaperBackend(_stubBackend);
-    expect(fired).toBe(false);
   });
   it('getTextShaperSignals returns null after dispose', () => {
     enableTextShaperSignals();
@@ -64,31 +47,5 @@ describe('getTextShaperSignals', () => {
 describe('initializeTextShaperSignals', () => {
   it('is the construction initializer of createTextShaperSignals', () => {
     expect(typeof initializeTextShaperSignals).toBe('function');
-  });
-});
-describe('setTextShaperBackend', () => {
-  it('emits onBackendChanged with the new backend when signals are enabled', () => {
-    const sigs = enableTextShaperSignals();
-    const received: (HostTextShaperProvider | null)[] = [];
-    sigs.onBackendChanged.emit = (b) => received.push(b);
-    setTextShaperBackend(_stubBackend);
-    expect(received).toEqual([_stubBackend]);
-  });
-  it('emits onBackendChanged with null when cleared', () => {
-    const sigs = enableTextShaperSignals();
-    const received: (HostTextShaperProvider | null)[] = [];
-    sigs.onBackendChanged.emit = (b) => received.push(b);
-    setTextShaperBackend(_stubBackend);
-    setTextShaperBackend(null);
-    expect(received).toEqual([_stubBackend, null]);
-  });
-  it('does not emit when signals are not enabled', () => {
-    // Verifies setTextShaperBackend does not throw when no signals enabled.
-    expect(() => setTextShaperBackend(_stubBackend2)).not.toThrow();
-  });
-  it('installs the backend', () => {
-    enableTextShaperSignals();
-    setTextShaperBackend(_stubBackend);
-    expect(_stubBackend).toBeDefined();
   });
 });
