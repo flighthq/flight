@@ -25,15 +25,29 @@ describe('createWebVideoCapabilityBackend', () => {
 
   it('exposes all video provider operations', () => {
     const backend = createWebVideoCapabilityBackend();
+    expect(backend.addEndedListener).toBeTypeOf('function');
     expect(backend.attachStream).toBeTypeOf('function');
     expect(backend.createObjectUrl).toBeTypeOf('function');
+    expect(backend.getCurrentTime).toBeTypeOf('function');
     expect(backend.getDuration).toBeTypeOf('function');
     expect(backend.getHeight).toBeTypeOf('function');
+    expect(backend.getLoop).toBeTypeOf('function');
+    expect(backend.getMuted).toBeTypeOf('function');
+    expect(backend.getPlaybackRate).toBeTypeOf('function');
+    expect(backend.getVolume).toBeTypeOf('function');
     expect(backend.getWidth).toBeTypeOf('function');
     expect(backend.isReady).toBeTypeOf('function');
     expect(backend.loadUrl).toBeTypeOf('function');
+    expect(backend.pause).toBeTypeOf('function');
+    expect(backend.play).toBeTypeOf('function');
     expect(backend.releaseElement).toBeTypeOf('function');
+    expect(backend.removeEndedListener).toBeTypeOf('function');
     expect(backend.revokeObjectUrl).toBeTypeOf('function');
+    expect(backend.setCurrentTime).toBeTypeOf('function');
+    expect(backend.setLoop).toBeTypeOf('function');
+    expect(backend.setMuted).toBeTypeOf('function');
+    expect(backend.setPlaybackRate).toBeTypeOf('function');
+    expect(backend.setVolume).toBeTypeOf('function');
   });
 
   it('returns distinct instances on each call', () => {
@@ -129,6 +143,99 @@ describe('createWebVideoCapabilityBackend', () => {
     backend.revokeObjectUrl!(url);
     expect(revokeSpy).toHaveBeenCalledWith('blob:test');
     vi.restoreAllMocks();
+  });
+
+  it('getCurrentTime returns the element currentTime', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    element.currentTime = 5.5;
+    expect(backend.getCurrentTime!(element)).toBe(5.5);
+  });
+
+  it('setCurrentTime sets the element currentTime', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    backend.setCurrentTime!(element, 3.0);
+    expect(element.currentTime).toBe(3.0);
+  });
+
+  it('getVolume returns the element volume', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    expect(backend.getVolume!(element)).toBe(1);
+  });
+
+  it('setVolume sets the element volume', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    backend.setVolume!(element, 0.5);
+    expect(element.volume).toBe(0.5);
+  });
+
+  it('getMuted returns the element muted state', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    expect(backend.getMuted!(element)).toBe(false);
+  });
+
+  it('setMuted sets the element muted state', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    backend.setMuted!(element, true);
+    expect(element.muted).toBe(true);
+  });
+
+  it('getPlaybackRate returns the element playbackRate', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    expect(backend.getPlaybackRate!(element)).toBe(1);
+  });
+
+  it('setPlaybackRate sets the element playbackRate', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    backend.setPlaybackRate!(element, 2.0);
+    expect(element.playbackRate).toBe(2.0);
+  });
+
+  it('getLoop returns the element loop state', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    expect(backend.getLoop!(element)).toBe(false);
+  });
+
+  it('setLoop sets the element loop state', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    backend.setLoop!(element, true);
+    expect(element.loop).toBe(true);
+  });
+
+  it('pause calls element.pause', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    const pauseSpy = vi.spyOn(element, 'pause');
+    backend.pause!(element);
+    expect(pauseSpy).toHaveBeenCalledOnce();
+  });
+
+  it('play calls element.play', async () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    vi.spyOn(element, 'play').mockResolvedValue();
+    await expect(backend.play!(element)).resolves.toBeUndefined();
+  });
+
+  it('addEndedListener and removeEndedListener manage ended event listeners', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!() as HTMLVideoElement;
+    const addSpy = vi.spyOn(element, 'addEventListener');
+    const removeSpy = vi.spyOn(element, 'removeEventListener');
+    const listener = vi.fn();
+    backend.addEndedListener!(element, listener);
+    expect(addSpy).toHaveBeenCalledWith('ended', listener);
+    backend.removeEndedListener!(element, listener);
+    expect(removeSpy).toHaveBeenCalledWith('ended', listener);
   });
 
   it('loadUrl rejects immediately when signal is already aborted', async () => {
@@ -252,14 +359,28 @@ describe('webHostVideo', () => {
   });
 
   it('exposes all video provider operations', () => {
+    expect(webHostVideo.addEndedListener).toBeTypeOf('function');
+    expect(webHostVideo.attachStream).toBeTypeOf('function');
+    expect(webHostVideo.createObjectUrl).toBeTypeOf('function');
+    expect(webHostVideo.getCurrentTime).toBeTypeOf('function');
     expect(webHostVideo.getDuration).toBeTypeOf('function');
     expect(webHostVideo.getHeight).toBeTypeOf('function');
+    expect(webHostVideo.getLoop).toBeTypeOf('function');
+    expect(webHostVideo.getMuted).toBeTypeOf('function');
+    expect(webHostVideo.getPlaybackRate).toBeTypeOf('function');
+    expect(webHostVideo.getVolume).toBeTypeOf('function');
     expect(webHostVideo.getWidth).toBeTypeOf('function');
     expect(webHostVideo.isReady).toBeTypeOf('function');
     expect(webHostVideo.loadUrl).toBeTypeOf('function');
+    expect(webHostVideo.pause).toBeTypeOf('function');
+    expect(webHostVideo.play).toBeTypeOf('function');
     expect(webHostVideo.releaseElement).toBeTypeOf('function');
-    expect(webHostVideo.attachStream).toBeTypeOf('function');
-    expect(webHostVideo.createObjectUrl).toBeTypeOf('function');
+    expect(webHostVideo.removeEndedListener).toBeTypeOf('function');
     expect(webHostVideo.revokeObjectUrl).toBeTypeOf('function');
+    expect(webHostVideo.setCurrentTime).toBeTypeOf('function');
+    expect(webHostVideo.setLoop).toBeTypeOf('function');
+    expect(webHostVideo.setMuted).toBeTypeOf('function');
+    expect(webHostVideo.setPlaybackRate).toBeTypeOf('function');
+    expect(webHostVideo.setVolume).toBeTypeOf('function');
   });
 });

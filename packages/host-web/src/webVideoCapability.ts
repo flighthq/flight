@@ -14,6 +14,9 @@ export function createWebVideoCapabilityBackend(): HostVideoProvider & Entity {
 }
 
 export function initializeWebVideoCapabilityBackend(out: EntityConstruction<HostVideoProvider & Entity>): void {
+  out.addEndedListener = (element: HostImageSource, listener: () => void): void => {
+    (element as HTMLVideoElement).addEventListener('ended', listener);
+  };
   out.attachStream = (stream: unknown): HostImageSource | null => {
     const element = safeCreateVideoElement();
     if (element === null) return null;
@@ -30,6 +33,7 @@ export function initializeWebVideoCapabilityBackend(out: EntityConstruction<Host
   };
   out.createVideoElement = (): HostImageSource | null => safeCreateVideoElement();
   out.createObjectUrl = (data: Blob): string => URL.createObjectURL(data);
+  out.getCurrentTime = (element: HostImageSource): number => (element as HTMLVideoElement).currentTime;
   out.getDuration = (element: HostImageSource): number => {
     const d = (element as HTMLVideoElement).duration;
     return d === d ? d : 0;
@@ -38,6 +42,10 @@ export function initializeWebVideoCapabilityBackend(out: EntityConstruction<Host
     const video = element as HTMLVideoElement;
     return video.videoHeight ?? 0;
   };
+  out.getLoop = (element: HostImageSource): boolean => (element as HTMLVideoElement).loop;
+  out.getMuted = (element: HostImageSource): boolean => (element as HTMLVideoElement).muted;
+  out.getPlaybackRate = (element: HostImageSource): number => (element as HTMLVideoElement).playbackRate;
+  out.getVolume = (element: HostImageSource): number => (element as HTMLVideoElement).volume;
   out.getWidth = (element: HostImageSource): number => {
     const video = element as HTMLVideoElement;
     return video.videoWidth ?? 0;
@@ -91,11 +99,33 @@ export function initializeWebVideoCapabilityBackend(out: EntityConstruction<Host
       element.src = url;
     });
   };
+  out.pause = (element: HostImageSource): void => {
+    (element as HTMLVideoElement).pause();
+  };
+  out.play = (element: HostImageSource): Promise<void> => (element as HTMLVideoElement).play();
   out.releaseElement = (element: HostImageSource): void => {
     safeReleaseElement(element as HTMLVideoElement);
   };
+  out.removeEndedListener = (element: HostImageSource, listener: () => void): void => {
+    (element as HTMLVideoElement).removeEventListener('ended', listener);
+  };
   out.revokeObjectUrl = (url: string): void => {
     URL.revokeObjectURL(url);
+  };
+  out.setCurrentTime = (element: HostImageSource, value: number): void => {
+    (element as HTMLVideoElement).currentTime = value;
+  };
+  out.setLoop = (element: HostImageSource, value: boolean): void => {
+    (element as HTMLVideoElement).loop = value;
+  };
+  out.setMuted = (element: HostImageSource, value: boolean): void => {
+    (element as HTMLVideoElement).muted = value;
+  };
+  out.setPlaybackRate = (element: HostImageSource, value: number): void => {
+    (element as HTMLVideoElement).playbackRate = value;
+  };
+  out.setVolume = (element: HostImageSource, value: number): void => {
+    (element as HTMLVideoElement).volume = value;
   };
 }
 

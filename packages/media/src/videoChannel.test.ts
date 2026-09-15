@@ -4,7 +4,7 @@ import {
   getTextureSource,
   getVideoTextureWidth,
 } from '@flighthq/texture/contract';
-import type { HostVideoProvider } from '@flighthq/types/contract';
+import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
 import { createVideoResource, destroyVideoResource } from '@flighthq/video/contract';
 
 import {
@@ -25,19 +25,50 @@ import {
   stopVideoChannel,
 } from './videoChannel';
 
-// The element teardown destroyVideoResource used to perform inline now belongs to the host provider,
-// so these cases supply the one the mock element expects: detach a live stream without stopping its
-// caller-owned tracks, then release the decoder.
 const webVideoHost: HostVideoProvider = {
+  addEndedListener: (element, listener) => {
+    (element as MockVideoElement).addEventListener('ended', listener);
+  },
   canPlayType: () => true,
-  getHeight: (element) => (element as HTMLVideoElement).videoHeight,
-  getWidth: (element) => (element as HTMLVideoElement).videoWidth,
-  isReady: (element) => (element as HTMLVideoElement).readyState >= 2,
+  getCurrentTime: (element) => (element as MockVideoElement).currentTime,
+  getDuration: (element) => {
+    const d = (element as MockVideoElement).duration;
+    return d === d ? d : 0;
+  },
+  getHeight: (element) => (element as MockVideoElement).videoHeight,
+  getLoop: (element) => (element as MockVideoElement).loop,
+  getMuted: (element) => (element as MockVideoElement).muted,
+  getPlaybackRate: (element) => (element as MockVideoElement).playbackRate,
+  getVolume: (element) => (element as MockVideoElement).volume,
+  getWidth: (element) => (element as MockVideoElement).videoWidth,
+  isReady: (element) => ((element as MockVideoElement).readyState ?? 0) >= 2,
+  pause: (element) => {
+    (element as MockVideoElement).pause();
+  },
+  play: (element) => (element as MockVideoElement).play(),
   releaseElement(element) {
-    const video = element as HTMLVideoElement;
+    const video = element as MockVideoElement;
     if (video.srcObject !== null) video.srcObject = null;
     video.removeAttribute('src');
     video.load();
+  },
+  removeEndedListener: (element, listener) => {
+    (element as MockVideoElement).removeEventListener('ended', listener);
+  },
+  setCurrentTime: (element, value) => {
+    (element as MockVideoElement).currentTime = value;
+  },
+  setLoop: (element, value) => {
+    (element as MockVideoElement).loop = value;
+  },
+  setMuted: (element, value) => {
+    (element as MockVideoElement).muted = value;
+  },
+  setPlaybackRate: (element, value) => {
+    (element as MockVideoElement).playbackRate = value;
+  },
+  setVolume: (element, value) => {
+    (element as MockVideoElement).volume = value;
   },
 };
 
@@ -45,9 +76,9 @@ describe('destroyVideoChannel', () => {
   it('nulls source and sets state to stopped', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
+    const channel = playVideoResource(webVideoHost, resource)!;
     expect(channel.source).toBe(resource);
-    destroyVideoChannel(channel);
+    destroyVideoChannel(webVideoHost, channel);
     expect(channel.source).toBeNull();
     expect(channel.state).toBe('stopped');
     expect(channel.currentTime).toBe(0);
@@ -56,28 +87,28 @@ describe('destroyVideoChannel', () => {
   it('removes the ended listener from the element', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
-    const listenersBefore = element.listenerCount('ended');
+    const channel = playVideoResource(webVideoHost, resource)!;
+    const listenersBefore = (element as MockVideoElement).listenerCount('ended');
     expect(listenersBefore).toBe(1);
-    destroyVideoChannel(channel);
-    expect(element.listenerCount('ended')).toBe(0);
+    destroyVideoChannel(webVideoHost, channel);
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(0);
   });
 
   it('pauses the element', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
-    expect(element.paused).toBe(false);
-    destroyVideoChannel(channel);
-    expect(element.paused).toBe(true);
+    const channel = playVideoResource(webVideoHost, resource)!;
+    expect((element as MockVideoElement).paused).toBe(false);
+    destroyVideoChannel(webVideoHost, channel);
+    expect((element as MockVideoElement).paused).toBe(true);
   });
 
   it('is idempotent', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
-    destroyVideoChannel(channel);
-    destroyVideoChannel(channel);
+    const channel = playVideoResource(webVideoHost, resource)!;
+    destroyVideoChannel(webVideoHost, channel);
+    destroyVideoChannel(webVideoHost, channel);
     expect(channel.source).toBeNull();
     expect(channel.state).toBe('stopped');
   });
@@ -85,8 +116,8 @@ describe('destroyVideoChannel', () => {
   it('does not destroy the borrowed video resource', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
-    destroyVideoChannel(channel);
+    const channel = playVideoResource(webVideoHost, resource)!;
+    destroyVideoChannel(webVideoHost, channel);
     expect(resource.element).toBe(element);
     expect(resource.ownsElement).toBe(false);
   });
@@ -95,22 +126,22 @@ describe('destroyVideoChannel', () => {
     const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
     const stream = { getTracks: () => [track] } as unknown as MediaStream;
     const element = createMockVideoElement();
-    (element as unknown as Record<string, unknown>).srcObject = stream;
+    (element as MockVideoElement).srcObject = stream;
     const resource = createVideoResource(element);
-    const channel = playVideoResource(resource)!;
-    destroyVideoChannel(channel);
+    const channel = playVideoResource(webVideoHost, resource)!;
+    destroyVideoChannel(webVideoHost, channel);
     expect(track.stop).not.toHaveBeenCalled();
   });
 
   it('removes listener even when destroyVideoResource runs first', () => {
     const element = createMockVideoElement();
     const resource = createVideoResource(element, undefined, true);
-    const channel = playVideoResource(resource)!;
-    expect(element.listenerCount('ended')).toBe(1);
+    const channel = playVideoResource(webVideoHost, resource)!;
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(1);
     destroyVideoResource(webVideoHost, resource);
     expect(resource.element).toBeNull();
-    destroyVideoChannel(channel);
-    expect(element.listenerCount('ended')).toBe(0);
+    destroyVideoChannel(webVideoHost, channel);
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(0);
     expect(channel.source).toBeNull();
     expect(channel.state).toBe('stopped');
   });
@@ -119,20 +150,20 @@ describe('destroyVideoChannel', () => {
     const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
     const stream = { getTracks: () => [track] } as unknown as MediaStream;
     const element = createMockVideoElement(10, 240, 320);
-    (element as unknown as Record<string, unknown>).srcObject = stream;
-    (element as unknown as Record<string, unknown>).readyState = 4;
+    (element as MockVideoElement).srcObject = stream;
+    (element as MockVideoElement).readyState = 4;
     const resource = createVideoResource(element, undefined, true);
-    const channel = playVideoResource(resource)!;
+    const channel = playVideoResource(webVideoHost, resource)!;
     const texture = createVideoTexture(webVideoHost, resource);
-    expect(element.listenerCount('ended')).toBe(1);
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(1);
     expect(getVideoTextureWidth(webVideoHost, texture)).toBe(320);
     destroyVideoResource(webVideoHost, resource);
     destroyVideoTexture(texture);
-    destroyVideoChannel(channel);
+    destroyVideoChannel(webVideoHost, channel);
     expect(resource.element).toBeNull();
     expect(channel.source).toBeNull();
-    expect(element.listenerCount('ended')).toBe(0);
-    expect(element.paused).toBe(true);
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(0);
+    expect((element as MockVideoElement).paused).toBe(true);
     expect(getTextureSource(texture)).toBeNull();
     expect(getVideoTextureWidth(webVideoHost, texture)).toBe(-1);
     expect(track.stop).not.toHaveBeenCalled();
@@ -142,17 +173,17 @@ describe('destroyVideoChannel', () => {
     const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
     const stream = { getTracks: () => [track] } as unknown as MediaStream;
     const element = createMockVideoElement(10, 240, 320);
-    (element as unknown as Record<string, unknown>).srcObject = stream;
-    (element as unknown as Record<string, unknown>).readyState = 4;
+    (element as MockVideoElement).srcObject = stream;
+    (element as MockVideoElement).readyState = 4;
     const resource = createVideoResource(element, undefined, true);
-    const channel = playVideoResource(resource)!;
+    const channel = playVideoResource(webVideoHost, resource)!;
     const texture = createVideoTexture(webVideoHost, resource);
-    destroyVideoChannel(channel);
+    destroyVideoChannel(webVideoHost, channel);
     destroyVideoTexture(texture);
     destroyVideoResource(webVideoHost, resource);
     expect(channel.source).toBeNull();
-    expect(element.listenerCount('ended')).toBe(0);
-    expect(element.paused).toBe(true);
+    expect((element as MockVideoElement).listenerCount('ended')).toBe(0);
+    expect((element as MockVideoElement).paused).toBe(true);
     expect(resource.element).toBeNull();
     expect(getTextureSource(texture)).toBeNull();
     expect(getVideoTextureWidth(webVideoHost, texture)).toBe(-1);
@@ -163,16 +194,16 @@ describe('destroyVideoChannel', () => {
 describe('getVideoChannelCurrentTime', () => {
   it('returns stored currentTime when not playing', () => {
     const source = createVideoResource(createMockVideoElement());
-    const channel = playVideoResource(source, { currentTime: 500 });
+    const channel = playVideoResource(webVideoHost, source, { currentTime: 500 });
     expect(channel).not.toBeNull();
-    pauseVideoChannel(channel!);
-    expect(getVideoChannelCurrentTime(channel!)).toBe(500);
+    pauseVideoChannel(webVideoHost, channel!);
+    expect(getVideoChannelCurrentTime(webVideoHost, channel!)).toBe(500);
   });
 });
 
 describe('getVideoChannelDuration', () => {
   it('returns the channel length', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement(5)));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement(5)));
     expect(channel).not.toBeNull();
     expect(getVideoChannelDuration(channel!)).toBe(5000);
   });
@@ -181,40 +212,40 @@ describe('getVideoChannelDuration', () => {
 describe('getVideoChannelHeight', () => {
   it('returns the element videoHeight', () => {
     const element = createMockVideoElement(10, 480);
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    expect(getVideoChannelHeight(channel!)).toBe(480);
+    expect(getVideoChannelHeight(webVideoHost, channel!)).toBe(480);
   });
 
   it('returns 0 when element is null', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
     channel!.source = createVideoResource();
-    expect(getVideoChannelHeight(channel!)).toBe(0);
+    expect(getVideoChannelHeight(webVideoHost, channel!)).toBe(0);
   });
 });
 
 describe('getVideoChannelWidth', () => {
   it('returns the element videoWidth', () => {
     const element = createMockVideoElement(10, 480, 640);
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    expect(getVideoChannelWidth(channel!)).toBe(640);
+    expect(getVideoChannelWidth(webVideoHost, channel!)).toBe(640);
   });
 
   it('returns 0 when element is null', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
     channel!.source = createVideoResource();
-    expect(getVideoChannelWidth(channel!)).toBe(0);
+    expect(getVideoChannelWidth(webVideoHost, channel!)).toBe(0);
   });
 });
 
 describe('isVideoChannelMuted', () => {
   it('reports the mute state independently of the stored gain', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()), { gain: 0.5 })!;
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()), { gain: 0.5 })!;
     expect(isVideoChannelMuted(channel)).toBe(false);
-    setVideoChannelMuted(channel, true);
+    setVideoChannelMuted(webVideoHost, channel, true);
     expect(isVideoChannelMuted(channel)).toBe(true);
     expect(channel.gain).toBe(0.5);
   });
@@ -222,15 +253,15 @@ describe('isVideoChannelMuted', () => {
 
 describe('isVideoChannelPlaying', () => {
   it('returns true while playing', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
     expect(isVideoChannelPlaying(channel!)).toBe(true);
   });
 
   it('returns false when stopped', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    stopVideoChannel(channel!);
+    stopVideoChannel(webVideoHost, channel!);
     expect(isVideoChannelPlaying(channel!)).toBe(false);
   });
 });
@@ -238,21 +269,21 @@ describe('isVideoChannelPlaying', () => {
 describe('pauseVideoChannel', () => {
   it('marks the channel as paused and calls element.pause', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    pauseVideoChannel(channel!);
+    pauseVideoChannel(webVideoHost, channel!);
     expect(channel!.state).toBe('paused');
-    expect(element.paused).toBe(true);
+    expect((element as MockVideoElement).paused).toBe(true);
   });
 });
 
 describe('playVideoResource', () => {
   it('returns null when element is null', () => {
-    expect(playVideoResource(createVideoResource())).toBeNull();
+    expect(playVideoResource(webVideoHost, createVideoResource())).toBeNull();
   });
 
   it('returns a playing channel with applied options', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()), { gain: 0.5 });
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()), { gain: 0.5 });
     expect(channel).not.toBeNull();
     expect(channel!.gain).toBe(0.5);
     expect(channel!.state).toBe('playing');
@@ -261,10 +292,10 @@ describe('playVideoResource', () => {
 
 describe('resumeVideoChannel', () => {
   it('resumes a paused channel', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    pauseVideoChannel(channel!);
-    resumeVideoChannel(channel!);
+    pauseVideoChannel(webVideoHost, channel!);
+    resumeVideoChannel(webVideoHost, channel!);
     expect(channel!.state).toBe('playing');
   });
 });
@@ -272,45 +303,45 @@ describe('resumeVideoChannel', () => {
 describe('setVideoChannelCurrentTime', () => {
   it('clamps the value to channel length', () => {
     const element = createMockVideoElement(1);
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    expect(setVideoChannelCurrentTime(channel!, 9999)).toBe(1000);
+    expect(setVideoChannelCurrentTime(webVideoHost, channel!, 9999)).toBe(1000);
   });
 });
 
 describe('setVideoChannelGain', () => {
   it('updates channel gain and element volume', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    expect(setVideoChannelGain(channel!, 0.3)).toBe(0.3);
-    expect(element.volume).toBe(0.3);
+    expect(setVideoChannelGain(webVideoHost, channel!, 0.3)).toBe(0.3);
+    expect((element as MockVideoElement).volume).toBe(0.3);
   });
 });
 
 describe('setVideoChannelMuted', () => {
   it('mutes the element without disturbing its volume or the stored gain', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element), { gain: 0.7 })!;
-    setVideoChannelMuted(channel, true);
-    expect(element.muted).toBe(true);
-    expect(element.volume).toBe(0.7);
+    const channel = playVideoResource(webVideoHost, createVideoResource(element), { gain: 0.7 })!;
+    setVideoChannelMuted(webVideoHost, channel, true);
+    expect((element as MockVideoElement).muted).toBe(true);
+    expect((element as MockVideoElement).volume).toBe(0.7);
     expect(channel.gain).toBe(0.7);
     expect(isVideoChannelMuted(channel)).toBe(true);
   });
 
   it('unmutes back to the level the caller set, including one set while muted', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element), { gain: 0.7 })!;
-    setVideoChannelMuted(channel, true);
-    setVideoChannelGain(channel, 0.2);
-    setVideoChannelMuted(channel, false);
-    expect(element.muted).toBe(false);
-    expect(element.volume).toBe(0.2);
+    const channel = playVideoResource(webVideoHost, createVideoResource(element), { gain: 0.7 })!;
+    setVideoChannelMuted(webVideoHost, channel, true);
+    setVideoChannelGain(webVideoHost, channel, 0.2);
+    setVideoChannelMuted(webVideoHost, channel, false);
+    expect((element as MockVideoElement).muted).toBe(false);
+    expect((element as MockVideoElement).volume).toBe(0.2);
   });
 
   it('starts unmuted', () => {
-    const channel = playVideoResource(createVideoResource(createMockVideoElement()))!;
+    const channel = playVideoResource(webVideoHost, createVideoResource(createMockVideoElement()))!;
     expect(isVideoChannelMuted(channel)).toBe(false);
   });
 });
@@ -318,19 +349,19 @@ describe('setVideoChannelMuted', () => {
 describe('setVideoChannelPlaybackRate', () => {
   it('updates channel playback rate and element rate', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element));
+    const channel = playVideoResource(webVideoHost, createVideoResource(element));
     expect(channel).not.toBeNull();
-    expect(setVideoChannelPlaybackRate(channel!, 2)).toBe(2);
-    expect(element.playbackRate).toBe(2);
+    expect(setVideoChannelPlaybackRate(webVideoHost, channel!, 2)).toBe(2);
+    expect((element as MockVideoElement).playbackRate).toBe(2);
   });
 });
 
 describe('stopVideoChannel', () => {
   it('stops playback and resets currentTime', () => {
     const element = createMockVideoElement();
-    const channel = playVideoResource(createVideoResource(element), { currentTime: 400 });
+    const channel = playVideoResource(webVideoHost, createVideoResource(element), { currentTime: 400 });
     expect(channel).not.toBeNull();
-    stopVideoChannel(channel!);
+    stopVideoChannel(webVideoHost, channel!);
     expect(channel!.currentTime).toBe(0);
     expect(channel!.state).toBe('stopped');
   });
@@ -340,8 +371,10 @@ class MockVideoElement {
   currentTime = 0;
   duration: number;
   loop = false;
+  muted = false;
   paused = false;
   playbackRate = 1;
+  readyState = 0;
   srcObject: MediaStream | null = null;
   videoHeight: number;
   videoWidth: number;
@@ -391,12 +424,6 @@ class MockVideoElement {
   }
 }
 
-function createMockVideoElement(
-  duration = 10,
-  videoHeight = 0,
-  videoWidth = 0,
-): HTMLVideoElement & { listenerCount(type: string): number } {
-  return new MockVideoElement(duration, videoHeight, videoWidth) as unknown as HTMLVideoElement & {
-    listenerCount(type: string): number;
-  };
+function createMockVideoElement(duration = 10, videoHeight = 0, videoWidth = 0): HostImageSource {
+  return new MockVideoElement(duration, videoHeight, videoWidth) as unknown as HostImageSource;
 }
