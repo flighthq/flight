@@ -12,33 +12,35 @@ ingested:
 
 # video — Review
 
-**Domain:** Video resource lifecycle -- the resource-carrier and acquisition layer for video: media-element-backed entities with ownership tracking, async loading from URLs and blobs with codec negotiation, MediaStream wrapping, format identification (extension and magic-byte), element inspection, and capability-backend management. Runtime playback (channels, gain, looping) belongs to `@flighthq/media`; on-screen presentation belongs to the `Video` display object in `@flighthq/scene2d`. Neither is counted here.
+**Domain:** Video resource lifecycle -- the resource-carrier and acquisition layer for video: opaque-handle-backed entities with ownership tracking, async loading from URLs and blobs with codec negotiation, format identification (extension and magic-byte), element inspection, and capability-backend management. All host-specific operations (element creation, loading, inspection, stream wrapping) go through `HostVideoProvider`; Web MediaStream wrapping lives in `@flighthq/host-web`. Runtime playback (channels, gain, looping) belongs to `@flighthq/media`; on-screen presentation belongs to the `Video` display object in `@flighthq/scene2d`. Neither is counted here.
 
 ## Verdict
 
-The package has matured from a four-function stub into a well-structured resource lifecycle manager with 25 exported functions across 3 source files, backed by 3 colocated test files with roughly 86 individual test cases. The loader is abort-safe, ownership-aware, and configurable via `VideoResourceLoadOptions`. Object-URL lifecycle transfers ownership correctly through the blob path. The capability-backend system is clean and mirrors the audio/image pattern. Within its declared scope (resource lifecycle, not playback), the package is largely complete.
+The package has matured from a four-function stub into a well-structured resource lifecycle manager with 16 public plus 1 contract-only exported functions across 3 source files, backed by 3 colocated test files with roughly 86 individual test cases. All host-touching operations (element creation, loading, dimension/readiness inspection, cleanup) go through `HostVideoProvider` as the first parameter — the package has zero direct browser API references. The loader is abort-safe, ownership-aware, and configurable via `VideoResourceLoadOptions`. Object-URL lifecycle transfers ownership correctly through the blob path. The capability-backend system is clean and mirrors the audio/image pattern. Within its declared scope (resource lifecycle, not playback), the package is largely complete.
 
 The remaining gaps are principally cross-package design decisions (frame-capture seam, resource-family failure-convention fork, playback types cohabiting in `@flighthq/types`) rather than missing within-package implementation. The score reflects a package that does its job well but has not resolved these family-wide questions and lacks a diagnostics/guard layer.
 
 ## Present capabilities
 
-### Resource creation and teardown (videoResource.ts -- 9 functions)
+### Resource creation and teardown (videoResource.ts -- 10 functions)
 
 - `createVideoResource(element?, objectUrl?, ownsElement?)` -- factory returning `VideoResource` with three fields (`element`, `objectUrl`, `ownsElement`). No-arg produces the null-element sentinel. The `objectUrl` parameter transfers blob-URL ownership; `ownsElement` records whether the resource created the element or received it from the caller.
-- `destroyVideoResource(resource)` -- ownership-aware teardown. For owned elements: nulls `srcObject` (without stopping caller-owned MediaStream tracks), detaches `src` via `removeAttribute`, calls `load()` to free the decoder. For borrowed elements: drops the reference only. Revokes a held `objectUrl` in either case. Idempotent (a second call is a no-op).
-- `disposeVideoResource(resource)` -- legacy unconditional teardown that releases the decoder regardless of the `ownsElement` flag. Retained for loader error paths where the element is known-owned but an ownership flag was not set. Also revokes any held `objectUrl`.
-- `getVideoResourceDuration(resource)` -- returns `element.duration` or `0` when no element is attached. May return `NaN` (pre-metadata) or `Infinity` (live stream), passed through from the element.
-- `getVideoResourceHeight(resource)` / `getVideoResourceWidth(resource)` -- read `videoHeight`/`videoWidth` from the element, or `0` without one.
+- `destroyVideoResource(hostVideo, resource)` -- ownership-aware teardown taking `HostVideoProvider` first. For owned elements: delegates cleanup to `hostVideo.releaseElement`. For borrowed elements: drops the reference only. Revokes a held `objectUrl` via `hostVideo.revokeObjectUrl` in either case. Idempotent (a second call is a no-op).
+- `disposeVideoResource(hostVideo, resource)` -- unconditional teardown that releases the element regardless of the `ownsElement` flag. Retained for loader error paths where the element is known-owned but an ownership flag was not set. Also revokes any held `objectUrl` via the provider.
+- `getVideoResourceDuration(hostVideo, resource)` -- delegates to `hostVideo.getDuration`, or `0` when no element is attached.
+- `getVideoResourceHeight(hostVideo, resource)` / `getVideoResourceWidth(hostVideo, resource)` -- delegate to `hostVideo.getHeight`/`getWidth`, or `0` without an element.
 - `hasVideoResourceElement(resource)` -- true when `element !== null`.
-- `isVideoResourceEmpty(resource)` -- true when no element or dimensions are zero.
-- `isVideoResourceReady(resource)` -- true when `readyState >= HAVE_CURRENT_DATA` (at least one decodable frame available).
+- `initializeVideoResource(out, element?, objectUrl?, ownsElement?)` -- initializer for the allocate-initialize model.
+- `isVideoResourceEmpty(hostVideo, resource)` -- true when no element or dimensions are zero.
+- `isVideoResourceReady(hostVideo, resource)` -- true when the provider reports readiness.
 
-### Async loading (videoResourceFrom.ts -- 4 functions)
+### Async loading (videoResourceFrom.ts -- 3 functions)
 
-- `loadVideoResourceFromUrl(url, options?, signal?)` -- creates a video element via the capability backend, applies `VideoResourceLoadOptions` (crossOrigin, muted, playsInline, preload, readiness), assigns `src`, and resolves on the configured readiness event (`loadedmetadata`, `canplay`, or `canplaythrough`, defaulting to `canplay`). Rejects on error or abort. Both rejection paths route element release through `disposeVideoResource`. Pre-aborted signals fast-path to rejection without creating an element. Marks the returned resource with `ownsElement: true`.
-- `loadVideoResourceFromUrls(sources, options?, signal?)` -- runs `selectVideoResourceUrl` for codec negotiation, then delegates to `loadVideoResourceFromUrl`. Returns the null-element sentinel (not a rejection) when no source is playable.
-- `loadVideoResourceFromBlob(blob, options?, signal?)` -- wraps a `Blob` in an object URL, delegates to `loadVideoResourceFromUrl`, then transfers the URL to the resource via `resource.objectUrl`. On failure, revokes the URL since no resource is returned to own it. The URL is deliberately kept live after load settlement because the element continues fetching from it during playback and seek.
-- `createVideoResourceFromMediaStream(stream)` -- wraps a `MediaStream` by assigning `element.srcObject` and returns an owned resource. Returns `null` when the backend cannot create a video element.
+- `loadVideoResourceFromUrl(hostVideo, url, options?, signal?)` -- delegates element creation and loading to `hostVideo.loadUrl`, which handles element lifecycle, option application, readiness events, and error/abort cleanup internally. Resolves to an owned `VideoResource`. Rejects when the provider has no `loadUrl` method.
+- `loadVideoResourceFromUrls(hostVideo, sources, options?, signal?)` -- runs `selectVideoResourceUrl` for codec negotiation, then delegates to `loadVideoResourceFromUrl`. Returns the null-element sentinel (not a rejection) when no source is playable.
+- `loadVideoResourceFromBlob(hostVideo, blob, options?, signal?)` -- wraps a `Blob` in an object URL via `hostVideo.createObjectUrl`, delegates to `loadVideoResourceFromUrl`, then transfers the URL to the resource via `resource.objectUrl`. On failure, revokes the URL via `hostVideo.revokeObjectUrl` since no resource is returned to own it.
+
+MediaStream wrapping is no longer exported by `@flighthq/video`. `@flighthq/host-web` exports `createWebVideoResourceFromMediaStream(hostVideo, stream)`, which delegates to `hostVideo.attachStream` and returns an owned `VideoResource` or `null`.
 
 ### Format identification and capability backend (videoFormat.ts -- 12 functions)
 
@@ -55,8 +57,8 @@ The remaining gaps are principally cross-package design decisions (frame-capture
 
 ### Export lanes
 
-- `index.ts` (public): 20 named re-exports from `contract.ts`. Omits the 5 backend-management functions (`getVideoCapabilityBackend`, `hasVideoCapabilityHostBackend`, `installVideoCapabilityHostBackend`, `observeVideoCapabilityHostResult`, `setVideoCapabilityBackend`) plus `resetVideoCapabilityBackendForTest`.
-- `contract.ts`: barrel re-export of all 3 source files (25 functions total).
+- `index.ts` (public): 16 named re-exports from `contract.ts`. Omits backend-management functions and test utilities.
+- `contract.ts`: barrel re-export of all 3 source files (17 functions total including 1 contract-only).
 - The two lanes are correctly aligned -- the public lane is a strict subset of the contract lane, and the contract-only functions are all internal-SDK backend plumbing appropriately kept off the public surface.
 
 ### Types (all in @flighthq/types)
@@ -64,8 +66,8 @@ The remaining gaps are principally cross-package design decisions (frame-capture
 - `VideoResource` -- `element: HostImageSource | null`, `objectUrl: string | null`, `ownsElement: boolean`. The `objectUrl` field was added for blob-URL lifecycle ownership; the `ownsElement` field distinguishes caller-provided from loader-created elements for `destroyVideoResource`.
 - `VideoResourceLoadOptions` -- `crossOrigin?`, `muted?`, `playsInline?`, `preload?`, `readiness?`.
 - `VideoResourceUrl` -- `url`, `type?`.
-- `VideoCapabilityBackend` -- `canPlayType(mimeType): boolean`, `createVideoElement?(): HostImageSource | null`.
-- `VideoCapabilityOperation` -- `keyof VideoCapabilityBackend`.
+- `HostVideoProvider` -- comprehensive provider interface covering element creation, loading, dimension/readiness inspection, source management (attach stream, object URLs), element cleanup, and codec negotiation. All host-specific operations in the video package go through this provider.
+- `VideoCapabilityOperation` -- `keyof HostVideoProvider` (excluding Entity fields).
 
 ### Tests
 
@@ -83,7 +85,7 @@ Tests use constructors (`createVideoResource`) rather than literals for SDK enti
 ### Consumers
 
 - `@flighthq/sdk` re-exports the public lane via `resources.ts`.
-- `@flighthq/host-web` uses the contract lane (`installVideoCapabilityHostBackend`, `hasVideoCapabilityHostBackend`, `observeVideoCapabilityHostResult`) in `webVideoCapability.ts` to wire up the browser's `HTMLVideoElement.canPlayType` and element creation.
+- `@flighthq/host-web` provides the web implementation via `createWebVideoCapabilityBackend()` (returning `HostVideoProvider & Entity`) and `createWebVideoResourceFromMediaStream(hostVideo, stream)`. Uses the contract lane for backend installation and host observation.
 
 ### Conventions adherence
 

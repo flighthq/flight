@@ -107,7 +107,7 @@ three of them `never`, to force discrimination that a single unified field would
 
 | Constructor                                 | Returns                                                              | Is the modifier a type?      |
 | ------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- |
-| `createVideoTexture(source: VideoResource)` | `Texture`                                                            | no — no `VideoTexture` type  |
+| `createVideoTexture(hostVideo, source: VideoResource)` | `Texture`                                                            | no — no `VideoTexture` type  |
 | `createRenderTexture(options)`              | `Texture`                                                            | no — no `RenderTexture` type |
 | `createCubeTexture(opts?)`                  | `Texture & { storage: Extract<TextureStorage, {dimension:'cube'}> }` | no — no `CubeTexture` type   |
 | `createCompressedImage(data)`               | `CompressedImage`                                                    | **yes** — correct            |

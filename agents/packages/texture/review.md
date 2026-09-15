@@ -107,15 +107,12 @@ renderer registration, no module-level mutable state. Two blessed export lanes w
 
 ### Video texture (`videoTexture.ts`, 126 lines)
 
-- `createVideoTexture` -- wraps a `VideoResource`'s borrowed host element in an `Image` source and
-  returns a universal `Texture2D`. Initial version is `0xffffffff` (the u32 predecessor of 0).
-- `advanceVideoTexture` -- bumps both the `Image` source and `Texture` version, updates video
-  dimensions from the element. Returns new version (wraps to 0 on first call).
+- `createVideoTexture(hostVideo, source)` -- takes `HostVideoProvider` first; wraps a `VideoResource`'s borrowed host element in an `Image` source and returns a universal `Texture2D`. Initial version is `0xffffffff` (the u32 predecessor of 0).
+- `advanceVideoTexture(hostVideo, texture)` -- takes `HostVideoProvider` first; bumps both the `Image` source and `Texture` version, updates video dimensions via the provider. Returns new version (wraps to 0 on first call).
 - `destroyVideoTexture` -- nulls the source and resets the version. Idempotent.
-- `isVideoTextureFrameReady` -- true when the element has `readyState >= HAVE_CURRENT_DATA` and
-  non-zero dimensions.
-- `getVideoTextureWidth`, `getVideoTextureHeight` -- from the element's `videoWidth`/`videoHeight`.
-- `setVideoTextureSource` -- replaces the host handle and resets the version.
+- `isVideoTextureFrameReady(hostVideo, texture)` -- takes `HostVideoProvider` first; delegates readiness and dimension checks to the provider.
+- `getVideoTextureWidth(hostVideo, texture)`, `getVideoTextureHeight(hostVideo, texture)` -- delegate to `hostVideo.getWidth`/`getHeight` through the provider.
+- `setVideoTextureSource(hostVideo, texture, source)` -- takes `HostVideoProvider` first; replaces the host handle and resets the version.
 - `resetVideoTextureFrame` -- resets the version sentinel so the next advance re-uploads everywhere.
 - `cloneVideoTexture`, `copyVideoTexture`, `getVideoTextureUvMatrix`,
   `getVideoTextureInverseUvMatrix` -- pass-throughs to the universal Texture equivalents,
@@ -164,9 +161,7 @@ renderer registration, no module-level mutable state. Two blessed export lanes w
   pull query for diagnostics.
 - **No `Texture.format` or `mipPolicy`.** Upload format and mip generation policy are each backend's
   decision. The descriptor carries no hint for the GPU layer.
-- **`videoTexture.ts` references `HTMLVideoElement` directly** (`videoTexture.ts:110`, `:119`)
-  including `readyState` and `videoWidth`/`videoHeight`, coupling the implementation to browser DOM
-  types. This is a portability concern for the C/C++ trajectory.
+- ~~**`videoTexture.ts` references `HTMLVideoElement` directly.**~~ Resolved — video texture functions now take `HostVideoProvider` first and delegate all element inspection (readiness, dimensions) through the provider. Zero direct browser API references remain.
 - **`renderTexture.ts` constructs a `RenderTarget` via inline `createEntity`** rather than a
   dedicated `createRenderTarget` function. The render target is an entity (carries runtime) but has
   no constructor outside this inline usage.
@@ -237,8 +232,6 @@ renderer registration, no module-level mutable state. Two blessed export lanes w
    slots or whether callers should use the universal Texture functions directly.
 5. **Guard module for sentinels.** An `enableTextureGuards` or `explainTextureWidth` pull query would
    make the `-1` / `null` sentinels diagnosable per the diagnostics convention.
-6. **Video texture portability.** `HTMLVideoElement` access in `videoTexture.ts` ties the
-   implementation to browser DOM. A host-abstracted video handle (via the `VideoResource` already
-   in scope) would bring this closer to the C/C++ portability goal.
+6. ~~**Video texture portability.**~~ Resolved — all video texture functions now take `HostVideoProvider` first and have zero browser API references.
 7. **Render target constructor.** A `createRenderTarget` function would give the RenderTarget source
    its own construction path rather than being assembled inline in `createRenderTexture`.

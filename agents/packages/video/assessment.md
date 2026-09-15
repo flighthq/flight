@@ -17,7 +17,7 @@ _None open._ All six original items landed in commit `2ef652b3` and were re-veri
 1. ~~**Loader options — `crossOrigin`, `muted`, `playsInline`, `preload`, readiness mode.**~~ Landed; all five are applied in `videoResourceFrom.ts`, readiness mapped to `loadedmetadata` / `canplay` / `canplaythrough`.
 2. ~~**Lifecycle — `disposeVideoResource`, `hasVideoResourceElement`, `isVideoResourceEmpty`, `isVideoResourceReady`.**~~ Landed in `videoResource.ts`, with the `removeAttribute('src')` + `load()` sequence and the clone-is-N/A decision documented at the top of the file.
 3. ~~**Inspection getters — `getVideoResourceWidth`, `getVideoResourceHeight`, `getVideoResourceDuration`.**~~ Landed.
-4. ~~**Non-URL sources — `loadVideoResourceFromBlob`, `createVideoResourceFromMediaStream`.**~~ Landed. The Blob loader's object-URL ownership is _not_ settled, though — see the revoke-timing entry in Backlog.
+4. ~~**Non-URL sources — `loadVideoResourceFromBlob`, `createVideoResourceFromMediaStream`.**~~ Landed. MediaStream wrapping moved to `@flighthq/host-web` as `createWebVideoResourceFromMediaStream(hostVideo, stream)` during the host-seam migration. Blob URL creation/revocation routes through `HostVideoProvider`. The Blob loader's object-URL ownership is settled — the resource owns the URL via `VideoResource.objectUrl`, and `disposeVideoResource` revokes it.
 5. ~~**Format family symmetry — `inferVideoMimeType`, `detectVideoMimeType`, extended MIME table.**~~ Landed.
 6. ~~**Export the codec-negotiation primitive — `selectVideoResourceUrl` / `canPlayVideoType`.**~~ Landed; both are in the package barrel.
 
