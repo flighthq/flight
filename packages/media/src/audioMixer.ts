@@ -2,34 +2,37 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clamp } from '@flighthq/math/contract';
 import type {
   AudioBus,
+  AudioBusNodeHandle,
   AudioBusMixerGuard,
   AudioBusMixerOperation,
   AudioBusOptions,
   AudioChannel,
+  AudioDeviceHandle,
   AudioMixer,
+  AudioMixerGraphHandle,
   AudioMixerOptions,
   EntityConstruction,
+  HostAudioMixerProvider,
 } from '@flighthq/types/contract';
 
-import { connectAudioChannelToNode, pauseAudioChannel, resumeAudioChannel, stopAudioChannel } from './audioChannel';
+import {
+  getAudioChannelSourceHandle,
+  pauseAudioChannel,
+  resumeAudioChannel,
+  setAudioChannelSourceRoute,
+  stopAudioChannel,
+} from './audioChannel';
 
-export function addAudioBusToMixer(mixer: Readonly<AudioMixer>, bus: AudioBus): void {
+export function addAudioBusToMixer(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  mixer: Readonly<AudioMixer>,
+  bus: AudioBus,
+): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  if (runtime.busGainNodes.has(bus)) return;
-  const gainNode = runtime.context.createGain();
-  gainNode.gain.value = bus.muted ? 0 : bus.gain;
-  let pannerNode: StereoPannerNode | null = null;
-  if (typeof runtime.context.createStereoPanner === 'function') {
-    pannerNode = runtime.context.createStereoPanner();
-    pannerNode.pan.value = bus.pan;
-    gainNode.connect(pannerNode);
-    pannerNode.connect(runtime.masterGainNode);
-  } else {
-    gainNode.connect(runtime.masterGainNode);
-  }
-  runtime.busGainNodes.set(bus, gainNode);
-  if (pannerNode !== null) runtime.busOutputNodes.set(bus, pannerNode);
+  if (runtime.busNodes.has(bus)) return;
+  const busNode = hostAudioMixer.createBusNode(runtime.graph, bus.muted ? 0 : bus.gain, bus.pan);
+  runtime.busNodes.set(bus, busNode);
   runtime.buses.set(bus.name, bus);
   registerBusInReverseMap(bus, runtime);
 }
@@ -40,59 +43,61 @@ export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
   return finishEntity(out);
 }
 
-export function createAudioMixer(context: AudioContext, options?: Readonly<AudioMixerOptions>): AudioMixer {
-  const masterGainNode = context.createGain();
-  masterGainNode.gain.value = options?.masterGain ?? 1;
-  masterGainNode.connect(context.destination);
+export function createAudioMixer(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  device: AudioDeviceHandle,
+  options?: Readonly<AudioMixerOptions>,
+): AudioMixer {
+  const masterGain = options?.masterGain ?? 1;
+  const masterMuted = options?.masterMuted ?? false;
+  const graph = hostAudioMixer.createMixerGraph(device, masterMuted ? 0 : masterGain);
   const mixer = allocateEntity<AudioMixer>();
-  mixer.masterGain = options?.masterGain ?? 1;
-  mixer.masterMuted = options?.masterMuted ?? false;
+  mixer.masterGain = masterGain;
+  mixer.masterMuted = masterMuted;
   mixerRuntimes.set(mixer, {
     activeChannels: new Set(),
     channelsPausedByMixer: new Set(),
     buses: new Map(),
-    busGainNodes: new Map(),
-    busOutputNodes: new Map(),
+    busNodes: new Map(),
     channelToBus: new WeakMap(),
-    context,
-    masterGainNode,
+    graph,
   });
   return mixer;
 }
 
-export function destroyAudioMixer(mixer: Readonly<AudioMixer>): void {
+export function destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
   // Stop every routed channel and reset its transport state.
-  for (const channel of runtime.activeChannels) stopAudioChannel(channel);
+  for (const channel of runtime.activeChannels) {
+    stopAudioChannel(channel);
+    setAudioChannelSourceRoute(channel, null);
+  }
   runtime.activeChannels.clear();
-  // Tear down the Web Audio graph: bus panners, bus gains, then the master gain.
-  for (const pannerNode of runtime.busOutputNodes.values()) pannerNode.disconnect();
-  for (const bus of runtime.busGainNodes.keys()) unregisterBusFromReverseMap(bus, runtime);
-  for (const gainNode of runtime.busGainNodes.values()) gainNode.disconnect();
-  runtime.masterGainNode.disconnect();
-  runtime.busGainNodes.clear();
-  runtime.busOutputNodes.clear();
+  for (const [bus, busNode] of runtime.busNodes) {
+    unregisterBusFromReverseMap(bus, runtime);
+    hostAudioMixer.destroyBusNode(runtime.graph, busNode);
+  }
+  hostAudioMixer.destroyMixerGraph(runtime.graph);
+  runtime.busNodes.clear();
   runtime.buses.clear();
   mixerRuntimes.delete(mixer);
 }
 
 export function fadeAudioBusGain(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
   mixer: Readonly<AudioMixer>,
   bus: AudioBus,
   targetGain: number,
   durationMs: number,
 ): void {
   const runtime = mixerRuntimes.get(mixer);
-  const gainNode = runtime?.busGainNodes.get(bus);
-  if (gainNode === undefined) {
+  const busNode = runtime?.busNodes.get(bus);
+  if (runtime === undefined || busNode === undefined) {
     bus.gain = targetGain;
     return;
   }
-  const now = runtime!.context.currentTime;
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-  gainNode.gain.linearRampToValueAtTime(bus.muted ? 0 : targetGain, now + durationMs / 1000);
+  hostAudioMixer.fadeBusNodeGain(runtime.graph, busNode, bus.muted ? 0 : targetGain, durationMs);
   bus.gain = targetGain;
 }
 
@@ -135,17 +140,22 @@ export function resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   runtime.channelsPausedByMixer.clear();
 }
 
-export function routeAudioChannelToMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel, bus: AudioBus): void {
+export function routeAudioChannelToMixerBus(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  mixer: Readonly<AudioMixer>,
+  channel: AudioChannel,
+  bus: AudioBus,
+): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  // Ensure the bus is registered in the Web Audio graph.
-  addAudioBusToMixer(mixer, bus);
+  addAudioBusToMixer(hostAudioMixer, mixer, bus);
   runtime.activeChannels.add(channel);
   runtime.channelToBus.set(channel, bus);
-  // Wire the channel's output to the bus gain node (the entry point into the bus graph).
-  const busGainNode = runtime.busGainNodes.get(bus);
-  if (busGainNode !== undefined) {
-    connectAudioChannelToNode(channel, busGainNode);
+  const busNode = runtime.busNodes.get(bus);
+  if (busNode !== undefined) {
+    setAudioChannelSourceRoute(channel, (source) => {
+      hostAudioMixer.routeSourceToBus(runtime.graph, source, busNode);
+    });
   }
 }
 
@@ -156,10 +166,14 @@ export function routeAudioChannelToMixerBus(mixer: Readonly<AudioMixer>, channel
 // nothing becomes audible. That is a silent no-op the return value cannot express — it reports the value
 // that was set, not whether anything is listening — so it routes through the guard seam instead of relying
 // on a comment telling callers to add the bus first.
-export function setAudioBusGain(bus: AudioBus, value: number): number {
+export function setAudioBusGain(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  bus: AudioBus,
+  value: number,
+): number {
   bus.gain = value;
   reportUnmixedBus(bus, 'gain');
-  updateBusGainNode(bus);
+  updateBusGainNode(hostAudioMixer, bus);
   return bus.gain;
 }
 
@@ -172,35 +186,47 @@ export function setAudioBusMixerGuard(guard: AudioBusMixerGuard | null): void {
 }
 
 // Same unmixed-bus caveat as setAudioBusGain: muting a bus no mixer holds changes nothing audible.
-export function setAudioBusMuted(bus: AudioBus, muted: boolean): boolean {
+export function setAudioBusMuted(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  bus: AudioBus,
+  muted: boolean,
+): boolean {
   bus.muted = muted;
   reportUnmixedBus(bus, 'mute');
-  updateBusGainNode(bus);
+  updateBusGainNode(hostAudioMixer, bus);
   return bus.muted;
 }
 
 // Same unmixed-bus caveat as setAudioBusGain: panning a bus no mixer holds changes nothing audible.
-export function setAudioBusPan(bus: AudioBus, value: number): number {
+export function setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus, value: number): number {
   bus.pan = clamp(value, -1, 1);
   reportUnmixedBus(bus, 'pan');
-  updateBusPannerNode(bus);
+  updateBusPannerNode(hostAudioMixer, bus);
   return bus.pan;
 }
 
-export function setAudioMixerMasterGain(mixer: AudioMixer, value: number): number {
+export function setAudioMixerMasterGain(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  mixer: AudioMixer,
+  value: number,
+): number {
   mixer.masterGain = value;
   const runtime = mixerRuntimes.get(mixer);
   if (runtime !== undefined) {
-    runtime.masterGainNode.gain.value = mixer.masterMuted ? 0 : value;
+    hostAudioMixer.setMasterGain(runtime.graph, mixer.masterMuted ? 0 : value);
   }
   return mixer.masterGain;
 }
 
-export function setAudioMixerMasterMuted(mixer: AudioMixer, muted: boolean): boolean {
+export function setAudioMixerMasterMuted(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  mixer: AudioMixer,
+  muted: boolean,
+): boolean {
   mixer.masterMuted = muted;
   const runtime = mixerRuntimes.get(mixer);
   if (runtime !== undefined) {
-    runtime.masterGainNode.gain.value = muted ? 0 : mixer.masterGain;
+    hostAudioMixer.setMasterGain(runtime.graph, muted ? 0 : mixer.masterGain);
   }
   return mixer.masterMuted;
 }
@@ -230,11 +256,9 @@ interface AudioMixerRuntime {
   // channel the caller paused on its own still paused.
   channelsPausedByMixer: Set<AudioChannel>;
   buses: Map<string, AudioBus>;
-  busGainNodes: Map<AudioBus, GainNode>;
-  busOutputNodes: Map<AudioBus, StereoPannerNode>;
+  busNodes: Map<AudioBus, AudioBusNodeHandle>;
   channelToBus: WeakMap<AudioChannel, AudioBus>;
-  context: AudioContext;
-  masterGainNode: GainNode;
+  graph: AudioMixerGraphHandle;
 }
 
 const mixerRuntimes = new WeakMap<AudioMixer, AudioMixerRuntime>();
@@ -262,14 +286,20 @@ function unregisterBusFromReverseMap(bus: AudioBus, runtime: AudioMixerRuntime):
   if (runtimes.size === 0) busToMixerRuntimes.delete(bus);
 }
 
-export function unrouteAudioChannelFromMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel): void {
+export function unrouteAudioChannelFromMixerBus(
+  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  mixer: Readonly<AudioMixer>,
+  channel: AudioChannel,
+): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
   runtime.activeChannels.delete(channel);
   runtime.channelsPausedByMixer.delete(channel);
   runtime.channelToBus.delete(channel);
-  // Reconnect the channel output to the context destination so it keeps playing if still active.
-  connectAudioChannelToNode(channel, runtime.context.destination);
+  setAudioChannelSourceRoute(channel, null);
+  const source = getAudioChannelSourceHandle(channel);
+  hostAudioMixer.unrouteSource(runtime.graph, source);
+  hostAudioMixer.routeSourceToDefault(runtime.graph, source);
 }
 
 // Reports a write to a bus that belongs to no mixer. Cheap by construction — the Map lookup happens only
@@ -281,24 +311,24 @@ function reportUnmixedBus(bus: Readonly<AudioBus>, operation: AudioBusMixerOpera
 
 let _unmixedBusGuard: AudioBusMixerGuard | null = null;
 
-function updateBusGainNode(bus: AudioBus): void {
+function updateBusGainNode(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus): void {
   const runtimes = busToMixerRuntimes.get(bus);
   if (runtimes === undefined) return;
   for (const runtime of runtimes) {
-    const gainNode = runtime.busGainNodes.get(bus);
-    if (gainNode !== undefined) {
-      gainNode.gain.value = bus.muted ? 0 : bus.gain;
+    const busNode = runtime.busNodes.get(bus);
+    if (busNode !== undefined) {
+      hostAudioMixer.setBusNodeGain(runtime.graph, busNode, bus.muted ? 0 : bus.gain);
     }
   }
 }
 
-function updateBusPannerNode(bus: AudioBus): void {
+function updateBusPannerNode(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus): void {
   const runtimes = busToMixerRuntimes.get(bus);
   if (runtimes === undefined) return;
   for (const runtime of runtimes) {
-    const pannerNode = runtime.busOutputNodes.get(bus);
-    if (pannerNode !== undefined && 'pan' in pannerNode) {
-      pannerNode.pan.value = bus.pan;
+    const busNode = runtime.busNodes.get(bus);
+    if (busNode !== undefined) {
+      hostAudioMixer.setBusNodePan(runtime.graph, busNode, bus.pan);
     }
   }
 }
