@@ -178,7 +178,9 @@ describe('packed Tauri host surface', { timeout: 30_000 }, () => {
   });
 });
 
-describe('packed Tauri leaf isolation', () => {
+// Each leaf is a real rollup bundle of the emitted package, every supported leaf at once: CPU-bound work that
+// shares the machine with every other worker in the aggregate run. The budget is contention headroom.
+describe('packed Tauri leaf isolation', { timeout: 30_000 }, () => {
   const isolatedLeaves = [
     {
       exportName: 'tauriHostMenuApplication',
