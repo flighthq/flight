@@ -157,6 +157,39 @@ describe('destroyAudioMixer', () => {
   });
 });
 
+describe('explicit provider-first mixer operations', () => {
+  it('uses the provider supplied to each host operation instead of retaining the construction provider', () => {
+    const operationProvider = createMockMixer();
+    const mixer = createAudioMixer(mockMixer, device);
+    const bus = createAudioBus();
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
+
+    addAudioBusToMixer(operationProvider, mixer, bus);
+    setAudioBusGain(operationProvider, bus, 0.5);
+    setAudioBusMuted(operationProvider, bus, true);
+    setAudioBusPan(operationProvider, bus, 0.25);
+    fadeAudioBusGain(operationProvider, mixer, bus, 0.75, 100);
+    setAudioMixerMasterGain(operationProvider, mixer, 0.4);
+    setAudioMixerMasterMuted(operationProvider, mixer, true);
+    routeAudioChannelToMixerBus(operationProvider, mixer, channel, bus);
+    unrouteAudioChannelFromMixerBus(operationProvider, mixer, channel);
+    destroyAudioMixer(operationProvider, mixer);
+
+    expect(operationProvider.createBusNode).toHaveBeenCalled();
+    expect(operationProvider.setBusNodeGain).toHaveBeenCalled();
+    expect(operationProvider.setBusNodePan).toHaveBeenCalled();
+    expect(operationProvider.fadeBusNodeGain).toHaveBeenCalled();
+    expect(operationProvider.setMasterGain).toHaveBeenCalled();
+    expect(operationProvider.routeSourceToBus).toHaveBeenCalled();
+    expect(operationProvider.unrouteSource).toHaveBeenCalled();
+    expect(operationProvider.routeSourceToDefault).toHaveBeenCalled();
+    expect(operationProvider.destroyBusNode).toHaveBeenCalled();
+    expect(operationProvider.destroyMixerGraph).toHaveBeenCalled();
+    expect(mockMixer.createMixerGraph).toHaveBeenCalledOnce();
+    expect(mockMixer.createBusNode).not.toHaveBeenCalled();
+  });
+});
+
 describe('fadeAudioBusGain', () => {
   it('updates bus gain immediately when no audio context time has passed', () => {
     const mixer = createAudioMixer(mockMixer, device);
