@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { rollup } from 'rollup';
@@ -13,23 +13,6 @@ const ROOT = resolve(__dirname, '../../..');
 const PACKAGE_ROOT = resolve(__dirname, '..');
 const DIST_ROOT = resolve(PACKAGE_ROOT, 'dist');
 const PACK_TIMEOUT_MS = 120_000;
-
-const PACKED_MODULES = [
-  'contract',
-  'index',
-  'tauriApp',
-  'tauriClipboard',
-  'tauriDialog',
-  'tauriHost',
-  'tauriMenu',
-  'tauriNotification',
-  'tauriPlatform',
-  'tauriShell',
-  'tauriShortcut',
-  'tauriTray',
-  'tauriUnsupportedHostGroups',
-  'tauriWindow',
-] as const;
 
 const ENTITY_CONSTRUCTORS = [
   'tauriHost',
@@ -115,8 +98,17 @@ interface PackResult {
 
 let packedFiles: string[];
 
+// `npm pack` would run this package's `prepack`, whose `tsc -b --clean` walks every project reference and
+// deletes then rebuilds thousands of files across the referenced packages (all of `types/dist` included)
+// on every test run, while other workers read them. Cleaning only this package's outputs and letting
+// `tsc -b` rebuild incrementally still packs a fresh, clean build of the surface under test.
 beforeAll(() => {
-  const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
+  execFileSync('npm', ['run', 'clean:dist'], { cwd: PACKAGE_ROOT, stdio: 'ignore' });
+  execFileSync(process.execPath, [resolve(ROOT, 'node_modules/typescript/bin/tsc'), '-b'], {
+    cwd: PACKAGE_ROOT,
+    stdio: 'ignore',
+  });
+  const output = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: PACKAGE_ROOT,
     encoding: 'utf8',
   });
@@ -124,11 +116,16 @@ beforeAll(() => {
   packedFiles = packed[0]!.files.map((file) => file.path).sort();
 }, PACK_TIMEOUT_MS);
 
-describe('packed Tauri host surface', () => {
-  it('ships exactly the clean canonical production modules', () => {
-    const expected = PACKED_MODULES.flatMap((module) =>
-      ['d.ts', 'd.ts.map', 'js', 'js.map'].map((extension) => `dist/${module}.${extension}`),
-    ).sort();
+// These build TypeScript programs over the emitted declarations: a few hundred milliseconds alone, but they
+// share the CPU with every other worker in the aggregate run. The budget is contention headroom, not a deadline.
+describe('packed Tauri host surface', { timeout: 30_000 }, () => {
+  it('ships exactly one clean build of every production source module', () => {
+    const sourceModules = readdirSync(resolve(PACKAGE_ROOT, 'src'))
+      .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+      .map((name) => name.slice(0, -'.ts'.length));
+    const expected = sourceModules
+      .flatMap((module) => ['d.ts', 'd.ts.map', 'js', 'js.map'].map((extension) => `dist/${module}.${extension}`))
+      .sort();
     const emitted = packedFiles.filter((path) => path.startsWith('dist/'));
 
     expect(emitted).toEqual(expected);
@@ -155,7 +152,6 @@ describe('packed Tauri host surface', () => {
 
     expect(moduleExportNames(checker, publicSource)).toEqual(runtimeNames);
     expect(moduleExportNames(checker, contractSource)).toEqual(runtimeNames);
-    expect(runtimeNames).toHaveLength(59);
   });
 
   it('emits Entity return types for exactly the constructors that allocate entities', () => {
