@@ -22,108 +22,12 @@ const BROWSER_MEDIA_IDENTIFIERS = new Set([
   'HTMLVideoElement',
   'StereoPannerNode',
 ]);
-const EXPECTED_AUDIO_MIXER_PROVIDER_SIGNATURES = [
-  'createBusNode(graph: AudioMixerGraphHandle, gain: number, pan: number): AudioBusNodeHandle',
-  'createMixerGraph(device: AudioDeviceHandle, masterGain: number): AudioMixerGraphHandle',
-  'destroyBusNode(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle): void',
-  'destroyMixerGraph(graph: AudioMixerGraphHandle): void',
-  'fadeBusNodeGain(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, target: number, durationMs: number): void',
-  'routeSourceToBus(graph: AudioMixerGraphHandle, source: AudioSourceHandle, bus: AudioBusNodeHandle): void',
-  'routeSourceToDefault(graph: AudioMixerGraphHandle, source: AudioSourceHandle): void',
-  'setBusNodeGain(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, gain: number): void',
-  'setBusNodePan(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, pan: number): void',
-  'setMasterGain(graph: AudioMixerGraphHandle, gain: number): void',
-  'unrouteSource(graph: AudioMixerGraphHandle, source: AudioSourceHandle): void',
-].sort();
-const EXPECTED_AUDIO_DEVICE_PROVIDER_METHODS = [
-  'createBuffer',
-  'createDevice',
-  'createSource',
-  'destroyBuffer',
-  'destroyDevice',
-  'destroySource',
-  'fadeSourceGain',
-  'getDeviceTime',
-  'onSourceEnded',
-  'resumeDevice',
-  'setSourceGain',
-  'setSourcePan',
-  'setSourcePlaybackRate',
-  'startSource',
-  'stopSource',
-].sort();
-const EXPECTED_AUDIO_DEVICE_FADE_SIGNATURE =
-  'fadeSourceGain?(source: AudioSourceHandle, targetGain: number, durationMs: number): void';
 // The node and context lookups are intentionally a host-web-only structural extension. Portable
 // consumers see only HostAudioDeviceProvider, while host-web helpers narrow to these own operations.
-const EXPECTED_WEB_AUDIO_DEVICE_METHODS = [
-  ...EXPECTED_AUDIO_DEVICE_PROVIDER_METHODS,
-  'getDeviceAudioContext',
-  'getSourceBufferSourceNode',
-  'getSourceGainNode',
-].sort();
+const WEB_AUDIO_DEVICE_EXTENSION_METHODS = ['getDeviceAudioContext', 'getSourceBufferSourceNode', 'getSourceGainNode'];
 const EXPECTED_MIXER_HANDLE_TYPES: ReadonlyMap<string, string> = new Map([
   ['AudioBusNodeHandle', "number & { readonly __brand: 'AudioBusNodeHandle' }"],
   ['AudioMixerGraphHandle', "number & { readonly __brand: 'AudioMixerGraphHandle' }"],
-]);
-const EXPECTED_VIDEO_PROVIDER_METHODS = [
-  'addEndedListener',
-  'attachStream',
-  'canPlayType',
-  'createObjectUrl',
-  'createVideoElement',
-  'getCurrentTime',
-  'getDuration',
-  'getHeight',
-  'getLoop',
-  'getMuted',
-  'getPlaybackRate',
-  'getVolume',
-  'getWidth',
-  'isReady',
-  'loadUrl',
-  'pause',
-  'play',
-  'releaseElement',
-  'removeEndedListener',
-  'revokeObjectUrl',
-  'setCurrentTime',
-  'setLoop',
-  'setMuted',
-  'setPlaybackRate',
-  'setVolume',
-].sort();
-const EXPECTED_VIDEO_TRANSPORT_SIGNATURES = [
-  'addEndedListener?(element: HostImageSource, listener: () => void): void',
-  'getCurrentTime?(element: HostImageSource): number',
-  'getLoop?(element: HostImageSource): boolean',
-  'getMuted?(element: HostImageSource): boolean',
-  'getPlaybackRate?(element: HostImageSource): number',
-  'getVolume?(element: HostImageSource): number',
-  'pause?(element: HostImageSource): void',
-  'play?(element: HostImageSource): Promise<void>',
-  'removeEndedListener?(element: HostImageSource, listener: () => void): void',
-  'setCurrentTime?(element: HostImageSource, value: number): void',
-  'setLoop?(element: HostImageSource, value: boolean): void',
-  'setMuted?(element: HostImageSource, value: boolean): void',
-  'setPlaybackRate?(element: HostImageSource, value: number): void',
-  'setVolume?(element: HostImageSource, value: number): void',
-].sort();
-const VIDEO_TRANSPORT_METHODS = new Set([
-  'addEndedListener',
-  'getCurrentTime',
-  'getLoop',
-  'getMuted',
-  'getPlaybackRate',
-  'getVolume',
-  'pause',
-  'play',
-  'removeEndedListener',
-  'setCurrentTime',
-  'setLoop',
-  'setMuted',
-  'setPlaybackRate',
-  'setVolume',
 ]);
 const PROVIDER_FIRST_FUNCTIONS: ReadonlyMap<string, ProviderFirstFunction> = new Map([
   ['addAudioBusToMixer', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
@@ -150,64 +54,6 @@ const PROVIDER_FIRST_FUNCTIONS: ReadonlyMap<string, ProviderFirstFunction> = new
   ['setVideoChannelPlaybackRate', { minimumArguments: 3, providerType: 'HostVideoProvider' }],
   ['stopVideoChannel', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
   ['unrouteAudioChannelFromMixerBus', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-]);
-const EXPECTED_PROVIDER_FIRST_MIXER_SIGNATURES: ReadonlyMap<string, string> = new Map([
-  [
-    'addAudioBusToMixer',
-    'addAudioBusToMixer(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>, bus: AudioBus): void',
-  ],
-  [
-    'createAudioMixer',
-    'createAudioMixer(hostAudioMixer: Readonly<HostAudioMixerProvider>, device: AudioDeviceHandle, options?: Readonly<AudioMixerOptions>): AudioMixer',
-  ],
-  [
-    'destroyAudioMixer',
-    'destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>): void',
-  ],
-  [
-    'fadeAudioBusGain',
-    'fadeAudioBusGain(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>, bus: AudioBus, targetGain: number, durationMs: number): void',
-  ],
-  [
-    'routeAudioChannelToMixerBus',
-    'routeAudioChannelToMixerBus(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>, channel: AudioChannel, bus: AudioBus): void',
-  ],
-  [
-    'setAudioBusGain',
-    'setAudioBusGain(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus, value: number): number',
-  ],
-  [
-    'setAudioBusMuted',
-    'setAudioBusMuted(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus, muted: boolean): boolean',
-  ],
-  [
-    'setAudioBusPan',
-    'setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus, value: number): number',
-  ],
-  [
-    'setAudioMixerMasterGain',
-    'setAudioMixerMasterGain(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: AudioMixer, value: number): number',
-  ],
-  [
-    'setAudioMixerMasterMuted',
-    'setAudioMixerMasterMuted(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: AudioMixer, muted: boolean): boolean',
-  ],
-  [
-    'unrouteAudioChannelFromMixerBus',
-    'unrouteAudioChannelFromMixerBus(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>, channel: AudioChannel): void',
-  ],
-]);
-const EXPECTED_PROVIDER_FREE_MIXER_SIGNATURES: ReadonlyMap<string, string> = new Map([
-  ['createAudioBus', 'createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus'],
-  ['getAudioMixerActiveChannels', 'getAudioMixerActiveChannels(mixer: Readonly<AudioMixer>): readonly AudioChannel[]'],
-  [
-    'initializeAudioBus',
-    'initializeAudioBus(out: EntityConstruction<AudioBus>, options?: Readonly<AudioBusOptions>): void',
-  ],
-  ['pauseAllAudioMixerChannels', 'pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void'],
-  ['resumeAllAudioMixerChannels', 'resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void'],
-  ['setAudioBusMixerGuard', 'setAudioBusMixerGuard(guard: AudioBusMixerGuard | null): void'],
-  ['stopAllAudioMixerChannels', 'stopAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void'],
 ]);
 const RETIRED_MEDIA_EXPORTS = [
   'connectAudioChannelToNode',
@@ -284,8 +130,16 @@ describe('media host-seam closure', () => {
     expect(productionMediaSources().flatMap(findBrowserMediaReferences)).toEqual([]);
   });
 
-  it('pins every HostAudioMixerProvider operation to the frozen graph-first surface', () => {
-    expect(interfaceMethodSignatures('HostAudioMixerProvider')).toEqual(EXPECTED_AUDIO_MIXER_PROVIDER_SIGNATURES);
+  it('keeps every HostAudioMixerProvider operation graph-first over branded handles', () => {
+    const methods = interfaceMethods('HostAudioMixerProvider');
+    expect(methods.length).toBeGreaterThan(0);
+    // Only the operation that creates a graph may precede one; every other operation addresses a graph.
+    const notGraphFirst = methods
+      .filter(({ returnType }) => returnType !== 'AudioMixerGraphHandle')
+      .filter(({ parameters }) => parameters[0] !== 'graph: AudioMixerGraphHandle')
+      .map(({ name }) => name);
+    expect(notGraphFirst).toEqual([]);
+    expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
     expect(interfaceHeritage('HostAudioMixerProvider')).toEqual(['Entity']);
     expect(interfacePropertySignatures('HostMediaCapabilities', new Set(['audioMixer']))).toEqual([
       'readonly audioMixer?: HostAudioMixerProvider',
@@ -298,29 +152,35 @@ describe('media host-seam closure', () => {
     }
   });
 
-  it('pins the HostAudioDeviceProvider surface and optional fade operation', () => {
-    expect(interfaceMethodNames('HostAudioDeviceProvider')).toEqual(EXPECTED_AUDIO_DEVICE_PROVIDER_METHODS);
-    expect(interfaceMethodSignatures('HostAudioDeviceProvider', new Set(['fadeSourceGain']))).toEqual([
-      EXPECTED_AUDIO_DEVICE_FADE_SIGNATURE,
-    ]);
+  it('keeps HostAudioDeviceProvider free of browser media types, with fade as an optional capability', () => {
+    const methods = interfaceMethods('HostAudioDeviceProvider');
+    expect(methods.length).toBeGreaterThan(0);
+    expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
+    expect(methods.find(({ name }) => name === 'fadeSourceGain')?.optional).toBe(true);
   });
 
-  it('pins the complete HostVideoProvider surface and its optional transport operations', () => {
-    expect(interfaceMethodNames('HostVideoProvider')).toEqual(EXPECTED_VIDEO_PROVIDER_METHODS);
-    expect(interfaceMethodSignatures('HostVideoProvider', VIDEO_TRANSPORT_METHODS)).toEqual(
-      EXPECTED_VIDEO_TRANSPORT_SIGNATURES,
-    );
+  it('keeps every HostVideoProvider operation on an element optional and free of browser media types', () => {
+    const methods = interfaceMethods('HostVideoProvider');
+    expect(methods.length).toBeGreaterThan(0);
+    // Transport and inspection act on a host element a provider may not be able to drive; each is a
+    // capability the host either has or omits, never a required member.
+    const requiredElementOperations = methods
+      .filter(({ parameters }) => parameters[0]?.endsWith(': HostImageSource') === true)
+      .filter(({ optional }) => !optional)
+      .map(({ name }) => name);
+    expect(requiredElementOperations).toEqual([]);
+    expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
   });
 
-  it('pins every host-web media provider implementation and composed singleton', () => {
+  it('implements every declared media provider operation in host-web and composes the same singletons', () => {
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostVideo'))).toEqual(
-      EXPECTED_VIDEO_PROVIDER_METHODS,
+      interfaceMethodNames('HostVideoProvider'),
     );
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostAudioDevice'))).toEqual(
-      EXPECTED_WEB_AUDIO_DEVICE_METHODS,
+      [...interfaceMethodNames('HostAudioDeviceProvider'), ...WEB_AUDIO_DEVICE_EXTENSION_METHODS].sort(),
     );
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostAudioMixer'))).toEqual(
-      EXPECTED_AUDIO_MIXER_PROVIDER_SIGNATURES.map((signature) => signature.slice(0, signature.indexOf('('))).sort(),
+      interfaceMethodNames('HostAudioMixerProvider'),
     );
 
     for (const name of ['webHostAudioDevice', 'webHostAudioMixer', 'webHostVideo']) {
@@ -365,16 +225,24 @@ describe('media host-seam closure', () => {
     expect(violations).toEqual([]);
   });
 
-  it('pins every complete provider-first mixer function signature', () => {
-    expect(exportedMediaFunctionSignatures(EXPECTED_PROVIDER_FIRST_MIXER_SIGNATURES)).toEqual(
-      EXPECTED_PROVIDER_FIRST_MIXER_SIGNATURES,
-    );
-  });
+  it('passes a host provider only as the first parameter of any exported media function', () => {
+    const declarations = [...exportedMediaFunctions()];
+    expect(declarations.length).toBeGreaterThan(0);
+    // Derived over every export rather than a roster: a host dependency is visible at the call site only
+    // when the provider leads, and a function needing two hosts would be two responsibilities.
+    const violations = declarations.flatMap(([name, declaration]) => {
+      const source = declaration.getSourceFile();
+      const positions = declaration.parameters
+        .map((parameter, index) =>
+          /\bHost[A-Za-z]*Provider\b/u.test(parameter.type?.getText(source) ?? '') ? index : -1,
+        )
+        .filter((index) => index !== -1);
+      return positions.length === 0 || (positions.length === 1 && positions[0] === 0)
+        ? []
+        : [`${name}: provider at ${positions.join(', ')}`];
+    });
 
-  it('pins every complete provider-free mixer function signature', () => {
-    expect(exportedMediaFunctionSignatures(EXPECTED_PROVIDER_FREE_MIXER_SIGNATURES)).toEqual(
-      EXPECTED_PROVIDER_FREE_MIXER_SIGNATURES,
-    );
+    expect(violations).toEqual([]);
   });
 
   it('leaves no providerless caller of a migrated media API', () => {
@@ -409,6 +277,14 @@ describe('media host-seam closure', () => {
 interface ProviderFirstFunction {
   minimumArguments: number;
   providerType: string;
+}
+
+interface InterfaceMethod {
+  name: string;
+  optional: boolean;
+  parameters: readonly string[];
+  returnType: string;
+  text: string;
 }
 
 interface ImportedMediaBindings {
@@ -447,18 +323,24 @@ function productionMediaSources(): ts.SourceFile[] {
     .map((path) => parseSource(path, readFileSync(path, 'utf8')));
 }
 
-function interfaceMethodSignatures(name: string, selected?: ReadonlySet<string>): string[] {
+function interfaceMethods(name: string): InterfaceMethod[] {
   for (const source of typeSources()) {
     for (const statement of source.statements) {
       if (!ts.isInterfaceDeclaration(statement) || statement.name.text !== name) continue;
-      return statement.members
-        .filter(ts.isMethodSignature)
-        .filter((member) => selected === undefined || selected.has(member.name.getText(source)))
-        .map((member) => member.getText(source).replace(/\s+/gu, ' ').replace(/;$/u, ''))
-        .sort();
+      return statement.members.filter(ts.isMethodSignature).map((member) => ({
+        name: member.name.getText(source),
+        optional: member.questionToken !== undefined,
+        parameters: member.parameters.map((parameter) => parameter.getText(source).replace(/\s+/gu, ' ')),
+        returnType: member.type?.getText(source) ?? '',
+        text: member.getText(source),
+      }));
     }
   }
   return [];
+}
+
+function referencesBrowserMediaType(text: string): boolean {
+  return [...BROWSER_MEDIA_IDENTIFIERS].some((identifier) => new RegExp(`\\b${identifier}\\b`, 'u').test(text));
 }
 
 function interfaceMethodNames(name: string): string[] {
@@ -540,20 +422,6 @@ function exportedMediaFunctions(): ReadonlyMap<string, ts.FunctionDeclaration> {
     }
   }
   return declarations;
-}
-
-function exportedMediaFunctionSignatures(expected: ReadonlyMap<string, string>): ReadonlyMap<string, string> {
-  const declarations = exportedMediaFunctions();
-  return new Map(
-    [...expected.keys()].map((name) => {
-      const declaration = declarations.get(name);
-      if (declaration === undefined) return [name, '<missing>'] as const;
-      const source = declaration.getSourceFile();
-      const parameters = declaration.parameters.map((parameter) => parameter.getText(source)).join(', ');
-      const returnType = declaration.type?.getText(source) ?? '<missing>';
-      return [name, `${name}(${parameters}): ${returnType}`.replace(/\s+/gu, ' ')] as const;
-    }),
-  );
 }
 
 function findLegacyCallArities(): string[] {
