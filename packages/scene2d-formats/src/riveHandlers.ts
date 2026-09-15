@@ -1,4 +1,4 @@
-import type { RiveImportRegistry } from '@flighthq/types/contract';
+import type { HostPathBooleanProvider, RiveImportRegistry } from '@flighthq/types/contract';
 
 import { registerRiveAssetHandlers } from './riveAssets';
 import { registerRiveClippingHandlers } from './riveClipping';
@@ -26,12 +26,15 @@ import { registerRiveTextHandlers } from './riveText';
  * only the registrars it needs; the families are independent, and each one's absence costs exactly
  * the content it reads.
  */
-export function registerAllRiveHandlers(registry: RiveImportRegistry): void {
+export function registerAllRiveHandlers(
+  pathBoolean: Readonly<HostPathBooleanProvider>,
+  registry: RiveImportRegistry,
+): void {
   registerRivePathHandlers(registry);
   registerRivePaintHandlers(registry);
   registerRiveTextHandlers(registry);
   registerRiveAssetHandlers(registry);
-  registerRiveClippingHandlers(registry);
+  registerRiveClippingHandlers(pathBoolean, registry);
   registerRiveDrawOrderHandlers(registry);
   registerRiveSoloHandlers(registry);
   registerRiveShapeHandlers(registry);
