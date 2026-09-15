@@ -5,10 +5,11 @@ import type {
   AudioMixerGraphHandle,
   AudioSourceHandle,
   EntityConstruction,
+  HostAudioDeviceProvider,
   HostAudioMixerProvider,
 } from '@flighthq/types/contract';
 
-import { getAudioDeviceContext, getAudioSourceGainNode, webHostAudioDevice } from './webAudioDevice';
+import { webHostAudioDevice } from './webAudioDevice';
 
 export function createWebAudioMixerBackend(): HostAudioMixerProvider {
   const out = allocateEntity<HostAudioMixerProvider>();
@@ -22,7 +23,7 @@ export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudio
   const buses = new Map<number, WebAudioBusNode>();
 
   out.createMixerGraph = (device: AudioDeviceHandle, masterGain: number): AudioMixerGraphHandle => {
-    const context = getAudioDeviceContext(webHostAudioDevice, device);
+    const context = getDeviceAudioContext(webHostAudioDevice, device);
     if (context === null) return INVALID_GRAPH;
     const masterGainNode = context.createGain();
     masterGainNode.gain.value = masterGain;
@@ -97,7 +98,7 @@ export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudio
   out.routeSourceToBus = (graph: AudioMixerGraphHandle, source: AudioSourceHandle, bus: AudioBusNodeHandle): void => {
     const graphEntry = graphs.get(graph as number);
     const busEntry = getBus(graph, bus, graphs, buses);
-    const sourceNode = getAudioSourceGainNode(webHostAudioDevice, source);
+    const sourceNode = getSourceGainNode(webHostAudioDevice, source);
     if (graphEntry === undefined || busEntry === null || !belongsToContext(sourceNode, graphEntry.context)) return;
     sourceNode.disconnect();
     sourceNode.connect(busEntry.gainNode);
@@ -105,14 +106,14 @@ export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudio
 
   out.unrouteSource = (graph: AudioMixerGraphHandle, source: AudioSourceHandle): void => {
     const entry = graphs.get(graph as number);
-    const sourceNode = getAudioSourceGainNode(webHostAudioDevice, source);
+    const sourceNode = getSourceGainNode(webHostAudioDevice, source);
     if (entry === undefined || !belongsToContext(sourceNode, entry.context)) return;
     sourceNode.disconnect();
   };
 
   out.routeSourceToDefault = (graph: AudioMixerGraphHandle, source: AudioSourceHandle): void => {
     const entry = graphs.get(graph as number);
-    const sourceNode = getAudioSourceGainNode(webHostAudioDevice, source);
+    const sourceNode = getSourceGainNode(webHostAudioDevice, source);
     if (entry === undefined || !belongsToContext(sourceNode, entry.context)) return;
     sourceNode.connect(entry.context.destination);
   };
@@ -124,6 +125,11 @@ interface WebAudioBusNode {
   gainNode: GainNode;
   graph: AudioMixerGraphHandle;
   outputNode: StereoPannerNode | null;
+}
+
+interface WebAudioDeviceMixerAccess extends HostAudioDeviceProvider {
+  getDeviceAudioContext(device: AudioDeviceHandle): AudioContext | null;
+  getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
 
 interface WebAudioMixerGraph {
@@ -160,6 +166,21 @@ function getBus(
   if (!graphs.has(graph as number)) return null;
   const entry = buses.get(bus as number);
   return entry?.graph === graph ? entry : null;
+}
+
+function getDeviceAudioContext(
+  backend: Readonly<HostAudioDeviceProvider>,
+  device: AudioDeviceHandle,
+): AudioContext | null {
+  return hasMixerAccess(backend) ? backend.getDeviceAudioContext(device) : null;
+}
+
+function getSourceGainNode(backend: Readonly<HostAudioDeviceProvider>, source: AudioSourceHandle): GainNode | null {
+  return hasMixerAccess(backend) ? backend.getSourceGainNode(source) : null;
+}
+
+function hasMixerAccess(backend: Readonly<HostAudioDeviceProvider>): backend is WebAudioDeviceMixerAccess {
+  return 'getDeviceAudioContext' in backend && 'getSourceGainNode' in backend;
 }
 
 const INVALID_GRAPH = 0 as AudioMixerGraphHandle;
