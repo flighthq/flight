@@ -44,10 +44,10 @@ const videoChannels: VideoChannel[] = [];
 
 function startVideoChannels(resources: readonly VideoResource[]): void {
   for (let i = 0; i < resources.length; i++) {
-    const channel = playVideoResource(resources[i], { loops: -1 });
+    const channel = playVideoResource(webHostVideo, resources[i], { loops: -1 });
     if (channel === null) throw new Error(`Unable to play video channel ${i + 1}`);
-    setVideoChannelGain(channel, i === 0 ? 1 : 0);
-    setVideoChannelPlaybackRate(channel, 0.75 + i * 0.25);
+    setVideoChannelGain(webHostVideo, channel, i === 0 ? 1 : 0);
+    setVideoChannelPlaybackRate(webHostVideo, channel, 0.75 + i * 0.25);
     videoChannels.push(channel);
   }
 }
