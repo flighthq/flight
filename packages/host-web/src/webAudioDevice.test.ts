@@ -105,6 +105,40 @@ describe('getAudioDeviceContext', () => {
     plain.createDevice = () => 1 as unknown as AudioDeviceHandle;
     expect(getAudioDeviceContext(finishEntity(plain), 1 as unknown as AudioDeviceHandle)).toBeNull();
   });
+  // The defect this file exists to prevent recurring: a provider carrying the SOURCE-NODE extension
+  // but no context resolver once passed the shared guard — which vouched for it on the strength of two
+  // other methods — and threw TypeError at the call. Each capability is now guarded on the member it
+  // actually calls.
+  it('returns null for a source-node-only extension instead of throwing', () => {
+    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    out.getSourceGainNode = (): null => null;
+    out.getSourceBufferSourceNode = (): null => null;
+    const backend = finishEntity(out);
+
+    expect(() => getAudioDeviceContext(backend, 1 as unknown as AudioDeviceHandle)).not.toThrow();
+    expect(getAudioDeviceContext(backend, 1 as unknown as AudioDeviceHandle)).toBeNull();
+  });
+
+  // The mirror case, so the split is verified in both directions rather than only the one that broke.
+  it('resolves a context-only extension even though it carries no source-node methods', () => {
+    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    const context = {} as AudioContext;
+    out.getDeviceAudioContext = (): AudioContext => context;
+    const backend = finishEntity(out);
+
+    expect(getAudioDeviceContext(backend, 1 as unknown as AudioDeviceHandle)).toBe(context);
+    expect(hasAudioDeviceWebNodeAccess(backend)).toBe(false);
+  });
+
+  // An `in` check would pass here and then throw at the call, which is the same defect by another
+  // route, so the guard tests callability rather than presence.
+  it('returns null when the property exists but is not callable', () => {
+    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    out.getDeviceAudioContext = 'not a function';
+    const backend = finishEntity(out);
+
+    expect(getAudioDeviceContext(backend, 1 as unknown as AudioDeviceHandle)).toBeNull();
+  });
 });
 
 describe('getAudioSourceBufferSourceNode', () => {
