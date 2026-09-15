@@ -46,7 +46,7 @@ export function getAudioDeviceContext(
   backend: Readonly<HostAudioDeviceProvider>,
   device: AudioDeviceHandle,
 ): AudioContext | null {
-  if (isWebExtendedBackend(backend)) return backend.getDeviceAudioContext(device);
+  if (isContextExtendedBackend(backend)) return backend.getDeviceAudioContext(device);
   return null;
 }
 
@@ -54,7 +54,7 @@ export function getAudioSourceBufferSourceNode(
   backend: Readonly<HostAudioDeviceProvider>,
   source: AudioSourceHandle,
 ): AudioBufferSourceNode | null {
-  if (isWebExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
+  if (isSourceNodeExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
   return null;
 }
 
@@ -62,12 +62,12 @@ export function getAudioSourceGainNode(
   backend: Readonly<HostAudioDeviceProvider>,
   source: AudioSourceHandle,
 ): GainNode | null {
-  if (isWebExtendedBackend(backend)) return backend.getSourceGainNode(source);
+  if (isSourceNodeExtendedBackend(backend)) return backend.getSourceGainNode(source);
   return null;
 }
 
 export function hasAudioDeviceWebNodeAccess(backend: Readonly<HostAudioDeviceProvider>): boolean {
-  return isWebExtendedBackend(backend);
+  return isSourceNodeExtendedBackend(backend);
 }
 
 export function initializeWebAudioDeviceBackend(
@@ -257,14 +257,22 @@ export function initializeWebAudioDeviceBackend(
   };
 }
 
-// The web-only surface the backend carries as runtime properties. A caller already bound to the web
-// may narrow the singleton to this and call the methods directly; everyone else goes through the
-// exported resolvers above, which perform the same narrowing and answer null when it fails.
-interface AudioDeviceBackendWebExtension extends HostAudioDeviceProvider {
+// The web-only surface the backend carries as runtime properties, split by CAPABILITY rather than
+// kept as one block. Each resolver narrows to the piece it actually calls, so a partial extension —
+// one carrying the source nodes but no context, say — degrades to a null answer for the capability it
+// lacks instead of passing a guard that vouched for a member it never had. A single combined
+// predicate is how the context resolver once threw: it was vouched for by evidence about two other
+// methods.
+interface AudioDeviceContextExtension extends HostAudioDeviceProvider {
   getDeviceAudioContext(device: AudioDeviceHandle): AudioContext | null;
+}
+
+interface AudioDeviceSourceNodeExtension extends HostAudioDeviceProvider {
   getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null;
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
+
+interface AudioDeviceBackendWebExtension extends AudioDeviceContextExtension, AudioDeviceSourceNodeExtension {}
 
 interface AudioSourceEntry {
   buffer: AudioBuffer;
@@ -276,8 +284,17 @@ interface AudioSourceEntry {
   state: 'playing' | 'stopped';
 }
 
-function isWebExtendedBackend(backend: Readonly<HostAudioDeviceProvider>): backend is AudioDeviceBackendWebExtension {
-  return 'getSourceGainNode' in backend && 'getSourceBufferSourceNode' in backend;
+// typeof rather than `in`: a property that exists but is not callable passes an `in` check and then
+// throws at the call, which is the same failure by a different route.
+function isContextExtendedBackend(backend: Readonly<HostAudioDeviceProvider>): backend is AudioDeviceContextExtension {
+  return typeof (backend as Partial<AudioDeviceContextExtension>).getDeviceAudioContext === 'function';
+}
+
+function isSourceNodeExtendedBackend(
+  backend: Readonly<HostAudioDeviceProvider>,
+): backend is AudioDeviceSourceNodeExtension {
+  const candidate = backend as Partial<AudioDeviceSourceNodeExtension>;
+  return typeof candidate.getSourceGainNode === 'function' && typeof candidate.getSourceBufferSourceNode === 'function';
 }
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
