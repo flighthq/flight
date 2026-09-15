@@ -1,16 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, WgpuHostAcquisition, HostWgpuProvider } from '@flighthq/types/contract';
 
-// The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
-// function's call graph so render-state creation can also consume native caller-provided handles.
 export function createWebWgpuHostBackend(): HostWgpuProvider {
   const out = allocateEntity<HostWgpuProvider>();
   initializeWebWgpuHostBackend(out);
   return finishEntity(out);
-}
-
-export function getWgpuHostBackend(): HostWgpuProvider {
-  return _custom ?? _host ?? _web;
 }
 
 export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuProvider>): void {
@@ -75,22 +69,6 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuPro
   };
 }
 
-// First host wins and a custom backend installed through setWgpuHostBackend always takes precedence.
-export function installWgpuHostBackend(backend: HostWgpuProvider): void {
-  if (_host === null) _host = backend;
-}
-
-export function resetWgpuHostBackendForTest(): void {
-  _custom = null;
-  _host = null;
-}
-
-// Installs a process-wide custom backend. Clearing it reveals the first installed host, or the
-// built-in explicit web adapter when no host has been installed.
-export function setWgpuHostBackend(backend: HostWgpuProvider | null): void {
-  _custom = backend;
-}
-
 function getWebWgpu(): GPU | null {
   if (typeof navigator === 'undefined') return null;
   try {
@@ -99,7 +77,3 @@ function getWebWgpu(): GPU | null {
     return null;
   }
 }
-
-const _web = createWebWgpuHostBackend();
-let _custom: HostWgpuProvider | null = null;
-let _host: HostWgpuProvider | null = null;

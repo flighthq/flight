@@ -7,6 +7,7 @@ export {
   createExternalWgpuTexture,
   createWgpuOffscreenRenderState,
   createWgpuPipeline,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuRenderState,

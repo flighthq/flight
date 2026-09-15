@@ -1,14 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
+  HostWgpuProvider,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
   WgpuScreenSurface,
 } from '@flighthq/types/contract';
-
-import { getWgpuHostBackend } from './wgpuHost';
 
 // Acquires the color view a screen pass attaches to, sizing the target's storage to the surface first.
 // The returned view is the supersample texture when antialiasing is enabled and the presentation view
@@ -31,12 +30,13 @@ export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuS
 // A screen target's whole point is that it presents; a texture target's is that it can be sampled. Both
 // creations are Entity allocations, so a factory is the only place either capability is decided.
 export function createWgpuScreenRenderTarget(
+  wgpuHost: Readonly<HostWgpuProvider>,
   device: GPUDevice,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): WgpuScreenRenderTarget {
   const out = allocateEntity<WgpuScreenRenderTarget>();
-  initializeWgpuScreenRenderTarget(out, device, surface, options);
+  initializeWgpuScreenRenderTarget(out, wgpuHost, device, surface, options);
   return finishEntity(out);
 }
 
@@ -65,6 +65,7 @@ export function endWgpuScreenRenderTargetFrame(target: WgpuScreenRenderTarget): 
 
 export function initializeWgpuScreenRenderTarget(
   out: EntityConstruction<WgpuScreenRenderTarget>,
+  wgpuHost: Readonly<HostWgpuProvider>,
   device: GPUDevice,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
@@ -73,7 +74,7 @@ export function initializeWgpuScreenRenderTarget(
   // getContext('webgpu'), a native host for its own swap chain — so the binding goes through the backend
   // rather than through a DOM call in the renderer.
   const format = options.format ?? 'bgra8unorm';
-  const context = getWgpuHostBackend().attachSurface(surface, {
+  const context = wgpuHost.attachSurface(surface, {
     alphaMode: options.alphaMode ?? 'premultiplied',
     device,
     format,

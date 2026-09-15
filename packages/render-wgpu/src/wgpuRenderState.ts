@@ -7,6 +7,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
+  HostWgpuProvider,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
@@ -26,7 +27,6 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
-import { getWgpuHostBackend } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
@@ -38,11 +38,12 @@ const RING_SLOT_COUNT = 4096;
 // destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
+  wgpuHost: Readonly<HostWgpuProvider>,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
   try {
-    const acquired = await getWgpuHostBackend().acquire(surface, options);
+    const acquired = await wgpuHost.acquire(surface, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);
@@ -394,8 +395,8 @@ export function initializeWgpuOffscreenRenderStateOkResult(
   out.state = state;
 }
 
-export function isWgpuSupported(): boolean {
-  return getWgpuHostBackend().isSupported();
+export function isWgpuSupported(wgpuHost: Readonly<HostWgpuProvider>): boolean {
+  return wgpuHost.isSupported();
 }
 
 export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
@@ -440,8 +441,11 @@ function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDevic
 }
 
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
-export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
-  getWgpuHostBackend().release(acquisition);
+export function releaseWgpuAcquisition(
+  wgpuHost: Readonly<HostWgpuProvider>,
+  acquisition: Readonly<WgpuHostAcquisition>,
+): void {
+  wgpuHost.release(acquisition);
 }
 
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {

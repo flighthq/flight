@@ -1,3 +1,4 @@
+import { createWebWgpuHostBackend } from './wgpuHost';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
@@ -15,6 +16,8 @@ import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
 beforeAll(() => {
   installWgpuMock();
 });
+
+const _webBackend = createWebWgpuHostBackend();
 
 describe('bindWgpuScreenRenderTarget', () => {
   it('acquires one swap-chain view per frame and releases it at the end of the frame', async () => {
@@ -36,7 +39,7 @@ describe('bindWgpuScreenRenderTarget', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;
-    const screen = createWgpuScreenRenderTarget(state.device, canvas, { format: state.format });
+    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, canvas, { format: state.format });
 
     canvas.width = 640;
     canvas.height = 480;
@@ -69,7 +72,7 @@ describe('createWgpuScreenRenderTarget', () => {
     const context = canvas.getContext('webgpu')!;
     const configure = vi.spyOn(context, 'configure');
 
-    const screen = createWgpuScreenRenderTarget(state.device, canvas, { format: 'rgba8unorm' });
+    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, canvas, { format: 'rgba8unorm' });
 
     expect(configure).toHaveBeenCalledOnce();
     expect(configure.mock.calls[0]![0].format).toBe('rgba8unorm');
@@ -84,7 +87,7 @@ describe('createWgpuScreenRenderTarget', () => {
     const state = await createWgpuRenderStateForTest();
     const surface = { getContext: () => null, height: 100, width: 100 };
 
-    expect(() => createWgpuScreenRenderTarget(state.device, surface)).toThrow(/cannot present WebGPU/);
+    expect(() => createWgpuScreenRenderTarget(_webBackend, state.device, surface)).toThrow(/cannot present WebGPU/);
   });
 });
 
@@ -140,7 +143,7 @@ describe('syncWgpuScreenRenderTargetExtent', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;
-    const screen = createWgpuScreenRenderTarget(state.device, canvas, { format: state.format });
+    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, canvas, { format: state.format });
 
     canvas.width = 500;
     canvas.height = 400;
