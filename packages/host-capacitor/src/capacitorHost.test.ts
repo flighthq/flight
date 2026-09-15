@@ -1,4 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
+import { createHost } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
@@ -67,35 +68,8 @@ describe('capacitor power slot coverage', () => {
 });
 
 describe('capacitorHost', () => {
-  it('publishes all 26 Host groups and no parallel top-level surface', () => {
-    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios')).sort()).toEqual([
-      'accessibility',
-      'app',
-      'clipboard',
-      'connectivity',
-      'dialog',
-      'graphics',
-      'input',
-      'ipc',
-      'media',
-      'menu',
-      'midi',
-      'net',
-      'notification',
-      'power',
-      'protocol',
-      'screen',
-      'share',
-      'shell',
-      'shortcut',
-      'storage',
-      'system',
-      'text',
-      'tray',
-      'ui',
-      'updater',
-      'window',
-    ]);
+  it('publishes every Host group and no parallel top-level surface', () => {
+    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios')).sort()).toEqual(Object.keys(createHost()).sort());
   });
 
   it('exposes the real Capacitor haptics provider', () => {

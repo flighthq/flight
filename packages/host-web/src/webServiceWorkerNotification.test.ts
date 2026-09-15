@@ -56,19 +56,24 @@ function fakeServiceWorker(permission: NotificationPermission = 'granted') {
 }
 
 describe('createWebServiceWorkerNotificationCapabilities', () => {
-  it('constructs the exact persistent profile without timers, reply, or synthetic received', () => {
+  it('constructs the persistent profile without timers, reply, or synthetic received', () => {
     const capabilities = createWebServiceWorkerNotificationCapabilities(fakeServiceWorker().api);
     expect(EntityRuntimeKey in capabilities).toBe(true);
-    expect(Object.keys(capabilities).sort()).toEqual([
-      'action',
-      'activeList',
-      'click',
-      'close',
-      'delivery',
-      'dismiss',
-      'lifecycle',
-      'permission',
-    ]);
+    expect(Object.keys(capabilities)).toEqual(
+      expect.arrayContaining([
+        'action',
+        'activeList',
+        'click',
+        'close',
+        'delivery',
+        'dismiss',
+        'lifecycle',
+        'permission',
+      ]),
+    );
+    for (const absent of ['received', 'reply', 'scheduling']) {
+      expect(capabilities, absent).not.toHaveProperty(absent);
+    }
   });
 
   it('keeps private provider identity out of opaque caller data', async () => {

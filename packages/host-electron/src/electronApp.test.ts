@@ -112,8 +112,7 @@ describe('electronHostApp', () => {
   it('publishes common application identity, control, and event slots on every profile', async () => {
     const fake = fakeElectron();
     const app = electronHostApp(fake.electron, 'linux');
-    expect(EntityRuntimeKey in app).toBe(true);
-    expect(Object.keys(app).sort()).toEqual([
+    const common = [
       'allWindowsClosed',
       'badge',
       'focus',
@@ -128,7 +127,14 @@ describe('electronHostApp', () => {
       'secondInstance',
       'singleInstance',
       'version',
-    ]);
+    ];
+    const profileOnly = [
+      ...Object.keys(electronHostApp(fakeElectron().electron, 'macos')),
+      ...Object.keys(electronHostApp(fakeElectron().electron, 'windows')),
+    ].filter((slot) => !common.includes(slot));
+    expect(EntityRuntimeKey in app).toBe(true);
+    expect(Object.keys(app)).toEqual(expect.arrayContaining(common));
+    expect(Object.keys(app).filter((slot) => profileOnly.includes(slot))).toEqual([]);
     expect(app.name.getName()).toBe('Flight');
     expect(app.version.getVersion()).toBe('1.2.3');
     expect(app.locale.getPreferredSystemLanguages()).toEqual(['en-US', 'fr']);

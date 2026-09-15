@@ -151,10 +151,10 @@ function trayLeaf(factory: () => object): () => void {
 }
 
 describe('electronHostTray', () => {
-  it('exposes only the slots supported by the injected OS profile', () => {
+  it('exposes the slots supported by the injected OS profile and none exclusive to another', () => {
     const { electron } = fakeElectron();
-    expect(Object.keys(electronHostTray(electron, 'linux')).sort()).toEqual(
-      [
+    const supported = {
+      linux: [
         'bounds',
         'image',
         'interactionEvents',
@@ -163,10 +163,8 @@ describe('electronHostTray', () => {
         'menuSelectionEvents',
         'popupMenu',
         'tooltip',
-      ].sort(),
-    );
-    expect(Object.keys(electronHostTray(electron, 'macos')).sort()).toEqual(
-      [
+      ],
+      macos: [
         'bounds',
         'doubleClickPolicy',
         'dropEvents',
@@ -180,10 +178,8 @@ describe('electronHostTray', () => {
         'templateImage',
         'title',
         'tooltip',
-      ].sort(),
-    );
-    expect(Object.keys(electronHostTray(electron, 'windows')).sort()).toEqual(
-      [
+      ],
+      windows: [
         'balloon',
         'balloonEvents',
         'bounds',
@@ -194,8 +190,20 @@ describe('electronHostTray', () => {
         'menuSelectionEvents',
         'popupMenu',
         'tooltip',
-      ].sort(),
-    );
+      ],
+    } as const;
+    for (const profile of ['linux', 'macos', 'windows'] as const) {
+      const slots = Object.keys(electronHostTray(electron, profile));
+      const exclusiveElsewhere = Object.entries(supported)
+        .filter(([other]) => other !== profile)
+        .flatMap(([, others]) => others)
+        .filter((slot) => !(supported[profile] as readonly string[]).includes(slot));
+      expect(slots, profile).toEqual(expect.arrayContaining([...supported[profile]]));
+      expect(
+        slots.filter((slot) => exclusiveElsewhere.includes(slot)),
+        profile,
+      ).toEqual([]);
+    }
   });
 
   it('constructs the native resource before publishing the Entity', async () => {

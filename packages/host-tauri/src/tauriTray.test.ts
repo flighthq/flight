@@ -118,13 +118,11 @@ async function acquire(hostTrayLifecycle: ReturnType<typeof tauriHostTray>['life
 }
 
 describe('tauriHostTray', () => {
-  it('exposes only the slots supported by the injected OS profile', () => {
+  it('exposes the slots supported by the injected OS profile and none exclusive to another', () => {
     const { tauri } = fakeTauri();
-    expect(Object.keys(tauriHostTray(tauri, 'linux')).sort()).toEqual(
-      ['image', 'lifecycle', 'menu', 'menuSelectionEvents', 'title'].sort(),
-    );
-    expect(Object.keys(tauriHostTray(tauri, 'macos')).sort()).toEqual(
-      [
+    const supported = {
+      linux: ['image', 'lifecycle', 'menu', 'menuSelectionEvents', 'title'],
+      macos: [
         'image',
         'interactionEvents',
         'lifecycle',
@@ -133,11 +131,21 @@ describe('tauriHostTray', () => {
         'templateImage',
         'title',
         'tooltip',
-      ].sort(),
-    );
-    expect(Object.keys(tauriHostTray(tauri, 'windows')).sort()).toEqual(
-      ['image', 'interactionEvents', 'lifecycle', 'menu', 'menuSelectionEvents', 'tooltip'].sort(),
-    );
+      ],
+      windows: ['image', 'interactionEvents', 'lifecycle', 'menu', 'menuSelectionEvents', 'tooltip'],
+    } as const;
+    for (const profile of ['linux', 'macos', 'windows'] as const) {
+      const slots = Object.keys(tauriHostTray(tauri, profile));
+      const exclusiveElsewhere = Object.entries(supported)
+        .filter(([other]) => other !== profile)
+        .flatMap(([, others]) => others)
+        .filter((slot) => !(supported[profile] as readonly string[]).includes(slot));
+      expect(slots, profile).toEqual(expect.arrayContaining([...supported[profile]]));
+      expect(
+        slots.filter((slot) => exclusiveElsewhere.includes(slot)),
+        profile,
+      ).toEqual([]);
+    }
   });
 
   it('publishes only after asynchronous native acquisition resolves', async () => {

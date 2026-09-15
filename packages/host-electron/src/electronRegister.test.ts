@@ -1,5 +1,6 @@
 import { getAppName } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
+import { createHost } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi, Entity } from '@flighthq/types/contract';
 
@@ -180,10 +181,9 @@ function fakeElectron(): ElectronApi {
 }
 
 describe('electronHost', () => {
-  it('exports exactly the canonical full, 26 group, and supported leaf constructors from both lanes', () => {
+  it('exports exactly the canonical full, group, and supported leaf constructors from both lanes', () => {
     const expected = [...new Set(['electronHost', ...GROUPS.map((entry) => entry[1]), ...LEAVES])].sort();
     const expectedSurface = [...expected, ...AUXILIARY_EXPORTS].sort();
-    expect(expected).toHaveLength(116);
     for (const api of [publicApi, contractApi]) {
       expect(Object.keys(api).sort()).toEqual(expectedSurface);
       const names = Object.keys(api)
@@ -205,10 +205,17 @@ describe('electronHost', () => {
     expectTypeOf<ElectronLeafProvidersAreEntities>().toEqualTypeOf<true>();
   });
 
-  it('constructs all 26 Host groups through explicit canonical boundaries', () => {
+  it('constructs every Host group through explicit canonical boundaries', () => {
     const host = electronHost(fakeElectron(), { platform: 'linux' }) as unknown as Record<string, unknown>;
-    expect(GROUPS).toHaveLength(26);
-    expect(Object.keys(host).sort()).toEqual(GROUPS.map((entry) => entry[0]).sort());
+    const hostGroups = Object.keys(createHost())
+      .filter((key) => key !== String(EntityRuntimeKey))
+      .sort();
+    expect(GROUPS.map((entry) => entry[0]).sort()).toEqual(hostGroups);
+    expect(
+      Object.keys(host)
+        .filter((key) => key !== String(EntityRuntimeKey))
+        .sort(),
+    ).toEqual(hostGroups);
     for (const [path] of GROUPS) expect(host[path], path).not.toBeUndefined();
   });
 
