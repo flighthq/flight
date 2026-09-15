@@ -4,11 +4,10 @@ import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } f
 import { vi } from 'vitest';
 
 import {
+  createDefaultTextSegmenterBackend,
   createWebTextSegmenterBackend,
   explainTextSegmenterBackend,
-  getTextSegmenterBackend,
   initializeWebTextSegmenterBackend,
-  setTextSegmenterBackend,
   webTextSegmenterBackend,
 } from './textSegmenterBackend';
 
@@ -28,8 +27,14 @@ function recordingBackend(): RecordingBackend {
 }
 
 afterEach(() => {
-  setTextSegmenterBackend(null);
   vi.unstubAllGlobals();
+});
+
+describe('createDefaultTextSegmenterBackend', () => {
+  it('returns a web segmenter backend', () => {
+    const backend = createDefaultTextSegmenterBackend();
+    expect(backend.segment('ab', 'grapheme').length).toBe(2);
+  });
 });
 
 describe('createWebTextSegmenterBackend', () => {
@@ -58,7 +63,7 @@ describe('createWebTextSegmenterBackend', () => {
 
 describe('explainTextSegmenterBackend', () => {
   it('reports the bundled Intl provider as available', () => {
-    expect(explainTextSegmenterBackend()).toEqual({
+    expect(explainTextSegmenterBackend(webTextSegmenterBackend)).toEqual({
       available: true,
       backend: 'web-intl',
       intlSegmenterAvailable: true,
@@ -66,7 +71,7 @@ describe('explainTextSegmenterBackend', () => {
   });
 
   it('identifies a custom provider independently of Intl availability', () => {
-    expect(explainTextSegmenterBackend(segmenterHost(recordingBackend()).text.segmenter)).toEqual({
+    expect(explainTextSegmenterBackend(recordingBackend())).toEqual({
       available: true,
       backend: 'custom',
       intlSegmenterAvailable: true,
@@ -75,35 +80,11 @@ describe('explainTextSegmenterBackend', () => {
 
   it('reports the bundled provider unavailable when the runtime primitive is absent', () => {
     vi.stubGlobal('Intl', { Segmenter: undefined });
-    expect(explainTextSegmenterBackend()).toEqual({
+    expect(explainTextSegmenterBackend(webTextSegmenterBackend)).toEqual({
       available: false,
       backend: 'web-intl',
       intlSegmenterAvailable: false,
     });
-  });
-});
-
-describe('getTextSegmenterBackend', () => {
-  it('returns an explicit host provider ahead of the legacy backend', () => {
-    const legacy = recordingBackend();
-    const explicit = recordingBackend();
-    const host: { readonly text: { readonly segmenter: HostTextSegmenterProvider } } = {
-      text: { segmenter: explicit },
-    };
-    setTextSegmenterBackend(legacy);
-    expect(getTextSegmenterBackend(host.text.segmenter)).toBe(explicit);
-  });
-
-  it('falls back to the stable bundled web backend when none is registered', () => {
-    const backend = getTextSegmenterBackend();
-    expect(backend).toBe(webTextSegmenterBackend);
-    expect(backend.segment('ab', 'grapheme').length).toBe(2);
-  });
-
-  it('returns the registered backend', () => {
-    const backend = recordingBackend();
-    setTextSegmenterBackend(backend);
-    expect(getTextSegmenterBackend()).toBe(backend);
   });
 });
 
@@ -113,21 +94,6 @@ describe('initializeWebTextSegmenterBackend', () => {
   });
 });
 
-describe('setTextSegmenterBackend', () => {
-  it('routes segmentation through the installed backend', () => {
-    const backend = recordingBackend();
-    setTextSegmenterBackend(backend);
-    getTextSegmenterBackend().segment('hello', 'sentence', 'fr');
-    expect(backend.calls).toEqual([{ text: 'hello', granularity: 'sentence', locale: 'fr' }]);
-  });
-
-  it('clears back to the stable bundled web default when passed null', () => {
-    setTextSegmenterBackend(recordingBackend());
-    setTextSegmenterBackend(null);
-    // The web default segments a ZWJ cluster as one grapheme; a recording backend would not.
-    expect(getTextSegmenterBackend().segment('a👨‍👩‍👧b', 'grapheme').length).toBe(3);
-  });
-});
 describe('webTextSegmenterBackend', () => {
   it('provides the stable bundled Intl fallback', () => {
     expect(webTextSegmenterBackend.segment('a👨‍👩‍👧b', 'grapheme').map((segment) => segment.text)).toEqual([
@@ -137,9 +103,3 @@ describe('webTextSegmenterBackend', () => {
     ]);
   });
 });
-
-function segmenterHost(segmenter: HostTextSegmenterProvider): {
-  readonly text: { readonly segmenter: HostTextSegmenterProvider };
-} {
-  return { text: { segmenter } };
-}

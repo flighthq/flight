@@ -1,45 +1,30 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
-import { setTextSegmenterBackend } from './textSegmenterBackend';
+import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
 
-afterEach(() => setTextSegmenterBackend(null));
+const backend = createDefaultTextSegmenterBackend();
 
 describe('segmentGraphemes', () => {
-  it('accepts an optional explicit segmenter host without breaking the existing signature', () => {
-    expectTypeOf(segmentGraphemes).toEqualTypeOf<
-      (text: string, locale?: string, hostTextSegmenter?: Readonly<HostTextSegmenterProvider>) => readonly TextSegment[]
-    >();
-  });
-
-  it('gives an explicit host precedence over the legacy installed backend', () => {
-    setTextSegmenterBackend(taggingBackend('legacy'));
-    expect(segmentGraphemes('hi', undefined, segmenterHost(taggingBackend('explicit')).text.segmenter)[0].text).toBe(
-      'explicit',
-    );
-  });
-
   it('isolates callers that interleave different explicit hosts', () => {
-    const first = segmenterHost(taggingBackend('first'));
-    const second = segmenterHost(taggingBackend('second'));
-    expect(segmentGraphemes('hi', undefined, first.text.segmenter)[0].text).toBe('first');
-    expect(segmentGraphemes('hi', undefined, second.text.segmenter)[0].text).toBe('second');
-    expect(segmentGraphemes('hi', undefined, first.text.segmenter)[0].text).toBe('first');
+    const first = taggingBackend('first');
+    const second = taggingBackend('second');
+    expect(segmentGraphemes(first, 'hi')[0].text).toBe('first');
+    expect(segmentGraphemes(second, 'hi')[0].text).toBe('second');
+    expect(segmentGraphemes(first, 'hi')[0].text).toBe('first');
   });
 
   it('treats a ZWJ family emoji as one grapheme', () => {
-    const segments = segmentGraphemes('a👨‍👩‍👧b');
+    const segments = segmentGraphemes(backend, 'a👨‍👩‍👧b');
     expect(segments.map((s) => s.text)).toEqual(['a', '👨‍👩‍👧', 'b']);
     expect(segments[1].start).toBe(1);
     expect(segments[1].end).toBe('a👨‍👩‍👧'.length);
   });
 
   it('treats a base plus combining mark as one grapheme', () => {
-    // 'e' + combining acute accent (U+0301) is one user-perceived character.
-    const segments = segmentGraphemes('éx');
-    expect(segments.map((s) => s.text)).toEqual(['é', 'x']);
+    const segments = segmentGraphemes(backend, 'éx');
+    expect(segments.map((s) => s.text)).toEqual(['é', 'x']);
   });
 
   it('threads the locale argument to the active backend', () => {
@@ -49,17 +34,10 @@ describe('segmentGraphemes', () => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text }];
     };
-    setTextSegmenterBackend(finishEntity(fake));
-    segmentGraphemes('hi', 'de-DE');
+    segmentGraphemes(finishEntity(fake), 'hi', 'de-DE');
     expect(seenLocale).toBe('de-DE');
   });
 });
-
-function segmenterHost(segmenter: HostTextSegmenterProvider): {
-  readonly text: { readonly segmenter: HostTextSegmenterProvider };
-} {
-  return { text: { segmenter } };
-}
 
 function taggingBackend(tag: string): HostTextSegmenterProvider {
   const out = allocateEntity<HostTextSegmenterProvider>();
@@ -69,14 +47,14 @@ function taggingBackend(tag: string): HostTextSegmenterProvider {
 
 describe('segmentSentences', () => {
   it('splits into sentences', () => {
-    const segments = segmentSentences('Hi. Bye.');
+    const segments = segmentSentences(backend, 'Hi. Bye.');
     expect(segments.map((s) => s.text.trim())).toEqual(['Hi.', 'Bye.']);
   });
 });
 
 describe('segmentWords', () => {
   it('marks words as word-like and punctuation/whitespace as not', () => {
-    const segments = segmentWords('Hello, world.');
+    const segments = segmentWords(backend, 'Hello, world.');
     const words = segments.filter((s) => s.isWordLike === true).map((s) => s.text);
     expect(words).toEqual(['Hello', 'world']);
     const comma = segments.find((s) => s.text === ',');
