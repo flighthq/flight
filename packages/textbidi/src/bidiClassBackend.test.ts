@@ -1,19 +1,13 @@
 import type { HostBidiClassProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   createCompactBidiClassBackend,
+  createDefaultBidiClassBackend,
   explainBidiClassBackend,
-  getBidiClassBackend,
   initializeCompactBidiClassBackend,
-  setBidiClassBackend,
 } from './bidiClassBackend';
-import { resolveBidiLevels } from './resolveBidiLevels';
-
-afterEach(() => {
-  setBidiClassBackend(null);
-});
 
 describe('createCompactBidiClassBackend', () => {
   it('classifies a representative sample of common-script codepoints', () => {
@@ -34,6 +28,13 @@ describe('createCompactBidiClassBackend', () => {
   it('resolves uncovered codepoints to the LTR default', () => {
     const backend = createCompactBidiClassBackend();
     expect(backend.getBidiClass(0x4e2d)).toBe('L'); // CJK ideograph, outside the compact table
+  });
+});
+
+describe('createDefaultBidiClassBackend', () => {
+  it('returns a compact bidi-class backend', () => {
+    const backend = createDefaultBidiClassBackend();
+    expect(backend.getBidiClass('a'.codePointAt(0) as number)).toBe('L');
   });
 });
 
@@ -64,29 +65,8 @@ describe('explainBidiClassBackend', () => {
   });
 });
 
-describe('getBidiClassBackend', () => {
-  it('lazily creates the compact default on first access', () => {
-    expect(getBidiClassBackend().getBidiClass('a'.codePointAt(0) as number)).toBe('L');
-  });
-});
-
 describe('initializeCompactBidiClassBackend', () => {
   it('is the construction initializer of createCompactBidiClassBackend', () => {
     expect(typeof initializeCompactBidiClassBackend).toBe('function');
-  });
-});
-describe('setBidiClassBackend', () => {
-  it('routes resolveBidiLevels class lookups through the installed backend', () => {
-    // A fake backend that reports every character as strong R forces the whole string to level 1.
-    const fake: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
-    setBidiClassBackend(fake);
-    expect(Array.from(resolveBidiLevels('abc', 'ltr'))).toEqual([1, 1, 1]);
-  });
-
-  it('restores the compact default when passed null', () => {
-    setBidiClassBackend({ [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' });
-    expect(getBidiClassBackend().getBidiClass('a'.codePointAt(0) as number)).toBe('R');
-    setBidiClassBackend(null);
-    expect(getBidiClassBackend().getBidiClass('a'.codePointAt(0) as number)).toBe('L');
   });
 });
