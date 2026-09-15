@@ -1,4 +1,4 @@
-import { createHost } from '@flighthq/entity/contract';
+import { createHost } from '@flighthq/host/contract';
 import type { DesktopOsProfile, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { tauriHostApp } from './tauriApp';

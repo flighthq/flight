@@ -94,6 +94,9 @@
       "path": "../dialog"
     },
     {
+      "path": "../host"
+    },
+    {
       "path": "../scene2d"
     },
     {

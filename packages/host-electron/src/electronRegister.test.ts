@@ -1,6 +1,6 @@
 import { getAppName } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { createHost } from '@flighthq/entity/contract';
+import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi, Entity } from '@flighthq/types/contract';
 

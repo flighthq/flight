@@ -1,5 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { createHost } from '@flighthq/entity/contract';
+import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 

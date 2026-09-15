@@ -1,6 +1,5 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, Host } from '@flighthq/types/contract';
-
-import { allocateEntity, finishEntity } from './entity';
 
 export function createHost<Capabilities extends Partial<EntityWithoutRuntime<Host>>>(
   capabilities: Readonly<Capabilities> = {} as Capabilities,

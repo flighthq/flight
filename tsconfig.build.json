@@ -47,6 +47,7 @@
     { "path": "./packages/gui" },
     { "path": "./packages/gizmo" },
     { "path": "./packages/haptics" },
+    { "path": "./packages/host" },
     { "path": "./packages/host-capacitor" },
     { "path": "./packages/host-electron" },
     { "path": "./packages/host-tauri" },
