@@ -107,11 +107,11 @@ describe('Host Phase 3 surface', () => {
     expect(declarations).toEqual([]);
   });
 
-  it('publishes exactly the same 105 canonical webHost values from both package lanes', () => {
+  it('publishes exactly the same 106 canonical webHost values from both package lanes', () => {
     const publicNames = canonicalWebHostNames(hostWebPublic);
     const contractNames = canonicalWebHostNames(hostWebContract);
 
-    expect(publicNames).toHaveLength(105);
+    expect(publicNames).toHaveLength(106);
     expect(contractNames).toEqual(publicNames);
     expect(canonicalWebHostNames(dialogPublic)).toEqual([]);
     expect(canonicalWebHostNames(dialogContract)).toEqual([]);
