@@ -21,7 +21,6 @@ export {
   getVideoChannelSignals,
   getVideoChannelWidth,
   hasAudioChannelFade,
-  hasAudioDeviceWebNodeAccess,
   isAudioChannelMuted,
   isAudioChannelPlaying,
   isVideoChannelMuted,
