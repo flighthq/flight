@@ -73,3 +73,5 @@ status: ./status.md
 3. **Expansion scope.** Draft charter lists: spatial audio, analyser/metering, streaming, crossfade, video-frame bridge, captions, backend seam. These are all important capabilities but "media" may not be the correct home for all of them. Spatial audio might be its own package. Analyser could be a sink. Video-frame bridge is a renderer concern.
 
 4. **Package Map update.**
+
+5. **Host seam.** The design for moving browser APIs out of this package is recorded in [media-host-seam-spec.md](./media-host-seam-spec.md).
