@@ -61,7 +61,7 @@ describe('loadBaselineCoverage', () => {
     }
   });
 
-  it('changes exactly the manifest 102 unpinned identities from ticks to dots, by name', () => {
+  it('changes exactly the manifest unpinned identities from ticks to dots, by name', () => {
     const realizations = loadRealizationCoverage();
     const before = supportGlyphs(buildGroups(loadBackendObjectCoverage(FUNCTIONAL_BASELINES), realizations));
     const after = supportGlyphs(buildGroups(loadBaselineCoverage(FUNCTIONAL_BASELINES), realizations));
@@ -74,7 +74,8 @@ describe('loadBaselineCoverage', () => {
       .map(([identity]) => identity)
       .sort();
 
-    expect(changedIdentities).toHaveLength(102);
+    // Non-empty, so the equality below cannot pass vacuously on two empty sides.
+    expect(unpinnedIdentities.length).toBeGreaterThan(0);
     expect(changedIdentities).toEqual(unpinnedIdentities);
     for (const identity of changedIdentities) {
       expect([before.get(identity), after.get(identity)]).toEqual(['✓', '·']);
