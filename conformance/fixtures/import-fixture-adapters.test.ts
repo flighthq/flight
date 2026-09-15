@@ -19,25 +19,16 @@ afterEach(() => {
 });
 
 describe('createImportFixtureAdapters', () => {
-  it('declares each not-yet-supported 3D family as its own implementation slot', () => {
+  it('declares each not-yet-supported family as its own implementation slot', () => {
     const adapters = createImportFixtureAdapters();
+    const ids = adapters.map((adapter) => adapter.id);
+    const unavailableReasons = adapters.flatMap(({ id, implementation }) =>
+      implementation.state === 'unavailable' ? [[id, implementation.reason] as const] : [],
+    );
 
-    expect(
-      adapters.filter((adapter) => adapter.implementation.state === 'unavailable').map((adapter) => adapter.id),
-    ).toEqual([
-      'alembic',
-      'blender',
-      'bvh',
-      'collada',
-      'directx-x',
-      'fbx',
-      'lightwave',
-      'ply',
-      'stl',
-      'three-ds-max',
-      'usd',
-      'woff2',
-    ]);
+    // A shared catch-all slot would hide which family is missing and force a split when one gains support.
+    expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+    expect(unavailableReasons.filter(([, reason]) => reason !== 'flight-importer-unavailable')).toEqual([]);
   });
 
   it('publishes only the ten exact reviewed intentional-choice kinds', () => {

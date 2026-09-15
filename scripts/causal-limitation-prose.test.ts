@@ -85,20 +85,21 @@ describe('causal limitation prose', () => {
 
   it('fails when effect coverage changes underneath the architecture documents', () => {
     expect([...canvas].sort()).toEqual([...CANVAS_EFFECTS].sort());
-    expect(gl.size).toBe(47);
-    expect(wgpu.size).toBe(45);
 
+    // The documents state the registrar census; the census is recomputed, never restated here, so a new
+    // runner fails only while the prose still carries the old count.
     const registration = read('agents/registration-model.md');
-    expect(registration).toContain('47/47 on GL, 45/45 on WGPU, 18/18 on canvas');
-    expect(registration).toContain('**GL 47 effect kinds, WGPU 45, canvas 18.**');
+    expect(registration).toContain(
+      `${gl.size}/${gl.size} on GL, ${wgpu.size}/${wgpu.size} on WGPU, ${canvas.size}/${canvas.size} on canvas`,
+    );
+    expect(registration).toContain(`**GL ${gl.size} effect kinds, WGPU ${wgpu.size}, canvas ${canvas.size}.**`);
 
     const support = read('agents/render-backend-support.md');
-    expect(support).toContain('On Canvas 2D, **18 are realized**');
+    expect(support).toContain(`On Canvas 2D, **${canvas.size} are realized**`);
     for (const kind of CANVAS_EFFECTS) expect(support).toContain(kind.replace(/Effect$/, ''));
   });
 
-  it('keeps the 8 STILL TRUE functional claim sites attached to assert-the-gap guards', () => {
-    expect(DIRECT_FUNCTIONAL_GAP_GUARDS).toHaveLength(8);
+  it('keeps every STILL TRUE functional claim site attached to its assert-the-gap guard', () => {
     // Collected rather than thrown one at a time: this loop reported only the FIRST mismatch, so when two
     // entries went stale together the second was invisible until the first was fixed. A list whose job is
     // to be complete should fail completely.

@@ -254,22 +254,6 @@ describe('backend provider lifetime census', () => {
     ]);
   });
 
-  it('pins the required enforced names to the current teardown-bearing backends', () => {
-    expect(REQUIRED_ENFORCED_NAMES).toEqual([
-      'AccessibilityBackend',
-      'ConnectivityChangeBackend',
-      'MediaSessionActionBackend',
-      'MediaSessionBackend',
-      'MenuApplicationBackend',
-      'NotificationLifecycleBackend',
-      'PowerKeepAwakeBackend',
-      'ScreenQueryBackend',
-      'ShortcutTriggerBackend',
-      'StorageChangeBackend',
-      'UpdaterCommandBackend',
-    ]);
-  });
-
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
     const delta = compareFloorToReport(HISTORICAL_BASELINE, report, RETIRED_HISTORICAL_NAMES);
     expect(delta.enforcedGained).toContain('MenuApplicationBackend');

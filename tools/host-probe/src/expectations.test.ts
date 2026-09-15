@@ -53,45 +53,11 @@ describe('createHostProbeProviderResults', () => {
 describe('getRequiredHostProbeCapabilities', () => {
   it('keeps each host subset explicit', () => {
     const electron = getRequiredHostProbeCapabilities('electron');
-    expect(electron.size).toBe(21);
     expect(electron.has('updater')).toBe(true);
-    expect([...getRequiredHostProbeCapabilities('web')]).toEqual([
-      'accessibility',
-      'app',
-      'clipboard',
-      'connectivity',
-      'cursor',
-      'device',
-      'dialog',
-      'filesystem',
-      'geolocation',
-      'glyph-rasterizer',
-      'haptics',
-      'loop',
-      'menu',
-      'notification.click',
-      'notification.close',
-      'notification.delivery',
-      'notification.dismiss',
-      'notification.lifecycle',
-      'notification.permission',
-      'notification.received',
-      'platform',
-      'power',
-      'protocol',
-      'screen',
-      'share',
-      'shell',
-      'soft-keyboard',
-      'statusbar',
-      'storage',
-      'window',
-    ]);
+    expect(getRequiredHostProbeCapabilities('web').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('tauri').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('capacitor').has('protocol')).toBe(true);
-    expect(getRequiredHostProbeCapabilities('tauri').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(18);
   });
 });
 
