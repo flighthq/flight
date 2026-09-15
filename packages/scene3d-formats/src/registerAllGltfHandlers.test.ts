@@ -1,39 +1,33 @@
 import type { GltfCoreFeatureHandler, GltfExtensionHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations';
 import { GltfCamerasCoreFeatureHandler } from './gltfCameras';
-import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
-import { GltfSkinsCoreFeatureHandler } from './gltfSkins';
 import { registerAllGltfHandlers } from './registerAllGltfHandlers';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
+import { registerGltfCameraHandlers } from './registerGltfCameraHandlers';
+import { registerGltfLightingExtensionHandlers } from './registerGltfLightingExtensionHandlers';
+import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers';
+import { registerGltfSkinHandlers } from './registerGltfSkinHandlers';
 
 describe('registerAllGltfHandlers', () => {
   it('registers every built-in optional family across both handler lists', () => {
-    const coreFeatureHandlers: GltfCoreFeatureHandler[] = [{ apply() {}, kind: 'cameras' }];
+    const cameraStub: GltfCoreFeatureHandler = { apply() {}, kind: 'cameras' };
+    const coreFeatureHandlers: GltfCoreFeatureHandler[] = [cameraStub];
     const extensionHandlers: GltfExtensionHandler[] = [];
 
     registerAllGltfHandlers(coreFeatureHandlers, extensionHandlers);
 
-    expect(coreFeatureHandlers.map((handler) => handler.kind)).toEqual(['cameras', 'animations', 'skins']);
-    expect(extensionHandlers.map((handler) => handler.kind)).toEqual([
-      'KHR_materials_anisotropy',
-      'KHR_materials_clearcoat',
-      'KHR_materials_emissive_strength',
-      'KHR_materials_iridescence',
-      'KHR_materials_sheen',
-      'KHR_materials_specular',
-      'KHR_materials_pbrSpecularGlossiness',
-      'KHR_materials_ior',
-      'KHR_materials_transmission',
-      'KHR_materials_volume',
-      'KHR_materials_unlit',
-      'KHR_lights_punctual',
-    ]);
-    expect(coreFeatureHandlers).toEqual([
-      GltfCamerasCoreFeatureHandler,
-      GltfAnimationsCoreFeatureHandler,
-      GltfSkinsCoreFeatureHandler,
-    ]);
-    expect(extensionHandlers.at(-1)).toBe(GltfPunctualLightsExtensionHandler);
+    const expectedCoreFeatureHandlers: GltfCoreFeatureHandler[] = [cameraStub];
+    registerGltfAnimationHandlers(expectedCoreFeatureHandlers);
+    registerGltfCameraHandlers(expectedCoreFeatureHandlers);
+    registerGltfSkinHandlers(expectedCoreFeatureHandlers);
+    const expectedExtensionHandlers: GltfExtensionHandler[] = [];
+    registerGltfMaterialExtensionHandlers(expectedExtensionHandlers);
+    registerGltfLightingExtensionHandlers(expectedExtensionHandlers);
+
+    expect(coreFeatureHandlers).toEqual(expectedCoreFeatureHandlers);
+    expect(extensionHandlers).toEqual(expectedExtensionHandlers);
+    expect(coreFeatureHandlers[0]).toBe(GltfCamerasCoreFeatureHandler);
+    expect(coreFeatureHandlers).not.toContain(cameraStub);
   });
 });

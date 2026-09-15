@@ -22,11 +22,11 @@ function expectRegisteredTimeline(kind: SpineBinaryTimelineKind, handler: SpineB
 }
 
 describe('registerSpineBinaryTimelineHandlers', () => {
-  it('registers only the eight animation timeline-family handlers', () => {
+  it('registers exactly one handler for every timeline family and no section handlers', () => {
     const registry = createSpineBinaryRegistry();
     registerSpineBinaryTimelineHandlers(registry);
     expect(registry.sectionHandlers).toEqual([]);
-    expect(registry.timelineHandlers).toHaveLength(8);
+    expect(registry.timelineHandlers.map((entry) => entry.kind).sort()).toEqual(Object.values(TimelineKind).sort());
   });
 });
 

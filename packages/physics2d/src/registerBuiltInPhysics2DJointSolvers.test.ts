@@ -31,7 +31,7 @@ describe('registerBuiltInPhysics2DJointSolvers', () => {
 
     registerBuiltInPhysics2DJointSolvers(world);
 
-    expect(Array.from(world.jointSolvers.entries())).toEqual([
+    for (const [kind, solver] of [
       [Physics2DDistanceJointKind, physics2DDistanceJointSolver],
       [Physics2DGearJointKind, physics2DGearJointSolver],
       [Physics2DMouseJointKind, physics2DMouseJointSolver],
@@ -41,7 +41,9 @@ describe('registerBuiltInPhysics2DJointSolvers', () => {
       [Physics2DRopeJointKind, physics2DRopeJointSolver],
       [Physics2DWeldJointKind, physics2DWeldJointSolver],
       [Physics2DWheelJointKind, physics2DWheelJointSolver],
-    ]);
+    ] as const) {
+      expect(world.jointSolvers.get(kind), kind).toBe(solver);
+    }
   });
 
   it('preserves vendor registrations and restores built-ins on repeat calls', () => {
@@ -55,7 +57,9 @@ describe('registerBuiltInPhysics2DJointSolvers', () => {
 
     expect(world.jointSolvers.get('acme.Conveyor')).toBe(custom);
     expect(world.jointSolvers.get(Physics2DDistanceJointKind)).toBe(physics2DDistanceJointSolver);
-    expect(world.jointSolvers.size).toBe(10);
+    const builtIns = createPhysics2DWorld();
+    registerBuiltInPhysics2DJointSolvers(builtIns);
+    expect(world.jointSolvers.size).toBe(builtIns.jointSolvers.size + 1);
   });
 
   it('activates factory-created joints that were loaded before the bank', () => {

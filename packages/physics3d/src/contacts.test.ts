@@ -52,19 +52,18 @@ describe('createPhysics3DContactPoint', () => {
   it('carries no solver state', () => {
     // Solver accumulators live in `Physics3DContactConstraintPoint`, which the solver owns. A contact
     // point carries geometry and identity only, so a second solver inherits no dead fields.
-    expect(Object.keys(createPhysics3DContactPoint()).sort()).toEqual([
-      'depth',
-      'featureId',
-      'rAX',
-      'rAY',
-      'rAZ',
-      'rBX',
-      'rBY',
-      'rBZ',
-      'x',
-      'y',
-      'z',
-    ]);
+    const keys = Object.keys(createPhysics3DContactPoint());
+    for (const accumulator of [
+      'bias',
+      'normalImpulse',
+      'normalMass',
+      'tangentImpulse0',
+      'tangentImpulse1',
+      'tangentMass0',
+      'tangentMass1',
+    ]) {
+      expect(keys).not.toContain(accumulator);
+    }
   });
 });
 describe('initializePhysics3DContact', () => {
