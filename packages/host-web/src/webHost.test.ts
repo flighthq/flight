@@ -1,3 +1,4 @@
+import { createHost } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as contractApi from './contract';
@@ -116,19 +117,18 @@ const LEAVES = [
 ] as const;
 
 describe('webHost', () => {
-  it('composes all 26 direct groups from their separately exported identities', () => {
+  it('composes every Host group from its separately exported identity', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
     expect(EntityRuntimeKey in publicApi.webHost).toBe(true);
-    expect(GROUPS).toHaveLength(26);
+    expect(GROUPS.map((entry) => entry[0]).sort()).toEqual(hostGroupNames(createHost()));
     for (const [path, exportName] of GROUPS) {
       expect(Reflect.get(publicApi, exportName), exportName).toBe(Reflect.get(contractApi, exportName));
       expect(host[path], path).toBe(Reflect.get(publicApi, exportName));
     }
   });
 
-  it('composes all 80 supported leaves from their separately exported identities', () => {
+  it('composes each supported leaf from its separately exported identity', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
-    expect(LEAVES).toHaveLength(80);
     for (const [group, path, exportName] of LEAVES) {
       const groupValue = host[group] as Record<string, unknown>;
       const composed = group === 'window' ? groupValue : groupValue[path];
@@ -137,10 +137,13 @@ describe('webHost', () => {
     }
   });
 
-  it('exports exactly the canonical full, group, and leaf names from both lanes', () => {
-    const expected = [
-      ...new Set(['webHost', ...GROUPS.map((entry) => entry[1]), ...LEAVES.map((entry) => entry[2])]),
-    ].sort();
+  it('exports only webHost values that the full Host composes, identically from both lanes', () => {
+    const host = publicApi.webHost as unknown as Record<string, unknown>;
+    const composed = new Set<unknown>([publicApi.webHost]);
+    for (const group of hostGroupNames(publicApi.webHost)) {
+      composed.add(host[group]);
+      for (const leaf of Object.values(host[group] as object)) composed.add(leaf);
+    }
     const publicNames = Object.keys(publicApi)
       .filter((name) => /^webHost(?:$|[A-Z])/u.test(name))
       .sort();
@@ -148,9 +151,8 @@ describe('webHost', () => {
       .filter((name) => /^webHost(?:$|[A-Z])/u.test(name))
       .sort();
 
-    expect(expected).toHaveLength(106);
-    expect(publicNames).toEqual(expected);
-    expect(contractNames).toEqual(expected);
+    expect(contractNames).toEqual(publicNames);
+    expect(publicNames.filter((name) => !composed.has(Reflect.get(publicApi, name)))).toEqual([]);
   });
 
   it('uses the narrow Group suffix only for unavoidable leaf collisions', () => {
@@ -170,3 +172,9 @@ describe('webHost', () => {
     }
   });
 });
+
+function hostGroupNames(host: object): string[] {
+  return Object.keys(host)
+    .filter((key) => key !== String(EntityRuntimeKey))
+    .sort();
+}

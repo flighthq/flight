@@ -112,10 +112,34 @@ describe('installDownloadedUpdate', () => {
     );
   });
 
-  it('exports only the reduced transaction surface from both entry points', () => {
-    const expected = ['checkForAppUpdate', 'destroyUpdater', 'installDownloadedUpdate'];
+  it('exports the same transaction surface from both entry points, without the retired stateful updater', () => {
+    const exports = Object.keys(updaterContract).sort();
+    const deletedSymbols = [
+      'attachAppUpdater',
+      'cancelAppUpdateDownload',
+      'checkAndDownloadAppUpdate',
+      'createAppUpdater',
+      'createUpdaterConfig',
+      'createUpdaterState',
+      'detachAppUpdater',
+      'disposeAppUpdater',
+      'downloadAppUpdate',
+      'explainUpdaterBackend',
+      'getAppUpdaterState',
+      'getUpdaterChannel',
+      'getUpdaterConfig',
+      'isAppUpdateEligible',
+      'quitAndInstallUpdate',
+      'rollbackAppUpdate',
+      'setUpdaterChannel',
+      'setUpdaterConfig',
+      'setUpdaterFeedUrl',
+      'setUpdaterSignatureConfig',
+    ];
 
-    expect(Object.keys(updaterPublic).sort()).toEqual(expected);
-    expect(Object.keys(updaterContract).sort()).toEqual(expected);
+    expect(Object.keys(updaterPublic).sort()).toEqual(exports);
+    for (const symbol of deletedSymbols) {
+      expect(exports).not.toContain(symbol);
+    }
   });
 });

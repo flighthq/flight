@@ -1,3 +1,4 @@
+import { createScreenInfo } from '@flighthq/screen/contract';
 import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -71,7 +72,15 @@ describe('electronHostScreen', () => {
       scaleFactor: 2,
       isPrimary: true,
     });
-    expect(Object.keys(out).filter((key) => key !== String(EntityRuntimeKey))).toHaveLength(25);
+    expect(
+      Object.keys(out)
+        .filter((key) => key !== String(EntityRuntimeKey))
+        .sort(),
+    ).toEqual(
+      Object.keys(createScreenInfo())
+        .filter((key) => key !== String(EntityRuntimeKey))
+        .sort(),
+    );
   });
 
   it('enumerates all screens marking the primary', () => {

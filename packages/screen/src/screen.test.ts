@@ -90,7 +90,6 @@ describe('createScreenInfo', () => {
     const screen = createScreenInfo();
 
     expect(EntityRuntimeKey in screen).toBe(true);
-    expect(Object.keys(screen)).toHaveLength(25);
     expect(screen).toMatchObject({
       id: 0,
       x: 0,

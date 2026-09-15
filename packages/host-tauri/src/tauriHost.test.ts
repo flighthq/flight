@@ -1,4 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
+import { createHost } from '@flighthq/entity/contract';
 import { getPlatformName } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
@@ -123,11 +124,12 @@ function fakeTauri(): TauriApi {
 }
 
 describe('tauriHost', () => {
-  it('constructs one Entity with all 26 direct groups and exact supported slots', async () => {
+  it('constructs one Entity with every Host group and exact supported slots', async () => {
     const host = publicApi.tauriHost(fakeTauri(), 'linux');
+    const hostGroups = Object.keys(createHost()).sort();
     expect(EntityRuntimeKey in host).toBe(true);
-    expect(GROUPS).toHaveLength(26);
-    expect(Object.keys(host).sort()).toEqual(GROUPS.map(([group]) => group).sort());
+    expect(GROUPS.map(([group]) => group).sort()).toEqual(hostGroups);
+    expect(Object.keys(host).sort()).toEqual(hostGroups);
     for (const group of UNSUPPORTED_GROUPS) expect(host[group], group).toEqual({});
     expect(Object.keys(host.app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
     expect(Object.keys(host.clipboard)).toEqual(['text']);
@@ -149,7 +151,6 @@ describe('tauriHost', () => {
     const publicNames = Object.keys(publicApi).sort();
     const contractNames = Object.keys(contractApi).sort();
 
-    expect(expected).toHaveLength(59);
     expect(publicNames).toEqual(expected);
     expect(contractNames).toEqual(expected);
     for (const name of expected) {

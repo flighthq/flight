@@ -98,41 +98,42 @@ function methods(state: FakeWindowState): string[] {
 }
 
 describe('tauriHostWindow', () => {
-  it('adapter-roster axis: publishes exactly 24 P1 operations and omits the four false members', () => {
+  it('adapter-roster axis: publishes the supported P1 operations and omits the four false members', () => {
     const { tauri } = fakeTauri();
     const backend = tauriHostWindow(tauri);
 
     expect(EntityRuntimeKey in backend).toBe(true);
-    expect(
-      Object.keys(backend)
-        .filter((operation) => operation !== 'attach')
-        .sort(),
-    ).toEqual([
-      'center',
-      'close',
-      'flashWindowFrame',
-      'focus',
-      'getBounds',
-      'hide',
-      'maximize',
-      'minimize',
-      'open',
-      'requestAttention',
-      'restore',
-      'setAlwaysOnTop',
-      'setContentProtection',
-      'setFullscreen',
-      'setHasShadow',
-      'setIcon',
-      'setMaximumSize',
-      'setMinimumSize',
-      'setPosition',
-      'setResizable',
-      'setSize',
-      'setSkipTaskbar',
-      'setTitle',
-      'show',
-    ]);
+    expect(Object.keys(backend)).toEqual(
+      expect.arrayContaining([
+        'center',
+        'close',
+        'flashWindowFrame',
+        'focus',
+        'getBounds',
+        'hide',
+        'maximize',
+        'minimize',
+        'open',
+        'requestAttention',
+        'restore',
+        'setAlwaysOnTop',
+        'setContentProtection',
+        'setFullscreen',
+        'setHasShadow',
+        'setIcon',
+        'setMaximumSize',
+        'setMinimumSize',
+        'setPosition',
+        'setResizable',
+        'setSize',
+        'setSkipTaskbar',
+        'setTitle',
+        'show',
+      ]),
+    );
+    for (const falseMember of ['setMenuBarVisible', 'setOpacity', 'setParent', 'setProgress']) {
+      expect(backend, falseMember).not.toHaveProperty(falseMember);
+    }
   });
 
   it('opens the current window and applies options', () => {

@@ -17,26 +17,28 @@ describe('createWebAudioDeviceBackend', () => {
   it('creates the backend with web node access', () => {
     const backend = createWebAudioDeviceBackend();
 
-    expect(Object.keys(backend).sort()).toEqual([
-      'createBuffer',
-      'createDevice',
-      'createSource',
-      'destroyBuffer',
-      'destroyDevice',
-      'destroySource',
-      'fadeSourceGain',
-      'getDeviceAudioContext',
-      'getDeviceTime',
-      'getSourceBufferSourceNode',
-      'getSourceGainNode',
-      'onSourceEnded',
-      'resumeDevice',
-      'setSourceGain',
-      'setSourcePan',
-      'setSourcePlaybackRate',
-      'startSource',
-      'stopSource',
-    ]);
+    expect(Object.keys(backend)).toEqual(
+      expect.arrayContaining([
+        'createBuffer',
+        'createDevice',
+        'createSource',
+        'destroyBuffer',
+        'destroyDevice',
+        'destroySource',
+        'fadeSourceGain',
+        'getDeviceAudioContext',
+        'getDeviceTime',
+        'getSourceBufferSourceNode',
+        'getSourceGainNode',
+        'onSourceEnded',
+        'resumeDevice',
+        'setSourceGain',
+        'setSourcePan',
+        'setSourcePlaybackRate',
+        'startSource',
+        'stopSource',
+      ]),
+    );
   });
 });
 

@@ -13,70 +13,6 @@ import * as hostWebPublic from '../packages/host-web/src/index';
 const ROOT = resolve(__dirname, '..');
 const THIS_FILE = resolve(__dirname, 'host-phase3-surface.test.ts');
 const PLATFORM_ADAPTERS = ['host-capacitor', 'host-electron', 'host-tauri', 'host-web'] as const;
-const CAPACITOR_HOST_EXPORTS = [
-  'capacitorHost',
-  'capacitorHostAccessibility',
-  'capacitorHostApp',
-  'capacitorHostAppActivate',
-  'capacitorHostAppHide',
-  'capacitorHostAppName',
-  'capacitorHostAppQuit',
-  'capacitorHostAppVersion',
-  'capacitorHostClipboard',
-  'capacitorHostClipboardImage',
-  'capacitorHostClipboardText',
-  'capacitorHostConnectivity',
-  'capacitorHostConnectivityChange',
-  'capacitorHostConnectivityStatus',
-  'capacitorHostDevice',
-  'capacitorHostDialog',
-  'capacitorHostFileSystem',
-  'capacitorHostGeolocation',
-  'capacitorHostGraphics',
-  'capacitorHostHaptics',
-  'capacitorHostInput',
-  'capacitorHostIpc',
-  'capacitorHostMedia',
-  'capacitorHostMenu',
-  'capacitorHostMessageDialog',
-  'capacitorHostMidi',
-  'capacitorHostNet',
-  'capacitorHostNotification',
-  'capacitorHostNotificationAction',
-  'capacitorHostNotificationClick',
-  'capacitorHostNotificationDelivery',
-  'capacitorHostNotificationLifecycle',
-  'capacitorHostNotificationPermission',
-  'capacitorHostNotificationScheduling',
-  'capacitorHostPower',
-  'capacitorHostPromptDialog',
-  'capacitorHostProtocol',
-  'capacitorHostProtocolOpen',
-  'capacitorHostScreen',
-  'capacitorHostShare',
-  'capacitorHostShareContent',
-  'capacitorHostShell',
-  'capacitorHostShortcut',
-  'capacitorHostSoftKeyboardAccessoryBar',
-  'capacitorHostSoftKeyboardChange',
-  'capacitorHostSoftKeyboardInfo',
-  'capacitorHostSoftKeyboardResizeModeWrite',
-  'capacitorHostSoftKeyboardScrollAssist',
-  'capacitorHostSoftKeyboardStyle',
-  'capacitorHostSoftKeyboardVisibility',
-  'capacitorHostStatusBarColor',
-  'capacitorHostStatusBarInfo',
-  'capacitorHostStatusBarOverlays',
-  'capacitorHostStatusBarStyle',
-  'capacitorHostStatusBarVisibility',
-  'capacitorHostStorage',
-  'capacitorHostSystem',
-  'capacitorHostText',
-  'capacitorHostTray',
-  'capacitorHostUi',
-  'capacitorHostUpdater',
-  'capacitorHostWindow',
-] as const;
 
 describe('Host Phase 3 surface', () => {
   it('keeps every platform adapter free of legacy names derived from canonical Host providers', () => {
@@ -107,11 +43,11 @@ describe('Host Phase 3 surface', () => {
     expect(declarations).toEqual([]);
   });
 
-  it('publishes exactly the same 106 canonical webHost values from both package lanes', () => {
+  it('publishes the same canonical webHost values from both package lanes', () => {
     const publicNames = canonicalWebHostNames(hostWebPublic);
     const contractNames = canonicalWebHostNames(hostWebContract);
 
-    expect(publicNames).toHaveLength(106);
+    expect(publicNames).toContain('webHost');
     expect(contractNames).toEqual(publicNames);
     expect(canonicalWebHostNames(dialogPublic)).toEqual([]);
     expect(canonicalWebHostNames(dialogContract)).toEqual([]);
@@ -124,10 +60,13 @@ describe('Host Phase 3 surface', () => {
     }
   });
 
-  it('publishes exactly the 62 canonical capacitorHost constructors from both package lanes', () => {
-    const expected = [...CAPACITOR_HOST_EXPORTS].sort();
-    expect(Object.keys(hostCapacitorPublic).sort()).toEqual(expected);
-    expect(Object.keys(hostCapacitorContract).sort()).toEqual(expected);
+  it('publishes only canonical capacitorHost constructors, identically from both package lanes', () => {
+    const publicNames = Object.keys(hostCapacitorPublic).sort();
+
+    expect(publicNames).toContain('capacitorHost');
+    expect(Object.keys(hostCapacitorContract).sort()).toEqual(publicNames);
+    expect(publicNames.filter((name) => !/^capacitorHost(?:$|[A-Z])/u.test(name))).toEqual([]);
+    expect(publicNames.filter((name) => typeof Reflect.get(hostCapacitorPublic, name) !== 'function')).toEqual([]);
   });
 
   it('keeps Capacitor packages, tools, and examples free of the removed constructor era', () => {

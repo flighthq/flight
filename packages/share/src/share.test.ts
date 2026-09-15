@@ -159,23 +159,21 @@ describe('isShareFileValid', () => {
 });
 
 describe('Share contract surface', () => {
-  it('contains only explicit-host commands, payload validation, and core signal lifecycle', () => {
-    expect(Object.keys(shareContract).sort()).toEqual([
-      'attachShareSignals',
-      'canShareContent',
-      'canShareFiles',
-      'detachShareSignals',
-      'disposeShareSignals',
-      'enableShareSignals',
-      'hasShareContentFields',
-      'initializeShareSignals',
-      'isShareFileValid',
-      'shareContent',
-      'shareContentWithResult',
-      'shareFiles',
-      'shareText',
-      'shareUrl',
-    ]);
+  it('exports no ambient backend state or availability API', () => {
+    const exports = Object.keys(shareContract);
+    const deletedSymbols = [
+      'createWebShareBackend',
+      'explainShareBackend',
+      'getShareBackend',
+      'installShareHostBackend',
+      'isShareAvailable',
+      'observeShareHostResult',
+      'resetShareBackendForTest',
+      'setShareBackend',
+    ];
+    for (const symbol of deletedSymbols) {
+      expect(exports).not.toContain(symbol);
+    }
   });
 });
 

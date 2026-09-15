@@ -100,16 +100,9 @@ describe('electron power slot coverage', () => {
   });
 
   it('drops only the thermal slot when the platform cannot report the level', () => {
-    const slots = electronHostPower(fakeElectron({ thermal: null }).electron);
-    expect(Object.keys(slots).sort()).toEqual([
-      'batteryHealth',
-      'change',
-      'idle',
-      'keepAwake',
-      'sessionLock',
-      'status',
-      'suspension',
-    ]);
+    const withThermal = Object.keys(electronHostPower(fakeElectron({}).electron)).sort();
+    const withoutThermal = Object.keys(electronHostPower(fakeElectron({ thermal: null }).electron)).sort();
+    expect(withoutThermal).toEqual(withThermal.filter((slot) => slot !== 'thermal'));
   });
 
   it('declares a teardown obligation on keepAwake alone', () => {
