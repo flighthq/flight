@@ -1,5 +1,11 @@
 import { flattenPath } from '@flighthq/path/contract';
-import type { Path, PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from '@flighthq/types/contract';
+import type {
+  HostPathBooleanProvider,
+  Path,
+  PathOffsetEnd,
+  PathOffsetJoin,
+  PathOffsetOptions,
+} from '@flighthq/types/contract';
 
 import { resolvePathRegions } from './resolvePathRegions';
 
@@ -14,6 +20,7 @@ import { resolvePathRegions } from './resolvePathRegions';
 // grows regardless of input winding. Over-deflating a region past self-collapse drops it, so the result
 // can be an empty path (no commands).
 export function offsetPath(
+  pathBoolean: Readonly<HostPathBooleanProvider>,
   path: Readonly<Path>,
   delta: number,
   options?: Readonly<PathOffsetOptions>,
@@ -65,7 +72,7 @@ export function offsetPath(
   // corner's inner-miter emission overshoots on a feature narrower than 2·|delta|, it dissolves the
   // negatively-wound self-overlap that non-zero fill would have kept; it also merges touching rings and
   // emits a clean, hole-correct outline (empty ring set → empty path).
-  return resolvePathRegions(rawRings, 'positive', out);
+  return resolvePathRegions(pathBoolean, rawRings, 'positive', out);
 }
 
 // Assembles one offset ring for a closed vertex loop by walking its vertices and emitting, at each, the
