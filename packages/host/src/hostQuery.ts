@@ -1,157 +1,158 @@
 import type {
   Host,
-  HostAudioDeviceProvider,
-  HostAudioMixerProvider,
-  HostBitmapEncodeProvider,
-  HostBitmapReadbackProvider,
-  HostClipboardFormatsProvider,
-  HostDeviceProvider,
-  HostFileSystemProvider,
-  HostFontLoadingProvider,
-  HostGeolocationProvider,
-  HostGlyphRasterizerProvider,
-  HostHapticsProvider,
-  HostImageProvider,
-  HostInputIngressProvider,
-  HostLifecycleProvider,
-  HostNetProvider,
-  HostNotificationPermissionProvider,
-  HostPlatformProvider,
-  HostPowerKeepAwakeProvider,
-  HostScreenQueryProvider,
-  HostSensorsProvider,
-  HostSocketProvider,
-  HostSoftKeyboardInfoProvider,
-  HostStorageProvider,
-  HostStoragePersistenceQueryProvider,
-  HostTextSegmenterProvider,
-  HostTextShaperProvider,
-  HostVideoProvider,
-  HostWgpuProvider,
+  HostAudioDeviceCapability,
+  HostAudioMixerCapability,
+  HostBitmapEncodeCapability,
+  HostBitmapReadbackCapability,
+  HostClipboardFormatsCapability,
+  HostDeviceCapability,
+  HostFileSystemCapability,
+  HostFontLoadingCapability,
+  HostGeolocationCapability,
+  HostGlyphRasterizerCapability,
+  HostHapticsCapability,
+  HostImageCapability,
+  HostInputIngressCapability,
+  HostLifecycleCapability,
+  HostNetCapability,
+  HostNotificationPermissionCapability,
+  HostPlatformCapability,
+  HostPowerKeepAwakeCapability,
+  HostPreferencesCapability,
+  HostScreenQueryCapability,
+  HostSensorsCapability,
+  HostSocketCapability,
+  HostSoftKeyboardInfoCapability,
+  HostStoragePersistenceQueryCapability,
+  HostTextSegmenterCapability,
+  HostTextShaperCapability,
+  HostVideoCapability,
+  HostWgpuCapability,
 } from '@flighthq/types/contract';
 
-// Typed accessors for the provider slots a Flight package actually takes as a function parameter. Each
-// is named after the provider interface it returns — `HostVideoProvider` -> `getHostVideo` — so the name
-// says both what comes back and that a Host is where it comes from, and typing `getHost` in an editor
-// lists the capabilities a host can carry.
+// Typed accessors for the capability slots a Flight package actually takes as a function parameter. Each
+// is named after the capability interface it returns — `HostVideoCapability` -> `getHostVideo` — so the
+// name says both what comes back and that a Host is where it comes from, and typing `getHost` in an
+// editor lists the capabilities a host can carry.
 //
 // The group access is optional-chained even though `Host` declares every group non-optional: these are
 // the diagnostic tier, reached exactly when a host is suspected of being malformed, and a structurally
-// built stand-in with a group missing must produce `null` rather than a TypeError.
+// built stand-in with a group missing must produce `null` rather than a TypeError. The `?.` is at exactly
+// one level — the slot below it is optional by declaration and the `??` handles it.
 //
 // Coverage is deliberately a subset of every optional slot on every group; `explainHost` reports the same
 // subset and hostExplain.ts states how it was drawn.
 
-export function getHostAudioDevice(host: Readonly<Host>): HostAudioDeviceProvider | null {
-  return host.media?.audioDevice ?? null;
+export function getHostAudioDevice(host: Readonly<Host>): HostAudioDeviceCapability | null {
+  return host.audio?.device ?? null;
 }
 
-export function getHostAudioMixer(host: Readonly<Host>): HostAudioMixerProvider | null {
-  return host.media?.audioMixer ?? null;
+export function getHostAudioMixer(host: Readonly<Host>): HostAudioMixerCapability | null {
+  return host.audio?.mixer ?? null;
 }
 
-export function getHostBitmapEncode(host: Readonly<Host>): HostBitmapEncodeProvider | null {
-  return host.graphics?.bitmapEncode ?? null;
+export function getHostBitmapEncode(host: Readonly<Host>): HostBitmapEncodeCapability | null {
+  return host.bitmap?.encode ?? null;
 }
 
-export function getHostBitmapReadback(host: Readonly<Host>): HostBitmapReadbackProvider | null {
-  return host.graphics?.bitmapReadback ?? null;
+export function getHostBitmapReadback(host: Readonly<Host>): HostBitmapReadbackCapability | null {
+  return host.bitmap?.readback ?? null;
 }
 
-export function getHostClipboardFormats(host: Readonly<Host>): HostClipboardFormatsProvider | null {
+export function getHostClipboardFormats(host: Readonly<Host>): HostClipboardFormatsCapability | null {
   return host.clipboard?.formats ?? null;
 }
 
-export function getHostDevice(host: Readonly<Host>): HostDeviceProvider | null {
-  return host.system?.device ?? null;
+export function getHostDevice(host: Readonly<Host>): HostDeviceCapability | null {
+  return host.device?.info ?? null;
 }
 
-export function getHostFileSystem(host: Readonly<Host>): HostFileSystemProvider | null {
-  return host.storage?.fileSystem ?? null;
+export function getHostFileSystem(host: Readonly<Host>): HostFileSystemCapability | null {
+  return host.fileSystem?.access ?? null;
 }
 
-export function getHostFontLoading(host: Readonly<Host>): HostFontLoadingProvider | null {
+export function getHostFontLoading(host: Readonly<Host>): HostFontLoadingCapability | null {
   return host.text?.fontLoading ?? null;
 }
 
-export function getHostGeolocation(host: Readonly<Host>): HostGeolocationProvider | null {
-  return host.system?.geolocation ?? null;
+export function getHostGeolocation(host: Readonly<Host>): HostGeolocationCapability | null {
+  return host.geolocation?.position ?? null;
 }
 
-export function getHostGlyphRasterizer(host: Readonly<Host>): HostGlyphRasterizerProvider | null {
+export function getHostGlyphRasterizer(host: Readonly<Host>): HostGlyphRasterizerCapability | null {
   return host.text?.glyphRasterizer ?? null;
 }
 
-export function getHostHaptics(host: Readonly<Host>): HostHapticsProvider | null {
-  return host.input?.haptics ?? null;
+export function getHostHaptics(host: Readonly<Host>): HostHapticsCapability | null {
+  return host.haptics?.engine ?? null;
 }
 
-export function getHostImage(host: Readonly<Host>): HostImageProvider | null {
-  return host.graphics?.image ?? null;
+export function getHostImage(host: Readonly<Host>): HostImageCapability | null {
+  return host.image?.loader ?? null;
 }
 
-export function getHostInputIngress(host: Readonly<Host>): HostInputIngressProvider | null {
+export function getHostInputIngress(host: Readonly<Host>): HostInputIngressCapability | null {
   return host.input?.ingress ?? null;
 }
 
-export function getHostLifecycle(host: Readonly<Host>): HostLifecycleProvider | null {
-  return host.system?.lifecycle ?? null;
+export function getHostLifecycle(host: Readonly<Host>): HostLifecycleCapability | null {
+  return host.lifecycle?.state ?? null;
 }
 
-export function getHostNet(host: Readonly<Host>): HostNetProvider | null {
+export function getHostNet(host: Readonly<Host>): HostNetCapability | null {
   return host.net?.http ?? null;
 }
 
-export function getHostNotificationPermission(host: Readonly<Host>): HostNotificationPermissionProvider | null {
+export function getHostNotificationPermission(host: Readonly<Host>): HostNotificationPermissionCapability | null {
   return host.notification?.permission ?? null;
 }
 
-export function getHostPlatform(host: Readonly<Host>): HostPlatformProvider | null {
-  return host.system?.platform ?? null;
+export function getHostPlatform(host: Readonly<Host>): HostPlatformCapability | null {
+  return host.platform?.info ?? null;
 }
 
-export function getHostPowerKeepAwake(host: Readonly<Host>): HostPowerKeepAwakeProvider | null {
+export function getHostPowerKeepAwake(host: Readonly<Host>): HostPowerKeepAwakeCapability | null {
   return host.power?.keepAwake ?? null;
 }
 
-export function getHostScreenQuery(host: Readonly<Host>): HostScreenQueryProvider | null {
+export function getHostPreferences(host: Readonly<Host>): HostPreferencesCapability | null {
+  return host.preferences?.local ?? null;
+}
+
+export function getHostScreenQuery(host: Readonly<Host>): HostScreenQueryCapability | null {
   return host.screen?.query ?? null;
 }
 
-export function getHostSensors(host: Readonly<Host>): HostSensorsProvider | null {
-  return host.system?.sensors ?? null;
+export function getHostSensors(host: Readonly<Host>): HostSensorsCapability | null {
+  return host.sensors?.query ?? null;
 }
 
-export function getHostSocket(host: Readonly<Host>): HostSocketProvider | null {
+export function getHostSocket(host: Readonly<Host>): HostSocketCapability | null {
   return host.net?.socket ?? null;
 }
 
-export function getHostSoftKeyboardInfo(host: Readonly<Host>): HostSoftKeyboardInfoProvider | null {
-  return host.input?.softKeyboardInfo ?? null;
+export function getHostSoftKeyboardInfo(host: Readonly<Host>): HostSoftKeyboardInfoCapability | null {
+  return host.softKeyboard?.info ?? null;
 }
 
-export function getHostStorage(host: Readonly<Host>): HostStorageProvider | null {
-  return host.storage?.local ?? null;
+export function getHostStoragePersistenceQuery(host: Readonly<Host>): HostStoragePersistenceQueryCapability | null {
+  return host.preferences?.persistenceQuery ?? null;
 }
 
-export function getHostStoragePersistenceQuery(host: Readonly<Host>): HostStoragePersistenceQueryProvider | null {
-  return host.storage?.persistenceQuery ?? null;
-}
-
-export function getHostTextSegmenter(host: Readonly<Host>): HostTextSegmenterProvider | null {
+export function getHostTextSegmenter(host: Readonly<Host>): HostTextSegmenterCapability | null {
   return host.text?.segmenter ?? null;
 }
 
-export function getHostTextShaper(host: Readonly<Host>): HostTextShaperProvider | null {
+export function getHostTextShaper(host: Readonly<Host>): HostTextShaperCapability | null {
   return host.text?.shaper ?? null;
 }
 
-export function getHostVideo(host: Readonly<Host>): HostVideoProvider | null {
-  return host.media?.video ?? null;
+export function getHostVideo(host: Readonly<Host>): HostVideoCapability | null {
+  return host.video?.playback ?? null;
 }
 
-export function getHostWgpu(host: Readonly<Host>): HostWgpuProvider | null {
-  return host.graphics?.wgpuHost ?? null;
+export function getHostWgpu(host: Readonly<Host>): HostWgpuCapability | null {
+  return host.wgpu?.context ?? null;
 }
 
 export function hasHostAudioDevice(host: Readonly<Host>): boolean {
@@ -226,6 +227,10 @@ export function hasHostPowerKeepAwake(host: Readonly<Host>): boolean {
   return getHostPowerKeepAwake(host) !== null;
 }
 
+export function hasHostPreferences(host: Readonly<Host>): boolean {
+  return getHostPreferences(host) !== null;
+}
+
 export function hasHostScreenQuery(host: Readonly<Host>): boolean {
   return getHostScreenQuery(host) !== null;
 }
@@ -240,10 +245,6 @@ export function hasHostSocket(host: Readonly<Host>): boolean {
 
 export function hasHostSoftKeyboardInfo(host: Readonly<Host>): boolean {
   return getHostSoftKeyboardInfo(host) !== null;
-}
-
-export function hasHostStorage(host: Readonly<Host>): boolean {
-  return getHostStorage(host) !== null;
 }
 
 export function hasHostStoragePersistenceQuery(host: Readonly<Host>): boolean {

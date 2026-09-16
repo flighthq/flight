@@ -21,40 +21,38 @@ describe('explainHost', () => {
   });
 
   it('lists the slot keys a populated group actually holds', () => {
-    const host = hostWith({ media: { audioDevice: PROVIDER, video: PROVIDER } });
-    const media = explainHost(host).groups.find((group) => group.group === 'media');
+    const host = hostWith({ audio: { codec: CAPABILITY, device: CAPABILITY } });
+    const audio = explainHost(host).groups.find((group) => group.group === 'audio');
 
-    expect(media?.slots.slice().sort()).toEqual(['audioDevice', 'video']);
-    expect(media?.isProvider).toBe(false);
+    expect(audio?.slots.slice().sort()).toEqual(['codec', 'device']);
   });
 
-  it('marks host.window as a provider rather than reporting its operations as slots', () => {
-    const host = hostWith({ window: { getWindowSize: () => undefined } });
+  it('reports host.window through its slots, because window is a group like every other', () => {
+    const host = hostWith({ window: { geometry: CAPABILITY, lifecycle: CAPABILITY } });
     const window = explainHost(host).groups.find((group) => group.group === 'window');
 
-    expect(window?.isProvider).toBe(true);
-    expect(window?.slots).toEqual([]);
+    expect(window?.slots.slice().sort()).toEqual(['geometry', 'lifecycle']);
   });
 
-  it('reports every covered provider as absent on an empty host', () => {
+  it('reports every covered capability as absent on an empty host', () => {
     const providers = explainHost(createHost()).providers;
 
     expect(providers.length).toBeGreaterThan(0);
     expect(providers.every((provider) => !provider.isPresent)).toBe(true);
-    expect(providers.map((provider) => `${provider.group}.${provider.slot}`)).toContain('media.video');
+    expect(providers.map((provider) => `${provider.group}.${provider.slot}`)).toContain('video.playback');
   });
 
-  it('flips a covered provider to present when its slot is filled', () => {
-    const host = hostWith({ media: { video: PROVIDER } });
-    const video = explainHost(host).providers.find((provider) => provider.slot === 'video');
+  it('flips a covered capability to present when its slot is filled', () => {
+    const host = hostWith({ video: { playback: CAPABILITY } });
+    const video = explainHost(host).providers.find((provider) => provider.slot === 'playback');
 
     expect(video?.isPresent).toBe(true);
-    expect(video?.provider).toBe('HostVideoProvider');
+    expect(video?.provider).toBe('HostVideoCapability');
   });
 
   it('covers exactly the slots hostQuery exposes accessors for, in both directions', () => {
     const censused = explainHost(createHost())
-      .providers.map((provider) => `get${provider.provider.slice(0, -'Provider'.length)}`)
+      .providers.map((provider) => `get${provider.provider.slice(0, -'Capability'.length)}`)
       .sort();
     const exported = Object.keys(hostQuery)
       .filter((name) => name.startsWith('getHost'))
@@ -63,7 +61,21 @@ describe('explainHost', () => {
     expect(censused).toEqual(exported);
   });
 
-  it('keeps every per-provider explainer naming the backends it returns as data', () => {
+  it('names, for every covered slot, the group and slot its own accessor reads', () => {
+    // The census supplies the (group, slot) pair; the accessor is the independent reading of it. A row
+    // that named the wrong group — `platform.info` where `device.info` was meant, which the flat
+    // structure makes a live mistake — leaves its accessor returning null here.
+    for (const coverage of explainHost(createHost()).providers) {
+      const name = `get${coverage.provider.slice(0, -'Capability'.length)}`;
+      const accessor = Reflect.get(hostQuery, name) as (host: Readonly<Host>) => unknown;
+      const host = hostWith({ [coverage.group]: { [coverage.slot]: CAPABILITY } });
+
+      expect(accessor, name).toBeTypeOf('function');
+      expect(accessor(host), `${name} reads host.${coverage.group}.${coverage.slot}`).toBe(CAPABILITY);
+    }
+  });
+
+  it('keeps every per-capability explainer naming the backends it returns as data', () => {
     for (const explain of EXPLAINERS) {
       const explanation = explain(createHost());
       expect(explanation.backends.length, explanation.provider).toBeGreaterThan(0);
@@ -87,47 +99,49 @@ describe('explainHost', () => {
 });
 
 describe('explainHostAudioDevice', () => {
-  it('names the accessor, the slot, and where to get the provider when it is absent', () => {
+  it('names the accessor, the slot, and where to get the capability when it is absent', () => {
     const explanation = explainHostAudioDevice(createHost());
 
     expect(explanation.isPresent).toBe(false);
-    expect(explanation.group).toBe('media');
-    expect(explanation.slot).toBe('audioDevice');
-    expect(explanation.provider).toBe('HostAudioDeviceProvider');
+    expect(explanation.group).toBe('audio');
+    expect(explanation.slot).toBe('device');
+    expect(explanation.provider).toBe('HostAudioDeviceCapability');
     expect(explanation.message).toContain('getHostAudioDevice');
     expect(explanation.backends.map((backend) => backend.packageName)).toEqual(['@flighthq/host-web']);
   });
 
   it('reports presence without a remedy when the slot is filled', () => {
-    const explanation = explainHostAudioDevice(hostWith({ media: { audioDevice: PROVIDER } }));
+    const explanation = explainHostAudioDevice(hostWith({ audio: { device: CAPABILITY } }));
 
     expect(explanation.isPresent).toBe(true);
-    expect(explanation.message).toBe('getHostAudioDevice: host.media.audioDevice is present');
+    expect(explanation.message).toBe('getHostAudioDevice: host.audio.device is present');
   });
 });
 
 describe('explainHostAudioMixer', () => {
-  it('explains an absent mixer against the media group', () => {
+  it('explains an absent mixer against the audio group', () => {
     const explanation = explainHostAudioMixer(createHost());
 
-    expect(explanation.slot).toBe('audioMixer');
+    expect(explanation.group).toBe('audio');
+    expect(explanation.slot).toBe('mixer');
     expect(explanation.isPresent).toBe(false);
     expect(explanation.backends.length).toBeGreaterThan(0);
   });
 });
 
 describe('explainHostImage', () => {
-  it('explains an absent image provider against the graphics group', () => {
+  it('explains an absent image loader against the image group', () => {
     const explanation = explainHostImage(createHost());
 
-    expect(explanation.group).toBe('graphics');
-    expect(explanation.provider).toBe('HostImageProvider');
+    expect(explanation.group).toBe('image');
+    expect(explanation.slot).toBe('loader');
+    expect(explanation.provider).toBe('HostImageCapability');
     expect(explanation.isPresent).toBe(false);
   });
 });
 
 describe('explainHostInputIngress', () => {
-  it('explains an absent ingress provider against the input group', () => {
+  it('explains an absent ingress capability against the input group', () => {
     const explanation = explainHostInputIngress(createHost());
 
     expect(explanation.group).toBe('input');
@@ -154,23 +168,24 @@ describe('explainHostTextShaper', () => {
   });
 
   it('reports presence when the shaper is composed into the text group', () => {
-    const explanation = explainHostTextShaper(hostWith({ text: { shaper: PROVIDER } }));
+    const explanation = explainHostTextShaper(hostWith({ text: { shaper: CAPABILITY } }));
 
     expect(explanation.isPresent).toBe(true);
   });
 });
 
 describe('explainHostVideo', () => {
-  it('explains an absent video provider against the media group', () => {
+  it('explains an absent video capability against the video group', () => {
     const explanation = explainHostVideo(createHost());
 
-    expect(explanation.group).toBe('media');
-    expect(explanation.provider).toBe('HostVideoProvider');
+    expect(explanation.group).toBe('video');
+    expect(explanation.slot).toBe('playback');
+    expect(explanation.provider).toBe('HostVideoCapability');
     expect(explanation.isPresent).toBe(false);
   });
 });
 
-const PROVIDER = {};
+const CAPABILITY = {};
 
 function hostWith(groups: Readonly<Record<string, Readonly<Record<string, unknown>>>>): Host {
   // A capability literal built from plain stand-ins cannot satisfy createHost's generic, so the shape is
@@ -191,28 +206,43 @@ const EXPLAINERS = [
 const HOST_GROUPS = [
   'accessibility',
   'app',
+  'audio',
+  'bitmap',
   'clipboard',
   'connectivity',
+  'device',
   'dialog',
-  'graphics',
+  'fileSystem',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'haptics',
+  'image',
   'input',
   'ipc',
-  'media',
+  'lifecycle',
+  'mediaSession',
   'menu',
   'midi',
   'net',
   'notification',
+  'permissions',
+  'platform',
   'power',
+  'preferences',
   'protocol',
   'screen',
+  'sensors',
   'share',
   'shell',
   'shortcut',
-  'storage',
-  'system',
+  'softKeyboard',
+  'statusBar',
+  'surface',
   'text',
   'tray',
-  'ui',
   'updater',
+  'video',
+  'wgpu',
   'window',
 ];

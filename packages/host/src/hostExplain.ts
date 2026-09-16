@@ -8,11 +8,11 @@ import type {
 } from '@flighthq/types/contract';
 
 // Pull queries over a Host: what it provides, what it does not, and — for the slots whose absence is a
-// common and confusing failure — where to get the missing provider. Plain data, no logging; the active
+// common and confusing failure — where to get the missing capability. Plain data, no logging; the active
 // counterpart is enableHostGuards, which reads these same tables so a warning cannot contradict a query.
 //
-// COVERAGE is the same subset hostQuery.ts exposes accessors for: a provider slot earns a row when a
-// Flight package takes that provider as a function parameter. It is not every optional slot on every
+// COVERAGE is the same subset hostQuery.ts exposes accessors for: a capability slot earns a row when a
+// Flight package takes that capability as a function parameter. It is not every optional slot on every
 // group, so a slot outside it is reported neither present nor missing — explainHost's `groups` is the
 // half that sees everything, because it enumerates the host object rather than a table.
 //
@@ -21,17 +21,17 @@ import type {
 
 // Reports what a host provides. `groups` is enumerated from the host object at call time and covers every
 // capability group it carries; `providers` is the covered-slot census, present and missing alike.
+//
+// Every group is a struct of optional capability slots — there is no group position holding a capability
+// directly, so every enumerated group reports its filled slot names and none reports its methods.
 export function explainHost(host: Readonly<Host>): HostExplanation {
   const groups: HostCapabilityGroupExplanation[] = [];
   for (const [group, value] of Object.entries(host)) {
     if (typeof value !== 'object' || value === null) continue;
-    const isProvider = _PROVIDER_GROUPS.has(group);
-    const slots = isProvider
-      ? []
-      : Object.entries(value as Record<string, unknown>)
-          .filter((entry) => entry[1] !== undefined && entry[1] !== null)
-          .map((entry) => entry[0]);
-    groups.push({ group, isProvider, slots });
+    const slots = Object.entries(value as Record<string, unknown>)
+      .filter((entry) => entry[1] !== undefined && entry[1] !== null)
+      .map((entry) => entry[0]);
+    groups.push({ group, slots });
   }
   const providers: HostProviderCoverage[] = _COVERAGE.map((entry) => ({
     group: entry.group,
@@ -42,17 +42,17 @@ export function explainHost(host: Readonly<Host>): HostExplanation {
   return { groups, providers };
 }
 
-// Why getHostAudioDevice returned null, and which package supplies the provider it wanted.
+// Why getHostAudioDevice returned null, and which package supplies the capability it wanted.
 export function explainHostAudioDevice(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'media', 'audioDevice');
+  return _explainSlot(host, 'audio', 'device');
 }
 
 export function explainHostAudioMixer(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'media', 'audioMixer');
+  return _explainSlot(host, 'audio', 'mixer');
 }
 
 export function explainHostImage(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'graphics', 'image');
+  return _explainSlot(host, 'image', 'loader');
 }
 
 export function explainHostInputIngress(host: Readonly<Host>): HostProviderExplanation {
@@ -68,7 +68,7 @@ export function explainHostTextShaper(host: Readonly<Host>): HostProviderExplana
 }
 
 export function explainHostVideo(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'media', 'video');
+  return _explainSlot(host, 'video', 'playback');
 }
 
 function _isSlotPresent(host: Readonly<Host>, group: string, slot: string): boolean {
@@ -83,7 +83,7 @@ function _explainSlot(host: Readonly<Host>, group: string, slot: string): HostPr
   const remedy = _REMEDIES[`${group}.${slot}`];
   const isPresent = _isSlotPresent(host, group, slot);
   const provider = coverage?.provider ?? '';
-  const accessor = `get${provider.slice(0, -'Provider'.length)}`;
+  const accessor = `get${provider.slice(0, -'Capability'.length)}`;
   const message = isPresent
     ? `${accessor}: host.${group}.${slot} is present`
     : `${accessor}: host.${group}.${slot} is absent, so ${remedy?.consequence ?? 'the capability is unavailable'} — ${remedy?.fix ?? 'build the host from a @flighthq/host-* package that provides it'}`;
@@ -97,40 +97,35 @@ function _explainSlot(host: Readonly<Host>, group: string, slot: string): HostPr
   };
 }
 
-// `Host.window` holds a provider directly rather than a group of provider slots. Listing its method names
-// as "slots" would report operations as capabilities, so it is named here and reported with none. The
-// seam: a second provider-at-group-position in Host must gain a name here or it reports its methods.
-const _PROVIDER_GROUPS: ReadonlySet<string> = new Set(['window']);
-
 const _COVERAGE: readonly { readonly group: string; readonly provider: string; readonly slot: string }[] = [
-  { group: 'clipboard', provider: 'HostClipboardFormatsProvider', slot: 'formats' },
-  { group: 'graphics', provider: 'HostBitmapEncodeProvider', slot: 'bitmapEncode' },
-  { group: 'graphics', provider: 'HostBitmapReadbackProvider', slot: 'bitmapReadback' },
-  { group: 'graphics', provider: 'HostImageProvider', slot: 'image' },
-  { group: 'graphics', provider: 'HostWgpuProvider', slot: 'wgpuHost' },
-  { group: 'input', provider: 'HostHapticsProvider', slot: 'haptics' },
-  { group: 'input', provider: 'HostInputIngressProvider', slot: 'ingress' },
-  { group: 'input', provider: 'HostSoftKeyboardInfoProvider', slot: 'softKeyboardInfo' },
-  { group: 'media', provider: 'HostAudioDeviceProvider', slot: 'audioDevice' },
-  { group: 'media', provider: 'HostAudioMixerProvider', slot: 'audioMixer' },
-  { group: 'media', provider: 'HostVideoProvider', slot: 'video' },
-  { group: 'net', provider: 'HostNetProvider', slot: 'http' },
-  { group: 'net', provider: 'HostSocketProvider', slot: 'socket' },
-  { group: 'notification', provider: 'HostNotificationPermissionProvider', slot: 'permission' },
-  { group: 'power', provider: 'HostPowerKeepAwakeProvider', slot: 'keepAwake' },
-  { group: 'screen', provider: 'HostScreenQueryProvider', slot: 'query' },
-  { group: 'storage', provider: 'HostFileSystemProvider', slot: 'fileSystem' },
-  { group: 'storage', provider: 'HostStorageProvider', slot: 'local' },
-  { group: 'storage', provider: 'HostStoragePersistenceQueryProvider', slot: 'persistenceQuery' },
-  { group: 'system', provider: 'HostDeviceProvider', slot: 'device' },
-  { group: 'system', provider: 'HostGeolocationProvider', slot: 'geolocation' },
-  { group: 'system', provider: 'HostLifecycleProvider', slot: 'lifecycle' },
-  { group: 'system', provider: 'HostPlatformProvider', slot: 'platform' },
-  { group: 'system', provider: 'HostSensorsProvider', slot: 'sensors' },
-  { group: 'text', provider: 'HostFontLoadingProvider', slot: 'fontLoading' },
-  { group: 'text', provider: 'HostGlyphRasterizerProvider', slot: 'glyphRasterizer' },
-  { group: 'text', provider: 'HostTextSegmenterProvider', slot: 'segmenter' },
-  { group: 'text', provider: 'HostTextShaperProvider', slot: 'shaper' },
+  { group: 'audio', provider: 'HostAudioDeviceCapability', slot: 'device' },
+  { group: 'audio', provider: 'HostAudioMixerCapability', slot: 'mixer' },
+  { group: 'bitmap', provider: 'HostBitmapEncodeCapability', slot: 'encode' },
+  { group: 'bitmap', provider: 'HostBitmapReadbackCapability', slot: 'readback' },
+  { group: 'clipboard', provider: 'HostClipboardFormatsCapability', slot: 'formats' },
+  { group: 'device', provider: 'HostDeviceCapability', slot: 'info' },
+  { group: 'fileSystem', provider: 'HostFileSystemCapability', slot: 'access' },
+  { group: 'geolocation', provider: 'HostGeolocationCapability', slot: 'position' },
+  { group: 'haptics', provider: 'HostHapticsCapability', slot: 'engine' },
+  { group: 'image', provider: 'HostImageCapability', slot: 'loader' },
+  { group: 'input', provider: 'HostInputIngressCapability', slot: 'ingress' },
+  { group: 'lifecycle', provider: 'HostLifecycleCapability', slot: 'state' },
+  { group: 'net', provider: 'HostNetCapability', slot: 'http' },
+  { group: 'net', provider: 'HostSocketCapability', slot: 'socket' },
+  { group: 'notification', provider: 'HostNotificationPermissionCapability', slot: 'permission' },
+  { group: 'platform', provider: 'HostPlatformCapability', slot: 'info' },
+  { group: 'power', provider: 'HostPowerKeepAwakeCapability', slot: 'keepAwake' },
+  { group: 'preferences', provider: 'HostPreferencesCapability', slot: 'local' },
+  { group: 'preferences', provider: 'HostStoragePersistenceQueryCapability', slot: 'persistenceQuery' },
+  { group: 'screen', provider: 'HostScreenQueryCapability', slot: 'query' },
+  { group: 'sensors', provider: 'HostSensorsCapability', slot: 'query' },
+  { group: 'softKeyboard', provider: 'HostSoftKeyboardInfoCapability', slot: 'info' },
+  { group: 'text', provider: 'HostFontLoadingCapability', slot: 'fontLoading' },
+  { group: 'text', provider: 'HostGlyphRasterizerCapability', slot: 'glyphRasterizer' },
+  { group: 'text', provider: 'HostTextSegmenterCapability', slot: 'segmenter' },
+  { group: 'text', provider: 'HostTextShaperCapability', slot: 'shaper' },
+  { group: 'video', provider: 'HostVideoCapability', slot: 'playback' },
+  { group: 'wgpu', provider: 'HostWgpuCapability', slot: 'context' },
 ];
 
 const _WEB_HOST: HostProviderBackend = {
@@ -148,7 +143,17 @@ const _REMEDIES: Readonly<
     { readonly backends: readonly HostProviderBackend[]; readonly consequence: string; readonly fix: string }
   >
 > = {
-  'graphics.image': {
+  'audio.device': {
+    backends: [_WEB_HOST],
+    consequence: 'no audio can be decoded or played',
+    fix: 'build the host from webHost in @flighthq/host-web',
+  },
+  'audio.mixer': {
+    backends: [_WEB_HOST],
+    consequence: 'sound transforms and mixer routing are inert',
+    fix: 'build the host from webHost in @flighthq/host-web',
+  },
+  'image.loader': {
     backends: [_WEB_HOST],
     consequence: 'nothing can decode an image or read its dimensions',
     fix: 'build the host from webHost in @flighthq/host-web',
@@ -156,21 +161,6 @@ const _REMEDIES: Readonly<
   'input.ingress': {
     backends: [_WEB_HOST],
     consequence: 'no pointer, key, or wheel event reaches the input manager',
-    fix: 'build the host from webHost in @flighthq/host-web',
-  },
-  'media.audioDevice': {
-    backends: [_WEB_HOST],
-    consequence: 'no audio can be decoded or played',
-    fix: 'build the host from webHost in @flighthq/host-web',
-  },
-  'media.audioMixer': {
-    backends: [_WEB_HOST],
-    consequence: 'sound transforms and mixer routing are inert',
-    fix: 'build the host from webHost in @flighthq/host-web',
-  },
-  'media.video': {
-    backends: [_WEB_HOST],
-    consequence: 'nothing can decode or present video',
     fix: 'build the host from webHost in @flighthq/host-web',
   },
   'text.segmenter': {
@@ -188,5 +178,10 @@ const _REMEDIES: Readonly<
     ],
     consequence: 'text cannot be measured or shaped and lays out at zero width',
     fix: "pass createCanvasTextShaperBackend() from @flighthq/textshaper-canvas into createHost's text group",
+  },
+  'video.playback': {
+    backends: [_WEB_HOST],
+    consequence: 'nothing can decode or present video',
+    fix: 'build the host from webHost in @flighthq/host-web',
   },
 };
