@@ -167,8 +167,8 @@ describe('explainHostTextShaper', () => {
     expect(explanation.message).toContain('createCanvasTextShaperBackend');
   });
 
-  it('reports presence when the shaper is composed into the text group', () => {
-    const explanation = explainHostTextShaper(hostWith({ text: { shaper: CAPABILITY } }));
+  it('reports presence when the shaper is composed into the textShaper group', () => {
+    const explanation = explainHostTextShaper(hostWith({ textShaper: { shaper: CAPABILITY } }));
 
     expect(explanation.isPresent).toBe(true);
   });
@@ -213,9 +213,11 @@ const HOST_GROUPS = [
   'device',
   'dialog',
   'fileSystem',
+  'font',
   'fullscreen',
   'geolocation',
   'gl',
+  'glyph',
   'haptics',
   'image',
   'input',
@@ -239,7 +241,8 @@ const HOST_GROUPS = [
   'softKeyboard',
   'statusBar',
   'surface',
-  'text',
+  'textSegment',
+  'textShaper',
   'tray',
   'updater',
   'video',

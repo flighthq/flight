@@ -60,11 +60,11 @@ export function explainHostInputIngress(host: Readonly<Host>): HostProviderExpla
 }
 
 export function explainHostTextSegmenter(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'text', 'segmenter');
+  return _explainSlot(host, 'textSegment', 'segmenter');
 }
 
 export function explainHostTextShaper(host: Readonly<Host>): HostProviderExplanation {
-  return _explainSlot(host, 'text', 'shaper');
+  return _explainSlot(host, 'textShaper', 'shaper');
 }
 
 export function explainHostVideo(host: Readonly<Host>): HostProviderExplanation {
@@ -105,7 +105,9 @@ const _COVERAGE: readonly { readonly group: string; readonly provider: string; r
   { group: 'clipboard', provider: 'HostClipboardFormatsCapability', slot: 'formats' },
   { group: 'device', provider: 'HostDeviceCapability', slot: 'info' },
   { group: 'fileSystem', provider: 'HostFileSystemCapability', slot: 'access' },
+  { group: 'font', provider: 'HostFontLoadingCapability', slot: 'loader' },
   { group: 'geolocation', provider: 'HostGeolocationCapability', slot: 'position' },
+  { group: 'glyph', provider: 'HostGlyphRasterizerCapability', slot: 'rasterizer' },
   { group: 'haptics', provider: 'HostHapticsCapability', slot: 'engine' },
   { group: 'image', provider: 'HostImageCapability', slot: 'loader' },
   { group: 'input', provider: 'HostInputIngressCapability', slot: 'ingress' },
@@ -120,10 +122,8 @@ const _COVERAGE: readonly { readonly group: string; readonly provider: string; r
   { group: 'screen', provider: 'HostScreenQueryCapability', slot: 'query' },
   { group: 'sensors', provider: 'HostSensorsCapability', slot: 'query' },
   { group: 'softKeyboard', provider: 'HostSoftKeyboardInfoCapability', slot: 'info' },
-  { group: 'text', provider: 'HostFontLoadingCapability', slot: 'fontLoading' },
-  { group: 'text', provider: 'HostGlyphRasterizerCapability', slot: 'glyphRasterizer' },
-  { group: 'text', provider: 'HostTextSegmenterCapability', slot: 'segmenter' },
-  { group: 'text', provider: 'HostTextShaperCapability', slot: 'shaper' },
+  { group: 'textSegment', provider: 'HostTextSegmenterCapability', slot: 'segmenter' },
+  { group: 'textShaper', provider: 'HostTextShaperCapability', slot: 'shaper' },
   { group: 'video', provider: 'HostVideoCapability', slot: 'playback' },
   { group: 'wgpu', provider: 'HostWgpuCapability', slot: 'context' },
 ];
@@ -163,12 +163,12 @@ const _REMEDIES: Readonly<
     consequence: 'no pointer, key, or wheel event reaches the input manager',
     fix: 'build the host from webHost in @flighthq/host-web',
   },
-  'text.segmenter': {
+  'textSegment.segmenter': {
     backends: [{ entryPoint: 'createWebTextSegmenterBackend', packageName: '@flighthq/textsegment', platform: 'Web' }],
     consequence: 'grapheme, word, and sentence breaking fall back to code-unit boundaries',
-    fix: "pass createWebTextSegmenterBackend() from @flighthq/textsegment into createHost's text group",
+    fix: "pass createWebTextSegmenterBackend() from @flighthq/textsegment into createHost's textSegment group",
   },
-  'text.shaper': {
+  'textShaper.shaper': {
     backends: [
       {
         entryPoint: 'createCanvasTextShaperBackend',
@@ -177,7 +177,7 @@ const _REMEDIES: Readonly<
       },
     ],
     consequence: 'text cannot be measured or shaped and lays out at zero width',
-    fix: "pass createCanvasTextShaperBackend() from @flighthq/textshaper-canvas into createHost's text group",
+    fix: "pass createCanvasTextShaperBackend() from @flighthq/textshaper-canvas into createHost's textShaper group",
   },
   'video.playback': {
     backends: [_WEB_HOST],

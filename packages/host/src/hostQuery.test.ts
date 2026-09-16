@@ -169,8 +169,8 @@ describe('getHostFileSystem', () => {
 });
 
 describe('getHostFontLoading', () => {
-  it('returns the capability held in host.text.fontLoading', () => {
-    expect(getHostFontLoading(hostWithSlot('text', 'fontLoading'))).toBe(CAPABILITY);
+  it('returns the capability held in host.font.loader', () => {
+    expect(getHostFontLoading(hostWithSlot('font', 'loader'))).toBe(CAPABILITY);
   });
 
   it('returns null when the slot is empty', () => {
@@ -178,7 +178,7 @@ describe('getHostFontLoading', () => {
   });
 
   it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(getHostFontLoading(hostWithEveryCoveredSlotExcept('text', 'fontLoading'))).toBeNull();
+    expect(getHostFontLoading(hostWithEveryCoveredSlotExcept('font', 'loader'))).toBeNull();
   });
 });
 
@@ -197,8 +197,8 @@ describe('getHostGeolocation', () => {
 });
 
 describe('getHostGlyphRasterizer', () => {
-  it('returns the capability held in host.text.glyphRasterizer', () => {
-    expect(getHostGlyphRasterizer(hostWithSlot('text', 'glyphRasterizer'))).toBe(CAPABILITY);
+  it('returns the capability held in host.glyph.rasterizer', () => {
+    expect(getHostGlyphRasterizer(hostWithSlot('glyph', 'rasterizer'))).toBe(CAPABILITY);
   });
 
   it('returns null when the slot is empty', () => {
@@ -206,7 +206,7 @@ describe('getHostGlyphRasterizer', () => {
   });
 
   it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(getHostGlyphRasterizer(hostWithEveryCoveredSlotExcept('text', 'glyphRasterizer'))).toBeNull();
+    expect(getHostGlyphRasterizer(hostWithEveryCoveredSlotExcept('glyph', 'rasterizer'))).toBeNull();
   });
 });
 
@@ -409,8 +409,8 @@ describe('getHostStoragePersistenceQuery', () => {
 });
 
 describe('getHostTextSegmenter', () => {
-  it('returns the capability held in host.text.segmenter', () => {
-    expect(getHostTextSegmenter(hostWithSlot('text', 'segmenter'))).toBe(CAPABILITY);
+  it('returns the capability held in host.textSegment.segmenter', () => {
+    expect(getHostTextSegmenter(hostWithSlot('textSegment', 'segmenter'))).toBe(CAPABILITY);
   });
 
   it('returns null when the slot is empty', () => {
@@ -418,13 +418,13 @@ describe('getHostTextSegmenter', () => {
   });
 
   it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(getHostTextSegmenter(hostWithEveryCoveredSlotExcept('text', 'segmenter'))).toBeNull();
+    expect(getHostTextSegmenter(hostWithEveryCoveredSlotExcept('textSegment', 'segmenter'))).toBeNull();
   });
 });
 
 describe('getHostTextShaper', () => {
-  it('returns the capability held in host.text.shaper', () => {
-    expect(getHostTextShaper(hostWithSlot('text', 'shaper'))).toBe(CAPABILITY);
+  it('returns the capability held in host.textShaper.shaper', () => {
+    expect(getHostTextShaper(hostWithSlot('textShaper', 'shaper'))).toBe(CAPABILITY);
   });
 
   it('returns null when the slot is empty', () => {
@@ -432,7 +432,7 @@ describe('getHostTextShaper', () => {
   });
 
   it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(getHostTextShaper(hostWithEveryCoveredSlotExcept('text', 'shaper'))).toBeNull();
+    expect(getHostTextShaper(hostWithEveryCoveredSlotExcept('textShaper', 'shaper'))).toBeNull();
   });
 });
 
@@ -521,9 +521,9 @@ describe('hasHostFileSystem', () => {
 });
 
 describe('hasHostFontLoading', () => {
-  it('is true only when host.text.fontLoading holds a capability', () => {
-    expect(hasHostFontLoading(hostWithSlot('text', 'fontLoading'))).toBe(true);
-    expect(hasHostFontLoading(hostWithEveryCoveredSlotExcept('text', 'fontLoading'))).toBe(false);
+  it('is true only when host.font.loader holds a capability', () => {
+    expect(hasHostFontLoading(hostWithSlot('font', 'loader'))).toBe(true);
+    expect(hasHostFontLoading(hostWithEveryCoveredSlotExcept('font', 'loader'))).toBe(false);
     expect(hasHostFontLoading(createHost())).toBe(false);
   });
 });
@@ -537,9 +537,9 @@ describe('hasHostGeolocation', () => {
 });
 
 describe('hasHostGlyphRasterizer', () => {
-  it('is true only when host.text.glyphRasterizer holds a capability', () => {
-    expect(hasHostGlyphRasterizer(hostWithSlot('text', 'glyphRasterizer'))).toBe(true);
-    expect(hasHostGlyphRasterizer(hostWithEveryCoveredSlotExcept('text', 'glyphRasterizer'))).toBe(false);
+  it('is true only when host.glyph.rasterizer holds a capability', () => {
+    expect(hasHostGlyphRasterizer(hostWithSlot('glyph', 'rasterizer'))).toBe(true);
+    expect(hasHostGlyphRasterizer(hostWithEveryCoveredSlotExcept('glyph', 'rasterizer'))).toBe(false);
     expect(hasHostGlyphRasterizer(createHost())).toBe(false);
   });
 });
@@ -659,17 +659,17 @@ describe('hasHostStoragePersistenceQuery', () => {
 });
 
 describe('hasHostTextSegmenter', () => {
-  it('is true only when host.text.segmenter holds a capability', () => {
-    expect(hasHostTextSegmenter(hostWithSlot('text', 'segmenter'))).toBe(true);
-    expect(hasHostTextSegmenter(hostWithEveryCoveredSlotExcept('text', 'segmenter'))).toBe(false);
+  it('is true only when host.textSegment.segmenter holds a capability', () => {
+    expect(hasHostTextSegmenter(hostWithSlot('textSegment', 'segmenter'))).toBe(true);
+    expect(hasHostTextSegmenter(hostWithEveryCoveredSlotExcept('textSegment', 'segmenter'))).toBe(false);
     expect(hasHostTextSegmenter(createHost())).toBe(false);
   });
 });
 
 describe('hasHostTextShaper', () => {
-  it('is true only when host.text.shaper holds a capability', () => {
-    expect(hasHostTextShaper(hostWithSlot('text', 'shaper'))).toBe(true);
-    expect(hasHostTextShaper(hostWithEveryCoveredSlotExcept('text', 'shaper'))).toBe(false);
+  it('is true only when host.textShaper.shaper holds a capability', () => {
+    expect(hasHostTextShaper(hostWithSlot('textShaper', 'shaper'))).toBe(true);
+    expect(hasHostTextShaper(hostWithEveryCoveredSlotExcept('textShaper', 'shaper'))).toBe(false);
     expect(hasHostTextShaper(createHost())).toBe(false);
   });
 });
@@ -703,9 +703,9 @@ const COVERED_SLOTS: readonly (readonly [string, string])[] = [
   ['clipboard', 'formats'],
   ['device', 'info'],
   ['fileSystem', 'access'],
-  ['text', 'fontLoading'],
+  ['font', 'loader'],
   ['geolocation', 'position'],
-  ['text', 'glyphRasterizer'],
+  ['glyph', 'rasterizer'],
   ['haptics', 'engine'],
   ['image', 'loader'],
   ['input', 'ingress'],
@@ -720,8 +720,8 @@ const COVERED_SLOTS: readonly (readonly [string, string])[] = [
   ['net', 'socket'],
   ['softKeyboard', 'info'],
   ['preferences', 'persistenceQuery'],
-  ['text', 'segmenter'],
-  ['text', 'shaper'],
+  ['textSegment', 'segmenter'],
+  ['textShaper', 'shaper'],
   ['video', 'playback'],
   ['wgpu', 'context'],
 ];
