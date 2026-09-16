@@ -1,41 +1,35 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   BidiClass,
-  HostBidiClassProvider,
-  BidiClassBackendExplanation,
+  BidiClassKernel,
+  BidiClassKernelExplanation,
   BidiCodePointRange,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { reportTextBidiCompactTableMiss } from './textBidiGuards';
 
-// Builds the compact bundled bidi-class backend: a from-scratch UAX #9 class lookup over a sorted
+// The compact bundled bidi-class kernel: a from-scratch UAX #9 class lookup over a sorted
 // range table (binary search), covering the COMMON scripts — Basic Latin + Latin-1, the combining
 // diacritical marks (NSM), the Hebrew block (R), the Arabic blocks + Arabic presentation forms
 // (AL/AN/R), European/Arabic numbers, and the explicit embedding/override/isolate format characters.
 // It is a few KB of range data, not the full Unicode database. Scripts outside these ranges (CJK,
 // Indic, Thaana, N'Ko, Syriac, and the rest of Unicode) are NOT covered here — a codepoint with no
 // range resolves to the safe common default 'L'. Full Unicode coverage (every assigned bidi class +
-// bracket-pairing data) is the designated flight-rs table backend, passed explicitly to the resolver.
-export function createCompactBidiClassBackend(): HostBidiClassProvider {
-  const out = allocateEntity<HostBidiClassProvider>();
-  initializeCompactBidiClassBackend(out);
-  const backend = finishEntity(out);
-  _compactBackends.add(backend);
-  return backend;
+// bracket-pairing data) is the designated flight-rs table kernel, passed explicitly to the resolver.
+export function createCompactBidiClassKernel(): BidiClassKernel {
+  const out = allocateEntity<BidiClassKernel>();
+  initializeCompactBidiClassKernel(out);
+  const kernel = finishEntity(out);
+  _compactBackends.add(kernel);
+  return kernel;
 }
 
-export function createDefaultBidiClassBackend(): HostBidiClassProvider {
-  return createCompactBidiClassBackend();
-}
-
-/** Describes the selected provider and the coverage boundary Flight can state for it. */
-export function explainBidiClassBackend(
-  bidiClassBackend: Readonly<HostBidiClassProvider>,
-): BidiClassBackendExplanation {
-  const compact = _compactBackends.has(bidiClassBackend);
+/** Describes the selected kernel and the coverage boundary Flight can state for it. */
+export function explainBidiClassKernel(bidiClassKernel: Readonly<BidiClassKernel>): BidiClassKernelExplanation {
+  const compact = _compactBackends.has(bidiClassKernel);
   return {
-    backend: compact ? 'compact' : 'custom',
+    kernel: compact ? 'compact' : 'custom',
     coverage: compact ? 'common-script-ranges' : 'provider-defined',
     coveredCodePointRanges: compact ? getCompactBidiClassCoverageRanges() : [],
     fallbackClass: compact ? 'L' : null,
@@ -43,14 +37,14 @@ export function explainBidiClassBackend(
   };
 }
 
-export function initializeCompactBidiClassBackend(out: EntityConstruction<HostBidiClassProvider>): void {
+export function initializeCompactBidiClassKernel(out: EntityConstruction<BidiClassKernel>): void {
   out.getBidiClass = getCompactBidiClass;
 }
 
 // Looks up `codepoint` in the sorted, non-overlapping range table by binary search. Each entry is
 // three flat numbers [start, end, classOrdinal]; a hit returns the range's class, a miss the common
 // default 'L' (the UAX #9 default for the assigned L-script ranges; unassigned/uncovered codepoints
-// resolve LTR under the compact table — the full flight-rs backend distinguishes them).
+// resolve LTR under the compact table — the full flight-rs table kernel distinguishes them).
 function getCompactBidiClass(codepoint: number): BidiClass {
   let lo = 0;
   let hi = _rangeCount - 1;
@@ -144,7 +138,7 @@ const PDI = 22;
 
 // The sorted, non-overlapping range table, flattened to [start, end, classOrdinal] triples. Kept in
 // ascending `start` order so getCompactBidiClass can binary-search it. Ranges omitted from the table
-// fall through to the 'L' default. This is the common-script subset; see createCompactBidiClassBackend
+// fall through to the 'L' default. This is the common-script subset; see createCompactBidiClassKernel
 // for the coverage boundary.
 // prettier-ignore
 const _ranges: readonly number[] = [
@@ -279,4 +273,12 @@ const _ranges: readonly number[] = [
 
 const _rangeCount = _ranges.length / 3;
 
-const _compactBackends = new WeakSet<HostBidiClassProvider>();
+const _compactBackends = new WeakSet<BidiClassKernel>();
+
+// The kernel the bidi operations use unless the caller passes another one. A stateless value, so it is
+// one shared instance rather than a per-call construction. `_compactBackends` still recognises any other
+// instance the factory mints, because the explanation reports the compact *table*, not the instance.
+//
+// Declared here, below `_compactBackends`, because constructing it registers into that set: a module-scope
+// const whose declared before it would read the set in its temporal dead zone.
+export const compactBidiClassKernel: BidiClassKernel = createCompactBidiClassKernel();

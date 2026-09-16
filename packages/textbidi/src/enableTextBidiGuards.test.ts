@@ -1,12 +1,12 @@
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
-import type { HostBidiClassProvider, LogEntry } from '@flighthq/types/contract';
+import type { BidiClassKernel, LogEntry } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createDefaultBidiClassBackend } from './bidiClassBackend';
+import { compactBidiClassKernel } from './bidiClassKernel';
 import { disableTextBidiGuards, enableTextBidiGuards } from './enableTextBidiGuards';
 import { resolveBidiLevels } from './resolveBidiLevels';
 
-const backend = createDefaultBidiClassBackend();
+const kernel = compactBidiClassKernel;
 
 let entries: LogEntry[];
 
@@ -25,28 +25,28 @@ describe('disableTextBidiGuards', () => {
   it('restores silent compact fallback', () => {
     enableTextBidiGuards();
     disableTextBidiGuards();
-    resolveBidiLevels(backend, '中', 'ltr');
+    resolveBidiLevels(kernel, '中', 'ltr');
     expect(entries).toEqual([]);
   });
 });
 
 describe('enableTextBidiGuards', () => {
-  it('warns once and names the backend fixing call for uncovered code points', () => {
+  it('warns once and names the kernel fixing call for uncovered code points', () => {
     enableTextBidiGuards();
-    resolveBidiLevels(backend, '中文', 'ltr');
+    resolveBidiLevels(kernel, '中文', 'ltr');
     expect(entries).toHaveLength(1);
-    expect(String((entries[0].data as { message?: unknown }).message)).toContain('HostBidiClassProvider');
+    expect(String((entries[0].data as { message?: unknown }).message)).toContain('BidiClassKernel');
   });
 
   it('stays silent for compact-table coverage', () => {
     enableTextBidiGuards();
-    resolveBidiLevels(backend, 'abc שלום ابت', 'auto');
+    resolveBidiLevels(kernel, 'abc שלום ابت', 'auto');
     expect(entries).toEqual([]);
   });
 
-  it('stays silent for an explicit non-compact backend', () => {
+  it('stays silent for an explicit non-compact kernel', () => {
     enableTextBidiGuards();
-    const custom: HostBidiClassProvider = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
+    const custom: BidiClassKernel = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
     resolveBidiLevels(custom, '中', 'ltr');
     expect(entries).toEqual([]);
   });

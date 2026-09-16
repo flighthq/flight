@@ -1,8 +1,8 @@
 export {
-  createDefaultBidiClassBackend,
+  compactBidiClassKernel,
   disableTextBidiGuards,
   enableTextBidiGuards,
-  explainBidiClassBackend,
+  explainBidiClassKernel,
   getBidiRuns,
   reorderBidiLine,
   resolveBidiLevels,

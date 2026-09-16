@@ -1,4 +1,4 @@
-export * from './bidiClassBackend';
+export * from './bidiClassKernel';
 export * from './enableTextBidiGuards';
 export * from './getBidiRuns';
 export * from './reorderBidiLine';

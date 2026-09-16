@@ -2,7 +2,6 @@ import type {
   Host,
   HostAudioDeviceProvider,
   HostAudioMixerProvider,
-  HostBidiClassProvider,
   HostBitmapEncodeProvider,
   HostBitmapReadbackProvider,
   HostClipboardFormatsProvider,
@@ -49,10 +48,6 @@ export function getHostAudioDevice(host: Readonly<Host>): HostAudioDeviceProvide
 
 export function getHostAudioMixer(host: Readonly<Host>): HostAudioMixerProvider | null {
   return host.media?.audioMixer ?? null;
-}
-
-export function getHostBidiClass(host: Readonly<Host>): HostBidiClassProvider | null {
-  return host.text?.bidiClass ?? null;
 }
 
 export function getHostBitmapEncode(host: Readonly<Host>): HostBitmapEncodeProvider | null {
@@ -165,10 +160,6 @@ export function hasHostAudioDevice(host: Readonly<Host>): boolean {
 
 export function hasHostAudioMixer(host: Readonly<Host>): boolean {
   return getHostAudioMixer(host) !== null;
-}
-
-export function hasHostBidiClass(host: Readonly<Host>): boolean {
-  return getHostBidiClass(host) !== null;
 }
 
 export function hasHostBitmapEncode(host: Readonly<Host>): boolean {

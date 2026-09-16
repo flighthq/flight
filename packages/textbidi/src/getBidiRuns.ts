@@ -1,13 +1,13 @@
-import type { HostBidiClassProvider, BidiDirection, BidiRun } from '@flighthq/types/contract';
+import type { BidiClassKernel, BidiDirection, BidiRun } from '@flighthq/types/contract';
 
 import { resolveBidiLevels } from './resolveBidiLevels';
 
 export function getBidiRuns(
-  bidiClassBackend: Readonly<HostBidiClassProvider>,
+  bidiClassKernel: Readonly<BidiClassKernel>,
   text: string,
   baseDirection: BidiDirection,
 ): readonly BidiRun[] {
-  const levels = resolveBidiLevels(bidiClassBackend, text, baseDirection);
+  const levels = resolveBidiLevels(bidiClassKernel, text, baseDirection);
   const runs: BidiRun[] = [];
   const length = levels.length;
   let start = 0;

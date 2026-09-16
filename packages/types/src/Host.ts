@@ -38,7 +38,6 @@ import type {
 import type { HostAudioProvider } from './AudioBackend';
 import type { HostAudioDeviceProvider } from './AudioDeviceBackend';
 import type { HostAudioMixerProvider } from './AudioMixerBackend';
-import type { HostBidiClassProvider } from './Bidi';
 import type { HostBitmapEncodeProvider } from './BitmapEncodeBackend';
 import type { HostBitmapReadbackProvider } from './BitmapReadbackBackend';
 import type {
@@ -430,7 +429,6 @@ export interface HostSystemCapabilities {
 }
 
 export interface HostTextCapabilities {
-  readonly bidiClass?: HostBidiClassProvider;
   readonly fontLoading?: HostFontLoadingProvider;
   readonly glyphRasterizer?: HostGlyphRasterizerProvider;
   readonly segmenter?: HostTextSegmenterProvider;
