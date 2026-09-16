@@ -593,6 +593,17 @@ export const P5_HOST_BYPASS_DETECTOR_PROVENANCE: P5HostBypassVersionedDetectorPr
 export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget =
   P5_HOST_BYPASS_V4_PROGRESS_HISTORY[P5_HOST_BYPASS_V4_PROGRESS_HISTORY.length - 1].budget;
 
+// Which argument of a WGPU entry point IS the presentation surface, which is the only thing that makes
+// the ownership claim checkable at a call site. Both entry points take the host's WGPU provider first,
+// so the surface sits one position right of where it did before `wgpuHost` was threaded through: the
+// index is a function of the signature, not a fixed 0/1. A further signature change must move it here
+// too — `p5WgpuSurfaceArgumentFailures` reads these declarations and fails the gate loudly when the
+// recorded position no longer names `surface`, so a stale index cannot silently start reading the host.
+const WGPU_SURFACE_ARGUMENT: Readonly<Record<string, { readonly file: string; readonly index: number }>> = {
+  createWgpuAcquisition: { file: 'packages/render-wgpu/src/wgpuRenderState.ts', index: 1 },
+  createWgpuScreenRenderTarget: { file: 'packages/render-wgpu/src/wgpuScreenRenderTarget.ts', index: 2 },
+};
+
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
   'beforeinput',
@@ -796,9 +807,10 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
     }
     if (ts.isCallExpression(node)) {
       const called = expressionName(node.expression);
-      if (called === 'createWgpuScreenRenderTarget' || called === 'createWgpuAcquisition') {
-        // createWgpuScreenRenderTarget(device, surface, …) and createWgpuAcquisition(surface, …).
-        const surface = called === 'createWgpuAcquisition' ? node.arguments[0] : node.arguments[1];
+      const surfaceArgument = called === null ? undefined : WGPU_SURFACE_ARGUMENT[called];
+      if (called !== null && surfaceArgument !== undefined) {
+        // createWgpuAcquisition(wgpuHost, surface, …) and createWgpuScreenRenderTarget(wgpuHost, device, surface, …).
+        const surface = node.arguments[surfaceArgument.index];
         if (surface !== undefined && ts.isIdentifier(surface)) {
           presentationSurfaces.push({
             line: parsed.getLineAndCharacterOfPosition(surface.getStart(parsed)).line + 1,
@@ -855,6 +867,29 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
     failures.push(`${harnessFile}: shared WebGPU harness no longer creates its surface through host-web`);
   } else {
     failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
+  }
+  return failures;
+}
+
+// The gate checks a call site by position, so the position has to still name the surface. Reading the
+// declaration rather than trusting the table is what keeps a re-threaded host parameter from turning
+// the check into a comparison against whatever now sits at the old index.
+export function p5WgpuSurfaceArgumentFailures(root: string): string[] {
+  const failures: string[] = [];
+  for (const [functionName, argument] of Object.entries(WGPU_SURFACE_ARGUMENT)) {
+    const parameters = exportedFunctionParameterNames(join(root, argument.file), functionName);
+    if (parameters === null) {
+      failures.push(
+        `${argument.file}: cannot read ${functionName} to confirm argument ${argument.index} is the presentation surface`,
+      );
+      continue;
+    }
+    if (parameters[argument.index] !== 'surface') {
+      failures.push(
+        `${functionName}: argument ${argument.index} is recorded as the presentation surface but names ` +
+          `'${parameters[argument.index] ?? '<none>'}' in ${argument.file}`,
+      );
+    }
   }
   return failures;
 }
@@ -1544,6 +1579,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ),
     ...p5GlRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
+    ...p5WgpuSurfaceArgumentFailures(process.cwd()),
     ...p5WgpuRenderSurfaceRepairFailures(report),
     ...p5BitmapDrawTransferRepairFailures(report),
     ...p5BitmapEncodeRepairFailures(report),
@@ -1597,6 +1633,26 @@ function collectTypeScriptFiles(directory: string, files: string[]): void {
     }
     files.push(path);
   }
+}
+
+function exportedFunctionParameterNames(file: string, functionName: string): readonly string[] | null {
+  let source: string;
+  try {
+    source = readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
+  let names: readonly string[] | null = null;
+  const visit = (node: ts.Node): void => {
+    if (names === null && ts.isFunctionDeclaration(node) && node.name?.text === functionName) {
+      names = node.parameters.map((parameter) => (ts.isIdentifier(parameter.name) ? parameter.name.text : ''));
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(parsed);
+  return names;
 }
 
 function statementInList(node: ts.Node): ts.Statement | null {

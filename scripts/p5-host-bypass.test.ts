@@ -22,6 +22,7 @@ import {
   p5WgpuRenderSurfaceConsumerFailures,
   p5WgpuRenderSurfaceConsumerSourceFailures,
   p5WgpuRenderSurfaceRepairFailures,
+  p5WgpuSurfaceArgumentFailures,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
   P5_HOST_BYPASS_CLASSIFICATION_HISTORY,
@@ -220,6 +221,21 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5WgpuRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
   });
 
+  // The gate reads the surface out of a call by POSITION, so the position has to still name the surface.
+  // Threading a new leading parameter through both entry points is exactly the change that invalidated it
+  // once, and nothing about that change was visible in the gate's output — the surface was simply read
+  // from the wrong argument. This pins the recorded position against the real declaration.
+  it('pins the WGPU presentation-surface argument against the real declarations', () => {
+    expect(p5WgpuSurfaceArgumentFailures(ROOT)).toEqual([]);
+  });
+
+  it('fails loudly rather than passing when a WGPU declaration cannot be read', () => {
+    expect(p5WgpuSurfaceArgumentFailures(join(ROOT, 'scripts'))).toEqual([
+      expect.stringContaining('cannot read createWgpuAcquisition'),
+      expect.stringContaining('cannot read createWgpuScreenRenderTarget'),
+    ]);
+  });
+
   // ★ THE OWNERSHIP FACT SURVIVED THE SINGLETON. The enabler this used to require is deleted, so the
   // mutation that proves the gate still bites is the one that matters now: a page that reaches for
   // document.createElement('canvas') instead of the host's sizing helper.
@@ -255,8 +271,8 @@ describe('P5 host-bypass derived gate', () => {
     const source = [
       "import { createWebWgpuCanvasElement } from '@flighthq/host-web';",
       'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
-      'const acquisition = await createWgpuAcquisition(canvas);',
-      'const screen = createWgpuScreenRenderTarget(acquisition.device, canvas);',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
+      'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas);',
       "const face = document.createElement('canvas');",
     ].join('\n');
 
@@ -266,7 +282,7 @@ describe('P5 host-bypass derived gate', () => {
   it('mutation-proves the host-web import is required, not just the call', () => {
     const source = [
       'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
-      'const acquisition = await createWgpuAcquisition(canvas);',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
     ].join('\n');
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([
