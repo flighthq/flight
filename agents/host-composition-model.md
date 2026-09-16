@@ -1,77 +1,88 @@
 # Host Composition Model
 
-_2026-09-11. Architecture record — the naming, typing, and composition surface for host capabilities._
+_2026-09-16. Architecture record — the naming, typing, structure, and decomposition of host capabilities._
 
-**Status: ratified 2026-09-11 by the user.** Read before renaming host types or consts, adding a function that consumes a host capability, or creating a new host leaf/group const.
+**Status: ratified 2026-09-16 by the user.** Read before renaming host types or consts, adding a function that consumes a host capability, creating a new host group or slot, or decomposing a provider.
 
-This record governs the **consumer-facing API surface** — how types, consts, parameters, and imports are named and structured. The extraction mechanics (precedence, enablers, provider transitions, bundle evidence) remain in [host-web architecture](host-web-architecture.md). The explicit dependency model (no ambient state, values not singletons) remains in [explicit dependency model](explicit-dependency-model.md).
+This record governs the **consumer-facing API surface** — how types, consts, parameters, groups, and slots are named and structured. The extraction mechanics (precedence, enablers, provider transitions, bundle evidence) remain in [host-web architecture](host-web-architecture.md). The explicit dependency model (no ambient state, values not singletons) remains in [explicit dependency model](explicit-dependency-model.md).
 
 ---
 
-## 1. Type Naming: `Host*Provider`
+## 1. Three-Level Structure
 
-Every host capability type uses the `Host*Provider` pattern. The word "Provider" replaces "Backend" in the user-facing API — "backend" is an implementation detail, "provider" describes what the type is to a consumer.
+The host is a flat container of domain groups. Each group contains independently-coverable capability slots. Each capability is an Entity with methods (hooks).
 
-```typescript
-interface HostImageProvider extends Entity { ... }
-interface HostNetProvider extends Entity { ... }
-interface HostStorageProvider extends Entity { ... }
-interface HostGraphicsProvider extends Entity { ... }   // group type
+```
+Host (Entity, flat)
+  group per domain (struct, non-optional, named by package)
+    slot per capability (Entity, optional, independently coverable)
+      methods / hooks (non-optional on the Entity, grow over time)
 ```
 
-The `Host` prefix identifies the type as a platform capability. The capability name follows. `Provider` is the suffix. No abbreviations.
+Three levels, each with a clear role:
 
-### Rename from current naming
+| Level | Role | Optional? | Named by |
+|-------|------|-----------|----------|
+| Group | Domain organization | No — always present on Host | SDK package |
+| Slot | Capability presence | Yes — null means absent | Independently coverable capability |
+| Hook | Operation | No — present when the capability is | Verb/action |
 
-| Before | After |
-|--------|-------|
-| `ImageBackend` | `HostImageProvider` |
-| `NetBackend` | `HostNetProvider` |
-| `ClipboardBackend` | `HostClipboardProvider` |
-| `HasGraphicsImage` | `HostImageProvider` |
-| `HasNetHttp` | `HostNetProvider` |
+The `?.` null check is always at exactly one level — the slot. Groups are non-optional structs. Hooks are non-optional methods on a present capability Entity.
 
-The `Has*` trait interfaces collapse into the `Host*Provider` types. A function that needs the image capability takes `HostImageProvider` directly — no nested-path trait required.
+### Slot boundary test
+
+A slot earns its existence when:
+
+> A host can support A without supporting B, or A has materially different semantics, lifetime, or error behavior from B.
+
+The number of hooks per capability is irrelevant. A single-hook capability is valid if it independently varies across platforms. Conversely, many hooks that always come together are one capability.
+
+### Primary subject test
+
+A capability belongs to the group whose primary subject it operates on:
+
+> Window APIs describe operations whose primary subject is a window handle. Input/graphics/surface APIs may affect something visually associated with a window, but their primary subject is their own handle.
 
 ---
 
-## 2. Const Naming: `webHost*` / `electronHost*`
+## 2. Type Naming: `Host*Capability`
 
-Platform consts follow `{platform}Host{Capability}`. The platform prefix (`web`, `electron`, `tauri`, `capacitor`) identifies provenance. No `Provider` suffix on consts — the type carries it; the const is the value.
+Every host capability type uses the `Host{Domain}{Name}Capability` pattern. The word "Capability" describes what the type is to a consumer — a thing the host can or cannot do.
 
-### Three tiers
+```typescript
+interface HostImageLoaderCapability extends Entity { ... }
+interface HostWindowFullscreenCapability extends Entity { ... }
+interface HostGlyphRasterizerCapability extends Entity { ... }
+```
+
+The `Host` prefix identifies the type as a platform capability. The capability name follows. `Capability` is the suffix. No abbreviations.
+
+### Why Capability, not Provider
+
+- **Matches the consumer question.** `hasHostWindowFullscreen` checks for a capability, not an implementation. "Has capability" reads; "has provider" leaks implementation.
+- **Matches group naming.** Groups are `Host*Capabilities`. A capabilities struct containing capabilities is natural; containing "providers" mixes abstraction levels.
+- **Self-documenting at the call site.** The type tells you: this is something the host may or may not have.
+
+### Capability as Entity
+
+Capabilities extend Entity because Entity enforces consistent V8 hidden-class shape, provides identity for diagnostics, and offers a hook for lowering to a class on native platforms (C/C++ struct with header). In C, a capability is a struct with function pointers and a common header — a small vtable. Entity is the tag that says "Flight allocated this."
+
+Entity also buys method-level extensibility: a capability that starts with one hook can grow optional hooks later without changing the slot structure.
+
+---
+
+## 3. Const Naming: `webHost*` / `electronHost*`
+
+Platform consts follow `{platform}Host{Capability}`. The platform prefix (`web`, `electron`, `tauri`, `capacitor`) identifies provenance. No `Capability` suffix on consts — the type carries it; the const is the value.
+
+### Two tiers
 
 | Tier | Pattern | Example | Type |
 |------|---------|---------|------|
 | Full host | `{platform}Host` | `webHost` | `Host` (all groups) |
-| Group | `{platform}Host{Group}` | `webHostGraphics` | `HostGraphicsProvider` |
-| Leaf | `{platform}Host{Capability}` | `webHostImage`, `webHostNet` | `HostImageProvider`, `HostNetProvider` |
+| Leaf | `{platform}Host{Capability}` | `webHostImage`, `webHostNet` | `HostImageLoaderCapability`, `HostNetCapability` |
 
-All three tiers are separately importable from the host package. Leaf consts exist for tree-shaking: importing `webHostImage` pulls only the image provider, not the full `webHost` assembly.
-
-### Rename from current naming
-
-| Before | After |
-|--------|-------|
-| `webImageBackend` | `webHostImage` |
-| `webNetBackend` | `webHostNet` |
-| `webBitmapEncodeBackend` | `webHostBitmapEncode` |
-| `webGraphicsHost` | `webHostGraphics` |
-
----
-
-## 3. Host Structure: Grouped
-
-The `Host` entity keeps its grouped structure. Capabilities are accessed through their group:
-
-```typescript
-webHost.graphics.image      // HostImageProvider
-webHost.graphics.surface    // HostSurfaceProvider
-webHost.net.http            // HostNetProvider
-webHost.media.session       // HostMediaSessionProvider
-```
-
-This mirrors the `Host` interface's 26 top-level groups. Groups organize capabilities by domain; the grouping is stable and does not change with the composition model.
+Group-level consts (`webHostGraphics`, `webHostMedia`) are no longer meaningful — super-groups have dissolved. Leaf consts exist for tree-shaking: importing `webHostImage` pulls only the image capability.
 
 ---
 
@@ -80,67 +91,243 @@ This mirrors the `Host` interface's 26 top-level groups. Groups organize capabil
 Functions that consume a host capability name the parameter `host{Capability}`:
 
 ```typescript
-// Single capability — parameter named after what it provides
 function loadImageResourceFromUrl(
-  hostImage: Readonly<HostImageProvider>,
-  url: string,
-): Promise<ImageResource>
-
-// Multiple capabilities — one parameter per provider
-function fetchAndDecodeImage(
-  hostNet: Readonly<HostNetProvider>,
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageLoaderCapability>,
   url: string,
 ): Promise<ImageResource>
 ```
 
-The parameter name mirrors the const name (`webHostImage` passed as `hostImage`). This makes the call site self-documenting:
-
-```typescript
-import { webHostImage, webHostNet } from '@flighthq/host-web';
-
-loadImageResourceFromUrl(webHostImage, url);
-fetchAndDecodeImage(webHostNet, webHostImage, url);
-```
+The host capability is the first parameter when present.
 
 ### Rules
 
-- A function needing one capability: parameter is `host{Capability}` (e.g., `hostImage`).
-- A function needing multiple capabilities: one parameter per capability (e.g., `hostNet`, `hostImage`), not a merged object.
-- Parameter type is `Readonly<Host*Provider>`, consistent with the SDK's `Readonly<T>` convention.
+- A function needing one capability: parameter is `host{Capability}`.
+- A function needing multiple capabilities: one parameter per capability, host capabilities first.
+- Parameter type is `Readonly<Host*Capability>`.
 - The full `Host` is never a parameter type for a function that uses only one capability. Functions declare their minimum requirement.
 
 ---
 
-## 5. Tree-Shaking Model
+## 5. Host Groups — Full Inventory
 
-The three-tier const export (full / group / leaf) serves tree-shaking directly:
+Super-groups (`system`, `graphics`, `media`, `text`, `input`, `ui`) dissolve. Each domain gets its own top-level group, named by its SDK package.
 
-```typescript
-// Minimal — only image provider in the bundle
-import { webHostImage } from '@flighthq/host-web';
-loadImageResourceFromUrl(webHostImage, url);
+### Groups that stay (already one-domain)
 
-// Group — all graphics providers
-import { webHostGraphics } from '@flighthq/host-web';
-loadImageResourceFromUrl(webHostGraphics.image, url);
+`accessibility`, `clipboard`, `connectivity`, `dialog`, `ipc`, `menu`, `midi`, `notification`, `power`, `protocol`, `screen`, `share`, `shell`, `shortcut`, `tray`, `updater`
 
-// Full — everything
-import { webHost } from '@flighthq/host-web';
-loadImageResourceFromUrl(webHost.graphics.image, url);
-```
+### Groups from dissolving `system`
 
-The leaf const is a separately importable value, not a property accessor on the full host. Importing `webHostImage` does not pull `webHostNet` or any other provider. The full `webHost` is a convenience assembly — every leaf it composes is also available standalone.
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.device` | `system.device` | Device info queries |
+| `host.geolocation` | `system.geolocation` | Position tracking |
+| `host.permissions` | `system.permissions` | Permission query/request |
+| `host.platform` | `system.platform` | Platform info |
+| `host.sensors` | `system.sensors` | Sensor availability |
+
+`system.lifecycle` moves to `host.app` (see App merge below).
+
+### Groups from dissolving `graphics`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.bitmap` | `graphics.bitmapEncode`, `graphics.bitmapReadback` | Slots: `encode`, `readback` |
+| `host.image` | `graphics.image` | Image loading/creation |
+| `host.gl` | `graphics.renderContext` + new GL acquire | GL context lifecycle |
+| `host.surface` | `graphics.renderSurface` | Render surface lifecycle |
+| `host.wgpu` | `graphics.wgpuHost` | WGPU device/context |
+
+### Groups from dissolving `media`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.audio` | `media.audioCodec`, `media.audioDevice`, `media.audioMixer` | Slots: `codec`, `device`, `mixer` |
+| `host.video` | `media.video` | Video decode/present |
+| `host.mediasession` | `media.session`, `media.sessionAction` | Slots: `control`, `action` |
+
+### Groups from dissolving `text`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.font` | `text.fontLoading` | Font loading |
+| `host.glyph` | `text.glyphRasterizer` | Glyph rasterization (not atlas) |
+| `host.textsegment` | `text.segmenter` | Text segmentation |
+| `host.textshaper` | `text.shaper` | Text shaping |
+
+### Groups from dissolving `input`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.input` | `input.ingress`, `input.dropFile`, `input.focus`, `input.pointerLock`, `input.target` | Stays, minus haptics and keyboard |
+| `host.haptics` | `input.haptics` | Haptic feedback |
+| `host.softKeyboard` | `input.softKeyboard*` (7 slots) | Virtual keyboard. "soft" stays — different from physical keyboard |
+
+### Groups from dissolving `net`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.net` | `net.http` | HTTP networking |
+| `host.socket` | `net.socket` | WebSocket/sockets |
+
+### Groups from dissolving `storage`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.preferences` | `storage.local`, `storage.change`, `storage.persistenceQuery`, `storage.persistenceRequest` | Package rename: `storage` → `preferences` |
+| `host.filesystem` | `storage.fileSystem` | File system access |
+
+### Groups from dissolving `ui`
+
+| New group | Former path | Notes |
+|-----------|-------------|-------|
+| `host.fullscreen` | `ui.fullscreen` | Element-level fullscreen (`HostElementFullscreenCapability`) |
+| `host.statusbar` | `ui.statusBar*` (6 slots) | Drop `statusBar` prefix on slot names |
+
+### New groups
+
+| Group | Purpose |
+|-------|---------|
+| `host.surface` | Render surface acquire/resize/release — shared substrate for GL and WGPU |
+| `host.gl` | GL context acquisition and context loss/restoration events |
+
+### App group after merge
+
+`App`, `Application`, and `AppLifecycle` merge into one entity `App`, one package `@flighthq/app`. The host group absorbs:
+
+- `loop` from application → `HostAppLoopCapability`
+- `exit` from application → `HostAppExitCapability` (was `HostApplicationExitProvider`)
+- `lifecycle` from system → `HostAppLifecycleCapability`
+- `visibility` and `hiddenQuery` dissolve into `AppLifecycleState`
 
 ---
 
-## 6. Summary
+## 6. Window Decomposition
 
-| Surface | Pattern | Example |
-|---------|---------|---------|
-| Type | `Host{Capability}Provider` | `HostImageProvider` |
-| Full host const | `{platform}Host` | `webHost` |
-| Group const | `{platform}Host{Group}` | `webHostGraphics` |
-| Leaf const | `{platform}Host{Capability}` | `webHostImage` |
-| Parameter | `host{Capability}` | `hostImage` |
-| Import path | `@flighthq/host-{platform}` | `@flighthq/host-web` |
+`HostWindowProvider` (a 30-method monolith) decomposes into independently-coverable capability slots. The direct-provider exception is eliminated — window becomes a group like everything else.
+
+Evidence: every consumer already narrows with `Required<Pick<HostWindowProvider, 'close'>>` — per-method capability selection expressed through type gymnastics. Decomposition replaces this with structural slots.
+
+### Window capability slots
+
+| Capability | Hooks |
+|------------|-------|
+| `HostWindowLifecycleCapability` | `attach`, `open`, `close`, `subscribeClose` |
+| `HostWindowGeometryCapability` | `setPosition`, `setSize`, `getBounds`, `center`, `subscribeMove`, `subscribeResize` |
+| `HostWindowConstraintsCapability` | `setMinimumSize`, `setMaximumSize`, `setResizable` |
+| `HostWindowStateCapability` | `minimize`, `maximize`, `restore`, `show`, `hide` |
+| `HostWindowFocusCapability` | `focus` |
+| `HostWindowFullscreenCapability` | `setFullscreen` |
+| `HostWindowAppearanceCapability` | `setTitle`, `setIcon`, `setOpacity` |
+| `HostWindowShellCapability` | `setMenuBarVisible`, `setSkipTaskbar`, `setHasShadow` |
+| `HostWindowHierarchyCapability` | `setParent` |
+| `HostWindowZOrderCapability` | `setAlwaysOnTop` |
+| `HostWindowProtectionCapability` | `setContentProtection` |
+| `HostWindowAttentionCapability` | `requestAttention`, `flashWindowFrame` |
+| `HostWindowProgressCapability` | `setProgress` |
+| `HostWindowVisibilityCapability` | `subscribeVisibility` |
+
+Events pair with their capability (mutations and observation of a concept live together). Exception: `subscribeVisibility` has no paired command, so it gets its own slot.
+
+`subscribeOrientation` moves to `host.screen` — orientation is a per-screen property, already covered by `HostScreenChangeCapability` with `changedMetrics.orientation`.
+
+### Element vs window fullscreen
+
+Two separate capabilities with different subjects:
+
+| Capability | Subject | Group |
+|------------|---------|-------|
+| `HostWindowFullscreenCapability` | Window handle | `host.window` |
+| `HostElementFullscreenCapability` | Element/target handle | `host.fullscreen` |
+
+They must not converge merely because both contain the word "fullscreen."
+
+---
+
+## 7. Graphics Stack
+
+Three layers, cleanly separated:
+
+```
+host.surface    — render surface acquire, resize, release (shared substrate)
+host.gl         — GL context acquisition, context loss events
+host.wgpu       — WGPU device/context acquisition, surface attachment
+```
+
+Surface is the platform-specific thing you render into. GL and WGPU are API-specific context layers on top. A consumer that needs a render target takes `hostSurface`; a consumer that needs a GL context takes both.
+
+GL context "resize" is not a real operation — you change the viewport (`glViewport`) and reallocate framebuffers at the render layer. Surface resize IS a host operation (the surface has dimensions that change).
+
+---
+
+## 8. Provider Type Renames
+
+| Before | After | Reason |
+|--------|-------|--------|
+| `Host*Provider` (all) | `Host*Capability` | §2 |
+| `HostApplicationExitProvider` | `HostAppExitCapability` | App merge |
+| `HostApplicationVisibilityProvider` | dissolves | Absorbed into lifecycle state |
+| `HostAppVisibilityQueryProvider` | dissolves | Absorbed into lifecycle state |
+| `HostLoopProvider` | `HostAppLoopCapability` | Missing domain prefix |
+| `HostFullscreenProvider` | `HostElementFullscreenCapability` | Disambiguate from window fullscreen |
+| `HostAudioProvider` | `HostAudioCodecCapability` | Slot is `codec`, type should match |
+| `HostWindowProvider` | decomposes into ~14 capabilities | §6 |
+
+---
+
+## 9. Naming Conventions for Slots
+
+Slot names are scoped by their group — they do not repeat the group name:
+
+```typescript
+host.statusbar.color      // not host.statusbar.statusBarColor
+host.softKeyboard.info    // not host.softKeyboard.softKeyboardInfo
+host.audio.codec          // not host.audio.audioCodec
+```
+
+For single-slot groups, the slot name describes the specific capability:
+
+| Group | Slot | Why |
+|-------|------|-----|
+| `host.geolocation` | `position` | Position tracking |
+| `host.device` | `info` | Device information queries |
+| `host.platform` | `info` | Platform information |
+| `host.sensors` | `query` | Sensor availability queries |
+| `host.permissions` | `query` | Permission query/request |
+| `host.image` | `loader` | Image loading/creation |
+| `host.haptics` | `engine` | Haptic feedback engine |
+| `host.accessibility` | `tree` | Accessibility tree management |
+
+---
+
+## 10. Tree-Shaking Model
+
+Leaf consts are separately importable from the host backend package:
+
+```typescript
+import { webHostImage } from '@flighthq/host-web';
+loadImageResourceFromUrl(webHostImage, url);
+
+import { webHost } from '@flighthq/host-web';
+loadImageResourceFromUrl(webHost.image.loader, url);
+```
+
+Importing `webHostImage` pulls only the image capability. The full `webHost` is a convenience assembly.
+
+---
+
+## 11. Package Decisions
+
+| Decision | Detail |
+|----------|--------|
+| `storage` → `preferences` | Key-value persistence. "Storage" is too generic; "preferences" matches industry naming (Capacitor, Android SharedPreferences, iOS UserDefaults, SDL3 UserStorage). |
+| `softKeyboard` stays `softKeyboard` | Virtual keyboard is a different domain from physical keyboard input. |
+| `glyph` not `glyphatlas` for host group | The host provides glyph rasterization, not atlas management. The atlas is the SDK construct. |
+| `application-gl` dissolves | Render view factory moves to render layer; GL context capability moves to `host.gl`. |
+| App/Application/AppLifecycle merge | One entity `App`, one package `@flighthq/app`. |
+
+---
+
+## 12. Has\* Traits
+
+Has\* traits are **not needed** for host capabilities. The node `Has*` pattern (`HasTransform2D`, `HasBoundsRectangle`) describes what kind of node something is via structural composition. Host capabilities are already concrete Entity types with methods — they don't need a wrapper. The census confirms: 98% of capability-consuming functions take a single capability directly. Zero functions take a group type. Zero take the whole Host.
