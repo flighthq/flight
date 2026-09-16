@@ -127,5 +127,7 @@ export type WebHost = Omit<
   readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
   readonly surface: Required<Pick<HostSurfaceCapabilities, 'resize'>>;
   readonly video: Required<Pick<HostVideoCapabilities, 'playback'>>;
-  readonly window: Required<HostWindowCapabilities>;
+  readonly window: Required<
+    Pick<HostWindowCapabilities, 'appearance' | 'attach' | 'focus' | 'fullscreen' | 'geometry' | 'lifecycle'>
+  >;
 };
