@@ -15,6 +15,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapePath,
+  createDefaultPathBooleanBackend,
   createDisplayObject,
   createPath,
   createShape,
@@ -50,7 +51,8 @@ appendPathRectangle(pathA, 50, 50, 100, 100);
 const pathB = createPath();
 appendPathRectangle(pathB, 100, 100, 100, 100);
 
-const result = xorPaths(pathA, pathB);
+const pathBoolean = createDefaultPathBooleanBackend();
+const result = xorPaths(pathBoolean, pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();

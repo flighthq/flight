@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webHostInputIngress } from '@flighthq/host-web';
 import type { ParticleEmitterConfig, ParticleForce } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -385,7 +385,7 @@ let mouseY = (HEIGHT * scale) / 2;
 const emitterSpring = createSpring2D(mouseX, mouseY);
 const emitterSpringConfig = createSpringConfig(7, 0.65);
 const inputManager = createInputManager();
-attachPointerInput(inputManager, canvas);
+attachPointerInput(webHostInputIngress, inputManager, canvas);
 connectSignal(inputManager.onPointerMove, (pointer) => {
   const rect = canvas.getBoundingClientRect();
   mouseX = (pointer.x - rect.left) * (WIDTH / rect.width) * scale;
