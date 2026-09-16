@@ -72,7 +72,7 @@ export function getHostFileSystem(host: Readonly<Host>): HostFileSystemCapabilit
 }
 
 export function getHostFontLoading(host: Readonly<Host>): HostFontLoadingCapability | null {
-  return host.text?.fontLoading ?? null;
+  return host.font?.loader ?? null;
 }
 
 export function getHostGeolocation(host: Readonly<Host>): HostGeolocationCapability | null {
@@ -80,7 +80,7 @@ export function getHostGeolocation(host: Readonly<Host>): HostGeolocationCapabil
 }
 
 export function getHostGlyphRasterizer(host: Readonly<Host>): HostGlyphRasterizerCapability | null {
-  return host.text?.glyphRasterizer ?? null;
+  return host.glyph?.rasterizer ?? null;
 }
 
 export function getHostHaptics(host: Readonly<Host>): HostHapticsCapability | null {
@@ -140,11 +140,11 @@ export function getHostStoragePersistenceQuery(host: Readonly<Host>): HostStorag
 }
 
 export function getHostTextSegmenter(host: Readonly<Host>): HostTextSegmenterCapability | null {
-  return host.text?.segmenter ?? null;
+  return host.textSegment?.segmenter ?? null;
 }
 
 export function getHostTextShaper(host: Readonly<Host>): HostTextShaperCapability | null {
-  return host.text?.shaper ?? null;
+  return host.textShaper?.shaper ?? null;
 }
 
 export function getHostVideo(host: Readonly<Host>): HostVideoCapability | null {

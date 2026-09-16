@@ -38,7 +38,8 @@ describe('enableHostGuards', () => {
           audio: { device: CAPABILITY, mixer: CAPABILITY },
           image: { loader: CAPABILITY },
           input: { ingress: CAPABILITY },
-          text: { segmenter: CAPABILITY, shaper: CAPABILITY },
+          textSegment: { segmenter: CAPABILITY },
+          textShaper: { shaper: CAPABILITY },
           video: { playback: CAPABILITY },
         }),
       ),
@@ -76,8 +77,8 @@ const GUARDED_SLOTS = [
   'audio.mixer',
   'image.loader',
   'input.ingress',
-  'text.segmenter',
-  'text.shaper',
+  'textSegment.segmenter',
+  'textShaper.shaper',
   'video.playback',
 ];
 

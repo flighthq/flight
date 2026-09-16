@@ -22,9 +22,11 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.device = (capabilities.device ?? {}) as Host['device'];
   out.dialog = (capabilities.dialog ?? {}) as Host['dialog'];
   out.fileSystem = (capabilities.fileSystem ?? {}) as Host['fileSystem'];
+  out.font = (capabilities.font ?? {}) as Host['font'];
   out.fullscreen = (capabilities.fullscreen ?? {}) as Host['fullscreen'];
   out.geolocation = (capabilities.geolocation ?? {}) as Host['geolocation'];
   out.gl = (capabilities.gl ?? {}) as Host['gl'];
+  out.glyph = (capabilities.glyph ?? {}) as Host['glyph'];
   out.haptics = (capabilities.haptics ?? {}) as Host['haptics'];
   out.image = (capabilities.image ?? {}) as Host['image'];
   out.input = (capabilities.input ?? {}) as Host['input'];
@@ -48,7 +50,8 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.softKeyboard = (capabilities.softKeyboard ?? {}) as Host['softKeyboard'];
   out.statusBar = (capabilities.statusBar ?? {}) as Host['statusBar'];
   out.surface = (capabilities.surface ?? {}) as Host['surface'];
-  out.text = (capabilities.text ?? {}) as Host['text'];
+  out.textSegment = (capabilities.textSegment ?? {}) as Host['textSegment'];
+  out.textShaper = (capabilities.textShaper ?? {}) as Host['textShaper'];
   out.tray = (capabilities.tray ?? {}) as Host['tray'];
   out.updater = (capabilities.updater ?? {}) as Host['updater'];
   out.video = (capabilities.video ?? {}) as Host['video'];
