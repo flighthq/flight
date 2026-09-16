@@ -94,6 +94,12 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
 export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
 
+export interface HostWindowAppearanceCapability extends Entity {
+  setIcon?(win: ApplicationWindow, icon: string): void;
+  setOpacity?(win: ApplicationWindow, opacity: number): void;
+  setTitle(win: ApplicationWindow, title: string): void;
+}
+
 export interface HostWindowAttachCapability extends Entity {
   attach(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
 }
@@ -101,39 +107,10 @@ export interface HostWindowAttachCapability extends Entity {
 export interface HostWindowAttentionCapability extends Entity {
   flashWindowFrame?(win: ApplicationWindow): void;
   requestAttention(win: ApplicationWindow, attention: boolean): void;
-  setProgress?(win: ApplicationWindow, progress: number): void;
 }
 
-export interface HostWindowBoundsCapability extends Entity {
-  center?(win: ApplicationWindow): void;
-  getBounds(win: ApplicationWindow, out: WindowBounds): WindowBounds;
-  setPosition(win: ApplicationWindow, x: number, y: number): void;
-  setSize(win: ApplicationWindow, width: number, height: number): void;
-}
-
-export interface HostWindowChromeCapability extends Entity {
-  setContentProtection?(win: ApplicationWindow, enabled: boolean): void;
-  setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
-  setIcon?(win: ApplicationWindow, icon: string): void;
-  setMenuBarVisible?(win: ApplicationWindow, visible: boolean): void;
-  setOpacity?(win: ApplicationWindow, opacity: number): void;
-  setSkipTaskbar?(win: ApplicationWindow, skip: boolean): void;
-}
-
-export interface HostWindowConfigCapability extends Entity {
-  setAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void;
-  setResizable(win: ApplicationWindow, resizable: boolean): void;
-}
-
-export interface HostWindowEventsCapability extends Entity {
-  subscribeClose?(onCloseRequest: () => boolean, onClose: () => void): () => void;
-  subscribeMove?(listener: (x: number, y: number) => void): () => void;
-  subscribeOrientation?(listener: () => void): () => void;
-  subscribeResize?(
-    target: WindowResizeTargetHandle,
-    listener: (width: number, height: number, devicePixelRatio: number) => void,
-  ): () => void;
-  subscribeVisibility?(listener: (visible: boolean) => void): () => void;
+export interface HostWindowContentProtectionCapability extends Entity {
+  setContentProtection(win: ApplicationWindow, enabled: boolean): void;
 }
 
 export interface HostWindowFocusCapability extends Entity {
@@ -144,13 +121,39 @@ export interface HostWindowFullscreenCapability extends Entity {
   setFullscreen(win: ApplicationWindow, fullscreen: boolean): void;
 }
 
+export interface HostWindowGeometryCapability extends Entity {
+  center?(win: ApplicationWindow): void;
+  getBounds(win: ApplicationWindow, out: WindowBounds): WindowBounds;
+  setPosition(win: ApplicationWindow, x: number, y: number): void;
+  setSize(win: ApplicationWindow, width: number, height: number): void;
+  subscribeMove?(listener: (x: number, y: number) => void): () => void;
+  subscribeResize?(
+    target: WindowResizeTargetHandle,
+    listener: (width: number, height: number, devicePixelRatio: number) => void,
+  ): () => void;
+}
+
+export interface HostWindowHierarchyCapability extends Entity {
+  setParent(win: ApplicationWindow, parent: ApplicationWindow | null): void;
+}
+
 export interface HostWindowLifecycleCapability extends Entity {
   close(win: ApplicationWindow): void;
   open(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
+  subscribeClose?(onCloseRequest: () => boolean, onClose: () => void): () => void;
 }
 
-export interface HostWindowParentCapability extends Entity {
-  setParent(win: ApplicationWindow, parent: ApplicationWindow | null): void;
+export interface HostWindowProgressCapability extends Entity {
+  setProgress(win: ApplicationWindow, progress: number): void;
+}
+
+export interface HostWindowShadowCapability extends Entity {
+  setHasShadow(win: ApplicationWindow, hasShadow: boolean): void;
+}
+
+export interface HostWindowShellCapability extends Entity {
+  setMenuBarVisible?(win: ApplicationWindow, visible: boolean): void;
+  setSkipTaskbar?(win: ApplicationWindow, skip: boolean): void;
 }
 
 export interface HostWindowSizeConstraintsCapability extends Entity {
@@ -164,11 +167,12 @@ export interface HostWindowStateCapability extends Entity {
   restore(win: ApplicationWindow): void;
 }
 
-export interface HostWindowTitleCapability extends Entity {
-  setTitle(win: ApplicationWindow, title: string): void;
-}
-
 export interface HostWindowVisibilityCapability extends Entity {
   hide(win: ApplicationWindow): void;
   show(win: ApplicationWindow): void;
+  subscribeVisibility?(listener: (visible: boolean) => void): () => void;
+}
+
+export interface HostWindowZOrderCapability extends Entity {
+  setAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void;
 }

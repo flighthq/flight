@@ -174,8 +174,8 @@ Super-groups (`system`, `graphics`, `media`, `text`, `input`, `ui`) dissolve. Ea
 
 | New group | Former path | Notes |
 |-----------|-------------|-------|
-| `host.preferences` | `storage.local`, `storage.change`, `storage.persistenceQuery`, `storage.persistenceRequest` | Package rename: `storage` → `preferences` |
-| `host.filesystem` | `storage.fileSystem` | File system access |
+| `host.preferences` | `storage.local`, `storage.change`, `storage.persistenceQuery`, `storage.persistenceRequest` | Package rename: `storage` → `preferences`. Slots: `local`, `change`, `persistenceQuery`, `persistenceRequest` |
+| `host.fileSystem` | `storage.fileSystem` | File system access. Slot: `access` |
 
 ### Groups from dissolving `ui`
 
@@ -212,22 +212,24 @@ Evidence: every consumer already narrows with `Required<Pick<HostWindowProvider,
 
 | Capability | Hooks |
 |------------|-------|
-| `HostWindowLifecycleCapability` | `attach`, `open`, `close`, `subscribeClose` |
-| `HostWindowGeometryCapability` | `setPosition`, `setSize`, `getBounds`, `center`, `subscribeMove`, `subscribeResize` |
-| `HostWindowConstraintsCapability` | `setMinimumSize`, `setMaximumSize`, `setResizable` |
-| `HostWindowStateCapability` | `minimize`, `maximize`, `restore`, `show`, `hide` |
+| `HostWindowAppearanceCapability` | `setTitle`, `setIcon?`, `setOpacity?` |
+| `HostWindowAttachCapability` | `attach` |
+| `HostWindowAttentionCapability` | `requestAttention`, `flashWindowFrame?` |
+| `HostWindowContentProtectionCapability` | `setContentProtection` |
 | `HostWindowFocusCapability` | `focus` |
 | `HostWindowFullscreenCapability` | `setFullscreen` |
-| `HostWindowAppearanceCapability` | `setTitle`, `setIcon`, `setOpacity` |
-| `HostWindowShellCapability` | `setMenuBarVisible`, `setSkipTaskbar`, `setHasShadow` |
+| `HostWindowGeometryCapability` | `setPosition`, `setSize`, `getBounds`, `center?`, `subscribeMove?`, `subscribeResize?` |
 | `HostWindowHierarchyCapability` | `setParent` |
-| `HostWindowZOrderCapability` | `setAlwaysOnTop` |
-| `HostWindowProtectionCapability` | `setContentProtection` |
-| `HostWindowAttentionCapability` | `requestAttention`, `flashWindowFrame` |
+| `HostWindowLifecycleCapability` | `open`, `close`, `subscribeClose?` |
 | `HostWindowProgressCapability` | `setProgress` |
-| `HostWindowVisibilityCapability` | `subscribeVisibility` |
+| `HostWindowShadowCapability` | `setHasShadow` |
+| `HostWindowShellCapability` | `setMenuBarVisible?`, `setSkipTaskbar?` |
+| `HostWindowSizeConstraintsCapability` | `setMinimumSize`, `setMaximumSize` |
+| `HostWindowStateCapability` | `minimize`, `maximize`, `restore` |
+| `HostWindowVisibilityCapability` | `show`, `hide`, `subscribeVisibility?` |
+| `HostWindowZOrderCapability` | `setAlwaysOnTop` |
 
-Events pair with their capability (mutations and observation of a concept live together). Exception: `subscribeVisibility` has no paired command, so it gets its own slot.
+Events pair with their capability (mutations and observation of a concept live together). `subscribeClose` lives with lifecycle, `subscribeMove` and `subscribeResize` with geometry, `subscribeVisibility` with visibility.
 
 `subscribeOrientation` moves to `host.screen` — orientation is a per-screen property, already covered by `HostScreenChangeCapability` with `changedMetrics.orientation`.
 
@@ -289,14 +291,20 @@ For single-slot groups, the slot name describes the specific capability:
 
 | Group | Slot | Why |
 |-------|------|-----|
-| `host.geolocation` | `position` | Position tracking |
+| `host.accessibility` | `tree` | Accessibility tree management |
 | `host.device` | `info` | Device information queries |
+| `host.fileSystem` | `access` | File system access |
+| `host.geolocation` | `position` | Position tracking |
+| `host.gl` | `context` | GL context lifecycle |
+| `host.haptics` | `engine` | Haptic feedback engine |
+| `host.image` | `loader` | Image loading/creation |
+| `host.lifecycle` | `state` | Lifecycle state tracking |
+| `host.permissions` | `query` | Permission query/request |
 | `host.platform` | `info` | Platform information |
 | `host.sensors` | `query` | Sensor availability queries |
-| `host.permissions` | `query` | Permission query/request |
-| `host.image` | `loader` | Image loading/creation |
-| `host.haptics` | `engine` | Haptic feedback engine |
-| `host.accessibility` | `tree` | Accessibility tree management |
+| `host.surface` | `resize` | Surface resize |
+| `host.video` | `playback` | Video decode/present |
+| `host.wgpu` | `context` | WGPU device/context |
 
 ---
 

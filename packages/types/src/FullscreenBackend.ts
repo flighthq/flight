@@ -6,7 +6,7 @@ export interface HostElementFullscreenCapability extends Entity {
   request(target: FullscreenTargetHandle): Promise<boolean>;
 }
 
-export interface HostFullscreenCapability {
+export interface HostFullscreenCapability extends Entity {
   exit(): Promise<boolean>;
   request(target: FullscreenTargetHandle): Promise<boolean>;
   subscribe?(callback: (fullscreen: boolean) => void): void;
