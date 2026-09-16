@@ -24,9 +24,9 @@ export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
     Required<Pick<HostConnectivityCapabilities, 'change' | 'status'>>;
   readonly device: Required<Pick<HostDeviceCapabilities, 'info'>>;
   readonly dialog: HostDialogCapabilities & Required<Pick<HostDialogCapabilities, 'message' | 'prompt'>>;
-  readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'provider'>>;
-  readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'provider'>>;
-  readonly haptics: Required<Pick<HostHapticsCapabilities, 'provider'>>;
+  readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'access'>>;
+  readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'position'>>;
+  readonly haptics: Required<Pick<HostHapticsCapabilities, 'engine'>>;
   readonly notification: CapacitorNotificationCapabilities;
   readonly protocol: CapacitorProtocolCapabilities;
   readonly share: HostShareCapabilities & { readonly content: HostCapacitorShareContentCapability };

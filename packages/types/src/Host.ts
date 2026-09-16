@@ -28,20 +28,22 @@ import type {
 import type { HostApplicationExitCapability } from './ApplicationExitBackend';
 import type { HostApplicationVisibilityCapability } from './ApplicationVisibilityBackend';
 import type {
+  HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
-  HostWindowBoundsCapability,
-  HostWindowChromeCapability,
-  HostWindowConfigCapability,
-  HostWindowEventsCapability,
+  HostWindowContentProtectionCapability,
   HostWindowFocusCapability,
   HostWindowFullscreenCapability,
+  HostWindowGeometryCapability,
+  HostWindowHierarchyCapability,
   HostWindowLifecycleCapability,
-  HostWindowParentCapability,
+  HostWindowProgressCapability,
+  HostWindowShadowCapability,
+  HostWindowShellCapability,
   HostWindowSizeConstraintsCapability,
   HostWindowStateCapability,
-  HostWindowTitleCapability,
   HostWindowVisibilityCapability,
+  HostWindowZOrderCapability,
 } from './ApplicationWindow';
 import type {
   HostGlCapability,
@@ -239,7 +241,6 @@ export interface Host extends Entity {
   readonly shortcut: HostShortcutCapabilities;
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
-  readonly storagePersistence: HostStoragePersistenceCapabilities;
   readonly surface: HostSurfaceCapabilities;
   readonly text: HostTextCapabilities;
   readonly tray: HostTrayCapabilities;
@@ -250,7 +251,7 @@ export interface Host extends Entity {
 }
 
 export interface HostAccessibilityCapabilities {
-  readonly provider?: HostAccessibilityCapability;
+  readonly tree?: HostAccessibilityCapability;
 }
 
 export interface HostAppCapabilities {
@@ -324,16 +325,16 @@ export interface HostDialogCapabilities {
 }
 
 export interface HostFileSystemCapabilities {
-  readonly provider?: HostFileSystemCapability;
+  readonly access?: HostFileSystemCapability;
 }
 
 export interface HostFullscreenCapabilities {
   readonly element?: HostElementFullscreenCapability;
-  readonly provider?: HostFullscreenCapability;
+  readonly exit?: HostFullscreenCapability;
 }
 
 export interface HostGeolocationCapabilities {
-  readonly provider?: HostGeolocationCapability;
+  readonly position?: HostGeolocationCapability;
 }
 
 export interface HostGlCapabilities {
@@ -341,11 +342,11 @@ export interface HostGlCapabilities {
 }
 
 export interface HostHapticsCapabilities {
-  readonly provider?: HostHapticsCapability;
+  readonly engine?: HostHapticsCapability;
 }
 
 export interface HostImageCapabilities {
-  readonly decode?: HostImageCapability;
+  readonly loader?: HostImageCapability;
 }
 
 export interface HostInputCapabilities {
@@ -365,7 +366,7 @@ export interface HostIpcCapabilities {
 }
 
 export interface HostLifecycleCapabilities {
-  readonly provider?: HostLifecycleCapability;
+  readonly state?: HostLifecycleCapability;
 }
 
 export interface HostMediaSessionCapabilities {
@@ -405,7 +406,7 @@ export interface HostNotificationCapabilities {
 }
 
 export interface HostPermissionsCapabilities {
-  readonly provider?: HostPermissionsCapability;
+  readonly query?: HostPermissionsCapability;
 }
 
 export interface HostPlatformCapabilities {
@@ -426,6 +427,8 @@ export interface HostPowerCapabilities {
 export interface HostPreferencesCapabilities {
   readonly change?: HostStorageChangeCapability;
   readonly local?: HostPreferencesCapability;
+  readonly persistenceQuery?: HostStoragePersistenceQueryCapability;
+  readonly persistenceRequest?: HostStoragePersistenceRequestCapability;
 }
 
 export interface HostProtocolCapabilities {
@@ -447,7 +450,7 @@ export interface HostScreenCapabilities {
 export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
 
 export interface HostSensorsCapabilities {
-  readonly provider?: HostSensorsCapability;
+  readonly query?: HostSensorsCapability;
 }
 
 export interface HostShareCapabilities {
@@ -489,11 +492,6 @@ export interface HostStatusBarCapabilities {
   readonly visibility?: HostStatusBarVisibilityCapability;
 }
 
-export interface HostStoragePersistenceCapabilities {
-  readonly query?: HostStoragePersistenceQueryCapability;
-  readonly request?: HostStoragePersistenceRequestCapability;
-}
-
 export interface HostSurfaceCapabilities {
   readonly resize?: HostSurfaceCapability;
 }
@@ -528,26 +526,28 @@ export interface HostUpdaterCapabilities {
 }
 
 export interface HostVideoCapabilities {
-  readonly provider?: HostVideoCapability;
+  readonly playback?: HostVideoCapability;
 }
 
 export interface HostWgpuCapabilities {
-  readonly provider?: HostWgpuCapability;
+  readonly context?: HostWgpuCapability;
 }
 
 export interface HostWindowCapabilities {
+  readonly appearance?: HostWindowAppearanceCapability;
   readonly attach?: HostWindowAttachCapability;
   readonly attention?: HostWindowAttentionCapability;
-  readonly bounds?: HostWindowBoundsCapability;
-  readonly chrome?: HostWindowChromeCapability;
-  readonly config?: HostWindowConfigCapability;
-  readonly events?: HostWindowEventsCapability;
+  readonly contentProtection?: HostWindowContentProtectionCapability;
   readonly focus?: HostWindowFocusCapability;
   readonly fullscreen?: HostWindowFullscreenCapability;
+  readonly geometry?: HostWindowGeometryCapability;
+  readonly hierarchy?: HostWindowHierarchyCapability;
   readonly lifecycle?: HostWindowLifecycleCapability;
-  readonly parent?: HostWindowParentCapability;
+  readonly progress?: HostWindowProgressCapability;
+  readonly shadow?: HostWindowShadowCapability;
+  readonly shell?: HostWindowShellCapability;
   readonly sizeConstraints?: HostWindowSizeConstraintsCapability;
   readonly state?: HostWindowStateCapability;
-  readonly title?: HostWindowTitleCapability;
   readonly visibility?: HostWindowVisibilityCapability;
+  readonly zOrder?: HostWindowZOrderCapability;
 }
