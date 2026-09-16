@@ -22,13 +22,13 @@ describe('createHost', () => {
     for (const group of HOST_GROUPS) expect(host[group]).toEqual({});
   });
 
-  it('preserves supplied capability-group and provider identities without populating another group', () => {
-    const provider = {};
-    const accessibility = { provider };
+  it('preserves supplied capability-group and capability identities without populating another group', () => {
+    const tree = {};
+    const accessibility = { tree };
     const host = requiredFunction(contract, 'createHost')({ accessibility });
 
     expect(host.accessibility).toBe(accessibility);
-    expect(host.accessibility.provider).toBe(provider);
+    expect(host.accessibility.tree).toBe(tree);
     for (const group of HOST_GROUPS) {
       if (group !== 'accessibility') expect(host[group]).toEqual({});
     }
@@ -50,10 +50,10 @@ describe('initializeHost', () => {
 
   it('writes every group into an existing construction target without allocating', () => {
     const out = {} as Parameters<typeof initializeHost>[0];
-    const media = {};
-    initializeHost(out, { media });
+    const audio = {};
+    initializeHost(out, { audio });
 
-    expect(out.media).toBe(media);
+    expect(out.audio).toBe(audio);
     expect(
       Object.keys(out)
         .filter((key) => key !== String(EntityRuntimeKey))
@@ -65,29 +65,44 @@ describe('initializeHost', () => {
 const HOST_GROUPS = [
   'accessibility',
   'app',
+  'audio',
+  'bitmap',
   'clipboard',
   'connectivity',
+  'device',
   'dialog',
-  'graphics',
+  'fileSystem',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'haptics',
+  'image',
   'input',
   'ipc',
-  'media',
+  'lifecycle',
+  'mediaSession',
   'menu',
   'midi',
   'net',
   'notification',
+  'permissions',
+  'platform',
   'power',
+  'preferences',
   'protocol',
   'screen',
+  'sensors',
   'share',
   'shell',
   'shortcut',
-  'storage',
-  'system',
+  'softKeyboard',
+  'statusBar',
+  'surface',
   'text',
   'tray',
-  'ui',
   'updater',
+  'video',
+  'wgpu',
   'window',
 ] as const;
 

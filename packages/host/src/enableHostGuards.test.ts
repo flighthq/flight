@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 describe('enableHostGuards', () => {
-  it('warns once per commonly needed provider a host is missing', () => {
+  it('warns once per commonly needed capability a host is missing', () => {
     const entries = captureLog(() => enableHostGuards(createHost()));
 
     expect(entries.length).toBe(GUARDED_SLOTS.length);
@@ -24,21 +24,22 @@ describe('enableHostGuards', () => {
     expect(entries.map((entry) => slotOf(entry)).sort()).toEqual(GUARDED_SLOTS.slice().sort());
   });
 
-  it('stays silent about a provider the host actually carries', () => {
-    const entries = captureLog(() => enableHostGuards(hostWith({ media: { video: PROVIDER } })));
+  it('stays silent about a capability the host actually carries', () => {
+    const entries = captureLog(() => enableHostGuards(hostWith({ video: { playback: CAPABILITY } })));
 
-    expect(entries.map((entry) => slotOf(entry))).not.toContain('video');
+    expect(entries.map((entry) => slotOf(entry))).not.toContain('video.playback');
     expect(entries.length).toBe(GUARDED_SLOTS.length - 1);
   });
 
-  it('says nothing at all when every guarded provider is present', () => {
+  it('says nothing at all when every guarded capability is present', () => {
     const entries = captureLog(() =>
       enableHostGuards(
         hostWith({
-          graphics: { image: PROVIDER },
-          input: { ingress: PROVIDER },
-          media: { audioDevice: PROVIDER, audioMixer: PROVIDER, video: PROVIDER },
-          text: { segmenter: PROVIDER, shaper: PROVIDER },
+          audio: { device: CAPABILITY, mixer: CAPABILITY },
+          image: { loader: CAPABILITY },
+          input: { ingress: CAPABILITY },
+          text: { segmenter: CAPABILITY, shaper: CAPABILITY },
+          video: { playback: CAPABILITY },
         }),
       ),
     );
@@ -57,19 +58,28 @@ describe('enableHostGuards', () => {
 
   it('carries the remedy and its backends as structured data, not only as prose', () => {
     const entries = captureLog(() => enableHostGuards(createHost()));
-    const video = entries.find((entry) => slotOf(entry) === 'video');
+    const video = entries.find((entry) => slotOf(entry) === 'video.playback');
     const data = video?.data as Readonly<Record<string, unknown>>;
 
-    expect(data.group).toBe('media');
-    expect(data.provider).toBe('HostVideoProvider');
+    expect(data.group).toBe('video');
+    expect(data.provider).toBe('HostVideoCapability');
     expect(data.backends).toEqual(['webHost (@flighthq/host-web)']);
     expect(String(data.message)).toContain('getHostVideo');
   });
 });
 
-const PROVIDER = {};
+const CAPABILITY = {};
 
-const GUARDED_SLOTS = ['audioDevice', 'audioMixer', 'image', 'ingress', 'segmenter', 'shaper', 'video'];
+// Group-qualified, because slot names are scoped by their group and repeat across the flat structure.
+const GUARDED_SLOTS = [
+  'audio.device',
+  'audio.mixer',
+  'image.loader',
+  'input.ingress',
+  'text.segmenter',
+  'text.shaper',
+  'video.playback',
+];
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(32);
@@ -89,5 +99,6 @@ function hostWith(groups: Readonly<Record<string, Readonly<Record<string, unknow
 }
 
 function slotOf(entry: Readonly<LogEntry>): string {
-  return String((entry.data as Readonly<Record<string, unknown>>).slot);
+  const data = entry.data as Readonly<Record<string, unknown>>;
+  return `${String(data.group)}.${String(data.slot)}`;
 }
