@@ -1,63 +1,80 @@
-import type { HostWindowCapability } from './ApplicationWindow';
 import type {
   Host,
   HostAccessibilityCapabilities,
   HostAppCapabilities,
+  HostAudioCapabilities,
+  HostBitmapCapabilities,
   HostClipboardCapabilities,
   HostConnectivityCapabilities,
+  HostDeviceCapabilities,
   HostDialogCapabilities,
-  HostGraphicsCapabilities,
+  HostFileSystemCapabilities,
+  HostFullscreenCapabilities,
+  HostGeolocationCapabilities,
+  HostGlCapabilities,
+  HostHapticsCapabilities,
+  HostImageCapabilities,
   HostInputCapabilities,
-  HostMediaCapabilities,
+  HostLifecycleCapabilities,
+  HostMediaSessionCapabilities,
   HostMenuCapabilities,
   HostNetCapabilities,
   HostNotificationCapabilities,
+  HostPermissionsCapabilities,
+  HostPlatformCapabilities,
   HostPowerCapabilities,
+  HostPreferencesCapabilities,
   HostProtocolCapabilities,
   HostScreenCapabilities,
+  HostSensorsCapabilities,
   HostShareCapabilities,
   HostShellCapabilities,
-  HostStorageCapabilities,
-  HostSystemCapabilities,
+  HostSoftKeyboardCapabilities,
+  HostStatusBarCapabilities,
+  HostStoragePersistenceCapabilities,
+  HostSurfaceCapabilities,
   HostTextCapabilities,
-  HostUiCapabilities,
+  HostVideoCapabilities,
+  HostWindowCapabilities,
 } from './Host';
 
-// The Web host, stating the slots the browser backends actually fill. Web is not uniform like Electron
-// is per-OS: what the `webHost*` group consts supply is the shape of the browser platform, so naming it
-// here is what lets a caller — and the C++ emitter — see a named host type rather than an anonymous
-// structural row, and lets the compiler answer "what does this host have?" instead of "possibly
-// undefined". Slots web does NOT fill are dropped rather than left optional: absence IS the signal
-// (see the Host group contracts — omission is capability absence, never a stub answering false).
-//
-// Groups web creates but fills no slot of (ipc, midi, shortcut, tray, updater) keep the Host group's
-// all-optional type, because "present and empty" and "absent" are the same fact to a consumer.
-//
-// Kept honest both ways by `webHost`'s `satisfies` in @flighthq/host-web: a slot listed here that no
-// group fills fails to typecheck, and so does a filled slot missing here. Add a web capability by
-// editing the group const and this type together.
 export type WebHost = Omit<
   Host,
   | 'accessibility'
   | 'app'
+  | 'audio'
+  | 'bitmap'
   | 'clipboard'
   | 'connectivity'
+  | 'device'
   | 'dialog'
-  | 'graphics'
+  | 'fileSystem'
+  | 'fullscreen'
+  | 'geolocation'
+  | 'gl'
+  | 'haptics'
+  | 'image'
   | 'input'
-  | 'media'
+  | 'lifecycle'
+  | 'mediaSession'
   | 'menu'
   | 'net'
   | 'notification'
+  | 'permissions'
+  | 'platform'
   | 'power'
+  | 'preferences'
   | 'protocol'
   | 'screen'
+  | 'sensors'
   | 'share'
   | 'shell'
-  | 'storage'
-  | 'system'
+  | 'softKeyboard'
+  | 'statusBar'
+  | 'storagePersistence'
+  | 'surface'
   | 'text'
-  | 'ui'
+  | 'video'
   | 'window'
 > & {
   readonly accessibility: Required<Pick<HostAccessibilityCapabilities, 'provider'>>;
@@ -67,89 +84,43 @@ export type WebHost = Omit<
       'badge' | 'exit' | 'focus' | 'locale' | 'loop' | 'name' | 'quit' | 'ready' | 'relaunch' | 'visibility'
     >
   >;
+  readonly audio: Required<Pick<HostAudioCapabilities, 'codec' | 'device' | 'mixer'>>;
+  readonly bitmap: Required<Pick<HostBitmapCapabilities, 'encode' | 'readback'>>;
   readonly clipboard: Required<Pick<HostClipboardCapabilities, 'change' | 'formats' | 'image' | 'text'>>;
   readonly connectivity: Required<Pick<HostConnectivityCapabilities, 'change' | 'reachability' | 'status'>>;
+  readonly device: Required<Pick<HostDeviceCapabilities, 'info'>>;
   readonly dialog: Required<
     Pick<
       HostDialogCapabilities,
       'directoryOpen' | 'fileOpen' | 'fileSave' | 'imageOpen' | 'message' | 'photoCapture' | 'prompt' | 'videoCapture'
     >
   >;
-  readonly graphics: Required<
-    Pick<HostGraphicsCapabilities, 'bitmapEncode' | 'bitmapReadback' | 'image' | 'renderContext' | 'renderSurface'>
-  >;
-  readonly input: Required<
-    Pick<
-      HostInputCapabilities,
-      | 'dropFile'
-      | 'focus'
-      | 'haptics'
-      | 'ingress'
-      | 'pointerLock'
-      | 'softKeyboardChange'
-      | 'softKeyboardInfo'
-      | 'softKeyboardVisibility'
-      | 'target'
-    >
-  >;
-  readonly media: Required<
-    Pick<HostMediaCapabilities, 'audioCodec' | 'audioDevice' | 'audioMixer' | 'session' | 'sessionAction' | 'video'>
-  >;
+  readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'provider'>>;
+  readonly fullscreen: Required<Pick<HostFullscreenCapabilities, 'provider'>>;
+  readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'provider'>>;
+  readonly gl: Required<Pick<HostGlCapabilities, 'context'>>;
+  readonly haptics: Required<Pick<HostHapticsCapabilities, 'provider'>>;
+  readonly image: Required<Pick<HostImageCapabilities, 'decode'>>;
+  readonly input: Required<Pick<HostInputCapabilities, 'dropFile' | 'focus' | 'ingress' | 'pointerLock' | 'target'>>;
+  readonly lifecycle: Required<Pick<HostLifecycleCapabilities, 'provider'>>;
+  readonly mediaSession: Required<Pick<HostMediaSessionCapabilities, 'action' | 'session'>>;
   readonly menu: Required<Pick<HostMenuCapabilities, 'highlight' | 'popup'>>;
   readonly net: Required<Pick<HostNetCapabilities, 'http' | 'socket'>>;
   readonly notification: Required<Pick<HostNotificationCapabilities, 'permission'>>;
+  readonly permissions: Required<Pick<HostPermissionsCapabilities, 'provider'>>;
+  readonly platform: Required<Pick<HostPlatformCapabilities, 'info'>>;
   readonly power: Required<Pick<HostPowerCapabilities, 'change' | 'keepAwake' | 'status' | 'suspension'>>;
+  readonly preferences: Required<Pick<HostPreferencesCapabilities, 'change' | 'local'>>;
   readonly protocol: Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
   readonly screen: Required<Pick<HostScreenCapabilities, 'change' | 'details' | 'permissionChange' | 'query'>>;
+  readonly sensors: Required<Pick<HostSensorsCapabilities, 'provider'>>;
   readonly share: Required<Pick<HostShareCapabilities, 'content' | 'files'>>;
   readonly shell: Required<Pick<HostShellCapabilities, 'external'>>;
-  readonly storage: Required<
-    Pick<HostStorageCapabilities, 'change' | 'fileSystem' | 'local' | 'persistenceQuery' | 'persistenceRequest'>
-  >;
-  readonly system: Required<
-    Pick<HostSystemCapabilities, 'device' | 'geolocation' | 'lifecycle' | 'permissions' | 'platform' | 'sensors'>
-  >;
+  readonly softKeyboard: Required<Pick<HostSoftKeyboardCapabilities, 'change' | 'info' | 'visibility'>>;
+  readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
+  readonly storagePersistence: Required<Pick<HostStoragePersistenceCapabilities, 'query' | 'request'>>;
+  readonly surface: Required<Pick<HostSurfaceCapabilities, 'resize'>>;
   readonly text: Required<Pick<HostTextCapabilities, 'fontLoading' | 'glyphRasterizer'>>;
-  readonly ui: Required<Pick<HostUiCapabilities, 'fullscreen' | 'statusBarColor'>>;
-  // A provider at group position, so the intersection keeps the members web leaves optional.
-  readonly window: HostWindowCapability &
-    Required<
-      Pick<
-        HostWindowCapability,
-        | 'attach'
-        | 'center'
-        | 'close'
-        | 'flashWindowFrame'
-        | 'focus'
-        | 'getBounds'
-        | 'hide'
-        | 'maximize'
-        | 'minimize'
-        | 'open'
-        | 'requestAttention'
-        | 'restore'
-        | 'setAlwaysOnTop'
-        | 'setContentProtection'
-        | 'setFullscreen'
-        | 'setHasShadow'
-        | 'setIcon'
-        | 'setMenuBarVisible'
-        | 'setMinimumSize'
-        | 'setMaximumSize'
-        | 'setOpacity'
-        | 'setParent'
-        | 'setPosition'
-        | 'setProgress'
-        | 'setResizable'
-        | 'setSize'
-        | 'setSkipTaskbar'
-        | 'setTitle'
-        | 'show'
-        | 'subscribeClose'
-        | 'subscribeMove'
-        | 'subscribeOrientation'
-        | 'subscribeResize'
-        | 'subscribeVisibility'
-      >
-    >;
+  readonly video: Required<Pick<HostVideoCapabilities, 'provider'>>;
+  readonly window: Required<HostWindowCapabilities>;
 };

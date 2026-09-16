@@ -27,13 +27,28 @@ import type {
 } from './App';
 import type { HostApplicationExitCapability } from './ApplicationExitBackend';
 import type { HostApplicationVisibilityCapability } from './ApplicationVisibilityBackend';
-import type { HostWindowCapability } from './ApplicationWindow';
 import type {
+  HostWindowAttachCapability,
+  HostWindowAttentionCapability,
+  HostWindowBoundsCapability,
+  HostWindowChromeCapability,
+  HostWindowConfigCapability,
+  HostWindowEventsCapability,
+  HostWindowFocusCapability,
+  HostWindowFullscreenCapability,
+  HostWindowLifecycleCapability,
+  HostWindowParentCapability,
+  HostWindowSizeConstraintsCapability,
+  HostWindowStateCapability,
+  HostWindowTitleCapability,
+  HostWindowVisibilityCapability,
+} from './ApplicationWindow';
+import type {
+  HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-  HostRenderContextCapability,
-  HostRenderSurfaceCapability,
+  HostSurfaceCapability,
 } from './ApplicationWindowTargetBackend';
 import type { HostAudioCapability } from './AudioBackend';
 import type { HostAudioDeviceCapability } from './AudioDeviceBackend';
@@ -61,7 +76,7 @@ import type {
 } from './FileDialogBackend';
 import type { HostFileSystemCapability } from './FileSystem';
 import type { HostFontLoadingCapability } from './FontLoadingBackend';
-import type { HostFullscreenCapability } from './FullscreenBackend';
+import type { HostElementFullscreenCapability, HostFullscreenCapability } from './FullscreenBackend';
 import type { HostGeolocationCapability } from './Geolocation';
 import type { HostGlyphRasterizerCapability } from './GlyphSource';
 import type { HostHapticsCapability } from './Haptics';
@@ -160,7 +175,7 @@ import type {
   HostStatusBarVisibilityCapability,
 } from './StatusBar';
 import type {
-  HostStorageCapability,
+  HostPreferencesCapability,
   HostStorageChangeCapability,
   HostStoragePersistenceQueryCapability,
   HostStoragePersistenceRequestCapability,
@@ -192,30 +207,46 @@ import type { HostWgpuCapability } from './WgpuHost';
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
   readonly app: HostAppCapabilities;
+  readonly audio: HostAudioCapabilities;
+  readonly bitmap: HostBitmapCapabilities;
   readonly clipboard: HostClipboardCapabilities;
   readonly connectivity: HostConnectivityCapabilities;
+  readonly device: HostDeviceCapabilities;
   readonly dialog: HostDialogCapabilities;
-  readonly graphics: HostGraphicsCapabilities;
+  readonly fileSystem: HostFileSystemCapabilities;
+  readonly fullscreen: HostFullscreenCapabilities;
+  readonly geolocation: HostGeolocationCapabilities;
+  readonly gl: HostGlCapabilities;
+  readonly haptics: HostHapticsCapabilities;
+  readonly image: HostImageCapabilities;
   readonly input: HostInputCapabilities;
   readonly ipc: HostIpcCapabilities;
-  readonly media: HostMediaCapabilities;
+  readonly lifecycle: HostLifecycleCapabilities;
+  readonly mediaSession: HostMediaSessionCapabilities;
   readonly menu: HostMenuCapabilities;
   readonly midi: HostMidiCapabilities;
   readonly net: HostNetCapabilities;
-  readonly power: HostPowerCapabilities;
-  readonly protocol: HostProtocolCapabilities;
   readonly notification: HostNotificationCapabilities;
+  readonly permissions: HostPermissionsCapabilities;
+  readonly platform: HostPlatformCapabilities;
+  readonly power: HostPowerCapabilities;
+  readonly preferences: HostPreferencesCapabilities;
+  readonly protocol: HostProtocolCapabilities;
   readonly screen: HostScreenCapabilities;
+  readonly sensors: HostSensorsCapabilities;
   readonly share: HostShareCapabilities;
   readonly shell: HostShellCapabilities;
   readonly shortcut: HostShortcutCapabilities;
-  readonly storage: HostStorageCapabilities;
-  readonly system: HostSystemCapabilities;
+  readonly softKeyboard: HostSoftKeyboardCapabilities;
+  readonly statusBar: HostStatusBarCapabilities;
+  readonly storagePersistence: HostStoragePersistenceCapabilities;
+  readonly surface: HostSurfaceCapabilities;
   readonly text: HostTextCapabilities;
   readonly tray: HostTrayCapabilities;
-  readonly ui: HostUiCapabilities;
   readonly updater: HostUpdaterCapabilities;
-  readonly window: HostWindowCapability;
+  readonly video: HostVideoCapabilities;
+  readonly wgpu: HostWgpuCapabilities;
+  readonly window: HostWindowCapabilities;
 }
 
 export interface HostAccessibilityCapabilities {
@@ -252,13 +283,15 @@ export interface HostAppCapabilities {
   readonly visibility?: HostApplicationVisibilityCapability;
 }
 
-export interface HostProtocolCapabilities {
-  readonly default?: HostProtocolDefaultCapability;
-  readonly launch?: HostProtocolLaunchCapability;
-  readonly open?: HostProtocolOpenCapability;
-  readonly registration?: HostProtocolRegistrationCapability;
-  readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
-  readonly unregistration?: HostProtocolUnregistrationCapability;
+export interface HostAudioCapabilities {
+  readonly codec?: HostAudioCapability;
+  readonly device?: HostAudioDeviceCapability;
+  readonly mixer?: HostAudioMixerCapability;
+}
+
+export interface HostBitmapCapabilities {
+  readonly encode?: HostBitmapEncodeCapability;
+  readonly readback?: HostBitmapReadbackCapability;
 }
 
 export interface HostClipboardCapabilities {
@@ -268,10 +301,15 @@ export interface HostClipboardCapabilities {
   readonly image?: HostClipboardImageCapability;
   readonly text?: HostClipboardTextCapability;
 }
+
 export interface HostConnectivityCapabilities {
   readonly change?: HostConnectivityChangeCapability;
   readonly reachability?: HostConnectivityReachabilityCapability;
   readonly status?: HostConnectivityStatusCapability;
+}
+
+export interface HostDeviceCapabilities {
+  readonly info?: HostDeviceCapability;
 }
 
 export interface HostDialogCapabilities {
@@ -285,28 +323,36 @@ export interface HostDialogCapabilities {
   readonly videoCapture?: HostVideoCaptureDialogCapability;
 }
 
-export interface HostGraphicsCapabilities {
-  readonly bitmapEncode?: HostBitmapEncodeCapability;
-  readonly bitmapReadback?: HostBitmapReadbackCapability;
-  readonly image?: HostImageCapability;
-  readonly renderContext?: HostRenderContextCapability;
-  readonly renderSurface?: HostRenderSurfaceCapability;
-  readonly wgpuHost?: HostWgpuCapability;
+export interface HostFileSystemCapabilities {
+  readonly provider?: HostFileSystemCapability;
+}
+
+export interface HostFullscreenCapabilities {
+  readonly element?: HostElementFullscreenCapability;
+  readonly provider?: HostFullscreenCapability;
+}
+
+export interface HostGeolocationCapabilities {
+  readonly provider?: HostGeolocationCapability;
+}
+
+export interface HostGlCapabilities {
+  readonly context?: HostGlCapability;
+}
+
+export interface HostHapticsCapabilities {
+  readonly provider?: HostHapticsCapability;
+}
+
+export interface HostImageCapabilities {
+  readonly decode?: HostImageCapability;
 }
 
 export interface HostInputCapabilities {
   readonly dropFile?: HostInputDropFileCapability;
   readonly focus?: HostInputFocusCapability;
-  readonly haptics?: HostHapticsCapability;
   readonly ingress?: HostInputIngressCapability;
   readonly pointerLock?: HostInputPointerLockCapability;
-  readonly softKeyboardAccessoryBar?: HostSoftKeyboardAccessoryBarCapability;
-  readonly softKeyboardChange?: HostSoftKeyboardChangeCapability;
-  readonly softKeyboardInfo?: HostSoftKeyboardInfoCapability;
-  readonly softKeyboardResizeModeWrite?: HostSoftKeyboardResizeModeWriteCapability;
-  readonly softKeyboardScrollAssist?: HostSoftKeyboardScrollAssistCapability;
-  readonly softKeyboardStyle?: HostSoftKeyboardStyleCapability;
-  readonly softKeyboardVisibility?: HostSoftKeyboardVisibilityCapability;
   readonly target?: HostInputTargetCapability;
 }
 
@@ -318,19 +364,15 @@ export interface HostIpcCapabilities {
   readonly targetedSend?: HostIpcTargetedSendCapability;
 }
 
-export interface HostMediaCapabilities {
-  readonly audioCodec?: HostAudioCapability;
-  readonly audioDevice?: HostAudioDeviceCapability;
-  readonly audioMixer?: HostAudioMixerCapability;
-  readonly session?: HostMediaSessionCapability;
-  readonly sessionAction?: HostMediaSessionActionCapability;
-  readonly video?: HostVideoCapability;
+export interface HostLifecycleCapabilities {
+  readonly provider?: HostLifecycleCapability;
 }
 
-// Menu is a top-level group rather than a ui slot: its three capabilities have different provider
-// coverage AND incompatible shapes, so one combined provider could not represent them honestly. The group is
-// non-optional like every other; the slots inside it are optional, and an omitted slot means the host
-// genuinely lacks that capability — never a stub that answers false.
+export interface HostMediaSessionCapabilities {
+  readonly action?: HostMediaSessionActionCapability;
+  readonly session?: HostMediaSessionCapability;
+}
+
 export interface HostMenuCapabilities {
   readonly application?: HostMenuApplicationCapability;
   readonly highlight?: HostMenuHighlightCapability;
@@ -362,16 +404,14 @@ export interface HostNotificationCapabilities {
   readonly scheduling?: HostNotificationSchedulingCapability;
 }
 
-// Share is top-level because content and Flight data-URL files have different provider coverage.
-// Omission is capability absence; providers never install a stub that merely answers false.
-export interface HostShareCapabilities {
-  readonly content?: HostShareContentCapability;
-  readonly files?: HostShareFilesCapability;
+export interface HostPermissionsCapabilities {
+  readonly provider?: HostPermissionsCapability;
 }
 
-// Power is a top-level group: its capabilities vary independently by host (web has keep-awake and
-// suspend/resume but no idle, session lock or battery health; electron has all of them), so one
-// combined power provider could not represent any host honestly.
+export interface HostPlatformCapabilities {
+  readonly info?: HostPlatformCapability;
+}
+
 export interface HostPowerCapabilities {
   readonly batteryHealth?: HostPowerBatteryHealthCapability;
   readonly change?: HostPowerChangeCapability;
@@ -383,6 +423,20 @@ export interface HostPowerCapabilities {
   readonly thermal?: HostPowerThermalCapability;
 }
 
+export interface HostPreferencesCapabilities {
+  readonly change?: HostStorageChangeCapability;
+  readonly local?: HostPreferencesCapability;
+}
+
+export interface HostProtocolCapabilities {
+  readonly default?: HostProtocolDefaultCapability;
+  readonly launch?: HostProtocolLaunchCapability;
+  readonly open?: HostProtocolOpenCapability;
+  readonly registration?: HostProtocolRegistrationCapability;
+  readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
+  readonly unregistration?: HostProtocolUnregistrationCapability;
+}
+
 export interface HostScreenCapabilities {
   readonly change?: HostScreenChangeCapability;
   readonly details?: HostScreenDetailsCapability;
@@ -392,8 +446,15 @@ export interface HostScreenCapabilities {
 
 export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
 
-// Shell is top-level because its seven command capabilities have distinct provider coverage. Every
-// Host names the group; omitted slots mean genuine absence, never a false-returning stub.
+export interface HostSensorsCapabilities {
+  readonly provider?: HostSensorsCapability;
+}
+
+export interface HostShareCapabilities {
+  readonly content?: HostShareContentCapability;
+  readonly files?: HostShareFilesCapability;
+}
+
 export interface HostShellCapabilities {
   readonly beep?: HostShellBeepCapability;
   readonly external?: HostShellExternalCapability;
@@ -404,28 +465,37 @@ export interface HostShellCapabilities {
   readonly trash?: HostShellTrashCapability;
 }
 
-// Shortcut stays top-level because trigger is an event subscription and query is a command/result;
-// both happen to have E/T coverage, but combining their incompatible shapes would hide that split.
 export interface HostShortcutCapabilities {
   readonly query?: HostShortcutQueryCapability;
   readonly trigger?: HostShortcutTriggerCapability;
 }
 
-export interface HostStorageCapabilities {
-  readonly change?: HostStorageChangeCapability;
-  readonly fileSystem?: HostFileSystemCapability;
-  readonly local?: HostStorageCapability;
-  readonly persistenceQuery?: HostStoragePersistenceQueryCapability;
-  readonly persistenceRequest?: HostStoragePersistenceRequestCapability;
+export interface HostSoftKeyboardCapabilities {
+  readonly accessoryBar?: HostSoftKeyboardAccessoryBarCapability;
+  readonly change?: HostSoftKeyboardChangeCapability;
+  readonly info?: HostSoftKeyboardInfoCapability;
+  readonly resizeModeWrite?: HostSoftKeyboardResizeModeWriteCapability;
+  readonly scrollAssist?: HostSoftKeyboardScrollAssistCapability;
+  readonly style?: HostSoftKeyboardStyleCapability;
+  readonly visibility?: HostSoftKeyboardVisibilityCapability;
 }
 
-export interface HostSystemCapabilities {
-  readonly device?: HostDeviceCapability;
-  readonly geolocation?: HostGeolocationCapability;
-  readonly lifecycle?: HostLifecycleCapability;
-  readonly permissions?: HostPermissionsCapability;
-  readonly platform?: HostPlatformCapability;
-  readonly sensors?: HostSensorsCapability;
+export interface HostStatusBarCapabilities {
+  readonly change?: HostStatusBarChangeCapability;
+  readonly color?: HostStatusBarColorCapability;
+  readonly info?: HostStatusBarInfoCapability;
+  readonly overlays?: HostStatusBarOverlaysCapability;
+  readonly style?: HostStatusBarStyleCapability;
+  readonly visibility?: HostStatusBarVisibilityCapability;
+}
+
+export interface HostStoragePersistenceCapabilities {
+  readonly query?: HostStoragePersistenceQueryCapability;
+  readonly request?: HostStoragePersistenceRequestCapability;
+}
+
+export interface HostSurfaceCapabilities {
+  readonly resize?: HostSurfaceCapability;
 }
 
 export interface HostTextCapabilities {
@@ -435,8 +505,6 @@ export interface HostTextCapabilities {
   readonly shaper?: HostTextShaperCapability;
 }
 
-// Tray is top-level because command, query, and event coverage varies independently by native OS
-// profile. The required group is stable; omitted slots mean genuine absence.
 export interface HostTrayCapabilities {
   readonly balloon?: HostTrayBalloonCapability;
   readonly balloonEvents?: HostTrayBalloonEventsCapability;
@@ -455,16 +523,31 @@ export interface HostTrayCapabilities {
   readonly tooltip?: HostTrayTooltipCapability;
 }
 
-export interface HostUiCapabilities {
-  readonly fullscreen?: HostFullscreenCapability;
-  readonly statusBarChange?: HostStatusBarChangeCapability;
-  readonly statusBarColor?: HostStatusBarColorCapability;
-  readonly statusBarInfo?: HostStatusBarInfoCapability;
-  readonly statusBarOverlays?: HostStatusBarOverlaysCapability;
-  readonly statusBarStyle?: HostStatusBarStyleCapability;
-  readonly statusBarVisibility?: HostStatusBarVisibilityCapability;
-}
-
 export interface HostUpdaterCapabilities {
   readonly command?: HostUpdaterCommandCapability;
+}
+
+export interface HostVideoCapabilities {
+  readonly provider?: HostVideoCapability;
+}
+
+export interface HostWgpuCapabilities {
+  readonly provider?: HostWgpuCapability;
+}
+
+export interface HostWindowCapabilities {
+  readonly attach?: HostWindowAttachCapability;
+  readonly attention?: HostWindowAttentionCapability;
+  readonly bounds?: HostWindowBoundsCapability;
+  readonly chrome?: HostWindowChromeCapability;
+  readonly config?: HostWindowConfigCapability;
+  readonly events?: HostWindowEventsCapability;
+  readonly focus?: HostWindowFocusCapability;
+  readonly fullscreen?: HostWindowFullscreenCapability;
+  readonly lifecycle?: HostWindowLifecycleCapability;
+  readonly parent?: HostWindowParentCapability;
+  readonly sizeConstraints?: HostWindowSizeConstraintsCapability;
+  readonly state?: HostWindowStateCapability;
+  readonly title?: HostWindowTitleCapability;
+  readonly visibility?: HostWindowVisibilityCapability;
 }

@@ -32,13 +32,10 @@ export interface HostInputPointerLockCapability extends Entity {
   request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
 }
 
-// Render-context loss/restoration is emitted by the host surface, so it is a Host event slot under R18.
-export interface HostRenderContextCapability extends Entity {
+export interface HostGlCapability extends Entity {
   subscribe(target: InputTargetHandle, onLost: () => void, onRestored: () => void): () => void;
 }
 
-// Backing-store sizing is a command. The core ApplicationWindow.onResize signal remains core-owned; an
-// attached render state reacts to it and asks this provider to size its opaque surface target.
-export interface HostRenderSurfaceCapability extends Entity {
+export interface HostSurfaceCapability extends Entity {
   resize(target: InputTargetHandle, width: number, height: number): void;
 }

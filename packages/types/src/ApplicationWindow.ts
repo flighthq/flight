@@ -94,70 +94,81 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
 export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
 
-// Control seam for windowing: the provider that window command functions call directly. The Web
-// provider covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
-// a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Operations whose
-// absence is a safe command no-op are optional, so a host declares support by providing the method rather
-// than by publishing a false implementation. Every method takes the target window so the seam supports
-// multiple windows.
-export interface HostWindowCapability extends Entity {
-  // Attaches an existing native window. Optional because absence is the structural declaration that a
-  // provider cannot adopt host-created windows. A provider passed to attachWindow must also provide close,
-  // which owns the resulting release obligation.
-  attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
-  // A host passed to openWindow must also provide close. Successful opens follow the canonical
-  // origin-pinned doctrine in agents/backend-lifecycle-ownership.md; an unsuccessful open returns false.
-  open?(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
-  // Releases one entity-keyed window attachment. Implementations must be idempotent: delete their native
-  // identity record and remove the exact listeners installed for that record before requesting native
-  // destruction. A host-owned record is detached only; a Flight-owned record also closes/destroys its
-  // native handle, at most once.
-  close?(win: ApplicationWindow): void;
-  setTitle?(win: ApplicationWindow, title: string): void;
-  setPosition?(win: ApplicationWindow, x: number, y: number): void;
-  setSize?(win: ApplicationWindow, width: number, height: number): void;
-  getBounds?(win: ApplicationWindow, out: WindowBounds): WindowBounds;
-  minimize?(win: ApplicationWindow): void;
-  maximize?(win: ApplicationWindow): void;
-  restore?(win: ApplicationWindow): void;
-  focus?(win: ApplicationWindow): void;
-  show?(win: ApplicationWindow): void;
-  hide?(win: ApplicationWindow): void;
+export interface HostWindowAttachCapability extends Entity {
+  attach(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
+}
+
+export interface HostWindowAttentionCapability extends Entity {
+  flashWindowFrame?(win: ApplicationWindow): void;
+  requestAttention(win: ApplicationWindow, attention: boolean): void;
+  setProgress?(win: ApplicationWindow, progress: number): void;
+}
+
+export interface HostWindowBoundsCapability extends Entity {
   center?(win: ApplicationWindow): void;
-  setResizable?(win: ApplicationWindow, resizable: boolean): void;
-  setAlwaysOnTop?(win: ApplicationWindow, alwaysOnTop: boolean): void;
-  setMinimumSize?(win: ApplicationWindow, width: number, height: number): void;
-  setMaximumSize?(win: ApplicationWindow, width: number, height: number): void;
-  setFullscreen?(win: ApplicationWindow, fullscreen: boolean): void;
+  getBounds(win: ApplicationWindow, out: WindowBounds): WindowBounds;
+  setPosition(win: ApplicationWindow, x: number, y: number): void;
+  setSize(win: ApplicationWindow, width: number, height: number): void;
+}
+
+export interface HostWindowChromeCapability extends Entity {
+  setContentProtection?(win: ApplicationWindow, enabled: boolean): void;
+  setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
   setIcon?(win: ApplicationWindow, icon: string): void;
+  setMenuBarVisible?(win: ApplicationWindow, visible: boolean): void;
   setOpacity?(win: ApplicationWindow, opacity: number): void;
   setSkipTaskbar?(win: ApplicationWindow, skip: boolean): void;
-  setMenuBarVisible?(win: ApplicationWindow, visible: boolean): void;
-  setParent?(win: ApplicationWindow, parent: ApplicationWindow | null): void;
-  // Taskbar/dock progress in [0, 1]; a negative value clears the indicator.
-  setProgress?(win: ApplicationWindow, progress: number): void;
-  // Flashes the taskbar entry / bounces the dock to draw attention; false stops it.
-  requestAttention?(win: ApplicationWindow, attention: boolean): void;
-  // Prevents (true) or allows (false) the window contents from being captured in screenshots or
-  // screen sharing. Web omits it; native hosts implement it (e.g. Electron setContentProtection).
-  setContentProtection?(win: ApplicationWindow, enabled: boolean): void;
-  // Briefly flashes the window frame to attract attention. Web omits it; native hosts implement it.
-  flashWindowFrame?(win: ApplicationWindow): void;
-  // Shows or hides the native drop shadow around the window. macOS / native only; web omits it.
-  setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
-  // Registers the host's close-request and terminal-close sources. onCloseRequest returns true when
-  // the request was cancelled. The returned function removes exactly this subscription.
+}
+
+export interface HostWindowConfigCapability extends Entity {
+  setAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void;
+  setResizable(win: ApplicationWindow, resizable: boolean): void;
+}
+
+export interface HostWindowEventsCapability extends Entity {
   subscribeClose?(onCloseRequest: () => boolean, onClose: () => void): () => void;
-  // Registers host-originated movement and reports the new logical screen coordinates.
   subscribeMove?(listener: (x: number, y: number) => void): () => void;
-  // Registers a host-originated orientation change notification.
   subscribeOrientation?(listener: () => void): () => void;
-  // Registers content-box changes for a provider-bound target and reports logical dimensions plus
-  // the device-pixel ratio used to size the backing store.
   subscribeResize?(
     target: WindowResizeTargetHandle,
     listener: (width: number, height: number, devicePixelRatio: number) => void,
   ): () => void;
-  // Registers activation visibility changes; true means active/visible.
   subscribeVisibility?(listener: (visible: boolean) => void): () => void;
+}
+
+export interface HostWindowFocusCapability extends Entity {
+  focus(win: ApplicationWindow): void;
+}
+
+export interface HostWindowFullscreenCapability extends Entity {
+  setFullscreen(win: ApplicationWindow, fullscreen: boolean): void;
+}
+
+export interface HostWindowLifecycleCapability extends Entity {
+  close(win: ApplicationWindow): void;
+  open(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
+}
+
+export interface HostWindowParentCapability extends Entity {
+  setParent(win: ApplicationWindow, parent: ApplicationWindow | null): void;
+}
+
+export interface HostWindowSizeConstraintsCapability extends Entity {
+  setMaximumSize(win: ApplicationWindow, width: number, height: number): void;
+  setMinimumSize(win: ApplicationWindow, width: number, height: number): void;
+}
+
+export interface HostWindowStateCapability extends Entity {
+  maximize(win: ApplicationWindow): void;
+  minimize(win: ApplicationWindow): void;
+  restore(win: ApplicationWindow): void;
+}
+
+export interface HostWindowTitleCapability extends Entity {
+  setTitle(win: ApplicationWindow, title: string): void;
+}
+
+export interface HostWindowVisibilityCapability extends Entity {
+  hide(win: ApplicationWindow): void;
+  show(win: ApplicationWindow): void;
 }

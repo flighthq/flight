@@ -122,7 +122,7 @@ export type StorageSetItemsResult = StorageBatchMutationResult<StorageSetItemFai
 
 // Key/value persistence commands. Absence is a successful getItem result whose value is null; callers
 // inspect reason rather than guessing whether a sentinel came from missing data or provider failure.
-export interface HostStorageCapability extends Entity {
+export interface HostPreferencesCapability extends Entity {
   clear(): StorageClearResult;
   getItem(key: string): StorageGetItemResult;
   keys(): StorageKeysResult;
