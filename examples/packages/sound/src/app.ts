@@ -1,4 +1,4 @@
-import { createWebCursorBackend, webHostAudioDevice, webHostAudioMixer } from '@flighthq/host-web';
+import { createWebCursorBackend, webHostAudioDevice, webHostAudioMixer, webHostInputIngress } from '@flighthq/host-web';
 import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -87,7 +87,7 @@ const interactionManager = createInteractionManager(root, {
   cursorBackend: createWebCursorBackend(canvasElement),
 });
 const inputManager = createInputManager();
-attachPointerInput(inputManager, canvasElement);
+attachPointerInput(webHostInputIngress, inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
 // Audio mixer with two buses: sfx and music. The Web host resolves the opaque device, graph, source,

@@ -4,6 +4,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { registerDeflateDecompressor } from '@flighthq/compression';
 import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
+import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean';
 import {
   createScene2DFromLottieDocument,
   createScene2DFromRiveDocument,
@@ -283,7 +284,11 @@ async function runParticleConfig(input: Readonly<ConformanceFixtureInput>): Prom
 
 async function runRive(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
-  createScene2DFromRiveDocument(new Uint8Array(await readFile(input.absolutePath)), diagnostics);
+  createScene2DFromRiveDocument(
+    createDefaultPathBooleanBackend(),
+    new Uint8Array(await readFile(input.absolutePath)),
+    diagnostics,
+  );
   return observation(diagnostics);
 }
 

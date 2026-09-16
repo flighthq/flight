@@ -1,4 +1,4 @@
-import { createWebCursorBackend } from '@flighthq/host-web';
+import { createWebCursorBackend, webHostInputIngress } from '@flighthq/host-web';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -57,7 +57,7 @@ const inputManager = createInputManager();
 // Pinning the canvas to the viewport origin removes the browser's default 8px body offset before
 // coordScale maps logical pointer positions into the high-DPI scene.
 document.body.style.margin = '0';
-attachPointerInput(inputManager, canvasElement);
+attachPointerInput(webHostInputIngress, inputManager, canvasElement);
 connectInputToInteraction(inputManager, manager, scale);
 
 // Shape definitions: six draggable colored shapes at different positions.
