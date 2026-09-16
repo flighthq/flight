@@ -5,19 +5,19 @@ import type {
   AudioMixerGraphHandle,
   AudioSourceHandle,
   EntityConstruction,
-  HostAudioDeviceProvider,
-  HostAudioMixerProvider,
+  HostAudioDeviceCapability,
+  HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
 import { webHostAudioDevice } from './webAudioDevice';
 
-export function createWebAudioMixerBackend(): HostAudioMixerProvider {
-  const out = allocateEntity<HostAudioMixerProvider>();
+export function createWebAudioMixerBackend(): HostAudioMixerCapability {
+  const out = allocateEntity<HostAudioMixerCapability>();
   initializeWebAudioMixerBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudioMixerProvider>): void {
+export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudioMixerCapability>): void {
   let nextHandle = 1;
   const graphs = new Map<number, WebAudioMixerGraph>();
   const buses = new Map<number, WebAudioBusNode>();
@@ -119,7 +119,7 @@ export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudio
   };
 }
 
-export const webHostAudioMixer: HostAudioMixerProvider = createWebAudioMixerBackend();
+export const webHostAudioMixer: HostAudioMixerCapability = createWebAudioMixerBackend();
 
 interface WebAudioBusNode {
   gainNode: GainNode;
@@ -127,7 +127,7 @@ interface WebAudioBusNode {
   outputNode: StereoPannerNode | null;
 }
 
-interface WebAudioDeviceMixerAccess extends HostAudioDeviceProvider {
+interface WebAudioDeviceMixerAccess extends HostAudioDeviceCapability {
   getDeviceAudioContext(device: AudioDeviceHandle): AudioContext | null;
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
@@ -169,17 +169,17 @@ function getBus(
 }
 
 function getDeviceAudioContext(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
   device: AudioDeviceHandle,
 ): AudioContext | null {
   return hasMixerAccess(backend) ? backend.getDeviceAudioContext(device) : null;
 }
 
-function getSourceGainNode(backend: Readonly<HostAudioDeviceProvider>, source: AudioSourceHandle): GainNode | null {
+function getSourceGainNode(backend: Readonly<HostAudioDeviceCapability>, source: AudioSourceHandle): GainNode | null {
   return hasMixerAccess(backend) ? backend.getSourceGainNode(source) : null;
 }
 
-function hasMixerAccess(backend: Readonly<HostAudioDeviceProvider>): backend is WebAudioDeviceMixerAccess {
+function hasMixerAccess(backend: Readonly<HostAudioDeviceCapability>): backend is WebAudioDeviceMixerAccess {
   return 'getDeviceAudioContext' in backend && 'getSourceGainNode' in backend;
 }
 

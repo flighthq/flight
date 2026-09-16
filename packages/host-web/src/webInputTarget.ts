@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostInputDropFileProvider,
-  HostInputFocusProvider,
-  HostInputPointerLockProvider,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostInputTargetProvider,
+  HostInputTargetCapability,
   InputTargetHandle,
-  HostRenderContextProvider,
-  HostRenderSurfaceProvider,
+  HostGlCapability,
+  HostSurfaceCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -17,7 +17,7 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
 }
 
 export const webHostInputDropFile = (() => {
-  const out = allocateEntity<HostInputDropFileProvider>();
+  const out = allocateEntity<HostInputDropFileCapability>();
   out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -37,7 +37,7 @@ export const webHostInputDropFile = (() => {
 })();
 
 export const webHostInputFocus = (() => {
-  const out = allocateEntity<HostInputFocusProvider>();
+  const out = allocateEntity<HostInputFocusCapability>();
   out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -52,7 +52,7 @@ export const webHostInputFocus = (() => {
 })();
 
 export const webHostInputPointerLock = (() => {
-  const out = allocateEntity<HostInputPointerLockProvider>();
+  const out = allocateEntity<HostInputPointerLockCapability>();
   out.exit = () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
@@ -95,7 +95,7 @@ export const webHostInputPointerLock = (() => {
 })();
 
 export const webHostInputTarget = (() => {
-  const out = allocateEntity<HostInputTargetProvider>();
+  const out = allocateEntity<HostInputTargetCapability>();
   out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
@@ -108,8 +108,8 @@ export const webHostInputTarget = (() => {
   return finishEntity(out);
 })();
 
-export const webHostRenderContext = (() => {
-  const out = allocateEntity<HostRenderContextProvider>();
+export const webHostGl = (() => {
+  const out = allocateEntity<HostGlCapability>();
   out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
@@ -129,8 +129,8 @@ export const webHostRenderContext = (() => {
   return finishEntity(out);
 })();
 
-export const webHostRenderSurface = (() => {
-  const out = allocateEntity<HostRenderSurfaceProvider>();
+export const webHostSurface = (() => {
+  const out = allocateEntity<HostSurfaceCapability>();
   out.resize = (target: InputTargetHandle, width: number, height: number) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {

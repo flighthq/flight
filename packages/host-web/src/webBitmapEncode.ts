@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostBitmapEncodeProvider, Entity, EntityConstruction } from '@flighthq/types/contract';
+import type { HostBitmapEncodeCapability, Entity, EntityConstruction } from '@flighthq/types/contract';
 
-export function createWebBitmapEncodeBackend(): HostBitmapEncodeProvider & Entity {
-  const out = allocateEntity<HostBitmapEncodeProvider & Entity>();
+export function createWebBitmapEncodeBackend(): HostBitmapEncodeCapability & Entity {
+  const out = allocateEntity<HostBitmapEncodeCapability & Entity>();
   initializeWebBitmapEncodeBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebBitmapEncodeBackend(out: EntityConstruction<HostBitmapEncodeProvider & Entity>): void {
+export function initializeWebBitmapEncodeBackend(out: EntityConstruction<HostBitmapEncodeCapability & Entity>): void {
   out.encodeBitmap = (source, format, quality): Uint8Array => {
     const canvas = document.createElement('canvas');
     canvas.width = source.width;
@@ -26,4 +26,4 @@ export function initializeWebBitmapEncodeBackend(out: EntityConstruction<HostBit
   out.supportedFormats = ['jpeg', 'png'];
 }
 
-export const webHostBitmapEncode: HostBitmapEncodeProvider & Entity = createWebBitmapEncodeBackend();
+export const webHostBitmapEncode: HostBitmapEncodeCapability & Entity = createWebBitmapEncodeBackend();

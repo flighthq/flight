@@ -1,7 +1,7 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { EntityWithoutRuntime, HostInputPointerLockProvider } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, HostInputPointerLockCapability } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
 import {
@@ -12,8 +12,8 @@ import {
   webHostInputFocus,
   webHostInputPointerLock,
   webHostInputTarget,
-  webHostRenderContext,
-  webHostRenderSurface,
+  webHostGl,
+  webHostSurface,
 } from './webInputTarget';
 
 afterEach(() => {
@@ -60,6 +60,33 @@ describe('resetWebInputTargetBackendForTest', () => {
     resetWebInputTargetBackendForTest();
     element.dispatchEvent(new Event('focus'));
 
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe('webHostGl', () => {
+  it('forwards context loss/restoration and removes the exact canvas listeners', () => {
+    const canvas = document.createElement('canvas');
+    const onLost = vi.fn();
+    const onRestored = vi.fn();
+    const release = webHostGl.subscribe(createWebInputTargetHandle(canvas), onLost, onRestored);
+    const lost = new Event('webglcontextlost', { cancelable: true });
+
+    canvas.dispatchEvent(lost);
+    canvas.dispatchEvent(new Event('webglcontextrestored'));
+    release();
+    canvas.dispatchEvent(new Event('webglcontextrestored'));
+
+    expect(lost.defaultPrevented).toBe(true);
+    expect(onLost).toHaveBeenCalledOnce();
+    expect(onRestored).toHaveBeenCalledOnce();
+  });
+
+  it('truthfully leaves a non-canvas target inert', () => {
+    const listener = vi.fn();
+    const release = webHostGl.subscribe(createWebInputTargetHandle(document.createElement('div')), listener, listener);
+
+    expect(release).toBeTypeOf('function');
     expect(listener).not.toHaveBeenCalled();
   });
 });
@@ -112,7 +139,7 @@ describe('webHostInputPointerLock', () => {
       out.request = async () => ({ reason: 'ok' });
       return finishEntity(out);
     })();
-    const fallbackHost: { readonly input: { readonly pointerLock: HostInputPointerLockProvider } } = {
+    const fallbackHost: { readonly input: { readonly pointerLock: HostInputPointerLockCapability } } = {
       input: { pointerLock: fallbackBackend },
     };
     resetWebInputTargetBackendForTest();
@@ -377,61 +404,24 @@ describe('webHostInputTarget', () => {
   });
 
   it('keeps command and event slots separate while every provider remains an Entity', () => {
-    const providers = [
-      webHostInputDropFile,
-      webHostInputFocus,
-      webHostInputPointerLock,
-      webHostRenderContext,
-      webHostRenderSurface,
-    ];
+    const providers = [webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostGl, webHostSurface];
 
     expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
     expect(webHost.input.dropFile).toBe(webHostInputDropFile);
     expect(webHost.input.focus).toBe(webHostInputFocus);
     expect(webHost.input.pointerLock).toBe(webHostInputPointerLock);
-    expect(webHost.graphics.renderContext).toBe(webHostRenderContext);
-    expect(webHost.graphics.renderSurface).toBe(webHostRenderSurface);
+    expect(webHost.graphics.renderContext).toBe(webHostGl);
+    expect(webHost.graphics.renderSurface).toBe(webHostSurface);
     expect(new Set(providers).size).toBe(5);
   });
 });
-
-describe('webHostRenderContext', () => {
-  it('forwards context loss/restoration and removes the exact canvas listeners', () => {
-    const canvas = document.createElement('canvas');
-    const onLost = vi.fn();
-    const onRestored = vi.fn();
-    const release = webHostRenderContext.subscribe(createWebInputTargetHandle(canvas), onLost, onRestored);
-    const lost = new Event('webglcontextlost', { cancelable: true });
-
-    canvas.dispatchEvent(lost);
-    canvas.dispatchEvent(new Event('webglcontextrestored'));
-    release();
-    canvas.dispatchEvent(new Event('webglcontextrestored'));
-
-    expect(lost.defaultPrevented).toBe(true);
-    expect(onLost).toHaveBeenCalledOnce();
-    expect(onRestored).toHaveBeenCalledOnce();
-  });
-
-  it('truthfully leaves a non-canvas target inert', () => {
-    const listener = vi.fn();
-    const release = webHostRenderContext.subscribe(
-      createWebInputTargetHandle(document.createElement('div')),
-      listener,
-      listener,
-    );
-
-    expect(release).toBeTypeOf('function');
-    expect(listener).not.toHaveBeenCalled();
-  });
-});
-describe('webHostRenderSurface', () => {
+describe('webHostSurface', () => {
   it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
     const canvas = document.createElement('canvas');
     const div = document.createElement('div');
 
-    webHostRenderSurface.resize(createWebInputTargetHandle(canvas), 640, 480);
-    webHostRenderSurface.resize(createWebInputTargetHandle(div), 1, 1);
+    webHostSurface.resize(createWebInputTargetHandle(canvas), 640, 480);
+    webHostSurface.resize(createWebInputTargetHandle(div), 1, 1);
 
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(480);

@@ -1,18 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostClipboardChangeProvider,
-  HostClipboardFormatsProvider,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
 } from '@flighthq/types/contract';
 import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
-type WebClipboardChangeProvider = HostClipboardChangeProvider &
-  Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>;
-type WebClipboardBackend = HostClipboardFormatsProvider &
-  HostClipboardImageProvider &
-  HostClipboardTextProvider &
+type WebClipboardChangeProvider = HostClipboardChangeCapability &
+  Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>;
+type WebClipboardBackend = HostClipboardFormatsCapability &
+  HostClipboardImageCapability &
+  HostClipboardTextCapability &
   WebClipboardChangeProvider;
 
 export function initializeWebClipboardBackend(out: EntityConstruction<WebClipboardBackend>): void {
@@ -33,20 +33,20 @@ function createWebClipboardChangeProvider(): WebClipboardChangeProvider {
   return finishEntity(out);
 }
 
-function createWebClipboardFormatsProvider(): HostClipboardFormatsProvider {
-  const out = allocateEntity<HostClipboardFormatsProvider>();
+function createWebClipboardFormatsProvider(): HostClipboardFormatsCapability {
+  const out = allocateEntity<HostClipboardFormatsCapability>();
   initializeWebClipboardFormatsBackend(out);
   return finishEntity(out);
 }
 
-function createWebClipboardImageProvider(): HostClipboardImageProvider {
-  const out = allocateEntity<HostClipboardImageProvider>();
+function createWebClipboardImageProvider(): HostClipboardImageCapability {
+  const out = allocateEntity<HostClipboardImageCapability>();
   initializeWebClipboardImageBackend(out);
   return finishEntity(out);
 }
 
-function createWebClipboardTextProvider(): HostClipboardTextProvider {
-  const out = allocateEntity<HostClipboardTextProvider>();
+function createWebClipboardTextProvider(): HostClipboardTextCapability {
+  const out = allocateEntity<HostClipboardTextCapability>();
   initializeWebClipboardTextProvider(out);
   return finishEntity(out);
 }
@@ -64,7 +64,7 @@ function initializeWebClipboardChangeProvider(out: EntityConstruction<WebClipboa
   };
 }
 
-function initializeWebClipboardFormatsBackend(out: EntityConstruction<HostClipboardFormatsProvider>): void {
+function initializeWebClipboardFormatsBackend(out: EntityConstruction<HostClipboardFormatsCapability>): void {
   async function blobFromFormatData(format: string, data: string): Promise<Blob> {
     if (format.startsWith('image/') && data.startsWith('data:')) {
       const response = await fetch(data);
@@ -110,7 +110,7 @@ function initializeWebClipboardFormatsBackend(out: EntityConstruction<HostClipbo
   out.writeRTF = (rtf: string) => writeFormat(ClipboardFormatRtf, rtf);
 }
 
-function initializeWebClipboardImageBackend(out: EntityConstruction<HostClipboardImageProvider>): void {
+function initializeWebClipboardImageBackend(out: EntityConstruction<HostClipboardImageCapability>): void {
   out.hasImage = async () => (await readWebClipboardImage()).length > 0;
   out.readImage = readWebClipboardImage;
   out.writeImage = async (dataUrl: string): Promise<boolean> => {
@@ -127,7 +127,7 @@ function initializeWebClipboardImageBackend(out: EntityConstruction<HostClipboar
   };
 }
 
-function initializeWebClipboardTextProvider(out: EntityConstruction<HostClipboardTextProvider>): void {
+function initializeWebClipboardTextProvider(out: EntityConstruction<HostClipboardTextCapability>): void {
   out.clear = () => writeWebClipboardText('');
   out.hasText = async () => (await readWebClipboardText()).length > 0;
   out.readText = readWebClipboardText;

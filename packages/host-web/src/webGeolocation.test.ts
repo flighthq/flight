@@ -79,7 +79,7 @@ describe('initializeWebGeolocationBackend', () => {
 });
 
 describe('webHostGeolocation', () => {
-  it('is a HostGeolocationProvider entity', () => {
+  it('is a HostGeolocationCapability entity', () => {
     expect(Object.hasOwn(webHostGeolocation, EntityRuntimeKey)).toBe(true);
     expect(typeof webHostGeolocation.isAvailable).toBe('function');
     expect(typeof webHostGeolocation.getCurrentPosition).toBe('function');

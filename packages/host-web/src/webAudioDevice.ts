@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioBufferHandle,
-  HostAudioDeviceProvider,
+  HostAudioDeviceCapability,
   AudioDeviceHandle,
   AudioSourceHandle,
   EntityConstruction,
@@ -16,7 +16,7 @@ import type {
  * seam only through the resolvers below, which exist for callers that are already web-bound and need
  * to wire these sources into a graph of their own.
  */
-export function createWebAudioDeviceBackend(): HostAudioDeviceProvider {
+export function createWebAudioDeviceBackend(): HostAudioDeviceCapability {
   let nextHandle = 1;
   const devices = new Map<number, AudioContext>();
   const buffers = new Map<number, AudioBuffer>();
@@ -26,7 +26,7 @@ export function createWebAudioDeviceBackend(): HostAudioDeviceProvider {
     return nextHandle++;
   }
 
-  const out = allocateEntity<HostAudioDeviceProvider & AudioDeviceBackendWebExtension>();
+  const out = allocateEntity<HostAudioDeviceCapability & AudioDeviceBackendWebExtension>();
   initializeWebAudioDeviceBackend(out, devices, buffers, sources, handle);
   return finishEntity(out);
 }
@@ -43,7 +43,7 @@ export function createWebAudioDeviceBackend(): HostAudioDeviceProvider {
  * the handle. Use this one unless you are already narrowing the singleton structurally.
  */
 export function getAudioDeviceContext(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
   device: AudioDeviceHandle,
 ): AudioContext | null {
   if (isContextExtendedBackend(backend)) return backend.getDeviceAudioContext(device);
@@ -51,7 +51,7 @@ export function getAudioDeviceContext(
 }
 
 export function getAudioSourceBufferSourceNode(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
   source: AudioSourceHandle,
 ): AudioBufferSourceNode | null {
   if (isSourceNodeExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
@@ -59,19 +59,19 @@ export function getAudioSourceBufferSourceNode(
 }
 
 export function getAudioSourceGainNode(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
   source: AudioSourceHandle,
 ): GainNode | null {
   if (isSourceNodeExtendedBackend(backend)) return backend.getSourceGainNode(source);
   return null;
 }
 
-export function hasAudioDeviceWebNodeAccess(backend: Readonly<HostAudioDeviceProvider>): boolean {
+export function hasAudioDeviceWebNodeAccess(backend: Readonly<HostAudioDeviceCapability>): boolean {
   return isSourceNodeExtendedBackend(backend);
 }
 
 export function initializeWebAudioDeviceBackend(
-  out: EntityConstruction<HostAudioDeviceProvider & AudioDeviceBackendWebExtension>,
+  out: EntityConstruction<HostAudioDeviceCapability & AudioDeviceBackendWebExtension>,
   devices: Map<number, AudioContext>,
   buffers: Map<number, AudioBuffer>,
   sources: Map<number, AudioSourceEntry>,
@@ -263,11 +263,11 @@ export function initializeWebAudioDeviceBackend(
 // lacks instead of passing a guard that vouched for a member it never had. A single combined
 // predicate is how the context resolver once threw: it was vouched for by evidence about two other
 // methods.
-interface AudioDeviceContextExtension extends HostAudioDeviceProvider {
+interface AudioDeviceContextExtension extends HostAudioDeviceCapability {
   getDeviceAudioContext(device: AudioDeviceHandle): AudioContext | null;
 }
 
-interface AudioDeviceSourceNodeExtension extends HostAudioDeviceProvider {
+interface AudioDeviceSourceNodeExtension extends HostAudioDeviceCapability {
   getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null;
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
@@ -286,12 +286,14 @@ interface AudioSourceEntry {
 
 // typeof rather than `in`: a property that exists but is not callable passes an `in` check and then
 // throws at the call, which is the same failure by a different route.
-function isContextExtendedBackend(backend: Readonly<HostAudioDeviceProvider>): backend is AudioDeviceContextExtension {
+function isContextExtendedBackend(
+  backend: Readonly<HostAudioDeviceCapability>,
+): backend is AudioDeviceContextExtension {
   return typeof (backend as Partial<AudioDeviceContextExtension>).getDeviceAudioContext === 'function';
 }
 
 function isSourceNodeExtendedBackend(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
 ): backend is AudioDeviceSourceNodeExtension {
   const candidate = backend as Partial<AudioDeviceSourceNodeExtension>;
   return typeof candidate.getSourceGainNode === 'function' && typeof candidate.getSourceBufferSourceNode === 'function';
@@ -304,4 +306,4 @@ function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends
 
 // Published on the Host rather than installed into the media package, so a caller selects this device
 // backend by passing the host that carries it.
-export const webHostAudioDevice: HostAudioDeviceProvider = createWebAudioDeviceBackend();
+export const webHostAudioDevice: HostAudioDeviceCapability = createWebAudioDeviceBackend();

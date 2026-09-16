@@ -8,7 +8,7 @@ describe('initializeWebAudioBackend', () => {
   });
 });
 describe('webHostAudio', () => {
-  it('is an HostAudioProvider entity', () => {
+  it('is an HostAudioCapability entity', () => {
     expect(Object.hasOwn(webHostAudio, EntityRuntimeKey)).toBe(true);
     expect(typeof webHostAudio.canPlayType).toBe('function');
   });

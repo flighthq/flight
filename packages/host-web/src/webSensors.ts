@@ -9,7 +9,7 @@ import {
 } from '@flighthq/sensors/contract';
 import type {
   AmbientLightReading,
-  HostSensorsProvider,
+  HostSensorsCapability,
   MotionReading,
   OrientationReading,
   QuaternionReading,
@@ -25,12 +25,12 @@ import type {
 // Rate control: the Generic Sensor API honors the `frequency` option; the devicemotion /
 // deviceorientation window event streams do not support rate control and always fire at the
 // browser's default interval.
-export function createWebSensorsBackend(): HostSensorsProvider {
+export function createWebSensorsBackend(): HostSensorsCapability {
   // Explicit type argument so the literal keeps its contextual method parameter types — without one,
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
-  // the runtime slot: `allocateEntity<HostSensorsProvider>` cannot work, because allocateEntity's type parameter
+  // the runtime slot: `allocateEntity<HostSensorsCapability>` cannot work, because allocateEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
-  const out = allocateEntity<HostSensorsProvider>();
+  const out = allocateEntity<HostSensorsCapability>();
   out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {
     return getWebSensorsPermissionState(sensor);
   };
@@ -291,7 +291,7 @@ export function createWebSensorsBackend(): HostSensorsProvider {
 
 // Published on the Host rather than installed into the sensors package, so a caller selects this
 // provider by passing the host that carries it.
-export const webHostSensors: HostSensorsProvider = createWebSensorsBackend();
+export const webHostSensors: HostSensorsCapability = createWebSensorsBackend();
 
 const _absoluteOrientation: OrientationReading = createOrientationReading();
 const _ambientLight: AmbientLightReading = createAmbientLightReading();

@@ -2,11 +2,11 @@ import { notifyWindowClosed } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
-  HostFullscreenProvider,
+  HostFullscreenCapability,
   FullscreenTargetHandle,
   NativeWindowHandle,
   WindowAttachmentOwnership,
-  HostWindowProvider,
+  HostWindowCapability,
   WindowResizeTargetHandle,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -16,10 +16,10 @@ import type {
 // without a user gesture, opacity and always-on-top on a plain tab). That is a runtime outcome, not
 // capability absence — absence is a missing slot, and a caller asking "can I set the title?" deserves a
 // yes here rather than a `| undefined` it has to guess about.
-type WebWindowBackend = HostWindowProvider &
+type WebWindowBackend = HostWindowCapability &
   Required<
     Pick<
-      HostWindowProvider,
+      HostWindowCapability,
       | 'attach'
       | 'center'
       | 'close'
@@ -193,8 +193,8 @@ export const webHostWindow = (() => {
   return finishEntity(out);
 })();
 
-export const webHostFullscreen: HostFullscreenProvider &
-  Required<Pick<HostFullscreenProvider, 'subscribe' | 'unsubscribe'>> = {
+export const webHostFullscreen: HostFullscreenCapability &
+  Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>> = {
   async exit() {
     if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
     try {

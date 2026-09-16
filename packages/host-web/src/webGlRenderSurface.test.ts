@@ -1,15 +1,15 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
-  createWebGlRenderSurfaceProvider,
+  createWebGlRenderSurfaceCreator,
   enableHostWebGlRenderSurface,
-  initializeWebGlRenderSurfaceProvider,
+  initializeWebGlRenderSurfaceCreator,
   resetHostWebGlRenderSurfaceForTest,
 } from './webGlRenderSurface';
 
-describe('createWebGlRenderSurfaceProvider', () => {
+describe('createWebGlRenderSurfaceCreator', () => {
   it('creates fresh caller-owned surfaces for every request', () => {
-    const provider = createWebGlRenderSurfaceProvider();
+    const provider = createWebGlRenderSurfaceCreator();
     const first = provider.createRenderSurface(100, 200, 1);
     const second = provider.createRenderSurface(100, 200, 1);
 
@@ -19,7 +19,7 @@ describe('createWebGlRenderSurfaceProvider', () => {
   });
 
   it('sets exact logical CSS and default-ratio backing dimensions', () => {
-    const surface = createWebGlRenderSurfaceProvider().createRenderSurface(100, 200, 1)!;
+    const surface = createWebGlRenderSurfaceCreator().createRenderSurface(100, 200, 1)!;
     expect(surface.style.width).toBe('100px');
     expect(surface.style.height).toBe('200px');
     expect(surface.width).toBe(100);
@@ -27,7 +27,7 @@ describe('createWebGlRenderSurfaceProvider', () => {
   });
 
   it('scales only backing dimensions for a non-unit pixel ratio', () => {
-    const surface = createWebGlRenderSurfaceProvider().createRenderSurface(300, 150, 2.5)!;
+    const surface = createWebGlRenderSurfaceCreator().createRenderSurface(300, 150, 2.5)!;
     expect(surface.style.width).toBe('300px');
     expect(surface.style.height).toBe('150px');
     expect(surface.width).toBe(750);
@@ -75,9 +75,9 @@ describe('enableHostWebGlRenderSurface', () => {
   });
 });
 
-describe('initializeWebGlRenderSurfaceProvider', () => {
-  it('is the construction initializer of createWebGlRenderSurfaceProvider', () => {
-    expect(typeof initializeWebGlRenderSurfaceProvider).toBe('function');
+describe('initializeWebGlRenderSurfaceCreator', () => {
+  it('is the construction initializer of createWebGlRenderSurfaceCreator', () => {
+    expect(typeof initializeWebGlRenderSurfaceCreator).toBe('function');
   });
 });
 describe('resetHostWebGlRenderSurfaceForTest', () => {

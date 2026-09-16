@@ -3,8 +3,8 @@ import type {
   Entity,
   EntityConstruction,
   HostProtocolCapabilities,
-  HostProtocolLaunchProvider,
-  HostProtocolRegistrationProvider,
+  HostProtocolLaunchCapability,
+  HostProtocolRegistrationCapability,
 } from '@flighthq/types/contract';
 
 type WebProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
@@ -21,18 +21,18 @@ export function initializeWebProtocolCapabilities(
   registeredSchemes: string[],
 ): void {
   out.launch = (() => {
-    const out = allocateEntity<HostProtocolLaunchProvider>();
+    const out = allocateEntity<HostProtocolLaunchCapability>();
     initializeWebProtocolLaunchBackend(out);
     return finishEntity(out);
   })();
   out.registration = (() => {
-    const out = allocateEntity<HostProtocolRegistrationProvider>();
+    const out = allocateEntity<HostProtocolRegistrationCapability>();
     initializeWebProtocolRegistrationBackend(out, registeredSchemes);
     return finishEntity(out);
   })();
 }
 
-export function initializeWebProtocolLaunchBackend(out: EntityConstruction<HostProtocolLaunchProvider>): void {
+export function initializeWebProtocolLaunchBackend(out: EntityConstruction<HostProtocolLaunchCapability>): void {
   out.getLaunchUrl = () => {
     if (typeof location === 'undefined') return null;
     try {
@@ -45,7 +45,7 @@ export function initializeWebProtocolLaunchBackend(out: EntityConstruction<HostP
 }
 
 export function initializeWebProtocolRegistrationBackend(
-  out: EntityConstruction<HostProtocolRegistrationProvider>,
+  out: EntityConstruction<HostProtocolRegistrationCapability>,
   registeredSchemes: string[],
 ): void {
   out.getRegisteredSchemes = () => {

@@ -3,11 +3,11 @@ import type {
   EntityConstruction,
   HapticImpactStyle,
   HapticNotificationType,
-  HostHapticsProvider,
+  HostHapticsCapability,
   HapticsCapabilities,
 } from '@flighthq/types/contract';
 
-export function initializeWebHapticsBackend(out: EntityConstruction<HostHapticsProvider>): void {
+export function initializeWebHapticsBackend(out: EntityConstruction<HostHapticsCapability>): void {
   out.cancel = (): boolean => {
     return _webVibrate(0);
   };
@@ -54,7 +54,7 @@ export function initializeWebHapticsBackend(out: EntityConstruction<HostHapticsP
 // is present. `vibrateWaveform` is deliberately absent rather than faked, so callers fall back to
 // `vibratePattern` and drop amplitudes honestly instead of silently ignoring them here.
 export const webHostHaptics = (() => {
-  const out = allocateEntity<HostHapticsProvider>();
+  const out = allocateEntity<HostHapticsCapability>();
   initializeWebHapticsBackend(out);
   return finishEntity(out);
 })();

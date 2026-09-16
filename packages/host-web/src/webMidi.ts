@@ -7,12 +7,12 @@ import {
 import type {
   EntityConstruction,
   MidiAccess,
-  HostMidiAccessProvider,
+  HostMidiAccessCapability,
   MidiEventAttachment,
   MidiEventBackendAttachOutcome,
   MidiInputPort,
   MidiOutputPort,
-  HostMidiPermissionProvider,
+  HostMidiPermissionCapability,
   MidiPort,
   PermissionQueryOutcome,
   PermissionState,
@@ -33,7 +33,7 @@ export function createWebMidiPermissionAccessCapabilities(
 }
 
 export function initializeWebMidiAccessBackend(
-  out: EntityConstruction<HostMidiAccessProvider>,
+  out: EntityConstruction<HostMidiAccessCapability>,
   api: Readonly<WebMidiProfileApi>,
   toAccess: (native: MIDIAccess) => MidiAccess,
 ): void {
@@ -49,7 +49,7 @@ export function initializeWebMidiAccessBackend(
 
 export function initializeWebMidiAccessCapabilities(
   out: EntityConstruction<WebMidiAccessCapabilities>,
-  access: HostMidiAccessProvider,
+  access: HostMidiAccessCapability,
 ): void {
   out.access = access;
 }
@@ -75,15 +75,15 @@ export function initializeWebMidiEventAttachment(
 
 export function initializeWebMidiPermissionAccessCapabilities(
   out: EntityConstruction<WebMidiPermissionAccessCapabilities>,
-  access: HostMidiAccessProvider,
-  permission: HostMidiPermissionProvider,
+  access: HostMidiAccessCapability,
+  permission: HostMidiPermissionCapability,
 ): void {
   out.access = access;
   out.permission = permission;
 }
 
 export function initializeWebMidiPermissionBackend(
-  out: EntityConstruction<HostMidiPermissionProvider>,
+  out: EntityConstruction<HostMidiPermissionCapability>,
   permissions: Permissions | undefined,
 ): void {
   out.getPermission = () => queryWebMidiPermission(permissions);
@@ -169,7 +169,7 @@ function createWebMidiProfile(
   }
 
   const access = (() => {
-    const out = allocateEntity<HostMidiAccessProvider>();
+    const out = allocateEntity<HostMidiAccessCapability>();
     initializeWebMidiAccessBackend(out, api, toAccess);
     return finishEntity(out);
   })();
@@ -180,7 +180,7 @@ function createWebMidiProfile(
       return finishEntity(out);
     })();
   const permission = (() => {
-    const out = allocateEntity<HostMidiPermissionProvider>();
+    const out = allocateEntity<HostMidiPermissionCapability>();
     initializeWebMidiPermissionBackend(out, api.permissions);
     return finishEntity(out);
   })();

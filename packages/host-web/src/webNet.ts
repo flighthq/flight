@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  HostNetProvider,
+  HostNetCapability,
   NetProgress,
   NetRequest,
   NetResponse,
@@ -11,13 +11,13 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createWebNetBackend(): HostNetProvider {
-  const out = allocateEntity<HostNetProvider>();
+export function createWebNetBackend(): HostNetCapability {
+  const out = allocateEntity<HostNetCapability>();
   initializeWebNetBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebNetBackend(out: EntityConstruction<HostNetProvider>): void {
+export function initializeWebNetBackend(out: EntityConstruction<HostNetCapability>): void {
   out.sendNetRequest = async (request, options): Promise<NetResponse> => {
     const controller = new AbortController();
     const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);
@@ -41,7 +41,7 @@ export function initializeWebNetBackend(out: EntityConstruction<HostNetProvider>
   };
 }
 
-export const webHostNet: HostNetProvider = createWebNetBackend();
+export const webHostNet: HostNetCapability = createWebNetBackend();
 
 const _netTimeoutReason = { flightNetTimeout: true } as const;
 

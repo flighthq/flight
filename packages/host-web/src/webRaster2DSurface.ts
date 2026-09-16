@@ -3,13 +3,13 @@ import type { EntityConstruction, Raster2DSurface, Raster2DSurfaceProvider } fro
 
 import { createWebImageResourceFromCanvas } from './webImageResource';
 
-export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
+export function createWebRaster2DSurfaceCreator(): Raster2DSurfaceProvider {
   const out = allocateEntity<Raster2DSurfaceProvider>();
-  initializeWebRaster2DSurfaceProvider(out);
+  initializeWebRaster2DSurfaceCreator(out);
   return finishEntity(out);
 }
 
-export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Raster2DSurfaceProvider>): void {
+export function initializeWebRaster2DSurfaceCreator(out: EntityConstruction<Raster2DSurfaceProvider>): void {
   out.createRaster2DSurface = (width, height) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -51,4 +51,4 @@ export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Ras
   };
 }
 
-export const webRaster2DSurfaceProvider: Raster2DSurfaceProvider = createWebRaster2DSurfaceProvider();
+export const webRaster2DSurfaceCreator: Raster2DSurfaceProvider = createWebRaster2DSurfaceCreator();

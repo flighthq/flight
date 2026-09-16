@@ -1,6 +1,6 @@
 import { encodeBitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, HostBitmapEncodeProvider } from '@flighthq/types/contract';
+import type { Bitmap, HostBitmapEncodeCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createWebBitmapEncodeBackend, initializeWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
@@ -18,7 +18,7 @@ function createTestBitmap(): Bitmap {
   return finishEntity(out);
 }
 
-function hostWith(backend = webHostBitmapEncode): HostBitmapEncodeProvider {
+function hostWith(backend = webHostBitmapEncode): HostBitmapEncodeCapability {
   return backend;
 }
 

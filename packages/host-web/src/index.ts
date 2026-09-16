@@ -64,7 +64,7 @@ export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 export { createWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
 export { createWebGlContext } from './webGlContext';
-export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
+export { createWebGlRenderSurfaceCreator, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostGraphics } from './webGraphicsHost';
 export { webHostHaptics } from './webHaptics';
@@ -99,8 +99,8 @@ export {
   webHostInputFocus,
   webHostInputPointerLock,
   webHostInputTarget,
-  webHostRenderContext,
-  webHostRenderSurface,
+  webHostGl,
+  webHostSurface,
 } from './webInputTarget';
 export {
   createWebInputIngressBackend,
@@ -150,7 +150,7 @@ export {
 } from './webPower';
 export { createWebProtocolCapabilities, webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
 export { webHostProtocol } from './webProtocolHost';
-export { createWebRaster2DSurfaceProvider, webRaster2DSurfaceProvider } from './webRaster2DSurface';
+export { createWebRaster2DSurfaceCreator, webRaster2DSurfaceCreator } from './webRaster2DSurface';
 export {
   createWebScreenCapabilities,
   webHostScreen,

@@ -1,4 +1,4 @@
-import { createWebGlContext, webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
+import { createWebGlContext, webRaster2DSurfaceCreator } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -28,7 +28,7 @@ export const state = createGlRenderState(
   {
     pixelRatio,
     sceneGraphSyncPolicy: 'requiresInvalidation',
-    raster2DSurfaceProvider: webRaster2DSurfaceProvider,
+    raster2DSurfaceProvider: webRaster2DSurfaceCreator,
   },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);

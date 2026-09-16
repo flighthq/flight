@@ -87,6 +87,6 @@ export { initializeWebCursorBackend } from './webCursor';
 export { initializeWebAccessibilityBackend } from './webAccessibility';
 export { initializeWebGlyphRasterizerBackend } from './webGlyphRasterizer';
 export { initializeWebVideoCapabilityBackend } from './webVideoCapability';
-export { initializeWebGlRenderSurfaceProvider } from './webGlRenderSurface';
+export { initializeWebGlRenderSurfaceCreator } from './webGlRenderSurface';
 export { initializeWebServiceWorkerNotificationCapabilities } from './webServiceWorkerNotification';
 export { initializeWebCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';

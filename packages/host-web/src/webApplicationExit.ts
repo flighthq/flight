@@ -1,6 +1,6 @@
-import type { HostApplicationExitProvider } from '@flighthq/types/contract';
+import type { HostApplicationExitCapability } from '@flighthq/types/contract';
 
-export const webHostApplicationExit: HostApplicationExitProvider = {
+export const webHostApplicationExit: HostApplicationExitCapability = {
   subscribe(listener) {
     webHostApplicationExit.unsubscribe(listener);
     if (typeof window === 'undefined') return;

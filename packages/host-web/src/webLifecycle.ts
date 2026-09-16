@@ -4,11 +4,11 @@ import type {
   AppLifecycleState,
   AppMemoryPressure,
   EntityConstruction,
-  HostLifecycleProvider,
+  HostLifecycleCapability,
 } from '@flighthq/types/contract';
 
-export function createWebLifecycleBackend(): HostLifecycleProvider {
-  const out = allocateEntity<HostLifecycleProvider>();
+export function createWebLifecycleBackend(): HostLifecycleCapability {
+  const out = allocateEntity<HostLifecycleCapability>();
   initializeWebLifecycleBackend(out);
   return finishEntity(out);
 }
@@ -30,7 +30,7 @@ export function createWebLifecycleBackend(): HostLifecycleProvider {
 // trial / behind flags). The event detail carries a 'critical' pressure string; this provider maps
 // it to 'critical' and fires 'normal' on the subsequent resolution event when present. Falls back to
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
-export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecycleProvider>): void {
+export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecycleCapability>): void {
   let _windowFocused = typeof document !== 'undefined';
   out.getState = (): AppLifecycleState => {
     if (typeof document === 'undefined') return 'active';
@@ -106,4 +106,4 @@ export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecy
   };
 }
 
-export const webHostLifecycle: HostLifecycleProvider = createWebLifecycleBackend();
+export const webHostLifecycle: HostLifecycleCapability = createWebLifecycleBackend();

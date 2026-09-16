@@ -1,20 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostPermissionsProvider,
+  HostPermissionsCapability,
   PermissionName,
   PermissionQueryOutcome,
   PermissionRequestOutcome,
   PermissionState,
 } from '@flighthq/types/contract';
 
-export function createWebPermissionsBackend(): HostPermissionsProvider {
-  const out = allocateEntity<HostPermissionsProvider>();
+export function createWebPermissionsBackend(): HostPermissionsCapability {
+  const out = allocateEntity<HostPermissionsCapability>();
   initializeWebPermissionsBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebPermissionsBackend(out: EntityConstruction<HostPermissionsProvider>): void {
+export function initializeWebPermissionsBackend(out: EntityConstruction<HostPermissionsCapability>): void {
   out.notification = {
     async getPermission() {
       if (typeof Notification === 'undefined') return { reason: 'operation-failed' };

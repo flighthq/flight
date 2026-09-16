@@ -3,17 +3,17 @@ import type {
   Entity,
   EntityConstruction,
   HostImageSource,
-  HostVideoProvider,
+  HostVideoCapability,
   VideoResourceLoadOptions,
 } from '@flighthq/types/contract';
 
-export function createWebVideoCapabilityBackend(): HostVideoProvider & Entity {
-  const out = allocateEntity<HostVideoProvider & Entity>();
+export function createWebVideoCapabilityBackend(): HostVideoCapability & Entity {
+  const out = allocateEntity<HostVideoCapability & Entity>();
   initializeWebVideoCapabilityBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebVideoCapabilityBackend(out: EntityConstruction<HostVideoProvider & Entity>): void {
+export function initializeWebVideoCapabilityBackend(out: EntityConstruction<HostVideoCapability & Entity>): void {
   out.addEndedListener = (element: HostImageSource, listener: () => void): void => {
     (element as HTMLVideoElement).addEventListener('ended', listener);
   };
@@ -129,7 +129,7 @@ export function initializeWebVideoCapabilityBackend(out: EntityConstruction<Host
   };
 }
 
-export const webHostVideo: HostVideoProvider & Entity = createWebVideoCapabilityBackend();
+export const webHostVideo: HostVideoCapability & Entity = createWebVideoCapabilityBackend();
 
 function readinessEventName(readiness: VideoResourceLoadOptions['readiness']): string {
   switch (readiness) {

@@ -301,7 +301,7 @@ describe('initializeWebNetBackend', () => {
   });
 });
 describe('webHostNet', () => {
-  it('is a pre-instantiated HostNetProvider const', () => {
+  it('is a pre-instantiated HostNetCapability const', () => {
     expect(webHostNet).not.toBeNull();
     expect(typeof webHostNet.sendNetRequest).toBe('function');
   });

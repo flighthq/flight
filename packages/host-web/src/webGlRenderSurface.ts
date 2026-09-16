@@ -4,19 +4,19 @@ import type { GlRenderSurfaceProvider, EntityConstruction } from '@flighthq/type
 
 let _enabled = false;
 
-export function createWebGlRenderSurfaceProvider(): GlRenderSurfaceProvider {
+export function createWebGlRenderSurfaceCreator(): GlRenderSurfaceProvider {
   const out = allocateEntity<GlRenderSurfaceProvider>();
-  initializeWebGlRenderSurfaceProvider(out);
+  initializeWebGlRenderSurfaceCreator(out);
   return finishEntity(out);
 }
 
 export function enableHostWebGlRenderSurface(): void {
   if (_enabled) return;
   _enabled = true;
-  setGlRenderSurfaceProvider(createWebGlRenderSurfaceProvider());
+  setGlRenderSurfaceProvider(createWebGlRenderSurfaceCreator());
 }
 
-export function initializeWebGlRenderSurfaceProvider(out: EntityConstruction<GlRenderSurfaceProvider>): void {
+export function initializeWebGlRenderSurfaceCreator(out: EntityConstruction<GlRenderSurfaceProvider>): void {
   out.createRenderSurface = (width, height, pixelRatio): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.style.width = `${width}px`;
