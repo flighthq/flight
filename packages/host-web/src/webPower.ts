@@ -9,7 +9,6 @@ import type {
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
   PowerStatus,
-  WebPowerCapabilities,
   WebPowerReadingCapabilities,
 } from '@flighthq/types/contract';
 
@@ -122,16 +121,6 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   return finishEntity(out);
 }
 
-export function initializeWebPowerCapabilities(
-  out: EntityConstruction<WebPowerCapabilities>,
-  readings: WebPowerReadingCapabilities,
-): void {
-  out.change = readings.change;
-  out.keepAwake = webHostPowerKeepAwake;
-  out.status = readings.status;
-  out.suspension = webHostPowerSuspension;
-}
-
 export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<HostPowerKeepAwakeCapability>): void {
   out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
@@ -210,14 +199,8 @@ export function initializeWebPowerSuspensionBackend(out: EntityConstruction<Host
   };
 }
 
-// The web power capability group, for composing into a Host.
 const webPowerReadings = createWebPowerReadings();
 
-export const webHostPower: WebPowerCapabilities = (() => {
-  const out = allocateEntity<WebPowerCapabilities>();
-  initializeWebPowerCapabilities(out, webPowerReadings);
-  return finishEntity(out);
-})();
 export const webHostPowerChange = webPowerReadings.change;
 export const webHostPowerStatus = webPowerReadings.status;
 

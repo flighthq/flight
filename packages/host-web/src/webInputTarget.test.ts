@@ -410,8 +410,8 @@ describe('webHostInputTarget', () => {
     expect(webHost.input.dropFile).toBe(webHostInputDropFile);
     expect(webHost.input.focus).toBe(webHostInputFocus);
     expect(webHost.input.pointerLock).toBe(webHostInputPointerLock);
-    expect(webHost.graphics.renderContext).toBe(webHostGl);
-    expect(webHost.graphics.renderSurface).toBe(webHostSurface);
+    expect(webHost.gl.context).toBe(webHostGl);
+    expect(webHost.surface.resize).toBe(webHostSurface);
     expect(new Set(providers).size).toBe(5);
   });
 });

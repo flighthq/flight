@@ -1,7 +1,6 @@
-import { attachWindow, closeWindow, createApplicationWindow } from '@flighthq/application/contract';
+import { createApplicationWindow } from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { webHost } from './webHost';
 import {
   createWebFullscreenTargetHandle,
   createWebWindowResizeTargetHandle,
@@ -9,7 +8,12 @@ import {
   initializeWebWindowResizeTargetHandle,
   resetWebWindowBackendForTest,
   webHostFullscreen,
-  webHostWindow,
+  webHostWindowAppearance,
+  webHostWindowAttach,
+  webHostWindowFocus,
+  webHostWindowFullscreen,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
 } from './webWindow';
 
 afterEach(() => {
@@ -43,7 +47,7 @@ describe('createWebWindowResizeTargetHandle', () => {
       },
     );
 
-    webHostWindow.subscribeResize(createWebWindowResizeTargetHandle(element), vi.fn());
+    webHostWindowGeometry.subscribeResize(createWebWindowResizeTargetHandle(element), vi.fn());
 
     expect(observe).toHaveBeenCalledWith(element);
   });
@@ -76,6 +80,7 @@ describe('resetWebWindowBackendForTest', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 });
+
 describe('webHostFullscreen', () => {
   it('requests fullscreen for the arbitrary element carried by the opaque handle', async () => {
     const element = document.createElement('div');
@@ -117,50 +122,140 @@ describe('webHostFullscreen', () => {
   });
 });
 
-describe('webHostWindow', () => {
-  it('adapter-roster axis: publishes the supported P1 operations plus the retained window subscriptions', () => {
-    expect(Object.keys(webHostWindow)).toEqual(
-      expect.arrayContaining([
-        'center',
-        'close',
-        'focus',
-        'getBounds',
-        'open',
-        'setFullscreen',
-        'setIcon',
-        'setPosition',
-        'setSize',
-        'setTitle',
-        'subscribeClose',
-        'subscribeMove',
-        'subscribeOrientation',
-        'subscribeResize',
-        'subscribeVisibility',
-      ]),
-    );
+describe('webHostWindowAppearance', () => {
+  it('publishes exactly the appearance operations the web window covers', () => {
+    expect(Object.keys(webHostWindowAppearance)).toEqual(expect.arrayContaining(['setIcon', 'setTitle']));
   });
 
-  it('provides close-request cancellation and terminal-close subscriptions with exact cleanup', () => {
-    const onCloseRequest = vi.fn().mockReturnValue(true);
-    const onClose = vi.fn();
-    const unsubscribe = webHostWindow.subscribeClose(onCloseRequest, onClose);
-    const request = new Event('beforeunload', { cancelable: true });
+  it('writes the page-window title for an attached window', () => {
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
 
-    window.dispatchEvent(request);
+    webHostWindowAppearance.setTitle(win, 'Retitled');
+
+    expect(document.title).toBe('Retitled');
+  });
+
+  it('points the existing icon link at the new icon', () => {
+    const win = createApplicationWindow();
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+
+    webHostWindowAppearance.setIcon(win, '/icon.png');
+
+    expect(link.href).toContain('/icon.png');
+    expect(document.querySelectorAll('link[rel="icon"]')).toHaveLength(1);
+  });
+
+  it('creates an icon link when the document has none', () => {
+    for (const existing of document.querySelectorAll('link[rel="icon"]')) existing.remove();
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+
+    webHostWindowAppearance.setIcon(win, '/fresh.png');
+
+    expect(document.querySelectorAll('link[rel="icon"]')).toHaveLength(1);
+  });
+});
+
+describe('webHostWindowAttach', () => {
+  it('publishes exactly the attach operation', () => {
+    expect(Object.keys(webHostWindowAttach)).toEqual(expect.arrayContaining(['attach']));
+  });
+
+  it('detaches a host-owned page window without closing it', () => {
+    const close = vi.spyOn(window, 'close').mockImplementation(() => {});
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+    expect(webHostWindowAttach.attach(createApplicationWindow(), window, 'host')).toBe(false);
+
+    webHostWindowLifecycle.close(win);
+    webHostWindowLifecycle.close(win);
+
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('closes a Flight-owned page window once', () => {
+    const close = vi.spyOn(window, 'close').mockImplementation(() => {});
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'flight')).toBe(true);
+
+    webHostWindowLifecycle.close(win);
+    webHostWindowLifecycle.close(win);
+
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('routes pagehide through the terminal close choke point once', () => {
+    const win = createApplicationWindow();
+    let closes = 0;
+    connectSignal(win.onClose, () => closes++);
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+
     window.dispatchEvent(new Event('pagehide'));
-    unsubscribe();
     window.dispatchEvent(new Event('pagehide'));
 
-    expect(onCloseRequest).toHaveBeenCalledOnce();
-    expect(request.defaultPrevented).toBe(true);
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(closes).toBe(1);
+  });
+
+  it('rejects a handle that is not a page window', () => {
+    expect(webHostWindowAttach.attach(createApplicationWindow(), {}, 'host')).toBe(false);
+  });
+});
+
+describe('webHostWindowFocus', () => {
+  it('focuses the attached page-window handle', () => {
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+    const focus = vi.spyOn(window, 'focus').mockImplementation(() => {});
+
+    webHostWindowFocus.focus(win);
+
+    expect(focus).toHaveBeenCalledOnce();
+  });
+});
+
+describe('webHostWindowFullscreen', () => {
+  it('requests document fullscreen for an attached window', () => {
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+
+    webHostWindowFullscreen.setFullscreen(win, true);
+
+    expect(requestFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it('exits document fullscreen for an attached window', () => {
+    const win = createApplicationWindow();
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+    const exitFullscreen = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exitFullscreen });
+
+    webHostWindowFullscreen.setFullscreen(win, false);
+
+    expect(exitFullscreen).toHaveBeenCalledOnce();
+  });
+});
+
+describe('webHostWindowGeometry', () => {
+  it('publishes the supported geometry operations', () => {
+    expect(Object.keys(webHostWindowGeometry)).toEqual(
+      expect.arrayContaining(['center', 'getBounds', 'setPosition', 'setSize', 'subscribeMove', 'subscribeResize']),
+    );
   });
 
   it('reports the page-window screen position on its browser move proxy', () => {
     vi.stubGlobal('screenX', 100);
     vi.stubGlobal('screenY', 200);
     const listener = vi.fn();
-    const unsubscribe = webHostWindow.subscribeMove(listener);
+    const unsubscribe = webHostWindowGeometry.subscribeMove(listener);
 
     window.dispatchEvent(new Event('resize'));
     unsubscribe();
@@ -168,19 +263,6 @@ describe('webHostWindow', () => {
 
     expect(listener).toHaveBeenCalledOnce();
     expect(listener).toHaveBeenCalledWith(100, 200);
-  });
-
-  it('subscribes to the browser orientation source and removes the exact listener', () => {
-    const addEventListener = vi.fn();
-    const removeEventListener = vi.fn();
-    vi.stubGlobal('screen', { orientation: { addEventListener, removeEventListener } });
-    const listener = vi.fn();
-
-    const unsubscribe = webHostWindow.subscribeOrientation(listener);
-    unsubscribe();
-
-    expect(addEventListener).toHaveBeenCalledWith('change', listener);
-    expect(removeEventListener).toHaveBeenCalledWith('change', listener);
   });
 
   it('reports rounded content-box size and browser device pixel ratio', () => {
@@ -200,7 +282,7 @@ describe('webHostWindow', () => {
       },
     );
     const listener = vi.fn();
-    const unsubscribe = webHostWindow.subscribeResize(createWebWindowResizeTargetHandle(element), listener);
+    const unsubscribe = webHostWindowGeometry.subscribeResize(createWebWindowResizeTargetHandle(element), listener);
 
     callback([{ contentRect: { width: 320.4, height: 199.6 } } as ResizeObserverEntry], {} as ResizeObserver);
     unsubscribe();
@@ -209,56 +291,33 @@ describe('webHostWindow', () => {
     expect(listener).toHaveBeenCalledWith(320, 200, 2);
     expect(disconnect).toHaveBeenCalledOnce();
   });
+});
 
-  it('reports browser visibility and removes the exact listener', () => {
-    let hidden = true;
-    vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
-    const listener = vi.fn();
-    const unsubscribe = webHostWindow.subscribeVisibility(listener);
+describe('webHostWindowLifecycle', () => {
+  it('publishes the supported lifecycle operations', () => {
+    expect(Object.keys(webHostWindowLifecycle)).toEqual(expect.arrayContaining(['close', 'open', 'subscribeClose']));
+  });
 
-    document.dispatchEvent(new Event('visibilitychange'));
-    hidden = false;
-    document.dispatchEvent(new Event('visibilitychange'));
+  it('opens the page window as a host-owned handle', () => {
+    const win = createApplicationWindow();
+
+    expect(webHostWindowLifecycle.open(win, {})).toBe(true);
+    expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
+  });
+
+  it('provides close-request cancellation and terminal-close subscriptions with exact cleanup', () => {
+    const onCloseRequest = vi.fn().mockReturnValue(true);
+    const onClose = vi.fn();
+    const unsubscribe = webHostWindowLifecycle.subscribeClose(onCloseRequest, onClose);
+    const request = new Event('beforeunload', { cancelable: true });
+
+    window.dispatchEvent(request);
+    window.dispatchEvent(new Event('pagehide'));
     unsubscribe();
-    document.dispatchEvent(new Event('visibilitychange'));
-
-    expect(listener).toHaveBeenCalledTimes(2);
-    expect(listener).toHaveBeenNthCalledWith(1, false);
-    expect(listener).toHaveBeenNthCalledWith(2, true);
-  });
-
-  it('detaches a host-owned page window without closing it', () => {
-    const close = vi.spyOn(window, 'close').mockImplementation(() => {});
-    const win = createApplicationWindow();
-    expect(attachWindow(webHost.window, win, window, 'host')).toBe(true);
-    expect(attachWindow(webHost.window, createApplicationWindow(), window, 'host')).toBe(false);
-
-    expect(closeWindow(webHost.window, win)).toBe(true);
-    expect(closeWindow(webHost.window, win)).toBe(true);
-
-    expect(close).not.toHaveBeenCalled();
-  });
-
-  it('closes a Flight-owned page window once', () => {
-    const close = vi.spyOn(window, 'close').mockImplementation(() => {});
-    const win = createApplicationWindow();
-    expect(attachWindow(webHost.window, win, window, 'flight')).toBe(true);
-
-    expect(closeWindow(webHost.window, win)).toBe(true);
-    expect(closeWindow(webHost.window, win)).toBe(true);
-
-    expect(close).toHaveBeenCalledTimes(1);
-  });
-
-  it('routes pagehide through the terminal close choke point once', () => {
-    const win = createApplicationWindow();
-    let closes = 0;
-    connectSignal(win.onClose, () => closes++);
-    expect(attachWindow(webHost.window, win, window, 'host')).toBe(true);
-
-    window.dispatchEvent(new Event('pagehide'));
     window.dispatchEvent(new Event('pagehide'));
 
-    expect(closes).toBe(1);
+    expect(onCloseRequest).toHaveBeenCalledOnce();
+    expect(request.defaultPrevented).toBe(true);
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

@@ -2,67 +2,125 @@ import { notifyWindowClosed } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
-  HostFullscreenCapability,
+  EntityConstruction,
   FullscreenTargetHandle,
+  HostFullscreenCapability,
+  HostWindowAppearanceCapability,
+  HostWindowAttachCapability,
+  HostWindowFocusCapability,
+  HostWindowFullscreenCapability,
+  HostWindowGeometryCapability,
+  HostWindowLifecycleCapability,
   NativeWindowHandle,
   WindowAttachmentOwnership,
-  HostWindowCapability,
   WindowResizeTargetHandle,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
-// Every operation this backend assigns, required. An operation being present does not promise it does
-// anything: most degrade to a no-op where the browser refuses (script-driven movement, fullscreen
-// without a user gesture, opacity and always-on-top on a plain tab). That is a runtime outcome, not
-// capability absence — absence is a missing slot, and a caller asking "can I set the title?" deserves a
-// yes here rather than a `| undefined` it has to guess about.
-type WebWindowBackend = HostWindowCapability &
-  Required<
-    Pick<
-      HostWindowCapability,
-      | 'attach'
-      | 'center'
-      | 'close'
-      | 'flashWindowFrame'
-      | 'focus'
-      | 'getBounds'
-      | 'hide'
-      | 'maximize'
-      | 'minimize'
-      | 'open'
-      | 'requestAttention'
-      | 'restore'
-      | 'setAlwaysOnTop'
-      | 'setContentProtection'
-      | 'setFullscreen'
-      | 'setHasShadow'
-      | 'setIcon'
-      | 'setMenuBarVisible'
-      | 'setMinimumSize'
-      | 'setMaximumSize'
-      | 'setOpacity'
-      | 'setParent'
-      | 'setPosition'
-      | 'setProgress'
-      | 'setResizable'
-      | 'setSize'
-      | 'setSkipTaskbar'
-      | 'setTitle'
-      | 'show'
-      | 'subscribeClose'
-      | 'subscribeMove'
-      | 'subscribeOrientation'
-      | 'subscribeResize'
-      | 'subscribeVisibility'
-    >
-  >;
+// The web window group, decomposed one capability per independently-coverable concept. Web covers
+// attach, appearance, focus, fullscreen, geometry and lifecycle. It omits attention, contentProtection,
+// hierarchy, progress, shadow, shell, sizeConstraints, state, visibility and zOrder: a browser tab has no
+// window-manager equivalent for those, and an omitted slot is the honest report where an inert method
+// would be indistinguishable from a real one.
+//
+// An operation being present does not promise it has an effect: several degrade to a no-op where the
+// browser refuses (script-driven movement, fullscreen without a user gesture). That is a runtime outcome,
+// not capability absence — absence is a missing slot, and a caller asking "can I set the title?" deserves
+// a yes here rather than a `| undefined` it has to guess about.
 
-export const webHostWindow = (() => {
-  const out = allocateEntity<WebWindowBackend>();
+export const webHostFullscreen: WebFullscreen = (() => {
+  const out = allocateEntity<WebFullscreen>();
+  out.exit = async () => {
+    if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
+    try {
+      await document.exitFullscreen();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  out.request = async (target) => {
+    const element = _fullscreenTargets.get(target);
+    if (element === undefined || typeof element.requestFullscreen !== 'function') return false;
+    try {
+      await element.requestFullscreen();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  out.subscribe = (callback) => {
+    out.unsubscribe(callback);
+    if (typeof document === 'undefined') return;
+    const handler = (): void => callback(document.fullscreenElement !== null);
+    _fullscreenListeners.set(callback, handler);
+    document.addEventListener('fullscreenchange', handler);
+  };
+  out.unsubscribe = (callback) => {
+    const handler = _fullscreenListeners.get(callback);
+    if (handler === undefined) return;
+    _fullscreenListeners.delete(callback);
+    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
+  };
+  return finishEntity(out);
+})();
+
+export const webHostWindowAppearance: WebWindowAppearance = (() => {
+  const out = allocateEntity<WebWindowAppearance>();
+  out.setIcon = (win, icon) => {
+    const document = getWebWindowHandle(win)?.document;
+    if (document === undefined) return;
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (link === null) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = icon;
+  };
+  out.setTitle = (win, title) => {
+    const document = getWebWindowHandle(win)?.document;
+    if (document !== undefined) document.title = title;
+  };
+  return finishEntity(out);
+})();
+
+export const webHostWindowAttach = (() => {
+  const out = allocateEntity<HostWindowAttachCapability>();
   out.attach = (win, handle, ownership) => {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
   };
+  return finishEntity(out);
+})();
+
+export const webHostWindowFocus = (() => {
+  const out = allocateEntity<HostWindowFocusCapability>();
+  out.focus = (win) => {
+    const handle = getWebWindowHandle(win);
+    if (handle !== null && typeof handle.focus === 'function') handle.focus();
+  };
+  return finishEntity(out);
+})();
+
+// Page fullscreen, the window-level counterpart of the element-level `host.fullscreen` capability: the
+// subject here is the window handle, the browser's only scripting surface for it being the document.
+export const webHostWindowFullscreen = (() => {
+  const out = allocateEntity<HostWindowFullscreenCapability>();
+  out.setFullscreen = (win, fullscreen) => {
+    const document = getWebWindowHandle(win)?.document;
+    if (document === undefined) return;
+    try {
+      if (fullscreen) void document.documentElement.requestFullscreen?.().catch(() => {});
+      else void document.exitFullscreen?.().catch(() => {});
+    } catch {
+      /* browser rejected the fullscreen request synchronously */
+    }
+  };
+  return finishEntity(out);
+})();
+
+export const webHostWindowGeometry: WebWindowGeometry = (() => {
+  const out = allocateEntity<WebWindowGeometry>();
   out.center = (win) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
@@ -75,13 +133,6 @@ export const webHostWindow = (() => {
       /* browser rejected script-driven movement */
     }
   };
-  out.close = (win) => {
-    detachWebWindow(win, true);
-  };
-  out.focus = (win) => {
-    const handle = getWebWindowHandle(win);
-    if (handle !== null && typeof handle.focus === 'function') handle.focus();
-  };
   out.getBounds = (win, out) => {
     const handle = getWebWindowHandle(win);
     out.x = handle?.screenX ?? win.x;
@@ -89,30 +140,6 @@ export const webHostWindow = (() => {
     out.width = handle?.innerWidth ?? win.width;
     out.height = handle?.innerHeight ?? win.height;
     return out;
-  };
-  out.open = (win) => {
-    return typeof window !== 'undefined' && attachWebWindow(win, window, 'host');
-  };
-  out.setFullscreen = (win, fullscreen) => {
-    const document = getWebWindowHandle(win)?.document;
-    if (document === undefined) return;
-    try {
-      if (fullscreen) void document.documentElement.requestFullscreen?.().catch(() => {});
-      else void document.exitFullscreen?.().catch(() => {});
-    } catch {
-      /* browser rejected the fullscreen request synchronously */
-    }
-  };
-  out.setIcon = (win, icon) => {
-    const document = getWebWindowHandle(win)?.document;
-    if (document === undefined) return;
-    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (link === null) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = icon;
   };
   out.setPosition = (win, x, y) => {
     const handle = getWebWindowHandle(win);
@@ -132,25 +159,6 @@ export const webHostWindow = (() => {
       /* browser rejected script-driven resizing */
     }
   };
-  out.setTitle = (win, title) => {
-    const document = getWebWindowHandle(win)?.document;
-    if (document !== undefined) document.title = title;
-  };
-  out.subscribeClose = (onCloseRequest, onClose) => {
-    if (typeof window === 'undefined') return noop;
-    const pageWindow = window;
-    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
-      if (!onCloseRequest()) return;
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    pageWindow.addEventListener('beforeunload', onBeforeUnload);
-    pageWindow.addEventListener('pagehide', onClose);
-    return trackWebWindowSubscription(() => {
-      pageWindow.removeEventListener('beforeunload', onBeforeUnload);
-      pageWindow.removeEventListener('pagehide', onClose);
-    });
-  };
   out.subscribeMove = (listener) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
@@ -161,12 +169,6 @@ export const webHostWindow = (() => {
     };
     pageWindow.addEventListener('resize', handler);
     return trackWebWindowSubscription(() => pageWindow.removeEventListener('resize', handler));
-  };
-  out.subscribeOrientation = (listener) => {
-    if (typeof screen === 'undefined' || screen.orientation === undefined) return noop;
-    const orientation = screen.orientation;
-    orientation.addEventListener('change', listener);
-    return trackWebWindowSubscription(() => orientation.removeEventListener('change', listener));
   };
   out.subscribeResize = (target, listener) => {
     const element = _windowResizeTargets.get(target);
@@ -183,51 +185,34 @@ export const webHostWindow = (() => {
     observer.observe(element);
     return trackWebWindowSubscription(() => observer.disconnect());
   };
-  out.subscribeVisibility = (listener) => {
-    if (typeof document === 'undefined') return noop;
-    const pageDocument = document;
-    const handler = (): void => listener(!pageDocument.hidden);
-    pageDocument.addEventListener('visibilitychange', handler);
-    return trackWebWindowSubscription(() => pageDocument.removeEventListener('visibilitychange', handler));
-  };
   return finishEntity(out);
 })();
 
-export const webHostFullscreen: HostFullscreenCapability &
-  Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>> = {
-  async exit() {
-    if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
-    try {
-      await document.exitFullscreen();
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  async request(target) {
-    const element = _fullscreenTargets.get(target);
-    if (element === undefined || typeof element.requestFullscreen !== 'function') return false;
-    try {
-      await element.requestFullscreen();
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  subscribe(callback) {
-    webHostFullscreen.unsubscribe(callback);
-    if (typeof document === 'undefined') return;
-    const handler = (): void => callback(document.fullscreenElement !== null);
-    _fullscreenListeners.set(callback, handler);
-    document.addEventListener('fullscreenchange', handler);
-  },
-  unsubscribe(callback) {
-    const handler = _fullscreenListeners.get(callback);
-    if (handler === undefined) return;
-    _fullscreenListeners.delete(callback);
-    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
-  },
-};
+export const webHostWindowLifecycle: WebWindowLifecycle = (() => {
+  const out = allocateEntity<WebWindowLifecycle>();
+  out.close = (win) => {
+    detachWebWindow(win, true);
+  };
+  out.open = (win) => {
+    return typeof window !== 'undefined' && attachWebWindow(win, window, 'host');
+  };
+  out.subscribeClose = (onCloseRequest, onClose) => {
+    if (typeof window === 'undefined') return noop;
+    const pageWindow = window;
+    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+      if (!onCloseRequest()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    pageWindow.addEventListener('beforeunload', onBeforeUnload);
+    pageWindow.addEventListener('pagehide', onClose);
+    return trackWebWindowSubscription(() => {
+      pageWindow.removeEventListener('beforeunload', onBeforeUnload);
+      pageWindow.removeEventListener('pagehide', onClose);
+    });
+  };
+  return finishEntity(out);
+})();
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
   const target = allocateEntity<FullscreenTargetHandle>();
@@ -276,6 +261,15 @@ const _fullscreenListeners = new Map<(fullscreen: boolean) => void, () => void>(
 let _fullscreenTargets = new WeakMap<FullscreenTargetHandle, Element>();
 const _windowSubscriptionCleanups = new Set<() => void>();
 let _windowResizeTargets = new WeakMap<WindowResizeTargetHandle, Element>();
+
+// What each web window capability actually supplies, required on the const's type: the optional hook is
+// present here, so a caller reads the operations rather than testing each one for absent-ness.
+type WebFullscreen = HostFullscreenCapability & Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>>;
+type WebWindowAppearance = HostWindowAppearanceCapability & Required<Pick<HostWindowAppearanceCapability, 'setIcon'>>;
+type WebWindowGeometry = HostWindowGeometryCapability &
+  Required<Pick<HostWindowGeometryCapability, 'center' | 'subscribeMove' | 'subscribeResize'>>;
+type WebWindowLifecycle = HostWindowLifecycleCapability &
+  Required<Pick<HostWindowLifecycleCapability, 'subscribeClose'>>;
 
 interface WebWindowRecord {
   readonly cleanup: () => void;

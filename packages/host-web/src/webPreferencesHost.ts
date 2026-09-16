@@ -1,13 +1,11 @@
-import type { HostStorageCapabilities } from '@flighthq/types/contract';
+import type { HostPreferencesCapabilities } from '@flighthq/types/contract';
 
-import { webHostFileSystem } from './webFilesystem';
 import { webHostStorage, webHostStorageChange } from './webStorage';
 import { webHostStoragePersistenceQuery, webHostStoragePersistenceRequest } from './webStoragePersistence';
 
-export const webHostStorageGroup = {
+export const webHostPreferences = {
   change: webHostStorageChange,
-  fileSystem: webHostFileSystem,
   local: webHostStorage,
   persistenceQuery: webHostStoragePersistenceQuery,
   persistenceRequest: webHostStoragePersistenceRequest,
-} satisfies HostStorageCapabilities;
+} satisfies HostPreferencesCapabilities;

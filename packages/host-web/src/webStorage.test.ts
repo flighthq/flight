@@ -20,8 +20,8 @@ describe('webHostStorage providers', () => {
 
   it('publishes independently owned local and change Host leaves', () => {
     expect(EntityRuntimeKey in webHostStorage).toBe(true);
-    expect(webHost.storage.local).toBe(webHostStorage);
-    expect(webHost.storage.change).toBe(webHostStorageChange);
+    expect(webHost.preferences.local).toBe(webHostStorage);
+    expect(webHost.preferences.change).toBe(webHostStorageChange);
     expect(webHostStorage).not.toBe(webHostStorageChange);
   });
 

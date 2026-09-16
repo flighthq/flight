@@ -3,32 +3,48 @@ import type { EntityRuntimeKey, WebHost } from '@flighthq/types/contract';
 
 import { webHostAccessibilityGroup } from './webAccessibilityHost';
 import { webHostApp } from './webAppHost';
+import { webHostAudioGroup } from './webAudioHost';
+import { webHostBitmap } from './webBitmapHost';
 import { webHostClipboard } from './webClipboardHost';
 import { webHostConnectivity } from './webConnectivityHost';
-import {
-  webHostIpc,
-  webHostMidi,
-  webHostNotification,
-  webHostShortcut,
-  webHostTray,
-  webHostUpdater,
-} from './webDefaultHostGroups';
+import { webHostDeviceGroup } from './webDeviceHost';
 import { webHostDialog } from './webDialogHost';
-import { webHostGraphics } from './webGraphicsHost';
-import { webHostNetGroup } from './webHostNet';
+import { webHostFileSystemGroup } from './webFileSystemHost';
+import { webHostFont } from './webFontHost';
+import { webHostFullscreenGroup } from './webFullscreenHost';
+import { webHostGeolocationGroup } from './webGeolocationHost';
+import { webHostGlGroup } from './webGlHost';
+import { webHostGlyph } from './webGlyphHost';
+import { webHostHapticsGroup } from './webHapticsHost';
+import { webHostImageGroup } from './webImageHost';
 import { webHostInput } from './webInputHost';
-import { webHostMedia } from './webMediaHost';
+import { webHostIpc } from './webIpcHost';
+import { webHostLifecycleGroup } from './webLifecycleHost';
+import { webHostMediaSessionGroup } from './webMediaSessionHost';
 import { webHostMenu } from './webMenuHost';
-import { webHostPower } from './webPower';
+import { webHostMidi } from './webMidiHost';
+import { webHostNetGroup } from './webNetHost';
+import { webHostNotification } from './webNotificationHost';
+import { webHostPermissionsGroup } from './webPermissionsHost';
+import { webHostPlatformGroup } from './webPlatformHost';
+import { webHostPower } from './webPowerHost';
+import { webHostPreferences } from './webPreferencesHost';
 import { webHostProtocol } from './webProtocolHost';
-import { webHostScreen } from './webScreen';
+import { webHostScreen } from './webScreenHost';
+import { webHostSensorsGroup } from './webSensorsHost';
 import { webHostShare } from './webShareHost';
 import { webHostShell } from './webShellHost';
-import { webHostStorageGroup } from './webStorageHost';
-import { webHostSystem } from './webSystemHost';
-import { webHostText } from './webTextHost';
-import { webHostUi } from './webUiHost';
-import { webHostWindow } from './webWindow';
+import { webHostShortcut } from './webShortcutHost';
+import { webHostSoftKeyboard } from './webSoftKeyboardHost';
+import { webHostStatusBar } from './webStatusBarHost';
+import { webHostSurfaceGroup } from './webSurfaceHost';
+import { webHostTextSegment } from './webTextSegmentHost';
+import { webHostTextShaper } from './webTextShaperHost';
+import { webHostTray } from './webTrayHost';
+import { webHostUpdater } from './webUpdaterHost';
+import { webHostVideoGroup } from './webVideoHost';
+import { webHostWgpu } from './webWgpuHost';
+import { webHostWindow } from './webWindowHost';
 
 // `satisfies Omit<WebHost, …>` is what keeps WebHost honest in the direction that matters: a slot it
 // claims that no group fills fails to typecheck here. The converse — a group gaining a slot WebHost does
@@ -40,29 +56,47 @@ import { webHostWindow } from './webWindow';
 const groups = {
   accessibility: webHostAccessibilityGroup,
   app: webHostApp,
+  audio: webHostAudioGroup,
+  bitmap: webHostBitmap,
   clipboard: webHostClipboard,
   connectivity: webHostConnectivity,
+  device: webHostDeviceGroup,
   dialog: webHostDialog,
-  graphics: webHostGraphics,
+  fileSystem: webHostFileSystemGroup,
+  font: webHostFont,
+  fullscreen: webHostFullscreenGroup,
+  geolocation: webHostGeolocationGroup,
+  gl: webHostGlGroup,
+  glyph: webHostGlyph,
+  haptics: webHostHapticsGroup,
+  image: webHostImageGroup,
   input: webHostInput,
   ipc: webHostIpc,
-  media: webHostMedia,
+  lifecycle: webHostLifecycleGroup,
+  mediaSession: webHostMediaSessionGroup,
   menu: webHostMenu,
   midi: webHostMidi,
   net: webHostNetGroup,
   notification: webHostNotification,
+  permissions: webHostPermissionsGroup,
+  platform: webHostPlatformGroup,
   power: webHostPower,
+  preferences: webHostPreferences,
   protocol: webHostProtocol,
   screen: webHostScreen,
+  sensors: webHostSensorsGroup,
   share: webHostShare,
   shell: webHostShell,
   shortcut: webHostShortcut,
-  storage: webHostStorageGroup,
-  system: webHostSystem,
-  text: webHostText,
+  softKeyboard: webHostSoftKeyboard,
+  statusBar: webHostStatusBar,
+  surface: webHostSurfaceGroup,
+  textSegment: webHostTextSegment,
+  textShaper: webHostTextShaper,
   tray: webHostTray,
-  ui: webHostUi,
   updater: webHostUpdater,
+  video: webHostVideoGroup,
+  wgpu: webHostWgpu,
   window: webHostWindow,
 } as const satisfies Omit<WebHost, typeof EntityRuntimeKey>;
 
