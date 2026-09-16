@@ -11,13 +11,44 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
+// Every operation this backend assigns, required. An operation being present does not promise it does
+// anything: most degrade to a no-op where the browser refuses (script-driven movement, fullscreen
+// without a user gesture, opacity and always-on-top on a plain tab). That is a runtime outcome, not
+// capability absence — absence is a missing slot, and a caller asking "can I set the title?" deserves a
+// yes here rather than a `| undefined` it has to guess about.
 type WebWindowBackend = HostWindowProvider &
   Required<
     Pick<
       HostWindowProvider,
       | 'attach'
+      | 'center'
       | 'close'
+      | 'flashWindowFrame'
+      | 'focus'
+      | 'getBounds'
+      | 'hide'
+      | 'maximize'
+      | 'minimize'
       | 'open'
+      | 'requestAttention'
+      | 'restore'
+      | 'setAlwaysOnTop'
+      | 'setContentProtection'
+      | 'setFullscreen'
+      | 'setHasShadow'
+      | 'setIcon'
+      | 'setMenuBarVisible'
+      | 'setMinimumSize'
+      | 'setMaximumSize'
+      | 'setOpacity'
+      | 'setParent'
+      | 'setPosition'
+      | 'setProgress'
+      | 'setResizable'
+      | 'setSize'
+      | 'setSkipTaskbar'
+      | 'setTitle'
+      | 'show'
       | 'subscribeClose'
       | 'subscribeMove'
       | 'subscribeOrientation'
