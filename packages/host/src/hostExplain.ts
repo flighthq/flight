@@ -127,7 +127,6 @@ const _COVERAGE: readonly { readonly group: string; readonly provider: string; r
   { group: 'system', provider: 'HostLifecycleProvider', slot: 'lifecycle' },
   { group: 'system', provider: 'HostPlatformProvider', slot: 'platform' },
   { group: 'system', provider: 'HostSensorsProvider', slot: 'sensors' },
-  { group: 'text', provider: 'HostBidiClassProvider', slot: 'bidiClass' },
   { group: 'text', provider: 'HostFontLoadingProvider', slot: 'fontLoading' },
   { group: 'text', provider: 'HostGlyphRasterizerProvider', slot: 'glyphRasterizer' },
   { group: 'text', provider: 'HostTextSegmenterProvider', slot: 'segmenter' },

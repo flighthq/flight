@@ -4,7 +4,6 @@ import { createHost } from './host';
 import {
   getHostAudioDevice,
   getHostAudioMixer,
-  getHostBidiClass,
   getHostBitmapEncode,
   getHostBitmapReadback,
   getHostClipboardFormats,
@@ -33,7 +32,6 @@ import {
   getHostWgpu,
   hasHostAudioDevice,
   hasHostAudioMixer,
-  hasHostBidiClass,
   hasHostBitmapEncode,
   hasHostBitmapReadback,
   hasHostClipboardFormats,
@@ -91,20 +89,6 @@ describe('getHostAudioMixer', () => {
 
   it('returns null when a different slot in the same group is filled', () => {
     expect(getHostAudioMixer(hostWithSlot('media', 'session'))).toBeNull();
-  });
-});
-
-describe('getHostBidiClass', () => {
-  it('returns the provider held in host.text.bidiClass', () => {
-    expect(getHostBidiClass(hostWithSlot('text', 'bidiClass'))).toBe(PROVIDER);
-  });
-
-  it('returns null when the slot is empty', () => {
-    expect(getHostBidiClass(createHost())).toBeNull();
-  });
-
-  it('returns null when a different slot in the same group is filled', () => {
-    expect(getHostBidiClass(hostWithSlot('text', 'shaper'))).toBeNull();
   });
 });
 
@@ -485,14 +469,6 @@ describe('hasHostAudioMixer', () => {
     expect(hasHostAudioMixer(hostWithSlot('media', 'audioMixer'))).toBe(true);
     expect(hasHostAudioMixer(hostWithSlot('media', 'session'))).toBe(false);
     expect(hasHostAudioMixer(createHost())).toBe(false);
-  });
-});
-
-describe('hasHostBidiClass', () => {
-  it('is true only when host.text.bidiClass holds a provider', () => {
-    expect(hasHostBidiClass(hostWithSlot('text', 'bidiClass'))).toBe(true);
-    expect(hasHostBidiClass(hostWithSlot('text', 'shaper'))).toBe(false);
-    expect(hasHostBidiClass(createHost())).toBe(false);
   });
 });
 

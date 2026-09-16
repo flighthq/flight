@@ -18,7 +18,7 @@ function warnOnCompactTableMiss(codepoint: number): void {
     'textbidi:compact-table-miss',
     LogLevel.Warn,
     {
-      message: `resolveBidiLevels: U+${codepoint.toString(16).toUpperCase().padStart(4, '0')} is outside the compact bidi-class table and defaulted to L. Pass a full-coverage HostBidiClassProvider to resolveBidiLevels or getBidiRuns.`,
+      message: `resolveBidiLevels: U+${codepoint.toString(16).toUpperCase().padStart(4, '0')} is outside the compact bidi-class table and defaulted to L. Pass a full-coverage BidiClassKernel to resolveBidiLevels or getBidiRuns.`,
     },
     'textbidi',
   );

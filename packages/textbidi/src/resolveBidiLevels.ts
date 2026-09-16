@@ -1,7 +1,7 @@
-import type { BidiClass, HostBidiClassProvider, BidiDirection } from '@flighthq/types/contract';
+import type { BidiClass, BidiClassKernel, BidiDirection } from '@flighthq/types/contract';
 
 export function resolveBidiLevels(
-  bidiClassBackend: Readonly<HostBidiClassProvider>,
+  bidiClassKernel: Readonly<BidiClassKernel>,
   text: string,
   baseDirection: BidiDirection,
 ): Uint8Array {
@@ -9,12 +9,12 @@ export function resolveBidiLevels(
   const levels = new Uint8Array(length);
   if (length === 0) return levels;
 
-  const backend = bidiClassBackend;
+  const kernel = bidiClassKernel;
   const codepoints: number[] = new Array(length);
   const original: BidiClass[] = new Array(length);
   for (let i = 0; i < length; i++) {
     const codepoint = text.codePointAt(i) as number;
-    const cls = backend.getBidiClass(codepoint);
+    const cls = kernel.getBidiClass(codepoint);
     codepoints[i] = codepoint;
     original[i] = cls;
     if (codepoint > 0xffff) {
@@ -531,7 +531,7 @@ function nextOdd(level: number): number {
   return (level + 1) | 1;
 }
 
-// Unicode paired-bracket facts needed by BD16. Keeping the table independent of the class backend lets
+// Unicode paired-bracket facts needed by BD16. Keeping the table independent of the class kernel lets
 // a full-coverage provider participate in N0 without growing its interface; N0 consults entries only
 // when that provider classifies the character as ON.
 const bidiBracketPairs: readonly number[] = [

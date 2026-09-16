@@ -2,9 +2,9 @@ import type { Entity } from './Entity';
 
 // Unicode bidirectional-text itemize seam (UAX #9). Free functions in @flighthq/textbidi resolve the
 // embedding levels of a mixed LTR/RTL string and reorder its runs from logical (storage) to visual
-// (display) order. Each character's bidi class comes from a HostBidiClassProvider passed to the resolver;
-// when omitted, @flighthq/textbidi uses its compact bundled table covering the common
-// Latin/Hebrew/Arabic ranges. A full-coverage backend can be supplied by a flight-rs Rust table kernel.
+// (display) order. Each character's bidi class comes from a BidiClassKernel passed to the resolver;
+// @flighthq/textbidi ships `compactBidiClassKernel`, covering the common Latin/Hebrew/Arabic ranges,
+// and a caller may pass a full-coverage table (a flight-rs Rust kernel) instead.
 // Unlike segmentation (UAX #29), the ECMAScript Intl API exposes NO bidi surface, so there is no
 // zero-bundle web backend — the algorithm needs each character's bidi class carried as data.
 
@@ -40,20 +40,20 @@ export type BidiClass =
   | 'PDI';
 
 // The class-lookup seam the UAX #9 algorithm queries per code point. A single method keeps a
-// from-scratch or native backend to one function to implement. The compact default answers the common
-// scripts; pass a complete-coverage backend (flight-rs) explicitly for full Unicode.
-export interface HostBidiClassProvider extends Entity {
+// from-scratch or native table to one function to implement. The compact kernel answers the common
+// scripts; pass a complete-coverage one (flight-rs) explicitly for full Unicode.
+export interface BidiClassKernel extends Entity {
   // Returns the UAX #9 bidi class of `codepoint` (a Unicode scalar value, not a UTF-16 code unit).
   getBidiClass(codepoint: number): BidiClass;
 }
 
-export type BidiClassBackendKind = 'compact' | 'custom';
+export type BidiClassKernelKind = 'compact' | 'custom';
 
 // Pull-style description of the class provider selected for a bidi operation. Compact coverage is
 // enumerated because its silent default-L behavior is meaningful; custom-provider coverage is owned by
 // that provider and therefore reported as unknown rather than guessed.
-export interface BidiClassBackendExplanation {
-  backend: BidiClassBackendKind;
+export interface BidiClassKernelExplanation {
+  kernel: BidiClassKernelKind;
   coverage: 'common-script-ranges' | 'provider-defined';
   coveredCodePointRanges: BidiCodePointRange[];
   fallbackClass: BidiClass | null;

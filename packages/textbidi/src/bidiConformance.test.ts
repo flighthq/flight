@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultBidiClassBackend } from './bidiClassBackend';
+import { compactBidiClassKernel } from './bidiClassKernel';
 import { reorderBidiLine } from './reorderBidiLine';
 import { resolveBidiLevels } from './resolveBidiLevels';
 
-const backend = createDefaultBidiClassBackend();
+const kernel = compactBidiClassKernel;
 
 const RLE = '‫';
 const PDF = '‬';
@@ -21,17 +21,17 @@ const levelFixtures: ReadonlyArray<{ direction: 'ltr' | 'rtl'; levels: number[];
 describe('bidi conformance fixtures', () => {
   it('covers weak chains, neutral sos/eos, numbers in RTL, and isolates', () => {
     for (const fixture of levelFixtures) {
-      expect(Array.from(resolveBidiLevels(backend, fixture.text, fixture.direction))).toEqual(fixture.levels);
+      expect(Array.from(resolveBidiLevels(kernel, fixture.text, fixture.direction))).toEqual(fixture.levels);
     }
   });
 
   it('caps explicit embedding depth and ignores overflow embeddings', () => {
     const text = RLE.repeat(126) + 'a' + PDF.repeat(126);
-    expect(resolveBidiLevels(backend, text, 'ltr')[126]).toBe(126);
+    expect(resolveBidiLevels(kernel, text, 'ltr')[126]).toBe(126);
   });
 
   it('reorders a resolved RTL number fixture while preserving digit order', () => {
-    const levels = resolveBidiLevels(backend, 'אב 12', 'rtl');
+    const levels = resolveBidiLevels(kernel, 'אב 12', 'rtl');
     const visual: number[] = [];
     reorderBidiLine(levels, 0, levels.length, visual);
     expect(visual).toEqual([3, 4, 2, 1, 0]);
