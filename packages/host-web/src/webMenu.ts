@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostMenuHighlightProvider,
+  HostMenuHighlightCapability,
   MenuItemTemplate,
-  HostMenuPopupProvider,
+  HostMenuPopupCapability,
 } from '@flighthq/types/contract';
 
 // The web menu providers. Web renders context menus itself in the DOM, so it exposes POPUP and — because
@@ -12,7 +12,7 @@ import type {
 // setApplicationMenu with an unconditional `false` and subscribeSelect with a no-op unsubscribe, which
 // made web structurally indistinguishable from a host that really implements them.
 
-export function initializeWebMenuHighlightBackend(out: EntityConstruction<HostMenuHighlightProvider>): void {
+export function initializeWebMenuHighlightBackend(out: EntityConstruction<HostMenuHighlightCapability>): void {
   out.subscribe = (listener: (id: string) => void): (() => void) => {
     _highlightListeners.add(listener);
     return () => {
@@ -21,20 +21,20 @@ export function initializeWebMenuHighlightBackend(out: EntityConstruction<HostMe
   };
 }
 
-export function initializeWebMenuPopupBackend(out: EntityConstruction<HostMenuPopupProvider>): void {
+export function initializeWebMenuPopupBackend(out: EntityConstruction<HostMenuPopupCapability>): void {
   out.popup = (items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
     return showWebContextMenu(items, x, y);
   };
 }
 
 export const webHostMenuHighlight = (() => {
-  const out = allocateEntity<HostMenuHighlightProvider>();
+  const out = allocateEntity<HostMenuHighlightCapability>();
   initializeWebMenuHighlightBackend(out);
   return finishEntity(out);
 })();
 
 export const webHostMenuPopup = (() => {
-  const out = allocateEntity<HostMenuPopupProvider>();
+  const out = allocateEntity<HostMenuPopupCapability>();
   initializeWebMenuPopupBackend(out);
   return finishEntity(out);
 })();

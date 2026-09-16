@@ -3,7 +3,7 @@ import type {
   Entity,
   EntityConstruction,
   HostInputCapabilities,
-  HostInputIngressProvider,
+  HostInputIngressCapability,
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
@@ -19,8 +19,8 @@ import { webHostHaptics } from './webHaptics';
 import { webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostInputTarget } from './webInputTarget';
 import { webHostSoftKeyboardChange, webHostSoftKeyboardInfo, webHostSoftKeyboardVisibility } from './webKeyboard';
 
-export function createWebInputIngressBackend(): HostInputIngressProvider & Entity {
-  const out = allocateEntity<HostInputIngressProvider & Entity>();
+export function createWebInputIngressBackend(): HostInputIngressCapability & Entity {
+  const out = allocateEntity<HostInputIngressCapability & Entity>();
   initializeWebInputIngressBackend(out);
   return finishEntity(out);
 }
@@ -83,7 +83,7 @@ export function getWebMouseWheelModeFromWheelEvent(event: Readonly<WheelEvent>):
 }
 
 /** Explicit browser adapter for input ingress. */
-export function initializeWebInputIngressBackend(out: EntityConstruction<HostInputIngressProvider & Entity>): void {
+export function initializeWebInputIngressBackend(out: EntityConstruction<HostInputIngressCapability & Entity>): void {
   out.attachGamepad = (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;

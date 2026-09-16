@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   MediaSessionAction,
-  HostMediaSessionActionProvider,
+  HostMediaSessionActionCapability,
   MediaSessionActionDetails,
-  HostMediaSessionProvider,
+  HostMediaSessionCapability,
   MediaSessionMetadata,
   MediaSessionPlaybackState,
   EntityConstruction,
@@ -17,14 +17,14 @@ const OPERATION_FAILED = { reason: 'operation-failed' } as const;
 const POSITION_STATE_UNAVAILABLE = { reason: 'position-state-unavailable' } as const;
 const _webMediaSessionOwnership = new WeakMap<MediaSession, WebMediaSessionOwnership>();
 
-export function createWebMediaSessionActionBackend(): HostMediaSessionActionProvider {
-  const out = allocateEntity<HostMediaSessionActionProvider>();
+export function createWebMediaSessionActionBackend(): HostMediaSessionActionCapability {
+  const out = allocateEntity<HostMediaSessionActionCapability>();
   initializeWebMediaSessionActionBackend(out);
   return finishEntity(out);
 }
 
-export function createWebMediaSessionBackend(): HostMediaSessionProvider {
-  const out = allocateEntity<HostMediaSessionProvider>();
+export function createWebMediaSessionBackend(): HostMediaSessionCapability {
+  const out = allocateEntity<HostMediaSessionCapability>();
   initializeWebMediaSessionBackend(out);
   return finishEntity(out);
 }
@@ -32,7 +32,9 @@ export function createWebMediaSessionBackend(): HostMediaSessionProvider {
 // Web event provider. Subscribers to the same action share one native handler; different actions are
 // never registered speculatively. Each returned unsubscribe remains pinned to its exact session,
 // action, lane token and subscription record even if navigator.mediaSession later changes.
-export function initializeWebMediaSessionActionBackend(out: EntityConstruction<HostMediaSessionActionProvider>): void {
+export function initializeWebMediaSessionActionBackend(
+  out: EntityConstruction<HostMediaSessionActionCapability>,
+): void {
   const lanes = new Map<MediaSession, Map<MediaSessionAction, WebMediaSessionActionLane>>();
   const finishLane = (lane: WebMediaSessionActionLane): void => {
     for (const subscription of lane.subscriptions) subscription.detached = true;
@@ -61,7 +63,7 @@ export function initializeWebMediaSessionActionBackend(out: EntityConstruction<H
     assertSyncVoid(lane.session.setActionHandler(lane.action, null));
     finishLane(lane);
   };
-  const backend: Pick<HostMediaSessionActionProvider, 'destroy' | 'subscribe'> = {
+  const backend: Pick<HostMediaSessionActionCapability, 'destroy' | 'subscribe'> = {
     destroy() {
       for (const sessionLanes of [...lanes.values()]) {
         for (const lane of [...sessionLanes.values()]) {
@@ -130,11 +132,11 @@ export function initializeWebMediaSessionActionBackend(out: EntityConstruction<H
 // Web command provider. Every publication is pinned to the exact MediaSession identity and an opaque
 // owner token. Readable lanes additionally compare the exact value before release; the opaque position
 // lane uses the strongest boundary the browser exposes, its provenance token.
-export function initializeWebMediaSessionBackend(out: EntityConstruction<HostMediaSessionProvider>): void {
+export function initializeWebMediaSessionBackend(out: EntityConstruction<HostMediaSessionCapability>): void {
   const owner = {};
   const publications = new Map<MediaSession, WebMediaSessionCommandPublication>();
   const backend: Pick<
-    HostMediaSessionProvider,
+    HostMediaSessionCapability,
     'clearMetadata' | 'clearPositionState' | 'destroy' | 'setMetadata' | 'setPlaybackState' | 'setPositionState'
   > = {
     clearMetadata() {

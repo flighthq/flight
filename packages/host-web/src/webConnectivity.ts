@@ -2,14 +2,14 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ConnectivityConnectionType,
   EntityConstruction,
-  HostConnectivityChangeProvider,
-  HostConnectivityReachabilityProvider,
-  HostConnectivityStatusProvider,
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
+  HostConnectivityStatusCapability,
 } from '@flighthq/types/contract';
 
-type WebConnectivityBackend = HostConnectivityStatusProvider &
-  HostConnectivityChangeProvider &
-  HostConnectivityReachabilityProvider;
+type WebConnectivityBackend = HostConnectivityStatusCapability &
+  HostConnectivityChangeCapability &
+  HostConnectivityReachabilityCapability;
 
 export function createWebConnectivityBackend(): WebConnectivityBackend {
   const backend = allocateEntity<WebConnectivityBackend>();
@@ -27,25 +27,25 @@ export const webHostConnectivityChange = createWebConnectivityChangeProvider();
 export const webHostConnectivityReachability = createWebConnectivityReachabilityProvider();
 export const webHostConnectivityStatus = createWebConnectivityStatusProvider();
 
-function createWebConnectivityChangeProvider(): HostConnectivityChangeProvider {
-  const out = allocateEntity<HostConnectivityChangeProvider>();
+function createWebConnectivityChangeProvider(): HostConnectivityChangeCapability {
+  const out = allocateEntity<HostConnectivityChangeCapability>();
   initializeWebConnectivityChangeProvider(out);
   return finishEntity(out);
 }
 
-function createWebConnectivityReachabilityProvider(): HostConnectivityReachabilityProvider {
-  const out = allocateEntity<HostConnectivityReachabilityProvider>();
+function createWebConnectivityReachabilityProvider(): HostConnectivityReachabilityCapability {
+  const out = allocateEntity<HostConnectivityReachabilityCapability>();
   initializeWebConnectivityReachabilityBackend(out);
   return finishEntity(out);
 }
 
-function createWebConnectivityStatusProvider(): HostConnectivityStatusProvider {
-  const out = allocateEntity<HostConnectivityStatusProvider>();
+function createWebConnectivityStatusProvider(): HostConnectivityStatusCapability {
+  const out = allocateEntity<HostConnectivityStatusCapability>();
   initializeWebConnectivityStatusProvider(out);
   return finishEntity(out);
 }
 
-function initializeWebConnectivityChangeProvider(backend: EntityConstruction<HostConnectivityChangeProvider>): void {
+function initializeWebConnectivityChangeProvider(backend: EntityConstruction<HostConnectivityChangeCapability>): void {
   const releases = new Set<() => void>();
   let destroyed = false;
   backend.destroy = () => {
@@ -99,7 +99,7 @@ function initializeWebConnectivityChangeProvider(backend: EntityConstruction<Hos
 }
 
 function initializeWebConnectivityReachabilityBackend(
-  backend: EntityConstruction<HostConnectivityReachabilityProvider>,
+  backend: EntityConstruction<HostConnectivityReachabilityCapability>,
 ): void {
   backend.detectReachability = async (options, out) => {
     if (typeof fetch !== 'function' || typeof AbortController === 'undefined') {
@@ -130,7 +130,7 @@ function initializeWebConnectivityReachabilityBackend(
   };
 }
 
-function initializeWebConnectivityStatusProvider(backend: EntityConstruction<HostConnectivityStatusProvider>): void {
+function initializeWebConnectivityStatusProvider(backend: EntityConstruction<HostConnectivityStatusCapability>): void {
   backend.getStatus = (out) => {
     const nav = typeof navigator !== 'undefined' ? navigator : null;
     out.online = typeof nav?.onLine === 'boolean' ? nav.onLine : null;

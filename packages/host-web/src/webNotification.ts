@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   EntityConstruction,
-  HostNotificationPermissionProvider,
+  HostNotificationPermissionCapability,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -17,7 +17,7 @@ import type {
 
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,
-  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
 ): WebPageNotificationCapabilities {
   const out = allocateEntity<WebPageNotificationCapabilities>();
   initializeWebPageNotificationCapabilities(out, api, hostNotificationPermission);
@@ -27,7 +27,7 @@ export function createWebPageNotificationCapabilities(
 export function initializeWebPageNotificationCapabilities(
   out: EntityConstruction<WebPageNotificationCapabilities>,
   api: Readonly<WebPageNotificationApi>,
-  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
 ): void {
   const nativeByNotification = new Map<Notification, WebPageNotificationInstance>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();

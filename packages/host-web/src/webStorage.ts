@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostStorageChangeProvider,
-  HostStorageProvider,
+  HostStorageChangeCapability,
+  HostPreferencesCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
   StorageSetItemFailureReason,
 } from '@flighthq/types/contract';
 
-type WebStorageBackend = HostStorageProvider & HostStorageChangeProvider;
+type WebStorageBackend = HostPreferencesCapability & HostStorageChangeCapability;
 
 export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBackend>): void {
   initializeWebStorageChangeProvider(out);
@@ -19,19 +19,19 @@ export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBa
 export const webHostStorage = createWebStorageProvider();
 export const webHostStorageChange = createWebStorageChangeProvider();
 
-function createWebStorageChangeProvider(): HostStorageChangeProvider {
-  const out = allocateEntity<HostStorageChangeProvider>();
+function createWebStorageChangeProvider(): HostStorageChangeCapability {
+  const out = allocateEntity<HostStorageChangeCapability>();
   initializeWebStorageChangeProvider(out);
   return finishEntity(out);
 }
 
-function createWebStorageProvider(): HostStorageProvider {
-  const out = allocateEntity<HostStorageProvider>();
+function createWebStorageProvider(): HostPreferencesCapability {
+  const out = allocateEntity<HostPreferencesCapability>();
   initializeWebStorageProvider(out);
   return finishEntity(out);
 }
 
-function initializeWebStorageChangeProvider(out: EntityConstruction<HostStorageChangeProvider>): void {
+function initializeWebStorageChangeProvider(out: EntityConstruction<HostStorageChangeCapability>): void {
   const releases = new Set<() => void>();
   let destroyed = false;
   out.destroy = () => {
@@ -78,7 +78,7 @@ function initializeWebStorageChangeProvider(out: EntityConstruction<HostStorageC
   };
 }
 
-function initializeWebStorageProvider(out: EntityConstruction<HostStorageProvider>): void {
+function initializeWebStorageProvider(out: EntityConstruction<HostPreferencesCapability>): void {
   out.clear = () => {
     try {
       const storage = getWebLocalStorage();

@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostImageProvider, ImageResource, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, HostImageCapability, ImageResource, EntityConstruction } from '@flighthq/types/contract';
 
 import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
 
-export function createWebImageBackend(): HostImageProvider & Entity {
-  const out = allocateEntity<HostImageProvider>();
+export function createWebImageBackend(): HostImageCapability & Entity {
+  const out = allocateEntity<HostImageCapability>();
   initializeWebImageBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebImageBackend(out: EntityConstruction<HostImageProvider>): void {
+export function initializeWebImageBackend(out: EntityConstruction<HostImageCapability>): void {
   out.createImageFromBitmap = (bitmap): ImageResource => {
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;
@@ -46,7 +46,7 @@ export function initializeWebImageBackend(out: EntityConstruction<HostImageProvi
   };
 }
 
-export const webHostImage: HostImageProvider & Entity = createWebImageBackend();
+export const webHostImage: HostImageCapability & Entity = createWebImageBackend();
 
 function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
   const data = new Uint8ClampedArray(source);

@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement, webRaster2DSurfaceProvider } from '@flighthq/host-web';
+import { createWebWgpuCanvasElement, webRaster2DSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
@@ -42,7 +42,7 @@ export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.devi
 export const state = createWgpuRenderState(acquisition.device, pipeline, {
   format: acquisition.format,
   pixelRatio: 1,
-  raster2DSurfaceProvider: webRaster2DSurfaceProvider,
+  raster2DSurfaceProvider: webRaster2DSurfaceCreator,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;

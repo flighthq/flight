@@ -1,4 +1,4 @@
-import { createWebGlContext, createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createWebGlContext, createWebGlRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -23,7 +23,7 @@ import {
 } from '@flighthq/shape';
 import { MorphShapeKind, RegistryEntryState } from '@flighthq/types';
 
-const canvas = createWebGlRenderSurfaceProvider().createRenderSurface(400, 300, 1);
+const canvas = createWebGlRenderSurfaceCreator().createRenderSurface(400, 300, 1);
 if (canvas === null) throw new Error('The WebGL MorphShape size fixture requires a canvas render surface.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

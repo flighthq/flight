@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { AudioDeviceHandle, HostAudioDeviceProvider } from '@flighthq/types/contract';
+import type { AudioDeviceHandle, HostAudioDeviceCapability } from '@flighthq/types/contract';
 import type { AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
@@ -103,7 +103,7 @@ describe('getAudioDeviceContext', () => {
   });
 
   it('returns null for a backend with no web extension', () => {
-    const plain = allocateEntity<HostAudioDeviceProvider>();
+    const plain = allocateEntity<HostAudioDeviceCapability>();
     plain.createDevice = () => 1 as unknown as AudioDeviceHandle;
     expect(getAudioDeviceContext(finishEntity(plain), 1 as unknown as AudioDeviceHandle)).toBeNull();
   });
@@ -112,7 +112,7 @@ describe('getAudioDeviceContext', () => {
   // other methods — and threw TypeError at the call. Each capability is now guarded on the member it
   // actually calls.
   it('returns null for a source-node-only extension instead of throwing', () => {
-    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    const out = allocateEntity<HostAudioDeviceCapability & Record<string, unknown>>();
     out.getSourceGainNode = (): null => null;
     out.getSourceBufferSourceNode = (): null => null;
     const backend = finishEntity(out);
@@ -123,7 +123,7 @@ describe('getAudioDeviceContext', () => {
 
   // The mirror case, so the split is verified in both directions rather than only the one that broke.
   it('resolves a context-only extension even though it carries no source-node methods', () => {
-    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    const out = allocateEntity<HostAudioDeviceCapability & Record<string, unknown>>();
     const context = {} as AudioContext;
     out.getDeviceAudioContext = (): AudioContext => context;
     const backend = finishEntity(out);
@@ -135,7 +135,7 @@ describe('getAudioDeviceContext', () => {
   // An `in` check would pass here and then throw at the call, which is the same defect by another
   // route, so the guard tests callability rather than presence.
   it('returns null when the property exists but is not callable', () => {
-    const out = allocateEntity<HostAudioDeviceProvider & Record<string, unknown>>();
+    const out = allocateEntity<HostAudioDeviceCapability & Record<string, unknown>>();
     out.getDeviceAudioContext = 'not a function';
     const backend = finishEntity(out);
 
@@ -190,8 +190,8 @@ describe('hasAudioDeviceWebNodeAccess', () => {
   });
 });
 
-function stubBackend(): HostAudioDeviceProvider {
-  const out = allocateEntity<HostAudioDeviceProvider>();
+function stubBackend(): HostAudioDeviceCapability {
+  const out = allocateEntity<HostAudioDeviceCapability>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn().mockReturnValue(1);

@@ -3,32 +3,34 @@ import type {
   Entity,
   EntityConstruction,
   SoftKeyboardChangeSubscription,
-  HostSoftKeyboardChangeProvider,
-  HostSoftKeyboardInfoProvider,
-  HostSoftKeyboardVisibilityProvider,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardVisibilityCapability,
   SoftKeyboardInfo,
   SoftKeyboardVisibilityResult,
 } from '@flighthq/types/contract';
 
-export function createWebSoftKeyboardChangeBackend(): HostSoftKeyboardChangeProvider & Entity {
-  const out = allocateEntity<HostSoftKeyboardChangeProvider>();
+export function createWebSoftKeyboardChangeBackend(): HostSoftKeyboardChangeCapability & Entity {
+  const out = allocateEntity<HostSoftKeyboardChangeCapability>();
   initializeWebSoftKeyboardChangeBackend(out);
   return finishEntity(out);
 }
 
-export function createWebSoftKeyboardInfoBackend(): HostSoftKeyboardInfoProvider & Entity {
-  const out = allocateEntity<HostSoftKeyboardInfoProvider>();
+export function createWebSoftKeyboardInfoBackend(): HostSoftKeyboardInfoCapability & Entity {
+  const out = allocateEntity<HostSoftKeyboardInfoCapability>();
   initializeWebSoftKeyboardInfoBackend(out);
   return finishEntity(out);
 }
 
-export function createWebSoftKeyboardVisibilityBackend(): HostSoftKeyboardVisibilityProvider & Entity {
-  const out = allocateEntity<HostSoftKeyboardVisibilityProvider>();
+export function createWebSoftKeyboardVisibilityBackend(): HostSoftKeyboardVisibilityCapability & Entity {
+  const out = allocateEntity<HostSoftKeyboardVisibilityCapability>();
   initializeWebSoftKeyboardVisibilityBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebSoftKeyboardChangeBackend(out: EntityConstruction<HostSoftKeyboardChangeProvider>): void {
+export function initializeWebSoftKeyboardChangeBackend(
+  out: EntityConstruction<HostSoftKeyboardChangeCapability>,
+): void {
   out.subscribe = async (listener: () => void): Promise<SoftKeyboardChangeSubscription> => {
     if (typeof window === 'undefined') return { result: 'acquisition-failed', unsubscribe: null };
     const virtualKeyboard = getVirtualKeyboard();
@@ -50,7 +52,7 @@ export function initializeWebSoftKeyboardChangeBackend(out: EntityConstruction<H
   };
 }
 
-export function initializeWebSoftKeyboardInfoBackend(out: EntityConstruction<HostSoftKeyboardInfoProvider>): void {
+export function initializeWebSoftKeyboardInfoBackend(out: EntityConstruction<HostSoftKeyboardInfoCapability>): void {
   out.getInfo = (target: SoftKeyboardInfo): SoftKeyboardInfo => {
     const geo = getWebKeyboardGeometry();
     target.height = geo.height;
@@ -63,7 +65,7 @@ export function initializeWebSoftKeyboardInfoBackend(out: EntityConstruction<Hos
 }
 
 export function initializeWebSoftKeyboardVisibilityBackend(
-  out: EntityConstruction<HostSoftKeyboardVisibilityProvider>,
+  out: EntityConstruction<HostSoftKeyboardVisibilityCapability>,
 ): void {
   out.hide = async (): Promise<SoftKeyboardVisibilityResult> => {
     const vk = getVirtualKeyboard();

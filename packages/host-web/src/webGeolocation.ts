@@ -6,16 +6,16 @@ import type {
   GeolocationErrorReason,
   GeolocationPosition as FlightGeolocationPosition,
   GeolocationRequestOptions,
-  HostGeolocationProvider,
+  HostGeolocationCapability,
 } from '@flighthq/types/contract';
 
-export function createWebGeolocationBackend(): HostGeolocationProvider {
-  const out = allocateEntity<HostGeolocationProvider>();
+export function createWebGeolocationBackend(): HostGeolocationCapability {
+  const out = allocateEntity<HostGeolocationCapability>();
   initializeWebGeolocationBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebGeolocationBackend(out: EntityConstruction<HostGeolocationProvider>): void {
+export function initializeWebGeolocationBackend(out: EntityConstruction<HostGeolocationCapability>): void {
   out.clearWatch = (id) => {
     const geo = getWebGeolocation();
     if (geo === null || typeof geo.clearWatch !== 'function') return;
@@ -97,7 +97,7 @@ export function initializeWebGeolocationBackend(out: EntityConstruction<HostGeol
   };
 }
 
-export const webHostGeolocation: HostGeolocationProvider = createWebGeolocationBackend();
+export const webHostGeolocation: HostGeolocationCapability = createWebGeolocationBackend();
 
 function getWebGeolocation(): Geolocation | null {
   if (typeof navigator === 'undefined') return null;
