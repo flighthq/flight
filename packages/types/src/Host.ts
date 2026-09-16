@@ -242,7 +242,10 @@ export interface Host extends Entity {
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
   readonly surface: HostSurfaceCapabilities;
-  readonly text: HostTextCapabilities;
+  readonly font: HostFontCapabilities;
+  readonly glyph: HostGlyphCapabilities;
+  readonly textSegment: HostTextSegmentCapabilities;
+  readonly textShaper: HostTextShaperCapabilities;
   readonly tray: HostTrayCapabilities;
   readonly updater: HostUpdaterCapabilities;
   readonly video: HostVideoCapabilities;
@@ -496,10 +499,19 @@ export interface HostSurfaceCapabilities {
   readonly resize?: HostSurfaceCapability;
 }
 
-export interface HostTextCapabilities {
-  readonly fontLoading?: HostFontLoadingCapability;
-  readonly glyphRasterizer?: HostGlyphRasterizerCapability;
+export interface HostFontCapabilities {
+  readonly loader?: HostFontLoadingCapability;
+}
+
+export interface HostGlyphCapabilities {
+  readonly rasterizer?: HostGlyphRasterizerCapability;
+}
+
+export interface HostTextSegmentCapabilities {
   readonly segmenter?: HostTextSegmenterCapability;
+}
+
+export interface HostTextShaperCapabilities {
   readonly shaper?: HostTextShaperCapability;
 }
 

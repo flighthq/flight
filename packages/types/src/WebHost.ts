@@ -9,9 +9,11 @@ import type {
   HostDeviceCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
+  HostFontCapabilities,
   HostFullscreenCapabilities,
   HostGeolocationCapabilities,
   HostGlCapabilities,
+  HostGlyphCapabilities,
   HostHapticsCapabilities,
   HostImageCapabilities,
   HostInputCapabilities,
@@ -32,7 +34,6 @@ import type {
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostSurfaceCapabilities,
-  HostTextCapabilities,
   HostVideoCapabilities,
   HostWindowCapabilities,
 } from './Host';
@@ -48,9 +49,11 @@ export type WebHost = Omit<
   | 'device'
   | 'dialog'
   | 'fileSystem'
+  | 'font'
   | 'fullscreen'
   | 'geolocation'
   | 'gl'
+  | 'glyph'
   | 'haptics'
   | 'image'
   | 'input'
@@ -71,7 +74,6 @@ export type WebHost = Omit<
   | 'softKeyboard'
   | 'statusBar'
   | 'surface'
-  | 'text'
   | 'video'
   | 'window'
 > & {
@@ -94,9 +96,11 @@ export type WebHost = Omit<
     >
   >;
   readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'access'>>;
+  readonly font: Required<Pick<HostFontCapabilities, 'loader'>>;
   readonly fullscreen: Required<Pick<HostFullscreenCapabilities, 'exit'>>;
   readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'position'>>;
   readonly gl: Required<Pick<HostGlCapabilities, 'context'>>;
+  readonly glyph: Required<Pick<HostGlyphCapabilities, 'rasterizer'>>;
   readonly haptics: Required<Pick<HostHapticsCapabilities, 'engine'>>;
   readonly image: Required<Pick<HostImageCapabilities, 'loader'>>;
   readonly input: Required<Pick<HostInputCapabilities, 'dropFile' | 'focus' | 'ingress' | 'pointerLock' | 'target'>>;
@@ -119,7 +123,6 @@ export type WebHost = Omit<
   readonly softKeyboard: Required<Pick<HostSoftKeyboardCapabilities, 'change' | 'info' | 'visibility'>>;
   readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
   readonly surface: Required<Pick<HostSurfaceCapabilities, 'resize'>>;
-  readonly text: Required<Pick<HostTextCapabilities, 'fontLoading' | 'glyphRasterizer'>>;
   readonly video: Required<Pick<HostVideoCapabilities, 'playback'>>;
   readonly window: Required<HostWindowCapabilities>;
 };
