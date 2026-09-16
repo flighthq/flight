@@ -142,7 +142,6 @@ function collectSignatureViolations(
   hostGroups: ReadonlySet<string>,
   violations: Violation[],
 ): void {
-  if (isHostConstructor(file, declaration)) return;
   for (const parameter of signature.parameters) {
     if (parameter.type !== undefined && isOverbroadType(parameter.type, sourceFile, hostGroups)) {
       violations.push({ declaration, file, type: parameter.type.getText(sourceFile) });
@@ -191,10 +190,6 @@ function containsCapabilityMember(type: ts.TypeNode, sourceFile: ts.SourceFile):
   return method;
 }
 
-function isHostConstructor(file: string, declaration: string): boolean {
-  return file === 'packages/entity/src/host.ts' && (declaration === 'createHost' || declaration === 'initializeHost');
-}
-
 function collectHostGroups(): ReadonlySet<string> {
   const source = readFileSync(resolve(PACKAGES, 'types/src/Host.ts'), 'utf8');
   const sourceFile = ts.createSourceFile('Host.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -233,7 +228,13 @@ interface Source {
 function runtimeSourceFiles(): Source[] {
   const files: Source[] = [];
   for (const packageEntry of readdirSync(PACKAGES, { withFileTypes: true })) {
-    if (!packageEntry.isDirectory() || packageEntry.name.startsWith('host-')) continue;
+    // The Host layer itself is out of scope. `host` owns createHost/initializeHost and the accessors, and
+    // `host-*` are the platform backends that compose whole hosts; every API in either one is about a host
+    // by definition, which is the opposite of the overbroad *runtime* parameter this ratchet catches.
+    // `host` does not match the `host-` prefix, so it was scanned for as long as the package has existed.
+    if (!packageEntry.isDirectory() || packageEntry.name === 'host' || packageEntry.name.startsWith('host-')) {
+      continue;
+    }
     const sourceRoot = resolve(PACKAGES, packageEntry.name, 'src');
     if (!existsSync(sourceRoot)) continue;
     for (const entry of readdirSync(sourceRoot, { recursive: true, withFileTypes: true })) {
