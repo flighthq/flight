@@ -161,16 +161,16 @@ export interface NotificationReceivedSubscription extends Entity {
   readonly onNotificationReceived: Signal<(notification: Readonly<Notification>) => void>;
 }
 
-export interface HostNotificationPermissionProvider {
+export interface HostNotificationPermissionCapability {
   getPermission(): Promise<NotificationPermissionQueryOutcome>;
   requestPermission(): Promise<NotificationPermissionRequestOutcome>;
 }
 
-export interface HostNotificationDeliveryProvider {
+export interface HostNotificationDeliveryCapability {
   notify(request: Readonly<NotificationRequest>): Promise<NotificationDeliveryOutcome>;
 }
 
-export interface HostNotificationSchedulingProvider {
+export interface HostNotificationSchedulingCapability {
   cancelAllScheduledNotifications(): Promise<NotificationLifecycleOutcome>;
   getPendingNotifications(): Promise<NotificationPendingListOutcome>;
   scheduleNotification(
@@ -179,96 +179,96 @@ export interface HostNotificationSchedulingProvider {
   ): Promise<NotificationScheduleOutcome>;
 }
 
-export interface HostNotificationCloseProvider {
+export interface HostNotificationCloseCapability {
   closeAllNotifications(): Promise<NotificationLifecycleOutcome>;
 }
 
-export interface HostNotificationActiveListProvider {
+export interface HostNotificationActiveListCapability {
   getActiveNotifications(): Promise<NotificationActiveListOutcome>;
 }
 
-export interface HostNotificationActionProvider {
+export interface HostNotificationActionCapability {
   attach(
     listener: (notification: Readonly<Notification>, actionId: string) => void,
   ): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface HostNotificationClickProvider {
+export interface HostNotificationClickCapability {
   attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface HostNotificationDismissProvider {
+export interface HostNotificationDismissCapability {
   attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface HostNotificationReplyProvider {
+export interface HostNotificationReplyCapability {
   attach(
     listener: (notification: Readonly<Notification>, actionId: string, text: string) => void,
   ): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface HostNotificationReceivedProvider {
+export interface HostNotificationReceivedCapability {
   attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface HostNotificationLifecycleProvider {
+export interface HostNotificationLifecycleCapability {
   destroy(): Promise<NotificationLifecycleOutcome>;
 }
 
 export type WebPageNotificationCapabilities = Entity &
   Readonly<{
-    click: HostNotificationClickProvider;
-    close: HostNotificationCloseProvider;
-    delivery: HostNotificationDeliveryProvider;
-    dismiss: HostNotificationDismissProvider;
-    lifecycle: HostNotificationLifecycleProvider;
-    permission: HostNotificationPermissionProvider;
-    received: HostNotificationReceivedProvider;
+    click: HostNotificationClickCapability;
+    close: HostNotificationCloseCapability;
+    delivery: HostNotificationDeliveryCapability;
+    dismiss: HostNotificationDismissCapability;
+    lifecycle: HostNotificationLifecycleCapability;
+    permission: HostNotificationPermissionCapability;
+    received: HostNotificationReceivedCapability;
   }>;
 
 export type WebServiceWorkerNotificationCapabilities = Entity &
   Readonly<{
-    action: HostNotificationActionProvider;
-    activeList: HostNotificationActiveListProvider;
-    click: HostNotificationClickProvider;
-    close: HostNotificationCloseProvider;
-    delivery: HostNotificationDeliveryProvider;
-    dismiss: HostNotificationDismissProvider;
-    lifecycle: HostNotificationLifecycleProvider;
-    permission: HostNotificationPermissionProvider;
+    action: HostNotificationActionCapability;
+    activeList: HostNotificationActiveListCapability;
+    click: HostNotificationClickCapability;
+    close: HostNotificationCloseCapability;
+    delivery: HostNotificationDeliveryCapability;
+    dismiss: HostNotificationDismissCapability;
+    lifecycle: HostNotificationLifecycleCapability;
+    permission: HostNotificationPermissionCapability;
   }>;
 
 export type ElectronNotificationCapabilities = Entity &
   Readonly<{
-    click: HostNotificationClickProvider & Entity;
-    close: HostNotificationCloseProvider & Entity;
-    delivery: HostNotificationDeliveryProvider & Entity;
-    dismiss: HostNotificationDismissProvider & Entity;
-    lifecycle: HostNotificationLifecycleProvider & Entity;
-    received: HostNotificationReceivedProvider & Entity;
+    click: HostNotificationClickCapability & Entity;
+    close: HostNotificationCloseCapability & Entity;
+    delivery: HostNotificationDeliveryCapability & Entity;
+    dismiss: HostNotificationDismissCapability & Entity;
+    lifecycle: HostNotificationLifecycleCapability & Entity;
+    received: HostNotificationReceivedCapability & Entity;
   }>;
 
 export type ElectronMacosNotificationCapabilities = ElectronNotificationCapabilities &
   Readonly<{
-    action: HostNotificationActionProvider & Entity;
-    reply: HostNotificationReplyProvider & Entity;
+    action: HostNotificationActionCapability & Entity;
+    reply: HostNotificationReplyCapability & Entity;
   }>;
 
 export type TauriNotificationCapabilities = Entity &
   Readonly<{
-    delivery: HostNotificationDeliveryProvider;
-    lifecycle: HostNotificationLifecycleProvider;
-    permission: HostNotificationPermissionProvider;
+    delivery: HostNotificationDeliveryCapability;
+    lifecycle: HostNotificationLifecycleCapability;
+    permission: HostNotificationPermissionCapability;
   }>;
 
 export type CapacitorNotificationCapabilities = Entity &
   Readonly<{
-    action: HostNotificationActionProvider;
-    click: HostNotificationClickProvider;
-    delivery: HostNotificationDeliveryProvider;
-    lifecycle: HostNotificationLifecycleProvider;
-    permission: HostNotificationPermissionProvider;
-    scheduling: HostNotificationSchedulingProvider;
+    action: HostNotificationActionCapability;
+    click: HostNotificationClickCapability;
+    delivery: HostNotificationDeliveryCapability;
+    lifecycle: HostNotificationLifecycleCapability;
+    permission: HostNotificationPermissionCapability;
+    scheduling: HostNotificationSchedulingCapability;
   }>;
 
 export interface WebNotificationOptions {

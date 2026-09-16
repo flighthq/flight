@@ -1,5 +1,5 @@
 import type { Entity } from './Entity';
-import type { HostNotificationPermissionProvider } from './Notification';
+import type { HostNotificationPermissionCapability } from './Notification';
 
 // Shared vocabulary projected by @flighthq/permissions from explicit Host capability providers.
 
@@ -56,8 +56,8 @@ export type PermissionRequestOutcome =
 // The narrow host seam for permission operations that require native platform APIs. Notification
 // retains its method-tight provider shape behind this aggregate; persistence, MIDI, and geolocation
 // remain separate because their capability owners expose distinct outcomes.
-export interface HostPermissionsProvider extends Entity {
-  readonly notification: HostNotificationPermissionProvider;
+export interface HostPermissionsCapability extends Entity {
+  readonly notification: HostNotificationPermissionCapability;
   queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;
   requestMediaAccess(name: 'camera' | 'microphone'): Promise<PermissionRequestOutcome>;
   requestWakeLock(): Promise<PermissionRequestOutcome>;

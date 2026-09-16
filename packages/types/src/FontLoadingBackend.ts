@@ -1,4 +1,4 @@
-export interface HostFontLoadingProvider {
+export interface HostFontLoadingCapability {
   addFontFace(face: FontFace): void;
   checkFontFace(shorthand: string): boolean;
   loadFontFaces(shorthand: string): Promise<FontFace[]>;

@@ -1,4 +1,4 @@
-import type { HostSocketProvider, SocketConnection, TcpSocketConnection, TcpSocketOptions } from './index';
+import type { HostSocketCapability, SocketConnection, TcpSocketConnection, TcpSocketOptions } from './index';
 
 describe('TcpSocketConnection', () => {
   it('publishes a byte-stream contract distinct from framed SocketConnection', () => {
@@ -7,7 +7,7 @@ describe('TcpSocketConnection', () => {
     expectTypeOf<TcpSocketConnection['writable']>().toEqualTypeOf<WritableStream<Uint8Array>>();
     expectTypeOf<TcpSocketConnection['closeTcpSocketConnection']>().toEqualTypeOf<() => void>();
     expectTypeOf<keyof SocketConnection>().toEqualTypeOf<'closeSocketConnection' | 'sendSocketFrame'>();
-    expectTypeOf<NonNullable<HostSocketProvider['openTcpSocket']>>().toEqualTypeOf<
+    expectTypeOf<NonNullable<HostSocketCapability['openTcpSocket']>>().toEqualTypeOf<
       (options: Readonly<TcpSocketOptions>) => TcpSocketConnection | null
     >();
   });

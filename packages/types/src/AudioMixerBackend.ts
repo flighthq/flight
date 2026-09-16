@@ -5,7 +5,7 @@ export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandl
 
 export type AudioMixerGraphHandle = number & { readonly __brand: 'AudioMixerGraphHandle' };
 
-export interface HostAudioMixerProvider extends Entity {
+export interface HostAudioMixerCapability extends Entity {
   createMixerGraph(device: AudioDeviceHandle, masterGain: number): AudioMixerGraphHandle;
   destroyMixerGraph(graph: AudioMixerGraphHandle): void;
   createBusNode(graph: AudioMixerGraphHandle, gain: number, pan: number): AudioBusNodeHandle;

@@ -1,4 +1,4 @@
-import type { HostWindowProvider } from './ApplicationWindow';
+import type { HostWindowCapability } from './ApplicationWindow';
 import type { ElectronIpcTarget } from './ElectronApi';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
 import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
@@ -15,7 +15,7 @@ import type {
   HostSystemCapabilities,
   HostUpdaterCapabilities,
 } from './Host';
-import type { HostIpcTargetedSendProvider } from './Ipc';
+import type { HostIpcTargetedSendCapability } from './Ipc';
 import type { ElectronMenuCapabilities } from './Menu';
 import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification';
 import type { ElectronPowerCapabilities } from './Power';
@@ -55,7 +55,7 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   readonly clipboard: Required<Pick<HostClipboardCapabilities, 'bookmark' | 'formats' | 'image' | 'text'>>;
   readonly dialog: Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>>;
   readonly ipc: Required<Pick<HostIpcCapabilities, 'handle' | 'message'>> & {
-    readonly targetedSend: HostIpcTargetedSendProvider<ElectronIpcTarget>;
+    readonly targetedSend: HostIpcTargetedSendCapability<ElectronIpcTarget>;
   };
   readonly menu: ElectronMenuCapabilities;
   readonly notification: ElectronNotificationCapabilitiesFor<Profile>;
@@ -68,7 +68,7 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   readonly system: Required<Pick<HostSystemCapabilities, 'platform'>>;
   readonly tray: ElectronTrayCapabilitiesFor<Profile>;
   readonly updater: Required<Pick<HostUpdaterCapabilities, 'command'>>;
-  readonly window: HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>;
+  readonly window: HostWindowCapability & Required<Pick<HostWindowCapability, 'attach' | 'close' | 'open'>>;
 };
 
 export type ElectronMacosHost = ElectronHost<'macos'>;

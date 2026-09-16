@@ -1,193 +1,193 @@
-import type { HostAccessibilityProvider } from './Accessibility';
+import type { HostAccessibilityCapability } from './Accessibility';
 import type {
-  HostAppActivateProvider,
-  HostAppActivationPolicyProvider,
-  HostAppAllWindowsClosedProvider,
-  HostAppBadgeProvider,
-  HostAppDockProvider,
-  HostAppFocusProvider,
-  HostAppHideProvider,
-  HostAppLocaleProvider,
-  HostAppLoginItemProvider,
-  HostAppNameProvider,
-  HostAppNameWriteProvider,
-  HostAppOpenFileProvider,
-  HostAppPathProvider,
-  HostAppQuitProvider,
-  HostAppQuitRequestProvider,
-  HostAppReadyProvider,
-  HostAppRecentDocumentsProvider,
-  HostAppRelaunchProvider,
-  HostAppSecondInstanceProvider,
-  HostAppSingleInstanceProvider,
-  HostAppUserModelIdProvider,
-  HostAppVersionProvider,
-  HostAppShowProvider,
-  HostAppVisibilityQueryProvider,
+  HostAppActivateCapability,
+  HostAppActivationPolicyCapability,
+  HostAppAllWindowsClosedCapability,
+  HostAppBadgeCapability,
+  HostAppDockCapability,
+  HostAppFocusCapability,
+  HostAppHideCapability,
+  HostAppLocaleCapability,
+  HostAppLoginItemCapability,
+  HostAppNameCapability,
+  HostAppNameWriteCapability,
+  HostAppOpenFileCapability,
+  HostAppPathCapability,
+  HostAppQuitCapability,
+  HostAppQuitRequestCapability,
+  HostAppReadyCapability,
+  HostAppRecentDocumentsCapability,
+  HostAppRelaunchCapability,
+  HostAppSecondInstanceCapability,
+  HostAppSingleInstanceCapability,
+  HostAppUserModelIdCapability,
+  HostAppVersionCapability,
+  HostAppShowCapability,
+  HostAppVisibilityQueryCapability,
 } from './App';
-import type { HostApplicationExitProvider } from './ApplicationExitBackend';
-import type { HostApplicationVisibilityProvider } from './ApplicationVisibilityBackend';
-import type { HostWindowProvider } from './ApplicationWindow';
+import type { HostApplicationExitCapability } from './ApplicationExitBackend';
+import type { HostApplicationVisibilityCapability } from './ApplicationVisibilityBackend';
+import type { HostWindowCapability } from './ApplicationWindow';
 import type {
-  HostInputDropFileProvider,
-  HostInputFocusProvider,
-  HostInputPointerLockProvider,
-  HostRenderContextProvider,
-  HostRenderSurfaceProvider,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
+  HostRenderContextCapability,
+  HostRenderSurfaceCapability,
 } from './ApplicationWindowTargetBackend';
-import type { HostAudioProvider } from './AudioBackend';
-import type { HostAudioDeviceProvider } from './AudioDeviceBackend';
-import type { HostAudioMixerProvider } from './AudioMixerBackend';
-import type { HostBitmapEncodeProvider } from './BitmapEncodeBackend';
-import type { HostBitmapReadbackProvider } from './BitmapReadbackBackend';
+import type { HostAudioCapability } from './AudioBackend';
+import type { HostAudioDeviceCapability } from './AudioDeviceBackend';
+import type { HostAudioMixerCapability } from './AudioMixerBackend';
+import type { HostBitmapEncodeCapability } from './BitmapEncodeBackend';
+import type { HostBitmapReadbackCapability } from './BitmapReadbackBackend';
 import type {
-  HostClipboardBookmarkProvider,
-  HostClipboardChangeProvider,
-  HostClipboardFormatsProvider,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
+  HostClipboardBookmarkCapability,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
 } from './Clipboard';
 import type {
-  HostConnectivityChangeProvider,
-  HostConnectivityReachabilityProvider,
-  HostConnectivityStatusProvider,
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
+  HostConnectivityStatusCapability,
 } from './Connectivity';
-import type { HostDeviceProvider } from './Device';
+import type { HostDeviceCapability } from './Device';
 import type { Entity } from './Entity';
 import type {
-  HostDirectoryOpenDialogProvider,
-  HostFileOpenDialogProvider,
-  HostFileSaveDialogProvider,
+  HostDirectoryOpenDialogCapability,
+  HostFileOpenDialogCapability,
+  HostFileSaveDialogCapability,
 } from './FileDialogBackend';
-import type { HostFileSystemProvider } from './FileSystem';
-import type { HostFontLoadingProvider } from './FontLoadingBackend';
-import type { HostFullscreenProvider } from './FullscreenBackend';
-import type { HostGeolocationProvider } from './Geolocation';
-import type { HostGlyphRasterizerProvider } from './GlyphSource';
-import type { HostHapticsProvider } from './Haptics';
-import type { HostImageOpenDialogProvider } from './ImageOpenDialogBackend';
-import type { HostImageProvider } from './ImageResource';
-import type { HostInputIngressProvider } from './InputIngressBackend';
-import type { HostInputTargetProvider } from './InputTargetBackend';
+import type { HostFileSystemCapability } from './FileSystem';
+import type { HostFontLoadingCapability } from './FontLoadingBackend';
+import type { HostFullscreenCapability } from './FullscreenBackend';
+import type { HostGeolocationCapability } from './Geolocation';
+import type { HostGlyphRasterizerCapability } from './GlyphSource';
+import type { HostHapticsCapability } from './Haptics';
+import type { HostImageOpenDialogCapability } from './ImageOpenDialogBackend';
+import type { HostImageCapability } from './ImageResource';
+import type { HostInputIngressCapability } from './InputIngressBackend';
+import type { HostInputTargetCapability } from './InputTargetBackend';
 import type {
-  HostIpcHandleProvider,
-  HostIpcInvokeProvider,
-  HostIpcMessageProvider,
-  HostIpcSendProvider,
-  HostIpcTargetedSendProvider,
+  HostIpcHandleCapability,
+  HostIpcInvokeCapability,
+  HostIpcMessageCapability,
+  HostIpcSendCapability,
+  HostIpcTargetedSendCapability,
 } from './Ipc';
 import type {
-  HostSoftKeyboardAccessoryBarProvider,
-  HostSoftKeyboardChangeProvider,
-  HostSoftKeyboardInfoProvider,
-  HostSoftKeyboardResizeModeWriteProvider,
-  HostSoftKeyboardScrollAssistProvider,
-  HostSoftKeyboardStyleProvider,
-  HostSoftKeyboardVisibilityProvider,
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
 } from './Keyboard';
-import type { HostLifecycleProvider } from './Lifecycle';
-import type { HostLoopProvider } from './LoopBackend';
-import type { HostMediaSessionActionProvider, HostMediaSessionProvider } from './MediaSession';
+import type { HostLifecycleCapability } from './Lifecycle';
+import type { HostLoopCapability } from './LoopBackend';
+import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession';
 import type {
-  HostMenuApplicationProvider,
-  HostMenuHighlightProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuHighlightCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
 } from './Menu';
-import type { HostMessageDialogProvider } from './MessageDialogBackend';
-import type { HostMidiAccessProvider, HostMidiPermissionProvider } from './Midi';
-import type { HostNetProvider } from './Net';
+import type { HostMessageDialogCapability } from './MessageDialogBackend';
+import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi';
+import type { HostNetCapability } from './Net';
 import type {
-  HostNotificationActionProvider,
-  HostNotificationActiveListProvider,
-  HostNotificationClickProvider,
-  HostNotificationCloseProvider,
-  HostNotificationDeliveryProvider,
-  HostNotificationDismissProvider,
-  HostNotificationLifecycleProvider,
-  HostNotificationPermissionProvider,
-  HostNotificationReceivedProvider,
-  HostNotificationReplyProvider,
-  HostNotificationSchedulingProvider,
+  HostNotificationActionCapability,
+  HostNotificationActiveListCapability,
+  HostNotificationClickCapability,
+  HostNotificationCloseCapability,
+  HostNotificationDeliveryCapability,
+  HostNotificationDismissCapability,
+  HostNotificationLifecycleCapability,
+  HostNotificationPermissionCapability,
+  HostNotificationReceivedCapability,
+  HostNotificationReplyCapability,
+  HostNotificationSchedulingCapability,
 } from './Notification';
-import type { HostPermissionsProvider } from './Permission';
-import type { HostPhotoCaptureDialogProvider } from './PhotoCaptureDialogBackend';
-import type { HostPlatformProvider } from './Platform';
+import type { HostPermissionsCapability } from './Permission';
+import type { HostPhotoCaptureDialogCapability } from './PhotoCaptureDialogBackend';
+import type { HostPlatformCapability } from './Platform';
 import type {
-  HostPowerBatteryHealthProvider,
-  HostPowerChangeProvider,
-  HostPowerIdleProvider,
-  HostPowerKeepAwakeProvider,
-  HostPowerSessionLockProvider,
-  HostPowerStatusProvider,
-  HostPowerSuspensionProvider,
-  HostPowerThermalProvider,
+  HostPowerBatteryHealthCapability,
+  HostPowerChangeCapability,
+  HostPowerIdleCapability,
+  HostPowerKeepAwakeCapability,
+  HostPowerSessionLockCapability,
+  HostPowerStatusCapability,
+  HostPowerSuspensionCapability,
+  HostPowerThermalCapability,
 } from './Power';
-import type { HostPromptDialogProvider } from './PromptDialogBackend';
+import type { HostPromptDialogCapability } from './PromptDialogBackend';
 import type {
-  HostProtocolDefaultProvider,
-  HostProtocolLaunchProvider,
-  HostProtocolOpenProvider,
-  HostProtocolRegistrationProvider,
-  HostProtocolRegistrationQueryProvider,
-  HostProtocolUnregistrationProvider,
+  HostProtocolDefaultCapability,
+  HostProtocolLaunchCapability,
+  HostProtocolOpenCapability,
+  HostProtocolRegistrationCapability,
+  HostProtocolRegistrationQueryCapability,
+  HostProtocolUnregistrationCapability,
 } from './Protocol';
 import type {
-  HostScreenChangeProvider,
-  HostScreenDetailsProvider,
-  HostScreenPermissionChangeProvider,
-  HostScreenQueryProvider,
+  HostScreenChangeCapability,
+  HostScreenDetailsCapability,
+  HostScreenPermissionChangeCapability,
+  HostScreenQueryCapability,
 } from './Screen';
-import type { HostSensorsProvider } from './Sensors';
-import type { HostShareContentProvider, HostShareFilesProvider } from './Share';
+import type { HostSensorsCapability } from './Sensors';
+import type { HostShareContentCapability, HostShareFilesCapability } from './Share';
 import type {
-  HostShellBeepProvider,
-  HostShellExternalProvider,
-  HostShellPathOpenProvider,
-  HostShellPathRevealProvider,
-  HostShellProcessProvider,
-  HostShellShortcutLinkProvider,
-  HostShellTrashProvider,
+  HostShellBeepCapability,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
+  HostShellProcessCapability,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
 } from './Shell';
-import type { HostShortcutQueryProvider, HostShortcutTriggerProvider } from './Shortcut';
-import type { HostSocketProvider } from './Socket';
+import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut';
+import type { HostSocketCapability } from './Socket';
 import type {
-  HostStatusBarChangeProvider,
-  HostStatusBarColorProvider,
-  HostStatusBarInfoProvider,
-  HostStatusBarOverlaysProvider,
-  HostStatusBarStyleProvider,
-  HostStatusBarVisibilityProvider,
+  HostStatusBarChangeCapability,
+  HostStatusBarColorCapability,
+  HostStatusBarInfoCapability,
+  HostStatusBarOverlaysCapability,
+  HostStatusBarStyleCapability,
+  HostStatusBarVisibilityCapability,
 } from './StatusBar';
 import type {
-  HostStorageProvider,
-  HostStorageChangeProvider,
-  HostStoragePersistenceQueryProvider,
-  HostStoragePersistenceRequestProvider,
+  HostStorageCapability,
+  HostStorageChangeCapability,
+  HostStoragePersistenceQueryCapability,
+  HostStoragePersistenceRequestCapability,
 } from './Storage';
-import type { HostTextSegmenterProvider } from './TextSegment';
-import type { HostTextShaperProvider } from './TextShaper';
+import type { HostTextSegmenterCapability } from './TextSegment';
+import type { HostTextShaperCapability } from './TextShaper';
 import type {
-  HostTrayBalloonProvider,
-  HostTrayBalloonEventsProvider,
-  HostTrayBoundsProvider,
-  HostTrayDoubleClickPolicyProvider,
-  HostTrayDropEventsProvider,
-  HostTrayImageProvider,
-  HostTrayInteractionEventsProvider,
-  HostTrayLifecycleProvider,
-  HostTrayMenuProvider,
-  HostTrayMenuSelectionEventsProvider,
-  HostTrayPopupMenuProvider,
-  HostTrayPressedImageProvider,
-  HostTrayTemplateImageProvider,
-  HostTrayTitleProvider,
-  HostTrayTooltipProvider,
+  HostTrayBalloonCapability,
+  HostTrayBalloonEventsCapability,
+  HostTrayBoundsCapability,
+  HostTrayDoubleClickPolicyCapability,
+  HostTrayDropEventsCapability,
+  HostTrayImageCapability,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayPopupMenuCapability,
+  HostTrayPressedImageCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
 } from './Tray';
-import type { HostUpdaterCommandProvider } from './Updater';
-import type { HostVideoProvider } from './VideoCapabilityBackend';
-import type { HostVideoCaptureDialogProvider } from './VideoCaptureDialogBackend';
-import type { HostWgpuProvider } from './WgpuHost';
+import type { HostUpdaterCommandCapability } from './Updater';
+import type { HostVideoCapability } from './VideoCapabilityBackend';
+import type { HostVideoCaptureDialogCapability } from './VideoCaptureDialogBackend';
+import type { HostWgpuCapability } from './WgpuHost';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -215,116 +215,116 @@ export interface Host extends Entity {
   readonly tray: HostTrayCapabilities;
   readonly ui: HostUiCapabilities;
   readonly updater: HostUpdaterCapabilities;
-  readonly window: HostWindowProvider;
+  readonly window: HostWindowCapability;
 }
 
 export interface HostAccessibilityCapabilities {
-  readonly provider?: HostAccessibilityProvider;
+  readonly provider?: HostAccessibilityCapability;
 }
 
 export interface HostAppCapabilities {
-  readonly activate?: HostAppActivateProvider;
-  readonly activationPolicy?: HostAppActivationPolicyProvider;
-  readonly allWindowsClosed?: HostAppAllWindowsClosedProvider;
-  readonly badge?: HostAppBadgeProvider;
-  readonly dock?: HostAppDockProvider;
-  readonly exit?: HostApplicationExitProvider;
-  readonly focus?: HostAppFocusProvider;
-  readonly hide?: HostAppHideProvider;
-  readonly locale?: HostAppLocaleProvider;
-  readonly loginItem?: HostAppLoginItemProvider;
-  readonly loop?: HostLoopProvider;
-  readonly name?: HostAppNameProvider;
-  readonly nameWrite?: HostAppNameWriteProvider;
-  readonly openFile?: HostAppOpenFileProvider;
-  readonly path?: HostAppPathProvider;
-  readonly hiddenQuery?: HostAppVisibilityQueryProvider;
-  readonly quit?: HostAppQuitProvider;
-  readonly quitRequest?: HostAppQuitRequestProvider;
-  readonly ready?: HostAppReadyProvider;
-  readonly recentDocuments?: HostAppRecentDocumentsProvider;
-  readonly relaunch?: HostAppRelaunchProvider;
-  readonly secondInstance?: HostAppSecondInstanceProvider;
-  readonly show?: HostAppShowProvider;
-  readonly singleInstance?: HostAppSingleInstanceProvider;
-  readonly userModelId?: HostAppUserModelIdProvider;
-  readonly version?: HostAppVersionProvider;
-  readonly visibility?: HostApplicationVisibilityProvider;
+  readonly activate?: HostAppActivateCapability;
+  readonly activationPolicy?: HostAppActivationPolicyCapability;
+  readonly allWindowsClosed?: HostAppAllWindowsClosedCapability;
+  readonly badge?: HostAppBadgeCapability;
+  readonly dock?: HostAppDockCapability;
+  readonly exit?: HostApplicationExitCapability;
+  readonly focus?: HostAppFocusCapability;
+  readonly hide?: HostAppHideCapability;
+  readonly locale?: HostAppLocaleCapability;
+  readonly loginItem?: HostAppLoginItemCapability;
+  readonly loop?: HostLoopCapability;
+  readonly name?: HostAppNameCapability;
+  readonly nameWrite?: HostAppNameWriteCapability;
+  readonly openFile?: HostAppOpenFileCapability;
+  readonly path?: HostAppPathCapability;
+  readonly hiddenQuery?: HostAppVisibilityQueryCapability;
+  readonly quit?: HostAppQuitCapability;
+  readonly quitRequest?: HostAppQuitRequestCapability;
+  readonly ready?: HostAppReadyCapability;
+  readonly recentDocuments?: HostAppRecentDocumentsCapability;
+  readonly relaunch?: HostAppRelaunchCapability;
+  readonly secondInstance?: HostAppSecondInstanceCapability;
+  readonly show?: HostAppShowCapability;
+  readonly singleInstance?: HostAppSingleInstanceCapability;
+  readonly userModelId?: HostAppUserModelIdCapability;
+  readonly version?: HostAppVersionCapability;
+  readonly visibility?: HostApplicationVisibilityCapability;
 }
 
 export interface HostProtocolCapabilities {
-  readonly default?: HostProtocolDefaultProvider;
-  readonly launch?: HostProtocolLaunchProvider;
-  readonly open?: HostProtocolOpenProvider;
-  readonly registration?: HostProtocolRegistrationProvider;
-  readonly registrationQuery?: HostProtocolRegistrationQueryProvider;
-  readonly unregistration?: HostProtocolUnregistrationProvider;
+  readonly default?: HostProtocolDefaultCapability;
+  readonly launch?: HostProtocolLaunchCapability;
+  readonly open?: HostProtocolOpenCapability;
+  readonly registration?: HostProtocolRegistrationCapability;
+  readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
+  readonly unregistration?: HostProtocolUnregistrationCapability;
 }
 
 export interface HostClipboardCapabilities {
-  readonly bookmark?: HostClipboardBookmarkProvider;
-  readonly change?: HostClipboardChangeProvider;
-  readonly formats?: HostClipboardFormatsProvider;
-  readonly image?: HostClipboardImageProvider;
-  readonly text?: HostClipboardTextProvider;
+  readonly bookmark?: HostClipboardBookmarkCapability;
+  readonly change?: HostClipboardChangeCapability;
+  readonly formats?: HostClipboardFormatsCapability;
+  readonly image?: HostClipboardImageCapability;
+  readonly text?: HostClipboardTextCapability;
 }
 export interface HostConnectivityCapabilities {
-  readonly change?: HostConnectivityChangeProvider;
-  readonly reachability?: HostConnectivityReachabilityProvider;
-  readonly status?: HostConnectivityStatusProvider;
+  readonly change?: HostConnectivityChangeCapability;
+  readonly reachability?: HostConnectivityReachabilityCapability;
+  readonly status?: HostConnectivityStatusCapability;
 }
 
 export interface HostDialogCapabilities {
-  readonly directoryOpen?: HostDirectoryOpenDialogProvider;
-  readonly fileOpen?: HostFileOpenDialogProvider;
-  readonly fileSave?: HostFileSaveDialogProvider;
-  readonly imageOpen?: HostImageOpenDialogProvider;
-  readonly message?: HostMessageDialogProvider;
-  readonly photoCapture?: HostPhotoCaptureDialogProvider;
-  readonly prompt?: HostPromptDialogProvider;
-  readonly videoCapture?: HostVideoCaptureDialogProvider;
+  readonly directoryOpen?: HostDirectoryOpenDialogCapability;
+  readonly fileOpen?: HostFileOpenDialogCapability;
+  readonly fileSave?: HostFileSaveDialogCapability;
+  readonly imageOpen?: HostImageOpenDialogCapability;
+  readonly message?: HostMessageDialogCapability;
+  readonly photoCapture?: HostPhotoCaptureDialogCapability;
+  readonly prompt?: HostPromptDialogCapability;
+  readonly videoCapture?: HostVideoCaptureDialogCapability;
 }
 
 export interface HostGraphicsCapabilities {
-  readonly bitmapEncode?: HostBitmapEncodeProvider;
-  readonly bitmapReadback?: HostBitmapReadbackProvider;
-  readonly image?: HostImageProvider;
-  readonly renderContext?: HostRenderContextProvider;
-  readonly renderSurface?: HostRenderSurfaceProvider;
-  readonly wgpuHost?: HostWgpuProvider;
+  readonly bitmapEncode?: HostBitmapEncodeCapability;
+  readonly bitmapReadback?: HostBitmapReadbackCapability;
+  readonly image?: HostImageCapability;
+  readonly renderContext?: HostRenderContextCapability;
+  readonly renderSurface?: HostRenderSurfaceCapability;
+  readonly wgpuHost?: HostWgpuCapability;
 }
 
 export interface HostInputCapabilities {
-  readonly dropFile?: HostInputDropFileProvider;
-  readonly focus?: HostInputFocusProvider;
-  readonly haptics?: HostHapticsProvider;
-  readonly ingress?: HostInputIngressProvider;
-  readonly pointerLock?: HostInputPointerLockProvider;
-  readonly softKeyboardAccessoryBar?: HostSoftKeyboardAccessoryBarProvider;
-  readonly softKeyboardChange?: HostSoftKeyboardChangeProvider;
-  readonly softKeyboardInfo?: HostSoftKeyboardInfoProvider;
-  readonly softKeyboardResizeModeWrite?: HostSoftKeyboardResizeModeWriteProvider;
-  readonly softKeyboardScrollAssist?: HostSoftKeyboardScrollAssistProvider;
-  readonly softKeyboardStyle?: HostSoftKeyboardStyleProvider;
-  readonly softKeyboardVisibility?: HostSoftKeyboardVisibilityProvider;
-  readonly target?: HostInputTargetProvider;
+  readonly dropFile?: HostInputDropFileCapability;
+  readonly focus?: HostInputFocusCapability;
+  readonly haptics?: HostHapticsCapability;
+  readonly ingress?: HostInputIngressCapability;
+  readonly pointerLock?: HostInputPointerLockCapability;
+  readonly softKeyboardAccessoryBar?: HostSoftKeyboardAccessoryBarCapability;
+  readonly softKeyboardChange?: HostSoftKeyboardChangeCapability;
+  readonly softKeyboardInfo?: HostSoftKeyboardInfoCapability;
+  readonly softKeyboardResizeModeWrite?: HostSoftKeyboardResizeModeWriteCapability;
+  readonly softKeyboardScrollAssist?: HostSoftKeyboardScrollAssistCapability;
+  readonly softKeyboardStyle?: HostSoftKeyboardStyleCapability;
+  readonly softKeyboardVisibility?: HostSoftKeyboardVisibilityCapability;
+  readonly target?: HostInputTargetCapability;
 }
 
 export interface HostIpcCapabilities {
-  readonly handle?: HostIpcHandleProvider;
-  readonly invoke?: HostIpcInvokeProvider;
-  readonly message?: HostIpcMessageProvider;
-  readonly send?: HostIpcSendProvider;
-  readonly targetedSend?: HostIpcTargetedSendProvider;
+  readonly handle?: HostIpcHandleCapability;
+  readonly invoke?: HostIpcInvokeCapability;
+  readonly message?: HostIpcMessageCapability;
+  readonly send?: HostIpcSendCapability;
+  readonly targetedSend?: HostIpcTargetedSendCapability;
 }
 
 export interface HostMediaCapabilities {
-  readonly audioCodec?: HostAudioProvider;
-  readonly audioDevice?: HostAudioDeviceProvider;
-  readonly audioMixer?: HostAudioMixerProvider;
-  readonly session?: HostMediaSessionProvider;
-  readonly sessionAction?: HostMediaSessionActionProvider;
-  readonly video?: HostVideoProvider;
+  readonly audioCodec?: HostAudioCapability;
+  readonly audioDevice?: HostAudioDeviceCapability;
+  readonly audioMixer?: HostAudioMixerCapability;
+  readonly session?: HostMediaSessionCapability;
+  readonly sessionAction?: HostMediaSessionActionCapability;
+  readonly video?: HostVideoCapability;
 }
 
 // Menu is a top-level group rather than a ui slot: its three capabilities have different provider
@@ -332,62 +332,62 @@ export interface HostMediaCapabilities {
 // non-optional like every other; the slots inside it are optional, and an omitted slot means the host
 // genuinely lacks that capability — never a stub that answers false.
 export interface HostMenuCapabilities {
-  readonly application?: HostMenuApplicationProvider;
-  readonly highlight?: HostMenuHighlightProvider;
-  readonly popup?: HostMenuPopupProvider;
-  readonly select?: HostMenuSelectProvider;
+  readonly application?: HostMenuApplicationCapability;
+  readonly highlight?: HostMenuHighlightCapability;
+  readonly popup?: HostMenuPopupCapability;
+  readonly select?: HostMenuSelectCapability;
 }
 
 export interface HostMidiCapabilities {
-  readonly access?: HostMidiAccessProvider;
-  readonly permission?: HostMidiPermissionProvider;
+  readonly access?: HostMidiAccessCapability;
+  readonly permission?: HostMidiPermissionCapability;
 }
 
 export interface HostNetCapabilities {
-  readonly http?: HostNetProvider;
-  readonly socket?: HostSocketProvider;
+  readonly http?: HostNetCapability;
+  readonly socket?: HostSocketCapability;
 }
 
 export interface HostNotificationCapabilities {
-  readonly action?: HostNotificationActionProvider;
-  readonly activeList?: HostNotificationActiveListProvider;
-  readonly click?: HostNotificationClickProvider;
-  readonly close?: HostNotificationCloseProvider;
-  readonly delivery?: HostNotificationDeliveryProvider;
-  readonly dismiss?: HostNotificationDismissProvider;
-  readonly lifecycle?: HostNotificationLifecycleProvider;
-  readonly permission?: HostNotificationPermissionProvider;
-  readonly received?: HostNotificationReceivedProvider;
-  readonly reply?: HostNotificationReplyProvider;
-  readonly scheduling?: HostNotificationSchedulingProvider;
+  readonly action?: HostNotificationActionCapability;
+  readonly activeList?: HostNotificationActiveListCapability;
+  readonly click?: HostNotificationClickCapability;
+  readonly close?: HostNotificationCloseCapability;
+  readonly delivery?: HostNotificationDeliveryCapability;
+  readonly dismiss?: HostNotificationDismissCapability;
+  readonly lifecycle?: HostNotificationLifecycleCapability;
+  readonly permission?: HostNotificationPermissionCapability;
+  readonly received?: HostNotificationReceivedCapability;
+  readonly reply?: HostNotificationReplyCapability;
+  readonly scheduling?: HostNotificationSchedulingCapability;
 }
 
 // Share is top-level because content and Flight data-URL files have different provider coverage.
 // Omission is capability absence; providers never install a stub that merely answers false.
 export interface HostShareCapabilities {
-  readonly content?: HostShareContentProvider;
-  readonly files?: HostShareFilesProvider;
+  readonly content?: HostShareContentCapability;
+  readonly files?: HostShareFilesCapability;
 }
 
 // Power is a top-level group: its capabilities vary independently by host (web has keep-awake and
 // suspend/resume but no idle, session lock or battery health; electron has all of them), so one
 // combined power provider could not represent any host honestly.
 export interface HostPowerCapabilities {
-  readonly batteryHealth?: HostPowerBatteryHealthProvider;
-  readonly change?: HostPowerChangeProvider;
-  readonly idle?: HostPowerIdleProvider;
-  readonly keepAwake?: HostPowerKeepAwakeProvider;
-  readonly sessionLock?: HostPowerSessionLockProvider;
-  readonly status?: HostPowerStatusProvider;
-  readonly suspension?: HostPowerSuspensionProvider;
-  readonly thermal?: HostPowerThermalProvider;
+  readonly batteryHealth?: HostPowerBatteryHealthCapability;
+  readonly change?: HostPowerChangeCapability;
+  readonly idle?: HostPowerIdleCapability;
+  readonly keepAwake?: HostPowerKeepAwakeCapability;
+  readonly sessionLock?: HostPowerSessionLockCapability;
+  readonly status?: HostPowerStatusCapability;
+  readonly suspension?: HostPowerSuspensionCapability;
+  readonly thermal?: HostPowerThermalCapability;
 }
 
 export interface HostScreenCapabilities {
-  readonly change?: HostScreenChangeProvider;
-  readonly details?: HostScreenDetailsProvider;
-  readonly permissionChange?: HostScreenPermissionChangeProvider;
-  readonly query?: HostScreenQueryProvider;
+  readonly change?: HostScreenChangeCapability;
+  readonly details?: HostScreenDetailsCapability;
+  readonly permissionChange?: HostScreenPermissionChangeCapability;
+  readonly query?: HostScreenQueryCapability;
 }
 
 export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
@@ -395,76 +395,76 @@ export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
 // Shell is top-level because its seven command capabilities have distinct provider coverage. Every
 // Host names the group; omitted slots mean genuine absence, never a false-returning stub.
 export interface HostShellCapabilities {
-  readonly beep?: HostShellBeepProvider;
-  readonly external?: HostShellExternalProvider;
-  readonly pathOpen?: HostShellPathOpenProvider;
-  readonly pathReveal?: HostShellPathRevealProvider;
-  readonly process?: HostShellProcessProvider;
-  readonly shortcutLink?: HostShellShortcutLinkProvider;
-  readonly trash?: HostShellTrashProvider;
+  readonly beep?: HostShellBeepCapability;
+  readonly external?: HostShellExternalCapability;
+  readonly pathOpen?: HostShellPathOpenCapability;
+  readonly pathReveal?: HostShellPathRevealCapability;
+  readonly process?: HostShellProcessCapability;
+  readonly shortcutLink?: HostShellShortcutLinkCapability;
+  readonly trash?: HostShellTrashCapability;
 }
 
 // Shortcut stays top-level because trigger is an event subscription and query is a command/result;
 // both happen to have E/T coverage, but combining their incompatible shapes would hide that split.
 export interface HostShortcutCapabilities {
-  readonly query?: HostShortcutQueryProvider;
-  readonly trigger?: HostShortcutTriggerProvider;
+  readonly query?: HostShortcutQueryCapability;
+  readonly trigger?: HostShortcutTriggerCapability;
 }
 
 export interface HostStorageCapabilities {
-  readonly change?: HostStorageChangeProvider;
-  readonly fileSystem?: HostFileSystemProvider;
-  readonly local?: HostStorageProvider;
-  readonly persistenceQuery?: HostStoragePersistenceQueryProvider;
-  readonly persistenceRequest?: HostStoragePersistenceRequestProvider;
+  readonly change?: HostStorageChangeCapability;
+  readonly fileSystem?: HostFileSystemCapability;
+  readonly local?: HostStorageCapability;
+  readonly persistenceQuery?: HostStoragePersistenceQueryCapability;
+  readonly persistenceRequest?: HostStoragePersistenceRequestCapability;
 }
 
 export interface HostSystemCapabilities {
-  readonly device?: HostDeviceProvider;
-  readonly geolocation?: HostGeolocationProvider;
-  readonly lifecycle?: HostLifecycleProvider;
-  readonly permissions?: HostPermissionsProvider;
-  readonly platform?: HostPlatformProvider;
-  readonly sensors?: HostSensorsProvider;
+  readonly device?: HostDeviceCapability;
+  readonly geolocation?: HostGeolocationCapability;
+  readonly lifecycle?: HostLifecycleCapability;
+  readonly permissions?: HostPermissionsCapability;
+  readonly platform?: HostPlatformCapability;
+  readonly sensors?: HostSensorsCapability;
 }
 
 export interface HostTextCapabilities {
-  readonly fontLoading?: HostFontLoadingProvider;
-  readonly glyphRasterizer?: HostGlyphRasterizerProvider;
-  readonly segmenter?: HostTextSegmenterProvider;
-  readonly shaper?: HostTextShaperProvider;
+  readonly fontLoading?: HostFontLoadingCapability;
+  readonly glyphRasterizer?: HostGlyphRasterizerCapability;
+  readonly segmenter?: HostTextSegmenterCapability;
+  readonly shaper?: HostTextShaperCapability;
 }
 
 // Tray is top-level because command, query, and event coverage varies independently by native OS
 // profile. The required group is stable; omitted slots mean genuine absence.
 export interface HostTrayCapabilities {
-  readonly balloon?: HostTrayBalloonProvider;
-  readonly balloonEvents?: HostTrayBalloonEventsProvider;
-  readonly bounds?: HostTrayBoundsProvider;
-  readonly doubleClickPolicy?: HostTrayDoubleClickPolicyProvider;
-  readonly dropEvents?: HostTrayDropEventsProvider;
-  readonly image?: HostTrayImageProvider;
-  readonly interactionEvents?: HostTrayInteractionEventsProvider;
-  readonly lifecycle?: HostTrayLifecycleProvider;
-  readonly menu?: HostTrayMenuProvider;
-  readonly menuSelectionEvents?: HostTrayMenuSelectionEventsProvider;
-  readonly popupMenu?: HostTrayPopupMenuProvider;
-  readonly pressedImage?: HostTrayPressedImageProvider;
-  readonly templateImage?: HostTrayTemplateImageProvider;
-  readonly title?: HostTrayTitleProvider;
-  readonly tooltip?: HostTrayTooltipProvider;
+  readonly balloon?: HostTrayBalloonCapability;
+  readonly balloonEvents?: HostTrayBalloonEventsCapability;
+  readonly bounds?: HostTrayBoundsCapability;
+  readonly doubleClickPolicy?: HostTrayDoubleClickPolicyCapability;
+  readonly dropEvents?: HostTrayDropEventsCapability;
+  readonly image?: HostTrayImageCapability;
+  readonly interactionEvents?: HostTrayInteractionEventsCapability;
+  readonly lifecycle?: HostTrayLifecycleCapability;
+  readonly menu?: HostTrayMenuCapability;
+  readonly menuSelectionEvents?: HostTrayMenuSelectionEventsCapability;
+  readonly popupMenu?: HostTrayPopupMenuCapability;
+  readonly pressedImage?: HostTrayPressedImageCapability;
+  readonly templateImage?: HostTrayTemplateImageCapability;
+  readonly title?: HostTrayTitleCapability;
+  readonly tooltip?: HostTrayTooltipCapability;
 }
 
 export interface HostUiCapabilities {
-  readonly fullscreen?: HostFullscreenProvider;
-  readonly statusBarChange?: HostStatusBarChangeProvider;
-  readonly statusBarColor?: HostStatusBarColorProvider;
-  readonly statusBarInfo?: HostStatusBarInfoProvider;
-  readonly statusBarOverlays?: HostStatusBarOverlaysProvider;
-  readonly statusBarStyle?: HostStatusBarStyleProvider;
-  readonly statusBarVisibility?: HostStatusBarVisibilityProvider;
+  readonly fullscreen?: HostFullscreenCapability;
+  readonly statusBarChange?: HostStatusBarChangeCapability;
+  readonly statusBarColor?: HostStatusBarColorCapability;
+  readonly statusBarInfo?: HostStatusBarInfoCapability;
+  readonly statusBarOverlays?: HostStatusBarOverlaysCapability;
+  readonly statusBarStyle?: HostStatusBarStyleCapability;
+  readonly statusBarVisibility?: HostStatusBarVisibilityCapability;
 }
 
 export interface HostUpdaterCapabilities {
-  readonly command?: HostUpdaterCommandProvider;
+  readonly command?: HostUpdaterCommandCapability;
 }

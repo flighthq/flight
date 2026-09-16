@@ -25,13 +25,13 @@ export interface ShareResult {
   dismissed: boolean;
 }
 
-export interface HostShareContentProvider extends Entity {
+export interface HostShareContentCapability extends Entity {
   canShareContent(content: Readonly<ShareContent>): boolean;
   shareContent(content: Readonly<ShareContent>): Promise<boolean>;
   shareContentWithResult(content: Readonly<ShareContent>): Promise<ShareResult>;
 }
 
-export interface HostShareFilesProvider extends Entity {
+export interface HostShareFilesCapability extends Entity {
   canShareContent(content: Readonly<ShareFilesContent>): boolean;
   shareContent(content: Readonly<ShareFilesContent>): Promise<boolean>;
   shareContentWithResult(content: Readonly<ShareFilesContent>): Promise<ShareResult>;
@@ -43,7 +43,7 @@ export interface CapacitorShareContentOptions {
   readonly chooserTitle?: string;
 }
 
-export interface HostCapacitorShareContentProvider extends HostShareContentProvider {
+export interface HostCapacitorShareContentCapability extends HostShareContentCapability {
   shareContent(content: Readonly<ShareContent>, options?: Readonly<CapacitorShareContentOptions>): Promise<boolean>;
   shareContentWithResult(
     content: Readonly<ShareContent>,

@@ -70,7 +70,7 @@ export interface GlyphMetrics {
 
 // A rasterizer's output for one glyph: an RGBA (row-major, straight-alpha) pixel block plus the pen
 // advance and bearing. `pixels` is exactly `width * height * 4` bytes. This is the plain-data
-// hand-off from a `HostGlyphRasterizerProvider` to the atlas, which packs it, blits `pixels` into the
+// hand-off from a `HostGlyphRasterizerCapability` to the atlas, which packs it, blits `pixels` into the
 // atlas bitmap, and records a `GlyphEntry`.
 export interface GlyphRasterizedBitmap {
   advance: number;
@@ -93,7 +93,7 @@ export interface GlyphRasterizeOptions {
 // The swappable glyph-rasterization seam. The Web provider renders via an offscreen canvas; a native
 // host supplies a FreeType-style provider. `rasterize` returns null for an unrenderable codepoint
 // (or when no canvas is available), never throwing.
-export interface HostGlyphRasterizerProvider {
+export interface HostGlyphRasterizerCapability {
   rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
   // Font-level line metrics, when the provider can measure them. Optional so existing providers stay
   // valid: an atlas whose provider does not implement it, or which returns null, keeps the font-size
@@ -124,7 +124,7 @@ export interface GlyphAtlasOptions {
   maxBytes?: number;
   maxGlyphs?: number;
   padding?: number;
-  rasterizerBackend: HostGlyphRasterizerProvider;
+  rasterizerBackend: HostGlyphRasterizerCapability;
   width: number;
 }
 
@@ -172,7 +172,7 @@ export interface GlyphAtlasRuntime {
   metrics: GlyphMetrics;
   packBottom: number;
   padding: number;
-  rasterizerBackend: HostGlyphRasterizerProvider;
+  rasterizerBackend: HostGlyphRasterizerCapability;
   rasterizeOptions: GlyphRasterizeOptions;
   shelves: GlyphAtlasShelf[];
   bitmap: Bitmap;
@@ -189,4 +189,4 @@ export interface GlyphAtlas extends Entity {
 // Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type GlyphRasterizerOperation = keyof HostGlyphRasterizerProvider;
+export type GlyphRasterizerOperation = keyof HostGlyphRasterizerCapability;

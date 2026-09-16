@@ -44,7 +44,7 @@ export interface HostProviderExplanation {
 export interface HostProviderCoverage {
   readonly group: string;
   readonly isPresent: boolean;
-  // The provider interface's name, e.g. 'HostVideoProvider' — the type to import when writing the slot.
+  // The provider interface's name, e.g. 'HostVideoCapability' — the type to import when writing the slot.
   readonly provider: string;
   readonly slot: string;
 }

@@ -65,11 +65,11 @@ export interface StoragePersistenceResult {
   readonly permissionState: PermissionState | null;
 }
 
-export interface HostStoragePersistenceQueryProvider extends Entity {
+export interface HostStoragePersistenceQueryCapability extends Entity {
   getPersistence(): Promise<StoragePersistenceResult>;
 }
 
-export interface HostStoragePersistenceRequestProvider extends Entity {
+export interface HostStoragePersistenceRequestCapability extends Entity {
   requestPersistence(): Promise<StoragePersistenceResult>;
 }
 
@@ -85,12 +85,12 @@ export interface WebWindowStoragePersistenceApi extends WebWorkerStoragePersiste
 }
 
 export interface WebWorkerStoragePersistenceCapabilities extends Entity {
-  readonly persistenceQuery: HostStoragePersistenceQueryProvider;
+  readonly persistenceQuery: HostStoragePersistenceQueryCapability;
 }
 
 export interface WebWindowStoragePersistenceCapabilities extends Entity {
-  readonly persistenceQuery: HostStoragePersistenceQueryProvider;
-  readonly persistenceRequest: HostStoragePersistenceRequestProvider;
+  readonly persistenceQuery: HostStoragePersistenceQueryCapability;
+  readonly persistenceRequest: HostStoragePersistenceRequestCapability;
 }
 
 // Multi-key queries return no partial payload: the first failed provider read identifies its key, while
@@ -122,7 +122,7 @@ export type StorageSetItemsResult = StorageBatchMutationResult<StorageSetItemFai
 
 // Key/value persistence commands. Absence is a successful getItem result whose value is null; callers
 // inspect reason rather than guessing whether a sentinel came from missing data or provider failure.
-export interface HostStorageProvider extends Entity {
+export interface HostStorageCapability extends Entity {
   clear(): StorageClearResult;
   getItem(key: string): StorageGetItemResult;
   keys(): StorageKeysResult;
@@ -132,7 +132,7 @@ export interface HostStorageProvider extends Entity {
 
 // Raw provider change delivery is separate from local commands because only Web supplies it. Provider
 // destroy is terminal; the unsubscribe returned by subscribe releases one caller-owned subscription.
-export interface HostStorageChangeProvider extends Entity {
+export interface HostStorageChangeCapability extends Entity {
   destroy(): void;
   subscribe(listener: (change: Readonly<StorageChange>) => void): (() => void) | null;
 }

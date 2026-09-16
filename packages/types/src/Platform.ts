@@ -47,7 +47,7 @@ export interface PlatformInfo extends Entity {
 }
 
 // The root environment-identification capability passed directly to the package's free functions.
-export interface HostPlatformProvider extends Entity {
+export interface HostPlatformCapability extends Entity {
   getInfo(out: PlatformInfo): PlatformInfo;
 }
 import type { Entity } from './Entity';

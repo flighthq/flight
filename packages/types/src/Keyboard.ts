@@ -34,7 +34,7 @@ export type SoftKeyboardAttachResult = 'ok' | 'acquisition-failed';
 export const SoftKeyboardAttachOkKind = 'ok';
 export const SoftKeyboardAttachAcquisitionFailedKind = 'acquisition-failed';
 
-export interface HostSoftKeyboardInfoProvider extends Entity {
+export interface HostSoftKeyboardInfoCapability extends Entity {
   getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo;
 }
 
@@ -43,27 +43,27 @@ export interface SoftKeyboardChangeSubscription {
   readonly unsubscribe: (() => void) | null;
 }
 
-export interface HostSoftKeyboardChangeProvider extends Entity {
+export interface HostSoftKeyboardChangeCapability extends Entity {
   subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription>;
 }
 
-export interface HostSoftKeyboardVisibilityProvider extends Entity {
+export interface HostSoftKeyboardVisibilityCapability extends Entity {
   show(): Promise<SoftKeyboardVisibilityResult>;
   hide(): Promise<SoftKeyboardVisibilityResult>;
 }
 
-export interface HostSoftKeyboardResizeModeWriteProvider extends Entity {
+export interface HostSoftKeyboardResizeModeWriteCapability extends Entity {
   setResizeMode(mode: SoftKeyboardResizeMode): Promise<SoftKeyboardSetterResult>;
 }
 
-export interface HostSoftKeyboardStyleProvider extends Entity {
+export interface HostSoftKeyboardStyleCapability extends Entity {
   setStyle(style: SoftKeyboardStyleKind): Promise<SoftKeyboardSetterResult>;
 }
 
-export interface HostSoftKeyboardAccessoryBarProvider extends Entity {
+export interface HostSoftKeyboardAccessoryBarCapability extends Entity {
   setAccessoryBarVisible(visible: boolean): Promise<SoftKeyboardSetterResult>;
 }
 
-export interface HostSoftKeyboardScrollAssistProvider extends Entity {
+export interface HostSoftKeyboardScrollAssistCapability extends Entity {
   setScrollAssistEnabled(enabled: boolean): Promise<SoftKeyboardSetterResult>;
 }
