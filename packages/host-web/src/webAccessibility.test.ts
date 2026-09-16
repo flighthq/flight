@@ -212,6 +212,6 @@ function node(
 describe('webHostAccessibility', () => {
   it('is the stable Entity provider published by webHost', () => {
     expect(EntityRuntimeKey in webHostAccessibility).toBe(true);
-    expect(webHost.accessibility.provider).toBe(webHostAccessibility);
+    expect(webHost.accessibility.tree).toBe(webHostAccessibility);
   });
 });

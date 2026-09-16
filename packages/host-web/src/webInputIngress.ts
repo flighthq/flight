@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   EntityConstruction,
-  HostInputCapabilities,
   HostInputIngressCapability,
   InputGamepadAxisData,
   InputGamepadButtonData,
@@ -14,10 +13,6 @@ import type {
   MouseWheelMode,
 } from '@flighthq/types/contract';
 import { KeyCode, KeyModifier } from '@flighthq/types/contract';
-
-import { webHostHaptics } from './webHaptics';
-import { webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostInputTarget } from './webInputTarget';
-import { webHostSoftKeyboardChange, webHostSoftKeyboardInfo, webHostSoftKeyboardVisibility } from './webKeyboard';
 
 export function createWebInputIngressBackend(): HostInputIngressCapability & Entity {
   const out = allocateEntity<HostInputIngressCapability & Entity>();
@@ -295,18 +290,6 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
 }
 
 export const webHostInputIngress = createWebInputIngressBackend();
-
-export const webHostInput = {
-  dropFile: webHostInputDropFile,
-  focus: webHostInputFocus,
-  haptics: webHostHaptics,
-  ingress: webHostInputIngress,
-  pointerLock: webHostInputPointerLock,
-  softKeyboardChange: webHostSoftKeyboardChange,
-  softKeyboardInfo: webHostSoftKeyboardInfo,
-  softKeyboardVisibility: webHostSoftKeyboardVisibility,
-  target: webHostInputTarget,
-} satisfies HostInputCapabilities;
 
 /** Releases Web pointer capture, tolerating an already-released pointer. */
 export function releaseWebInputPointerCapture(element: HTMLElement, pointerId: number): void {

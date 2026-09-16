@@ -4,37 +4,61 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import * as contractApi from './contract';
 import * as publicApi from './index';
 
+// Every top-level group of the ratified flat Host. A group is a plain struct of independently-coverable
+// capability slots, so it is composed here from separately importable consts rather than from the
+// super-groups that used to gather several domains.
 const GROUPS = [
   ['accessibility', 'webHostAccessibilityGroup'],
   ['app', 'webHostApp'],
+  ['audio', 'webHostAudioGroup'],
+  ['bitmap', 'webHostBitmap'],
   ['clipboard', 'webHostClipboard'],
   ['connectivity', 'webHostConnectivity'],
+  ['device', 'webHostDeviceGroup'],
   ['dialog', 'webHostDialog'],
-  ['graphics', 'webHostGraphics'],
+  ['fileSystem', 'webHostFileSystemGroup'],
+  ['font', 'webHostFont'],
+  ['fullscreen', 'webHostFullscreenGroup'],
+  ['geolocation', 'webHostGeolocationGroup'],
+  ['gl', 'webHostGlGroup'],
+  ['glyph', 'webHostGlyph'],
+  ['haptics', 'webHostHapticsGroup'],
+  ['image', 'webHostImageGroup'],
   ['input', 'webHostInput'],
   ['ipc', 'webHostIpc'],
-  ['media', 'webHostMedia'],
+  ['lifecycle', 'webHostLifecycleGroup'],
+  ['mediaSession', 'webHostMediaSessionGroup'],
   ['menu', 'webHostMenu'],
   ['midi', 'webHostMidi'],
   ['net', 'webHostNetGroup'],
   ['notification', 'webHostNotification'],
+  ['permissions', 'webHostPermissionsGroup'],
+  ['platform', 'webHostPlatformGroup'],
   ['power', 'webHostPower'],
+  ['preferences', 'webHostPreferences'],
   ['protocol', 'webHostProtocol'],
   ['screen', 'webHostScreen'],
+  ['sensors', 'webHostSensorsGroup'],
   ['share', 'webHostShare'],
   ['shell', 'webHostShell'],
   ['shortcut', 'webHostShortcut'],
-  ['storage', 'webHostStorageGroup'],
-  ['system', 'webHostSystem'],
-  ['text', 'webHostText'],
+  ['softKeyboard', 'webHostSoftKeyboard'],
+  ['statusBar', 'webHostStatusBar'],
+  ['surface', 'webHostSurfaceGroup'],
+  ['textSegment', 'webHostTextSegment'],
+  ['textShaper', 'webHostTextShaper'],
   ['tray', 'webHostTray'],
-  ['ui', 'webHostUi'],
   ['updater', 'webHostUpdater'],
+  ['video', 'webHostVideoGroup'],
+  ['wgpu', 'webHostWgpu'],
   ['window', 'webHostWindow'],
 ] as const;
 
+// Every slot web fills, addressed by the group that owns it. A slot web cannot serve is absent rather
+// than inert: an omitted slot is the honest report, where a stubbed capability would be
+// indistinguishable from a real one. The groups above with no entry here are the absent ones.
 const LEAVES = [
-  ['accessibility', 'provider', 'webHostAccessibility'],
+  ['accessibility', 'tree', 'webHostAccessibility'],
   ['app', 'badge', 'webHostAppBadge'],
   ['app', 'exit', 'webHostApplicationExit'],
   ['app', 'focus', 'webHostAppFocus'],
@@ -45,6 +69,11 @@ const LEAVES = [
   ['app', 'ready', 'webHostAppReady'],
   ['app', 'relaunch', 'webHostAppRelaunch'],
   ['app', 'visibility', 'webHostApplicationVisibility'],
+  ['audio', 'codec', 'webHostAudio'],
+  ['audio', 'device', 'webHostAudioDevice'],
+  ['audio', 'mixer', 'webHostAudioMixer'],
+  ['bitmap', 'encode', 'webHostBitmapEncode'],
+  ['bitmap', 'readback', 'webHostBitmapReadback'],
   ['clipboard', 'change', 'webHostClipboardChange'],
   ['clipboard', 'formats', 'webHostClipboardFormats'],
   ['clipboard', 'image', 'webHostClipboardImage'],
@@ -52,6 +81,7 @@ const LEAVES = [
   ['connectivity', 'change', 'webHostConnectivityChange'],
   ['connectivity', 'reachability', 'webHostConnectivityReachability'],
   ['connectivity', 'status', 'webHostConnectivityStatus'],
+  ['device', 'info', 'webHostDevice'],
   ['dialog', 'directoryOpen', 'webHostDirectoryOpenDialog'],
   ['dialog', 'fileOpen', 'webHostFileOpenDialog'],
   ['dialog', 'fileSave', 'webHostFileSaveDialog'],
@@ -60,61 +90,81 @@ const LEAVES = [
   ['dialog', 'photoCapture', 'webHostPhotoCaptureDialog'],
   ['dialog', 'prompt', 'webHostPromptDialog'],
   ['dialog', 'videoCapture', 'webHostVideoCaptureDialog'],
-  ['graphics', 'bitmapEncode', 'webHostBitmapEncode'],
-  ['graphics', 'bitmapReadback', 'webHostBitmapReadback'],
-  ['graphics', 'image', 'webHostImage'],
-  ['graphics', 'renderContext', 'webHostGl'],
-  ['graphics', 'renderSurface', 'webHostSurface'],
+  ['fileSystem', 'access', 'webHostFileSystem'],
+  ['font', 'loader', 'webHostFontLoading'],
+  ['fullscreen', 'exit', 'webHostFullscreen'],
+  ['geolocation', 'position', 'webHostGeolocation'],
+  ['gl', 'context', 'webHostGl'],
+  ['glyph', 'rasterizer', 'webHostGlyphRasterizer'],
+  ['haptics', 'engine', 'webHostHaptics'],
+  ['image', 'loader', 'webHostImage'],
   ['input', 'dropFile', 'webHostInputDropFile'],
   ['input', 'focus', 'webHostInputFocus'],
-  ['input', 'haptics', 'webHostHaptics'],
   ['input', 'ingress', 'webHostInputIngress'],
   ['input', 'pointerLock', 'webHostInputPointerLock'],
-  ['input', 'softKeyboardChange', 'webHostSoftKeyboardChange'],
-  ['input', 'softKeyboardInfo', 'webHostSoftKeyboardInfo'],
-  ['input', 'softKeyboardVisibility', 'webHostSoftKeyboardVisibility'],
   ['input', 'target', 'webHostInputTarget'],
-  ['media', 'audioCodec', 'webHostAudio'],
-  ['media', 'audioDevice', 'webHostAudioDevice'],
-  ['media', 'audioMixer', 'webHostAudioMixer'],
-  ['media', 'session', 'webHostMediaSession'],
-  ['media', 'sessionAction', 'webHostMediaSessionAction'],
-  ['media', 'video', 'webHostVideo'],
+  ['lifecycle', 'state', 'webHostLifecycle'],
+  ['mediaSession', 'action', 'webHostMediaSessionAction'],
+  ['mediaSession', 'session', 'webHostMediaSession'],
   ['menu', 'highlight', 'webHostMenuHighlight'],
   ['menu', 'popup', 'webHostMenuPopup'],
   ['net', 'http', 'webHostNet'],
   ['net', 'socket', 'webHostSocket'],
   ['notification', 'permission', 'webHostNotificationPermission'],
+  ['permissions', 'query', 'webHostPermissions'],
+  ['platform', 'info', 'webHostPlatform'],
   ['power', 'change', 'webHostPowerChange'],
   ['power', 'keepAwake', 'webHostPowerKeepAwake'],
   ['power', 'status', 'webHostPowerStatus'],
   ['power', 'suspension', 'webHostPowerSuspension'],
+  ['preferences', 'change', 'webHostStorageChange'],
+  ['preferences', 'local', 'webHostStorage'],
+  ['preferences', 'persistenceQuery', 'webHostStoragePersistenceQuery'],
+  ['preferences', 'persistenceRequest', 'webHostStoragePersistenceRequest'],
   ['protocol', 'launch', 'webHostProtocolLaunch'],
   ['protocol', 'registration', 'webHostProtocolRegistration'],
   ['screen', 'change', 'webHostScreenChange'],
   ['screen', 'details', 'webHostScreenDetails'],
   ['screen', 'permissionChange', 'webHostScreenPermissionChange'],
   ['screen', 'query', 'webHostScreenQuery'],
+  ['sensors', 'query', 'webHostSensors'],
   ['share', 'content', 'webHostShareContent'],
   ['share', 'files', 'webHostShareFiles'],
   ['shell', 'external', 'webHostShellExternal'],
-  ['storage', 'change', 'webHostStorageChange'],
-  ['storage', 'fileSystem', 'webHostFileSystem'],
-  ['storage', 'local', 'webHostStorage'],
-  ['storage', 'persistenceQuery', 'webHostStoragePersistenceQuery'],
-  ['storage', 'persistenceRequest', 'webHostStoragePersistenceRequest'],
-  ['system', 'device', 'webHostDevice'],
-  ['system', 'geolocation', 'webHostGeolocation'],
-  ['system', 'lifecycle', 'webHostLifecycle'],
-  ['system', 'permissions', 'webHostPermissions'],
-  ['system', 'platform', 'webHostPlatform'],
-  ['system', 'sensors', 'webHostSensors'],
-  ['text', 'fontLoading', 'webHostFontLoading'],
-  ['text', 'glyphRasterizer', 'webHostGlyphRasterizer'],
-  ['ui', 'fullscreen', 'webHostFullscreen'],
-  ['ui', 'statusBarColor', 'webHostStatusBarColor'],
-  ['window', '', 'webHostWindow'],
+  ['softKeyboard', 'change', 'webHostSoftKeyboardChange'],
+  ['softKeyboard', 'info', 'webHostSoftKeyboardInfo'],
+  ['softKeyboard', 'visibility', 'webHostSoftKeyboardVisibility'],
+  ['statusBar', 'color', 'webHostStatusBarColor'],
+  ['surface', 'resize', 'webHostSurface'],
+  ['video', 'playback', 'webHostVideo'],
+  ['window', 'appearance', 'webHostWindowAppearance'],
+  ['window', 'attach', 'webHostWindowAttach'],
+  ['window', 'focus', 'webHostWindowFocus'],
+  ['window', 'fullscreen', 'webHostWindowFullscreen'],
+  ['window', 'geometry', 'webHostWindowGeometry'],
+  ['window', 'lifecycle', 'webHostWindowLifecycle'],
 ] as const;
+
+// The one escape hatch: a group whose const name would collide with a leaf's takes the Group suffix.
+const GROUP_SUFFIXED = [
+  'webHostAccessibilityGroup',
+  'webHostAudioGroup',
+  'webHostDeviceGroup',
+  'webHostFileSystemGroup',
+  'webHostFullscreenGroup',
+  'webHostGeolocationGroup',
+  'webHostGlGroup',
+  'webHostHapticsGroup',
+  'webHostImageGroup',
+  'webHostLifecycleGroup',
+  'webHostMediaSessionGroup',
+  'webHostNetGroup',
+  'webHostPermissionsGroup',
+  'webHostPlatformGroup',
+  'webHostSensorsGroup',
+  'webHostSurfaceGroup',
+  'webHostVideoGroup',
+];
 
 describe('webHost', () => {
   it('composes every Host group from its separately exported identity', () => {
@@ -131,9 +181,8 @@ describe('webHost', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
     for (const [group, path, exportName] of LEAVES) {
       const groupValue = host[group] as Record<string, unknown>;
-      const composed = group === 'window' ? groupValue : groupValue[path];
       expect(Reflect.get(publicApi, exportName), exportName).toBe(Reflect.get(contractApi, exportName));
-      expect(composed, `${group}.${path}`).toBe(Reflect.get(publicApi, exportName));
+      expect(groupValue[path], `${group}.${path}`).toBe(Reflect.get(publicApi, exportName));
     }
   });
 
@@ -156,10 +205,15 @@ describe('webHost', () => {
   });
 
   it('uses the narrow Group suffix only for unavoidable leaf collisions', () => {
-    expect(publicApi.webHostAccessibilityGroup.provider).toBe(publicApi.webHostAccessibility);
+    expect(
+      Object.keys(publicApi)
+        .filter((name) => name.endsWith('Group'))
+        .sort(),
+    ).toEqual(GROUP_SUFFIXED);
+    expect(publicApi.webHostAccessibilityGroup.tree).toBe(publicApi.webHostAccessibility);
     expect(publicApi.webHostNetGroup.http).toBe(publicApi.webHostNet);
-    expect(publicApi.webHostStorageGroup.local).toBe(publicApi.webHostStorage);
-    expect(publicApi.webHost.window).toBe(publicApi.webHostWindow);
+    expect(publicApi.webHostPreferences.local).toBe(publicApi.webHostStorage);
+    expect(publicApi.webHostGlGroup.context).toBe(publicApi.webHostGl);
   });
 
   it('does not expose the removed Backend aliases, partial Hosts, or capability aliases', () => {

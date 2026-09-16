@@ -2,14 +2,15 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createWebPowerReadings,
-  initializeWebPowerCapabilities,
   initializeWebPowerKeepAwakeBackend,
   initializeWebPowerReadings,
   initializeWebPowerSuspensionBackend,
-  webHostPower,
+  webHostPowerChange,
   webHostPowerKeepAwake,
+  webHostPowerStatus,
   webHostPowerSuspension,
 } from './webPower';
+import { webHostPower } from './webPowerHost';
 
 interface FakeSentinel {
   addEventListener?: (type: 'release', listener: () => void) => void;
@@ -80,12 +81,6 @@ describe('createWebPowerReadings status', () => {
   });
 });
 
-describe('initializeWebPowerCapabilities', () => {
-  it('is the construction initializer of createWebPowerCapabilities', () => {
-    expect(typeof initializeWebPowerCapabilities).toBe('function');
-  });
-});
-
 describe('initializeWebPowerKeepAwakeBackend', () => {
   it('is the construction initializer of createWebPowerKeepAwakeBackend', () => {
     expect(typeof initializeWebPowerKeepAwakeBackend).toBe('function');
@@ -108,13 +103,10 @@ describe('webHostPower', () => {
   // them with inert subscriptions and constant sentinels, which no structural probe could tell from a
   // real provider. Asserting the exact key set is what stops one being quietly re-added as a stub.
   it('offers exactly status, change, keepAwake and suspension', () => {
-    expect(EntityRuntimeKey in webHostPower).toBe(true);
-    for (const provider of Object.values(webHostPower)) expect(EntityRuntimeKey in provider).toBe(true);
-    expect(
-      Object.keys(webHostPower)
-        .filter((k) => k !== 'constructor')
-        .sort(),
-    ).toEqual(['change', 'keepAwake', 'status', 'suspension']);
+    for (const capability of Object.values(webHostPower)) expect(EntityRuntimeKey in capability).toBe(true);
+    expect(Object.keys(webHostPower).sort()).toEqual(['change', 'keepAwake', 'status', 'suspension']);
+    expect(webHostPower.change).toBe(webHostPowerChange);
+    expect(webHostPower.status).toBe(webHostPowerStatus);
     expect('idle' in webHostPower).toBe(false);
     expect('sessionLock' in webHostPower).toBe(false);
     expect('batteryHealth' in webHostPower).toBe(false);

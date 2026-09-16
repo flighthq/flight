@@ -325,11 +325,12 @@ export function initializeWebScreenCapabilities(
   out.query = query;
 }
 
-export const webHostScreen = createWebScreenCapabilities();
-export const webHostScreenChange = webHostScreen.change;
-export const webHostScreenDetails = webHostScreen.details;
-export const webHostScreenPermissionChange = webHostScreen.permissionChange;
-export const webHostScreenQuery = webHostScreen.query;
+const webScreenCapabilities = createWebScreenCapabilities();
+
+export const webHostScreenChange = webScreenCapabilities.change;
+export const webHostScreenDetails = webScreenCapabilities.details;
+export const webHostScreenPermissionChange = webScreenCapabilities.permissionChange;
+export const webHostScreenQuery = webScreenCapabilities.query;
 
 function media(query: string): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;

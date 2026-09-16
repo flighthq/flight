@@ -1,7 +1,7 @@
 import type { HostNetCapabilities } from '@flighthq/types/contract';
 
-import { webHostNetGroup } from './webHostNet';
 import { webHostNet } from './webNet';
+import { webHostNetGroup } from './webNetHost';
 import { webHostSocket } from './webSocket';
 
 describe('webHostNetGroup', () => {
@@ -16,7 +16,7 @@ describe('webHostNetGroup', () => {
   });
 
   it('exports only the direct group value', async () => {
-    const source = await import('./webHostNet');
+    const source = await import('./webNetHost');
     expect(Object.keys(source)).toEqual(['webHostNetGroup']);
   });
 });

@@ -19,6 +19,7 @@ import type { InputIngressSink, InputPointerData } from '@flighthq/types/contrac
 import { EntityRuntimeKey, KeyCode, KeyModifier } from '@flighthq/types/contract';
 
 import * as hostWebPublic from './index';
+import { webHostInput } from './webInputHost';
 import {
   createWebInputIngressBackend,
   getWebCoalescedPointerEvents,
@@ -28,9 +29,8 @@ import {
   initializeWebInputIngressBackend,
   releaseWebInputPointerCapture,
   setWebInputPointerCapture,
-  webHostInput,
   webHostInputIngress,
-} from './webInputHost';
+} from './webInputIngress';
 
 afterEach(() => {
   vi.restoreAllMocks();
