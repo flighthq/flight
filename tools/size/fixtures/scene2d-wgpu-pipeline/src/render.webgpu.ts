@@ -3,6 +3,7 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -17,9 +18,12 @@ const canvas = createWebWgpuCanvasElement(400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const acquisition = await createWgpuAcquisition(canvas);
+const webWgpuHost = createWebWgpuHostBackend();
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  format: acquisition.format,
+});
 export const state = createWgpuRenderState(acquisition.device, scene2DWgpuPipeline, {
   format: acquisition.format,
   pixelRatio: 1,

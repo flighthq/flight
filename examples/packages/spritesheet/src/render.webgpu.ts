@@ -2,6 +2,7 @@ import { createWebWgpuCanvasElement } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   beginWgpuRenderPass,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -19,9 +20,12 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-const acquisition = await createWgpuAcquisition(canvas);
+const webWgpuHost = createWebWgpuHostBackend();
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  format: acquisition.format,
+});
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
   format: acquisition.format,
   pixelRatio,

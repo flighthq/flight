@@ -4,6 +4,7 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
@@ -25,9 +26,12 @@ const pipeline = createWgpuPipeline({
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, defaultWgpuSpriteRenderer),
 });
-const acquisition = await createWgpuAcquisition(canvas);
+const webWgpuHost = createWebWgpuHostBackend();
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  format: acquisition.format,
+});
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;

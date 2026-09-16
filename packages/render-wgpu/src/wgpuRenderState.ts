@@ -115,8 +115,8 @@ export function createWgpuOffscreenRenderState(
 // is a per-pass decision, so the screen target is created separately and flows in at beginWgpuRenderPass.
 //
 // Synchronous, because everything asynchronous (adapter and device discovery) happens before this call:
-//   const acquisition = await createWgpuAcquisition(canvas);
-//   const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+//   const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+//   const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, { format: acquisition.format });
 //   const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format });
 export function createWgpuRenderState(
   device: GPUDevice,

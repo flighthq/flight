@@ -3,6 +3,7 @@ import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuRenderEffec
 import {
   beginWgpuRenderEffectPipeline,
   beginWgpuRenderPass,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -24,9 +25,12 @@ export const height = 600;
 export const canvas = createWebWgpuCanvasElement(width, height, pixelRatio);
 document.body.appendChild(canvas);
 
-const acquisition = await createWgpuAcquisition(canvas);
+const webWgpuHost = createWebWgpuHostBackend();
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  format: acquisition.format,
+});
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
   format: acquisition.format,
   pixelRatio,

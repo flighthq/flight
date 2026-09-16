@@ -8,6 +8,7 @@ import {
   createPixelArtSampler,
   createSprite,
   createTexture,
+  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -61,9 +62,12 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWebWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
-const acquisition = await createWgpuAcquisition(canvas);
+const webWgpuHost = createWebWgpuHostBackend();
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(acquisition.device, canvas, { format: acquisition.format });
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  format: acquisition.format,
+});
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
   format: acquisition.format,
   pixelRatio,
