@@ -239,6 +239,7 @@ export interface Host extends Entity {
   readonly share: HostShareCapabilities;
   readonly shell: HostShellCapabilities;
   readonly shortcut: HostShortcutCapabilities;
+  readonly socket: HostSocketCapabilities;
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
   readonly surface: HostSurfaceCapabilities;
@@ -374,7 +375,7 @@ export interface HostLifecycleCapabilities {
 
 export interface HostMediaSessionCapabilities {
   readonly action?: HostMediaSessionActionCapability;
-  readonly session?: HostMediaSessionCapability;
+  readonly control?: HostMediaSessionCapability;
 }
 
 export interface HostMenuCapabilities {
@@ -391,7 +392,10 @@ export interface HostMidiCapabilities {
 
 export interface HostNetCapabilities {
   readonly http?: HostNetCapability;
-  readonly socket?: HostSocketCapability;
+}
+
+export interface HostSocketCapabilities {
+  readonly connection?: HostSocketCapability;
 }
 
 export interface HostNotificationCapabilities {

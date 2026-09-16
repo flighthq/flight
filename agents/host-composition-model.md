@@ -144,7 +144,7 @@ Super-groups (`system`, `graphics`, `media`, `text`, `input`, `ui`) dissolve. Ea
 |-----------|-------------|-------|
 | `host.audio` | `media.audioCodec`, `media.audioDevice`, `media.audioMixer` | Slots: `codec`, `device`, `mixer` |
 | `host.video` | `media.video` | Video decode/present |
-| `host.mediasession` | `media.session`, `media.sessionAction` | Slots: `control`, `action` |
+| `host.mediaSession` | `media.session`, `media.sessionAction` | Slots: `control`, `action` |
 
 ### Groups from dissolving `text`
 
@@ -152,8 +152,8 @@ Super-groups (`system`, `graphics`, `media`, `text`, `input`, `ui`) dissolve. Ea
 |-----------|-------------|-------|
 | `host.font` | `text.fontLoading` | Font loading |
 | `host.glyph` | `text.glyphRasterizer` | Glyph rasterization (not atlas) |
-| `host.textsegment` | `text.segmenter` | Text segmentation |
-| `host.textshaper` | `text.shaper` | Text shaping |
+| `host.textSegment` | `text.segmenter` | Text segmentation |
+| `host.textShaper` | `text.shaper` | Text shaping |
 
 ### Groups from dissolving `input`
 
@@ -182,7 +182,7 @@ Super-groups (`system`, `graphics`, `media`, `text`, `input`, `ui`) dissolve. Ea
 | New group | Former path | Notes |
 |-----------|-------------|-------|
 | `host.fullscreen` | `ui.fullscreen` | Element-level fullscreen (`HostElementFullscreenCapability`) |
-| `host.statusbar` | `ui.statusBar*` (6 slots) | Drop `statusBar` prefix on slot names |
+| `host.statusBar` | `ui.statusBar*` (6 slots) | Drop `statusBar` prefix on slot names |
 
 ### New groups
 
@@ -302,6 +302,7 @@ For single-slot groups, the slot name describes the specific capability:
 | `host.permissions` | `query` | Permission query/request |
 | `host.platform` | `info` | Platform information |
 | `host.sensors` | `query` | Sensor availability queries |
+| `host.socket` | `connection` | Socket connection management |
 | `host.surface` | `resize` | Surface resize |
 | `host.video` | `playback` | Video decode/present |
 | `host.wgpu` | `context` | WGPU device/context |
