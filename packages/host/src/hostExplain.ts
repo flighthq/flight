@@ -107,7 +107,6 @@ const _COVERAGE: readonly { readonly group: string; readonly provider: string; r
   { group: 'graphics', provider: 'HostBitmapEncodeProvider', slot: 'bitmapEncode' },
   { group: 'graphics', provider: 'HostBitmapReadbackProvider', slot: 'bitmapReadback' },
   { group: 'graphics', provider: 'HostImageProvider', slot: 'image' },
-  { group: 'graphics', provider: 'HostPathBooleanProvider', slot: 'pathBoolean' },
   { group: 'graphics', provider: 'HostWgpuProvider', slot: 'wgpuHost' },
   { group: 'input', provider: 'HostHapticsProvider', slot: 'haptics' },
   { group: 'input', provider: 'HostInputIngressProvider', slot: 'ingress' },

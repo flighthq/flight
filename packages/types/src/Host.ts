@@ -111,7 +111,6 @@ import type {
   HostNotificationReplyProvider,
   HostNotificationSchedulingProvider,
 } from './Notification';
-import type { HostPathBooleanProvider } from './PathBooleanBackend';
 import type { HostPermissionsProvider } from './Permission';
 import type { HostPhotoCaptureDialogProvider } from './PhotoCaptureDialogBackend';
 import type { HostPlatformProvider } from './Platform';
@@ -291,7 +290,6 @@ export interface HostGraphicsCapabilities {
   readonly bitmapEncode?: HostBitmapEncodeProvider;
   readonly bitmapReadback?: HostBitmapReadbackProvider;
   readonly image?: HostImageProvider;
-  readonly pathBoolean?: HostPathBooleanProvider;
   readonly renderContext?: HostRenderContextProvider;
   readonly renderSurface?: HostRenderSurfaceProvider;
   readonly wgpuHost?: HostWgpuProvider;
