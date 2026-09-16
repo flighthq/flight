@@ -1,5 +1,5 @@
 import { getNodeChildCount } from '@flighthq/node/contract';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 
 import {
   registerLottieScene2DDocumentImporter,
@@ -7,7 +7,7 @@ import {
   registerSvgScene2DDocumentImporter,
 } from './builtInScene2DDocumentImporters';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
@@ -41,7 +41,7 @@ describe('registerLottieScene2DDocumentImporter', () => {
 describe('registerRiveScene2DDocumentImporter', () => {
   it('adds an opt-in Rive codec that produces a document root', () => {
     const registry = createScene2DDocumentImporterRegistry();
-    registerRiveScene2DDocumentImporter(backend, registry);
+    registerRiveScene2DDocumentImporter(kernel, registry);
     const document = createScene2DDocumentFromBytes(riveBytes(), registry);
 
     expect(document?.sourceKind).toBe('rive');
@@ -52,7 +52,7 @@ describe('registerRiveScene2DDocumentImporter', () => {
   // decoding anything — resolveScene2DResources is what turns them into pixels.
   it('carries an embedded image out as an unresolved resource reference', () => {
     const registry = createScene2DDocumentImporterRegistry();
-    registerRiveScene2DDocumentImporter(backend, registry);
+    registerRiveScene2DDocumentImporter(kernel, registry);
     const document = createScene2DDocumentFromBytes(riveBytes(true), registry);
 
     expect(document!.imageResources).toHaveLength(1);
@@ -61,7 +61,7 @@ describe('registerRiveScene2DDocumentImporter', () => {
 
   it('preserves the null sentinel for bytes that are not a Rive file', () => {
     const registry = createScene2DDocumentImporterRegistry();
-    registerRiveScene2DDocumentImporter(backend, registry);
+    registerRiveScene2DDocumentImporter(kernel, registry);
 
     expect(createScene2DDocumentFromBytes(encode('not a riv'), registry)).toBeNull();
   });

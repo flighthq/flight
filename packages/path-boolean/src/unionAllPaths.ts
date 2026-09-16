@@ -1,10 +1,10 @@
 import { flattenPath } from '@flighthq/path/contract';
-import type { HostPathBooleanProvider, Path, PathBooleanContour, PathBooleanOptions } from '@flighthq/types/contract';
+import type { PathBooleanKernel, Path, PathBooleanContour, PathBooleanOptions } from '@flighthq/types/contract';
 
 import { writePathBooleanContours } from './writePathBooleanContours';
 
 export function unionAllPaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   paths: readonly Readonly<Path>[],
   out?: Path,
   options?: Readonly<PathBooleanOptions>,
@@ -17,7 +17,7 @@ export function unionAllPaths(
   const result =
     contours.length === 0
       ? EMPTY_CONTOURS
-      : pathBoolean.computePathBoolean(contours, EMPTY_CONTOURS, 'union', fillRule);
+      : pathBooleanKernel.computePathBoolean(contours, EMPTY_CONTOURS, 'union', fillRule);
 
   return writePathBooleanContours(result, out);
 }

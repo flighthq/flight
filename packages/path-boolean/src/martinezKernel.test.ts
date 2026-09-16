@@ -1,7 +1,11 @@
 import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMartinezPathBooleanBackend, initializeMartinezPathBooleanBackend } from './martinezKernel';
+import {
+  createMartinezPathBooleanKernel,
+  initializeMartinezPathBooleanKernel,
+  martinezPathBooleanKernel,
+} from './martinezKernel';
 
 // A closed square contour [x, y, x+s, y, x+s, y+s, x, y+s], wound consistently (screen y-down CW).
 function square(x: number, y: number, s: number): number[] {
@@ -78,10 +82,10 @@ function run(
   operation: PathBooleanOperation,
   fillRule: PathBooleanFillRule = 'nonZero',
 ): readonly PathBooleanContour[] {
-  return createMartinezPathBooleanBackend().computePathBoolean(subject, clip, operation, fillRule);
+  return createMartinezPathBooleanKernel().computePathBoolean(subject, clip, operation, fillRule);
 }
 
-describe('createMartinezPathBooleanBackend', () => {
+describe('createMartinezPathBooleanKernel', () => {
   describe('coincident and shared-boundary degeneracies', () => {
     it('unions two squares sharing a full edge into one rectangle', () => {
       const result = run([square(0, 0, 10)], [square(10, 0, 10)], 'union');
@@ -374,8 +378,21 @@ describe('createMartinezPathBooleanBackend', () => {
     });
   });
 });
-describe('initializeMartinezPathBooleanBackend', () => {
-  it('is the construction initializer of createMartinezPathBooleanBackend', () => {
-    expect(typeof initializeMartinezPathBooleanBackend).toBe('function');
+
+describe('initializeMartinezPathBooleanKernel', () => {
+  it('is the construction initializer of createMartinezPathBooleanKernel', () => {
+    expect(typeof initializeMartinezPathBooleanKernel).toBe('function');
+  });
+});
+
+describe('martinezPathBooleanKernel', () => {
+  it('is the shared kernel the boolean operations are handed', () => {
+    const result = martinezPathBooleanKernel.computePathBoolean(
+      [square(0, 0, 10)],
+      [square(5, 5, 10)],
+      'union',
+      'nonZero',
+    );
+    expect(netArea(result)).toBeCloseTo(175, 4);
   });
 });

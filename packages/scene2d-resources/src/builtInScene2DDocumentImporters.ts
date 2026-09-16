@@ -4,7 +4,7 @@ import {
   createScene2DFromSvgDocument,
 } from '@flighthq/scene2d-formats/contract';
 import type {
-  HostPathBooleanProvider,
+  PathBooleanKernel,
   ImportDiagnostic,
   Scene2DDocument,
   Scene2DDocumentImportContext,
@@ -20,11 +20,11 @@ export function registerLottieScene2DDocumentImporter(registry: Scene2DDocumentI
 }
 
 export function registerRiveScene2DDocumentImporter(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   registry: Scene2DDocumentImporterRegistry,
 ): void {
   registerScene2DDocumentImporter(registry, 'rive', matchesRiveDocument, (source, context) =>
-    importRiveDocument(pathBoolean, source, context),
+    importRiveDocument(pathBooleanKernel, source, context),
   );
 }
 
@@ -38,12 +38,12 @@ export function registerSvgScene2DDocumentImporter(registry: Scene2DDocumentImpo
  * every sprite that uses it — this importer decodes nothing itself.
  */
 function importRiveDocument(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   source: Uint8Array,
   _context: Readonly<Scene2DDocumentImportContext>,
 ): Scene2DDocument | null {
   const diagnostics: ImportDiagnostic[] = [];
-  const result = createScene2DDocumentFromRiveDocument(pathBoolean, source, diagnostics);
+  const result = createScene2DDocumentFromRiveDocument(pathBooleanKernel, source, diagnostics);
   if (result === null) return null;
   return createScene2DDocument(result.root, result.slots, 'rive', null, result.imageResources);
 }

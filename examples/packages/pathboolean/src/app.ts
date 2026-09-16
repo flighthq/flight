@@ -13,7 +13,7 @@ import {
 } from '@flighthq/sdk';
 import { appendPathCircle, appendPathRoundedRectangle, createPath } from '@flighthq/sdk/scene2d';
 import {
-  createDefaultPathBooleanBackend,
+  martinezPathBooleanKernel,
   differencePaths,
   intersectPaths,
   unionPaths,
@@ -21,8 +21,6 @@ import {
 } from '@flighthq/sdk/scene2d';
 
 import { canvas, render, scale } from './render';
-
-const pathBoolean = createDefaultPathBooleanBackend();
 
 const CELL_W = 400;
 const CELL_H = 300;
@@ -107,7 +105,7 @@ function rebuild(): void {
   const operations = [unionPaths, intersectPaths, differencePaths, xorPaths];
 
   for (let i = 0; i < 4; i++) {
-    const resultPath = operations[i](pathBoolean, pathA, pathB);
+    const resultPath = operations[i](martinezPathBooleanKernel, pathA, pathB);
 
     clearShapeCommands(resultShapes[i]);
     drawBooleanResult(resultShapes[i], resultPath, FILL_COLORS[i]);

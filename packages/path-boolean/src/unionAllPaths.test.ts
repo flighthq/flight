@@ -2,10 +2,10 @@ import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flatte
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
+import { martinezPathBooleanKernel } from './martinezKernel';
 import { unionAllPaths } from './unionAllPaths';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 function squarePath(x: number, y: number, s: number): Path {
   const path = createPath('nonZero');
@@ -34,7 +34,7 @@ function ringCount(path: Readonly<Path>): number {
 
 describe('unionAllPaths', () => {
   it('returns an empty path for an empty list', () => {
-    const result = unionAllPaths(backend, []);
+    const result = unionAllPaths(kernel, []);
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });
@@ -51,20 +51,20 @@ describe('unionAllPaths', () => {
     appendPathLineTo(overlap, 6, 6);
     appendPathLineTo(overlap, 2, 6);
     appendPathClose(overlap);
-    const result = unionAllPaths(backend, [overlap]);
+    const result = unionAllPaths(kernel, [overlap]);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
 
   it('merges a list of overlapping squares into one outline', () => {
-    const result = unionAllPaths(backend, [squarePath(0, 0, 10), squarePath(5, 5, 10), squarePath(8, 8, 10)]);
+    const result = unionAllPaths(kernel, [squarePath(0, 0, 10), squarePath(5, 5, 10), squarePath(8, 8, 10)]);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeGreaterThan(100);
     expect(pathArea(result)).toBeLessThan(300);
   });
 
   it('keeps disjoint squares as separate rings summing their areas', () => {
-    const result = unionAllPaths(backend, [squarePath(0, 0, 10), squarePath(20, 20, 10), squarePath(40, 0, 10)]);
+    const result = unionAllPaths(kernel, [squarePath(0, 0, 10), squarePath(20, 20, 10), squarePath(40, 0, 10)]);
     expect(ringCount(result)).toBe(3);
     expect(pathArea(result)).toBeCloseTo(300, 6);
   });
@@ -73,8 +73,8 @@ describe('unionAllPaths', () => {
     const a = squarePath(0, 0, 10);
     const b = squarePath(5, 5, 10);
     const c = squarePath(2, 8, 10);
-    const forward = unionAllPaths(backend, [a, b, c]);
-    const reversed = unionAllPaths(backend, [c, b, a]);
+    const forward = unionAllPaths(kernel, [a, b, c]);
+    const reversed = unionAllPaths(kernel, [c, b, a]);
     expect(pathArea(forward)).toBeCloseTo(pathArea(reversed), 6);
     expect(ringCount(forward)).toBe(ringCount(reversed));
   });
@@ -82,7 +82,7 @@ describe('unionAllPaths', () => {
   it('writes into a provided out path that aliases an input', () => {
     const a = squarePath(0, 0, 10);
     const b = squarePath(5, 5, 10);
-    const result = unionAllPaths(backend, [a, b], a);
+    const result = unionAllPaths(kernel, [a, b], a);
     expect(result).toBe(a);
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(175, 6);

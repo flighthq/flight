@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d';
 import { createScene2DFromRiveDocument } from '@flighthq/scene2d-formats';
 import type { Bitmap } from '@flighthq/types';
@@ -332,7 +332,7 @@ const { render, width } = await createFunctionalTarget({
     'descriptions of the same drawing, so any visible difference between them is wrong.',
 });
 
-const imported = createScene2DFromRiveDocument(createDefaultPathBooleanBackend(), createRiveFixture());
+const imported = createScene2DFromRiveDocument(martinezPathBooleanKernel, createRiveFixture());
 const artboard = imported.artboards[0];
 if (artboard === undefined) throw new Error('[rive-import] synthetic Rive fixture produced no artboard');
 const animation = artboard.animations[0];

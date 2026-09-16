@@ -2,7 +2,5 @@ export * from './booleanPaths';
 export * from './explainPathBoolean';
 export * from './martinezKernel';
 export * from './offsetPath';
-export * from './pathBooleanBackend';
 export * from './simplifyPath';
 export * from './unionAllPaths';
-export { initializeMartinezPathBooleanBackend } from './martinezKernel';
