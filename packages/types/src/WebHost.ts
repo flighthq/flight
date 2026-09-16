@@ -31,6 +31,7 @@ import type {
   HostSensorsCapabilities,
   HostShareCapabilities,
   HostShellCapabilities,
+  HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostSurfaceCapabilities,
@@ -71,6 +72,7 @@ export type WebHost = Omit<
   | 'sensors'
   | 'share'
   | 'shell'
+  | 'socket'
   | 'softKeyboard'
   | 'statusBar'
   | 'surface'
@@ -105,9 +107,9 @@ export type WebHost = Omit<
   readonly image: Required<Pick<HostImageCapabilities, 'loader'>>;
   readonly input: Required<Pick<HostInputCapabilities, 'dropFile' | 'focus' | 'ingress' | 'pointerLock' | 'target'>>;
   readonly lifecycle: Required<Pick<HostLifecycleCapabilities, 'state'>>;
-  readonly mediaSession: Required<Pick<HostMediaSessionCapabilities, 'action' | 'session'>>;
+  readonly mediaSession: Required<Pick<HostMediaSessionCapabilities, 'action' | 'control'>>;
   readonly menu: Required<Pick<HostMenuCapabilities, 'highlight' | 'popup'>>;
-  readonly net: Required<Pick<HostNetCapabilities, 'http' | 'socket'>>;
+  readonly net: Required<Pick<HostNetCapabilities, 'http'>>;
   readonly notification: Required<Pick<HostNotificationCapabilities, 'permission'>>;
   readonly permissions: Required<Pick<HostPermissionsCapabilities, 'query'>>;
   readonly platform: Required<Pick<HostPlatformCapabilities, 'info'>>;
@@ -120,6 +122,7 @@ export type WebHost = Omit<
   readonly sensors: Required<Pick<HostSensorsCapabilities, 'query'>>;
   readonly share: Required<Pick<HostShareCapabilities, 'content' | 'files'>>;
   readonly shell: Required<Pick<HostShellCapabilities, 'external'>>;
+  readonly socket: Required<Pick<HostSocketCapabilities, 'connection'>>;
   readonly softKeyboard: Required<Pick<HostSoftKeyboardCapabilities, 'change' | 'info' | 'visibility'>>;
   readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
   readonly surface: Required<Pick<HostSurfaceCapabilities, 'resize'>>;
