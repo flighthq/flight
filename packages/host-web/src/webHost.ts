@@ -1,5 +1,5 @@
 import { createHost } from '@flighthq/host/contract';
-import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
+import type { EntityRuntimeKey, WebHost } from '@flighthq/types/contract';
 
 import { webHostAccessibilityGroup } from './webAccessibilityHost';
 import { webHostApp } from './webAppHost';
@@ -30,7 +30,14 @@ import { webHostText } from './webTextHost';
 import { webHostUi } from './webUiHost';
 import { webHostWindow } from './webWindow';
 
-export const webHost = createHost({
+// `satisfies Omit<WebHost, …>` is what keeps WebHost honest in the direction that matters: a slot it
+// claims that no group fills fails to typecheck here. The converse — a group gaining a slot WebHost does
+// not list — is NOT caught at this site, because the group value is an identifier and `satisfies` only
+// excess-checks a fresh object literal. That direction cannot mislead, though: WebHost would understate,
+// and the first caller to reach for the new slot gets a type error naming the gap. The annotation on the
+// const then publishes WebHost as the host's type — a named struct in C++ rather than an anonymous
+// structural row, and for a caller a host whose filled slots are stated.
+const groups = {
   accessibility: webHostAccessibilityGroup,
   app: webHostApp,
   clipboard: webHostClipboard,
@@ -57,4 +64,6 @@ export const webHost = createHost({
   ui: webHostUi,
   updater: webHostUpdater,
   window: webHostWindow,
-} as const satisfies Omit<Host, typeof EntityRuntimeKey>);
+} as const satisfies Omit<WebHost, typeof EntityRuntimeKey>;
+
+export const webHost: WebHost = createHost(groups);

@@ -229,6 +229,7 @@ export * from './ElectronApi';
 export type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
 export * from './ElectronHostOptions';
 export type { ElectronHost, ElectronMacosHost } from './ElectronHost';
+export type { WebHost } from './WebHost';
 export type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
 export type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor';
 export * from './EmissiveMaterial';

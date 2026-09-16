@@ -232,6 +232,7 @@ export * from './ElectronApi';
 export * from './ElectronAppCapabilitiesFor';
 export * from './ElectronHostOptions';
 export * from './ElectronHost';
+export * from './WebHost';
 export * from './ElectronProtocolCapabilities';
 export * from './ElectronTrayCapabilitiesFor';
 export * from './EmissiveMaterial';
