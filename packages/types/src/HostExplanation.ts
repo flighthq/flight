@@ -13,11 +13,6 @@ export interface HostExplanation {
 
 export interface HostCapabilityGroupExplanation {
   readonly group: string;
-  // True when the group position holds a PROVIDER rather than a group of provider slots. `Host.window`
-  // is the only one, and it reports no slots — without this flag that is indistinguishable from a group
-  // that is simply empty, which is the opposite conclusion.
-  readonly isProvider: boolean;
-  // The slot keys actually set on the group, in the order the host object carries them.
   readonly slots: readonly string[];
 }
 

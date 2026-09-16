@@ -5,12 +5,14 @@ import type {
   Host,
   HostClipboardCapabilities,
   HostConnectivityCapabilities,
+  HostDeviceCapabilities,
   HostDialogCapabilities,
-  HostInputCapabilities,
+  HostFileSystemCapabilities,
+  HostGeolocationCapabilities,
+  HostHapticsCapabilities,
   HostShareCapabilities,
-  HostStorageCapabilities,
-  HostSystemCapabilities,
-  HostUiCapabilities,
+  HostSoftKeyboardCapabilities,
+  HostStatusBarCapabilities,
 } from './Host';
 import type { CapacitorNotificationCapabilities } from './Notification';
 import type { HostCapacitorShareContentCapability } from './Share';
@@ -20,31 +22,19 @@ export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
   readonly clipboard: HostClipboardCapabilities & Required<Pick<HostClipboardCapabilities, 'image' | 'text'>>;
   readonly connectivity: HostConnectivityCapabilities &
     Required<Pick<HostConnectivityCapabilities, 'change' | 'status'>>;
+  readonly device: Required<Pick<HostDeviceCapabilities, 'info'>>;
   readonly dialog: HostDialogCapabilities & Required<Pick<HostDialogCapabilities, 'message' | 'prompt'>>;
-  readonly input: HostInputCapabilities &
-    Required<
-      Pick<
-        HostInputCapabilities,
-        | 'haptics'
-        | 'softKeyboardAccessoryBar'
-        | 'softKeyboardChange'
-        | 'softKeyboardInfo'
-        | 'softKeyboardResizeModeWrite'
-        | 'softKeyboardScrollAssist'
-        | 'softKeyboardStyle'
-        | 'softKeyboardVisibility'
-      >
-    >;
+  readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'provider'>>;
+  readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'provider'>>;
+  readonly haptics: Required<Pick<HostHapticsCapabilities, 'provider'>>;
   readonly notification: CapacitorNotificationCapabilities;
   readonly protocol: CapacitorProtocolCapabilities;
   readonly share: HostShareCapabilities & { readonly content: HostCapacitorShareContentCapability };
-  readonly storage: HostStorageCapabilities & Required<Pick<HostStorageCapabilities, 'fileSystem'>>;
-  readonly system: HostSystemCapabilities & Required<Pick<HostSystemCapabilities, 'device' | 'geolocation'>>;
-  readonly ui: HostUiCapabilities &
-    Required<
-      Pick<
-        HostUiCapabilities,
-        'statusBarColor' | 'statusBarInfo' | 'statusBarOverlays' | 'statusBarStyle' | 'statusBarVisibility'
-      >
-    >;
+  readonly softKeyboard: Required<
+    Pick<
+      HostSoftKeyboardCapabilities,
+      'accessoryBar' | 'change' | 'info' | 'resizeModeWrite' | 'scrollAssist' | 'style' | 'visibility'
+    >
+  >;
+  readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color' | 'info' | 'overlays' | 'style' | 'visibility'>>;
 };

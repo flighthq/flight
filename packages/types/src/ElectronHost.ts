@@ -1,4 +1,3 @@
-import type { HostWindowCapability } from './ApplicationWindow';
 import type { ElectronIpcTarget } from './ElectronApi';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
 import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
@@ -8,12 +7,13 @@ import type {
   HostClipboardCapabilities,
   HostDialogCapabilities,
   HostIpcCapabilities,
+  HostPlatformCapabilities,
+  HostPreferencesCapabilities,
   HostScreenCapabilities,
   HostShellCapabilities,
   HostShortcutCapabilities,
-  HostStorageCapabilities,
-  HostSystemCapabilities,
   HostUpdaterCapabilities,
+  HostWindowCapabilities,
 } from './Host';
 import type { HostIpcTargetedSendCapability } from './Ipc';
 import type { ElectronMenuCapabilities } from './Menu';
@@ -30,8 +30,6 @@ type ElectronShellCapabilitiesFor<Profile extends DesktopOsProfile> = Required<
 > &
   (Profile extends 'windows' ? Required<Pick<HostShellCapabilities, 'shortcutLink'>> : object);
 
-// The canonical Electron host makes the exact populated group shapes visible to callers while
-// retaining every required Host group. Conditional groups preserve macOS/Windows/Linux coverage.
 export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   Host,
   | 'app'
@@ -40,13 +38,13 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   | 'ipc'
   | 'menu'
   | 'notification'
+  | 'platform'
   | 'power'
+  | 'preferences'
   | 'protocol'
   | 'screen'
   | 'shell'
   | 'shortcut'
-  | 'storage'
-  | 'system'
   | 'tray'
   | 'updater'
   | 'window'
@@ -59,16 +57,16 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   };
   readonly menu: ElectronMenuCapabilities;
   readonly notification: ElectronNotificationCapabilitiesFor<Profile>;
+  readonly platform: Required<Pick<HostPlatformCapabilities, 'info'>>;
   readonly power: ElectronPowerCapabilities;
+  readonly preferences: Required<Pick<HostPreferencesCapabilities, 'local'>>;
   readonly protocol: ElectronProtocolCapabilities;
   readonly screen: Required<Pick<HostScreenCapabilities, 'change' | 'query'>>;
   readonly shell: ElectronShellCapabilitiesFor<Profile>;
   readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
-  readonly storage: Required<Pick<HostStorageCapabilities, 'local'>>;
-  readonly system: Required<Pick<HostSystemCapabilities, 'platform'>>;
   readonly tray: ElectronTrayCapabilitiesFor<Profile>;
   readonly updater: Required<Pick<HostUpdaterCapabilities, 'command'>>;
-  readonly window: HostWindowCapability & Required<Pick<HostWindowCapability, 'attach' | 'close' | 'open'>>;
+  readonly window: Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>>;
 };
 
 export type ElectronMacosHost = ElectronHost<'macos'>;

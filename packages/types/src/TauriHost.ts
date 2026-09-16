@@ -1,11 +1,11 @@
-import type { HostWindowCapability } from './ApplicationWindow';
 import type {
   Host,
   HostClipboardCapabilities,
   HostDialogCapabilities,
+  HostPlatformCapabilities,
   HostShellCapabilities,
   HostShortcutCapabilities,
-  HostSystemCapabilities,
+  HostWindowCapabilities,
 } from './Host';
 import type { TauriMenuCapabilities } from './Menu';
 import type { TauriNotificationCapabilities } from './Notification';
@@ -19,9 +19,9 @@ export type TauriHost<Profile extends DesktopOsProfile> = Host & {
   readonly dialog: Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>>;
   readonly menu: TauriMenuCapabilities;
   readonly notification: TauriNotificationCapabilities;
+  readonly platform: Required<Pick<HostPlatformCapabilities, 'info'>>;
   readonly shell: Required<Pick<HostShellCapabilities, 'external' | 'pathOpen' | 'pathReveal'>>;
   readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
-  readonly system: Required<Pick<HostSystemCapabilities, 'platform'>>;
   readonly tray: TauriTrayCapabilitiesFor<Profile>;
-  readonly window: HostWindowCapability & Required<Pick<HostWindowCapability, 'attach' | 'close' | 'open'>>;
+  readonly window: Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>>;
 };

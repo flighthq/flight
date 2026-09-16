@@ -29,7 +29,7 @@
 // while several Flight seams (device/statusbar/connectivity snapshot getters, keyboard info) are
 // synchronous. Those adapters prefetch-and-cache (and, where the value is live, subscribe to keep the
 // cache fresh) — see each adapter for the exact contract. `@capacitor/preferences` is deliberately
-// absent: `HostStorageCapability` is synchronous but Preferences is async, an unbridgeable mismatch, so the
+// absent: `HostPreferencesCapability` is synchronous but Preferences is async, an unbridgeable mismatch, so the
 // the Capacitor Host omits the local-storage slot instead of adapting it dishonestly.
 
 export interface CapacitorApi {
