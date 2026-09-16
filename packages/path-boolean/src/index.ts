@@ -1,10 +1,10 @@
 export {
   booleanPaths,
-  createDefaultPathBooleanBackend,
   differencePaths,
   explainOffsetPath,
   explainSimplifyPath,
   intersectPaths,
+  martinezPathBooleanKernel,
   offsetPath,
   simplifyPath,
   unionAllPaths,

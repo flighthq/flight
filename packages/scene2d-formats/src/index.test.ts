@@ -1,5 +1,5 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { DisplayObject, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
@@ -13,7 +13,7 @@ import {
 } from './index';
 import * as scene2DFormatsPublic from './index';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 // The two lanes are a design decision, not a convention, so the split is pinned here rather than
 // left to whoever next edits `index.ts`. The line the Rive registry draws: an app composes an import
@@ -102,7 +102,7 @@ describe('scene2d-formats exports', () => {
 describe('scene2d-formats Rive registry overrides', () => {
   it('lets a caller replace a built-in family through the public door', () => {
     const registry = createRiveImportRegistry();
-    registerAllRiveHandlers(backend, registry);
+    registerAllRiveHandlers(kernel, registry);
     // The shape family already claims this key, so a plain Shape is what the import would produce.
     registerRiveCoreObjectHandler(registry, RIVE_SHAPE_TYPE_KEY, {
       importComponent: (_context, index): DisplayObject | null => createDisplayObject({ name: `replaced:${index}` }),
@@ -115,10 +115,10 @@ describe('scene2d-formats Rive registry overrides', () => {
 
   it('leaves a second registry untouched, because a registry belongs to its caller', () => {
     const overridden = createRiveImportRegistry();
-    registerAllRiveHandlers(backend, overridden);
+    registerAllRiveHandlers(kernel, overridden);
     registerRiveCoreObjectHandler(overridden, RIVE_SHAPE_TYPE_KEY, { importComponent: () => null });
     const stock = createRiveImportRegistry();
-    registerAllRiveHandlers(backend, stock);
+    registerAllRiveHandlers(kernel, stock);
 
     // The override drops the shape entirely; the untouched registry still imports it by name.
     expect(getNodeChildCountOf(createRiveDocumentImportResult(overridden, riveWithOneShape()))).toBe(0);

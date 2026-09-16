@@ -5,7 +5,7 @@ import { intersectPaths, simplifyPath } from '@flighthq/path-boolean/contract';
 import { createPath } from '@flighthq/path/contract';
 import type {
   DisplayObject,
-  HostPathBooleanProvider,
+  PathBooleanKernel,
   ImportDiagnostic,
   Matrix,
   Path,
@@ -30,7 +30,7 @@ import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riv
  * therefore cancels, which is what keeps the artboard's pivot out of the arithmetic.
  */
 export function applyRiveClipping(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   nodes: ReadonlyArray<DisplayObject | null>,
   artboard: Readonly<RiveArtboardGraph>,
   shapePaths: ReadonlyMap<number, RivePathRecord[]>,
@@ -59,15 +59,15 @@ export function applyRiveClipping(
       );
       continue;
     }
-    const next = createRiveClipPath(pathBoolean, paths, relative[owner], relative[source], object);
+    const next = createRiveClipPath(pathBooleanKernel, paths, relative[owner], relative[source], object);
     const current = clips.get(target);
-    clips.set(target, current === undefined ? next : intersectPaths(pathBoolean, current, next));
+    clips.set(target, current === undefined ? next : intersectPaths(pathBooleanKernel, current, next));
   }
   for (const [target, path] of clips) target.clip = createClipRegionFromPath(path);
 }
 
 function createRiveClipPath(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   paths: readonly RivePathRecord[],
   clipped: Readonly<Matrix>,
   source: Readonly<Matrix>,
@@ -91,7 +91,7 @@ function createRiveClipPath(
   // Resolve every clipping shape under its own fill rule before intersections. `intersectPaths`
   // accepts contour sets, but its fill-rule option applies to both operands; normalizing each one to
   // a non-zero outline first preserves a mixed even-odd/non-zero stack without conflating the two.
-  return simplifyPath(pathBoolean, path, { fillRule: path.winding });
+  return simplifyPath(pathBooleanKernel, path, { fillRule: path.winding });
 }
 
 /**
@@ -108,12 +108,12 @@ function createRiveClipPath(
  * stream than the node being clipped, so no node can be clipped until the whole artboard exists.
  */
 export function registerRiveClippingHandlers(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   registry: RiveImportRegistry,
 ): void {
   registerRiveCoreObjectHandler(registry, RIVE_CLIPPING_SHAPE, {
     applyArtboard: (context) =>
-      applyRiveClipping(pathBoolean, context.nodes, context.artboard, context.shapePaths, context.diagnostics),
+      applyRiveClipping(pathBooleanKernel, context.nodes, context.artboard, context.shapePaths, context.diagnostics),
     importComponent: importRiveCoreObjectAsData,
   });
 }

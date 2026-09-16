@@ -2,10 +2,10 @@ import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
+import { martinezPathBooleanKernel } from './martinezKernel';
 import { resolvePathRegions } from './resolvePathRegions';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 function pathArea(path: Readonly<Path>): number {
   let total = 0;
@@ -27,20 +27,20 @@ const SQUARE_B = [2, 2, 6, 2, 6, 6, 2, 6];
 
 describe('resolvePathRegions', () => {
   it('returns an empty path for no rings', () => {
-    const result = resolvePathRegions(backend, [], 'nonZero');
+    const result = resolvePathRegions(kernel, [], 'nonZero');
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
     expect(result.winding).toBe('nonZero');
   });
 
   it('self-unions overlapping rings into one outline under nonZero', () => {
-    const result = resolvePathRegions(backend, [SQUARE_A, SQUARE_B], 'nonZero');
+    const result = resolvePathRegions(kernel, [SQUARE_A, SQUARE_B], 'nonZero');
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
 
   it('applies the fill rule to self-overlap under evenOdd', () => {
-    const result = resolvePathRegions(backend, [SQUARE_A, SQUARE_B], 'evenOdd');
+    const result = resolvePathRegions(kernel, [SQUARE_A, SQUARE_B], 'evenOdd');
     expect(pathArea(result)).toBeCloseTo(24, 6);
     expect(ringCount(result)).toBeGreaterThan(1);
   });

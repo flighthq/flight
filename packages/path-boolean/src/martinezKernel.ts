@@ -1,19 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostPathBooleanProvider,
+  PathBooleanKernel,
   PathBooleanContour,
   PathBooleanFillRule,
   PathBooleanOperation,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function createMartinezPathBooleanBackend(): HostPathBooleanProvider {
-  const out = allocateEntity<HostPathBooleanProvider>();
-  initializeMartinezPathBooleanBackend(out);
+export function createMartinezPathBooleanKernel(): PathBooleanKernel {
+  const out = allocateEntity<PathBooleanKernel>();
+  initializeMartinezPathBooleanKernel(out);
   return finishEntity(out);
 }
 
-// Builds the default boolean kernel: a from-scratch, floating-point Martinez–Rueda–Feito sweep-line.
+// The Martinez–Rueda–Feito kernel: a from-scratch, floating-point sweep-line over caller-owned contours.
+//
 //
 // The pipeline runs in two stages, deliberately separated so the correctness-critical classification
 // never races the arrangement construction:
@@ -35,7 +36,7 @@ export function createMartinezPathBooleanBackend(): HostPathBooleanProvider {
 // edge orientations fall out of the same arithmetic with no field-staleness. It trades the classic
 // algorithm's O(n log n) inline classification for an O(n²) post-pass, which is the right call for a
 // correctness-first kernel on the modest polygon sizes booleans see.
-export function initializeMartinezPathBooleanBackend(out: EntityConstruction<HostPathBooleanProvider>): void {
+export function initializeMartinezPathBooleanKernel(out: EntityConstruction<PathBooleanKernel>): void {
   out.computePathBoolean = (
     subject: readonly PathBooleanContour[],
     clip: readonly PathBooleanContour[],
@@ -45,6 +46,13 @@ export function initializeMartinezPathBooleanBackend(out: EntityConstruction<Hos
     return computeMartinezBoolean(subject, clip, operation, fillRule);
   };
 }
+
+// The kernel the boolean operations use unless the caller passes another one. A stateless value, so it is
+// one shared instance rather than a per-call construction: a second instance would be indistinguishable
+// and would only break the identity a caller may use to recognise the stock kernel. Annotated with its
+// concrete type because an exported const whose type is inferred lowers to an anonymous struct of
+// type-erased closures in the C++ emitter; see agents/portability.md.
+export const martinezPathBooleanKernel: PathBooleanKernel = createMartinezPathBooleanKernel();
 
 // One endpoint of a segment during the sweep. The two endpoints of an edge cross-link via `otherEvent`.
 // `windingDelta` is only meaningful on the left endpoint and records the source ring's traversal

@@ -1,5 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
@@ -16,7 +16,7 @@ import {
 } from './riveScene2D';
 import { registerRiveShapeHandlers } from './riveShapeNode';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 // Rive states rotation in RADIANS, established from the corpus: 1,299 rotation values with a maximum
 // of 6.93 and exact landmarks at 3PI/2 and 2PI, where degrees would show 90/180/360. Node2D.rotation
@@ -120,12 +120,12 @@ interface TestProperty {
 
 describe('createScene2DFromRiveDocument', () => {
   it('returns no artboards for bytes that are not a Rive file', () => {
-    expect(createScene2DFromRiveDocument(backend, new Uint8Array([1, 2, 3, 4])).artboards).toEqual([]);
+    expect(createScene2DFromRiveDocument(kernel, new Uint8Array([1, 2, 3, 4])).artboards).toEqual([]);
   });
 
   it('imports each artboard with its name and size', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [text(NAME, 'First'), float(WIDTH, 400), float(HEIGHT, 300)]),
         object(ARTBOARD, [text(NAME, 'Second'), float(WIDTH, 120), float(HEIGHT, 60)]),
@@ -141,7 +141,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('converts the artboard origin into a pivot in artboard units', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([object(ARTBOARD, [float(WIDTH, 400), float(HEIGHT, 300), float(ORIGIN_X, 0.5), float(ORIGIN_Y, 1)])]),
     );
 
@@ -151,7 +151,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('writes rotation in the degrees Node2D expects, from the radians Rive states', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 100), float(HEIGHT, 100)]),
         object(NODE, [uint(PARENT_ID, 0), float(ROTATION, Math.PI / 2)]),
@@ -171,7 +171,7 @@ describe('createScene2DFromRiveDocument', () => {
     // A Rive file writes only what differs from the documented initial value, so an absent scale
     // means 1 and an absent opacity means 1 — not zero.
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(NODE, [uint(PARENT_ID, 0)])]),
     );
     const node = getNodeChildAt(result.artboards[0].root, 0) as Node2D;
@@ -181,7 +181,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('reads the transform a node states', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [
@@ -202,7 +202,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('accepts the retired position key files still write', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [uint(PARENT_ID, 0), float(X_LEGACY, 33)]),
@@ -214,7 +214,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('nests nodes the way the component tree states', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [uint(PARENT_ID, 0), text(NAME, 'parent')]),
@@ -233,7 +233,7 @@ describe('createScene2DFromRiveDocument', () => {
   // node. Emitting one would put a phantom object in the display tree.
   it('makes display objects only for components that are nodes', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(SHAPE, [uint(PARENT_ID, 0), text(NAME, 'shape')]),
@@ -252,7 +252,7 @@ describe('createScene2DFromRiveDocument', () => {
   it('crumbs a path that is not owned by a shape instead of dropping it silently', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [uint(PARENT_ID, 0)]),
@@ -269,7 +269,7 @@ describe('createScene2DFromRiveDocument', () => {
   it('crumbs a drawable kind it does not build instead of yielding a silent empty container', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(TEXT_INPUT, [uint(PARENT_ID, 0)])]),
       diagnostics,
     );
@@ -284,7 +284,7 @@ describe('createScene2DFromRiveDocument', () => {
   it('reports a nine-sliced node imported as a plain container', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(NSLICED_NODE, [uint(PARENT_ID, 0)])]),
       diagnostics,
     );
@@ -300,7 +300,7 @@ describe('createScene2DFromRiveDocument', () => {
   it('stays silent for a plain node, which is a container by definition', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [uint(PARENT_ID, 0)]),
@@ -318,7 +318,7 @@ describe('createScene2DFromRiveDocument', () => {
   it('marks a nested-artboard subclass as a slot rather than reporting it unsupported', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NESTED_ARTBOARD_LEAF, [uint(PARENT_ID, 0)]),
@@ -349,7 +349,7 @@ describe('createScene2DFromRiveDocument', () => {
       if (isRiveCoreTypeDerivedFrom(typeKey, NESTED_ARTBOARD)) continue;
       const diagnostics: ImportDiagnostic[] = [];
       const result = createScene2DFromRiveDocument(
-        backend,
+        kernel,
         buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(typeKey, [uint(PARENT_ID, 0)])]),
         diagnostics,
       );
@@ -377,7 +377,7 @@ describe('createScene2DFromRiveDocument', () => {
       [24, 'Multiply'],
     ] as const;
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         ...modes.map(([value]) => object(SHAPE, [uint(PARENT_ID, 0), uint(BLEND_MODE, value)])),
@@ -406,7 +406,7 @@ describe('createScene2DFromRiveDocument', () => {
       [28, 'Luminosity'],
     ] as const;
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         ...advanced.map(([value]) => object(SHAPE, [uint(PARENT_ID, 0), uint(BLEND_MODE, value)])),
@@ -424,7 +424,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it("leaves a plain node's blend mode alone, since only a drawable states one", () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(NODE, [uint(PARENT_ID, 0), uint(BLEND_MODE, 24)]),
@@ -436,7 +436,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('reparents past a non-node ancestor rather than dropping its descendants', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(FILL, [uint(PARENT_ID, 0)]),
@@ -451,7 +451,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('returns authored layout descriptors alongside their display targets', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 100), float(HEIGHT, 50), uint(LAYOUT_STYLE_ID, 1)]),
         object(LAYOUT_COMPONENT_STYLE, [uint(PARENT_ID, 0), uint(LAYOUT_FLEX_DIRECTION, 2)]),
@@ -474,7 +474,7 @@ describe('createScene2DFromRiveDocument', () => {
   // caller pays nothing for a file that rigs nothing.
   it('carries no skeleton for an artboard without bones', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(NODE, [uint(PARENT_ID, 0)])]),
     );
 
@@ -483,7 +483,7 @@ describe('createScene2DFromRiveDocument', () => {
 
   it('carries the artboard bone rig beside the display tree rather than inside it', () => {
     const result = createScene2DFromRiveDocument(
-      backend,
+      kernel,
       buildRive([
         object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
         object(ROOT_BONE, [uint(PARENT_ID, 0), text(NAME, 'root')]),

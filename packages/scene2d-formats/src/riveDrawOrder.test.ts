@@ -1,5 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
@@ -7,7 +7,7 @@ import { registerRiveDrawOrderHandlers } from './riveDrawOrder';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 // A DrawRules is parented to the node it governs and names a DrawTarget, which names the drawable to
 // sit beside and whether to land before or after it. Ordering permutes within one parent, so a rule
@@ -118,7 +118,7 @@ function childNames(root: Node2D): string[] {
 
 function build(objects: TestObject[], diagnostics?: ImportDiagnostic[]): Node2D {
   const artboard = object(ARTBOARD, [text(NAME, 'Board'), float(WIDTH, 100), float(HEIGHT, 100)]);
-  return createScene2DFromRiveDocument(backend, encodeRive([artboard, ...objects]), diagnostics).artboards[0].root;
+  return createScene2DFromRiveDocument(kernel, encodeRive([artboard, ...objects]), diagnostics).artboards[0].root;
 }
 
 interface TestProperty {

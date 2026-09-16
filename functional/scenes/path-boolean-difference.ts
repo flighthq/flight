@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapePath,
-  createDefaultPathBooleanBackend,
+  martinezPathBooleanKernel,
   createDisplayObject,
   createPath,
   createShape,
@@ -49,8 +49,7 @@ appendPathRectangle(pathA, 50, 50, 100, 100);
 const pathB = createPath();
 appendPathRectangle(pathB, 100, 100, 100, 100);
 
-const pathBoolean = createDefaultPathBooleanBackend();
-const result = differencePaths(pathBoolean, pathA, pathB);
+const result = differencePaths(martinezPathBooleanKernel, pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();

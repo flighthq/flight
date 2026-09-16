@@ -6,7 +6,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
   EntityConstruction,
-  HostPathBooleanProvider,
+  PathBooleanKernel,
   ImportDiagnostic,
   RiveAdvancedBlend,
   RiveArtboardGraph,
@@ -78,12 +78,12 @@ export function createRiveDocumentImportResult(
  * out; see `registerAllRiveHandlers` for what this installs and in what order.
  */
 export function createScene2DFromRiveDocument(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   source: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
 ): RiveDocumentImportResult {
   const registry = createRiveImportRegistry();
-  registerAllRiveHandlers(pathBoolean, registry);
+  registerAllRiveHandlers(pathBooleanKernel, registry);
   return createRiveDocumentImportResult(registry, source, diagnostics);
 }
 

@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path/contract';
-import type { HostPathBooleanProvider, Path, PathWinding } from '@flighthq/types/contract';
+import type { PathBooleanKernel, Path, PathWinding } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths';
-import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
+import { martinezPathBooleanKernel } from './martinezKernel';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 function rectanglePath(x: number, y: number, w: number, h: number, winding: PathWinding = 'nonZero'): Path {
   const path = createPath(winding);
@@ -49,21 +49,21 @@ describe('booleanPaths', () => {
   it('dispatches to the operation named in the argument', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(5, 5, 10, 10);
-    expect(pathFilledArea(booleanPaths(backend, a, b, 'union'))).toBeCloseTo(175, 4);
-    expect(pathFilledArea(booleanPaths(backend, a, b, 'intersection'))).toBeCloseTo(25, 4);
-    expect(pathFilledArea(booleanPaths(backend, a, b, 'difference'))).toBeCloseTo(75, 4);
-    expect(pathFilledArea(booleanPaths(backend, a, b, 'xor'))).toBeCloseTo(150, 4);
+    expect(pathFilledArea(booleanPaths(kernel, a, b, 'union'))).toBeCloseTo(175, 4);
+    expect(pathFilledArea(booleanPaths(kernel, a, b, 'intersection'))).toBeCloseTo(25, 4);
+    expect(pathFilledArea(booleanPaths(kernel, a, b, 'difference'))).toBeCloseTo(75, 4);
+    expect(pathFilledArea(booleanPaths(kernel, a, b, 'xor'))).toBeCloseTo(150, 4);
   });
 
   it('returns a fresh non-zero path when out is omitted', () => {
-    const result = booleanPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(20, 20, 5, 5), 'union');
+    const result = booleanPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(20, 20, 5, 5), 'union');
     expect(result.winding).toBe('nonZero');
     expect(result.commands.length).toBeGreaterThan(0);
   });
 
   it('writes into the provided out path and returns it', () => {
     const out = createPath('nonZero');
-    const returned = booleanPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10), 'union', out);
+    const returned = booleanPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10), 'union', out);
     expect(returned).toBe(out);
     expect(pathFilledArea(out)).toBeCloseTo(175, 4);
   });
@@ -71,7 +71,7 @@ describe('booleanPaths', () => {
   it('is safe when out aliases the subject input', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(5, 5, 10, 10);
-    const result = booleanPaths(backend, a, b, 'union', a);
+    const result = booleanPaths(kernel, a, b, 'union', a);
     expect(result).toBe(a);
     expect(pathFilledArea(result)).toBeCloseTo(175, 4);
   });
@@ -79,7 +79,7 @@ describe('booleanPaths', () => {
   it('is safe when out aliases the clip input', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(5, 5, 10, 10);
-    const result = booleanPaths(backend, a, b, 'intersection', b);
+    const result = booleanPaths(kernel, a, b, 'intersection', b);
     expect(result).toBe(b);
     expect(pathFilledArea(result)).toBeCloseTo(25, 4);
   });
@@ -89,11 +89,11 @@ describe('booleanPaths', () => {
     appendPathRectangle(a, 0, 0, 10, 10);
     appendPathRectangle(a, 5, 5, 10, 10);
     const empty = createPath('nonZero');
-    expect(pathFilledArea(booleanPaths(backend, a, empty, 'union', undefined, { fillRule: 'nonZero' }))).toBeCloseTo(
+    expect(pathFilledArea(booleanPaths(kernel, a, empty, 'union', undefined, { fillRule: 'nonZero' }))).toBeCloseTo(
       175,
       4,
     );
-    expect(pathFilledArea(booleanPaths(backend, a, empty, 'union', undefined, { fillRule: 'evenOdd' }))).toBeCloseTo(
+    expect(pathFilledArea(booleanPaths(kernel, a, empty, 'union', undefined, { fillRule: 'evenOdd' }))).toBeCloseTo(
       150,
       4,
     );
@@ -102,13 +102,13 @@ describe('booleanPaths', () => {
   it('accepts a coarser tolerance option without error', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(5, 5, 10, 10);
-    expect(pathFilledArea(booleanPaths(backend, a, b, 'union', undefined, { tolerance: 2 }))).toBeCloseTo(175, 4);
+    expect(pathFilledArea(booleanPaths(kernel, a, b, 'union', undefined, { tolerance: 2 }))).toBeCloseTo(175, 4);
   });
 });
 
 describe('differencePaths', () => {
   it('cuts a contained hole', () => {
-    const result = differencePaths(backend, rectanglePath(0, 0, 30, 30), rectanglePath(10, 10, 10, 10));
+    const result = differencePaths(kernel, rectanglePath(0, 0, 30, 30), rectanglePath(10, 10, 10, 10));
     expect(pathFilledArea(result)).toBeCloseTo(800, 4);
     expect(pathFillContains(result, 15, 15)).toBe(false);
     expect(pathFillContains(result, 2, 2)).toBe(true);
@@ -117,38 +117,38 @@ describe('differencePaths', () => {
   it('is empty for a path differenced against itself', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(0, 0, 10, 10);
-    expect(pathFilledArea(differencePaths(backend, a, b))).toBeCloseTo(0, 4);
+    expect(pathFilledArea(differencePaths(kernel, a, b))).toBeCloseTo(0, 4);
   });
 });
 
 describe('intersectPaths', () => {
   it('keeps the overlap', () => {
-    const result = intersectPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
+    const result = intersectPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
     expect(pathFilledArea(result)).toBeCloseTo(25, 4);
   });
 
   it('is empty for disjoint inputs', () => {
-    const result = intersectPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(20, 20, 10, 10));
+    const result = intersectPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(20, 20, 10, 10));
     expect(pathFilledArea(result)).toBeCloseTo(0, 4);
   });
 });
 
 describe('unionPaths', () => {
   it('merges overlapping rectangles', () => {
-    const result = unionPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
+    const result = unionPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
     expect(pathFilledArea(result)).toBeCloseTo(175, 4);
   });
 
   it('commutes', () => {
     const a = rectanglePath(0, 0, 10, 10);
     const b = rectanglePath(4, 4, 10, 10);
-    expect(pathFilledArea(unionPaths(backend, a, b))).toBeCloseTo(pathFilledArea(unionPaths(backend, b, a)), 4);
+    expect(pathFilledArea(unionPaths(kernel, a, b))).toBeCloseTo(pathFilledArea(unionPaths(kernel, b, a)), 4);
   });
 
-  it('routes through a provided backend', () => {
+  it('routes through a provided kernel', () => {
     let seen = false;
     const custom = (() => {
-      const out = allocateEntity<HostPathBooleanProvider>();
+      const out = allocateEntity<PathBooleanKernel>();
       out.computePathBoolean = () => {
         seen = true;
         return [];
@@ -163,7 +163,7 @@ describe('unionPaths', () => {
 
 describe('xorPaths', () => {
   it('keeps the symmetric difference', () => {
-    const result = xorPaths(backend, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
+    const result = xorPaths(kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
     expect(pathFilledArea(result)).toBeCloseTo(150, 4);
   });
 });

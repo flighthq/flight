@@ -1,7 +1,7 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { createDefaultPathBooleanBackend } from '@flighthq/path-boolean/contract';
+import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
@@ -17,7 +17,7 @@ import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './ri
 import { createScene2DFromRiveDocument } from './riveScene2D';
 import { createRiveSkeleton2D } from './riveSkeleton';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 // Time comes from the animation's OWN frame rate, so expectations below are computed from the
 // frame/fps relation the format states rather than from what the builder produced. Interpolation type
@@ -71,7 +71,7 @@ describe('applyAnimationClipToRiveDocument', () => {
     { expected: 2, field: 'scaleY', from: 1, propertyKey: 17, to: 3 },
     { expected: 0.75, field: 'alpha', from: 1, propertyKey: 18, to: 0.5 },
   ] as const)('composes $field with geometry and paint mutation', ({ expected, field, from, propertyKey, to }) => {
-    const result = createScene2DFromRiveDocument(backend, riveWithComposedAnimation(propertyKey, from, to));
+    const result = createScene2DFromRiveDocument(kernel, riveWithComposedAnimation(propertyKey, from, to));
     const shape = firstShape(result);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
@@ -83,7 +83,7 @@ describe('applyAnimationClipToRiveDocument', () => {
   });
 
   it('moves a path vertex and regenerates the shape geometry', () => {
-    const result = createScene2DFromRiveDocument(backend, riveWithAnimatedVertex(24, 0, 60));
+    const result = createScene2DFromRiveDocument(kernel, riveWithAnimatedVertex(24, 0, 60));
     const shape = firstShape(result);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
@@ -92,7 +92,7 @@ describe('applyAnimationClipToRiveDocument', () => {
   });
 
   it('interpolates a vertex partway through its segment', () => {
-    const result = createScene2DFromRiveDocument(backend, riveWithAnimatedVertex(24, 0, 100));
+    const result = createScene2DFromRiveDocument(kernel, riveWithAnimatedVertex(24, 0, 100));
     const shape = firstShape(result);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
@@ -101,7 +101,7 @@ describe('applyAnimationClipToRiveDocument', () => {
   });
 
   it('animates a fill colour through the same route', () => {
-    const result = createScene2DFromRiveDocument(backend, riveWithAnimatedFill());
+    const result = createScene2DFromRiveDocument(kernel, riveWithAnimatedFill());
     const shape = firstShape(result);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
@@ -110,7 +110,7 @@ describe('applyAnimationClipToRiveDocument', () => {
   });
 
   it('interpolates packed ARGB by channel instead of treating it as one scalar', () => {
-    const result = createScene2DFromRiveDocument(backend, riveWithAnimatedFill(0x40102030, 0xc0506070));
+    const result = createScene2DFromRiveDocument(kernel, riveWithAnimatedFill(0x40102030, 0xc0506070));
     const shape = firstShape(result);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
@@ -120,7 +120,7 @@ describe('applyAnimationClipToRiveDocument', () => {
   });
 
   it('leaves the clip alone when nothing keyed belongs to a shape', () => {
-    const result = createScene2DFromRiveDocument(backend, riveWithAnimatedVertex(24, 0, 10));
+    const result = createScene2DFromRiveDocument(kernel, riveWithAnimatedVertex(24, 0, 10));
 
     // Sampling twice must be stable rather than accumulating.
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);

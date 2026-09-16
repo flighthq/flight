@@ -2,11 +2,11 @@ import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flatte
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { martinezPathBooleanKernel } from './martinezKernel';
 import { offsetPath } from './offsetPath';
-import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
 import { simplifyPath } from './simplifyPath';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 function polygonPath(vertices: readonly number[], closed: boolean): Path {
   const path = createPath('nonZero');
@@ -60,14 +60,14 @@ const UNIT_SQUARE = [0, 0, 1, 0, 1, 1, 0, 1];
 describe('offsetPath', () => {
   it('writes into an existing output and is alias-safe', () => {
     const path = polygonPath([0, 0, 4, 0, 4, 4, 0, 4], true);
-    const result = offsetPath(backend, path, 1, undefined, path);
+    const result = offsetPath(kernel, path, 1, undefined, path);
 
     expect(result).toBe(path);
     expect(pathBounds(path)).toEqual({ minX: -1, minY: -1, maxX: 5, maxY: 5 });
   });
 
   it('inflates a closed square by delta on every side with a miter join', () => {
-    const result = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1);
+    const result = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1);
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-1, 6);
     expect(bounds.minY).toBeCloseTo(-1, 6);
@@ -77,7 +77,7 @@ describe('offsetPath', () => {
   });
 
   it('deflates a closed square on a negative delta', () => {
-    const result = offsetPath(backend, polygonPath([0, 0, 4, 0, 4, 4, 0, 4], true), -1);
+    const result = offsetPath(kernel, polygonPath([0, 0, 4, 0, 4, 4, 0, 4], true), -1);
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(1, 6);
     expect(bounds.minY).toBeCloseTo(1, 6);
@@ -87,13 +87,13 @@ describe('offsetPath', () => {
   });
 
   it('emits an empty path when deflation collapses the region', () => {
-    const result = offsetPath(backend, polygonPath(UNIT_SQUARE, true), -1);
+    const result = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), -1);
     expect(result.commands.length).toBe(0);
     expect(pathArea(result)).toBe(0);
   });
 
   it('chamfers corners with a bevel join', () => {
-    const result = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, { join: 'bevel' });
+    const result = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, { join: 'bevel' });
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-1, 6);
     expect(bounds.maxX).toBeCloseTo(2, 6);
@@ -101,19 +101,19 @@ describe('offsetPath', () => {
   });
 
   it('rounds corners with a round join and tessellates denser with radius and finer tolerance', () => {
-    const rounded = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, { join: 'round' });
+    const rounded = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, { join: 'round' });
     const bounds = pathBounds(rounded);
     expect(bounds.minX).toBeCloseTo(-1, 6);
     expect(bounds.maxX).toBeCloseTo(2, 6);
     const fineArea = pathArea(
-      offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, { join: 'round', arcTolerance: 0.001 }),
+      offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, { join: 'round', arcTolerance: 0.001 }),
     );
     expect(fineArea).toBeCloseTo(5 + Math.PI, 1);
 
-    const largeRadius = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 5, { join: 'round' });
+    const largeRadius = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 5, { join: 'round' });
     expect(pathVertexCount(largeRadius)).toBeGreaterThan(pathVertexCount(rounded));
 
-    const fineTolerance = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, {
+    const fineTolerance = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, {
       join: 'round',
       arcTolerance: 0.01,
     });
@@ -122,26 +122,26 @@ describe('offsetPath', () => {
 
   it('falls back to a bevel when a sharp miter exceeds the miter limit', () => {
     const wedge = [0, 0, 4, 0.5, 4, -0.5];
-    const clipped = offsetPath(backend, polygonPath(wedge, true), 1, { miterLimit: 2 });
-    const sharp = offsetPath(backend, polygonPath(wedge, true), 1, { miterLimit: 50 });
+    const clipped = offsetPath(kernel, polygonPath(wedge, true), 1, { miterLimit: 2 });
+    const sharp = offsetPath(kernel, polygonPath(wedge, true), 1, { miterLimit: 50 });
     expect(pathBounds(clipped).minX).toBeGreaterThan(pathBounds(sharp).minX + 3);
     expect(pathBounds(sharp).minX).toBeLessThan(-5);
   });
 
   it('squares corners with a square join', () => {
-    const result = offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, { join: 'square' });
+    const result = offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, { join: 'square' });
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-1, 6);
     expect(bounds.maxX).toBeCloseTo(2, 6);
     expect(pathArea(result)).toBeCloseTo(9, 4);
     expect(pathArea(result)).toBeGreaterThan(
-      pathArea(offsetPath(backend, polygonPath(UNIT_SQUARE, true), 1, { join: 'bevel' })),
+      pathArea(offsetPath(kernel, polygonPath(UNIT_SQUARE, true), 1, { join: 'bevel' })),
     );
   });
 
   it('cleans a concave corner into a single valid outline', () => {
     const lShape = [0, 0, 2, 0, 2, 2, 1, 2, 1, 1, 0, 1];
-    const result = offsetPath(backend, polygonPath(lShape, true), 0.25);
+    const result = offsetPath(kernel, polygonPath(lShape, true), 0.25);
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-0.25, 6);
     expect(bounds.minY).toBeCloseTo(-0.25, 6);
@@ -153,14 +153,14 @@ describe('offsetPath', () => {
 
   it('closes a concave slot narrower than 2·delta into a valid self-intersection-free outline', () => {
     const uShape = [0, 0, 10, 0, 10, 10, 5.5, 10, 5.5, 3, 4.5, 3, 4.5, 10, 0, 10];
-    const result = offsetPath(backend, polygonPath(uShape, true), 1);
+    const result = offsetPath(kernel, polygonPath(uShape, true), 1);
     expect(ringCount(result)).toBe(1);
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-1, 6);
     expect(bounds.maxX).toBeCloseTo(11, 6);
     expect(bounds.minY).toBeCloseTo(-1, 6);
     expect(bounds.maxY).toBeCloseTo(11, 6);
-    const simplified = simplifyPath(backend, result, { fillRule: 'nonZero' });
+    const simplified = simplifyPath(kernel, result, { fillRule: 'nonZero' });
     expect(ringCount(simplified)).toBe(ringCount(result));
     expect(pathArea(simplified)).toBeCloseTo(pathArea(result), 4);
   });
@@ -168,9 +168,9 @@ describe('offsetPath', () => {
   it('offsets consistently across a 1e9 span of coordinate scales (magnitude-relative epsilons)', () => {
     const lShape = (s: number): number[] => [0, 0, 2 * s, 0, 2 * s, 2 * s, s, 2 * s, s, s, 0, s];
     const at = (s: number): Readonly<Path> => polygonPath(lShape(s), true);
-    const small = offsetPath(backend, at(1e-3), 0.25e-3);
-    const mid = offsetPath(backend, at(1), 0.25);
-    const large = offsetPath(backend, at(1e6), 0.25e6);
+    const small = offsetPath(kernel, at(1e-3), 0.25e-3);
+    const mid = offsetPath(kernel, at(1), 0.25);
+    const large = offsetPath(kernel, at(1e6), 0.25e6);
     expect(ringCount(small)).toBe(ringCount(mid));
     expect(ringCount(large)).toBe(ringCount(mid));
     expect(pathArea(small) / 1e-3 ** 2).toBeCloseTo(pathArea(mid), 4);
@@ -178,7 +178,7 @@ describe('offsetPath', () => {
   });
 
   it('strokes an open path into a butt-capped rectangle', () => {
-    const result = offsetPath(backend, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'butt' });
+    const result = offsetPath(kernel, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'butt' });
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(0, 6);
     expect(bounds.maxX).toBeCloseTo(2, 6);
@@ -188,7 +188,7 @@ describe('offsetPath', () => {
   });
 
   it('extends an open path past its ends with a square cap', () => {
-    const result = offsetPath(backend, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'square' });
+    const result = offsetPath(kernel, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'square' });
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-0.5, 6);
     expect(bounds.maxX).toBeCloseTo(2.5, 6);
@@ -196,7 +196,7 @@ describe('offsetPath', () => {
   });
 
   it('caps an open path with half-circles on a round end', () => {
-    const result = offsetPath(backend, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'round', arcTolerance: 0.001 });
+    const result = offsetPath(kernel, polygonPath([0, 0, 2, 0], false), 0.5, { end: 'round', arcTolerance: 0.001 });
     const bounds = pathBounds(result);
     expect(bounds.minX).toBeCloseTo(-0.5, 2);
     expect(bounds.maxX).toBeCloseTo(2.5, 2);
@@ -205,8 +205,8 @@ describe('offsetPath', () => {
 
   it('offsets the same vertices differently as an open vs a closed contour', () => {
     const vertices = [0, 0, 2, 0, 2, 2, 0, 2];
-    const closed = offsetPath(backend, polygonPath(vertices, true), 0.5);
-    const open = offsetPath(backend, polygonPath(vertices, false), 0.5, { end: 'butt' });
+    const closed = offsetPath(kernel, polygonPath(vertices, true), 0.5);
+    const open = offsetPath(kernel, polygonPath(vertices, false), 0.5, { end: 'butt' });
     expect(pathArea(closed)).toBeCloseTo(9, 4);
     expect(pathArea(open)).toBeLessThan(pathArea(closed));
   });

@@ -1,10 +1,10 @@
 import { flattenPath } from '@flighthq/path/contract';
-import type { HostPathBooleanProvider, Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types/contract';
+import type { PathBooleanKernel, Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types/contract';
 
 import { writePathBooleanContours } from './writePathBooleanContours';
 
 export function booleanPaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   subject: Readonly<Path>,
   clip: Readonly<Path>,
   operation: PathBooleanOperation,
@@ -14,46 +14,46 @@ export function booleanPaths(
   const fillRule = options?.fillRule ?? 'nonZero';
   const subjectContours = flattenPath(subject, options?.tolerance);
   const clipContours = flattenPath(clip, options?.tolerance);
-  const result = pathBoolean.computePathBoolean(subjectContours, clipContours, operation, fillRule);
+  const result = pathBooleanKernel.computePathBoolean(subjectContours, clipContours, operation, fillRule);
   return writePathBooleanContours(result, out);
 }
 
 export function differencePaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   out?: Path,
   options?: Readonly<PathBooleanOptions>,
 ): Path {
-  return booleanPaths(pathBoolean, a, b, 'difference', out, options);
+  return booleanPaths(pathBooleanKernel, a, b, 'difference', out, options);
 }
 
 export function intersectPaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   out?: Path,
   options?: Readonly<PathBooleanOptions>,
 ): Path {
-  return booleanPaths(pathBoolean, a, b, 'intersection', out, options);
+  return booleanPaths(pathBooleanKernel, a, b, 'intersection', out, options);
 }
 
 export function unionPaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   out?: Path,
   options?: Readonly<PathBooleanOptions>,
 ): Path {
-  return booleanPaths(pathBoolean, a, b, 'union', out, options);
+  return booleanPaths(pathBooleanKernel, a, b, 'union', out, options);
 }
 
 export function xorPaths(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   out?: Path,
   options?: Readonly<PathBooleanOptions>,
 ): Path {
-  return booleanPaths(pathBoolean, a, b, 'xor', out, options);
+  return booleanPaths(pathBooleanKernel, a, b, 'xor', out, options);
 }

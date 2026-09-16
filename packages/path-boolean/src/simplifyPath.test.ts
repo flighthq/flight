@@ -2,10 +2,10 @@ import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flatte
 import type { Path, PathWinding } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDefaultPathBooleanBackend } from './pathBooleanBackend';
+import { martinezPathBooleanKernel } from './martinezKernel';
 import { simplifyPath } from './simplifyPath';
 
-const backend = createDefaultPathBooleanBackend();
+const kernel = martinezPathBooleanKernel;
 
 function polygonPath(vertices: readonly number[], winding: PathWinding = 'nonZero'): Path {
   const path = createPath(winding);
@@ -63,7 +63,7 @@ const UNIT_SQUARE = [0, 0, 3, 0, 3, 3, 0, 3];
 describe('simplifyPath', () => {
   it('writes into an existing output and is alias-safe', () => {
     const path = polygonPath(BOWTIE);
-    const result = simplifyPath(backend, path, undefined, path);
+    const result = simplifyPath(kernel, path, undefined, path);
 
     expect(result).toBe(path);
     expect(ringCount(path)).toBe(2);
@@ -71,7 +71,7 @@ describe('simplifyPath', () => {
   });
 
   it('resolves a self-intersecting bowtie into two triangles', () => {
-    const result = simplifyPath(backend, polygonPath(BOWTIE));
+    const result = simplifyPath(kernel, polygonPath(BOWTIE));
     expect(ringCount(result)).toBe(2);
     expect(pathArea(result)).toBeCloseTo(2, 6);
   });
@@ -88,7 +88,7 @@ describe('simplifyPath', () => {
     appendPathLineTo(path, 6, 6);
     appendPathLineTo(path, 2, 6);
     appendPathClose(path);
-    const result = simplifyPath(backend, path, { fillRule: 'nonZero' });
+    const result = simplifyPath(kernel, path, { fillRule: 'nonZero' });
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
@@ -105,14 +105,14 @@ describe('simplifyPath', () => {
     appendPathLineTo(path, 6, 6);
     appendPathLineTo(path, 2, 6);
     appendPathClose(path);
-    const result = simplifyPath(backend, path, { fillRule: 'evenOdd' });
+    const result = simplifyPath(kernel, path, { fillRule: 'evenOdd' });
     expect(pathArea(result)).toBeCloseTo(24, 6);
     expect(ringCount(result)).toBeGreaterThan(1);
   });
 
   it('fills a self-overlapping star solid under nonZero but hollow under evenOdd', () => {
-    const solid = simplifyPath(backend, pentagramPath(10, 'nonZero'), { fillRule: 'nonZero' });
-    const hollow = simplifyPath(backend, pentagramPath(10, 'evenOdd'), { fillRule: 'evenOdd' });
+    const solid = simplifyPath(kernel, pentagramPath(10, 'nonZero'), { fillRule: 'nonZero' });
+    const hollow = simplifyPath(kernel, pentagramPath(10, 'evenOdd'), { fillRule: 'evenOdd' });
     expect(ringCount(solid)).toBe(1);
     expect(pathArea(solid)).toBeCloseTo(112.257, 2);
     expect(ringCount(hollow)).toBeGreaterThan(1);
@@ -121,7 +121,7 @@ describe('simplifyPath', () => {
   });
 
   it('passes an already-simple convex path through unchanged', () => {
-    const result = simplifyPath(backend, polygonPath(UNIT_SQUARE));
+    const result = simplifyPath(kernel, polygonPath(UNIT_SQUARE));
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(9, 6);
     const bounds = pathBounds(result);
@@ -132,13 +132,13 @@ describe('simplifyPath', () => {
   });
 
   it('returns an empty path for empty input', () => {
-    const result = simplifyPath(backend, createPath('nonZero'));
+    const result = simplifyPath(kernel, createPath('nonZero'));
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });
 
   it('returns an empty path for a degenerate zero-area contour', () => {
-    const result = simplifyPath(backend, polygonPath([0, 0, 5, 0, 10, 0]));
+    const result = simplifyPath(kernel, polygonPath([0, 0, 5, 0, 10, 0]));
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });

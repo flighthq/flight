@@ -1,4 +1,4 @@
-import type { HostPathBooleanProvider, RiveImportRegistry } from '@flighthq/types/contract';
+import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 
 import { registerRiveAssetHandlers } from './riveAssets';
 import { registerRiveClippingHandlers } from './riveClipping';
@@ -27,14 +27,14 @@ import { registerRiveTextHandlers } from './riveText';
  * the content it reads.
  */
 export function registerAllRiveHandlers(
-  pathBoolean: Readonly<HostPathBooleanProvider>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   registry: RiveImportRegistry,
 ): void {
   registerRivePathHandlers(registry);
   registerRivePaintHandlers(registry);
   registerRiveTextHandlers(registry);
   registerRiveAssetHandlers(registry);
-  registerRiveClippingHandlers(pathBoolean, registry);
+  registerRiveClippingHandlers(pathBooleanKernel, registry);
   registerRiveDrawOrderHandlers(registry);
   registerRiveSoloHandlers(registry);
   registerRiveShapeHandlers(registry);
