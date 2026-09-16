@@ -17,7 +17,6 @@ import type {
   HostLifecycleProvider,
   HostNetProvider,
   HostNotificationPermissionProvider,
-  HostPathBooleanProvider,
   HostPlatformProvider,
   HostPowerKeepAwakeProvider,
   HostScreenQueryProvider,
@@ -110,10 +109,6 @@ export function getHostNet(host: Readonly<Host>): HostNetProvider | null {
 
 export function getHostNotificationPermission(host: Readonly<Host>): HostNotificationPermissionProvider | null {
   return host.notification?.permission ?? null;
-}
-
-export function getHostPathBoolean(host: Readonly<Host>): HostPathBooleanProvider | null {
-  return host.graphics?.pathBoolean ?? null;
 }
 
 export function getHostPlatform(host: Readonly<Host>): HostPlatformProvider | null {
@@ -230,10 +225,6 @@ export function hasHostNet(host: Readonly<Host>): boolean {
 
 export function hasHostNotificationPermission(host: Readonly<Host>): boolean {
   return getHostNotificationPermission(host) !== null;
-}
-
-export function hasHostPathBoolean(host: Readonly<Host>): boolean {
-  return getHostPathBoolean(host) !== null;
 }
 
 export function hasHostPlatform(host: Readonly<Host>): boolean {

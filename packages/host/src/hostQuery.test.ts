@@ -19,7 +19,6 @@ import {
   getHostLifecycle,
   getHostNet,
   getHostNotificationPermission,
-  getHostPathBoolean,
   getHostPlatform,
   getHostPowerKeepAwake,
   getHostScreenQuery,
@@ -49,7 +48,6 @@ import {
   hasHostLifecycle,
   hasHostNet,
   hasHostNotificationPermission,
-  hasHostPathBoolean,
   hasHostPlatform,
   hasHostPowerKeepAwake,
   hasHostScreenQuery,
@@ -303,20 +301,6 @@ describe('getHostNotificationPermission', () => {
 
   it('returns null when a different slot in the same group is filled', () => {
     expect(getHostNotificationPermission(hostWithSlot('notification', 'delivery'))).toBeNull();
-  });
-});
-
-describe('getHostPathBoolean', () => {
-  it('returns the provider held in host.graphics.pathBoolean', () => {
-    expect(getHostPathBoolean(hostWithSlot('graphics', 'pathBoolean'))).toBe(PROVIDER);
-  });
-
-  it('returns null when the slot is empty', () => {
-    expect(getHostPathBoolean(createHost())).toBeNull();
-  });
-
-  it('returns null when a different slot in the same group is filled', () => {
-    expect(getHostPathBoolean(hostWithSlot('graphics', 'renderContext'))).toBeNull();
   });
 });
 
@@ -621,14 +605,6 @@ describe('hasHostNotificationPermission', () => {
     expect(hasHostNotificationPermission(hostWithSlot('notification', 'permission'))).toBe(true);
     expect(hasHostNotificationPermission(hostWithSlot('notification', 'delivery'))).toBe(false);
     expect(hasHostNotificationPermission(createHost())).toBe(false);
-  });
-});
-
-describe('hasHostPathBoolean', () => {
-  it('is true only when host.graphics.pathBoolean holds a provider', () => {
-    expect(hasHostPathBoolean(hostWithSlot('graphics', 'pathBoolean'))).toBe(true);
-    expect(hasHostPathBoolean(hostWithSlot('graphics', 'renderContext'))).toBe(false);
-    expect(hasHostPathBoolean(createHost())).toBe(false);
   });
 });
 
