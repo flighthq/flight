@@ -1,6 +1,6 @@
 import type { Entity } from './Entity';
 
-// Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HostHapticsProvider
+// Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HostHapticsCapability
 // (web default over navigator.vibrate, or a native host's). Each trigger returns false when the host
 // lacks haptics or denies the request rather than throwing.
 export type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid';
@@ -16,7 +16,7 @@ export interface HapticsCapabilities {
   supported: boolean;
 }
 
-export interface HostHapticsProvider extends Entity {
+export interface HostHapticsCapability extends Entity {
   // Cancels any in-progress vibration. Returns false when haptics are unavailable.
   cancel(): boolean;
   // Fills `out` with the provider's capabilities and returns it.
@@ -40,4 +40,4 @@ export interface HostHapticsProvider extends Entity {
 // Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type HapticsOperation = keyof HostHapticsProvider;
+export type HapticsOperation = keyof HostHapticsCapability;

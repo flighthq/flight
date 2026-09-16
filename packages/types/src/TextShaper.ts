@@ -6,7 +6,7 @@ import type { TextFormat } from './TextFormat';
 import type { TextMeasureFunction } from './TextLayout';
 
 // Text-shaping seam. Free functions in @flighthq/textshaper accept an explicit
-// HostTextShaperProvider. The legacy installed backend remains a compatibility fallback when no
+// HostTextShaperCapability. The legacy installed backend remains a compatibility fallback when no
 // provider is passed.
 // A canvas/advances-only backend ships in @flighthq/textshaper-canvas today; a future HarfBuzz
 // backend can provide full glyph shaping. Shaping turns a string + format into the horizontal
@@ -19,13 +19,13 @@ import type { TextMeasureFunction } from './TextLayout';
 // backend (HarfBuzz) implements the same measureText and may, in future, add cluster/glyph methods
 // here without breaking advances-only callers.
 
-// Options passed to HostTextShaperProvider.shapeRun for run-level shaping hints.
+// Options passed to HostTextShaperCapability.shapeRun for run-level shaping hints.
 export interface ShapeRunOptions {
   direction?: TextDirection;
   script?: string;
 }
 
-export interface HostTextShaperProvider {
+export interface HostTextShaperCapability {
   // Returns the unicode code point that produced `glyphId`, or -1 if unknown. Reverse map of
   // getGlyphIndexForCodePoint; useful for hit-testing and accessibility.
   getCodePointForGlyph?: (glyphId: number) => number;
@@ -52,4 +52,4 @@ export interface HostTextShaperProvider {
 // Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type TextShaperOperation = keyof HostTextShaperProvider;
+export type TextShaperOperation = keyof HostTextShaperCapability;

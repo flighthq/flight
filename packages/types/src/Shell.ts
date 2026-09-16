@@ -55,30 +55,30 @@ export interface ShellProcess extends Entity {
 // Host.shell slot is capability absence, never a provider whose methods return unsupported sentinels.
 // The six bounded command providers own no whole-provider resource. Process lifetime belongs to each
 // returned ShellProcess, so the spawning provider itself likewise has no destroy hook.
-export interface HostShellBeepProvider extends Entity {
+export interface HostShellBeepCapability extends Entity {
   beep(): void;
 }
 
-export interface HostShellExternalProvider extends Entity {
+export interface HostShellExternalCapability extends Entity {
   open(url: string): Promise<ShellExternalOutcome>;
 }
 
-export interface HostShellPathOpenProvider extends Entity {
+export interface HostShellPathOpenCapability extends Entity {
   open(path: string): Promise<ShellPathOpenOutcome>;
 }
 
-export interface HostShellPathRevealProvider extends Entity {
+export interface HostShellPathRevealCapability extends Entity {
   reveal(path: string): Promise<ShellPathRevealOutcome>;
 }
 
 // Spawn is asynchronous work with a synchronously returned live handle, not a synchronous execution
 // API: completion is observed through ShellProcess.exit. The backend receives an argument vector and
 // never a shell command string to parse.
-export interface HostShellProcessProvider extends Entity {
+export interface HostShellProcessCapability extends Entity {
   spawn(command: string, args: readonly string[], options?: Readonly<ShellProcessOptions>): ShellProcess;
 }
 
-export interface HostShellShortcutLinkProvider extends Entity {
+export interface HostShellShortcutLinkCapability extends Entity {
   read(shortcutPath: string): Promise<ShellShortcutLinkReadOutcome>;
   write(
     shortcutPath: string,
@@ -87,7 +87,7 @@ export interface HostShellShortcutLinkProvider extends Entity {
   ): Promise<ShellShortcutLinkWriteOutcome>;
 }
 
-export interface HostShellTrashProvider extends Entity {
+export interface HostShellTrashCapability extends Entity {
   moveToTrash(path: string): Promise<ShellTrashOutcome>;
 }
 

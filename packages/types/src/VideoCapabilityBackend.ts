@@ -1,7 +1,7 @@
 import type { HostImageSource } from './HostImageSource';
 import type { VideoResourceLoadOptions } from './VideoResource';
 
-export interface HostVideoProvider {
+export interface HostVideoCapability {
   addEndedListener?(element: HostImageSource, listener: () => void): void;
   attachStream?(stream: unknown): HostImageSource | null;
   canPlayType(mimeType: string): boolean;

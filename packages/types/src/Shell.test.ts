@@ -1,11 +1,11 @@
-import type { ShellProcess, HostShellProcessProvider, ShellProcessExitStatus, ShellProcessOptions } from './Shell';
+import type { ShellProcess, HostShellProcessCapability, ShellProcessExitStatus, ShellProcessOptions } from './Shell';
 
-describe('HostShellProcessProvider', () => {
+describe('HostShellProcessCapability', () => {
   it('spawns one process from an argument vector and optional process options', () => {
-    expectTypeOf<HostShellProcessProvider['spawn']>().parameters.toEqualTypeOf<
+    expectTypeOf<HostShellProcessCapability['spawn']>().parameters.toEqualTypeOf<
       [string, readonly string[], Readonly<ShellProcessOptions>?]
     >();
-    expectTypeOf<HostShellProcessProvider['spawn']>().returns.toEqualTypeOf<ShellProcess>();
+    expectTypeOf<HostShellProcessCapability['spawn']>().returns.toEqualTypeOf<ShellProcess>();
   });
 });
 

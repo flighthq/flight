@@ -38,7 +38,7 @@ export interface WgpuHostAcquisitionOptions {
 // return its own structurally compatible handles without coupling render-wgpu to Application or a
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
-export interface HostWgpuProvider extends Entity {
+export interface HostWgpuCapability extends Entity {
   acquire(surface: WgpuScreenSurface, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
   // Binds a device to a presentation surface and returns its configured swap-chain context, or null when
   // the surface cannot present. Separate from `acquire` because a device outlives any one surface: a

@@ -44,23 +44,23 @@ export interface App extends Entity {
 
 export type MobileOsProfile = 'android' | 'ios';
 
-export interface HostAppActivateProvider extends Entity {
+export interface HostAppActivateCapability extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppActivationPolicyProvider extends Entity {
+export interface HostAppActivationPolicyCapability extends Entity {
   setActivationPolicy(policy: AppActivationPolicy): void;
 }
 
-export interface HostAppAllWindowsClosedProvider extends Entity {
+export interface HostAppAllWindowsClosedCapability extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppBadgeProvider extends Entity {
+export interface HostAppBadgeCapability extends Entity {
   setBadgeCount(count: number): Promise<boolean>;
 }
 
-export interface HostAppDockProvider extends Entity {
+export interface HostAppDockCapability extends Entity {
   bounceDock(): number;
   cancelAttention(id: number): void;
   cancelDockBounce(id: number): void;
@@ -69,86 +69,86 @@ export interface HostAppDockProvider extends Entity {
   setDockMenu(items: readonly MenuItemTemplate[]): void;
 }
 
-export interface HostAppFocusProvider extends Entity {
+export interface HostAppFocusCapability extends Entity {
   focus(): void;
 }
 
-export interface HostAppLocaleProvider extends Entity {
+export interface HostAppLocaleCapability extends Entity {
   getLocale(): string;
   getPreferredSystemLanguages(): readonly string[];
   getSystemLocale(): string;
 }
 
-export interface HostAppLoginItemProvider extends Entity {
+export interface HostAppLoginItemCapability extends Entity {
   getLoginItem(): AppLoginItem;
   setLoginItem(settings: Readonly<AppLoginItemLike>): void;
 }
 
-export interface HostAppNameProvider extends Entity {
+export interface HostAppNameCapability extends Entity {
   getName(): string;
 }
 
-export interface HostAppNameWriteProvider extends Entity {
+export interface HostAppNameWriteCapability extends Entity {
   setName(name: string): void;
 }
 
-export interface HostAppOpenFileProvider extends Entity {
+export interface HostAppOpenFileCapability extends Entity {
   subscribe(listener: (path: string) => void): () => void;
 }
 
-export interface HostAppPathProvider extends Entity {
+export interface HostAppPathCapability extends Entity {
   getAppDirectoryPath(kind: AppPathKind): string;
   getAppPath(): string;
   getExecutablePath(): string;
 }
 
-export interface HostAppQuitProvider extends Entity {
+export interface HostAppQuitCapability extends Entity {
   quit(): void;
 }
 
-export interface HostAppQuitRequestProvider extends Entity {
+export interface HostAppQuitRequestCapability extends Entity {
   subscribe(listener: (cancelHost: () => void) => void): () => void;
 }
 
-export interface HostAppReadyProvider extends Entity {
+export interface HostAppReadyCapability extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppRecentDocumentsProvider extends Entity {
+export interface HostAppRecentDocumentsCapability extends Entity {
   addRecentDocument(path: string): void;
   clearRecentDocuments(): void;
 }
 
-export interface HostAppRelaunchProvider extends Entity {
+export interface HostAppRelaunchCapability extends Entity {
   relaunch(): void;
 }
 
-export interface HostAppSecondInstanceProvider extends Entity {
+export interface HostAppSecondInstanceCapability extends Entity {
   subscribe(listener: (argv: readonly string[]) => void): () => void;
 }
 
-export interface HostAppSingleInstanceProvider extends Entity {
+export interface HostAppSingleInstanceCapability extends Entity {
   hasSingleInstanceLock(): boolean;
   releaseSingleInstanceLock(): void;
   requestSingleInstanceLock(): boolean;
 }
 
-export interface HostAppUserModelIdProvider extends Entity {
+export interface HostAppUserModelIdCapability extends Entity {
   setUserModelId(id: string): void;
 }
 
-export interface HostAppVersionProvider extends Entity {
+export interface HostAppVersionCapability extends Entity {
   getVersion(): string;
 }
 
-export interface HostAppHideProvider extends Entity {
+export interface HostAppHideCapability extends Entity {
   hideApp(): void;
 }
 
-export interface HostAppShowProvider extends Entity {
+export interface HostAppShowCapability extends Entity {
   showApp(): void;
 }
 
-export interface HostAppVisibilityQueryProvider extends Entity {
+export interface HostAppVisibilityQueryCapability extends Entity {
   isAppHidden(): boolean;
 }

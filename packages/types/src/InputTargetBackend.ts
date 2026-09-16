@@ -6,6 +6,6 @@ export interface InputTargetHandle extends Entity {
   readonly __brand: 'InputTargetHandle';
 }
 
-export interface HostInputTargetProvider extends Entity {
+export interface HostInputTargetCapability extends Entity {
   prepare(target: InputTargetHandle): void;
 }

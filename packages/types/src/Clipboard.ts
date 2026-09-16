@@ -13,21 +13,21 @@ export interface ClipboardWriteItem {
 
 // Bookmark transport is a distinct capability because only native hosts with a bookmark pasteboard
 // format can provide it.
-export interface HostClipboardBookmarkProvider extends Entity {
+export interface HostClipboardBookmarkCapability extends Entity {
   readBookmark(): Promise<ClipboardBookmark | null>;
   writeBookmark(title: string, url: string): Promise<boolean>;
 }
 
 // Clipboard change delivery is optional at the method level so a consumer trait can make the
 // subscribe/unsubscribe teardown obligation explicit as one eligibility edge.
-export interface HostClipboardChangeProvider extends Entity {
+export interface HostClipboardChangeCapability extends Entity {
   subscribe?(callback: () => void): void;
   unsubscribe?(callback: () => void): void;
 }
 
 // Rich and arbitrary flavored clipboard transport. HTML and RTF share this slot with the generic
 // format/item operations because provider coverage varies as one unit.
-export interface HostClipboardFormatsProvider extends Entity {
+export interface HostClipboardFormatsCapability extends Entity {
   getFormats(): Promise<readonly string[]>;
   hasFormat(format: string): Promise<boolean>;
   readFormat(format: string): Promise<string>;
@@ -41,14 +41,14 @@ export interface HostClipboardFormatsProvider extends Entity {
 }
 
 // Image clipboard transport uses data URLs at Flight's host boundary.
-export interface HostClipboardImageProvider extends Entity {
+export interface HostClipboardImageCapability extends Entity {
   hasImage(): Promise<boolean>;
   readImage(): Promise<string>;
   writeImage(dataUrl: string): Promise<boolean>;
 }
 
 // Plain-text transport and clearing vary together across every shipped provider.
-export interface HostClipboardTextProvider extends Entity {
+export interface HostClipboardTextCapability extends Entity {
   clear(): Promise<boolean>;
   hasText(): Promise<boolean>;
   readText(): Promise<string>;

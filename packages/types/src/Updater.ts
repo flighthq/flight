@@ -28,7 +28,7 @@ export interface AppUpdateInstallOutcome {
 
 // Squirrel auto-downloads during check. The awaited check is therefore the only download command;
 // its native events are adapter-private transaction details rather than a second public event model.
-export interface HostUpdaterCommandProvider extends Entity {
+export interface HostUpdaterCommandCapability extends Entity {
   check(): Promise<AppUpdateCheckOutcome>;
   destroy(): void;
   install(update: DownloadedUpdate): Promise<AppUpdateInstallOutcome>;

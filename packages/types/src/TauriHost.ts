@@ -1,4 +1,4 @@
-import type { HostWindowProvider } from './ApplicationWindow';
+import type { HostWindowCapability } from './ApplicationWindow';
 import type {
   Host,
   HostClipboardCapabilities,
@@ -23,5 +23,5 @@ export type TauriHost<Profile extends DesktopOsProfile> = Host & {
   readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
   readonly system: Required<Pick<HostSystemCapabilities, 'platform'>>;
   readonly tray: TauriTrayCapabilitiesFor<Profile>;
-  readonly window: HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close' | 'open'>>;
+  readonly window: HostWindowCapability & Required<Pick<HostWindowCapability, 'attach' | 'close' | 'open'>>;
 };

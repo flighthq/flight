@@ -1,4 +1,4 @@
-import type { HostWindowProvider } from './ApplicationWindow';
+import type { HostWindowCapability } from './ApplicationWindow';
 import type {
   Host,
   HostAccessibilityCapabilities,
@@ -112,10 +112,10 @@ export type WebHost = Omit<
   readonly text: Required<Pick<HostTextCapabilities, 'fontLoading' | 'glyphRasterizer'>>;
   readonly ui: Required<Pick<HostUiCapabilities, 'fullscreen' | 'statusBarColor'>>;
   // A provider at group position, so the intersection keeps the members web leaves optional.
-  readonly window: HostWindowProvider &
+  readonly window: HostWindowCapability &
     Required<
       Pick<
-        HostWindowProvider,
+        HostWindowCapability,
         | 'attach'
         | 'center'
         | 'close'

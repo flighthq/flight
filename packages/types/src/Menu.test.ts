@@ -2,18 +2,18 @@ import type { Entity } from './Entity';
 import type { HostMenuCapabilities } from './Host';
 import type {
   ElectronMenuCapabilities,
-  HostMenuApplicationProvider,
-  HostMenuHighlightProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuHighlightCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
   TauriMenuCapabilities,
 } from './Menu';
 
 type MenuProvidersAreEntities = [
-  HostMenuApplicationProvider extends Entity ? true : false,
-  HostMenuHighlightProvider extends Entity ? true : false,
-  HostMenuPopupProvider extends Entity ? true : false,
-  HostMenuSelectProvider extends Entity ? true : false,
+  HostMenuApplicationCapability extends Entity ? true : false,
+  HostMenuHighlightCapability extends Entity ? true : false,
+  HostMenuPopupCapability extends Entity ? true : false,
+  HostMenuSelectCapability extends Entity ? true : false,
 ];
 
 type ConcreteMenuBundlesAreEntities = [
@@ -23,10 +23,10 @@ type ConcreteMenuBundlesAreEntities = [
 
 type GenericMenuContractsAreStructural = [
   HostMenuCapabilities extends Entity ? true : false,
-  { readonly menu: { readonly application: HostMenuApplicationProvider } } extends Entity ? true : false,
-  { readonly menu: { readonly highlight: HostMenuHighlightProvider } } extends Entity ? true : false,
-  { readonly menu: { readonly popup: HostMenuPopupProvider } } extends Entity ? true : false,
-  { readonly menu: { readonly select: HostMenuSelectProvider } } extends Entity ? true : false,
+  { readonly menu: { readonly application: HostMenuApplicationCapability } } extends Entity ? true : false,
+  { readonly menu: { readonly highlight: HostMenuHighlightCapability } } extends Entity ? true : false,
+  { readonly menu: { readonly popup: HostMenuPopupCapability } } extends Entity ? true : false,
+  { readonly menu: { readonly select: HostMenuSelectCapability } } extends Entity ? true : false,
 ];
 
 describe('menu Entity boundaries', () => {

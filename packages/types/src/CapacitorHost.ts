@@ -13,7 +13,7 @@ import type {
   HostUiCapabilities,
 } from './Host';
 import type { CapacitorNotificationCapabilities } from './Notification';
-import type { HostCapacitorShareContentProvider } from './Share';
+import type { HostCapacitorShareContentCapability } from './Share';
 
 export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
   readonly app: CapacitorAppCapabilitiesFor<Profile>;
@@ -37,7 +37,7 @@ export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
     >;
   readonly notification: CapacitorNotificationCapabilities;
   readonly protocol: CapacitorProtocolCapabilities;
-  readonly share: HostShareCapabilities & { readonly content: HostCapacitorShareContentProvider };
+  readonly share: HostShareCapabilities & { readonly content: HostCapacitorShareContentCapability };
   readonly storage: HostStorageCapabilities & Required<Pick<HostStorageCapabilities, 'fileSystem'>>;
   readonly system: HostSystemCapabilities & Required<Pick<HostSystemCapabilities, 'device' | 'geolocation'>>;
   readonly ui: HostUiCapabilities &

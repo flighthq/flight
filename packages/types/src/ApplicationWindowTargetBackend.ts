@@ -4,13 +4,13 @@ import type { InputTargetHandle } from './InputTargetBackend';
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider
 // resource that created it, so application teardown cannot be redirected by a later Host selection.
-export interface HostInputDropFileProvider extends Entity {
+export interface HostInputDropFileCapability extends Entity {
   subscribe(target: InputTargetHandle, listener: (path: string) => void): () => void;
 }
 
 // Host-emitted target focus is its own event capability. Core owns the ApplicationWindow signals; the
 // backend owns only event ingress and its exact release obligation.
-export interface HostInputFocusProvider extends Entity {
+export interface HostInputFocusCapability extends Entity {
   subscribe(target: InputTargetHandle, onFocus: () => void, onBlur: () => void): () => void;
 }
 
@@ -27,18 +27,18 @@ export type InputPointerLockRequestOutcome =
   | { readonly reason: 'ok' }
   | { readonly reason: 'api-unavailable' | 'denied' | 'operation-failed' | 'target-not-found' };
 
-export interface HostInputPointerLockProvider extends Entity {
+export interface HostInputPointerLockCapability extends Entity {
   exit(): Promise<InputPointerLockExitOutcome>;
   request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
 }
 
 // Render-context loss/restoration is emitted by the host surface, so it is a Host event slot under R18.
-export interface HostRenderContextProvider extends Entity {
+export interface HostRenderContextCapability extends Entity {
   subscribe(target: InputTargetHandle, onLost: () => void, onRestored: () => void): () => void;
 }
 
 // Backing-store sizing is a command. The core ApplicationWindow.onResize signal remains core-owned; an
 // attached render state reacts to it and asks this provider to size its opaque surface target.
-export interface HostRenderSurfaceProvider extends Entity {
+export interface HostRenderSurfaceCapability extends Entity {
   resize(target: InputTargetHandle, width: number, height: number): void;
 }
