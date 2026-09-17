@@ -4,24 +4,18 @@ import { webHost } from '@flighthq/host-web';
 import { renderHostWebFullCard } from './render.canvas';
 
 const applicationWindow = createApplicationWindow();
-const opened = openWindow(webHost.window, applicationWindow, {
+// The aggregate window group is a struct of capability leaves; the ones this card uses are typed
+// required, so a host that omitted one would be a compile error here rather than a runtime guard.
+const { appearance, geometry, lifecycle } = webHost.window;
+const opened = openWindow(lifecycle, geometry, applicationWindow, {
   height: window.innerHeight,
   title: 'Flight Web Host',
   width: window.innerWidth,
 });
 
-const readBounds = webHost.window.getBounds;
-const setTitle = webHost.window.setTitle;
-if (readBounds === undefined || setTitle === undefined) {
-  throw new Error('The aggregate web host must provide window title and bounds operations.');
-}
-const windowOperations = webHost.window as typeof webHost.window & {
-  getBounds: typeof readBounds;
-  setTitle: typeof setTitle;
-};
-setWindowTitle(windowOperations, applicationWindow, 'Flight Web Host');
+setWindowTitle(appearance, applicationWindow, 'Flight Web Host');
 
-const bounds = getWindowBounds(windowOperations, applicationWindow, { height: 0, width: 0, x: 0, y: 0 });
+const bounds = getWindowBounds(geometry, applicationWindow, { height: 0, width: 0, x: 0, y: 0 });
 const card = renderHostWebFullCard(applicationWindow, bounds, opened);
 
 Reflect.set(globalThis, '__flightHostWebFull', card);
