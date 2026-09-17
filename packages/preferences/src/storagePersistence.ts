@@ -5,15 +5,15 @@ import type {
 } from '@flighthq/types/contract';
 
 export function getStoragePersistence(
-  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability>,
+  hostPreferencesPersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability>,
 ): Promise<StoragePersistenceResult> {
-  const backend = hostStoragePersistenceQuery;
+  const backend = hostPreferencesPersistenceQuery;
   return backend.getPersistence();
 }
 
 export function requestStoragePersistence(
-  hostStoragePersistenceRequest: Readonly<HostPreferencesPersistenceRequestCapability>,
+  hostPreferencesPersistenceRequest: Readonly<HostPreferencesPersistenceRequestCapability>,
 ): Promise<StoragePersistenceResult> {
-  const backend = hostStoragePersistenceRequest;
+  const backend = hostPreferencesPersistenceRequest;
   return backend.requestPersistence();
 }

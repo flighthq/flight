@@ -22,11 +22,11 @@ const kPaused = Symbol();
 
 // -- Application entity --
 
-export function attachApplicationExit(hostApplicationExit: Readonly<HostAppExitCapability>, app: Application): void {
+export function attachApplicationExit(hostAppExit: Readonly<HostAppExitCapability>, app: Application): void {
   const observers = getApplicationObservers(app);
   observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
-  const exit = hostApplicationExit;
+  const exit = hostAppExit;
   exit.subscribe(handler);
   observers.set(kExit, () => exit.unsubscribe(handler));
 }
@@ -184,7 +184,7 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
 }
 
 export function startApplicationLoop(
-  hostLoop: Readonly<HostAppLoopCapability>,
+  hostAppLoop: Readonly<HostAppLoopCapability>,
   hostLifecycle: Readonly<HostLifecycleCapability>,
   app: Application,
   options: Readonly<ApplicationLoopOptions> = {},
@@ -194,7 +194,7 @@ export function startApplicationLoop(
   observers.get(kLoop)?.();
   observers.delete(kPaused);
 
-  const backend = hostLoop;
+  const backend = hostAppLoop;
   const lifecycle = hostLifecycle;
   const maxDeltaTime = options.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
   const targetFrameRate = options.targetFrameRate ?? 0;

@@ -13,7 +13,7 @@ export function encodeBitmap(
 ): Uint8Array | null {
   const resolution = resolveBitmapEncode(hostBitmapEncode, format);
   if (resolution.reason !== null) return null;
-  return resolution.backend.encodeBitmap(source, resolution.format, quality);
+  return resolution.hostBitmapEncode.encodeBitmap(source, resolution.format, quality);
 }
 
 export function explainBitmapEncodeFailure(
@@ -26,12 +26,12 @@ export function explainBitmapEncodeFailure(
 
 type BitmapEncodeResolution =
   | {
-      readonly backend: Readonly<HostBitmapEncodeCapability>;
+      readonly hostBitmapEncode: Readonly<HostBitmapEncodeCapability>;
       readonly format: ImageFormat;
       readonly reason: null;
     }
   | {
-      readonly backend: Readonly<HostBitmapEncodeCapability> | null;
+      readonly hostBitmapEncode: Readonly<HostBitmapEncodeCapability> | null;
       readonly format: ImageFormat;
       readonly reason: BitmapEncodeFailureExplanation['reason'];
     };
@@ -41,9 +41,8 @@ function resolveBitmapEncode(
   format: ImageFormat,
 ): BitmapEncodeResolution {
   const normalizedFormat: ImageFormat = format === 'jpeg' ? 'jpeg' : 'png';
-  const backend = hostBitmapEncode;
-  if (!backend.supportedFormats.includes(normalizedFormat)) {
-    return { backend, format: normalizedFormat, reason: 'format-unsupported' };
+  if (!hostBitmapEncode.supportedFormats.includes(normalizedFormat)) {
+    return { hostBitmapEncode, format: normalizedFormat, reason: 'format-unsupported' };
   }
-  return { backend, format: normalizedFormat, reason: null };
+  return { hostBitmapEncode, format: normalizedFormat, reason: null };
 }

@@ -74,62 +74,62 @@ export function applyGamepadStickDeadZone(out: { x: number; y: number }, x: numb
 }
 
 export function attachGamepadInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachGamepad(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachGamepad(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kGamepadInput, release);
 }
 
 export function attachKeyboardInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachKeyboard(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachKeyboard(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kKeyboardInput, release);
 }
 
 export function attachPointerInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachPointer(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachPointer(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kPointerInput, release);
 }
 
 export function attachRelativePointerInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachRelativePointer(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachRelativePointer(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kRelativePointerInput, release);
 }
 
 export function attachTextInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachText(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachText(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kTextInput, release);
 }
 
 export function attachWheelInput(
-  inputIngress: Readonly<HostInputIngressCapability>,
+  hostInputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const release = inputIngress.attachWheel(source, getInputIngressSink(manager), options);
+  const release = hostInputIngress.attachWheel(source, getInputIngressSink(manager), options);
   setInputBinding(manager, source, kWheelInput, release);
 }
 

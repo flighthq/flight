@@ -98,31 +98,31 @@ async function _loadAudioResourceFromUrl(
 
 export async function loadAudioResourceFromUrls(
   hostNet: Readonly<HostNetCapability>,
-  hostAudio: Readonly<HostAudioCodecCapability>,
+  hostAudioCodec: Readonly<HostAudioCodecCapability>,
   context: AudioContext,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
 ): Promise<AudioResource> {
-  const selected = _selectAudioResourceSource(hostAudio, sources);
+  const selected = _selectAudioResourceSource(hostAudioCodec, sources);
   if (selected === null) return createAudioResource();
   const mimeType = selected.type ?? inferAudioMimeType(selected.url) ?? undefined;
   return _loadAudioResourceFromUrl(hostNet, context, selected.url, mimeType, signal);
 }
 
 export function selectAudioResourceUrl(
-  hostAudio: Readonly<HostAudioCodecCapability>,
+  hostAudioCodec: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
 ): string | null {
-  return _selectAudioResourceSource(hostAudio, sources)?.url ?? null;
+  return _selectAudioResourceSource(hostAudioCodec, sources)?.url ?? null;
 }
 
 function _selectAudioResourceSource(
-  hostAudio: Readonly<HostAudioCodecCapability>,
+  hostAudioCodec: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
 ): AudioResourceUrl | null {
   for (const source of sources) {
     const type = source.type ?? inferAudioMimeType(source.url) ?? '';
-    if (hasAudioDecoder(type) || canPlayAudioType(hostAudio, type)) return source;
+    if (hasAudioDecoder(type) || canPlayAudioType(hostAudioCodec, type)) return source;
   }
   return null;
 }
