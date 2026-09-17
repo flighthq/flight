@@ -24,7 +24,7 @@ claim about this tree, not about a session.
   `device.ts:18`, `:28`, `:42`, `:73`), and omits `getDeviceBackend` / `setDeviceBackend` /
   `createWebDeviceBackend`. `power` and `keyboard` share the shape, so this is a lane policy question.
 - **`getDeviceId` writes `localStorage` directly.** The web backend reads and writes
-  `__flighthq_device_id` itself (`device.ts:114-121`) rather than going through `@flighthq/storage`.
+  `__flighthq_device_id` itself (`device.ts:114-121`) rather than going through `@flighthq/preferences`.
   Whether the install id should ride a storage seam is an unruled dependency-direction decision; the
   source comment at `:113` names the alternative without taking it.
 - **`DeviceDisplayMetrics` versus `@flighthq/screen` has no written boundary.** The intended split —

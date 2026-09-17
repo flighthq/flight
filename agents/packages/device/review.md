@@ -70,5 +70,5 @@ One nuance: the charter still names `setDeviceBackend` and `getDeviceBackend` in
 - Whether the `detectDesktopUa` duplication in `host-web` should be reconciled with `@flighthq/useragent` (charter Decision, now a cross-package question between `host-web` and `useragent`).
 - Predicate-convenience policy (charter Open direction 5).
 - `device` vs `screen` boundary ruling for `DeviceDisplayMetrics` (charter Open direction 2).
-- `getId` durability seam -- `@flighthq/storage` vs direct `localStorage` (charter Open direction 3, now relevant in `host-web`'s `webDevice.ts:46-60`).
+- `getId` durability seam -- `@flighthq/preferences` vs direct `localStorage` (charter Open direction 3, now relevant in `host-web`'s `webDevice.ts:46-60`).
 - `installSource` / install provenance home (charter Open direction 4).

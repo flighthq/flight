@@ -14,7 +14,7 @@ None — all prior items verified landed 2026-08-25.
 
 ## Approved
 
-1. **Add missing `@flighthq/storage` dependency** [2026-07-02 · blanket "platform integration suite sweep"]
+1. **Add missing `@flighthq/preferences` dependency** [2026-07-02 · blanket "platform integration suite sweep"]
 
 ## Backlog
 

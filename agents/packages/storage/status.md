@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/storage'
+package: '@flighthq/preferences'
 updated: 2026-08-29
 by: builder4
 ---
@@ -22,7 +22,7 @@ by: builder4
 - **Durability is intentionally narrower than atomic visibility.** Mutation `reason: 'ok'` promises
   visibility plus provider-cache agreement, not fsync or sudden-power-loss survival. Electron meets the
   contract with a same-directory temporary candidate and rename.
-- **No `@flighthq/storage-formats` neighbor exists.** Snapshot export/import remains a possible future
+- **No `@flighthq/preferences-formats` neighbor exists.** Snapshot export/import remains a possible future
   package rather than part of this synchronous capability.
 
 ## Log

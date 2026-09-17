@@ -180,4 +180,4 @@ Batch charter blessing 2026-07-02. Shared principles: [platform-integration.md](
 
 | Package | State | Last visited | Note |
 | --- | --- | --- | --- |
-| host-electron | direction | 2026-07-02 | Fix missing `@flighthq/storage` dep. Not a `*Backend` itself — provides backends. No Rust crate. |
+| host-electron | direction | 2026-07-02 | Fix missing `@flighthq/preferences` dep. Not a `*Backend` itself — provides backends. No Rust crate. |

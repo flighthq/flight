@@ -31,7 +31,7 @@ Absent those, a mandated state container would over-prescribe how apps hold thei
 ## Boundaries (anticipated)
 
 - Would depend on `@flighthq/types` (+ `@flighthq/signals` for change observation). No display, no scene graph.
-- The **model** (game/app data: score, inventory, document), distinct from the **view** (display objects) and the **flow** (modes). It is not save/serialization (that's `@flighthq/snapshot` + `@flighthq/storage`) and not the mode machine (that's `@flighthq/flow`).
+- The **model** (game/app data: score, inventory, document), distinct from the **view** (display objects) and the **flow** (modes). It is not save/serialization (that's `@flighthq/snapshot` + `@flighthq/preferences`) and not the mode machine (that's `@flighthq/flow`).
 
 ## Origin
 

@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/storage'
+package: '@flighthq/preferences'
 role: package
 crate: flighthq-storage
 draft: false

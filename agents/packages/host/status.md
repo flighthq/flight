@@ -36,7 +36,7 @@ composed into `createHost`'s `text` group by the caller. `explainHostTextShaper`
 
 **The backend breadcrumbs are hand-maintained.** `_REMEDIES` in `hostExplain.ts` names which package
 supplies each of the seven guarded providers. A new host backend filling one of those slots must gain a
-`HostProviderBackend` entry or the explanation keeps pointing only at the old source. The sentence and
+`HostCapabilityBackend` entry or the explanation keeps pointing only at the old source. The sentence and
 the structured `backends` list cannot drift from each other — a test asserts every `fix` names every
 `entryPoint` and `packageName` it returns — but neither can notice a backend that was never added.
 

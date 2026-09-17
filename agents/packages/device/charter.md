@@ -25,6 +25,6 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 - Whether `device-formats` collapses into the shared `useragent` primitive (structural fork E, paired with the same decision in `platform`).
 - `device` vs `screen` boundary ruling for `DeviceDisplayMetrics` vs live multi-display.
-- `getId` durability seam — inject `@flighthq/storage` vs direct `localStorage`.
+- `getId` durability seam — inject `@flighthq/preferences` vs direct `localStorage`.
 - `installSource` / install provenance home — likely `@flighthq/app`, confirm placement.
 - Predicate-convenience policy: ship `isDeviceTablet(info)` etc. as free functions, or leave consumers to compare the `formFactor` string.

@@ -46,10 +46,10 @@ coverage lives in [`seam-audit.md`](seam-audit.md); this section carries only wh
   installs through that origin, and treats feed URL as immutable provider-construction policy.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Biggest false claim dropped: the parked
   "stale premise — no `electronStorage.ts`, no `StorageBackend` import in `electronRegister.ts`, no
-  `@flighthq/storage` dependency, so the `package.json` description must not claim a storage seam."
+  `@flighthq/preferences` dependency, so the `package.json` description must not claim a storage seam."
   All four are present today: `src/electronStorage.ts` with its colocated test,
   `setStorageBackend(createElectronStorageBackend(...))` at `electronRegister.ts:60`,
-  `"@flighthq/storage": "*"` in the manifest, and `storage` already named in the description — 16
+  `"@flighthq/preferences": "*"` in the manifest, and `storage` already named in the description — 16
   seams registered, not 15. Also dropped: the "pre-existing type errors in `filters` … `scene-gl`"
   note, since neither package exists.
 - **2026-06-25** — Added `seam-audit.md`: every implemented seam mapped to its Electron call or
