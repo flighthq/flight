@@ -97,6 +97,7 @@ const HOST_GROUPS = [
   'share',
   'shell',
   'shortcut',
+  'socket',
   'softKeyboard',
   'statusBar',
   'surface',

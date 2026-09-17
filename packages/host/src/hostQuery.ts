@@ -128,7 +128,7 @@ export function getHostSensors(host: Readonly<Host>): HostSensorsCapability | nu
 }
 
 export function getHostSocket(host: Readonly<Host>): HostSocketCapability | null {
-  return host.net?.socket ?? null;
+  return host.socket?.connection ?? null;
 }
 
 export function getHostSoftKeyboardInfo(host: Readonly<Host>): HostSoftKeyboardInfoCapability | null {

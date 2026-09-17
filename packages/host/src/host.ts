@@ -47,6 +47,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.share = (capabilities.share ?? {}) as Host['share'];
   out.shell = (capabilities.shell ?? {}) as Host['shell'];
   out.shortcut = (capabilities.shortcut ?? {}) as Host['shortcut'];
+  out.socket = (capabilities.socket ?? {}) as Host['socket'];
   out.softKeyboard = (capabilities.softKeyboard ?? {}) as Host['softKeyboard'];
   out.statusBar = (capabilities.statusBar ?? {}) as Host['statusBar'];
   out.surface = (capabilities.surface ?? {}) as Host['surface'];
