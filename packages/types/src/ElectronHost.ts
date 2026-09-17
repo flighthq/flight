@@ -66,7 +66,9 @@ export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
   readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
   readonly tray: ElectronTrayCapabilitiesFor<Profile>;
   readonly updater: Required<Pick<HostUpdaterCapabilities, 'command'>>;
-  readonly window: Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>>;
+  // Electron covers every window capability slot; the hooks it does not implement (the subscribe
+  // pair inside geometry, lifecycle and visibility) stay optional within their slot.
+  readonly window: Required<HostWindowCapabilities>;
 };
 
 export type ElectronMacosHost = ElectronHost<'macos'>;

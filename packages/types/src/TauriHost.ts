@@ -23,5 +23,26 @@ export type TauriHost<Profile extends DesktopOsProfile> = Host & {
   readonly shell: Required<Pick<HostShellCapabilities, 'external' | 'pathOpen' | 'pathReveal'>>;
   readonly shortcut: Required<Pick<HostShortcutCapabilities, 'query' | 'trigger'>>;
   readonly tray: TauriTrayCapabilitiesFor<Profile>;
-  readonly window: Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>>;
+  // Tauri covers these window capability slots. It omits hierarchy and progress (no setParent or
+  // taskbar-progress call) and, as electron does, the subscribe pair inside geometry, lifecycle and
+  // visibility — its window events are wired straight to the window's own signals.
+  readonly window: Required<
+    Pick<
+      HostWindowCapabilities,
+      | 'appearance'
+      | 'attach'
+      | 'attention'
+      | 'contentProtection'
+      | 'focus'
+      | 'fullscreen'
+      | 'geometry'
+      | 'lifecycle'
+      | 'shadow'
+      | 'shell'
+      | 'sizeConstraints'
+      | 'state'
+      | 'visibility'
+      | 'zOrder'
+    >
+  >;
 };

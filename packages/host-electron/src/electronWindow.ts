@@ -39,9 +39,7 @@ import type {
 // and visibility (subscribeMove, subscribeResize, subscribeClose, subscribeVisibility): an attached
 // BrowserWindow's OS events are wired straight to the window's own signals in attachElectronWindow, so a
 // second host-side subscription would report every change twice.
-export function electronHostWindow(
-  electron: ElectronApi,
-): HostWindowCapabilities & Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>> {
+export function electronHostWindow(electron: ElectronApi): Required<HostWindowCapabilities> {
   return {
     appearance: electronHostWindowAppearance(),
     attach: electronHostWindowAttach(),
