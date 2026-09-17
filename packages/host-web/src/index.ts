@@ -62,7 +62,7 @@ export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 export { createWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
 export { createWebGlContext, getWebGlContext } from './webGlContext';
-export { createWebGlRenderSurfaceCreator, enableHostWebGlRenderSurface } from './webGlRenderSurface';
+export { createWebSurfaceCreateCapability, webSurfaceCreateCapability } from './webSurfaceCreate';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostBitmap } from './webBitmapHost';
 export { webHostGlGroup } from './webGlHost';
@@ -203,6 +203,5 @@ export {
   webHostWindowLifecycle,
 } from './webWindow';
 export { webHostWindow } from './webWindowHost';
-export { createWebWgpuCanvasElement } from './webWgpuCanvasElement';
 export { createWebSocketBackend, webHostSocket } from './webSocket';
 export { webHostSocketGroup } from './webSocketHost';

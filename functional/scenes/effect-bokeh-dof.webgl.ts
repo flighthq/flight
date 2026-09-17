@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -10,7 +10,6 @@ import {
   beginGlRenderEffectPipeline,
   createBokehDepthOfFieldEffect,
   createDisplayObject,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
@@ -21,6 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -40,8 +40,7 @@ declareExpectedImageDescription(
 // Bokeh depth-of-field [DEPTH]: shapes near the focus distance stay sharp while out-of-focus
 // shapes spread into soft bokeh discs. Gl drives the circle-of-confusion from the depth target.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

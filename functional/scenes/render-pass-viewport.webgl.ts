@@ -2,15 +2,14 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
 import { createVector3 } from '@flighthq/geometry';
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, createViewport } from '@flighthq/node';
-import { prepareScene2DRender } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
 import {
   beginGlRenderPass,
-  createGlCanvasElement,
   createGlProgram,
   createGlRenderState,
   createGlTextureRenderTarget,
@@ -51,8 +50,7 @@ export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(width, height, scale);
+const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
   createWebGlContext(canvas, {

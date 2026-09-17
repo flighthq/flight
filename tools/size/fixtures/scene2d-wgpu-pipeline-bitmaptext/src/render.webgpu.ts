@@ -1,9 +1,9 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas';
-import { createWebWgpuCanvasElement, webHostGlyphRasterizer } from '@flighthq/host-web';
+import { webSurfaceCreateCapability, webHostGlyphRasterizer } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -20,7 +20,7 @@ import { defaultWgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scen
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { BitmapTextKind, StandardMaterialKind } from '@flighthq/types';
 
-const canvas = createWebWgpuCanvasElement(320, 240, 1);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU BitmapText size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

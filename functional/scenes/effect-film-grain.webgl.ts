@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -19,7 +19,6 @@ import {
   beginGlRenderEffectPipeline,
   createDisplayObject,
   createFilmGrainEffect,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
@@ -30,6 +29,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -43,8 +43,7 @@ declareExpectedImageDescription(
 // the grain shows as fine speckle that would be invisible over busy content. Fixed seed keeps the
 // static capture deterministic.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

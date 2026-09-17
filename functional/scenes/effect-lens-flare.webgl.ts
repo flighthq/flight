@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -9,7 +9,6 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createDisplayObject,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createLensFlareEffect,
@@ -21,6 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -40,8 +40,7 @@ declareExpectedImageDescription(
 // Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
 // frame center, run through an HDR (rgba16f) pipeline so bright spots carry the flare.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, GlRenderEffectPipeline, Material, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
@@ -11,7 +11,6 @@ import {
   createCamera3D,
   createDepthMaterial,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMatcapMaterial,
@@ -34,6 +33,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -52,8 +52,7 @@ declareExpectedImageDescription(
 // different built-in material whose vertex path used to stay rigid: Depth, Normal, Matcap, and
 // Wireframe. Their upper arms must all reach a region left of the corresponding bind-pose column.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

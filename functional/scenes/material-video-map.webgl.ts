@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface, webHostVideo } from '@flighthq/host-web';
+import { createWebGlContext, webHostVideo, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
@@ -9,7 +9,6 @@ import {
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderState,
   createMesh,
   createOrthographicProjection,
@@ -24,6 +23,7 @@ import {
   beginGlRenderPass,
   createGlScreenRenderTarget,
   endGlRenderPass,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -34,8 +34,7 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 export const state = createGlRenderState(
   createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),

@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
@@ -42,6 +42,7 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
   submitWgpuFrame,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -60,7 +61,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of shadow-skinning.webgl. Its shadow pass must select the optional skin depth pipeline,
 // upload the prepared palette, and deform the bind-pose vertices before recording depth.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

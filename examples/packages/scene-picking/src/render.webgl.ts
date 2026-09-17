@@ -1,21 +1,21 @@
-import { createWebGlContext } from '@flighthq/host-web/contract';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web/contract';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   beginGlRenderEffectPipeline,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-export const canvas = createGlCanvasElement(width, height, pixelRatio);
+export const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
 document.body.appendChild(canvas);
 export const state = createGlRenderState(
   createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),

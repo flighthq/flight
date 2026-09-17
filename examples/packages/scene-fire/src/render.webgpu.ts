@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
@@ -16,13 +16,14 @@ import {
   registerWgpuToneMapEffect,
   registerWgpuVignetteEffect,
   scene3DWgpuPipeline,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-export const canvas = createWebWgpuCanvasElement(width, height, pixelRatio);
+export const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

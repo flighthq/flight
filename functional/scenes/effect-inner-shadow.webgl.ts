@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -8,7 +8,6 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createDisplayObject,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createInnerShadowEffect,
@@ -21,6 +20,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   ShapeKind,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -43,8 +43,7 @@ const SHADOW_ANGLE = 45;
 const SHADOW_DISTANCE = 57;
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

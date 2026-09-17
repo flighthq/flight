@@ -1,6 +1,6 @@
-import { createWebGlContext, createWebGlRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -16,8 +16,7 @@ import { DisplayObjectKind, RegistryEntryState } from '@flighthq/types';
 
 // DisplayObject is a genuine non-visible container. This size-only control deliberately has no
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.
-const canvas = createWebGlRenderSurfaceCreator().createRenderSurface(400, 300, 1);
-if (canvas === null) throw new Error('The WebGL DisplayObject size fixture requires a canvas render surface.');
+const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

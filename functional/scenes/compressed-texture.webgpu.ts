@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createCompressedImageResource } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
@@ -27,6 +27,7 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   SpriteKind,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -60,7 +61,7 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 const webWgpuHost = createWebWgpuHostBackend();
 const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);

@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Bitmap, GlRenderEffectPipeline } from '@flighthq/sdk';
@@ -12,7 +12,6 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -28,6 +27,7 @@ import {
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -46,8 +46,7 @@ declareExpectedImageDescription(
 // capture resolution. Keeping this synthetic witness separate lets shadow-classic exercise the normal
 // fitted-camera path while mutations of either sampling control still change a persistent raster.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

@@ -1,11 +1,11 @@
 import {
-  createWebWgpuCanvasElement,
+  webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webRaster2DSurfaceCreator,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -28,7 +28,7 @@ import {
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { Scale9ShapeKind } from '@flighthq/types';
 
-const canvas = createWebWgpuCanvasElement(320, 240, 1);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU Scale9Shape size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

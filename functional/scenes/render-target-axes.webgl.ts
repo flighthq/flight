@@ -1,9 +1,8 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import {
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
-  createGlCanvasElement,
   createGlRenderState,
   createGlTextureRenderTargetPool,
   endGlRenderPass,
@@ -12,6 +11,7 @@ import {
   releaseGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
+import { createRenderSurface } from '@flighthq/render/contract';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -31,8 +31,7 @@ export const scale = window.devicePixelRatio || 1;
 // heuristic has no split to measure, so assertRender below checks the actual attachment color.
 export const minCoverage = 0;
 
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(width, height, scale);
+const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
   createWebGlContext(canvas, {

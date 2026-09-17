@@ -1,7 +1,7 @@
-import { createWebGlContext, createWebGlRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -16,8 +16,7 @@ import { defaultGlMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-g
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { RegistryEntryState, ShapeKind } from '@flighthq/types';
 
-const canvas = createWebGlRenderSurfaceCreator().createRenderSurface(400, 300, 1);
-if (canvas === null) throw new Error('The WebGL size fixture requires a canvas render surface.');
+const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

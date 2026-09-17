@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -9,7 +9,6 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createDisplayObject,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createRadialBlurEffect,
@@ -21,6 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -45,8 +45,7 @@ const RADIAL_CENTER_Y = 0.4;
 // Radial blur: the full frame smears radially outward from the configured center, so mid-screen
 // shapes streak toward the edges like a zoom blur.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

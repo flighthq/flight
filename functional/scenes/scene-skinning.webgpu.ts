@@ -1,4 +1,4 @@
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
@@ -36,6 +36,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -54,7 +55,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of scene-skinning.webgl: the posed silhouette can only reach the leaned-arm probe
 // when the rgba32float joint palette is uploaded and sampled by the HAS_SKIN vertex variant.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

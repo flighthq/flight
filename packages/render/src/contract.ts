@@ -16,6 +16,7 @@ export * from './explainScene3DPipelineCoverage';
 export * from './renderRegistryGuards';
 export * from './renderRegistrySignals';
 export * from './renderState';
+export * from './renderSurface';
 export * from './renderTarget';
 export * from './renderTransform2d';
 export * from './renderViewport';
