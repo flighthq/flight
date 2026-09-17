@@ -13,7 +13,7 @@ import type {
   HostAppBadgeCapability,
   HostAppDockCapability,
   HostAppFocusCapability,
-  HostAppVisibilityQueryCapability,
+  HostLifecycleCapability,
   HostAppHideCapability,
   HostAppLocaleCapability,
   HostAppLoginItemCapability,
@@ -221,8 +221,8 @@ export function initializeApp(out: EntityConstruction<App>): void {
   out.onSecondInstance = createSignal();
 }
 
-export function isAppHidden(hostAppVisibilityQuery: Readonly<HostAppVisibilityQueryCapability>): boolean {
-  return hostAppVisibilityQuery.isAppHidden();
+export function isAppHidden(hostLifecycle: Readonly<HostLifecycleCapability>): boolean {
+  return hostLifecycle.getState() === 'background';
 }
 
 export function quitApp(hostAppQuit: Readonly<HostAppQuitCapability>): void {
@@ -241,7 +241,9 @@ export function requestAppAttention(hostAppDock: Readonly<HostAppDockCapability>
   return hostAppDock.requestAttention(critical);
 }
 
-export function requestAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceCapability>): boolean {
+export function requestAppSingleInstanceLock(
+  hostAppSingleInstance: Readonly<HostAppSingleInstanceCapability>,
+): boolean {
   return hostAppSingleInstance.requestSingleInstanceLock();
 }
 

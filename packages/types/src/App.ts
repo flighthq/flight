@@ -148,7 +148,3 @@ export interface HostAppHideCapability extends Entity {
 export interface HostAppShowCapability extends Entity {
   showApp(): void;
 }
-
-export interface HostAppVisibilityQueryCapability extends Entity {
-  isAppHidden(): boolean;
-}

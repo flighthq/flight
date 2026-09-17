@@ -195,7 +195,6 @@ describe('electronHostAppAllWindowsClosed', appLeaf('linux', 'allWindowsClosed')
 describe('electronHostAppBadge', appLeaf('linux', 'badge'));
 describe('electronHostAppDock', appLeaf('macos', 'dock'));
 describe('electronHostAppFocus', appLeaf('linux', 'focus'));
-describe('electronHostAppHiddenQuery', appLeaf('macos', 'hiddenQuery'));
 describe('electronHostAppHide', appLeaf('macos', 'hide'));
 describe('electronHostAppLocale', appLeaf('linux', 'locale'));
 describe('electronHostAppLoginItem', appLeaf('windows', 'loginItem'));

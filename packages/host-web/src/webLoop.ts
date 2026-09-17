@@ -1,10 +1,4 @@
-import type { HostApplicationVisibilityCapability, HostLoopCapability } from '@flighthq/types/contract';
-
-export const webHostApplicationVisibility: HostApplicationVisibilityCapability = {
-  isVisible() {
-    return typeof document === 'undefined' || !document.hidden;
-  },
-};
+import type { HostLoopCapability } from '@flighthq/types/contract';
 
 export const webHostLoop: HostLoopCapability = {
   cancelFrame(handle) {

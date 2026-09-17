@@ -63,7 +63,6 @@ const LEAVES = [
   'electronHostAppBadge',
   'electronHostAppDock',
   'electronHostAppFocus',
-  'electronHostAppHiddenQuery',
   'electronHostAppHide',
   'electronHostAppLocale',
   'electronHostAppLoginItem',

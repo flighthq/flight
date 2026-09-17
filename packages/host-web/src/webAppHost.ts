@@ -10,7 +10,7 @@ import {
   webHostAppRelaunch,
 } from './webApp';
 import { webHostApplicationExit } from './webApplicationExit';
-import { webHostApplicationVisibility, webHostLoop } from './webLoop';
+import { webHostLoop } from './webLoop';
 
 export const webHostApp = {
   badge: webHostAppBadge,
@@ -22,5 +22,4 @@ export const webHostApp = {
   quit: webHostAppQuit,
   ready: webHostAppReady,
   relaunch: webHostAppRelaunch,
-  visibility: webHostApplicationVisibility,
 } satisfies HostAppCapabilities;

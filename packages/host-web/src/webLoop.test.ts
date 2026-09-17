@@ -1,24 +1,9 @@
 import { webHost } from './webHost';
-import { webHostApplicationVisibility, webHostLoop } from './webLoop';
+import { webHostLoop } from './webLoop';
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-});
-
-describe('webHostApplicationVisibility', () => {
-  it('queries the current document visibility', () => {
-    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-    expect(webHostApplicationVisibility.isVisible()).toBe(true);
-
-    hidden.mockReturnValue(true);
-    expect(webHostApplicationVisibility.isVisible()).toBe(false);
-  });
-
-  it('occupies the web host visibility query slot separately from scheduling', () => {
-    expect(webHost.app.visibility).toBe(webHostApplicationVisibility);
-    expect(webHost.app.visibility).not.toBe(webHost.app.loop);
-  });
 });
 
 describe('webHostLoop', () => {

@@ -81,10 +81,7 @@ export type WebHost = Omit<
 > & {
   readonly accessibility: Required<Pick<HostAccessibilityCapabilities, 'tree'>>;
   readonly app: Required<
-    Pick<
-      HostAppCapabilities,
-      'badge' | 'exit' | 'focus' | 'locale' | 'loop' | 'name' | 'quit' | 'ready' | 'relaunch' | 'visibility'
-    >
+    Pick<HostAppCapabilities, 'badge' | 'exit' | 'focus' | 'locale' | 'loop' | 'name' | 'quit' | 'ready' | 'relaunch'>
   >;
   readonly audio: Required<Pick<HostAudioCapabilities, 'codec' | 'device' | 'mixer'>>;
   readonly bitmap: Required<Pick<HostBitmapCapabilities, 'encode' | 'readback'>>;
