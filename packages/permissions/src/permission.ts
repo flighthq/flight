@@ -121,33 +121,33 @@ async function queryPermissionState(
 }
 
 async function queryMidiPermission(
-  provider: Readonly<HostMidiPermissionCapability> | null,
+  capability: Readonly<HostMidiPermissionCapability> | null,
 ): Promise<PermissionQueryOutcome> {
-  if (provider === null) return { reason: 'unsupported' };
+  if (capability === null) return { reason: 'unsupported' };
   try {
-    return await provider.getPermission();
+    return await capability.getPermission();
   } catch {
     return { reason: 'operation-failed' };
   }
 }
 
 async function queryStoragePersistencePermission(
-  provider: Readonly<HostPreferencesPersistenceQueryCapability> | null,
+  capability: Readonly<HostPreferencesPersistenceQueryCapability> | null,
 ): Promise<PermissionQueryOutcome> {
-  if (provider === null) return { reason: 'unsupported' };
+  if (capability === null) return { reason: 'unsupported' };
   try {
-    return projectStoragePersistenceQuery(await provider.getPersistence());
+    return projectStoragePersistenceQuery(await capability.getPersistence());
   } catch {
     return { reason: 'operation-failed' };
   }
 }
 
 async function queryNotificationPermission(
-  provider: Readonly<HostNotificationPermissionCapability> | null,
+  capability: Readonly<HostNotificationPermissionCapability> | null,
 ): Promise<PermissionQueryOutcome> {
-  if (provider === null) return { reason: 'unsupported' };
+  if (capability === null) return { reason: 'unsupported' };
   try {
-    const outcome = await provider.getPermission();
+    const outcome = await capability.getPermission();
     if (outcome.reason !== 'ok') return { reason: outcome.reason };
     return {
       reason: 'ok',
@@ -159,11 +159,11 @@ async function queryNotificationPermission(
 }
 
 async function requestNotificationPermission(
-  provider: Readonly<HostNotificationPermissionCapability> | null,
+  capability: Readonly<HostNotificationPermissionCapability> | null,
 ): Promise<PermissionRequestOutcome> {
-  if (provider === null) return { reason: 'unsupported' };
+  if (capability === null) return { reason: 'unsupported' };
   try {
-    const outcome = await provider.requestPermission();
+    const outcome = await capability.requestPermission();
     switch (outcome.reason) {
       case 'granted':
         return { reason: 'granted', state: 'granted' };
@@ -180,11 +180,11 @@ async function requestNotificationPermission(
 }
 
 async function requestStoragePersistencePermission(
-  provider: Readonly<HostPreferencesPersistenceRequestCapability> | null,
+  capability: Readonly<HostPreferencesPersistenceRequestCapability> | null,
 ): Promise<PermissionRequestOutcome> {
-  if (provider === null) return { reason: 'unsupported' };
+  if (capability === null) return { reason: 'unsupported' };
   try {
-    return projectStoragePersistenceRequest(await provider.requestPersistence());
+    return projectStoragePersistenceRequest(await capability.requestPersistence());
   } catch {
     return { reason: 'operation-failed' };
   }
