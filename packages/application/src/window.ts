@@ -9,7 +9,7 @@ import type {
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-  HostInputTargetCapability,
+  HostTargetCapability,
   HostScreenChangeCapability,
   HostSurfaceCapability,
   HostWindowAppearanceCapability,
@@ -30,7 +30,7 @@ import type {
   HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  InputTargetHandle,
+  HostTarget,
   Matrix,
   NativeWindowHandle,
   RenderState,
@@ -94,7 +94,7 @@ export function attachWindowClose(
 export function attachWindowDropFile(
   hostInputDropFile: Readonly<HostInputDropFileCapability>,
   win: ApplicationWindow,
-  target: InputTargetHandle,
+  target: HostTarget,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kDropFile)?.();
@@ -107,7 +107,7 @@ export function attachWindowDropFile(
 export function attachWindowFocus(
   hostInputFocus: Readonly<HostInputFocusCapability>,
   win: ApplicationWindow,
-  target: InputTargetHandle,
+  target: HostTarget,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kFocus)?.();
@@ -176,7 +176,7 @@ export function attachWindowOrientation(
 export function attachWindowRenderContext(
   hostGl: Readonly<HostGlCapability>,
   win: ApplicationWindow,
-  target: InputTargetHandle,
+  target: HostTarget,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderContext)?.();
@@ -200,7 +200,7 @@ export function attachWindowRenderState(
   hostSurface: Readonly<HostSurfaceCapability>,
   win: ApplicationWindow,
   state: RenderState,
-  target: InputTargetHandle,
+  target: HostTarget,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();
@@ -457,7 +457,7 @@ export function initializeApplicationWindow(out: EntityConstruction<ApplicationW
 // provider even if the caller later supplies a different provider.
 export async function lockApplicationPointer(
   hostInputPointerLock: Readonly<HostInputPointerLockCapability>,
-  target: InputTargetHandle,
+  target: HostTarget,
 ): Promise<InputPointerLockRequestOutcome> {
   const backend = hostInputPointerLock;
   const outcome = await backend.request(target);
@@ -532,10 +532,7 @@ export function openWindow(
 
 // Prepares a provider-bound target for direct input. The provider owns platform details such as
 // browser CSS and canvas compositing; the application contract only carries opaque identity.
-export function prepareElementForInput(
-  hostInputTarget: Readonly<HostInputTargetCapability>,
-  target: InputTargetHandle,
-): void {
+export function prepareElementForInput(hostInputTarget: Readonly<HostTargetCapability>, target: HostTarget): void {
   hostInputTarget.prepare(target);
 }
 

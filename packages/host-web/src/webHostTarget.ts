@@ -5,8 +5,8 @@ import type {
   HostInputPointerLockCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostInputTargetCapability,
-  InputTargetHandle,
+  HostTargetCapability,
+  HostTarget,
   HostGlCapability,
   HostSurfaceCapability,
   EntityConstruction,
@@ -15,14 +15,14 @@ import type {
 
 import { getWebGlContext } from './webGlContext';
 
-interface WebInputTargetStyle extends CSSStyleDeclaration {
+interface WebHostTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
 }
 
 export const webHostInputDropFile = (() => {
   const out = allocateEntity<HostInputDropFileCapability>();
-  out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
-    const element = _inputTargets.get(target);
+  out.subscribe = (target: HostTarget, listener: (path: string) => void) => {
+    const element = _hostTargets.get(target);
     if (element === undefined) return noop;
     const onDragOver = (event: DragEvent): void => event.preventDefault();
     const onDrop = (event: DragEvent): void => {
@@ -31,7 +31,7 @@ export const webHostInputDropFile = (() => {
     };
     element.addEventListener('dragover', onDragOver);
     element.addEventListener('drop', onDrop);
-    return trackWebInputTargetSubscription(() => {
+    return trackWebHostTargetSubscription(() => {
       element.removeEventListener('dragover', onDragOver);
       element.removeEventListener('drop', onDrop);
     });
@@ -41,12 +41,12 @@ export const webHostInputDropFile = (() => {
 
 export const webHostInputFocus = (() => {
   const out = allocateEntity<HostInputFocusCapability>();
-  out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
-    const element = _inputTargets.get(target);
+  out.subscribe = (target: HostTarget, onFocus: () => void, onBlur: () => void) => {
+    const element = _hostTargets.get(target);
     if (element === undefined) return noop;
     element.addEventListener('focus', onFocus);
     element.addEventListener('blur', onBlur);
-    return trackWebInputTargetSubscription(() => {
+    return trackWebHostTargetSubscription(() => {
       element.removeEventListener('focus', onFocus);
       element.removeEventListener('blur', onBlur);
     });
@@ -74,8 +74,8 @@ export const webHostInputPointerLock = (() => {
     }
     return observation.outcome;
   };
-  out.request = (target: InputTargetHandle) => {
-    const element = _inputTargets.get(target);
+  out.request = (target: HostTarget) => {
+    const element = _hostTargets.get(target);
     if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
     const requestPointerLock = element.requestPointerLock;
     if (typeof requestPointerLock !== 'function') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
@@ -97,15 +97,15 @@ export const webHostInputPointerLock = (() => {
   return finishEntity(out);
 })();
 
-export const webHostInputTarget = (() => {
-  const out = allocateEntity<HostInputTargetCapability>();
-  out.prepare = (target: InputTargetHandle) => {
-    const element = _inputTargets.get(target);
+export const webHostTarget = (() => {
+  const out = allocateEntity<HostTargetCapability>();
+  out.prepare = (target: HostTarget) => {
+    const element = _hostTargets.get(target);
     if (element === undefined) return;
     element.style.touchAction = 'none';
     element.style.userSelect = 'none';
     element.style.webkitUserSelect = 'none';
-    (element.style as WebInputTargetStyle).webkitTapHighlightColor = 'transparent';
+    (element.style as WebHostTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
   };
   return finishEntity(out);
@@ -113,17 +113,17 @@ export const webHostInputTarget = (() => {
 
 export const webHostGl = (() => {
   const out = allocateEntity<HostGlCapability>();
-  out.acquire = (target: InputTargetHandle, options?: Readonly<GlContextOptions>) => {
+  out.acquire = (target: HostTarget, options?: Readonly<GlContextOptions>) => {
     const element = getCanvasForTarget(target);
     // null covers both reasons the slot cannot hand out a context: an unregistered target, and a
     // canvas the browser refuses WebGL2 on. The caller distinguishes them with its own target record.
     return element === null ? null : getWebGlContext(element, options);
   };
-  out.release = (_target: InputTargetHandle) => {
+  out.release = (_target: HostTarget) => {
     // The DOM owns context lifetime: a canvas's WebGL2 context is released with the canvas, so the web
     // host holds no GPU resource to free. A native host frees one here.
   };
-  out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
+  out.subscribe = (target: HostTarget, onLost: () => void, onRestored: () => void) => {
     const element = getCanvasForTarget(target);
     if (element === null) return noop;
     const onContextLost = (event: Event): void => {
@@ -132,7 +132,7 @@ export const webHostGl = (() => {
     };
     element.addEventListener('webglcontextlost', onContextLost);
     element.addEventListener('webglcontextrestored', onRestored);
-    return trackWebInputTargetSubscription(() => {
+    return trackWebHostTargetSubscription(() => {
       element.removeEventListener('webglcontextlost', onContextLost);
       element.removeEventListener('webglcontextrestored', onRestored);
     });
@@ -142,7 +142,7 @@ export const webHostGl = (() => {
 
 export const webHostSurface = (() => {
   const out = allocateEntity<HostSurfaceCapability>();
-  out.resize = (target: InputTargetHandle, width: number, height: number) => {
+  out.resize = (target: HostTarget, width: number, height: number) => {
     const element = getCanvasForTarget(target);
     if (element === null) return;
     element.width = width;
@@ -151,33 +151,30 @@ export const webHostSurface = (() => {
   return finishEntity(out);
 })();
 
-export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
-  const target = allocateEntity<InputTargetHandle>();
-  initializeWebInputTargetHandle(target, element);
+export function createWebHostTarget(element: HTMLElement): HostTarget {
+  const target = allocateEntity<HostTarget>();
+  initializeWebHostTarget(target, element);
   return target;
 }
 
-export function initializeWebInputTargetHandle(
-  target: EntityConstruction<InputTargetHandle>,
-  element: HTMLElement,
-): void {
-  target.__brand = 'InputTargetHandle' as const;
-  _inputTargets.set(target, element);
+export function initializeWebHostTarget(target: EntityConstruction<HostTarget>, element: HTMLElement): void {
+  target.__brand = 'HostTarget' as const;
+  _hostTargets.set(target, element);
 }
 
-export function resetWebInputTargetBackendForTest(): void {
-  for (const cleanup of [..._inputTargetSubscriptionCleanups]) cleanup();
-  _inputTargetSubscriptionCleanups.clear();
-  _inputTargets = new WeakMap();
+export function resetWebHostTargetBackendForTest(): void {
+  for (const cleanup of [..._hostTargetSubscriptionCleanups]) cleanup();
+  _hostTargetSubscriptionCleanups.clear();
+  _hostTargets = new WeakMap();
 }
 
-let _inputTargets = new WeakMap<InputTargetHandle, HTMLElement>();
-const _inputTargetSubscriptionCleanups = new Set<() => void>();
+let _hostTargets = new WeakMap<HostTarget, HTMLElement>();
+const _hostTargetSubscriptionCleanups = new Set<() => void>();
 
 // The canvas a GL or surface hook addresses, or null when the target is unregistered or is not a
 // canvas. Both of those are the same sentinel to the capability: there is no drawable to operate on.
-function getCanvasForTarget(target: InputTargetHandle): HTMLCanvasElement | null {
-  const element = _inputTargets.get(target);
+function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null {
+  const element = _hostTargets.get(target);
   if (element === undefined) return null;
   if (typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) return null;
   return element;
@@ -255,15 +252,15 @@ function isPointerLockTarget(element: HTMLElement): boolean {
   return pointerLockRoot.pointerLockElement === element;
 }
 
-function trackWebInputTargetSubscription(cleanup: () => void): () => void {
+function trackWebHostTargetSubscription(cleanup: () => void): () => void {
   let active = true;
   const trackedCleanup = (): void => {
     if (!active) return;
     active = false;
-    _inputTargetSubscriptionCleanups.delete(trackedCleanup);
+    _hostTargetSubscriptionCleanups.delete(trackedCleanup);
     cleanup();
   };
-  _inputTargetSubscriptionCleanups.add(trackedCleanup);
+  _hostTargetSubscriptionCleanups.add(trackedCleanup);
   return trackedCleanup;
 }
 

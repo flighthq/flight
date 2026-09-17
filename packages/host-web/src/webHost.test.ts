@@ -102,7 +102,7 @@ const LEAVES = [
   ['input', 'focus', 'webHostInputFocus'],
   ['input', 'ingress', 'webHostInputIngress'],
   ['input', 'pointerLock', 'webHostInputPointerLock'],
-  ['input', 'target', 'webHostInputTarget'],
+  ['input', 'target', 'webHostTarget'],
   ['lifecycle', 'state', 'webHostLifecycle'],
   ['mediaSession', 'action', 'webHostMediaSessionAction'],
   ['mediaSession', 'control', 'webHostMediaSession'],

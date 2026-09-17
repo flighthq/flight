@@ -9,7 +9,7 @@ import type {
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-  HostInputTargetCapability,
+  HostTargetCapability,
   HostScreenChangeCapability,
   HostSurfaceCapability,
   HostWindowAppearanceCapability,
@@ -30,7 +30,7 @@ import type {
   HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  InputTargetHandle,
+  HostTarget,
   Matrix,
   RenderState,
   ScreenChangeEvent,
@@ -332,9 +332,9 @@ function recordingWindowBackend(): RecordingWindowBackend {
   return finishEntity(out);
 }
 
-function createInputTarget(): InputTargetHandle {
+function createHostTarget(): HostTarget {
   const out = allocateEntity<any>();
-  out.__brand = 'InputTargetHandle' as const;
+  out.__brand = 'HostTarget' as const;
   return finishEntity(out);
 }
 
@@ -379,7 +379,7 @@ function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   out.emit = (path: string) => {
     listener?.(path);
   };
-  out.subscribe = (_target: InputTargetHandle, next: (path: string) => void) => {
+  out.subscribe = (_target: HostTarget, next: (path: string) => void) => {
     calls.push('subscribe');
     listener = next;
     return () => {
@@ -402,7 +402,7 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
   out.emitFocus = () => {
     onFocus?.();
   };
-  out.subscribe = (_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) => {
+  out.subscribe = (_target: HostTarget, nextFocus: () => void, nextBlur: () => void) => {
     calls.push('subscribe');
     onFocus = nextFocus;
     onBlur = nextBlur;
@@ -423,7 +423,7 @@ function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
     calls.push('exit');
     return { reason: 'ok' };
   };
-  out.request = async (_target: InputTargetHandle) => {
+  out.request = async (_target: HostTarget) => {
     calls.push('request');
     return { reason: 'ok' };
   };
@@ -442,7 +442,7 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
   out.emitRestored = () => {
     onRestored?.();
   };
-  out.subscribe = (_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) => {
+  out.subscribe = (_target: HostTarget, nextLost: () => void, nextRestored: () => void) => {
     calls.push('subscribe');
     onLost = nextLost;
     onRestored = nextRestored;
@@ -459,7 +459,7 @@ function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
   const out = allocateEntity<any>();
   out.calls = calls;
-  out.resize = (_target: InputTargetHandle, width: number, height: number) => {
+  out.resize = (_target: HostTarget, width: number, height: number) => {
     calls.push(`resize:${width},${height}`);
   };
   return finishEntity(out);
@@ -627,7 +627,7 @@ describe('attachWindowDropFile', () => {
     connectSignal(win.onDropFile, (path) => {
       received = path;
     });
-    attachWindowDropFile(host.input.dropFile, win, createInputTarget());
+    attachWindowDropFile(host.input.dropFile, win, createHostTarget());
     host.input.dropFile.emit('test.png');
 
     expect(received).toBe('test.png');
@@ -637,7 +637,7 @@ describe('attachWindowDropFile', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
     const win = createApplicationWindow();
-    const target = createInputTarget();
+    const target = createHostTarget();
 
     attachWindowDropFile(origin.input.dropFile, win, target);
     attachWindowDropFile(replacement.input.dropFile, win, target);
@@ -655,7 +655,7 @@ describe('attachWindowFocus', () => {
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(host.input.focus, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createHostTarget());
     host.input.focus.emitFocus();
     expect(called).toBe(true);
   });
@@ -666,7 +666,7 @@ describe('attachWindowFocus', () => {
     connectSignal(win.onFocusOut, () => {
       called = true;
     });
-    attachWindowFocus(host.input.focus, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createHostTarget());
     host.input.focus.emitBlur();
     expect(called).toBe(true);
   });
@@ -675,7 +675,7 @@ describe('attachWindowFocus', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
     const win = createApplicationWindow();
-    const target = createInputTarget();
+    const target = createHostTarget();
 
     attachWindowFocus(origin.input.focus, win, target);
     attachWindowFocus(replacement.input.focus, win, target);
@@ -756,7 +756,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
     host.graphics.renderContext.emitLost();
     expect(called).toBe(true);
   });
@@ -767,7 +767,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextRestored, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
     host.graphics.renderContext.emitRestored();
     expect(called).toBe(true);
   });
@@ -776,7 +776,7 @@ describe('attachWindowRenderContext', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
     const win = createApplicationWindow();
-    const target = createInputTarget();
+    const target = createHostTarget();
 
     attachWindowRenderContext(origin.graphics.renderContext, win, target);
     attachWindowRenderContext(replacement.graphics.renderContext, win, target);
@@ -794,7 +794,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 2;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
     expect(state.renderTransform2D?.a).toBe(2);
     expect(state.renderTransform2D?.d).toBe(2);
@@ -806,7 +806,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     win.width = 400;
     win.devicePixelRatio = 2;
     emitSignal(win.onResize);
@@ -822,7 +822,7 @@ describe('attachWindowRenderState', () => {
     win.height = 200;
     const state = makeRenderState();
 
-    attachWindowRenderState(origin.graphics.renderSurface, win, state, createInputTarget());
+    attachWindowRenderState(origin.graphics.renderSurface, win, state, createHostTarget());
     host = active;
     win.width = 640;
     emitSignal(win.onResize);
@@ -834,7 +834,7 @@ describe('attachWindowRenderState', () => {
   it('composes the five retained seams as explicit trait intersections', async () => {
     const targetHost = createTestHost();
     const composedHost: WindowTargetHost = targetHost;
-    const target = createInputTarget();
+    const target = createHostTarget();
     const win = createApplicationWindow();
 
     attachWindowDropFile(composedHost.input.dropFile, win, target);
@@ -1045,7 +1045,7 @@ describe('detachWindowDropFile', () => {
     connectSignal(win.onDropFile, () => {
       called = true;
     });
-    attachWindowDropFile(host.input.dropFile, win, createInputTarget());
+    attachWindowDropFile(host.input.dropFile, win, createHostTarget());
     detachWindowDropFile(win);
     host.input.dropFile.emit('ignored.txt');
 
@@ -1061,7 +1061,7 @@ describe('detachWindowFocus', () => {
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(host.input.focus, win, createInputTarget());
+    attachWindowFocus(host.input.focus, win, createHostTarget());
     detachWindowFocus(win);
     host.input.focus.emitFocus();
     expect(called).toBe(false);
@@ -1123,7 +1123,7 @@ describe('detachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createInputTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
     detachWindowRenderContext(win);
     host.graphics.renderContext.emitLost();
     expect(called).toBe(false);
@@ -1138,7 +1138,7 @@ describe('detachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createInputTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     detachWindowRenderState(win);
     win.width = 400;
     emitSignal(win.onResize);
@@ -1219,7 +1219,7 @@ describe('exitApplicationPointerLock', () => {
         return attempts === 1 ? { reason } : { reason: 'ok' };
       };
 
-      await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+      await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
       await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason });
       await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
@@ -1239,7 +1239,7 @@ describe('exitApplicationPointerLock', () => {
       return { reason: 'ok' };
     };
 
-    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
     await expect(exitApplicationPointerLock(active.input.pointerLock)).rejects.toThrow('busy');
     await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
@@ -1298,7 +1298,7 @@ describe('initializeApplicationWindow', () => {
 
 describe('lockApplicationPointer', () => {
   it('passes the opaque target to the pointer-lock command capability', async () => {
-    const target = createInputTarget();
+    const target = createHostTarget();
     await expect(lockApplicationPointer(host.input.pointerLock, target)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['request']);
     await exitApplicationPointerLock(host.input.pointerLock);
@@ -1308,7 +1308,7 @@ describe('lockApplicationPointer', () => {
     const origin = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
+    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
     await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
@@ -1331,8 +1331,8 @@ describe('lockApplicationPointer', () => {
         return { reason };
       };
 
-      await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
-      await expect(lockApplicationPointer(declined.input.pointerLock, createInputTarget())).resolves.toEqual({
+      await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
+      await expect(lockApplicationPointer(declined.input.pointerLock, createHostTarget())).resolves.toEqual({
         reason,
       });
       await exitApplicationPointerLock(active.input.pointerLock);
@@ -1352,8 +1352,8 @@ describe('lockApplicationPointer', () => {
       throw new Error('defect');
     };
 
-    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
-    await expect(lockApplicationPointer(rejected.input.pointerLock, createInputTarget())).rejects.toThrow('defect');
+    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
+    await expect(lockApplicationPointer(rejected.input.pointerLock, createHostTarget())).rejects.toThrow('defect');
     await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
@@ -1366,8 +1366,8 @@ describe('lockApplicationPointer', () => {
     const replacement = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin.input.pointerLock, createInputTarget());
-    await lockApplicationPointer(replacement.input.pointerLock, createInputTarget());
+    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
+    await lockApplicationPointer(replacement.input.pointerLock, createHostTarget());
     await exitApplicationPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request']);
@@ -1529,11 +1529,11 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<HostInputTargetCapability>();
+    const backend = allocateEntity<HostTargetCapability>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();
-      out.__brand = 'InputTargetHandle' as const;
+      out.__brand = 'HostTarget' as const;
       return finishEntity(out);
     })();
 

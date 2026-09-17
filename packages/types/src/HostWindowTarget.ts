@@ -1,18 +1,18 @@
 import type { Entity } from './Entity';
 import type { GlContext, GlContextOptions } from './GlContext';
-import type { InputTargetHandle } from './HostInputTarget';
+import type { HostTarget } from './HostTarget';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider
 // resource that created it, so application teardown cannot be redirected by a later Host selection.
 export interface HostInputDropFileCapability extends Entity {
-  subscribe(target: InputTargetHandle, listener: (path: string) => void): () => void;
+  subscribe(target: HostTarget, listener: (path: string) => void): () => void;
 }
 
 // Host-emitted target focus is its own event capability. Core owns the ApplicationWindow signals; the
 // backend owns only event ingress and its exact release obligation.
 export interface HostInputFocusCapability extends Entity {
-  subscribe(target: InputTargetHandle, onFocus: () => void, onBlur: () => void): () => void;
+  subscribe(target: HostTarget, onFocus: () => void, onBlur: () => void): () => void;
 }
 
 // Pointer lock is command-only: request is target-scoped while exit is provider-global. Keeping both in
@@ -30,7 +30,7 @@ export type InputPointerLockRequestOutcome =
 
 export interface HostInputPointerLockCapability extends Entity {
   exit(): Promise<InputPointerLockExitOutcome>;
-  request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
+  request(target: HostTarget): Promise<InputPointerLockRequestOutcome>;
 }
 
 // GL context lifecycle for a provider-bound target. `acquire` is the slot's primary purpose — a caller
@@ -39,11 +39,11 @@ export interface HostInputPointerLockCapability extends Entity {
 // lookup that cannot succeed. `release` drops the host's record for that target; it does not force
 // context loss, which the driver owns and `subscribe` reports.
 export interface HostGlCapability extends Entity {
-  acquire(target: InputTargetHandle, options?: Readonly<GlContextOptions>): GlContext | null;
-  release(target: InputTargetHandle): void;
-  subscribe(target: InputTargetHandle, onLost: () => void, onRestored: () => void): () => void;
+  acquire(target: HostTarget, options?: Readonly<GlContextOptions>): GlContext | null;
+  release(target: HostTarget): void;
+  subscribe(target: HostTarget, onLost: () => void, onRestored: () => void): () => void;
 }
 
 export interface HostSurfaceCapability extends Entity {
-  resize(target: InputTargetHandle, width: number, height: number): void;
+  resize(target: HostTarget, width: number, height: number): void;
 }

@@ -1,56 +1,56 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, HostInputPointerLockCapability, HostTarget } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
 import {
-  createWebInputTargetHandle,
-  initializeWebInputTargetHandle,
-  resetWebInputTargetBackendForTest,
+  createWebHostTarget,
+  initializeWebHostTarget,
+  resetWebHostTargetBackendForTest,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
-  webHostInputTarget,
+  webHostTarget,
   webHostGl,
   webHostSurface,
-} from './webInputTarget';
+} from './webHostTarget';
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   Object.defineProperty(document, 'exitPointerLock', { configurable: true, value: undefined });
   Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: undefined });
-  resetWebInputTargetBackendForTest();
+  resetWebHostTargetBackendForTest();
 });
 
 // The canvas getContext mock returns this; acquire only has to hand back what the canvas produced.
 const FAKE_GL = { fake: 'gl' } as unknown as WebGL2RenderingContext;
 
-describe('createWebInputTargetHandle', () => {
+describe('createWebHostTarget', () => {
   it('constructs an opaque Entity bound to the provider', () => {
     const element = document.createElement('div');
-    const target = createWebInputTargetHandle(element);
+    const target = createWebHostTarget(element);
 
     expect(EntityRuntimeKey in target).toBe(true);
-    webHostInputTarget.prepare(target);
+    webHostTarget.prepare(target);
     expect(element.style.touchAction).toBe('none');
   });
 });
 
-describe('initializeWebInputTargetHandle', () => {
-  it('is the construction initializer of createWebInputTargetHandle', () => {
-    expect(typeof initializeWebInputTargetHandle).toBe('function');
+describe('initializeWebHostTarget', () => {
+  it('is the construction initializer of createWebHostTarget', () => {
+    expect(typeof initializeWebHostTarget).toBe('function');
   });
 });
 
-describe('resetWebInputTargetBackendForTest', () => {
+describe('resetWebHostTargetBackendForTest', () => {
   it('forgets existing target bindings', () => {
     const element = document.createElement('div');
-    const target = createWebInputTargetHandle(element);
+    const target = createWebHostTarget(element);
 
-    resetWebInputTargetBackendForTest();
-    webHostInputTarget.prepare(target);
+    resetWebHostTargetBackendForTest();
+    webHostTarget.prepare(target);
 
     expect(element.style.touchAction).not.toBe('none');
   });
@@ -58,9 +58,9 @@ describe('resetWebInputTargetBackendForTest', () => {
   it('releases active event subscriptions before forgetting targets', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    webHostInputFocus.subscribe(createWebInputTargetHandle(element), listener, vi.fn());
+    webHostInputFocus.subscribe(createWebHostTarget(element), listener, vi.fn());
 
-    resetWebInputTargetBackendForTest();
+    resetWebHostTargetBackendForTest();
     element.dispatchEvent(new Event('focus'));
 
     expect(listener).not.toHaveBeenCalled();
@@ -72,19 +72,19 @@ describe('webHostGl', () => {
     const canvas = document.createElement('canvas');
     canvas.getContext = vi.fn().mockReturnValue(FAKE_GL) as typeof canvas.getContext;
 
-    expect(webHostGl.acquire(createWebInputTargetHandle(canvas))).toBe(FAKE_GL);
+    expect(webHostGl.acquire(createWebHostTarget(canvas))).toBe(FAKE_GL);
   });
 
   it('reports null for a target this host never registered', () => {
-    expect(webHostGl.acquire(finishEntity(allocateEntity<InputTargetHandle>()))).toBeNull();
+    expect(webHostGl.acquire(finishEntity(allocateEntity<HostTarget>()))).toBeNull();
   });
 
   it('reports null for a registered target that is not a canvas', () => {
-    expect(webHostGl.acquire(createWebInputTargetHandle(document.createElement('div')))).toBeNull();
+    expect(webHostGl.acquire(createWebHostTarget(document.createElement('div')))).toBeNull();
   });
 
   it('degrades release to a no-op because the DOM owns context lifetime', () => {
-    const target = createWebInputTargetHandle(document.createElement('canvas'));
+    const target = createWebHostTarget(document.createElement('canvas'));
 
     expect(() => webHostGl.release(target)).not.toThrow();
   });
@@ -93,7 +93,7 @@ describe('webHostGl', () => {
     const canvas = document.createElement('canvas');
     const onLost = vi.fn();
     const onRestored = vi.fn();
-    const release = webHostGl.subscribe(createWebInputTargetHandle(canvas), onLost, onRestored);
+    const release = webHostGl.subscribe(createWebHostTarget(canvas), onLost, onRestored);
     const lost = new Event('webglcontextlost', { cancelable: true });
 
     canvas.dispatchEvent(lost);
@@ -108,7 +108,7 @@ describe('webHostGl', () => {
 
   it('truthfully leaves a non-canvas target inert', () => {
     const listener = vi.fn();
-    const release = webHostGl.subscribe(createWebInputTargetHandle(document.createElement('div')), listener, listener);
+    const release = webHostGl.subscribe(createWebHostTarget(document.createElement('div')), listener, listener);
 
     expect(release).toBeTypeOf('function');
     expect(listener).not.toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe('webHostInputDropFile', () => {
   it('forwards every dropped file name and removes the exact listeners', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    const release = webHostInputDropFile.subscribe(createWebInputTargetHandle(element), listener);
+    const release = webHostInputDropFile.subscribe(createWebHostTarget(element), listener);
     const event = new Event('drop', { cancelable: true });
     Object.defineProperty(event, 'dataTransfer', { value: { files: [{ name: 'a.txt' }, { name: 'b.png' }] } });
 
@@ -140,7 +140,7 @@ describe('webHostInputFocus', () => {
     const element = document.createElement('div');
     const onFocus = vi.fn();
     const onBlur = vi.fn();
-    const release = webHostInputFocus.subscribe(createWebInputTargetHandle(element), onFocus, onBlur);
+    const release = webHostInputFocus.subscribe(createWebHostTarget(element), onFocus, onBlur);
 
     element.dispatchEvent(new Event('focus'));
     element.dispatchEvent(new Event('blur'));
@@ -155,7 +155,7 @@ describe('webHostInputFocus', () => {
 
 describe('webHostInputPointerLock', () => {
   it('does not pin the Web provider when the target is unknown', async () => {
-    const target = createWebInputTargetHandle(document.createElement('div'));
+    const target = createWebHostTarget(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
     const fallbackBackend = (() => {
       const out = allocateEntity<any>();
@@ -166,7 +166,7 @@ describe('webHostInputPointerLock', () => {
     const fallbackHost: { readonly input: { readonly pointerLock: HostInputPointerLockCapability } } = {
       input: { pointerLock: fallbackBackend },
     };
-    resetWebInputTargetBackendForTest();
+    resetWebHostTargetBackendForTest();
 
     await expect(lockApplicationPointer(webHost.input.pointerLock, target)).resolves.toEqual({
       reason: 'target-not-found',
@@ -180,7 +180,7 @@ describe('webHostInputPointerLock', () => {
     const element = document.createElement('div');
     Object.defineProperty(element, 'requestPointerLock', { configurable: true, value: undefined });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'api-unavailable',
     });
   });
@@ -209,7 +209,7 @@ describe('webHostInputPointerLock', () => {
           : () => Promise.reject(error),
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({ reason });
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({ reason });
   });
 
   it('observes a legacy request error and removes both exact listeners', async () => {
@@ -221,7 +221,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockerror')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
 
@@ -248,7 +248,7 @@ describe('webHostInputPointerLock', () => {
       },
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -267,7 +267,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -280,7 +280,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
   });
@@ -372,7 +372,7 @@ describe('webHostInputPointerLock', () => {
       value: () => thenable,
     });
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -382,7 +382,7 @@ describe('webHostInputPointerLock', () => {
     const request = vi.fn().mockResolvedValue(undefined);
     element.requestPointerLock = request;
 
-    await expect(webHostInputPointerLock.request(createWebInputTargetHandle(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -390,18 +390,30 @@ describe('webHostInputPointerLock', () => {
   });
 
   it('reports an unknown provider-bound target', async () => {
-    const target = createWebInputTargetHandle(document.createElement('div'));
-    resetWebInputTargetBackendForTest();
+    const target = createWebHostTarget(document.createElement('div'));
+    resetWebHostTargetBackendForTest();
 
     await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
   });
 });
 
-describe('webHostInputTarget', () => {
+describe('webHostSurface', () => {
+  it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
+    const canvas = document.createElement('canvas');
+    const div = document.createElement('div');
+
+    webHostSurface.resize(createWebHostTarget(canvas), 640, 480);
+    webHostSurface.resize(createWebHostTarget(div), 1, 1);
+
+    expect(canvas.width).toBe(640);
+    expect(canvas.height).toBe(480);
+  });
+});
+describe('webHostTarget', () => {
   it('prepares the bound element without exposing DOM through the neutral contract', () => {
     const element = document.createElement('div');
 
-    webHostInputTarget.prepare(createWebInputTargetHandle(element));
+    webHostTarget.prepare(createWebHostTarget(element));
 
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
@@ -415,16 +427,16 @@ describe('webHostInputTarget', () => {
     const canvas = document.createElement('canvas');
     const div = document.createElement('div');
 
-    webHostInputTarget.prepare(createWebInputTargetHandle(canvas));
-    webHostInputTarget.prepare(createWebInputTargetHandle(div));
+    webHostTarget.prepare(createWebHostTarget(canvas));
+    webHostTarget.prepare(createWebHostTarget(div));
 
     expect(canvas.style.transform).toBe('translateZ(0)');
     expect(div.style.transform).toBe('');
   });
 
   it('is an Entity provider value', () => {
-    expect(EntityRuntimeKey in webHostInputTarget).toBe(true);
-    expect(webHost.input.target).toBe(webHostInputTarget);
+    expect(EntityRuntimeKey in webHostTarget).toBe(true);
+    expect(webHost.input.target).toBe(webHostTarget);
   });
 
   it('keeps command and event slots separate while every provider remains an Entity', () => {
@@ -437,17 +449,5 @@ describe('webHostInputTarget', () => {
     expect(webHost.gl.context).toBe(webHostGl);
     expect(webHost.surface.resize).toBe(webHostSurface);
     expect(new Set(providers).size).toBe(5);
-  });
-});
-describe('webHostSurface', () => {
-  it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
-    const canvas = document.createElement('canvas');
-    const div = document.createElement('div');
-
-    webHostSurface.resize(createWebInputTargetHandle(canvas), 640, 480);
-    webHostSurface.resize(createWebInputTargetHandle(div), 1, 1);
-
-    expect(canvas.width).toBe(640);
-    expect(canvas.height).toBe(480);
   });
 });
