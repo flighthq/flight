@@ -50,14 +50,14 @@ declareExpectedImageDescription(
 // swapchain headless) so the verifier reads the frame back from the GPU.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

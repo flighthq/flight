@@ -56,12 +56,12 @@ declareExpectedImageDescription(
 // out-of-cone side — the signature of the cone-limited punctual shading wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,

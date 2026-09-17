@@ -36,11 +36,11 @@ declareExpectedImageDescription(
 // encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 export const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -127,7 +127,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = ATLAS_SIZE;
   canvas.height = ATLAS_SIZE;
-  const context = canvas.native.getContext('2d')!;
+  const context = canvas.getContext('2d')!;
   context.fillStyle = 'rgba(224,96,48,0.5)';
   context.fillRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
   return canvas;
