@@ -124,6 +124,7 @@ export * from '@flighthq/statechart';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
 export * from '@flighthq/statusbar';
+export * from '@flighthq/surface';
 export * from '@flighthq/preferences';
 export * from '@flighthq/swf';
 export * from '@flighthq/bitmap';

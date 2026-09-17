@@ -391,6 +391,9 @@
       "path": "../statusbar"
     },
     {
+      "path": "../surface"
+    },
+    {
       "path": "../swf"
     },
     {

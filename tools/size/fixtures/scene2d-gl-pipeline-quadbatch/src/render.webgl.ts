@@ -2,7 +2,7 @@ import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceF
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -15,11 +15,12 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlQuadBatchRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { createSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
 import { QuadBatchKind, RegistryEntryState } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

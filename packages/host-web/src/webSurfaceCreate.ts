@@ -8,15 +8,13 @@ export function createWebSurfaceCreateCapability(): HostSurfaceCreateCapability 
 }
 
 export function initializeWebSurfaceCreateCapability(out: EntityConstruction<HostSurfaceCreateCapability>): void {
-  out.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
+  out.createSurface = (width: number, height: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.width = width;
+    canvas.height = height;
     return canvas;
   };
-  out.destroyRenderSurface = (surface: HTMLCanvasElement): void => {
+  out.destroySurface = (surface: HTMLCanvasElement): void => {
     surface.width = 0;
     surface.height = 0;
   };

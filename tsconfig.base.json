@@ -70,6 +70,8 @@
       "@flighthq/device/*": ["./packages/device/src/*"],
       "@flighthq/statusbar": ["./packages/statusbar/src/index.ts"],
       "@flighthq/statusbar/*": ["./packages/statusbar/src/*"],
+      "@flighthq/surface": ["./packages/surface/src/index.ts"],
+      "@flighthq/surface/*": ["./packages/surface/src/*"],
       "@flighthq/haptics": ["./packages/haptics/src/index.ts"],
       "@flighthq/haptics/*": ["./packages/haptics/src/*"],
       "@flighthq/geolocation": ["./packages/geolocation/src/index.ts"],

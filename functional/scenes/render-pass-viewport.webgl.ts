@@ -7,7 +7,7 @@ import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, createViewport } from '@flighthq/node';
-import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
+import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginGlRenderPass,
   createGlProgram,
@@ -23,6 +23,7 @@ import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
+import { createSurface } from '@flighthq/surface';
 import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -50,7 +51,9 @@ export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, scale);
+const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 const state = createGlRenderState(
   createWebGlContext(canvas, {

@@ -23,7 +23,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -50,7 +50,9 @@ declareExpectedImageDescription(
 // vignette. The pipeline ping-pongs between offscreen targets so each scene2d reads the previous
 // scene2d's output, proving multi-scene2d ordering. HDR (rgba16f) keeps the bright pass for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

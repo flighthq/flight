@@ -4,7 +4,7 @@ import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
-import { createRenderSurface, prepareScene3DRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -17,8 +17,9 @@ import {
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { createSurface } from '@flighthq/surface';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

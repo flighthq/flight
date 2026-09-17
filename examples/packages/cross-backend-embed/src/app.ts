@@ -26,7 +26,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 
 import { render } from './render';
@@ -38,7 +38,7 @@ const INSTANCE_COUNT = 24;
 
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
-const producerCanvas = createRenderSurface(webSurfaceCreateCapability, PRODUCER_WIDTH, PRODUCER_HEIGHT);
+const producerCanvas = createSurface(webSurfaceCreateCapability, PRODUCER_WIDTH, PRODUCER_HEIGHT);
 const producerState = createGlRenderState(
   createWebGlContext(producerCanvas, {
     contextAttributes: { alpha: false, preserveDrawingBuffer: true },

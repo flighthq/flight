@@ -22,6 +22,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/requirements',
     '@flighthq/signals',
     '@flighthq/spatial',
+    '@flighthq/surface',
     '@flighthq/types',
     '@flighthq/xml',
   ],

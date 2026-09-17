@@ -18,7 +18,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -32,7 +32,9 @@ declareExpectedImageDescription(
 // offscreen multisampled target that resolves to the canvas. With no effect stages, this isolates
 // MSAA alone, so the rotated shape's edges should be smooth (the jaggies that started this work).
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

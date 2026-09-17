@@ -25,7 +25,7 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   ShapeKind,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -48,7 +48,9 @@ declareExpectedImageDescription(
     'each other.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

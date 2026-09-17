@@ -21,7 +21,7 @@ import {
   getBitmapPixelLuminance,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -44,7 +44,9 @@ declareExpectedImageDescription(
 // screen-left (shadowed) point and asserts the lit side is clearly brighter — the signature of real
 // per-pixel punctual shading, absent before point lights were wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

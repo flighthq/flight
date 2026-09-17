@@ -12,4 +12,5 @@ export * from '@flighthq/registry';
 export * from '@flighthq/registry-catalog';
 export * from '@flighthq/registry-codegen';
 export * from '@flighthq/signals';
+export * from '@flighthq/surface';
 export * from '@flighthq/types';

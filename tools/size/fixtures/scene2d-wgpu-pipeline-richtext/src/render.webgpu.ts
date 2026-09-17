@@ -1,7 +1,7 @@
 import { webSurfaceCreateCapability, webRaster2DSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
+import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -14,10 +14,11 @@ import {
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuRichTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { createSurface } from '@flighthq/surface';
 import { createRichText } from '@flighthq/text';
 import { RichTextKind } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 if (canvas === null) throw new Error('The WebGPU RichText size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

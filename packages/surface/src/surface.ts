@@ -1,21 +1,20 @@
 import type { HostSurfaceCreateCapability } from '@flighthq/types/contract';
 
-export function createRenderSurface(
+export function createSurface(
   creator: Readonly<HostSurfaceCreateCapability>,
   width: number,
   height: number,
-  pixelRatio = 1,
 ): HTMLCanvasElement {
-  const surface = creator.createRenderSurface(width, height, pixelRatio);
+  const surface = creator.createSurface(width, height);
   _surfaceCreators.set(surface, creator);
   return surface;
 }
 
-export function destroyRenderSurface(surface: HTMLCanvasElement): void {
+export function destroySurface(surface: HTMLCanvasElement): void {
   const creator = _surfaceCreators.get(surface);
   if (creator === undefined) return;
   _surfaceCreators.delete(surface);
-  creator.destroyRenderSurface(surface);
+  creator.destroySurface(surface);
 }
 
 const _surfaceCreators = new WeakMap<HTMLCanvasElement, Readonly<HostSurfaceCreateCapability>>();

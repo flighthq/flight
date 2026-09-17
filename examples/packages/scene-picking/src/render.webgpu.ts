@@ -13,14 +13,16 @@ import {
   endWgpuRenderPass,
   prepareScene3DRender,
   scene3DWgpuPipeline,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-export const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
+export const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 const webWgpuHost = createWebWgpuHostBackend();
 const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);

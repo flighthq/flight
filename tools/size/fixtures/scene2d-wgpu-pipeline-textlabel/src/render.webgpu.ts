@@ -1,7 +1,7 @@
 import { webSurfaceCreateCapability, webRaster2DSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
+import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -15,10 +15,11 @@ import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuTextLabelRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
+import { createSurface } from '@flighthq/surface';
 import { createTextLabel } from '@flighthq/text';
 import { StandardMaterialKind, TextLabelKind } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 if (canvas === null) throw new Error('The WebGPU TextLabel size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

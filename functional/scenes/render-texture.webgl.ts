@@ -24,7 +24,7 @@ import {
   prepareScene3DRender,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -42,7 +42,9 @@ declareExpectedImageDescription(
 const WIDTH = 800;
 const HEIGHT = 600;
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, WIDTH, HEIGHT, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, WIDTH * pixelRatio, HEIGHT * pixelRatio);
+canvas.style.width = `${WIDTH}px`;
+canvas.style.height = `${HEIGHT}px`;
 document.body.appendChild(canvas);
 export const state = createGlRenderState(
   createWebGlContext(canvas, {

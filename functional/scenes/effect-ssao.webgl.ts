@@ -20,7 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -38,7 +38,9 @@ declareExpectedImageDescription(
 // ssao is depth-driven [DEPTH]. With no sampleable depth buffer in this test, the Gl recipe is a
 // color-only fallback (no occlusion darkening), passing the lit scene through.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

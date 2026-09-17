@@ -3,7 +3,7 @@ import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -16,11 +16,12 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlBitmapTextRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { createSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

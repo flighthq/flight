@@ -1,6 +1,6 @@
 import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -12,11 +12,12 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlScene2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { createSurface } from '@flighthq/surface';
 import { DisplayObjectKind, RegistryEntryState } from '@flighthq/types';
 
 // DisplayObject is a genuine non-visible container. This size-only control deliberately has no
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.
-const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

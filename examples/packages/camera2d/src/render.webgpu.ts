@@ -26,7 +26,7 @@ import {
   scene3DWgpuPipeline,
   ShapeKind,
   TextLabelKind,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 
 export const CANVAS_WIDTH = 800;
@@ -34,7 +34,9 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-export const canvas = createRenderSurface(webSurfaceCreateCapability, CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
+export const canvas = createSurface(webSurfaceCreateCapability, CANVAS_WIDTH * pixelRatio, CANVAS_HEIGHT * pixelRatio);
+canvas.style.width = `${CANVAS_WIDTH}px`;
+canvas.style.height = `${CANVAS_HEIGHT}px`;
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();
