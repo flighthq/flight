@@ -7,8 +7,8 @@ import type {
   ApplicationWindow,
   EntityConstruction,
   HostApplicationExitCapability,
+  HostLifecycleCapability,
   HostLoopCapability,
-  HostApplicationVisibilityCapability,
 } from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
@@ -188,7 +188,7 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
 
 export function startApplicationLoop(
   hostLoop: Readonly<HostLoopCapability>,
-  hostApplicationVisibility: Readonly<HostApplicationVisibilityCapability>,
+  hostLifecycle: Readonly<HostLifecycleCapability>,
   app: Application,
   options: Readonly<ApplicationLoopOptions> = {},
 ): void {
@@ -198,7 +198,7 @@ export function startApplicationLoop(
   observers.delete(kPaused);
 
   const backend = hostLoop;
-  const visibility = hostApplicationVisibility;
+  const lifecycle = hostLifecycle;
   const maxDeltaTime = options.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
   const targetFrameRate = options.targetFrameRate ?? 0;
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;
@@ -227,7 +227,8 @@ export function startApplicationLoop(
     loopState.lastTime = time;
 
     // Determine the effective frame interval for this tick (background throttle or normal cap).
-    const activeInterval = app.isRunning && bgInterval > 0 && !visibility.isVisible() ? bgInterval : frameInterval;
+    const activeInterval =
+      app.isRunning && bgInterval > 0 && lifecycle.getState() === 'background' ? bgInterval : frameInterval;
 
     // Frame-rate cap: skip this tick if we haven't reached the target interval. The first tick
     // always emits so the app receives an immediate first frame regardless of targetFrameRate.

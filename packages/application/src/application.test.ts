@@ -1,8 +1,9 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
+  AppLifecycleState,
   HostApplicationExitCapability,
-  HostApplicationVisibilityCapability,
+  HostLifecycleCapability,
   HostLoopCapability,
 } from '@flighthq/types/contract';
 
@@ -53,23 +54,26 @@ function makeManualLoopBackend(): HostLoopCapability & { tick: (time: number) =>
   };
 }
 
-type RecordingApplicationVisibilityBackend = HostApplicationVisibilityCapability & { visible: boolean };
+type RecordingLifecycleBackend = HostLifecycleCapability & { state: AppLifecycleState };
 
 type LoopTestHost = {
   readonly app: {
     readonly loop: HostLoopCapability;
-    readonly visibility: RecordingApplicationVisibilityBackend;
+    readonly lifecycle: RecordingLifecycleBackend;
   };
 };
 
 function createLoopTestHost(loop: HostLoopCapability, visible = true): LoopTestHost {
-  const visibility: RecordingApplicationVisibilityBackend = {
-    visible,
-    isVisible() {
-      return visibility.visible;
+  const impl = {
+    state: (visible ? 'active' : 'background') as AppLifecycleState,
+    getState(): AppLifecycleState {
+      return impl.state;
+    },
+    subscribe() {
+      return () => {};
     },
   };
-  return { app: { loop, visibility } };
+  return { app: { loop, lifecycle: impl as unknown as RecordingLifecycleBackend } };
 }
 
 type RecordingApplicationExitBackend = HostApplicationExitCapability & {
@@ -142,7 +146,7 @@ describe('attachApplicationLifecycle', () => {
     const host = createLoopTestHost(backend);
     const app = createApplication();
     const win = createApplicationWindow();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     attachApplicationLifecycle(app, win);
 
     // Simulate window deactivation by emitting its signal directly.
@@ -156,7 +160,7 @@ describe('attachApplicationLifecycle', () => {
     const host = createLoopTestHost(backend);
     const app = createApplication();
     const win = createApplicationWindow();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     attachApplicationLifecycle(app, win);
 
     emitSignal(win.onDeactivate);
@@ -237,7 +241,7 @@ describe('disposeApplication', () => {
       exitCalled = true;
     });
 
-    startApplicationLoop(loopHost.app.loop, loopHost.app.visibility, app);
+    startApplicationLoop(loopHost.app.loop, loopHost.app.lifecycle, app);
     attachApplicationExit(exitHost.app.exit, app);
     expect(app.isRunning).toBe(true);
     disposeApplication(app);
@@ -292,7 +296,7 @@ describe('getApplicationFrameRate', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     // Simulate 60fps ticks (~16.67ms each).
     for (let i = 0; i <= 60; i++) {
       backend.tick(i * 16.67);
@@ -363,7 +367,7 @@ describe('isApplicationRunning', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     expect(isApplicationRunning(app)).toBe(true);
     stopApplicationLoop(app);
   });
@@ -372,7 +376,7 @@ describe('isApplicationRunning', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     stopApplicationLoop(app);
     expect(isApplicationRunning(app)).toBe(false);
   });
@@ -386,7 +390,7 @@ describe('pauseApplicationLoop', () => {
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
     pauseApplicationLoop(app);
@@ -400,7 +404,7 @@ describe('pauseApplicationLoop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     pauseApplicationLoop(app);
     pauseApplicationLoop(app); // second call should not throw
     expect(app.isRunning).toBe(false);
@@ -433,7 +437,7 @@ describe('resumeApplicationLoop', () => {
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
     pauseApplicationLoop(app);
@@ -450,7 +454,7 @@ describe('resumeApplicationLoop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     resumeApplicationLoop(app); // not paused, should not throw
     expect(app.isRunning).toBe(true);
     stopApplicationLoop(app);
@@ -472,7 +476,7 @@ describe('startApplicationLoop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     expect(app.isRunning).toBe(true);
     stopApplicationLoop(app);
   });
@@ -481,9 +485,9 @@ describe('startApplicationLoop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     const initialCancelCount = backend.cancelCount;
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     expect(backend.cancelCount).toBeGreaterThan(initialCancelCount);
     stopApplicationLoop(app);
   });
@@ -497,7 +501,7 @@ describe('startApplicationLoop', () => {
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(100);
 
@@ -513,7 +517,7 @@ describe('startApplicationLoop', () => {
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { maxDeltaTime: 100 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
     backend.tick(0);
     backend.tick(5000); // 5 second gap clamped to 100ms
 
@@ -528,7 +532,7 @@ describe('startApplicationLoop', () => {
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(10000); // 10 second gap clamped to 250ms
 
@@ -541,7 +545,7 @@ describe('startApplicationLoop', () => {
     const host = createLoopTestHost(backend);
     const app = createApplication();
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
     backend.tick(32);
@@ -559,7 +563,7 @@ describe('startApplicationLoop', () => {
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { targetFrameRate: 30 }); // 33.33ms interval
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { targetFrameRate: 30 }); // 33.33ms interval
     backend.tick(0); // first tick: lastTime=-1 so delta=0, accumulated=0 → emits
     backend.tick(16); // 16ms < 33.33ms → should skip
     backend.tick(34); // 34ms accumulated ≥ 33.33ms → should emit
@@ -570,19 +574,19 @@ describe('startApplicationLoop', () => {
     stopApplicationLoop(app);
   });
 
-  it('pulls visibility from the distinct host query when choosing the frame interval', () => {
+  it('pulls lifecycle state from the host when choosing the frame interval', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend, false);
     const app = createApplication();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { backgroundFrameRate: 1 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { backgroundFrameRate: 1 });
     backend.tick(0);
     backend.tick(500);
     expect(renders).toBe(1);
 
-    host.app.visibility.visible = true;
+    host.app.lifecycle.state = 'active';
     backend.tick(516);
     expect(renders).toBe(2);
     stopApplicationLoop(app);
@@ -598,7 +602,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (dt) => fixedDeltas.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { fixedTimeStep: 16 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(48); // 48ms → 3 fixed steps of 16ms
 
@@ -615,7 +619,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
     let fixedCount = 0;
     connectSignal(app.onFixedUpdate!, () => fixedCount++);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
     backend.tick(0);
     backend.tick(10000); // huge gap
 
@@ -629,7 +633,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { fixedTimeStep: 16 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(24); // 24ms = 1 full step (16ms) + 8ms remainder → alpha = 8/16 = 0.5
 
@@ -654,7 +658,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
     connectSignal(app.onUpdate, () => updates++);
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { fixedTimeStep: 16 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(32);
 
@@ -679,7 +683,7 @@ describe('startApplicationLoop (tick-error routing)', () => {
       throw boom;
     });
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
 
     expect(errors).toContain(boom);
@@ -752,7 +756,7 @@ describe('stepApplicationLoop', () => {
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { fixedTimeStep: 8 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 8 });
     stepApplicationLoop(app, 12, { fixedTimeStep: 12 });
 
     expect(fixedDeltas).toEqual([12]);
@@ -794,7 +798,7 @@ describe('stepApplicationLoop', () => {
     const host = createLoopTestHost(backend);
     const app = createApplication();
 
-    startApplicationLoop(host.app.loop, host.app.visibility, app, { maxDeltaTime: 100 });
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
     stepApplicationLoop(app, 9999, { maxDeltaTime: 40 });
 
     expect(app.deltaTime).toBe(40);
@@ -862,7 +866,7 @@ describe('stopApplicationLoop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     stopApplicationLoop(app);
     expect(app.isRunning).toBe(false);
   });
@@ -873,7 +877,7 @@ describe('stopApplicationLoop', () => {
     const app = createApplication();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
-    startApplicationLoop(host.app.loop, host.app.visibility, app);
+    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     stopApplicationLoop(app);
     // After stop, calling tick should not emit even if the backend fires.

@@ -29,7 +29,6 @@ export type ElectronMacosAppCapabilities = ElectronCommonAppCapabilities &
       | 'activationPolicy'
       | 'badge'
       | 'dock'
-      | 'hiddenQuery'
       | 'hide'
       | 'loginItem'
       | 'openFile'

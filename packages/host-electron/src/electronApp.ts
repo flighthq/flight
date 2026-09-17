@@ -24,7 +24,6 @@ import type {
   HostAppSingleInstanceCapability,
   HostAppUserModelIdCapability,
   HostAppVersionCapability,
-  HostAppVisibilityQueryCapability,
   DesktopOsProfile,
   ElectronApi,
   ElectronAppCapabilitiesFor,
@@ -91,7 +90,6 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
       electronHostAppBadge(electron),
       electronHostAppDock(electron),
       electronHostAppHide(electron),
-      electronHostAppHiddenQuery(electron),
       electronHostAppLoginItem(electron),
       electronHostAppOpenFile(electron),
       electronHostAppRecentDocuments(electron),
@@ -141,10 +139,6 @@ export function electronHostAppDock(electron: ElectronApi): HostAppDockCapabilit
 
 export function electronHostAppFocus(electron: ElectronApi): HostAppFocusCapability {
   return finishProvider((out) => populateElectronHostAppFocus(out, electron.app));
-}
-
-export function electronHostAppHiddenQuery(electron: ElectronApi): HostAppVisibilityQueryCapability {
-  return finishProvider((out) => populateElectronHostAppHiddenQuery(out, electron.app));
 }
 
 export function electronHostAppHide(electron: ElectronApi): HostAppHideCapability {
@@ -295,13 +289,6 @@ export function populateElectronHostAppFocus(
   out.focus = () => app.focus();
 }
 
-export function populateElectronHostAppHiddenQuery(
-  out: EntityConstruction<HostAppVisibilityQueryCapability>,
-  app: ElectronApi['app'],
-): void {
-  out.isAppHidden = () => app.isHidden();
-}
-
 export function populateElectronHostAppHide(
   out: EntityConstruction<HostAppHideCapability>,
   app: ElectronApi['app'],
@@ -370,7 +357,6 @@ export function populateElectronHostAppMacos(
   badge: HostAppBadgeCapability,
   dock: HostAppDockCapability,
   hide: HostAppHideCapability,
-  hiddenQuery: HostAppVisibilityQueryCapability,
   loginItem: HostAppLoginItemCapability,
   openFile: HostAppOpenFileCapability,
   recentDocuments: HostAppRecentDocumentsCapability,
@@ -383,7 +369,6 @@ export function populateElectronHostAppMacos(
   out.dock = dock;
   out.focus = common.focus;
   out.hide = hide;
-  out.hiddenQuery = hiddenQuery;
   out.locale = common.locale;
   out.loginItem = loginItem;
   out.name = common.name;

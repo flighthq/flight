@@ -126,7 +126,7 @@ export {
   webHostSoftKeyboardVisibility,
 } from './webKeyboard';
 export { webHostSoftKeyboard } from './webSoftKeyboardHost';
-export { webHostApplicationVisibility, webHostLoop } from './webLoop';
+export { webHostLoop } from './webLoop';
 export {
   createWebMediaSessionActionBackend,
   createWebMediaSessionBackend,

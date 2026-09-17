@@ -23,10 +23,8 @@ import type {
   HostAppUserModelIdCapability,
   HostAppVersionCapability,
   HostAppShowCapability,
-  HostAppVisibilityQueryCapability,
 } from './App';
 import type { HostApplicationExitCapability } from './ApplicationExitBackend';
-import type { HostApplicationVisibilityCapability } from './ApplicationVisibilityBackend';
 import type {
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
@@ -178,9 +176,9 @@ import type {
 } from './StatusBar';
 import type {
   HostPreferencesCapability,
-  HostStorageChangeCapability,
-  HostStoragePersistenceQueryCapability,
-  HostStoragePersistenceRequestCapability,
+  HostPreferencesChangeCapability,
+  HostPreferencesPersistenceQueryCapability,
+  HostPreferencesPersistenceRequestCapability,
 } from './Storage';
 import type { HostTextSegmenterCapability } from './TextSegment';
 import type { HostTextShaperCapability } from './TextShaper';
@@ -274,7 +272,6 @@ export interface HostAppCapabilities {
   readonly nameWrite?: HostAppNameWriteCapability;
   readonly openFile?: HostAppOpenFileCapability;
   readonly path?: HostAppPathCapability;
-  readonly hiddenQuery?: HostAppVisibilityQueryCapability;
   readonly quit?: HostAppQuitCapability;
   readonly quitRequest?: HostAppQuitRequestCapability;
   readonly ready?: HostAppReadyCapability;
@@ -285,7 +282,6 @@ export interface HostAppCapabilities {
   readonly singleInstance?: HostAppSingleInstanceCapability;
   readonly userModelId?: HostAppUserModelIdCapability;
   readonly version?: HostAppVersionCapability;
-  readonly visibility?: HostApplicationVisibilityCapability;
 }
 
 export interface HostAudioCapabilities {
@@ -431,10 +427,10 @@ export interface HostPowerCapabilities {
 }
 
 export interface HostPreferencesCapabilities {
-  readonly change?: HostStorageChangeCapability;
+  readonly change?: HostPreferencesChangeCapability;
   readonly local?: HostPreferencesCapability;
-  readonly persistenceQuery?: HostStoragePersistenceQueryCapability;
-  readonly persistenceRequest?: HostStoragePersistenceRequestCapability;
+  readonly persistenceQuery?: HostPreferencesPersistenceQueryCapability;
+  readonly persistenceRequest?: HostPreferencesPersistenceRequestCapability;
 }
 
 export interface HostProtocolCapabilities {

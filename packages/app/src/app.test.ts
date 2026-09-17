@@ -104,11 +104,6 @@ function createFixture() {
         out.focus = () => calls.push('focus');
         return finishEntity(out);
       })(),
-      hiddenQuery: (() => {
-        const out = allocateEntity<any>();
-        out.isAppHidden = () => true;
-        return finishEntity(out);
-      })(),
       hide: (() => {
         const out = allocateEntity<any>();
         out.hideApp = () => calls.push('hide');
@@ -184,6 +179,14 @@ function createFixture() {
       version: (() => {
         const out = allocateEntity<any>();
         out.getVersion = () => '1.2.3';
+        return finishEntity(out);
+      })(),
+    },
+    lifecycle: {
+      state: (() => {
+        const out = allocateEntity<any>();
+        out.getState = () => 'background';
+        out.subscribe = () => () => {};
         return finishEntity(out);
       })(),
     },
@@ -430,7 +433,7 @@ describe('initializeApp', () => {
   });
 });
 describe('isAppHidden', () => {
-  it('returns the provider fact', () => expect(isAppHidden(createFixture().host.app.hiddenQuery)).toBe(true));
+  it('returns the provider fact', () => expect(isAppHidden(createFixture().host.lifecycle.state)).toBe(true));
 });
 describe('quitApp', () => {
   it('delegates', () => {
