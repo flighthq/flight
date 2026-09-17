@@ -31,14 +31,14 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createSurface(webSurfaceCreateCapability, 600 * pixelRatio, 400 * pixelRatio);
-canvas.style.width = '600px';
-canvas.style.height = '400px';
-document.body.appendChild(canvas);
+canvas.native.style.width = '600px';
+canvas.native.style.height = '400px';
+document.body.appendChild(canvas.native);
 
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

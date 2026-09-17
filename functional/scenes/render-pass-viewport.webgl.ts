@@ -52,11 +52,11 @@ export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
 const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
-canvas.style.width = `${width}px`;
-canvas.style.height = `${height}px`;
-document.body.appendChild(canvas);
+canvas.native.style.width = `${width}px`;
+canvas.native.style.height = `${height}px`;
+document.body.appendChild(canvas.native);
 const state = createGlRenderState(
-  createWebGlContext(canvas, {
+  createWebGlContext(canvas.native, {
     antialias: false,
     contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   }),

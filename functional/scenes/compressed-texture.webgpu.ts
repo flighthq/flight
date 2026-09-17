@@ -62,13 +62,13 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, WIDTH * pixelRatio, HEIGHT * pixelRatio);
-canvas.style.width = `${WIDTH}px`;
-canvas.style.height = `${HEIGHT}px`;
-document.body.appendChild(canvas);
+canvas.native.style.width = `${WIDTH}px`;
+canvas.native.style.height = `${HEIGHT}px`;
+document.body.appendChild(canvas.native);
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

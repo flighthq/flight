@@ -43,14 +43,14 @@ declareExpectedImageDescription(
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+canvas.native.style.width = '800px';
+canvas.native.style.height = '600px';
+document.body.appendChild(canvas.native);
 
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
@@ -153,7 +153,7 @@ function createPositiveTangentNormalMap(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 2;
   canvas.height = 2;
-  const context = canvas.getContext('2d')!;
+  const context = canvas.native.getContext('2d')!;
   context.fillStyle = 'rgb(255, 128, 255)';
   context.fillRect(0, 0, 2, 2);
   return canvas;
