@@ -1,6 +1,6 @@
 import type { Entity } from './Entity';
 import type { GlContext, GlContextOptions } from './GlContext';
-import type { InputTargetHandle } from './InputTargetBackend';
+import type { InputTargetHandle } from './HostInputTarget';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider
