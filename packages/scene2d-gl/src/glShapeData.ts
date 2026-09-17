@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
   GlRenderState,
   GlShapeRendererData,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   Renderable,
   RendererData,
 } from '@flighthq/types/contract';
@@ -16,12 +16,12 @@ import type {
 // bumps the resource's version (invalidateImageResource), which the batch's version-aware cache uses
 // to re-upload.
 export function acquireGlShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: GlShapeRendererData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;
@@ -45,7 +45,7 @@ export function destroyGlShapeData(state: GlRenderState, data: RendererData): vo
     state.gl.deleteTexture(entry.texture);
     runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function getGlShapeData(data: RendererData): GlShapeRendererData {

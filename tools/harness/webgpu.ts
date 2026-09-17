@@ -2,7 +2,7 @@ import {
   webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webHostImage,
-  webRaster2DSurfaceCreator,
+  webImageSurfaceCreator,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -80,7 +80,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
     format: acquisition.format,
     pixelRatio,
-    raster2DSurfaceProvider: webRaster2DSurfaceCreator,
+    imageSurfaceProvider: webImageSurfaceCreator,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
   // The background is what the frame is cleared to — a per-pass value the render loop below passes in,

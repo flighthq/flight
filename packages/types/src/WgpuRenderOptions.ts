@@ -1,4 +1,4 @@
-import type { Raster2DSurfaceCreator } from './Raster2DSurface';
+import type { ImageSurfaceCreator } from './ImageSurface';
 import type { Scene3DGraphSyncPolicy } from './RenderState';
 
 export interface WgpuRenderOptions {
@@ -8,7 +8,7 @@ export interface WgpuRenderOptions {
   format?: GPUTextureFormat;
   imageSmoothingEnabled?: boolean;
   pixelRatio?: number;
-  raster2DSurfaceProvider?: Readonly<Raster2DSurfaceCreator>;
+  imageSurfaceProvider?: Readonly<ImageSurfaceCreator>;
   roundPixels?: boolean;
   sceneGraphSyncPolicy?: Scene3DGraphSyncPolicy;
 }

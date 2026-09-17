@@ -7,7 +7,7 @@ import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { Raster2DSurface, RenderProxy2D } from '@flighthq/types/contract';
+import type { ImageSurface, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
 
 beforeEach(() => {
@@ -41,7 +41,7 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+function createTestImageSurface(width: number, height: number): ImageSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -65,11 +65,11 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
-  state.raster2DSurfaceProvider = {
+function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
+  state.imageSurfaceProvider = {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface: createTestRaster2DSurface,
-    destroyRaster2DSurface() {},
+    createImageSurface: createTestImageSurface,
+    destroyImageSurface() {},
   };
 }
 

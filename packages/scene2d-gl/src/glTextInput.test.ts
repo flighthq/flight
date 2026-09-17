@@ -5,7 +5,7 @@ import {
 } from '@flighthq/image/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
-import type { Raster2DSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
+import type { ImageSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createGlRichTextData, drawGlRichText } from './glRichText';
@@ -34,7 +34,7 @@ function makeFocusedInputProxy(state: Parameters<typeof createGlRichTextData>[0]
   } as unknown as RenderProxy2D;
 }
 
-function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+function createTestImageSurface(width: number, height: number): ImageSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -65,10 +65,10 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused collapsed selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
-    state.raster2DSurfaceProvider = {
+    state.imageSurfaceProvider = {
       [EntityRuntimeKey]: undefined,
-      createRaster2DSurface: createTestRaster2DSurface,
-      destroyRaster2DSurface() {},
+      createImageSurface: createTestImageSurface,
+      destroyImageSurface() {},
     };
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 2, 2);
@@ -80,10 +80,10 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused expanded selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
-    state.raster2DSurfaceProvider = {
+    state.imageSurfaceProvider = {
       [EntityRuntimeKey]: undefined,
-      createRaster2DSurface: createTestRaster2DSurface,
-      destroyRaster2DSurface() {},
+      createImageSurface: createTestImageSurface,
+      destroyImageSurface() {},
     };
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 1, 4);

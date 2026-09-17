@@ -1,22 +1,22 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
+import type { EntityConstruction, ImageSurface, ImageSurfaceCreator } from '@flighthq/types/contract';
 
 import { createWebImageResourceFromCanvas } from './webImageResource';
 
-export function createWebRaster2DSurfaceCreator(): Raster2DSurfaceCreator {
-  const out = allocateEntity<Raster2DSurfaceCreator>();
-  initializeWebRaster2DSurfaceCreator(out);
+export function createWebImageSurfaceCreator(): ImageSurfaceCreator {
+  const out = allocateEntity<ImageSurfaceCreator>();
+  initializeWebImageSurfaceCreator(out);
   return finishEntity(out);
 }
 
-export function initializeWebRaster2DSurfaceCreator(out: EntityConstruction<Raster2DSurfaceCreator>): void {
-  out.createRaster2DSurface = (width, height) => {
+export function initializeWebImageSurfaceCreator(out: EntityConstruction<ImageSurfaceCreator>): void {
+  out.createImageSurface = (width, height) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
     if (context === null) return null;
-    const surface = allocateEntity<Raster2DSurface>();
+    const surface = allocateEntity<ImageSurface>();
     Object.defineProperty(surface, 'width', {
       get() {
         return canvas.width;
@@ -45,10 +45,10 @@ export function initializeWebRaster2DSurfaceCreator(out: EntityConstruction<Rast
     surface.image = createWebImageResourceFromCanvas(canvas);
     return finishEntity(surface);
   };
-  out.destroyRaster2DSurface = (surface) => {
+  out.destroyImageSurface = (surface) => {
     surface.width = 0;
     surface.height = 0;
   };
 }
 
-export const webRaster2DSurfaceCreator: Raster2DSurfaceCreator = createWebRaster2DSurfaceCreator();
+export const webImageSurfaceCreator: ImageSurfaceCreator = createWebImageSurfaceCreator();

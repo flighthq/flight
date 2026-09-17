@@ -4,7 +4,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -21,8 +21,8 @@ import type {
   EntityConstruction,
   GlRenderState,
   GlRichTextOverlay,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -38,7 +38,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface GlRichTextData extends RendererData {
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
@@ -58,7 +58,7 @@ export function destroyGlRichTextData(state: GlRenderState, data: RendererData):
     state.gl.deleteTexture(entry.texture);
     cache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawGlRichText(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -84,9 +84,9 @@ export function drawGlRichTextWithOverlay(
   const content = getRichTextContent(richTextRuntime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
-  if (renderProxy.rendererData === null || state.raster2DSurfaceProvider === null) return;
+  if (renderProxy.rendererData === null || state.imageSurfaceProvider === null) return;
   const richTextData = renderProxy.rendererData as GlRichTextData;
-  const surface = acquireGlRichTextRasterSurface(state.raster2DSurfaceProvider, richTextData);
+  const surface = acquireGlRichTextRasterSurface(state.imageSurfaceProvider, richTextData);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, surface.context);
@@ -233,11 +233,11 @@ function layoutRichText(
 }
 
 function acquireGlRichTextRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: GlRichTextData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

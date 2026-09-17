@@ -64,7 +64,7 @@ export function initializeRenderState(state: EntityConstruction<RenderState>, ob
   state.currentClipDepth = obj?.currentClipDepth ?? 0;
   state.displayObjectClipHooks = obj?.displayObjectClipHooks ?? null;
   state.pixelRatio = obj?.pixelRatio ?? 1;
-  state.raster2DSurfaceProvider = obj?.raster2DSurfaceProvider ?? null;
+  state.imageSurfaceProvider = obj?.imageSurfaceProvider ?? null;
   state.renderAlpha = obj?.renderAlpha ?? 1;
   state.renderBlendMode = obj?.renderBlendMode ?? BlendMode.Normal;
   state.renderTransform2D = obj?.renderTransform2D ?? null;

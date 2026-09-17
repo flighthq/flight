@@ -4,15 +4,15 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   EntityConstruction,
   GlContext,
   GlRenderState,
   MatrixLike,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -34,18 +34,18 @@ interface GlScale9ShapeData extends RendererData {
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
 }
 
 const _remappedCommands: ShapeCommandToken[] = [];
 
 export function acquireGlScale9ShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: GlScale9ShapeData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;
@@ -67,7 +67,7 @@ export function destroyGlScale9ShapeData(state: GlRenderState, data: RendererDat
     state.gl.deleteTexture(entry.texture);
     cache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -99,8 +99,8 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
-  if (state.raster2DSurfaceProvider === null) return;
-  const surface = acquireGlScale9ShapeRasterSurface(state.raster2DSurfaceProvider, shapeData);
+  if (state.imageSurfaceProvider === null) return;
+  const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider, shapeData);
   if (surface === null) return;
   // Sized in device pixels with the replay pre-scaled to match, exactly as glTextLabel and glRichText
   // treat their offscreen canvases. The quad below stays in local units and samples the whole texture,

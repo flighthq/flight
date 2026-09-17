@@ -4,15 +4,15 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   EntityConstruction,
   GlRenderState,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -36,7 +36,7 @@ import {
 interface GlTextLabelData extends RendererData {
   // Allocated on first draw so a node created before its host provider is enabled can recover. Once
   // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
   // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
@@ -67,7 +67,7 @@ function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void 
     state.gl.deleteTexture(entry.texture);
     runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -81,9 +81,9 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  if (state.raster2DSurfaceProvider === null) return;
+  if (state.imageSurfaceProvider === null) return;
   const textData = getGlTextLabelData(renderProxy.rendererData);
-  const surface = acquireGlTextLabelRasterSurface(state.raster2DSurfaceProvider, textData);
+  const surface = acquireGlTextLabelRasterSurface(state.imageSurfaceProvider, textData);
   if (surface === null) return;
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
@@ -188,11 +188,11 @@ export const defaultGlTextLabelRenderer: Scene2DRenderer = {
 };
 
 function acquireGlTextLabelRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: GlTextLabelData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

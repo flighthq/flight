@@ -3,14 +3,14 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -35,7 +35,7 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 interface WgpuTextLabelData extends RendererData {
   // Allocated on first draw so a node created before its host provider is enabled can recover. Once
   // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
   // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
@@ -68,7 +68,7 @@ function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): v
     entry.texture.destroy();
     runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -84,10 +84,10 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  if (state.raster2DSurfaceProvider === null) return;
+  if (state.imageSurfaceProvider === null) return;
   const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
   if (textData === null) return;
-  const surface = acquireWgpuTextLabelRasterSurface(state.raster2DSurfaceProvider, textData);
+  const surface = acquireWgpuTextLabelRasterSurface(state.imageSurfaceProvider, textData);
   if (surface === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
@@ -188,11 +188,11 @@ export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {
 };
 
 function acquireWgpuTextLabelRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: WgpuTextLabelData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

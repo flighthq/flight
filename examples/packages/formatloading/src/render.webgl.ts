@@ -2,7 +2,7 @@ import {
   createWebGlContext,
   webCanvasRenderSurfaceCreator,
   webHostImage,
-  webRaster2DSurfaceCreator,
+  webImageSurfaceCreator,
   webSurfaceCreateCapability,
 } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
@@ -45,7 +45,7 @@ export const state = createGlRenderState(
   {
     pixelRatio,
     sceneGraphSyncPolicy: 'requiresInvalidation',
-    raster2DSurfaceProvider: webRaster2DSurfaceCreator,
+    imageSurfaceProvider: webImageSurfaceCreator,
   },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
