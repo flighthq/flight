@@ -1,1 +1,1 @@
-export { createSurface, destroySurface, resizeSurface } from './contract';
+export { createSurface, destroySurface } from './contract';

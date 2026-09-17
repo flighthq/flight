@@ -20,7 +20,7 @@ import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const emptyRegistries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -28,9 +28,9 @@ const pipeline = createWgpuPipeline({
   renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, defaultWgpuSpriteRenderer),
 });
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
@@ -54,6 +54,6 @@ prepareScene2DRender(state, root);
 const pass = beginWgpuRenderPass(state, screen, screenClear);
 renderWgpuScene2D(pass, root);
 endWgpuRenderPass(pass);
-canvas.native.style.outline = '4px solid #ff4d67';
+canvas.style.outline = '4px solid #ff4d67';
 
 Reflect.set(globalThis, '__flightScene2dWgpuPipelineSprite', { registries, root });

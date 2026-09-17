@@ -19,12 +19,12 @@ import { createSurface } from '@flighthq/surface';
 
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, createWgpuPipeline(createEmptyWgpuRegistries()), {

@@ -24,7 +24,7 @@ import { UnlitMaterialKind } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -36,9 +36,9 @@ const pipeline = createWgpuPipeline({
   ),
 });
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });

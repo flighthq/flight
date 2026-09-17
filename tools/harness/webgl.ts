@@ -65,12 +65,12 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const pixelRatio = window.devicePixelRatio || 1;
 
   const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
-  canvas.native.style.width = `${width}px`;
-  canvas.native.style.height = `${height}px`;
-  document.body.appendChild(canvas.native);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  document.body.appendChild(canvas);
 
   const state = createGlRenderState(
-    createWebGlContext(canvas.native, {
+    createWebGlContext(canvas, {
       contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true, ...options.contextAttributes },
     }),
     scene3DGlPipeline,

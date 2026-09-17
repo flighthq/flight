@@ -16,11 +16,11 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
 export const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
-canvas.native.style.width = `${width}px`;
-canvas.native.style.height = `${height}px`;
-document.body.appendChild(canvas.native);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
+document.body.appendChild(canvas);
 export const state = createGlRenderState(
-  createWebGlContext(canvas.native, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene3DGlPipeline,
   {
     pixelRatio,

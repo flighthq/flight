@@ -19,7 +19,7 @@ import { DisplayObjectKind, RegistryEntryState } from '@flighthq/types';
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const emptyRegistries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({
@@ -27,7 +27,7 @@ const pipeline = createGlPipeline({
   renderers: withRegistryTableEntry(emptyRegistries.renderers, DisplayObjectKind, defaultGlScene2DRenderer),
 });
 const state = createGlRenderState(
-  createWebGlContext(canvas.native, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   pipeline,
   { pixelRatio: 1 },
 );
