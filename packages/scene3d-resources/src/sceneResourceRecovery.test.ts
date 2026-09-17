@@ -3,7 +3,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { HostImageProvider, ImageResource, ImageResourceReference } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource, ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceFailureKind,
@@ -16,9 +16,9 @@ import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScen
 import { retryFailedScene3DResources } from './sceneResourceRecovery';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const fakeImage = { height: 1, width: 1 } as ImageResource;
 
 function externalRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {

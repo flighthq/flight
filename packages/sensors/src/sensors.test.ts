@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostSensorsProvider,
+  HostSensorsCapability,
   AmbientLightReading,
   MotionReading,
   OrientationReading,
@@ -53,7 +53,7 @@ import {
   requestSensorsPermission,
 } from './sensors';
 
-function fakeBackend(): HostSensorsProvider & {
+function fakeBackend(): HostSensorsCapability & {
   fireMotion: (acceleration: MotionReading, rotationRate: RotationRateReading) => void;
   fireOrientation: (orientation: OrientationReading) => void;
   fireMagnetometer: (reading: MotionReading) => void;
@@ -76,7 +76,7 @@ function fakeBackend(): HostSensorsProvider & {
   let proximityListener: ((reading: Readonly<ProximityReading>) => void) | null = null;
   let quaternionListener: ((reading: Readonly<QuaternionReading>) => void) | null = null;
 
-  type FakeBackend = HostSensorsProvider & {
+  type FakeBackend = HostSensorsCapability & {
     fireMotion: (acceleration: MotionReading, rotationRate: RotationRateReading) => void;
     fireOrientation: (orientation: OrientationReading) => void;
     fireMagnetometer: (reading: MotionReading) => void;
@@ -195,8 +195,8 @@ function fakeBackend(): HostSensorsProvider & {
   return finishEntity(out);
 }
 
-function hostOf(backend: HostSensorsProvider): { readonly system: { readonly sensors: HostSensorsProvider } } {
-  return { system: { sensors: backend } } as { readonly system: { readonly sensors: HostSensorsProvider } };
+function hostOf(backend: HostSensorsCapability): { readonly system: { readonly sensors: HostSensorsCapability } } {
+  return { system: { sensors: backend } } as { readonly system: { readonly sensors: HostSensorsCapability } };
 }
 
 describe('attachSensors', () => {

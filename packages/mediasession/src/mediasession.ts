@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostMediaSessionProvider,
-  HostMediaSessionActionProvider,
+  HostMediaSessionCapability,
+  HostMediaSessionActionCapability,
   MediaSessionAction,
   MediaSessionActionSignal,
   MediaSessionClearMetadataOutcome,
@@ -19,7 +19,7 @@ import type {
 // Attaches exactly the action named by `signal`. A null provider subscription is a truthful runtime
 // refusal and leaves the entity detached. Reattaching first releases the prior exact origin.
 export function attachMediaSessionAction(
-  hostMediaSessionAction: Readonly<HostMediaSessionActionProvider>,
+  hostMediaSessionAction: Readonly<HostMediaSessionActionCapability>,
   signal: MediaSessionActionSignal,
 ): boolean {
   detachMediaSessionAction(signal);
@@ -32,13 +32,13 @@ export function attachMediaSessionAction(
 }
 
 export function clearMediaSessionMetadata(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
 ): MediaSessionClearMetadataOutcome {
   return hostMediaSession.clearMetadata();
 }
 
 export function clearMediaSessionPositionState(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
 ): MediaSessionClearPositionStateOutcome {
   return hostMediaSession.clearPositionState();
 }
@@ -53,8 +53,8 @@ export function createMediaSessionActionSignal(action: MediaSessionAction): Medi
 // destroyed once; passing it as both provider arguments cannot double-release it, and one throwing provider does
 // not prevent the other distinct provider from being attempted.
 export function destroyMediaSession(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
-  hostMediaSessionAction: Readonly<HostMediaSessionActionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
+  hostMediaSessionAction: Readonly<HostMediaSessionActionCapability>,
 ): void {
   const providers = new Set([hostMediaSession, hostMediaSessionAction]);
   let firstError: unknown;
@@ -96,14 +96,14 @@ export function initializeMediaSessionActionSignal(
 }
 
 export function setMediaSessionMetadata(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
   metadata: Readonly<MediaSessionMetadata>,
 ): MediaSessionSetMetadataOutcome {
   return hostMediaSession.setMetadata(metadata);
 }
 
 export function setMediaSessionPlaybackState(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
   state: MediaSessionPlaybackState,
 ): MediaSessionSetPlaybackStateOutcome {
   // TypeScript callers cannot construct this misuse, but untyped JavaScript can. It is programmer error,
@@ -115,7 +115,7 @@ export function setMediaSessionPlaybackState(
 }
 
 export function setMediaSessionPositionState(
-  hostMediaSession: Readonly<HostMediaSessionProvider>,
+  hostMediaSession: Readonly<HostMediaSessionCapability>,
   state: Readonly<MediaSessionPositionState>,
 ): MediaSessionSetPositionStateOutcome {
   // The W3C algorithm classifies these values locally. Invalid caller data wins over runtime API

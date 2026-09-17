@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
-  HostConnectivityChangeProvider,
-  HostConnectivityReachabilityProvider,
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
   ConnectivityStatus,
-  HostConnectivityStatusProvider,
+  HostConnectivityStatusCapability,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -23,7 +23,7 @@ import {
   isConnectivitySaveDataEnabled,
 } from './connectivity';
 
-interface FakeConnectivityProvider extends HostConnectivityStatusProvider, HostConnectivityChangeProvider {
+interface FakeConnectivityProvider extends HostConnectivityStatusCapability, HostConnectivityChangeCapability {
   readonly activeSubscriptions: () => number;
   readonly destroyCalls: () => number;
   fire(): void;
@@ -226,7 +226,7 @@ describe('detachConnectivity', () => {
 describe('detectConnectivityReachability', () => {
   it('dispatches reachability only to the supplied reachability slot', async () => {
     let calls = 0;
-    const reachability = allocateEntity<HostConnectivityReachabilityProvider>();
+    const reachability = allocateEntity<HostConnectivityReachabilityCapability>();
     reachability.detectReachability = async (_options, out) => {
       calls++;
       out.latency = 7;

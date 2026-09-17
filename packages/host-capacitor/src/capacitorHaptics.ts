@@ -3,25 +3,25 @@ import type {
   CapacitorApi,
   HapticImpactStyle,
   HapticNotificationType,
-  HostHapticsProvider,
+  HostHapticsCapability,
   HapticsCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function capacitorHostHaptics(capacitor: CapacitorApi): HostHapticsProvider {
-  const out = allocateEntity<HostHapticsProvider>();
+export function capacitorHostHaptics(capacitor: CapacitorApi): HostHapticsCapability {
+  const out = allocateEntity<HostHapticsCapability>();
   populateCapacitorHaptics(out, capacitor);
   return finishEntity(out);
 }
 
-// Maps Flight's HostHapticsProvider onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
+// Maps Flight's HostHapticsCapability onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async
 // void, whereas the provider triggers are synchronous booleans, so each adapter method fires the
 // async call and forgets, reporting `true` (the request was issued). Flight's five impact styles fold
 // onto Capacitor's three ('soft' → LIGHT, 'rigid' → HEAVY); notification types uppercase directly.
 // `selection` maps to `selectionChanged`. Capacitor has no cancel, no arbitrary vibration pattern, and
 // no amplitude waveform, so cancel/vibratePattern report false and the optional vibrateWaveform is
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
-function populateCapacitorHaptics(out: EntityConstruction<HostHapticsProvider>, capacitor: CapacitorApi): void {
+function populateCapacitorHaptics(out: EntityConstruction<HostHapticsCapability>, capacitor: CapacitorApi): void {
   const haptics = capacitor.haptics;
   out.cancel = () => {
     // Capacitor exposes no cancel-vibration call.

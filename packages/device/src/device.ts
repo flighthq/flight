@@ -4,7 +4,7 @@ import type {
   DeviceDisplayMetrics,
   DeviceInfo,
   EntityConstruction,
-  HostDeviceProvider,
+  HostDeviceCapability,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
@@ -34,28 +34,28 @@ export function createSafeAreaInsets(): SafeAreaInsets {
 }
 
 export function getDeviceCapabilities(
-  hostDevice: Readonly<HostDeviceProvider>,
+  hostDevice: Readonly<HostDeviceCapability>,
   out: DeviceCapabilities,
 ): DeviceCapabilities {
   return hostDevice.getCapabilities(out);
 }
 
 export function getDeviceDisplayMetrics(
-  hostDevice: Readonly<HostDeviceProvider>,
+  hostDevice: Readonly<HostDeviceCapability>,
   out: DeviceDisplayMetrics,
 ): DeviceDisplayMetrics {
   return hostDevice.getDisplayMetrics(out);
 }
 
-export function getDeviceId(hostDevice: Readonly<HostDeviceProvider>): string {
+export function getDeviceId(hostDevice: Readonly<HostDeviceCapability>): string {
   return hostDevice.getId();
 }
 
-export function getDeviceInfo(hostDevice: Readonly<HostDeviceProvider>, out: DeviceInfo): DeviceInfo {
+export function getDeviceInfo(hostDevice: Readonly<HostDeviceCapability>, out: DeviceInfo): DeviceInfo {
   return hostDevice.getInfo(out);
 }
 
-export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceProvider>, out: SafeAreaInsets): SafeAreaInsets {
+export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceCapability>, out: SafeAreaInsets): SafeAreaInsets {
   return hostDevice.getSafeAreaInsets(out);
 }
 
@@ -110,6 +110,6 @@ export function initializeSafeAreaInsets(out: EntityConstruction<SafeAreaInsets>
   out.top = 0;
 }
 
-export function refreshDeviceInfo(hostDevice: Readonly<HostDeviceProvider>): void {
+export function refreshDeviceInfo(hostDevice: Readonly<HostDeviceCapability>): void {
   hostDevice.refresh?.();
 }

@@ -1,6 +1,6 @@
-import type { HostAudioProvider } from '@flighthq/types/contract';
+import type { HostAudioCapability } from '@flighthq/types/contract';
 
-export function canPlayAudioType(hostAudio: Readonly<HostAudioProvider>, mimeType: string): boolean {
+export function canPlayAudioType(hostAudio: Readonly<HostAudioCapability>, mimeType: string): boolean {
   if (mimeType === '') return false;
   return hostAudio.canPlayType(mimeType);
 }

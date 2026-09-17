@@ -1,4 +1,4 @@
-import type { HostFontLoadingProvider } from '@flighthq/types/contract';
+import type { HostFontLoadingCapability } from '@flighthq/types/contract';
 
 import { createFontResource } from './fontResource';
 import {
@@ -17,7 +17,7 @@ interface FontFaceConstruction {
 let constructions: FontFaceConstruction[];
 let addMock = vi.fn<(face: FontFace) => void>();
 let loadMock = vi.fn<(shorthand: string) => Promise<FontFace[]>>();
-let backend: HostFontLoadingProvider;
+let backend: HostFontLoadingCapability;
 
 class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);

@@ -28,14 +28,14 @@ describe('runtime APIs use direct Host providers', () => {
     const source = `
       interface Host {}
       interface HostTrayCapabilities {}
-      interface HostTrayImageProvider {}
+      interface HostTrayImageCapability {}
       export function whole(host: Host): void {}
       export function group(tray: Readonly<HostTrayCapabilities>): void {}
-      export function structural<T extends { readonly tray: { readonly image: HostTrayImageProvider } }>(host: T): void {}
+      export function structural<T extends { readonly tray: { readonly image: HostTrayImageCapability } }>(host: T): void {}
       export function structuralMethod(host: { readonly 'tray'?: { readonly create(): void } }): void {}
-      export function direct(hostTrayImage: Readonly<HostTrayImageProvider>): void {}
+      export function direct(hostTrayImage: Readonly<HostTrayImageCapability>): void {}
       export const arrow = (host: Host): void => {};
-      export const directArrow = (hostTrayImage: Readonly<HostTrayImageProvider>): void => {};
+      export const directArrow = (hostTrayImage: Readonly<HostTrayImageCapability>): void => {};
     `;
 
     expect(collectOverbroadRuntimeParameters([{ file: 'fixture.ts', source }])).toEqual([
@@ -44,7 +44,7 @@ describe('runtime APIs use direct Host providers', () => {
       {
         declaration: 'structural',
         file: 'fixture.ts',
-        type: '{ readonly tray: { readonly image: HostTrayImageProvider } }',
+        type: '{ readonly tray: { readonly image: HostTrayImageCapability } }',
       },
       {
         declaration: 'structuralMethod',

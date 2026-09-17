@@ -1,9 +1,9 @@
 import type {
-  HostIpcHandleProvider,
-  HostIpcInvokeProvider,
-  HostIpcMessageProvider,
-  HostIpcSendProvider,
-  HostIpcTargetedSendProvider,
+  HostIpcHandleCapability,
+  HostIpcInvokeCapability,
+  HostIpcMessageCapability,
+  HostIpcSendCapability,
+  HostIpcTargetedSendCapability,
 } from '@flighthq/types/contract';
 
 // Inter-process messaging over explicitly supplied, operation-tight Host providers. Every operation
@@ -11,7 +11,7 @@ import type {
 // missing-provider arm. A caller without the exact provider cannot compile the call.
 
 export function invokeIpc(
-  hostIpcInvoke: Readonly<HostIpcInvokeProvider>,
+  hostIpcInvoke: Readonly<HostIpcInvokeCapability>,
   channel: string,
   ...args: readonly unknown[]
 ): Promise<unknown> {
@@ -24,7 +24,7 @@ export function invokeIpc(
 // The unsubscribe is idempotent and ORIGIN-PINNED: it releases exactly the subscription this call
 // opened, whether it runs after the first message or before any arrives.
 export function onceIpcMessage(
-  hostIpcMessage: Readonly<HostIpcMessageProvider>,
+  hostIpcMessage: Readonly<HostIpcMessageCapability>,
   channel: string,
   listener: (...args: readonly unknown[]) => void,
 ): () => void {
@@ -48,7 +48,7 @@ export function onceIpcMessage(
 
 // Registers an invoke responder on `channel`. The returned release belongs to this registration.
 export function onIpcInvoke(
-  hostIpcHandle: Readonly<HostIpcHandleProvider>,
+  hostIpcHandle: Readonly<HostIpcHandleCapability>,
   channel: string,
   handler: (...args: readonly unknown[]) => unknown | Promise<unknown>,
 ): () => void {
@@ -58,7 +58,7 @@ export function onIpcInvoke(
 // Subscribes to every message on `channel`. Returns the unsubscribe for THIS subscription alone —
 // releasing one listener never disturbs another on the same channel.
 export function onIpcMessage(
-  hostIpcMessage: Readonly<HostIpcMessageProvider>,
+  hostIpcMessage: Readonly<HostIpcMessageCapability>,
   channel: string,
   listener: (...args: readonly unknown[]) => void,
 ): () => void {
@@ -66,7 +66,7 @@ export function onIpcMessage(
 }
 
 export function sendIpcMessage(
-  hostIpcSend: Readonly<HostIpcSendProvider>,
+  hostIpcSend: Readonly<HostIpcSendCapability>,
   channel: string,
   ...args: readonly unknown[]
 ): void {
@@ -74,7 +74,7 @@ export function sendIpcMessage(
 }
 
 export function sendIpcMessageTo<Target>(
-  hostIpcTargetedSend: Readonly<HostIpcTargetedSendProvider<Target>>,
+  hostIpcTargetedSend: Readonly<HostIpcTargetedSendCapability<Target>>,
   target: NoInfer<Target>,
   channel: string,
   ...args: readonly unknown[]

@@ -4,7 +4,7 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type {
-  HostImageProvider,
+  HostImageCapability,
   Material,
   Scene3DKindUsage,
   SceneCoverageCatalog,
@@ -17,9 +17,9 @@ import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './ex
 import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver';
 import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'UnlitMaterial',

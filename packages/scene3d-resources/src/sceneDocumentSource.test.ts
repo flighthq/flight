@@ -1,6 +1,6 @@
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  HostNetProvider,
+  HostNetCapability,
   NetResponse,
   Scene3DDocument,
   Scene3DDocumentLoadProgress,
@@ -15,8 +15,8 @@ import {
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
-function fakeNetHost(backend: Omit<HostNetProvider, typeof EntityRuntimeKey>): {
-  readonly net: { readonly http: HostNetProvider };
+function fakeNetHost(backend: Omit<HostNetCapability, typeof EntityRuntimeKey>): {
+  readonly net: { readonly http: HostNetCapability };
 } {
   return { net: { http: { ...backend, [EntityRuntimeKey]: undefined } } };
 }

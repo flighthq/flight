@@ -1,4 +1,4 @@
-import type { HostFontLoadingProvider, FontResource, FontUrl } from '@flighthq/types/contract';
+import type { HostFontLoadingCapability, FontResource, FontUrl } from '@flighthq/types/contract';
 
 import {
   _loadFontFaceFromBytes,
@@ -8,7 +8,7 @@ import {
 } from './_fontFaceLoad';
 
 export async function loadFontResourceFromBytes(
-  backend: Readonly<HostFontLoadingProvider>,
+  backend: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   bytes: Uint8Array,
 ): Promise<FontResource> {
@@ -18,7 +18,7 @@ export async function loadFontResourceFromBytes(
 }
 
 export async function loadFontResourceFromName(
-  backend: Readonly<HostFontLoadingProvider>,
+  backend: Readonly<HostFontLoadingCapability>,
   out: FontResource,
 ): Promise<FontResource> {
   const faces = await _loadFontFacesFromName(backend, out.family);
@@ -27,7 +27,7 @@ export async function loadFontResourceFromName(
 }
 
 export async function loadFontResourceFromUrl(
-  backend: Readonly<HostFontLoadingProvider>,
+  backend: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   url: string,
 ): Promise<FontResource> {
@@ -37,7 +37,7 @@ export async function loadFontResourceFromUrl(
 }
 
 export async function loadFontResourceFromUrls(
-  backend: Readonly<HostFontLoadingProvider>,
+  backend: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   sources: FontUrl[],
 ): Promise<FontResource> {

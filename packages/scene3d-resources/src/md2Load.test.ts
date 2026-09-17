@@ -1,6 +1,6 @@
 import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
-import type { HostNetProvider, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,8 +21,8 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
-function fakeHost(): { readonly net: { readonly http: HostNetProvider } } {
-  const host: { readonly net: { readonly http: HostNetProvider } } = {
+function fakeHost(): { readonly net: { readonly http: HostNetCapability } } {
+  const host: { readonly net: { readonly http: HostNetCapability } } = {
     net: {
       http: {
         [EntityRuntimeKey]: undefined,

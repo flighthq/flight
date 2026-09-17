@@ -8,11 +8,11 @@ import type {
   FileSystemUsage,
   FileWalkOptions,
   FileWatchEvent,
-  HostFileSystemProvider,
+  HostFileSystemCapability,
 } from '@flighthq/types/contract';
 
 export function appendTextFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   data: string,
   signal?: AbortSignal,
@@ -24,14 +24,14 @@ export function appendTextFile(
 }
 
 export function canAccessFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   mode: 'readable' | 'writable' | 'executable',
 ): Promise<boolean> {
   return hostFileSystem.canAccessFile?.(path, mode) ?? Promise.resolve(false);
 }
 
-export function copyFile(hostFileSystem: Readonly<HostFileSystemProvider>, from: string, to: string): Promise<boolean> {
+export function copyFile(hostFileSystem: Readonly<HostFileSystemCapability>, from: string, to: string): Promise<boolean> {
   return hostFileSystem.copy?.(from, to) ?? Promise.resolve(false);
 }
 
@@ -40,16 +40,16 @@ export function createFileSymlink(_target: string, _linkPath: string): Promise<b
   return Promise.resolve(false);
 }
 
-export function directoryExists(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+export function directoryExists(hostFileSystem: Readonly<HostFileSystemCapability>, path: string): Promise<boolean> {
   return hostFileSystem.directoryExists?.(path) ?? Promise.resolve(false);
 }
 
-export function fileExists(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+export function fileExists(hostFileSystem: Readonly<HostFileSystemCapability>, path: string): Promise<boolean> {
   return hostFileSystem.fileExists?.(path) ?? Promise.resolve(false);
 }
 
 export async function findFiles(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   rootPath: string,
   pattern: string,
   options?: Readonly<FileWalkOptions>,
@@ -92,7 +92,7 @@ export function getFileSystemPath(_kind: FileSystemPathKind): string {
   return '';
 }
 
-export function getFileSystemUsage(hostFileSystem: Readonly<HostFileSystemProvider>): Promise<FileSystemUsage | null> {
+export function getFileSystemUsage(hostFileSystem: Readonly<HostFileSystemCapability>): Promise<FileSystemUsage | null> {
   return hostFileSystem.getFileSystemUsage?.() ?? Promise.resolve(null);
 }
 
@@ -111,7 +111,7 @@ export function joinFilePath(...segments: readonly string[]): string {
   return formatResolvedPath(resolvePathSegments(segments.join('/'), absolute), absolute);
 }
 
-export function makeDirectory(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+export function makeDirectory(hostFileSystem: Readonly<HostFileSystemCapability>, path: string): Promise<boolean> {
   return hostFileSystem.makeDirectory?.(path) ?? Promise.resolve(false);
 }
 
@@ -133,7 +133,7 @@ export function normalizeFilePath(path: string): string {
 }
 
 export function openFileReadStream(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   signal?: AbortSignal,
 ): Promise<ReadableStream<Uint8Array> | null> {
@@ -144,7 +144,7 @@ export function openFileReadStream(
 }
 
 export function openFileWriteStream(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   signal?: AbortSignal,
 ): Promise<WritableStream<Uint8Array> | null> {
@@ -155,7 +155,7 @@ export function openFileWriteStream(
 }
 
 export function readBinaryFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   signal?: AbortSignal,
 ): Promise<Uint8Array | null> {
@@ -166,7 +166,7 @@ export function readBinaryFile(
 }
 
 export function readBinaryFileRange(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   offset: number,
   length: number,
@@ -179,7 +179,7 @@ export function readBinaryFileRange(
 }
 
 export async function readDialogHandleBinaryFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   handle: Readonly<FileDialogHandle>,
   signal?: AbortSignal,
 ): Promise<Uint8Array | null> {
@@ -191,7 +191,7 @@ export async function readDialogHandleBinaryFile(
 }
 
 export async function readDialogHandleTextFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   handle: Readonly<FileDialogHandle>,
   signal?: AbortSignal,
 ): Promise<string | null> {
@@ -203,7 +203,7 @@ export async function readDialogHandleTextFile(
 }
 
 export function readDirectory(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   signal?: AbortSignal,
 ): Promise<FileEntry[]> {
@@ -214,7 +214,7 @@ export function readDirectory(
 }
 
 export function readDirectoryRecursive(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   options?: Readonly<FileWalkOptions>,
 ): Promise<readonly FileEntry[]> {
@@ -230,7 +230,7 @@ export function readFileSymlink(_path: string): Promise<string | null> {
 }
 
 export function readTextFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   signal?: AbortSignal,
 ): Promise<string | null> {
@@ -241,19 +241,19 @@ export function readTextFile(
 }
 
 export function removeDirectory(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   recursive?: boolean,
 ): Promise<boolean> {
   return hostFileSystem.removeDirectory?.(path, recursive) ?? Promise.resolve(false);
 }
 
-export function removeFile(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<boolean> {
+export function removeFile(hostFileSystem: Readonly<HostFileSystemCapability>, path: string): Promise<boolean> {
   return hostFileSystem.removeFile?.(path) ?? Promise.resolve(false);
 }
 
 export function renameFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   from: string,
   to: string,
 ): Promise<boolean> {
@@ -265,7 +265,7 @@ export function setFilePermissions(_path: string, _permissions: Readonly<FilePer
   return Promise.resolve(false);
 }
 
-export function statFile(hostFileSystem: Readonly<HostFileSystemProvider>, path: string): Promise<FileStat | null> {
+export function statFile(hostFileSystem: Readonly<HostFileSystemCapability>, path: string): Promise<FileStat | null> {
   return hostFileSystem.statFile?.(path) ?? Promise.resolve(null);
 }
 
@@ -275,7 +275,7 @@ export function watchPath(_path: string, _listener: (event: Readonly<FileWatchEv
 }
 
 export function writeBinaryFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   data: Readonly<Uint8Array>,
   signal?: AbortSignal,
@@ -287,7 +287,7 @@ export function writeBinaryFile(
 }
 
 export async function writeBinaryFileChunks(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   chunks: AsyncIterable<Readonly<Uint8Array>>,
   signal?: AbortSignal,
@@ -326,7 +326,7 @@ export async function writeBinaryFileChunks(
 }
 
 export async function writeDialogHandleBinaryFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   handle: Readonly<FileDialogHandle>,
   data: Readonly<Uint8Array>,
   signal?: AbortSignal,
@@ -339,7 +339,7 @@ export async function writeDialogHandleBinaryFile(
 }
 
 export async function writeDialogHandleTextFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   handle: Readonly<FileDialogHandle>,
   data: string,
   signal?: AbortSignal,
@@ -352,7 +352,7 @@ export async function writeDialogHandleTextFile(
 }
 
 export function writeFileAtomic(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   data: Readonly<Uint8Array> | string,
   signal?: AbortSignal,
@@ -364,7 +364,7 @@ export function writeFileAtomic(
 }
 
 export function writeTextFile(
-  hostFileSystem: Readonly<HostFileSystemProvider>,
+  hostFileSystem: Readonly<HostFileSystemCapability>,
   path: string,
   data: string,
   signal?: AbortSignal,

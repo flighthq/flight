@@ -4,7 +4,7 @@ import type {
   CapacitorPluginListenerHandle,
   CapacitorProtocolCapabilities,
   EntityConstruction,
-  HostProtocolOpenProvider,
+  HostProtocolOpenCapability,
 } from '@flighthq/types/contract';
 
 export function capacitorHostProtocol(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
@@ -13,7 +13,7 @@ export function capacitorHostProtocol(capacitor: CapacitorApi): CapacitorProtoco
   return finishEntity(out);
 }
 
-export function capacitorHostProtocolOpen(capacitor: CapacitorApi): HostProtocolOpenProvider {
+export function capacitorHostProtocolOpen(capacitor: CapacitorApi): HostProtocolOpenCapability {
   return capacitorHostProtocol(capacitor).open;
 }
 
@@ -21,7 +21,7 @@ function populateCapacitorProtocol(
   out: EntityConstruction<CapacitorProtocolCapabilities>,
   capacitor: CapacitorApi,
 ): void {
-  const openBackend = allocateEntity<HostProtocolOpenProvider>();
+  const openBackend = allocateEntity<HostProtocolOpenCapability>();
   openBackend.subscribe = (listener: (url: string) => void) => {
     return toCapacitorUnsubscribe(capacitor.app.addListener('appUrlOpen', (event) => listener(event.url)));
   };

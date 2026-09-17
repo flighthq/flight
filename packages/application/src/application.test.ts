@@ -1,9 +1,9 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostApplicationExitProvider,
-  HostApplicationVisibilityProvider,
-  HostLoopProvider,
+  HostApplicationExitCapability,
+  HostApplicationVisibilityCapability,
+  HostLoopCapability,
 } from '@flighthq/types/contract';
 
 import {
@@ -30,7 +30,7 @@ import {
 } from './application';
 import { createApplicationWindow } from './window';
 
-function makeManualLoopBackend(): HostLoopProvider & { tick: (time: number) => void; cancelCount: number } {
+function makeManualLoopBackend(): HostLoopCapability & { tick: (time: number) => void; cancelCount: number } {
   let callback: ((time: number) => void) | null = null;
   let cancelCount = 0;
   return {
@@ -53,16 +53,16 @@ function makeManualLoopBackend(): HostLoopProvider & { tick: (time: number) => v
   };
 }
 
-type RecordingApplicationVisibilityBackend = HostApplicationVisibilityProvider & { visible: boolean };
+type RecordingApplicationVisibilityBackend = HostApplicationVisibilityCapability & { visible: boolean };
 
 type LoopTestHost = {
   readonly app: {
-    readonly loop: HostLoopProvider;
+    readonly loop: HostLoopCapability;
     readonly visibility: RecordingApplicationVisibilityBackend;
   };
 };
 
-function createLoopTestHost(loop: HostLoopProvider, visible = true): LoopTestHost {
+function createLoopTestHost(loop: HostLoopCapability, visible = true): LoopTestHost {
   const visibility: RecordingApplicationVisibilityBackend = {
     visible,
     isVisible() {
@@ -72,7 +72,7 @@ function createLoopTestHost(loop: HostLoopProvider, visible = true): LoopTestHos
   return { app: { loop, visibility } };
 }
 
-type RecordingApplicationExitBackend = HostApplicationExitProvider & {
+type RecordingApplicationExitBackend = HostApplicationExitCapability & {
   readonly calls: string[];
   emit(): void;
 };

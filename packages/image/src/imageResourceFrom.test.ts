@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, HostImageProvider, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createImageResource } from './imageResource';
@@ -21,7 +21,7 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function webHost(): { readonly graphics: { readonly image: HostImageProvider } } {
+function webHost(): { readonly graphics: { readonly image: HostImageCapability } } {
   return {
     graphics: {
       image: {
@@ -66,10 +66,10 @@ function webHost(): { readonly graphics: { readonly image: HostImageProvider } }
         },
       },
     },
-  } as { readonly graphics: { readonly image: HostImageProvider } };
+  } as { readonly graphics: { readonly image: HostImageCapability } };
 }
 
-let host: { readonly graphics: { readonly image: HostImageProvider } };
+let host: { readonly graphics: { readonly image: HostImageCapability } };
 
 beforeEach(() => {
   host = webHost();
@@ -87,12 +87,12 @@ describe('createImageResourceFromBitmap', () => {
     const bitmap = createTestBitmap(3, 2);
     const expected = {} as ImageResource;
     const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
-    const backend: HostImageProvider = {
+    const backend: HostImageCapability = {
       [EntityRuntimeKey]: undefined,
       createImageFromBitmap,
       loadImageFromUrl: vi.fn(),
     };
-    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
+    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
     vi.stubGlobal('document', undefined);
 
     expect(createImageResourceFromBitmap(customHost.graphics.image, bitmap)).toBe(expected);
@@ -101,8 +101,8 @@ describe('createImageResourceFromBitmap', () => {
 
   it('returns null for backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
-    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
-    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
+    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
 
     expect(() => createImageResourceFromBitmap(customHost.graphics.image, createTestBitmap(1, 1))).not.toThrow();
     expect(createImageResourceFromBitmap(customHost.graphics.image, createTestBitmap(1, 1))).toBeNull();

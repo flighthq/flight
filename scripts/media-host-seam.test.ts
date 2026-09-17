@@ -23,37 +23,37 @@ const BROWSER_MEDIA_IDENTIFIERS = new Set([
   'StereoPannerNode',
 ]);
 // The node and context lookups are intentionally a host-web-only structural extension. Portable
-// consumers see only HostAudioDeviceProvider, while host-web helpers narrow to these own operations.
+// consumers see only HostAudioDeviceCapability, while host-web helpers narrow to these own operations.
 const WEB_AUDIO_DEVICE_EXTENSION_METHODS = ['getDeviceAudioContext', 'getSourceBufferSourceNode', 'getSourceGainNode'];
 const EXPECTED_MIXER_HANDLE_TYPES: ReadonlyMap<string, string> = new Map([
   ['AudioBusNodeHandle', "number & { readonly __brand: 'AudioBusNodeHandle' }"],
   ['AudioMixerGraphHandle', "number & { readonly __brand: 'AudioMixerGraphHandle' }"],
 ]);
 const PROVIDER_FIRST_FUNCTIONS: ReadonlyMap<string, ProviderFirstFunction> = new Map([
-  ['addAudioBusToMixer', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['createAudioMixer', { minimumArguments: 2, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['destroyAudioMixer', { minimumArguments: 2, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['destroyVideoChannel', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['fadeAudioBusGain', { minimumArguments: 5, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['fadeAudioChannelGain', { minimumArguments: 4, providerType: 'Readonly<HostAudioDeviceProvider>' }],
-  ['getVideoChannelCurrentTime', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['getVideoChannelHeight', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['getVideoChannelWidth', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['pauseVideoChannel', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['playVideoResource', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['resumeVideoChannel', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['routeAudioChannelToMixerBus', { minimumArguments: 4, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setAudioBusGain', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setAudioBusMuted', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setAudioBusPan', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setAudioMixerMasterGain', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setAudioMixerMasterMuted', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
-  ['setVideoChannelCurrentTime', { minimumArguments: 3, providerType: 'HostVideoProvider' }],
-  ['setVideoChannelGain', { minimumArguments: 3, providerType: 'HostVideoProvider' }],
-  ['setVideoChannelMuted', { minimumArguments: 3, providerType: 'HostVideoProvider' }],
-  ['setVideoChannelPlaybackRate', { minimumArguments: 3, providerType: 'HostVideoProvider' }],
-  ['stopVideoChannel', { minimumArguments: 2, providerType: 'HostVideoProvider' }],
-  ['unrouteAudioChannelFromMixerBus', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerProvider>' }],
+  ['addAudioBusToMixer', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['createAudioMixer', { minimumArguments: 2, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['destroyAudioMixer', { minimumArguments: 2, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['destroyVideoChannel', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['fadeAudioBusGain', { minimumArguments: 5, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['fadeAudioChannelGain', { minimumArguments: 4, providerType: 'Readonly<HostAudioDeviceCapability>' }],
+  ['getVideoChannelCurrentTime', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['getVideoChannelHeight', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['getVideoChannelWidth', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['pauseVideoChannel', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['playVideoResource', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['resumeVideoChannel', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['routeAudioChannelToMixerBus', { minimumArguments: 4, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setAudioBusGain', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setAudioBusMuted', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setAudioBusPan', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setAudioMixerMasterGain', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setAudioMixerMasterMuted', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
+  ['setVideoChannelCurrentTime', { minimumArguments: 3, providerType: 'HostVideoCapability' }],
+  ['setVideoChannelGain', { minimumArguments: 3, providerType: 'HostVideoCapability' }],
+  ['setVideoChannelMuted', { minimumArguments: 3, providerType: 'HostVideoCapability' }],
+  ['setVideoChannelPlaybackRate', { minimumArguments: 3, providerType: 'HostVideoCapability' }],
+  ['stopVideoChannel', { minimumArguments: 2, providerType: 'HostVideoCapability' }],
+  ['unrouteAudioChannelFromMixerBus', { minimumArguments: 3, providerType: 'Readonly<HostAudioMixerCapability>' }],
 ]);
 const RETIRED_MEDIA_EXPORTS = [
   'connectAudioChannelToNode',
@@ -130,8 +130,8 @@ describe('media host-seam closure', () => {
     expect(productionMediaSources().flatMap(findBrowserMediaReferences)).toEqual([]);
   });
 
-  it('keeps every HostAudioMixerProvider operation graph-first over branded handles', () => {
-    const methods = interfaceMethods('HostAudioMixerProvider');
+  it('keeps every HostAudioMixerCapability operation graph-first over branded handles', () => {
+    const methods = interfaceMethods('HostAudioMixerCapability');
     expect(methods.length).toBeGreaterThan(0);
     // Only the operation that creates a graph may precede one; every other operation addresses a graph.
     const notGraphFirst = methods
@@ -140,9 +140,9 @@ describe('media host-seam closure', () => {
       .map(({ name }) => name);
     expect(notGraphFirst).toEqual([]);
     expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
-    expect(interfaceHeritage('HostAudioMixerProvider')).toEqual(['Entity']);
+    expect(interfaceHeritage('HostAudioMixerCapability')).toEqual(['Entity']);
     expect(interfacePropertySignatures('HostMediaCapabilities', new Set(['audioMixer']))).toEqual([
-      'readonly audioMixer?: HostAudioMixerProvider',
+      'readonly audioMixer?: HostAudioMixerCapability',
     ]);
   });
 
@@ -152,15 +152,15 @@ describe('media host-seam closure', () => {
     }
   });
 
-  it('keeps HostAudioDeviceProvider free of browser media types, with fade as an optional capability', () => {
-    const methods = interfaceMethods('HostAudioDeviceProvider');
+  it('keeps HostAudioDeviceCapability free of browser media types, with fade as an optional capability', () => {
+    const methods = interfaceMethods('HostAudioDeviceCapability');
     expect(methods.length).toBeGreaterThan(0);
     expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
     expect(methods.find(({ name }) => name === 'fadeSourceGain')?.optional).toBe(true);
   });
 
-  it('keeps every HostVideoProvider operation on an element optional and free of browser media types', () => {
-    const methods = interfaceMethods('HostVideoProvider');
+  it('keeps every HostVideoCapability operation on an element optional and free of browser media types', () => {
+    const methods = interfaceMethods('HostVideoCapability');
     expect(methods.length).toBeGreaterThan(0);
     // Transport and inspection act on a host element a provider may not be able to drive; each is a
     // capability the host either has or omits, never a required member.
@@ -174,13 +174,13 @@ describe('media host-seam closure', () => {
 
   it('implements every declared media provider operation in host-web and composes the same singletons', () => {
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostVideo'))).toEqual(
-      interfaceMethodNames('HostVideoProvider'),
+      interfaceMethodNames('HostVideoCapability'),
     );
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostAudioDevice'))).toEqual(
-      [...interfaceMethodNames('HostAudioDeviceProvider'), ...WEB_AUDIO_DEVICE_EXTENSION_METHODS].sort(),
+      [...interfaceMethodNames('HostAudioDeviceCapability'), ...WEB_AUDIO_DEVICE_EXTENSION_METHODS].sort(),
     );
     expect(providerOperationNames(exportedValue(hostWebContract, 'webHostAudioMixer'))).toEqual(
-      interfaceMethodNames('HostAudioMixerProvider'),
+      interfaceMethodNames('HostAudioMixerCapability'),
     );
 
     for (const name of ['webHostAudioDevice', 'webHostAudioMixer', 'webHostVideo']) {

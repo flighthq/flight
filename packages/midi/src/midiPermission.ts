@@ -1,7 +1,7 @@
-import type { HostMidiPermissionProvider, PermissionQueryOutcome } from '@flighthq/types/contract';
+import type { HostMidiPermissionCapability, PermissionQueryOutcome } from '@flighthq/types/contract';
 
 export async function getMidiPermission(
-  hostMidiPermission: Readonly<HostMidiPermissionProvider>,
+  hostMidiPermission: Readonly<HostMidiPermissionCapability>,
 ): Promise<PermissionQueryOutcome> {
   try {
     return await hostMidiPermission.getPermission();

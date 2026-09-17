@@ -5,7 +5,7 @@ import {
   loadImageResourceFromUrl,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider, ImageResource, TextureAtlas } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 
@@ -14,7 +14,7 @@ export function createTextureAtlasFromImageResource(resource: ImageResource): Te
 }
 
 export async function loadTextureAtlasFromBase64(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
@@ -23,7 +23,7 @@ export async function loadTextureAtlasFromBase64(
 }
 
 export async function loadTextureAtlasFromBlob(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   blob: Blob,
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
@@ -31,7 +31,7 @@ export async function loadTextureAtlasFromBlob(
 }
 
 export async function loadTextureAtlasFromBytes(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
@@ -40,7 +40,7 @@ export async function loadTextureAtlasFromBytes(
 }
 
 export async function loadTextureAtlasFromUrl(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,

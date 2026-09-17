@@ -14,8 +14,8 @@ describe('permission host ownership', () => {
 
   it('defines the exact narrow provider and publishes it through the system Host group', () => {
     const permissionTypes = readFileSync(resolve('packages/types/src/Permission.ts'), 'utf8');
-    expect(permissionTypes).toMatch(/export interface HostPermissionsProvider extends Entity/u);
-    expect(permissionTypes).toContain('readonly notification: HostNotificationPermissionProvider;');
+    expect(permissionTypes).toMatch(/export interface HostPermissionsCapability extends Entity/u);
+    expect(permissionTypes).toContain('readonly notification: HostNotificationPermissionCapability;');
     expect(permissionTypes).toContain('queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;');
     expect(permissionTypes).toContain(
       "requestMediaAccess(name: 'camera' | 'microphone'): Promise<PermissionRequestOutcome>;",
@@ -23,7 +23,7 @@ describe('permission host ownership', () => {
     expect(permissionTypes).toContain('requestWakeLock(): Promise<PermissionRequestOutcome>;');
 
     const hostTypes = readFileSync(resolve('packages/types/src/Host.ts'), 'utf8');
-    expect(hostTypes).toMatch(/readonly permissions\?: HostPermissionsProvider;/u);
+    expect(hostTypes).toMatch(/readonly permissions\?: HostPermissionsCapability;/u);
   });
 
   it('moves every Web permission operation behind createWebPermissionsBackend', () => {
@@ -39,7 +39,7 @@ describe('permission host ownership', () => {
 
   it('makes the page Notification profile consume the provider instead of a second native owner', () => {
     const source = readFileSync(resolve('packages/host-web/src/webNotification.ts'), 'utf8');
-    expect(source).toContain('hostNotificationPermission: Readonly<HostNotificationPermissionProvider>');
+    expect(source).toContain('hostNotificationPermission: Readonly<HostNotificationPermissionCapability>');
     expect(source).toContain('out.permission = hostNotificationPermission;');
     expect(source).not.toMatch(/api\.Notification\.permission/u);
     expect(source).not.toMatch(/api\.Notification\.requestPermission/u);

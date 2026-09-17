@@ -1,4 +1,4 @@
-import type { HostTextShaperProvider, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
+import type { HostTextShaperCapability, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
 
 import { itemizeText, shapeTextRuns } from './textShaperItemize';
 
@@ -11,7 +11,7 @@ const _emptyRun: ShapedRun = {
   script: 'Latn',
 };
 
-function _makeShapingBackend(): HostTextShaperProvider {
+function _makeShapingBackend(): HostTextShaperCapability {
   return {
     measureText: (t: string) => t.length * 8,
     shapeRun: (_t: string, _f: Readonly<TextFormat>, opts?: Readonly<ShapeRunOptions>): ShapedRun => ({
@@ -22,7 +22,7 @@ function _makeShapingBackend(): HostTextShaperProvider {
   };
 }
 
-const _advancesOnly: HostTextShaperProvider = { measureText: (t: string) => t.length };
+const _advancesOnly: HostTextShaperCapability = { measureText: (t: string) => t.length };
 const _shapingBackend = _makeShapingBackend();
 
 describe('itemizeText', () => {
@@ -91,7 +91,7 @@ describe('shapeTextRuns', () => {
   });
   it('passes per-item direction and script to shapeRun', () => {
     const captured: { direction?: string; script?: string }[] = [];
-    const capturingBackend: HostTextShaperProvider = {
+    const capturingBackend: HostTextShaperCapability = {
       measureText: () => 0,
       shapeRun: (_t: string, _f: Readonly<TextFormat>, opts?: Readonly<ShapeRunOptions>): ShapedRun => {
         captured.push({ direction: opts?.direction, script: opts?.script });

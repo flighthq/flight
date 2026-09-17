@@ -2,12 +2,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   HostClipboardCapabilities,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorClipboardProvider = HostClipboardImageProvider & HostClipboardTextProvider;
+type CapacitorClipboardProvider = HostClipboardImageCapability & HostClipboardTextCapability;
 
 // Capacitor covers the text/clear and image clipboard vectors. Other capability slots are
 // deliberately absent from its returned host rather than simulated by sentinels.
@@ -18,11 +18,11 @@ export function capacitorHostClipboard(
   return { image: provider, text: provider };
 }
 
-export function capacitorHostClipboardImage(capacitor: CapacitorApi): HostClipboardImageProvider {
+export function capacitorHostClipboardImage(capacitor: CapacitorApi): HostClipboardImageCapability {
   return capacitorClipboardProvider(capacitor);
 }
 
-export function capacitorHostClipboardText(capacitor: CapacitorApi): HostClipboardTextProvider {
+export function capacitorHostClipboardText(capacitor: CapacitorApi): HostClipboardTextCapability {
   return capacitorClipboardProvider(capacitor);
 }
 

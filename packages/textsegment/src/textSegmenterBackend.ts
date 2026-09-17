@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostTextSegmenterProvider,
+  HostTextSegmenterCapability,
   TextSegment,
   TextSegmentGranularity,
   TextSegmenterBackendExplanation,
@@ -9,13 +9,13 @@ import type {
 
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
-export function createDefaultTextSegmenterBackend(): HostTextSegmenterProvider {
+export function createDefaultTextSegmenterBackend(): HostTextSegmenterCapability {
   return createWebTextSegmenterBackend();
 }
 
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object.
-export const webTextSegmenterBackend: HostTextSegmenterProvider = createWebTextSegmenterBackend();
+export const webTextSegmenterBackend: HostTextSegmenterCapability = createWebTextSegmenterBackend();
 
 // Builds the default web backend: a wrapper over the browser-native Intl.Segmenter. It ships no
 // Unicode tables — the engine already carries them — so the common path costs nothing in bundle
@@ -23,15 +23,15 @@ export const webTextSegmenterBackend: HostTextSegmenterProvider = createWebTextS
 // expensive relative to a single segment() call. Where Intl.Segmenter is absent (an old or headless
 // engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
 // the host for those environments.
-export function createWebTextSegmenterBackend(): HostTextSegmenterProvider {
-  const out = allocateEntity<HostTextSegmenterProvider>();
+export function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
+  const out = allocateEntity<HostTextSegmenterCapability>();
   initializeWebTextSegmenterBackend(out);
   return finishEntity(out);
 }
 
 /** Describes which provider an operation would use and whether Intl.Segmenter is present. */
 export function explainTextSegmenterBackend(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
 ): TextSegmenterBackendExplanation {
   const web = textSegmenter === webTextSegmenterBackend;
   const intlSegmenterAvailable = hasIntlSegmenter();
@@ -42,7 +42,7 @@ export function explainTextSegmenterBackend(
   };
 }
 
-export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTextSegmenterProvider>): void {
+export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTextSegmenterCapability>): void {
   out.segment = segmentWithIntlSegmenter;
 }
 

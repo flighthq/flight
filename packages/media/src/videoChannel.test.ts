@@ -4,7 +4,7 @@ import {
   getTextureSource,
   getVideoTextureWidth,
 } from '@flighthq/texture/contract';
-import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
+import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
 import { createVideoResource, destroyVideoResource } from '@flighthq/video/contract';
 
 import {
@@ -25,7 +25,7 @@ import {
   stopVideoChannel,
 } from './videoChannel';
 
-const webVideoHost: HostVideoProvider = {
+const webVideoHost: HostVideoCapability = {
   addEndedListener: (element, listener) => {
     asMock(element).addEventListener('ended', listener);
   },

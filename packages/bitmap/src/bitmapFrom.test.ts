@@ -3,7 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import type { HostBitmapReadbackProvider } from '@flighthq/types/contract';
+import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
@@ -17,11 +17,11 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function hostWith(backend: HostBitmapReadbackProvider): {
-  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+function hostWith(backend: HostBitmapReadbackCapability): {
+  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
 } {
   return { graphics: { bitmapReadback: backend } } as {
-    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
   };
 }
 

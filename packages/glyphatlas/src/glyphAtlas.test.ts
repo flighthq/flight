@@ -1,4 +1,4 @@
-import type { GlyphRasterizeOptions, HostGlyphRasterizerProvider } from '@flighthq/types/contract';
+import type { GlyphRasterizeOptions, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,7 +11,7 @@ import {
 } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 
-const defaultBackend: HostGlyphRasterizerProvider = { rasterize: () => null };
+const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 
 describe('createGlyphAtlas', () => {
   it('allocates an atlas bitmap at the requested size with an empty cache', () => {
@@ -59,7 +59,7 @@ describe('createGlyphAtlas', () => {
 describe('createGlyphAtlas font style and weight', () => {
   it('forwards fontStyle and fontWeight to the rasterizer', () => {
     let seen: Readonly<GlyphRasterizeOptions> | null = null;
-    const backend: HostGlyphRasterizerProvider = {
+    const backend: HostGlyphRasterizerCapability = {
       rasterize: (_codepoint, options) => {
         seen = options;
         return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
@@ -84,7 +84,7 @@ describe('createGlyphAtlas font style and weight', () => {
 
   it('leaves fontStyle and fontWeight absent when not supplied', () => {
     let seen: Readonly<GlyphRasterizeOptions> | null = null;
-    const backend: HostGlyphRasterizerProvider = {
+    const backend: HostGlyphRasterizerCapability = {
       rasterize: (_codepoint, options) => {
         seen = options;
         return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
@@ -145,9 +145,9 @@ describe('disposeGlyphAtlas', () => {
   });
 });
 
-function createMockRasterizerBackend(): { backend: HostGlyphRasterizerProvider; calls: number[] } {
+function createMockRasterizerBackend(): { backend: HostGlyphRasterizerCapability; calls: number[] } {
   const calls: number[] = [];
-  const backend: HostGlyphRasterizerProvider = {
+  const backend: HostGlyphRasterizerCapability = {
     rasterize(codepoint) {
       calls.push(codepoint);
       return { advance: 8, bearingX: 1, bearingY: 8, height: 8, pixels: new Uint8ClampedArray(8 * 8 * 4), width: 8 };

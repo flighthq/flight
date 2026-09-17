@@ -1,8 +1,8 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostNotificationPermissionProvider,
-  HostPermissionsProvider,
-  HostStoragePersistenceRequestProvider,
+  HostNotificationPermissionCapability,
+  HostPermissionsCapability,
+  HostStoragePersistenceRequestCapability,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -161,7 +161,7 @@ function forbidNativeNotificationOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostNotificationPermissionProvider');
+          throw new Error('Permissions must delegate to HostNotificationPermissionCapability');
         },
       },
     ),
@@ -175,7 +175,7 @@ function forbidNativePermissionOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostPermissionsProvider');
+          throw new Error('Permissions must delegate to HostPermissionsCapability');
         },
       },
     ),
@@ -189,25 +189,25 @@ function forbidNativeStorageOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostStoragePersistenceRequestProvider');
+          throw new Error('Permissions must delegate to HostStoragePersistenceRequestCapability');
         },
       },
     ),
   );
 }
 
-function persistenceProvider(provider: object): HostStoragePersistenceRequestProvider {
-  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceRequestProvider;
+function persistenceProvider(provider: object): HostStoragePersistenceRequestCapability {
+  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceRequestCapability;
 }
 
 interface PermissionsProviderOverrides {
-  readonly notification?: HostNotificationPermissionProvider;
-  readonly queryPermission?: HostPermissionsProvider['queryPermission'];
-  readonly requestMediaAccess?: HostPermissionsProvider['requestMediaAccess'];
-  readonly requestWakeLock?: HostPermissionsProvider['requestWakeLock'];
+  readonly notification?: HostNotificationPermissionCapability;
+  readonly queryPermission?: HostPermissionsCapability['queryPermission'];
+  readonly requestMediaAccess?: HostPermissionsCapability['requestMediaAccess'];
+  readonly requestWakeLock?: HostPermissionsCapability['requestWakeLock'];
 }
 
-function permissionsProvider(overrides: Readonly<PermissionsProviderOverrides> = {}): HostPermissionsProvider {
+function permissionsProvider(overrides: Readonly<PermissionsProviderOverrides> = {}): HostPermissionsCapability {
   return {
     [EntityRuntimeKey]: undefined,
     notification: overrides.notification ?? {

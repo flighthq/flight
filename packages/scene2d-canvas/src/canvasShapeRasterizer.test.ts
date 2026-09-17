@@ -7,7 +7,7 @@ import {
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
-import type { HostImageProvider, RenderState } from '@flighthq/types/contract';
+import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -35,7 +35,7 @@ function makeRasterizerState(): RenderState {
   return state;
 }
 
-function createTestImageBackend(): HostImageProvider {
+function createTestImageBackend(): HostImageCapability {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -48,10 +48,10 @@ function createTestImageBackend(): HostImageProvider {
   };
 }
 
-function imageHost(backend: HostImageProvider = createTestImageBackend()): {
-  readonly graphics: { readonly image: HostImageProvider };
+function imageHost(backend: HostImageCapability = createTestImageBackend()): {
+  readonly graphics: { readonly image: HostImageCapability };
 } {
-  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
 }
 
 const host = imageHost();
@@ -96,7 +96,7 @@ describe('createCanvasShapeRasterizer', () => {
   it('paints nothing when the registered Bitmap resolver cannot materialize on this host', () => {
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     const noMaterializeHost = imageHost(backend);
     registerCanvasBitmapTextureResolver(noMaterializeHost.graphics.image, resolvers);
 

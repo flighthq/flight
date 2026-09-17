@@ -13,27 +13,27 @@ import type {
   HostTrayCapabilities,
   MenuItemTemplate,
   Signal,
-  HostTrayBalloonProvider,
+  HostTrayBalloonCapability,
   TrayBalloonEvent,
-  HostTrayBalloonEventsProvider,
-  HostTrayBoundsProvider,
-  HostTrayDoubleClickPolicyProvider,
+  HostTrayBalloonEventsCapability,
+  HostTrayBoundsCapability,
+  HostTrayDoubleClickPolicyCapability,
   TrayDropEvent,
-  HostTrayDropEventsProvider,
+  HostTrayDropEventsCapability,
   TrayIcon,
   TrayIconOptions,
-  HostTrayImageProvider,
+  HostTrayImageCapability,
   TrayInteractionEvent,
-  HostTrayInteractionEventsProvider,
-  HostTrayLifecycleProvider,
-  HostTrayMenuProvider,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
   TrayMenuSelectionEvent,
-  HostTrayMenuSelectionEventsProvider,
-  HostTrayPopupMenuProvider,
-  HostTrayPressedImageProvider,
-  HostTrayTemplateImageProvider,
-  HostTrayTitleProvider,
-  HostTrayTooltipProvider,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayPopupMenuCapability,
+  HostTrayPressedImageCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
   Vector2Like,
 } from '@flighthq/types/contract';
 
@@ -66,50 +66,50 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
   const records = new Map<TrayIcon, TrayRecord>();
 
   const lifecycle = (() => {
-    const out = allocateEntity<HostTrayLifecycleProvider>();
+    const out = allocateEntity<HostTrayLifecycleCapability>();
     populateElectronHostTrayLifecycle(out, records, electron, profile);
     return finishEntity(out);
   })();
 
   const image = (() => {
-    const out = allocateEntity<HostTrayImageProvider>();
+    const out = allocateEntity<HostTrayImageCapability>();
     populateElectronHostTrayImage(out, records, electron);
     return finishEntity(out);
   })();
 
   const tooltip = (() => {
-    const out = allocateEntity<HostTrayTooltipProvider>();
+    const out = allocateEntity<HostTrayTooltipCapability>();
     populateElectronHostTrayTooltip(out, records);
     return finishEntity(out);
   })();
 
   const menu = (() => {
-    const out = allocateEntity<HostTrayMenuProvider>();
+    const out = allocateEntity<HostTrayMenuCapability>();
     populateElectronHostTrayMenu(out, records, electron);
     return finishEntity(out);
   })();
 
   const common = {
     bounds: (() => {
-      const out = allocateEntity<HostTrayBoundsProvider>();
+      const out = allocateEntity<HostTrayBoundsCapability>();
       populateElectronHostTrayBounds(out, records);
       return finishEntity(out);
     })(),
     image,
     interactionEvents: (() => {
-      const out = allocateEntity<HostTrayInteractionEventsProvider>();
+      const out = allocateEntity<HostTrayInteractionEventsCapability>();
       populateElectronHostTrayInteractionEvents(out, records);
       return finishEntity(out);
     })(),
     lifecycle,
     menu,
     menuSelectionEvents: (() => {
-      const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
+      const out = allocateEntity<HostTrayMenuSelectionEventsCapability>();
       populateElectronHostTrayMenuSelectionEvents(out, records);
       return finishEntity(out);
     })(),
     popupMenu: (() => {
-      const out = allocateEntity<HostTrayPopupMenuProvider>();
+      const out = allocateEntity<HostTrayPopupMenuCapability>();
       populateElectronHostTrayPopupMenu(out, records);
       return finishEntity(out);
     })(),
@@ -119,27 +119,27 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
   if (profile === 'macos') {
     const macos = {
       doubleClickPolicy: (() => {
-        const out = allocateEntity<HostTrayDoubleClickPolicyProvider>();
+        const out = allocateEntity<HostTrayDoubleClickPolicyCapability>();
         populateElectronHostTrayDoubleClickPolicy(out, records);
         return finishEntity(out);
       })(),
       dropEvents: (() => {
-        const out = allocateEntity<HostTrayDropEventsProvider>();
+        const out = allocateEntity<HostTrayDropEventsCapability>();
         populateElectronHostTrayDropEvents(out, records);
         return finishEntity(out);
       })(),
       pressedImage: (() => {
-        const out = allocateEntity<HostTrayPressedImageProvider>();
+        const out = allocateEntity<HostTrayPressedImageCapability>();
         populateElectronHostTrayPressedImage(out, records, electron);
         return finishEntity(out);
       })(),
       templateImage: (() => {
-        const out = allocateEntity<HostTrayTemplateImageProvider>();
+        const out = allocateEntity<HostTrayTemplateImageCapability>();
         populateElectronHostTrayTemplateImage(out, records);
         return finishEntity(out);
       })(),
       title: (() => {
-        const out = allocateEntity<HostTrayTitleProvider>();
+        const out = allocateEntity<HostTrayTitleCapability>();
         populateElectronHostTrayTitle(out, records);
         return finishEntity(out);
       })(),
@@ -154,12 +154,12 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
   if (profile === 'windows') {
     const windows = {
       balloon: (() => {
-        const out = allocateEntity<HostTrayBalloonProvider>();
+        const out = allocateEntity<HostTrayBalloonCapability>();
         populateElectronHostTrayBalloon(out, records);
         return finishEntity(out);
       })(),
       balloonEvents: (() => {
-        const out = allocateEntity<HostTrayBalloonEventsProvider>();
+        const out = allocateEntity<HostTrayBalloonEventsCapability>();
         populateElectronHostTrayBalloonEvents(out, records);
         return finishEntity(out);
       })(),
@@ -176,74 +176,74 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
   return finishEntity(out) as unknown as ElectronTrayCapabilitiesFor<Profile>;
 }
 
-export function electronHostTrayBalloon(electron: ElectronApi): HostTrayBalloonProvider {
+export function electronHostTrayBalloon(electron: ElectronApi): HostTrayBalloonCapability {
   return electronHostTray(electron, 'windows').balloon;
 }
 
-export function electronHostTrayBalloonEvents(electron: ElectronApi): HostTrayBalloonEventsProvider {
+export function electronHostTrayBalloonEvents(electron: ElectronApi): HostTrayBalloonEventsCapability {
   return electronHostTray(electron, 'windows').balloonEvents;
 }
 
-export function electronHostTrayBounds(electron: ElectronApi, profile: DesktopOsProfile): HostTrayBoundsProvider {
+export function electronHostTrayBounds(electron: ElectronApi, profile: DesktopOsProfile): HostTrayBoundsCapability {
   return electronHostTray(electron, profile).bounds;
 }
 
-export function electronHostTrayDoubleClickPolicy(electron: ElectronApi): HostTrayDoubleClickPolicyProvider {
+export function electronHostTrayDoubleClickPolicy(electron: ElectronApi): HostTrayDoubleClickPolicyCapability {
   return electronHostTray(electron, 'macos').doubleClickPolicy;
 }
 
-export function electronHostTrayDropEvents(electron: ElectronApi): HostTrayDropEventsProvider {
+export function electronHostTrayDropEvents(electron: ElectronApi): HostTrayDropEventsCapability {
   return electronHostTray(electron, 'macos').dropEvents;
 }
 
-export function electronHostTrayImage(electron: ElectronApi, profile: DesktopOsProfile): HostTrayImageProvider {
+export function electronHostTrayImage(electron: ElectronApi, profile: DesktopOsProfile): HostTrayImageCapability {
   return electronHostTray(electron, profile).image;
 }
 
 export function electronHostTrayInteractionEvents(
   electron: ElectronApi,
   profile: DesktopOsProfile,
-): HostTrayInteractionEventsProvider {
+): HostTrayInteractionEventsCapability {
   return electronHostTray(electron, profile).interactionEvents;
 }
 
-export function electronHostTrayLifecycle(electron: ElectronApi, profile: DesktopOsProfile): HostTrayLifecycleProvider {
+export function electronHostTrayLifecycle(electron: ElectronApi, profile: DesktopOsProfile): HostTrayLifecycleCapability {
   return electronHostTray(electron, profile).lifecycle;
 }
 
-export function electronHostTrayMenu(electron: ElectronApi, profile: DesktopOsProfile): HostTrayMenuProvider {
+export function electronHostTrayMenu(electron: ElectronApi, profile: DesktopOsProfile): HostTrayMenuCapability {
   return electronHostTray(electron, profile).menu;
 }
 
 export function electronHostTrayMenuSelectionEvents(
   electron: ElectronApi,
   profile: DesktopOsProfile,
-): HostTrayMenuSelectionEventsProvider {
+): HostTrayMenuSelectionEventsCapability {
   return electronHostTray(electron, profile).menuSelectionEvents;
 }
 
-export function electronHostTrayPopupMenu(electron: ElectronApi, profile: DesktopOsProfile): HostTrayPopupMenuProvider {
+export function electronHostTrayPopupMenu(electron: ElectronApi, profile: DesktopOsProfile): HostTrayPopupMenuCapability {
   return electronHostTray(electron, profile).popupMenu;
 }
 
-export function electronHostTrayPressedImage(electron: ElectronApi): HostTrayPressedImageProvider {
+export function electronHostTrayPressedImage(electron: ElectronApi): HostTrayPressedImageCapability {
   return electronHostTray(electron, 'macos').pressedImage;
 }
 
-export function electronHostTrayTemplateImage(electron: ElectronApi): HostTrayTemplateImageProvider {
+export function electronHostTrayTemplateImage(electron: ElectronApi): HostTrayTemplateImageCapability {
   return electronHostTray(electron, 'macos').templateImage;
 }
 
-export function electronHostTrayTitle(electron: ElectronApi): HostTrayTitleProvider {
+export function electronHostTrayTitle(electron: ElectronApi): HostTrayTitleCapability {
   return electronHostTray(electron, 'macos').title;
 }
 
-export function electronHostTrayTooltip(electron: ElectronApi, profile: DesktopOsProfile): HostTrayTooltipProvider {
+export function electronHostTrayTooltip(electron: ElectronApi, profile: DesktopOsProfile): HostTrayTooltipCapability {
   return electronHostTray(electron, profile).tooltip;
 }
 
 export function populateElectronHostTrayBalloon(
-  out: EntityConstruction<HostTrayBalloonProvider>,
+  out: EntityConstruction<HostTrayBalloonCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.display = async (
@@ -283,14 +283,14 @@ export function populateElectronHostTrayBalloon(
 }
 
 export function populateElectronHostTrayBalloonEvents(
-  out: EntityConstruction<HostTrayBalloonEventsProvider>,
+  out: EntityConstruction<HostTrayBalloonEventsCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null;
 }
 
 export function populateElectronHostTrayBounds(
-  out: EntityConstruction<HostTrayBoundsProvider>,
+  out: EntityConstruction<HostTrayBoundsCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {
@@ -305,7 +305,7 @@ export function populateElectronHostTrayBounds(
 }
 
 export function populateElectronHostTrayDoubleClickPolicy(
-  out: EntityConstruction<HostTrayDoubleClickPolicyProvider>,
+  out: EntityConstruction<HostTrayDoubleClickPolicyCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.setIgnore = async (tray: TrayIcon, ignore: boolean) => {
@@ -316,14 +316,14 @@ export function populateElectronHostTrayDoubleClickPolicy(
 }
 
 export function populateElectronHostTrayDropEvents(
-  out: EntityConstruction<HostTrayDropEventsProvider>,
+  out: EntityConstruction<HostTrayDropEventsCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.dropEvents ?? null;
 }
 
 export function populateElectronHostTrayImage(
-  out: EntityConstruction<HostTrayImageProvider>,
+  out: EntityConstruction<HostTrayImageCapability>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -347,14 +347,14 @@ export function populateElectronHostTrayImage(
 }
 
 export function populateElectronHostTrayInteractionEvents(
-  out: EntityConstruction<HostTrayInteractionEventsProvider>,
+  out: EntityConstruction<HostTrayInteractionEventsCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.interactionEvents ?? null;
 }
 
 export function populateElectronHostTrayLifecycle(
-  out: EntityConstruction<HostTrayLifecycleProvider>,
+  out: EntityConstruction<HostTrayLifecycleCapability>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
   profile: DesktopOsProfile,
@@ -463,7 +463,7 @@ export function populateElectronHostTrayLifecycle(
 }
 
 export function populateElectronHostTrayMenu(
-  out: EntityConstruction<HostTrayMenuProvider>,
+  out: EntityConstruction<HostTrayMenuCapability>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -489,14 +489,14 @@ export function populateElectronHostTrayMenu(
 }
 
 export function populateElectronHostTrayMenuSelectionEvents(
-  out: EntityConstruction<HostTrayMenuSelectionEventsProvider>,
+  out: EntityConstruction<HostTrayMenuSelectionEventsCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.getSignal = (tray: TrayIcon) => records.get(tray)?.menuSelectionEvents ?? null;
 }
 
 export function populateElectronHostTrayPopupMenu(
-  out: EntityConstruction<HostTrayPopupMenuProvider>,
+  out: EntityConstruction<HostTrayPopupMenuCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.popup = async (tray: TrayIcon, position?: Readonly<Vector2Like>) => {
@@ -513,7 +513,7 @@ export function populateElectronHostTrayPopupMenu(
 }
 
 export function populateElectronHostTrayPressedImage(
-  out: EntityConstruction<HostTrayPressedImageProvider>,
+  out: EntityConstruction<HostTrayPressedImageCapability>,
   records: Map<TrayIcon, TrayRecord>,
   electron: ElectronApi,
 ): void {
@@ -536,7 +536,7 @@ export function populateElectronHostTrayPressedImage(
 }
 
 export function populateElectronHostTrayTemplateImage(
-  out: EntityConstruction<HostTrayTemplateImageProvider>,
+  out: EntityConstruction<HostTrayTemplateImageCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.set = async (tray: TrayIcon, isTemplate: boolean) => {
@@ -553,7 +553,7 @@ export function populateElectronHostTrayTemplateImage(
 }
 
 export function populateElectronHostTrayTitle(
-  out: EntityConstruction<HostTrayTitleProvider>,
+  out: EntityConstruction<HostTrayTitleCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {
@@ -576,7 +576,7 @@ export function populateElectronHostTrayTitle(
 }
 
 export function populateElectronHostTrayTooltip(
-  out: EntityConstruction<HostTrayTooltipProvider>,
+  out: EntityConstruction<HostTrayTooltipCapability>,
   records: Map<TrayIcon, TrayRecord>,
 ): void {
   out.get = async (tray: TrayIcon) => {

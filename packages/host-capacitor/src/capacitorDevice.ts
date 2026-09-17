@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorDeviceInfo,
-  HostDeviceProvider,
+  HostDeviceCapability,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
@@ -12,20 +12,20 @@ import type {
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceProvider & Entity {
-  const out = allocateEntity<HostDeviceProvider>();
+export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability & Entity {
+  const out = allocateEntity<HostDeviceCapability>();
   populateCapacitorDevice(out, capacitor);
   return finishEntity(out);
 }
 
-// Maps Flight's HostDeviceProvider onto Capacitor's `@capacitor/device`. Provider reads are synchronous
+// Maps Flight's HostDeviceCapability onto Capacitor's `@capacitor/device`. Provider reads are synchronous
 // out-fills, whereas Capacitor's getInfo/getId are async, so the adapter prefetches both once at
 // construction and fills the caller's `out` from the cached values (sentinels — '' / -1 / false — until
 // the first probe resolves). Capacitor reports device identity (model, manufacturer, OS, virtual,
 // webview), which map onto DeviceInfo; the fields it does not report (arch, memory, GPU, ABIs, board,
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
-function populateCapacitorDevice(out: EntityConstruction<HostDeviceProvider>, capacitor: CapacitorApi): void {
+function populateCapacitorDevice(out: EntityConstruction<HostDeviceCapability>, capacitor: CapacitorApi): void {
   const device = capacitor.device;
   // Sync getters over async Capacitor: prefetch identity once and serve the cached values.
   let cachedInfo: CapacitorDeviceInfo | null = null;

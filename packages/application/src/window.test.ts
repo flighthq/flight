@@ -3,16 +3,16 @@ import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contr
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
-  HostFullscreenProvider,
+  HostFullscreenCapability,
   FullscreenTargetHandle,
-  HostRenderContextProvider,
-  HostRenderSurfaceProvider,
-  HostInputDropFileProvider,
-  HostInputFocusProvider,
-  HostInputPointerLockProvider,
+  HostGlCapability,
+  HostSurfaceCapability,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostInputTargetProvider,
+  HostInputTargetCapability,
   InputTargetHandle,
   Matrix,
   RenderState,
@@ -93,31 +93,31 @@ type RecordingWindowBackend = Required<HostWindowProvider> & {
   emitVisibility(visible: boolean): void;
 };
 
-type RecordingFullscreenBackend = Required<HostFullscreenProvider> & {
+type RecordingFullscreenBackend = Required<HostFullscreenCapability> & {
   readonly calls: string[];
   emit(fullscreen: boolean): void;
 };
 
-type RecordingInputDropFileBackend = HostInputDropFileProvider & {
+type RecordingInputDropFileBackend = HostInputDropFileCapability & {
   readonly calls: string[];
   emit(path: string): void;
 };
 
-type RecordingInputFocusBackend = HostInputFocusProvider & {
+type RecordingInputFocusBackend = HostInputFocusCapability & {
   readonly calls: string[];
   emitBlur(): void;
   emitFocus(): void;
 };
 
-type RecordingInputPointerLockBackend = HostInputPointerLockProvider & { readonly calls: string[] };
+type RecordingInputPointerLockBackend = HostInputPointerLockCapability & { readonly calls: string[] };
 
-type RecordingRenderContextBackend = HostRenderContextProvider & {
+type RecordingRenderContextBackend = HostGlCapability & {
   readonly calls: string[];
   emitLost(): void;
   emitRestored(): void;
 };
 
-type RecordingRenderSurfaceBackend = HostRenderSurfaceProvider & { readonly calls: string[] };
+type RecordingRenderSurfaceBackend = HostSurfaceCapability & { readonly calls: string[] };
 
 type TestHost = {
   readonly graphics: {
@@ -133,11 +133,11 @@ type TestHost = {
   readonly window: RecordingWindowBackend;
 };
 
-type WindowTargetHost = { readonly graphics: { readonly renderContext: HostRenderContextProvider } } & {
-  readonly graphics: { readonly renderSurface: HostRenderSurfaceProvider };
-} & { readonly input: { readonly dropFile: HostInputDropFileProvider } } & {
-  readonly input: { readonly focus: HostInputFocusProvider };
-} & { readonly input: { readonly pointerLock: HostInputPointerLockProvider } };
+type WindowTargetHost = { readonly graphics: { readonly renderContext: HostGlCapability } } & {
+  readonly graphics: { readonly renderSurface: HostSurfaceCapability };
+} & { readonly input: { readonly dropFile: HostInputDropFileCapability } } & {
+  readonly input: { readonly focus: HostInputFocusCapability };
+} & { readonly input: { readonly pointerLock: HostInputPointerLockCapability } };
 
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
@@ -1463,7 +1463,7 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<HostInputTargetProvider>();
+    const backend = allocateEntity<HostInputTargetCapability>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();

@@ -4,7 +4,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { HostImageProvider, ImageResource } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -23,7 +23,7 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function createTestImageBackend(): HostImageProvider {
+function createTestImageBackend(): HostImageCapability {
   return {
     [EntityRuntimeKey]: undefined,
     async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
@@ -37,9 +37,9 @@ function createTestImageBackend(): HostImageProvider {
   };
 }
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: createTestImageBackend() },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 
 beforeEach(() => {
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);

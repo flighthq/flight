@@ -1,14 +1,14 @@
-import type { HostGlyphRasterizerProvider } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas';
 import { createGlyphSourceFromGlyphAtlas, initializeGlyphSourceFromGlyphAtlas } from './glyphSource';
 
-const defaultBackend: HostGlyphRasterizerProvider = { rasterize: () => null };
+const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 
 describe('createGlyphSourceFromGlyphAtlas', () => {
   it('exposes the atlas as a GlyphSource that rasterizes on miss', () => {
-    const backend: HostGlyphRasterizerProvider = {
+    const backend: HostGlyphRasterizerCapability = {
       rasterize: () => ({
         advance: 8,
         bearingX: 1,
@@ -72,7 +72,7 @@ describe('createGlyphSourceFromGlyphAtlas', () => {
   });
 });
 
-function createBlockRasterizerBackend(): HostGlyphRasterizerProvider {
+function createBlockRasterizerBackend(): HostGlyphRasterizerCapability {
   return {
     rasterize: () => ({
       advance: 8,

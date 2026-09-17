@@ -15,16 +15,16 @@ import type {
   TauriTrayCapabilitiesFor,
   TrayIcon,
   TrayIconOptions,
-  HostTrayImageProvider,
+  HostTrayImageCapability,
   TrayInteractionEvent,
-  HostTrayInteractionEventsProvider,
-  HostTrayLifecycleProvider,
-  HostTrayMenuProvider,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
   TrayMenuSelectionEvent,
-  HostTrayMenuSelectionEventsProvider,
-  HostTrayTemplateImageProvider,
-  HostTrayTitleProvider,
-  HostTrayTooltipProvider,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
 } from '@flighthq/types/contract';
 
 interface TrayRecord {
@@ -107,7 +107,7 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
 export function tauriHostTrayImage<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
-): HostTrayImageProvider {
+): HostTrayImageCapability {
   void tauri;
   void profile;
   return createTrayImage(new Map());
@@ -116,7 +116,7 @@ export function tauriHostTrayImage<Profile extends DesktopOsProfile>(
 export function tauriHostTrayInteractionEvents(
   tauri: TauriApi,
   profile: 'macos' | 'windows',
-): HostTrayInteractionEventsProvider {
+): HostTrayInteractionEventsCapability {
   void tauri;
   void profile;
   return createTrayInteractionEvents(new Map());
@@ -125,14 +125,14 @@ export function tauriHostTrayInteractionEvents(
 export function tauriHostTrayLifecycle<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
-): HostTrayLifecycleProvider {
+): HostTrayLifecycleCapability {
   return createTrayLifecycle(tauri, profile, new Map());
 }
 
 export function tauriHostTrayMenu<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
-): HostTrayMenuProvider {
+): HostTrayMenuCapability {
   void profile;
   return createTrayMenu(tauri, new Map());
 }
@@ -140,24 +140,24 @@ export function tauriHostTrayMenu<Profile extends DesktopOsProfile>(
 export function tauriHostTrayMenuSelectionEvents<Profile extends DesktopOsProfile>(
   tauri: TauriApi,
   profile: Profile,
-): HostTrayMenuSelectionEventsProvider {
+): HostTrayMenuSelectionEventsCapability {
   void tauri;
   void profile;
   return createTrayMenuSelectionEvents(new Map());
 }
 
-export function tauriHostTrayTemplateImage(tauri: TauriApi): HostTrayTemplateImageProvider {
+export function tauriHostTrayTemplateImage(tauri: TauriApi): HostTrayTemplateImageCapability {
   void tauri;
   return createTrayTemplateImage(new Map());
 }
 
-export function tauriHostTrayTitle(tauri: TauriApi, profile: 'linux' | 'macos'): HostTrayTitleProvider {
+export function tauriHostTrayTitle(tauri: TauriApi, profile: 'linux' | 'macos'): HostTrayTitleCapability {
   void tauri;
   void profile;
   return createTrayTitle(new Map());
 }
 
-export function tauriHostTrayTooltip(tauri: TauriApi, profile: 'macos' | 'windows'): HostTrayTooltipProvider {
+export function tauriHostTrayTooltip(tauri: TauriApi, profile: 'macos' | 'windows'): HostTrayTooltipCapability {
   void tauri;
   void profile;
   return createTrayTooltip(new Map());
@@ -167,8 +167,8 @@ function createTrayLifecycle(
   tauri: TauriApi,
   profile: DesktopOsProfile,
   records: Map<TrayIcon, TrayRecord>,
-): HostTrayLifecycleProvider {
-  const out = allocateEntity<HostTrayLifecycleProvider>();
+): HostTrayLifecycleCapability {
+  const out = allocateEntity<HostTrayLifecycleCapability>();
   out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
     if (options.signal?.aborted) return { outcome: 'cancelled' as const };
     const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
@@ -242,16 +242,16 @@ function createTrayLifecycle(
   return finishEntity(out);
 }
 
-function createTrayImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayImageProvider {
-  const out = allocateEntity<HostTrayImageProvider>();
+function createTrayImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayImageCapability {
+  const out = allocateEntity<HostTrayImageCapability>();
   out.set = async (tray: TrayIcon, icon: string) => {
     return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
   };
   return finishEntity(out);
 }
 
-function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayMenuProvider {
-  const out = allocateEntity<HostTrayMenuProvider>();
+function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayMenuCapability {
+  const out = allocateEntity<HostTrayMenuCapability>();
   out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
     const record = activeRecord(records, tray);
     if (record === null) return { outcome: 'tray-destroyed' as const };
@@ -317,20 +317,20 @@ function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayReco
 
 function createTrayMenuSelectionEvents(
   records: ReadonlyMap<TrayIcon, TrayRecord>,
-): HostTrayMenuSelectionEventsProvider {
-  const out = allocateEntity<HostTrayMenuSelectionEventsProvider>();
+): HostTrayMenuSelectionEventsCapability {
+  const out = allocateEntity<HostTrayMenuSelectionEventsCapability>();
   out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
   return finishEntity(out);
 }
 
-function createTrayInteractionEvents(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayInteractionEventsProvider {
-  const out = allocateEntity<HostTrayInteractionEventsProvider>();
+function createTrayInteractionEvents(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayInteractionEventsCapability {
+  const out = allocateEntity<HostTrayInteractionEventsCapability>();
   out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
   return finishEntity(out);
 }
 
-function createTrayTemplateImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTemplateImageProvider {
-  const out = allocateEntity<HostTrayTemplateImageProvider>();
+function createTrayTemplateImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTemplateImageCapability {
+  const out = allocateEntity<HostTrayTemplateImageCapability>();
   out.set = async (tray: TrayIcon, isTemplate: boolean) => {
     return update(records, tray, 'template-image-update-failed', async (record) =>
       record.icon.setIconAsTemplate(isTemplate),
@@ -339,8 +339,8 @@ function createTrayTemplateImage(records: ReadonlyMap<TrayIcon, TrayRecord>): Ho
   return finishEntity(out);
 }
 
-function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTitleProvider {
-  const out = allocateEntity<HostTrayTitleProvider>();
+function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTitleCapability {
+  const out = allocateEntity<HostTrayTitleCapability>();
   out.get = async (tray: TrayIcon) => {
     const record = activeRecord(records, tray);
     return record === null
@@ -355,8 +355,8 @@ function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTi
   return finishEntity(out);
 }
 
-function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTooltipProvider {
-  const out = allocateEntity<HostTrayTooltipProvider>();
+function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTooltipCapability {
+  const out = allocateEntity<HostTrayTooltipCapability>();
   out.get = async (tray: TrayIcon) => {
     const record = activeRecord(records, tray);
     return record === null
@@ -375,14 +375,14 @@ function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTray
 
 function configureTray(
   out: EntityConstruction<Entity>,
-  image: HostTrayImageProvider,
-  interactionEvents: HostTrayInteractionEventsProvider | null,
-  lifecycle: HostTrayLifecycleProvider,
-  menu: HostTrayMenuProvider,
-  menuSelectionEvents: HostTrayMenuSelectionEventsProvider,
-  templateImage: HostTrayTemplateImageProvider | null,
-  title: HostTrayTitleProvider | null,
-  tooltip: HostTrayTooltipProvider | null,
+  image: HostTrayImageCapability,
+  interactionEvents: HostTrayInteractionEventsCapability | null,
+  lifecycle: HostTrayLifecycleCapability,
+  menu: HostTrayMenuCapability,
+  menuSelectionEvents: HostTrayMenuSelectionEventsCapability,
+  templateImage: HostTrayTemplateImageCapability | null,
+  title: HostTrayTitleCapability | null,
+  tooltip: HostTrayTooltipCapability | null,
 ): void {
   (out as any).image = image;
   if (interactionEvents !== null) (out as any).interactionEvents = interactionEvents;

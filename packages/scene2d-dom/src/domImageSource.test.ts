@@ -5,7 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
@@ -26,7 +26,7 @@ function makeState() {
   return createDomRenderState(document.createElement('div'));
 }
 
-function createTestImageBackend(): HostImageProvider {
+function createTestImageBackend(): HostImageCapability {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -39,9 +39,9 @@ function createTestImageBackend(): HostImageProvider {
   };
 }
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: createTestImageBackend() },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 
 describe('explainDomImageSource', () => {
   it('reports element and data for the two drawable representations', () => {

@@ -3,7 +3,7 @@ import { setLogSink } from '@flighthq/log/contract';
 import type {
   GlyphAtlas,
   GlyphEntry,
-  HostGlyphRasterizerProvider,
+  HostGlyphRasterizerCapability,
   GlyphSource,
   LogEntry,
 } from '@flighthq/types/contract';
@@ -34,7 +34,7 @@ function messages(): string {
 // of them resident at once: laying out its tail evicts its head, every pass invalidates the last, and
 // the layout cannot settle however many passes it is given.
 function createTinyGlyphAtlas(): GlyphAtlas {
-  const backend: HostGlyphRasterizerProvider = {
+  const backend: HostGlyphRasterizerCapability = {
     rasterize: () => ({
       advance: 8,
       bearingX: 0,

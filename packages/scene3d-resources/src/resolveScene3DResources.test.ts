@@ -6,7 +6,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type {
-  HostImageProvider,
+  HostImageCapability,
   ImageResource,
   ImageResourceReference,
   Scene3DResourceResolverWithRuntime,
@@ -31,9 +31,9 @@ import {
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as ImageResource;
 const testResources: ImageResourceReference[] = [];
 let sceneResources: ImageResourceReference[] = [];

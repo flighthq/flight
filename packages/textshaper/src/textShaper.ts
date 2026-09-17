@@ -1,12 +1,12 @@
 import type {
   BackendOperationExplanation,
-  HostTextShaperProvider,
+  HostTextShaperCapability,
   TextFormat,
   TextShaperOperation,
 } from '@flighthq/types/contract';
 
 export function explainTextShaperOperation(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   operation: TextShaperOperation,
 ): BackendOperationExplanation {
   if (typeof hostTextShaper[operation] === 'function') {
@@ -16,14 +16,14 @@ export function explainTextShaperOperation(
 }
 
 export function hasTextShaperOperation(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   operation: TextShaperOperation,
 ): boolean {
   return explainTextShaperOperation(hostTextShaper, operation).implemented;
 }
 
 export function measureText(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   text: string,
   format: Readonly<TextFormat>,
 ): number {

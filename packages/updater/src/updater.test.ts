@@ -3,14 +3,14 @@ import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
   DownloadedUpdate,
-  HostUpdaterCommandProvider,
+  HostUpdaterCommandCapability,
 } from '@flighthq/types/contract';
 
 import * as updaterContract from './contract';
 import * as updaterPublic from './index';
 import { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './updater';
 
-interface FakeBackend extends HostUpdaterCommandProvider {
+interface FakeBackend extends HostUpdaterCommandCapability {
   readonly calls: {
     check: number;
     destroy: number;
@@ -55,8 +55,8 @@ function fakeBackend(
   };
 }
 
-function host(command: HostUpdaterCommandProvider): {
-  readonly updater: { readonly command: HostUpdaterCommandProvider };
+function host(command: HostUpdaterCommandCapability): {
+  readonly updater: { readonly command: HostUpdaterCommandCapability };
 } {
   return { updater: { command } };
 }

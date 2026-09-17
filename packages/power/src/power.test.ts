@@ -4,15 +4,15 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
   HostPowerCapabilities,
-  HostPowerBatteryHealthProvider,
-  HostPowerKeepAwakeProvider,
-  HostPowerChangeProvider,
+  HostPowerBatteryHealthCapability,
+  HostPowerKeepAwakeCapability,
+  HostPowerChangeCapability,
   PowerIdleState,
-  HostPowerIdleProvider,
-  HostPowerSessionLockProvider,
+  HostPowerIdleCapability,
+  HostPowerSessionLockCapability,
   PowerStatus,
-  HostPowerStatusProvider,
-  HostPowerThermalProvider,
+  HostPowerStatusCapability,
+  HostPowerThermalCapability,
   PowerBatteryHealth,
   PowerThermalState,
 } from '@flighthq/types/contract';
@@ -83,8 +83,8 @@ function statusHost(status: Partial<PowerStatus>): TestPowerHost & { emitChange(
 }
 
 function keepAwakeHost(
-  overrides: Partial<{ readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake']> = {},
-): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } } {
+  overrides: Partial<{ readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } }['power']['keepAwake']> = {},
+): { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } } {
   return {
     power: {
       keepAwake: (() => {
@@ -240,7 +240,7 @@ describe('destroyPowerKeepAwake', () => {
   // would silently make them distinct and the alias assertion would prove nothing.
   function keepAwakeProvider(
     destroy?: () => void,
-  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake'] {
+  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } }['power']['keepAwake'] {
     const out = allocateEntity<any>();
     out.acquire = async () => ({ reason: 'ok' }) as const;
     out.destroy = destroy;
@@ -250,8 +250,8 @@ describe('destroyPowerKeepAwake', () => {
   }
 
   function keepAwakeHostWith(
-    provider: { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } }['power']['keepAwake'],
-  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeProvider } } {
+    provider: { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } }['power']['keepAwake'],
+  ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } } {
     return { power: { keepAwake: provider } };
   }
 
@@ -377,7 +377,7 @@ describe('getPowerBatteryHealth', () => {
   it('fills and returns the caller-owned out parameter', () => {
     const out = makePowerBatteryHealth();
     const provider = (() => {
-      const target = allocateEntity<HostPowerBatteryHealthProvider>();
+      const target = allocateEntity<HostPowerBatteryHealthCapability>();
       target.getBatteryHealth = (health: PowerBatteryHealth): PowerBatteryHealth => {
         health.cycleCount = 12;
         return health;

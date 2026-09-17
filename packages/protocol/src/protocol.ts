@@ -2,18 +2,18 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostProtocolDefaultProvider,
-  HostProtocolLaunchProvider,
-  HostProtocolOpenProvider,
-  HostProtocolRegistrationProvider,
-  HostProtocolRegistrationQueryProvider,
-  HostProtocolUnregistrationProvider,
+  HostProtocolDefaultCapability,
+  HostProtocolLaunchCapability,
+  HostProtocolOpenCapability,
+  HostProtocolRegistrationCapability,
+  HostProtocolRegistrationQueryCapability,
+  HostProtocolUnregistrationCapability,
   ParsedProtocolUrl,
   ProtocolHandler,
 } from '@flighthq/types/contract';
 
 export function attachProtocolHandler(
-  hostProtocolOpen: Readonly<HostProtocolOpenProvider>,
+  hostProtocolOpen: Readonly<HostProtocolOpenCapability>,
   handler: ProtocolHandler,
 ): void {
   detachProtocolHandler(handler);
@@ -60,12 +60,12 @@ export function disposeProtocolHandler(handler: ProtocolHandler): void {
   clearSignal(handler.onOpenUrl);
 }
 
-export function getProtocolLaunchUrl(hostProtocolLaunch: Readonly<HostProtocolLaunchProvider>): string | null {
+export function getProtocolLaunchUrl(hostProtocolLaunch: Readonly<HostProtocolLaunchCapability>): string | null {
   return hostProtocolLaunch.getLaunchUrl();
 }
 
 export function getRegisteredProtocolSchemes(
-  hostProtocolRegistration: Readonly<HostProtocolRegistrationProvider>,
+  hostProtocolRegistration: Readonly<HostProtocolRegistrationCapability>,
 ): readonly string[] {
   return hostProtocolRegistration.getRegisteredSchemes();
 }
@@ -75,14 +75,14 @@ export function initializeProtocolHandler(out: EntityConstruction<ProtocolHandle
 }
 
 export function isProtocolSchemeDefault(
-  hostProtocolDefault: Readonly<HostProtocolDefaultProvider>,
+  hostProtocolDefault: Readonly<HostProtocolDefaultCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolDefault.isDefault(scheme);
 }
 
 export function isProtocolSchemeRegistered(
-  hostProtocolRegistrationQuery: Readonly<HostProtocolRegistrationQueryProvider>,
+  hostProtocolRegistrationQuery: Readonly<HostProtocolRegistrationQueryCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolRegistrationQuery.isRegistered(scheme);
@@ -138,14 +138,14 @@ export function parseProtocolUrl(url: string): ParsedProtocolUrl | null {
 }
 
 export function registerProtocolScheme(
-  hostProtocolRegistration: Readonly<HostProtocolRegistrationProvider>,
+  hostProtocolRegistration: Readonly<HostProtocolRegistrationCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolRegistration.register(scheme);
 }
 
 export function registerProtocolSchemes(
-  hostProtocolRegistration: Readonly<HostProtocolRegistrationProvider>,
+  hostProtocolRegistration: Readonly<HostProtocolRegistrationCapability>,
   schemes: readonly string[],
 ): boolean {
   if (!schemes.every(isValidProtocolScheme)) return false;
@@ -158,28 +158,28 @@ export function registerProtocolSchemes(
 }
 
 export function removeProtocolSchemeAsDefault(
-  hostProtocolDefault: Readonly<HostProtocolDefaultProvider>,
+  hostProtocolDefault: Readonly<HostProtocolDefaultCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolDefault.removeAsDefault(scheme);
 }
 
 export function setProtocolSchemeAsDefault(
-  hostProtocolDefault: Readonly<HostProtocolDefaultProvider>,
+  hostProtocolDefault: Readonly<HostProtocolDefaultCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolDefault.setAsDefault(scheme);
 }
 
 export function unregisterProtocolScheme(
-  hostProtocolUnregistration: Readonly<HostProtocolUnregistrationProvider>,
+  hostProtocolUnregistration: Readonly<HostProtocolUnregistrationCapability>,
   scheme: string,
 ): boolean {
   return isValidProtocolScheme(scheme) && hostProtocolUnregistration.unregister(scheme);
 }
 
 export function unregisterProtocolSchemes(
-  hostProtocolUnregistration: Readonly<HostProtocolUnregistrationProvider>,
+  hostProtocolUnregistration: Readonly<HostProtocolUnregistrationCapability>,
   schemes: readonly string[],
 ): boolean {
   if (!schemes.every(isValidProtocolScheme)) return false;

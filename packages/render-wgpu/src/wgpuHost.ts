@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, WgpuHostAcquisition, HostWgpuProvider } from '@flighthq/types/contract';
+import type { EntityConstruction, WgpuHostAcquisition, HostWgpuCapability } from '@flighthq/types/contract';
 
-export function createWebWgpuHostBackend(): HostWgpuProvider {
-  const out = allocateEntity<HostWgpuProvider>();
+export function createWebWgpuHostBackend(): HostWgpuCapability {
+  const out = allocateEntity<HostWgpuCapability>();
   initializeWebWgpuHostBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuProvider>): void {
+export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
   out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');

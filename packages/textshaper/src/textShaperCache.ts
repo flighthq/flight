@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
   EntityRuntime,
-  HostTextShaperProvider,
+  HostTextShaperCapability,
   ShapeRunOptions,
   ShapedRun,
   TextFormat,
@@ -47,7 +47,7 @@ export function initializeTextShaperCache(out: EntityConstruction<TextShaperCach
 // are NOT cached so a different backend can succeed. Cache keys include provider identity so
 // callers can safely share a cache while interleaving hosts.
 export function shapeTextRunCached(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   cache: TextShaperCache,
   text: string,
   format: Readonly<TextFormat>,
@@ -73,10 +73,10 @@ function _getTextShaperCacheRuntime(cache: TextShaperCache): TextShaperCacheRunt
 
 // Backend identity is allocation state, not capability state: it only scopes cached values and
 // never selects a provider. Weak keys avoid retaining host-provided backends after their lifetime.
-const _backendCacheIds = new WeakMap<HostTextShaperProvider, number>();
+const _backendCacheIds = new WeakMap<HostTextShaperCapability, number>();
 let _nextBackendCacheId = 1;
 
-function _getBackendCacheId(backend: HostTextShaperProvider): number {
+function _getBackendCacheId(backend: HostTextShaperCapability): number {
   const existing = _backendCacheIds.get(backend);
   if (existing !== undefined) return existing;
   const id = _nextBackendCacheId++;

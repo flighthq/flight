@@ -1,11 +1,11 @@
 import type {
-  HostShellBeepProvider,
-  HostShellExternalProvider,
-  HostShellPathOpenProvider,
-  HostShellPathRevealProvider,
-  HostShellProcessProvider,
-  HostShellShortcutLinkProvider,
-  HostShellTrashProvider,
+  HostShellBeepCapability,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
+  HostShellProcessCapability,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
   ShellExternalOutcome,
   ShellExternalUrlPolicy,
   ShellPathOpenOutcome,
@@ -33,14 +33,14 @@ export function isShellUrlAllowed(url: string, policy: Readonly<ShellExternalUrl
 // Projects the one-path provider operation across the batch. Promise.all starts every operation,
 // awaits every settlement, and returns outcomes in the same order as paths.
 export function moveShellItemsToTrash(
-  hostShellTrash: Readonly<HostShellTrashProvider>,
+  hostShellTrash: Readonly<HostShellTrashCapability>,
   paths: readonly string[],
 ): Promise<readonly ShellTrashOutcome[]> {
   return Promise.all(paths.map((path) => hostShellTrash.moveToTrash(path)));
 }
 
 export function moveShellItemToTrash(
-  hostShellTrash: Readonly<HostShellTrashProvider>,
+  hostShellTrash: Readonly<HostShellTrashCapability>,
   path: string,
 ): Promise<ShellTrashOutcome> {
   return hostShellTrash.moveToTrash(path);
@@ -50,7 +50,7 @@ export function moveShellItemToTrash(
 // per-call policy is validated before dispatch, so a blocked or malformed scheme never reaches the
 // host. There is intentionally no policy default, ambient allowlist, or allow-all path.
 export function openShellExternalUrl(
-  hostShellExternal: Readonly<HostShellExternalProvider>,
+  hostShellExternal: Readonly<HostShellExternalCapability>,
   url: string,
   policy: Readonly<ShellExternalUrlPolicy>,
 ): Promise<ShellExternalOutcome> {
@@ -59,32 +59,32 @@ export function openShellExternalUrl(
 }
 
 export function openShellPath(
-  hostShellPathOpen: Readonly<HostShellPathOpenProvider>,
+  hostShellPathOpen: Readonly<HostShellPathOpenCapability>,
   path: string,
 ): Promise<ShellPathOpenOutcome> {
   return hostShellPathOpen.open(path);
 }
 
 export function readShellShortcutLink(
-  hostShellShortcutLink: Readonly<HostShellShortcutLinkProvider>,
+  hostShellShortcutLink: Readonly<HostShellShortcutLinkCapability>,
   shortcutPath: string,
 ): Promise<ShellShortcutLinkReadOutcome> {
   return hostShellShortcutLink.read(shortcutPath);
 }
 
 export function revealShellPath(
-  hostShellPathReveal: Readonly<HostShellPathRevealProvider>,
+  hostShellPathReveal: Readonly<HostShellPathRevealCapability>,
   path: string,
 ): Promise<ShellPathRevealOutcome> {
   return hostShellPathReveal.reveal(path);
 }
 
-export function shellBeep(hostShellBeep: Readonly<HostShellBeepProvider>): void {
+export function shellBeep(hostShellBeep: Readonly<HostShellBeepCapability>): void {
   hostShellBeep.beep();
 }
 
 export function spawnShellProcess(
-  hostShellProcess: Readonly<HostShellProcessProvider>,
+  hostShellProcess: Readonly<HostShellProcessCapability>,
   command: string,
   args: readonly string[],
   options?: Readonly<ShellProcessOptions>,
@@ -93,7 +93,7 @@ export function spawnShellProcess(
 }
 
 export function writeShellShortcutLink(
-  hostShellShortcutLink: Readonly<HostShellShortcutLinkProvider>,
+  hostShellShortcutLink: Readonly<HostShellShortcutLinkCapability>,
   shortcutPath: string,
   link: Readonly<ShellShortcutLink>,
   operation: ShellShortcutWriteOperation,

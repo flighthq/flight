@@ -1,13 +1,13 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
 import type {
-  HostSoftKeyboardAccessoryBarProvider,
-  HostSoftKeyboardChangeProvider,
-  HostSoftKeyboardInfoProvider,
-  HostSoftKeyboardResizeModeWriteProvider,
-  HostSoftKeyboardScrollAssistProvider,
-  HostSoftKeyboardStyleProvider,
-  HostSoftKeyboardVisibilityProvider,
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
   SoftKeyboardChangeSubscription,
   SoftKeyboardInfo,
   SoftKeyboardSetterResult,
@@ -36,7 +36,7 @@ type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 function fakeInfoBackend(
   info: Partial<SoftKeyboardInfo> = {},
 ): OmitRuntime<
-  { readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider } }['input']['softKeyboardInfo']
+  { readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability } }['input']['softKeyboardInfo']
 > {
   const data: SoftKeyboardInfo = { visible: false, height: 0, x: 0, y: 0, width: 0, ...info };
   return {
@@ -54,7 +54,7 @@ function fakeInfoBackend(
 function fakeChangeBackend(
   willSucceed = true,
 ): OmitRuntime<
-  { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } }['input']['softKeyboardChange']
+  { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } }['input']['softKeyboardChange']
 > {
   return {
     async subscribe(): Promise<SoftKeyboardChangeSubscription> {
@@ -67,7 +67,7 @@ function fakeChangeBackend(
 function fakeVisibilityBackend(result: SoftKeyboardVisibilityResult = 'ok'): OmitRuntime<
   {
     readonly input: {
-      readonly softKeyboardVisibility: HostSoftKeyboardVisibilityProvider;
+      readonly softKeyboardVisibility: HostSoftKeyboardVisibilityCapability;
     };
   }['input']['softKeyboardVisibility']
 > {
@@ -84,7 +84,7 @@ function fakeVisibilityBackend(result: SoftKeyboardVisibilityResult = 'ok'): Omi
 function fakeAccessoryBarBackend(result: SoftKeyboardSetterResult = 'ok'): OmitRuntime<
   {
     readonly input: {
-      readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarProvider;
+      readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarCapability;
     };
   }['input']['softKeyboardAccessoryBar']
 > {
@@ -98,7 +98,7 @@ function fakeAccessoryBarBackend(result: SoftKeyboardSetterResult = 'ok'): OmitR
 function fakeResizeModeWriteBackend(result: SoftKeyboardSetterResult = 'ok'): OmitRuntime<
   {
     readonly input: {
-      readonly softKeyboardResizeModeWrite: HostSoftKeyboardResizeModeWriteProvider;
+      readonly softKeyboardResizeModeWrite: HostSoftKeyboardResizeModeWriteCapability;
     };
   }['input']['softKeyboardResizeModeWrite']
 > {
@@ -112,7 +112,7 @@ function fakeResizeModeWriteBackend(result: SoftKeyboardSetterResult = 'ok'): Om
 function fakeScrollAssistBackend(result: SoftKeyboardSetterResult = 'ok'): OmitRuntime<
   {
     readonly input: {
-      readonly softKeyboardScrollAssist: HostSoftKeyboardScrollAssistProvider;
+      readonly softKeyboardScrollAssist: HostSoftKeyboardScrollAssistCapability;
     };
   }['input']['softKeyboardScrollAssist']
 > {
@@ -126,7 +126,7 @@ function fakeScrollAssistBackend(result: SoftKeyboardSetterResult = 'ok'): OmitR
 function fakeStyleBackend(
   result: SoftKeyboardSetterResult = 'ok',
 ): OmitRuntime<
-  { readonly input: { readonly softKeyboardStyle: HostSoftKeyboardStyleProvider } }['input']['softKeyboardStyle']
+  { readonly input: { readonly softKeyboardStyle: HostSoftKeyboardStyleCapability } }['input']['softKeyboardStyle']
 > {
   return {
     async setStyle(): Promise<SoftKeyboardSetterResult> {
@@ -136,21 +136,21 @@ function fakeStyleBackend(
 }
 
 function infoHost(info: Partial<SoftKeyboardInfo> = {}): {
-  readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+  readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
 } {
   return { input: { softKeyboardInfo: fakeInfoBackend(info) } } as {
-    readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+    readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
   };
 }
 
 function visibilityHost(result: SoftKeyboardVisibilityResult = 'ok'): {
   readonly input: {
-    readonly softKeyboardVisibility: HostSoftKeyboardVisibilityProvider;
+    readonly softKeyboardVisibility: HostSoftKeyboardVisibilityCapability;
   };
 } {
   return { input: { softKeyboardVisibility: fakeVisibilityBackend(result) } } as {
     readonly input: {
-      readonly softKeyboardVisibility: HostSoftKeyboardVisibilityProvider;
+      readonly softKeyboardVisibility: HostSoftKeyboardVisibilityCapability;
     };
   };
 }
@@ -158,16 +158,16 @@ function visibilityHost(result: SoftKeyboardVisibilityResult = 'ok'): {
 function attachHost(
   willSucceed = true,
   info: Partial<SoftKeyboardInfo> = {},
-): { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } } & {
-  readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+): { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } } & {
+  readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
 } {
   return {
     input: {
       softKeyboardChange: fakeChangeBackend(willSucceed),
       softKeyboardInfo: fakeInfoBackend(info),
     },
-  } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } } & {
-    readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+  } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } } & {
+    readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
   };
 }
 
@@ -208,8 +208,8 @@ describe('attachSoftKeyboard', () => {
           },
         },
       },
-    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } } & {
-      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } } & {
+      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
     };
     const keyboard = createSoftKeyboard();
     let firedHeight = -1;
@@ -245,8 +245,8 @@ describe('attachSoftKeyboard', () => {
           },
         },
       },
-    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } } & {
-      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } } & {
+      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
     };
     const keyboard = createSoftKeyboard();
     let hideFired = false;
@@ -282,8 +282,8 @@ describe('attachSoftKeyboard', () => {
           },
         },
       },
-    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeProvider } } & {
-      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoProvider };
+    } as { readonly input: { readonly softKeyboardChange: HostSoftKeyboardChangeCapability } } & {
+      readonly input: { readonly softKeyboardInfo: HostSoftKeyboardInfoCapability };
     };
     const keyboard = createSoftKeyboard();
     let resizedHeight = -1;
@@ -374,7 +374,7 @@ describe('setSoftKeyboardAccessoryBarVisible', () => {
   it('delegates to the accessory bar backend', async () => {
     const host = { input: { softKeyboardAccessoryBar: fakeAccessoryBarBackend('ok') } } as {
       readonly input: {
-        readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarProvider;
+        readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarCapability;
       };
     };
     expect(await setSoftKeyboardAccessoryBarVisible(host.input.softKeyboardAccessoryBar, true)).toBe('ok');
@@ -385,7 +385,7 @@ describe('setSoftKeyboardAccessoryBarVisible', () => {
       input: { softKeyboardAccessoryBar: fakeAccessoryBarBackend('operation-failed') },
     } as {
       readonly input: {
-        readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarProvider;
+        readonly softKeyboardAccessoryBar: HostSoftKeyboardAccessoryBarCapability;
       };
     };
     expect(await setSoftKeyboardAccessoryBarVisible(host.input.softKeyboardAccessoryBar, false)).toBe(
@@ -400,7 +400,7 @@ describe('setSoftKeyboardResizeMode', () => {
       input: { softKeyboardResizeModeWrite: fakeResizeModeWriteBackend('ok') },
     } as {
       readonly input: {
-        readonly softKeyboardResizeModeWrite: HostSoftKeyboardResizeModeWriteProvider;
+        readonly softKeyboardResizeModeWrite: HostSoftKeyboardResizeModeWriteCapability;
       };
     };
     expect(await setSoftKeyboardResizeMode(host.input.softKeyboardResizeModeWrite, SoftKeyboardResizeBodyKind)).toBe(
@@ -415,7 +415,7 @@ describe('setSoftKeyboardScrollAssistEnabled', () => {
       input: { softKeyboardScrollAssist: fakeScrollAssistBackend('ok') },
     } as {
       readonly input: {
-        readonly softKeyboardScrollAssist: HostSoftKeyboardScrollAssistProvider;
+        readonly softKeyboardScrollAssist: HostSoftKeyboardScrollAssistCapability;
       };
     };
     expect(await setSoftKeyboardScrollAssistEnabled(host.input.softKeyboardScrollAssist, true)).toBe('ok');
@@ -425,7 +425,7 @@ describe('setSoftKeyboardScrollAssistEnabled', () => {
 describe('setSoftKeyboardStyle', () => {
   it('delegates to the style backend', async () => {
     const host = { input: { softKeyboardStyle: fakeStyleBackend('ok') } } as {
-      readonly input: { readonly softKeyboardStyle: HostSoftKeyboardStyleProvider };
+      readonly input: { readonly softKeyboardStyle: HostSoftKeyboardStyleCapability };
     };
     expect(await setSoftKeyboardStyle(host.input.softKeyboardStyle, 'Dark')).toBe('ok');
   });

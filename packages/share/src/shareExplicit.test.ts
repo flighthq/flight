@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostShareContentProvider, ShareContent } from '@flighthq/types/contract';
+import type { HostShareContentCapability, ShareContent } from '@flighthq/types/contract';
 
 import { shareText } from './share';
 
 function createRecordingHost(
   label: string,
   calls: string[],
-): { readonly share: { readonly content: HostShareContentProvider } } {
-  const content = allocateEntity<HostShareContentProvider>();
+): { readonly share: { readonly content: HostShareContentCapability } } {
+  const content = allocateEntity<HostShareContentCapability>();
   content.canShareContent = () => true;
   content.shareContent = async (payload: Readonly<ShareContent>) => {
     calls.push(`${label}:${payload.text ?? ''}`);

@@ -1,7 +1,7 @@
-import type { HostTextSegmenterProvider, TextSegment } from '@flighthq/types/contract';
+import type { HostTextSegmenterCapability, TextSegment } from '@flighthq/types/contract';
 
 export function segmentGraphemes(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   locale?: string,
 ): readonly TextSegment[] {
@@ -9,7 +9,7 @@ export function segmentGraphemes(
 }
 
 export function segmentSentences(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   locale?: string,
 ): readonly TextSegment[] {
@@ -17,7 +17,7 @@ export function segmentSentences(
 }
 
 export function segmentWords(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   locale?: string,
 ): readonly TextSegment[] {

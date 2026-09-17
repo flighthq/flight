@@ -1,5 +1,5 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HostImageProvider, ImageResourceReference, Texture } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResourceReference, Texture } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -11,9 +11,9 @@ import {
   initializeScene3DResourceSignals,
 } from './sceneResourceSignals';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const ref: ImageResourceReference = {
   [EntityRuntimeKey]: undefined,
   alphaType: 'straight',

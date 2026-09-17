@@ -12,7 +12,7 @@ import type {
   AudioMixerGraphHandle,
   AudioMixerOptions,
   EntityConstruction,
-  HostAudioMixerProvider,
+  HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
 import {
@@ -24,7 +24,7 @@ import {
 } from './audioChannel';
 
 export function addAudioBusToMixer(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: Readonly<AudioMixer>,
   bus: AudioBus,
 ): void {
@@ -44,7 +44,7 @@ export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
 }
 
 export function createAudioMixer(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   device: AudioDeviceHandle,
   options?: Readonly<AudioMixerOptions>,
 ): AudioMixer {
@@ -65,7 +65,7 @@ export function createAudioMixer(
   return mixer;
 }
 
-export function destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerProvider>, mixer: Readonly<AudioMixer>): void {
+export function destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerCapability>, mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
   // Stop every routed channel and reset its transport state.
@@ -85,7 +85,7 @@ export function destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerProvide
 }
 
 export function fadeAudioBusGain(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: Readonly<AudioMixer>,
   bus: AudioBus,
   targetGain: number,
@@ -141,7 +141,7 @@ export function resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
 }
 
 export function routeAudioChannelToMixerBus(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: Readonly<AudioMixer>,
   channel: AudioChannel,
   bus: AudioBus,
@@ -167,7 +167,7 @@ export function routeAudioChannelToMixerBus(
 // that was set, not whether anything is listening — so it routes through the guard seam instead of relying
 // on a comment telling callers to add the bus first.
 export function setAudioBusGain(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   bus: AudioBus,
   value: number,
 ): number {
@@ -187,7 +187,7 @@ export function setAudioBusMixerGuard(guard: AudioBusMixerGuard | null): void {
 
 // Same unmixed-bus caveat as setAudioBusGain: muting a bus no mixer holds changes nothing audible.
 export function setAudioBusMuted(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   bus: AudioBus,
   muted: boolean,
 ): boolean {
@@ -198,7 +198,7 @@ export function setAudioBusMuted(
 }
 
 // Same unmixed-bus caveat as setAudioBusGain: panning a bus no mixer holds changes nothing audible.
-export function setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus, value: number): number {
+export function setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerCapability>, bus: AudioBus, value: number): number {
   bus.pan = clamp(value, -1, 1);
   reportUnmixedBus(bus, 'pan');
   updateBusPannerNode(hostAudioMixer, bus);
@@ -206,7 +206,7 @@ export function setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerProvider>,
 }
 
 export function setAudioMixerMasterGain(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: AudioMixer,
   value: number,
 ): number {
@@ -219,7 +219,7 @@ export function setAudioMixerMasterGain(
 }
 
 export function setAudioMixerMasterMuted(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: AudioMixer,
   muted: boolean,
 ): boolean {
@@ -287,7 +287,7 @@ function unregisterBusFromReverseMap(bus: AudioBus, runtime: AudioMixerRuntime):
 }
 
 export function unrouteAudioChannelFromMixerBus(
-  hostAudioMixer: Readonly<HostAudioMixerProvider>,
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
   mixer: Readonly<AudioMixer>,
   channel: AudioChannel,
 ): void {
@@ -311,7 +311,7 @@ function reportUnmixedBus(bus: Readonly<AudioBus>, operation: AudioBusMixerOpera
 
 let _unmixedBusGuard: AudioBusMixerGuard | null = null;
 
-function updateBusGainNode(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus): void {
+function updateBusGainNode(hostAudioMixer: Readonly<HostAudioMixerCapability>, bus: AudioBus): void {
   const runtimes = busToMixerRuntimes.get(bus);
   if (runtimes === undefined) return;
   for (const runtime of runtimes) {
@@ -322,7 +322,7 @@ function updateBusGainNode(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus
   }
 }
 
-function updateBusPannerNode(hostAudioMixer: Readonly<HostAudioMixerProvider>, bus: AudioBus): void {
+function updateBusPannerNode(hostAudioMixer: Readonly<HostAudioMixerCapability>, bus: AudioBus): void {
   const runtimes = busToMixerRuntimes.get(bus);
   if (runtimes === undefined) return;
   for (const runtime of runtimes) {

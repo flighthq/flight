@@ -8,8 +8,8 @@ import type {
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,
   GlobalShortcutQueryOutcome,
-  HostShortcutQueryProvider,
-  HostShortcutTriggerProvider,
+  HostShortcutQueryCapability,
+  HostShortcutTriggerCapability,
   NonEntityCreateResult,
   ParsedAccelerator,
   ShortcutTriggerSubscription,
@@ -18,7 +18,7 @@ import type {
 import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut';
 
 interface GlobalShortcutAttachment {
-  readonly provider: HostShortcutTriggerProvider;
+  readonly provider: HostShortcutTriggerCapability;
   readonly subscription: ShortcutTriggerSubscription;
 }
 
@@ -42,7 +42,7 @@ const _attachedByAccelerator = new Map<Accelerator, GlobalShortcut>();
 const _pendingAccelerators = new Set<Accelerator>();
 
 export async function attachGlobalShortcut(
-  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerCapability>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutAttachOutcome> {
   if (_attachments.has(shortcut)) return ALREADY_ATTACHED;
@@ -94,14 +94,14 @@ export function createGlobalShortcut(
   };
 }
 
-export function destroyShortcutTrigger(hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>): Promise<void> {
+export function destroyShortcutTrigger(hostShortcutTrigger: Readonly<HostShortcutTriggerCapability>): Promise<void> {
   return hostShortcutTrigger.destroy();
 }
 
 // The provider argument keeps the exact dependency visible, while the stored origin prevents a replacement
 // provider from redirecting a release. Failed releases remain attached and can be retried exactly.
 export async function detachGlobalShortcut(
-  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerCapability>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutDetachOutcome> {
   const attachment = _attachments.get(shortcut);
@@ -124,7 +124,7 @@ export async function detachGlobalShortcut(
 // Disposal always clears consumer listeners, including when native teardown fails. A failed native
 // release remains attached so detachGlobalShortcut can retry it later.
 export async function disposeGlobalShortcut(
-  hostShortcutTrigger: Readonly<HostShortcutTriggerProvider>,
+  hostShortcutTrigger: Readonly<HostShortcutTriggerCapability>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutDetachOutcome> {
   try {
@@ -140,14 +140,14 @@ export function initializeGlobalShortcut(out: EntityConstruction<GlobalShortcut>
 }
 
 export async function queryGlobalShortcutConflict(
-  hostShortcutQuery: Readonly<HostShortcutQueryProvider>,
+  hostShortcutQuery: Readonly<HostShortcutQueryCapability>,
   accelerator: string,
 ): Promise<GlobalShortcutQueryOutcome> {
   return queryGlobalShortcutRegistration(hostShortcutQuery, accelerator);
 }
 
 export async function queryGlobalShortcutRegistration(
-  hostShortcutQuery: Readonly<HostShortcutQueryProvider>,
+  hostShortcutQuery: Readonly<HostShortcutQueryCapability>,
   accelerator: string,
 ): Promise<GlobalShortcutQueryOutcome> {
   const parsed = makeParsedAccelerator();

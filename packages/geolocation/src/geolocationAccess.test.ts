@@ -1,12 +1,12 @@
-import type { GeolocationAccessOutcome, HostGeolocationProvider } from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationCapability } from '@flighthq/types/contract';
 
 import { promptForGeolocationAccess } from './geolocationAccess';
 
 // A provider whose promptForAccess answer the test dictates. Only that member is exercised, so the
-// rest of HostGeolocationProvider stays absent on purpose — a probe needing the whole provider would be
+// rest of HostGeolocationCapability stays absent on purpose — a probe needing the whole provider would be
 // testing the fake.
-function providerAnswering(outcome: GeolocationAccessOutcome): HostGeolocationProvider {
-  return { promptForAccess: () => Promise.resolve(outcome) } as unknown as HostGeolocationProvider;
+function providerAnswering(outcome: GeolocationAccessOutcome): HostGeolocationCapability {
+  return { promptForAccess: () => Promise.resolve(outcome) } as unknown as HostGeolocationCapability;
 }
 
 describe('promptForGeolocationAccess', () => {
@@ -35,7 +35,7 @@ describe('promptForGeolocationAccess', () => {
   it('reports operation-failed when the provider throws', async () => {
     const throwing = {
       promptForAccess: () => Promise.reject(new Error('boom')),
-    } as unknown as HostGeolocationProvider;
+    } as unknown as HostGeolocationCapability;
     expect(await promptForGeolocationAccess(throwing)).toEqual({ reason: 'operation-failed' });
   });
 

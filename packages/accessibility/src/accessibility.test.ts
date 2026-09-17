@@ -1,5 +1,5 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HostAccessibilityProvider, AccessibilityNode, EntityWithoutRuntime } from '@flighthq/types/contract';
+import type { HostAccessibilityCapability, AccessibilityNode, EntityWithoutRuntime } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -81,8 +81,8 @@ describe('setAccessibilityNode', () => {
 });
 
 function createProvider(
-  overrides: Partial<EntityWithoutRuntime<HostAccessibilityProvider>> = {},
-): HostAccessibilityProvider {
+  overrides: Partial<EntityWithoutRuntime<HostAccessibilityCapability>> = {},
+): HostAccessibilityCapability {
   return {
     [EntityRuntimeKey]: undefined,
     announce: vi.fn(() => ({ reason: 'ok' as const })),

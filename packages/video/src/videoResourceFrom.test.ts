@@ -1,17 +1,17 @@
-import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
+import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
 
 import { loadVideoResourceFromBlob, loadVideoResourceFromUrl, loadVideoResourceFromUrls } from './videoResourceFrom';
 
 const element = {} as HostImageSource;
 
-function hostWithLoad(loadUrl = vi.fn(async () => element), canPlay = false): HostVideoProvider {
+function hostWithLoad(loadUrl = vi.fn(async () => element), canPlay = false): HostVideoCapability {
   return {
     canPlayType: () => canPlay,
     loadUrl,
   };
 }
 
-function hostWithObjectUrls(loadUrl = vi.fn(async () => element)): HostVideoProvider {
+function hostWithObjectUrls(loadUrl = vi.fn(async () => element)): HostVideoCapability {
   return {
     canPlayType: () => false,
     createObjectUrl: vi.fn(() => 'blob:mock'),
@@ -92,7 +92,7 @@ describe('loadVideoResourceFromUrl', () => {
   });
 
   it('rejects when the provider has no URL loader', async () => {
-    const hostVideo: HostVideoProvider = { canPlayType: () => false };
+    const hostVideo: HostVideoCapability = { canPlayType: () => false };
 
     await expect(loadVideoResourceFromUrl(hostVideo, 'test.mp4')).rejects.toThrow('No video element backend available');
   });

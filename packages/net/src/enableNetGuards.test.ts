@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { HostNetProvider, LogEntry, NetResponse } from '@flighthq/types/contract';
+import type { HostNetCapability, LogEntry, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards';
@@ -13,8 +13,8 @@ function captureLog(run: () => Promise<void>): Promise<readonly LogEntry[]> {
     .finally(() => removeLogSink(sink.sink));
 }
 
-function hostOf(sendNetRequestBackend: HostNetProvider['sendNetRequest']): {
-  readonly net: { readonly http: HostNetProvider };
+function hostOf(sendNetRequestBackend: HostNetCapability['sendNetRequest']): {
+  readonly net: { readonly http: HostNetCapability };
 } {
   return {
     net: {

@@ -3,41 +3,41 @@ import type {
   CapacitorApi,
   CapacitorStatusBarInfoResult,
   Entity,
-  HostStatusBarColorProvider,
+  HostStatusBarColorCapability,
   StatusBarInfo,
-  HostStatusBarInfoProvider,
-  HostStatusBarOverlaysProvider,
+  HostStatusBarInfoCapability,
+  HostStatusBarOverlaysCapability,
   StatusBarStyle,
-  HostStatusBarStyleProvider,
-  HostStatusBarVisibilityProvider,
+  HostStatusBarStyleCapability,
+  HostStatusBarVisibilityCapability,
   HostUiCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorStatusBarProvider = Entity &
-  HostStatusBarColorProvider &
-  HostStatusBarInfoProvider &
-  HostStatusBarOverlaysProvider &
-  HostStatusBarStyleProvider &
-  HostStatusBarVisibilityProvider;
+  HostStatusBarColorCapability &
+  HostStatusBarInfoCapability &
+  HostStatusBarOverlaysCapability &
+  HostStatusBarStyleCapability &
+  HostStatusBarVisibilityCapability;
 
-export function capacitorHostStatusBarColor(capacitor: CapacitorApi): HostStatusBarColorProvider {
+export function capacitorHostStatusBarColor(capacitor: CapacitorApi): HostStatusBarColorCapability {
   return capacitorStatusBarProvider(capacitor);
 }
 
-export function capacitorHostStatusBarInfo(capacitor: CapacitorApi): HostStatusBarInfoProvider {
+export function capacitorHostStatusBarInfo(capacitor: CapacitorApi): HostStatusBarInfoCapability {
   return capacitorStatusBarProvider(capacitor);
 }
 
-export function capacitorHostStatusBarOverlays(capacitor: CapacitorApi): HostStatusBarOverlaysProvider {
+export function capacitorHostStatusBarOverlays(capacitor: CapacitorApi): HostStatusBarOverlaysCapability {
   return capacitorStatusBarProvider(capacitor);
 }
 
-export function capacitorHostStatusBarStyle(capacitor: CapacitorApi): HostStatusBarStyleProvider {
+export function capacitorHostStatusBarStyle(capacitor: CapacitorApi): HostStatusBarStyleCapability {
   return capacitorStatusBarProvider(capacitor);
 }
 
-export function capacitorHostStatusBarVisibility(capacitor: CapacitorApi): HostStatusBarVisibilityProvider {
+export function capacitorHostStatusBarVisibility(capacitor: CapacitorApi): HostStatusBarVisibilityCapability {
   return capacitorStatusBarProvider(capacitor);
 }
 

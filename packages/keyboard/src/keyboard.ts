@@ -3,13 +3,13 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  HostSoftKeyboardAccessoryBarProvider,
-  HostSoftKeyboardChangeProvider,
-  HostSoftKeyboardInfoProvider,
-  HostSoftKeyboardResizeModeWriteProvider,
-  HostSoftKeyboardScrollAssistProvider,
-  HostSoftKeyboardStyleProvider,
-  HostSoftKeyboardVisibilityProvider,
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
   SoftKeyboard,
   SoftKeyboardAttachResult,
   SoftKeyboardInfo,
@@ -20,8 +20,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export async function attachSoftKeyboard(
-  hostSoftKeyboardChange: Readonly<HostSoftKeyboardChangeProvider>,
-  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>,
+  hostSoftKeyboardChange: Readonly<HostSoftKeyboardChangeCapability>,
+  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>,
   keyboard: SoftKeyboard,
 ): Promise<SoftKeyboardAttachResult> {
   detachSoftKeyboard(keyboard);
@@ -67,19 +67,19 @@ export function disposeSoftKeyboard(keyboard: SoftKeyboard): void {
   detachSoftKeyboard(keyboard);
 }
 
-export function getSoftKeyboardHeight(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>): number {
+export function getSoftKeyboardHeight(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>): number {
   return hostSoftKeyboardInfo.getInfo(_scratch).height;
 }
 
 export function getSoftKeyboardInfo(
-  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>,
+  hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>,
   out: SoftKeyboardInfo,
 ): SoftKeyboardInfo {
   return hostSoftKeyboardInfo.getInfo(out);
 }
 
 export function hideSoftKeyboard(
-  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityProvider>,
+  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityCapability>,
 ): Promise<SoftKeyboardVisibilityResult> {
   return hostSoftKeyboardVisibility.hide();
 }
@@ -90,40 +90,40 @@ export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard & En
   out.onShow = createSignal();
 }
 
-export function isSoftKeyboardVisible(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoProvider>): boolean {
+export function isSoftKeyboardVisible(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>): boolean {
   return hostSoftKeyboardInfo.getInfo(_scratch).visible;
 }
 
 export function setSoftKeyboardAccessoryBarVisible(
-  hostSoftKeyboardAccessoryBar: Readonly<HostSoftKeyboardAccessoryBarProvider>,
+  hostSoftKeyboardAccessoryBar: Readonly<HostSoftKeyboardAccessoryBarCapability>,
   visible: boolean,
 ): Promise<SoftKeyboardSetterResult> {
   return hostSoftKeyboardAccessoryBar.setAccessoryBarVisible(visible);
 }
 
 export function setSoftKeyboardResizeMode(
-  hostSoftKeyboardResizeModeWrite: Readonly<HostSoftKeyboardResizeModeWriteProvider>,
+  hostSoftKeyboardResizeModeWrite: Readonly<HostSoftKeyboardResizeModeWriteCapability>,
   mode: SoftKeyboardResizeMode,
 ): Promise<SoftKeyboardSetterResult> {
   return hostSoftKeyboardResizeModeWrite.setResizeMode(mode);
 }
 
 export function setSoftKeyboardScrollAssistEnabled(
-  hostSoftKeyboardScrollAssist: Readonly<HostSoftKeyboardScrollAssistProvider>,
+  hostSoftKeyboardScrollAssist: Readonly<HostSoftKeyboardScrollAssistCapability>,
   enabled: boolean,
 ): Promise<SoftKeyboardSetterResult> {
   return hostSoftKeyboardScrollAssist.setScrollAssistEnabled(enabled);
 }
 
 export function setSoftKeyboardStyle(
-  hostSoftKeyboardStyle: Readonly<HostSoftKeyboardStyleProvider>,
+  hostSoftKeyboardStyle: Readonly<HostSoftKeyboardStyleCapability>,
   style: SoftKeyboardStyleKind,
 ): Promise<SoftKeyboardSetterResult> {
   return hostSoftKeyboardStyle.setStyle(style);
 }
 
 export function showSoftKeyboard(
-  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityProvider>,
+  hostSoftKeyboardVisibility: Readonly<HostSoftKeyboardVisibilityCapability>,
 ): Promise<SoftKeyboardVisibilityResult> {
   return hostSoftKeyboardVisibility.show();
 }

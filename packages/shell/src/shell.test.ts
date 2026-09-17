@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityRuntimeKey,
-  HostShellBeepProvider,
-  HostShellExternalProvider,
-  HostShellPathOpenProvider,
-  HostShellPathRevealProvider,
-  HostShellShortcutLinkProvider,
-  HostShellTrashProvider,
+  HostShellBeepCapability,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
   ShellExternalUrlPolicy,
   ShellProcess,
-  HostShellProcessProvider,
+  HostShellProcessCapability,
   ShellProcessOptions,
 } from '@flighthq/types/contract';
 
@@ -91,7 +91,7 @@ describe('moveShellItemToTrash', () => {
 describe('openShellExternalUrl', () => {
   it('requires policy as the third parameter at the type boundary', () => {
     expectTypeOf(openShellExternalUrl).parameters.toEqualTypeOf<
-      [Readonly<HostShellExternalProvider>, string, Readonly<ShellExternalUrlPolicy>]
+      [Readonly<HostShellExternalCapability>, string, Readonly<ShellExternalUrlPolicy>]
     >();
   });
 
@@ -146,7 +146,7 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = allocateEntity<HostShellPathOpenProvider>();
+    const provider = allocateEntity<HostShellPathOpenCapability>();
     provider.open = async () => {
       return { message: '', reason: 'operation-failed' as const };
     };
@@ -206,7 +206,7 @@ describe('shellBeep', () => {
 describe('spawnShellProcess', () => {
   it('exposes the explicit host, command, argument-vector, and optional-options API', () => {
     expectTypeOf(spawnShellProcess).parameters.toEqualTypeOf<
-      [Readonly<HostShellProcessProvider>, string, readonly string[], Readonly<ShellProcessOptions>?]
+      [Readonly<HostShellProcessCapability>, string, readonly string[], Readonly<ShellProcessOptions>?]
     >();
     expectTypeOf(spawnShellProcess).returns.toEqualTypeOf<ShellProcess>();
   });
@@ -241,30 +241,30 @@ describe('writeShellShortcutLink', () => {
 
 const HTTPS_ONLY: ShellExternalUrlPolicy = { allowedSchemes: ['https'] };
 
-function beepHost(beep: HostShellBeepProvider): { readonly shell: { readonly beep: HostShellBeepProvider } } {
+function beepHost(beep: HostShellBeepCapability): { readonly shell: { readonly beep: HostShellBeepCapability } } {
   return { shell: { beep } };
 }
 
-function externalHost(external: HostShellExternalProvider): {
-  readonly shell: { readonly external: HostShellExternalProvider };
+function externalHost(external: HostShellExternalCapability): {
+  readonly shell: { readonly external: HostShellExternalCapability };
 } {
   return { shell: { external } };
 }
 
-function pathOpenHost(pathOpen: HostShellPathOpenProvider): {
-  readonly shell: { readonly pathOpen: HostShellPathOpenProvider };
+function pathOpenHost(pathOpen: HostShellPathOpenCapability): {
+  readonly shell: { readonly pathOpen: HostShellPathOpenCapability };
 } {
   return { shell: { pathOpen } };
 }
 
-function pathRevealHost(pathReveal: HostShellPathRevealProvider): {
-  readonly shell: { readonly pathReveal: HostShellPathRevealProvider };
+function pathRevealHost(pathReveal: HostShellPathRevealCapability): {
+  readonly shell: { readonly pathReveal: HostShellPathRevealCapability };
 } {
   return { shell: { pathReveal } };
 }
 
-function processHost(process: HostShellProcessProvider): {
-  readonly shell: { readonly process: HostShellProcessProvider };
+function processHost(process: HostShellProcessCapability): {
+  readonly shell: { readonly process: HostShellProcessCapability };
 } {
   return { shell: { process } };
 }
@@ -279,13 +279,13 @@ function shellProcess(): ShellProcess {
   return finishEntity(out);
 }
 
-function shortcutLinkHost(shortcutLink: HostShellShortcutLinkProvider): {
-  readonly shell: { readonly shortcutLink: HostShellShortcutLinkProvider };
+function shortcutLinkHost(shortcutLink: HostShellShortcutLinkCapability): {
+  readonly shell: { readonly shortcutLink: HostShellShortcutLinkCapability };
 } {
   return { shell: { shortcutLink } };
 }
 
-function shortcutLinkProvider(): HostShellShortcutLinkProvider & { write: ReturnType<typeof vi.fn> } {
+function shortcutLinkProvider(): HostShellShortcutLinkCapability & { write: ReturnType<typeof vi.fn> } {
   const out = allocateEntity<any>();
   out.read = async () => {
     return { link: { target: '/app' }, reason: 'ok' };
@@ -294,6 +294,6 @@ function shortcutLinkProvider(): HostShellShortcutLinkProvider & { write: Return
   return finishEntity(out);
 }
 
-function trashHost(trash: HostShellTrashProvider): { readonly shell: { readonly trash: HostShellTrashProvider } } {
+function trashHost(trash: HostShellTrashCapability): { readonly shell: { readonly trash: HostShellTrashCapability } } {
   return { shell: { trash } };
 }

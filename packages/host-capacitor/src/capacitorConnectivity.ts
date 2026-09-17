@@ -3,15 +3,15 @@ import type {
   CapacitorApi,
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
-  HostConnectivityChangeProvider,
+  HostConnectivityChangeCapability,
   HostConnectivityCapabilities,
   ConnectivityConnectionType,
   ConnectivityStatus,
-  HostConnectivityStatusProvider,
+  HostConnectivityStatusCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-type CapacitorConnectivityProvider = HostConnectivityStatusProvider & HostConnectivityChangeProvider;
+type CapacitorConnectivityProvider = HostConnectivityStatusCapability & HostConnectivityChangeCapability;
 
 export function capacitorHostConnectivity(
   capacitor: CapacitorApi,
@@ -20,11 +20,11 @@ export function capacitorHostConnectivity(
   return { change: provider, status: provider };
 }
 
-export function capacitorHostConnectivityChange(capacitor: CapacitorApi): HostConnectivityChangeProvider {
+export function capacitorHostConnectivityChange(capacitor: CapacitorApi): HostConnectivityChangeCapability {
   return capacitorConnectivityProvider(capacitor);
 }
 
-export function capacitorHostConnectivityStatus(capacitor: CapacitorApi): HostConnectivityStatusProvider {
+export function capacitorHostConnectivityStatus(capacitor: CapacitorApi): HostConnectivityStatusCapability {
   return capacitorConnectivityProvider(capacitor);
 }
 

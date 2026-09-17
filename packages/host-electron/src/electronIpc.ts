@@ -4,11 +4,11 @@ import type {
   ElectronIpcRenderer,
   ElectronIpcTarget,
   HostIpcCapabilities,
-  HostIpcHandleProvider,
-  HostIpcInvokeProvider,
-  HostIpcMessageProvider,
-  HostIpcSendProvider,
-  HostIpcTargetedSendProvider,
+  HostIpcHandleCapability,
+  HostIpcInvokeCapability,
+  HostIpcMessageCapability,
+  HostIpcSendCapability,
+  HostIpcTargetedSendCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -25,40 +25,40 @@ export function electronHostIpc(
   };
 }
 
-export function electronHostIpcHandle(electron: ElectronApi): HostIpcHandleProvider {
-  const out = allocateEntity<HostIpcHandleProvider>();
+export function electronHostIpcHandle(electron: ElectronApi): HostIpcHandleCapability {
+  const out = allocateEntity<HostIpcHandleCapability>();
   populateElectronHostIpcHandle(out, electron);
   return finishEntity(out);
 }
 
-export function electronHostIpcInvoke(ipcRenderer: ElectronIpcRenderer): HostIpcInvokeProvider {
-  const out = allocateEntity<HostIpcInvokeProvider>();
+export function electronHostIpcInvoke(ipcRenderer: ElectronIpcRenderer): HostIpcInvokeCapability {
+  const out = allocateEntity<HostIpcInvokeCapability>();
   populateElectronHostIpcInvoke(out, ipcRenderer);
   return finishEntity(out);
 }
 
-export function electronHostIpcMessage(electron: ElectronApi): HostIpcMessageProvider {
-  const out = allocateEntity<HostIpcMessageProvider>();
+export function electronHostIpcMessage(electron: ElectronApi): HostIpcMessageCapability {
+  const out = allocateEntity<HostIpcMessageCapability>();
   populateElectronHostIpcMessage(out, electron);
   return finishEntity(out);
 }
 
-export function electronHostIpcSend(ipcRenderer: ElectronIpcRenderer): HostIpcSendProvider {
-  const out = allocateEntity<HostIpcSendProvider>();
+export function electronHostIpcSend(ipcRenderer: ElectronIpcRenderer): HostIpcSendCapability {
+  const out = allocateEntity<HostIpcSendCapability>();
   populateElectronHostIpcSend(out, ipcRenderer);
   return finishEntity(out);
 }
 
 export function electronHostIpcTargetedSend<
   Target extends ElectronIpcTarget = ElectronIpcTarget,
->(): HostIpcTargetedSendProvider<Target> {
-  const out = allocateEntity<HostIpcTargetedSendProvider<Target>>();
+>(): HostIpcTargetedSendCapability<Target> {
+  const out = allocateEntity<HostIpcTargetedSendCapability<Target>>();
   populateElectronHostIpcTargetedSend(out);
   return finishEntity(out);
 }
 
 export function populateElectronHostIpcHandle(
-  out: EntityConstruction<HostIpcHandleProvider>,
+  out: EntityConstruction<HostIpcHandleCapability>,
   electron: ElectronApi,
 ): void {
   const ipcMain = electron.ipcMain;
@@ -74,7 +74,7 @@ export function populateElectronHostIpcHandle(
 }
 
 export function populateElectronHostIpcInvoke(
-  out: EntityConstruction<HostIpcInvokeProvider>,
+  out: EntityConstruction<HostIpcInvokeCapability>,
   ipcRenderer: ElectronIpcRenderer,
 ): void {
   out.invoke = (channel, args) => {
@@ -83,7 +83,7 @@ export function populateElectronHostIpcInvoke(
 }
 
 export function populateElectronHostIpcMessage(
-  out: EntityConstruction<HostIpcMessageProvider>,
+  out: EntityConstruction<HostIpcMessageCapability>,
   electron: ElectronApi,
 ): void {
   const ipcMain = electron.ipcMain;
@@ -95,7 +95,7 @@ export function populateElectronHostIpcMessage(
 }
 
 export function populateElectronHostIpcSend(
-  out: EntityConstruction<HostIpcSendProvider>,
+  out: EntityConstruction<HostIpcSendCapability>,
   ipcRenderer: ElectronIpcRenderer,
 ): void {
   out.send = (channel, args) => {
@@ -104,7 +104,7 @@ export function populateElectronHostIpcSend(
 }
 
 export function populateElectronHostIpcTargetedSend<Target extends ElectronIpcTarget = ElectronIpcTarget>(
-  out: EntityConstruction<HostIpcTargetedSendProvider<Target>>,
+  out: EntityConstruction<HostIpcTargetedSendCapability<Target>>,
 ): void {
   out.send = (target, channel, args) => {
     target.send(channel, ...args);

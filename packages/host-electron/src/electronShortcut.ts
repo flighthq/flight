@@ -4,8 +4,8 @@ import type {
   ElectronApi,
   Entity,
   HostShortcutCapabilities,
-  HostShortcutQueryProvider,
-  HostShortcutTriggerProvider,
+  HostShortcutQueryCapability,
+  HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -19,15 +19,15 @@ export function electronHostShortcut(
   };
 }
 
-export function electronHostShortcutQuery(electron: ElectronApi): HostShortcutQueryProvider {
-  const provider = allocateEntity<HostShortcutQueryProvider>();
+export function electronHostShortcutQuery(electron: ElectronApi): HostShortcutQueryCapability {
+  const provider = allocateEntity<HostShortcutQueryCapability>();
   populateElectronHostShortcutQuery(provider, electron);
   return finishEntity(provider);
 }
 
 // Electron registration is synchronous, but the provider lifts it into the same awaited subscription
 // contract as Tauri. Exact opaque tokens keep native accelerator identity private and creator-pinned.
-export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcutTriggerProvider {
+export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcutTriggerCapability {
   const globalShortcut = electron.globalShortcut;
   const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
 
@@ -39,7 +39,7 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
   }
 
   const provider = (() => {
-    const out = allocateEntity<HostShortcutTriggerProvider>();
+    const out = allocateEntity<HostShortcutTriggerCapability>();
     out.destroy = async () => {
       let firstError: unknown;
       const accelerators = new Set(registrations.values());
@@ -71,7 +71,7 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
 }
 
 export function populateElectronHostShortcutQuery(
-  provider: EntityConstruction<HostShortcutQueryProvider>,
+  provider: EntityConstruction<HostShortcutQueryCapability>,
   electron: ElectronApi,
 ): void {
   provider.isRegistered = async (accelerator: Accelerator) => {

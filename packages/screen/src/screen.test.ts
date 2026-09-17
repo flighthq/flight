@@ -1,7 +1,7 @@
 import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
-  HostScreenQueryProvider,
+  HostScreenQueryCapability,
   ScreenChangeEvent,
   ScreenInfo,
   ScreenPermissionState,
@@ -602,7 +602,7 @@ function createScreenDetailsHost(permission: ScreenPermissionState, requestResul
 function createScreenQueryHost(
   screens: readonly ScreenInfo[],
   cursor: Readonly<{ x: number; y: number }> = { x: 0, y: 0 },
-): { readonly screen: { readonly query: HostScreenQueryProvider } } {
+): { readonly screen: { readonly query: HostScreenQueryCapability } } {
   return {
     screen: {
       query: (() => {

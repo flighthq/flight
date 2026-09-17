@@ -1,8 +1,8 @@
-import type { HostSocketProvider, SocketConnection, SocketEventSink } from '@flighthq/types/contract';
+import type { HostSocketCapability, SocketConnection, SocketEventSink } from '@flighthq/types/contract';
 
 import { createSocket, getSocketReadyState } from './socket';
 
-function recordingBackend(label: string, opened: string[]): HostSocketProvider {
+function recordingBackend(label: string, opened: string[]): HostSocketCapability {
   return {
     openSocket(_options, events: SocketEventSink): SocketConnection | null {
       opened.push(label);
@@ -17,9 +17,9 @@ function recordingBackend(label: string, opened: string[]): HostSocketProvider {
   };
 }
 
-function hostWith(backend: HostSocketProvider | undefined): { readonly net: { readonly socket: HostSocketProvider } } {
+function hostWith(backend: HostSocketCapability | undefined): { readonly net: { readonly socket: HostSocketCapability } } {
   return { net: backend === undefined ? {} : { socket: backend } } as {
-    readonly net: { readonly socket: HostSocketProvider };
+    readonly net: { readonly socket: HostSocketCapability };
   };
 }
 

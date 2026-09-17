@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostShareContentProvider,
-  HostShareFilesProvider,
+  HostShareContentCapability,
+  HostShareFilesCapability,
   ShareContent,
   ShareResult,
 } from '@flighthq/types/contract';
@@ -26,13 +26,13 @@ import {
   shareUrl,
 } from './share';
 
-function contentHost(overrides: Partial<HostShareContentProvider> = {}): {
-  readonly share: { readonly content: HostShareContentProvider };
+function contentHost(overrides: Partial<HostShareContentCapability> = {}): {
+  readonly share: { readonly content: HostShareContentCapability };
 } {
   return {
     share: {
       content: (() => {
-        const out = allocateEntity<HostShareContentProvider>();
+        const out = allocateEntity<HostShareContentCapability>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
@@ -43,13 +43,13 @@ function contentHost(overrides: Partial<HostShareContentProvider> = {}): {
   };
 }
 
-function filesHost(overrides: Partial<HostShareFilesProvider> = {}): {
-  readonly share: { readonly files: HostShareFilesProvider };
+function filesHost(overrides: Partial<HostShareFilesCapability> = {}): {
+  readonly share: { readonly files: HostShareFilesCapability };
 } {
   return {
     share: {
       files: (() => {
-        const out = allocateEntity<HostShareFilesProvider>();
+        const out = allocateEntity<HostShareFilesCapability>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
@@ -198,7 +198,7 @@ describe('shareContentWithResult', () => {
 
 describe('shareFiles', () => {
   it('dispatches only a valid, non-empty portable file tuple', async () => {
-    const invoke = vi.fn(async (_content: Parameters<HostShareFilesProvider['shareContent']>[0]) => true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareFilesCapability['shareContent']>[0]) => true);
     const host = filesHost({ shareContent: invoke });
     expect(await shareFiles(host.share.files, [file])).toBe(true);
     expect(await shareFiles(host.share.files, [])).toBe(false);
@@ -210,14 +210,14 @@ describe('shareFiles', () => {
 
 describe('shareText', () => {
   it('delegates text through the content slot', async () => {
-    const invoke = vi.fn(async (_content: Parameters<HostShareContentProvider['shareContent']>[0]) => true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareContentCapability['shareContent']>[0]) => true);
     expect(await shareText(contentHost({ shareContent: invoke }).share.content, 'hello')).toBe(true);
     expect(invoke).toHaveBeenCalledWith({ text: 'hello' });
   });
 });
 describe('shareUrl', () => {
   it('delegates a URL through the content slot', async () => {
-    const invoke = vi.fn(async (_content: Parameters<HostShareContentProvider['shareContent']>[0]) => true);
+    const invoke = vi.fn(async (_content: Parameters<HostShareContentCapability['shareContent']>[0]) => true);
     expect(await shareUrl(contentHost({ shareContent: invoke }).share.content, 'https://flight.dev')).toBe(true);
     expect(invoke).toHaveBeenCalledWith({ url: 'https://flight.dev' });
   });

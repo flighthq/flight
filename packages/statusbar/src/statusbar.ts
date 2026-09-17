@@ -2,12 +2,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostStatusBarChangeProvider,
-  HostStatusBarColorProvider,
-  HostStatusBarInfoProvider,
-  HostStatusBarOverlaysProvider,
-  HostStatusBarStyleProvider,
-  HostStatusBarVisibilityProvider,
+  HostStatusBarChangeCapability,
+  HostStatusBarColorCapability,
+  HostStatusBarInfoCapability,
+  HostStatusBarOverlaysCapability,
+  HostStatusBarStyleCapability,
+  HostStatusBarVisibilityCapability,
   StatusBar,
   StatusBarAnimation,
   StatusBarInfo,
@@ -17,8 +17,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export function attachStatusBar(
-  hostStatusBarChange: Readonly<HostStatusBarChangeProvider>,
-  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  hostStatusBarChange: Readonly<HostStatusBarChangeCapability>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
   bar: StatusBar,
 ): void {
   detachStatusBar(bar);
@@ -30,7 +30,7 @@ export function attachStatusBar(
   _subscriptions.set(bar, unsubscribe);
 }
 
-export function clearStatusBarStyleStack(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>): void {
+export function clearStatusBarStyleStack(hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>): void {
   const state = _styleStacks.get(hostStatusBarInfo);
   if (state === undefined || state.entries.length === 0) return;
   state.entries.length = 0;
@@ -60,19 +60,19 @@ export function disposeStatusBar(bar: StatusBar): void {
   detachStatusBar(bar);
 }
 
-export function getStatusBarHeight(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>): number {
+export function getStatusBarHeight(hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>): number {
   return hostStatusBarInfo.getInfo(_scratchInfo).height;
 }
 
 export function getStatusBarInfo(
-  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
   out: StatusBarInfo,
 ): StatusBarInfo {
   return hostStatusBarInfo.getInfo(out);
 }
 
 export function hasStatusBarStyleEntry(
-  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
   handle: StatusBarStyleEntryHandle,
 ): boolean {
   if (handle === INVALID_HANDLE) return false;
@@ -97,7 +97,7 @@ export function packedRgbaToHexColor(color: number): string {
 }
 
 export function popStatusBarStyleEntry(
-  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
   handle: StatusBarStyleEntryHandle,
 ): void {
   if (handle === INVALID_HANDLE) return;
@@ -110,11 +110,11 @@ export function popStatusBarStyleEntry(
 }
 
 export function pushStatusBarStyleEntry(
-  hostStatusBarColor: Readonly<HostStatusBarColorProvider>,
-  hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>,
-  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysProvider>,
-  hostStatusBarStyle: Readonly<HostStatusBarStyleProvider>,
-  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityProvider>,
+  hostStatusBarColor: Readonly<HostStatusBarColorCapability>,
+  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
+  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysCapability>,
+  hostStatusBarStyle: Readonly<HostStatusBarStyleCapability>,
+  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityCapability>,
   entry: Readonly<StatusBarStyleEntry>,
 ): StatusBarStyleEntryHandle {
   let state = _styleStacks.get(hostStatusBarInfo);
@@ -139,7 +139,7 @@ export function pushStatusBarStyleEntry(
 }
 
 export function setStatusBarColor(
-  hostStatusBarColor: Readonly<HostStatusBarColorProvider>,
+  hostStatusBarColor: Readonly<HostStatusBarColorCapability>,
   color: number,
   animated?: boolean,
 ): void {
@@ -147,21 +147,21 @@ export function setStatusBarColor(
 }
 
 export function setStatusBarOverlaysContent(
-  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysProvider>,
+  hostStatusBarOverlays: Readonly<HostStatusBarOverlaysCapability>,
   overlay: boolean,
 ): void {
   hostStatusBarOverlays.setOverlaysContent(overlay);
 }
 
 export function setStatusBarStyle(
-  hostStatusBarStyle: Readonly<HostStatusBarStyleProvider>,
+  hostStatusBarStyle: Readonly<HostStatusBarStyleCapability>,
   style: StatusBarStyle,
 ): void {
   hostStatusBarStyle.setStyle(style);
 }
 
 export function setStatusBarVisible(
-  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityProvider>,
+  hostStatusBarVisibility: Readonly<HostStatusBarVisibilityCapability>,
   visible: boolean,
   animation?: StatusBarAnimation,
 ): void {
@@ -171,20 +171,20 @@ export function setStatusBarVisible(
 interface StyleStackState {
   applied: StatusBarInfo;
   baseline: StatusBarInfo;
-  colorProvider: HostStatusBarColorProvider;
+  colorProvider: HostStatusBarColorCapability;
   entries: Array<{ entry: Readonly<StatusBarStyleEntry>; handle: StatusBarStyleEntryHandle }>;
-  overlaysProvider: HostStatusBarOverlaysProvider;
-  styleProvider: HostStatusBarStyleProvider;
-  visibilityProvider: HostStatusBarVisibilityProvider;
+  overlaysProvider: HostStatusBarOverlaysCapability;
+  styleProvider: HostStatusBarStyleCapability;
+  visibilityProvider: HostStatusBarVisibilityCapability;
 }
 
 const INVALID_HANDLE: StatusBarStyleEntryHandle = -1;
 let _nextHandle: StatusBarStyleEntryHandle = 1;
 const _scratchInfo: StatusBarInfo = createStatusBarInfo();
-const _styleStacks = new WeakMap<HostStatusBarInfoProvider, StyleStackState>();
+const _styleStacks = new WeakMap<HostStatusBarInfoCapability, StyleStackState>();
 const _subscriptions = new WeakMap<StatusBar, () => void>();
 
-function applyTopStyleEntry(hostStatusBarInfo: Readonly<HostStatusBarInfoProvider>, state: StyleStackState): void {
+function applyTopStyleEntry(hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>, state: StyleStackState): void {
   let animation: StatusBarAnimation | undefined;
   let color: number | undefined;
   let overlaysContent: boolean | undefined;

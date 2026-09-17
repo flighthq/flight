@@ -1,5 +1,5 @@
 import type {
-  HostDeviceProvider,
+  HostDeviceCapability,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
@@ -25,7 +25,7 @@ import {
   refreshDeviceInfo,
 } from './device';
 
-function fakeBackend(): HostDeviceProvider {
+function fakeBackend(): HostDeviceCapability {
   return {
     [EntityRuntimeKey]: undefined,
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
@@ -85,7 +85,7 @@ function fakeBackend(): HostDeviceProvider {
   };
 }
 
-function fakeHost(): { readonly system: { readonly device: HostDeviceProvider } } {
+function fakeHost(): { readonly system: { readonly device: HostDeviceCapability } } {
   return { system: { device: fakeBackend() } };
 }
 
@@ -284,7 +284,7 @@ describe('refreshDeviceInfo', () => {
         refreshed = true;
       },
     };
-    const host: { readonly system: { readonly device: HostDeviceProvider } } = { system: { device: backend } };
+    const host: { readonly system: { readonly device: HostDeviceCapability } } = { system: { device: backend } };
     refreshDeviceInfo(host.system.device);
     expect(refreshed).toBe(true);
   });

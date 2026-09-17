@@ -2,28 +2,28 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronProtocolCapabilities,
-  HostProtocolDefaultProvider,
-  HostProtocolOpenProvider,
-  HostProtocolRegistrationProvider,
-  HostProtocolRegistrationQueryProvider,
-  HostProtocolUnregistrationProvider,
+  HostProtocolDefaultCapability,
+  HostProtocolOpenCapability,
+  HostProtocolRegistrationCapability,
+  HostProtocolRegistrationQueryCapability,
+  HostProtocolUnregistrationCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-function protocolDefault(electron: ElectronApi, registered: Set<string>): HostProtocolDefaultProvider {
-  const out = allocateEntity<HostProtocolDefaultProvider>();
+function protocolDefault(electron: ElectronApi, registered: Set<string>): HostProtocolDefaultCapability {
+  const out = allocateEntity<HostProtocolDefaultCapability>();
   populateElectronHostProtocolDefault(out, electron.app, registered);
   return finishEntity(out);
 }
 
-function protocolRegistration(electron: ElectronApi, registered: Set<string>): HostProtocolRegistrationProvider {
-  const out = allocateEntity<HostProtocolRegistrationProvider>();
+function protocolRegistration(electron: ElectronApi, registered: Set<string>): HostProtocolRegistrationCapability {
+  const out = allocateEntity<HostProtocolRegistrationCapability>();
   populateElectronHostProtocolRegistration(out, electron.app, registered);
   return finishEntity(out);
 }
 
-function protocolUnregistration(electron: ElectronApi, registered: Set<string>): HostProtocolUnregistrationProvider {
-  const out = allocateEntity<HostProtocolUnregistrationProvider>();
+function protocolUnregistration(electron: ElectronApi, registered: Set<string>): HostProtocolUnregistrationCapability {
+  const out = allocateEntity<HostProtocolUnregistrationCapability>();
   populateElectronHostProtocolUnregistration(out, electron.app, registered);
   return finishEntity(out);
 }
@@ -42,37 +42,37 @@ export function electronHostProtocol(electron: ElectronApi): ElectronProtocolCap
   return finishEntity(out);
 }
 
-export function electronHostProtocolDefault(electron: ElectronApi): HostProtocolDefaultProvider {
+export function electronHostProtocolDefault(electron: ElectronApi): HostProtocolDefaultCapability {
   return protocolDefault(electron, new Set());
 }
 
-export function electronHostProtocolOpen(electron: ElectronApi): HostProtocolOpenProvider {
-  const out = allocateEntity<HostProtocolOpenProvider>();
+export function electronHostProtocolOpen(electron: ElectronApi): HostProtocolOpenCapability {
+  const out = allocateEntity<HostProtocolOpenCapability>();
   populateElectronHostProtocolOpen(out, electron.app);
   return finishEntity(out);
 }
 
-export function electronHostProtocolRegistration(electron: ElectronApi): HostProtocolRegistrationProvider {
+export function electronHostProtocolRegistration(electron: ElectronApi): HostProtocolRegistrationCapability {
   return protocolRegistration(electron, new Set());
 }
 
-export function electronHostProtocolRegistrationQuery(electron: ElectronApi): HostProtocolRegistrationQueryProvider {
-  const out = allocateEntity<HostProtocolRegistrationQueryProvider>();
+export function electronHostProtocolRegistrationQuery(electron: ElectronApi): HostProtocolRegistrationQueryCapability {
+  const out = allocateEntity<HostProtocolRegistrationQueryCapability>();
   populateElectronHostProtocolRegistrationQuery(out, electron.app);
   return finishEntity(out);
 }
 
-export function electronHostProtocolUnregistration(electron: ElectronApi): HostProtocolUnregistrationProvider {
+export function electronHostProtocolUnregistration(electron: ElectronApi): HostProtocolUnregistrationCapability {
   return protocolUnregistration(electron, new Set());
 }
 
 export function populateElectronHostProtocol(
   out: EntityConstruction<ElectronProtocolCapabilities>,
-  defaultProvider: HostProtocolDefaultProvider,
-  open: HostProtocolOpenProvider,
-  registration: HostProtocolRegistrationProvider,
-  registrationQuery: HostProtocolRegistrationQueryProvider,
-  unregistration: HostProtocolUnregistrationProvider,
+  defaultProvider: HostProtocolDefaultCapability,
+  open: HostProtocolOpenCapability,
+  registration: HostProtocolRegistrationCapability,
+  registrationQuery: HostProtocolRegistrationQueryCapability,
+  unregistration: HostProtocolUnregistrationCapability,
 ): void {
   out.default = defaultProvider;
   out.open = open;
@@ -82,7 +82,7 @@ export function populateElectronHostProtocol(
 }
 
 export function populateElectronHostProtocolDefault(
-  out: EntityConstruction<HostProtocolDefaultProvider>,
+  out: EntityConstruction<HostProtocolDefaultCapability>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -96,7 +96,7 @@ export function populateElectronHostProtocolDefault(
 }
 
 export function populateElectronHostProtocolOpen(
-  out: EntityConstruction<HostProtocolOpenProvider>,
+  out: EntityConstruction<HostProtocolOpenCapability>,
   app: ElectronApi['app'],
 ): void {
   out.subscribe = (listener: (url: string) => void) => {
@@ -107,7 +107,7 @@ export function populateElectronHostProtocolOpen(
 }
 
 export function populateElectronHostProtocolRegistration(
-  out: EntityConstruction<HostProtocolRegistrationProvider>,
+  out: EntityConstruction<HostProtocolRegistrationCapability>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -120,14 +120,14 @@ export function populateElectronHostProtocolRegistration(
 }
 
 export function populateElectronHostProtocolRegistrationQuery(
-  out: EntityConstruction<HostProtocolRegistrationQueryProvider>,
+  out: EntityConstruction<HostProtocolRegistrationQueryCapability>,
   app: ElectronApi['app'],
 ): void {
   out.isRegistered = (scheme: string) => app.isDefaultProtocolClient(scheme);
 }
 
 export function populateElectronHostProtocolUnregistration(
-  out: EntityConstruction<HostProtocolUnregistrationProvider>,
+  out: EntityConstruction<HostProtocolUnregistrationCapability>,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {

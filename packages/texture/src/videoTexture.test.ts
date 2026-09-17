@@ -1,5 +1,5 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { HostVideoProvider, ImageResource, VideoResource } from '@flighthq/types/contract';
+import type { HostVideoCapability, ImageResource, VideoResource } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getTextureSource } from './texture';
@@ -24,7 +24,7 @@ const testVideoHost = {
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,
   getWidth: (source) => (source as HTMLVideoElement).videoWidth,
   isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
-} satisfies HostVideoProvider;
+} satisfies HostVideoCapability;
 
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
   return createVideoResource({
@@ -99,7 +99,7 @@ describe('createVideoTexture', () => {
       getHeight,
       getWidth,
       isReady,
-    } satisfies HostVideoProvider;
+    } satisfies HostVideoCapability;
 
     const texture = createVideoTexture(hostVideo, resource);
 
@@ -114,7 +114,7 @@ describe('createVideoTexture', () => {
   });
 
   it('uses dimension and readiness sentinels when the provider omits inspection methods', () => {
-    const hostVideo = { canPlayType: () => false } satisfies HostVideoProvider;
+    const hostVideo = { canPlayType: () => false } satisfies HostVideoCapability;
     const texture = createVideoTexture(hostVideo, makeVideoResource());
 
     expect(getTextureSource(texture)?.height).toBe(0);

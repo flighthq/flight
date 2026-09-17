@@ -11,7 +11,7 @@ import type {
   QuaternionReading,
   RotationRateReading,
   Sensors,
-  HostSensorsProvider,
+  HostSensorsCapability,
   SensorsPermissionState,
 } from '@flighthq/types/contract';
 
@@ -20,7 +20,7 @@ import type {
 //
 // Readings passed to signal listeners are scratch-reused objects. Listeners must not retain a
 // reference to a reading across callback boundaries — copy the values if they need to outlive the call.
-export function attachSensors(hostSensors: Readonly<HostSensorsProvider>, sensors: Sensors): void {
+export function attachSensors(hostSensors: Readonly<HostSensorsCapability>, sensors: Sensors): void {
   detachSensors(sensors);
   const backend = hostSensors;
 
@@ -295,54 +295,54 @@ export function disposeSensors(sensors: Sensors): void {
 // Queries the current permission state for the given sensor without triggering a permission prompt.
 // Returns 'unsupported' when the device has no such sensor.
 export function getSensorsPermissionState(
-  hostSensors: Readonly<HostSensorsProvider>,
+  hostSensors: Readonly<HostSensorsCapability>,
   sensor?: 'motion' | 'orientation' | 'magnetometer',
 ): Promise<SensorsPermissionState> {
   return hostSensors.getPermissionState(sensor);
 }
 
 // True if the accelerometer (including gravity) is available on this device.
-export function hasAccelerometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasAccelerometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMotionSupported();
 }
 
 // True if ambient light sensing is available on this device/platform.
-export function hasAmbientLightSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasAmbientLightSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isAmbientLightSupported();
 }
 
 // True if barometric pressure sensing is available.
-export function hasBarometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasBarometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isBarometerSupported();
 }
 
 // True if the gravity vector sensor (or derivation) is available on this device.
-export function hasGravitySensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasGravitySensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isGravitySupported();
 }
 
 // True if the gyroscope (rotation rate) sensor is available.
-export function hasGyroscope(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasGyroscope(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isGyroscopeSupported();
 }
 
 // True if the linear acceleration (gravity-removed) sensor is available.
-export function hasLinearAccelerationSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasLinearAccelerationSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isLinearAccelerationSupported();
 }
 
 // True if the magnetometer sensor is available.
-export function hasMagnetometer(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasMagnetometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMagnetometerSupported();
 }
 
 // True if the device orientation sensor is available.
-export function hasOrientationSensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasOrientationSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isOrientationSupported();
 }
 
 // True if a proximity sensor is available.
-export function hasProximitySensor(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function hasProximitySensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isProximitySupported();
 }
 
@@ -437,12 +437,12 @@ export function initializeSensors(out: EntityConstruction<Sensors>): void {
 }
 
 // True if any motion sensors (accelerometer or gyroscope) are available on this device.
-export function isSensorsSupported(hostSensors: Readonly<HostSensorsProvider>): boolean {
+export function isSensorsSupported(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMotionSupported();
 }
 
 // Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
-export function requestSensorsPermission(hostSensors: Readonly<HostSensorsProvider>): Promise<boolean> {
+export function requestSensorsPermission(hostSensors: Readonly<HostSensorsCapability>): Promise<boolean> {
   return hostSensors.requestPermission();
 }
 

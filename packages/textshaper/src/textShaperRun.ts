@@ -4,7 +4,7 @@ import type {
   EntityConstruction,
   FontMetrics,
   GlyphExtents,
-  HostTextShaperProvider,
+  HostTextShaperCapability,
   ShapeRunOptions,
   ShapedRun,
   TextFormat,
@@ -27,7 +27,7 @@ export function createShapedRun(): ShapedRun & Entity {
 }
 
 export function getCodePointForGlyph(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   glyphId: number,
   _format: Readonly<TextFormat>,
 ): number {
@@ -36,7 +36,7 @@ export function getCodePointForGlyph(
 }
 
 export function getFontMetrics(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   format: Readonly<TextFormat>,
 ): FontMetrics | null {
   if (!hostTextShaper.getFontMetrics) return null;
@@ -44,7 +44,7 @@ export function getFontMetrics(
 }
 
 export function getFontMetricsInto(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   format: Readonly<TextFormat>,
   out: FontMetrics,
 ): boolean {
@@ -62,7 +62,7 @@ export function getFontMetricsInto(
 }
 
 export function getFontUnitScale(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   format: Readonly<TextFormat>,
 ): number {
   const metrics = getFontMetrics(hostTextShaper, format);
@@ -72,7 +72,7 @@ export function getFontUnitScale(
 }
 
 export function getGlyphExtents(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   glyphId: number,
   _format: Readonly<TextFormat>,
 ): GlyphExtents | null {
@@ -81,7 +81,7 @@ export function getGlyphExtents(
 }
 
 export function getGlyphExtentsBatch(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   glyphIds: ReadonlyArray<number>,
   _format: Readonly<TextFormat>,
   out: GlyphExtents[],
@@ -101,7 +101,7 @@ export function getGlyphExtentsBatch(
 }
 
 export function getGlyphExtentsInto(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   glyphId: number,
   _format: Readonly<TextFormat>,
   out: GlyphExtents,
@@ -116,7 +116,7 @@ export function getGlyphExtentsInto(
 }
 
 export function getGlyphIndexForCodePoint(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   codePoint: number,
   _format: Readonly<TextFormat>,
 ): number {
@@ -125,7 +125,7 @@ export function getGlyphIndexForCodePoint(
 }
 
 export function getGlyphName(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   glyphId: number,
   _format: Readonly<TextFormat>,
 ): string {
@@ -143,7 +143,7 @@ export function initializeShapedRun(out: EntityConstruction<ShapedRun & Entity>)
 }
 
 export function shapeTextRun(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   text: string,
   format: Readonly<TextFormat>,
   options?: ShapeRunOptions,
@@ -153,7 +153,7 @@ export function shapeTextRun(
 }
 
 export function shapeTextRunInto(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   text: string,
   format: Readonly<TextFormat>,
   out: ShapedRun,

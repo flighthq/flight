@@ -4,7 +4,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -46,9 +46,9 @@ function makeTexture(w = 64, h = 64, repeatX = false, repeatY = false, smooth = 
   });
 }
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const resolvers = createCanvasTextureResolvers();
 registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 registerCanvasImageTextureResolver(resolvers);

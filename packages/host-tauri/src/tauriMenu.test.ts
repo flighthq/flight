@@ -1,7 +1,7 @@
 import type {
-  HostMenuApplicationProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -212,9 +212,9 @@ async function flush(): Promise<void> {
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: TauriApi): {
   destroy?: () => void;
-  popupContextMenu: HostMenuPopupProvider['popup'];
-  setApplicationMenu: HostMenuApplicationProvider['setApplicationMenu'];
-  subscribeSelect: HostMenuSelectProvider['subscribe'];
+  popupContextMenu: HostMenuPopupCapability['popup'];
+  setApplicationMenu: HostMenuApplicationCapability['setApplicationMenu'];
+  subscribeSelect: HostMenuSelectCapability['subscribe'];
 } {
   const { application, popup, select } = tauriHostMenu(api);
   return {

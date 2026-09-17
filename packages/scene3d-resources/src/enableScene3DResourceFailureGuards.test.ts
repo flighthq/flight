@@ -1,7 +1,7 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider, ImageResourceReference } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceFailureKind,
@@ -19,9 +19,9 @@ import {
 import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const sinks: ReturnType<typeof createMemoryLogSink>[] = [];
 
 afterEach(() => {

@@ -3,9 +3,9 @@ import { createNotificationResource } from '@flighthq/notification/contract';
 import type {
   NotificationRequest,
   NotificationRequestField,
-  HostNotificationDeliveryProvider,
-  HostNotificationLifecycleProvider,
-  HostNotificationPermissionProvider,
+  HostNotificationDeliveryCapability,
+  HostNotificationLifecycleCapability,
+  HostNotificationPermissionCapability,
   TauriApi,
   TauriNotificationCapabilities,
 } from '@flighthq/types/contract';
@@ -19,15 +19,15 @@ export function tauriHostNotification(tauri: TauriApi): TauriNotificationCapabil
   return finishEntity(out);
 }
 
-export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryProvider {
+export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryCapability {
   return createNotificationDelivery(createNotificationState(tauri));
 }
 
-export function tauriHostNotificationLifecycle(tauri: TauriApi): HostNotificationLifecycleProvider {
+export function tauriHostNotificationLifecycle(tauri: TauriApi): HostNotificationLifecycleCapability {
   return createNotificationLifecycle(createNotificationState(tauri));
 }
 
-export function tauriHostNotificationPermission(tauri: TauriApi): HostNotificationPermissionProvider {
+export function tauriHostNotificationPermission(tauri: TauriApi): HostNotificationPermissionCapability {
   return createNotificationPermission(createNotificationState(tauri));
 }
 
@@ -41,7 +41,7 @@ function createNotificationState(tauri: TauriApi): NotificationState {
   return { destroyed: false, nextId: 1, notification: tauri.notification };
 }
 
-function createNotificationDelivery(state: NotificationState): HostNotificationDeliveryProvider {
+function createNotificationDelivery(state: NotificationState): HostNotificationDeliveryCapability {
   return {
     async notify(request) {
       if (state.destroyed) return { reason: 'operation-failed' };
@@ -72,7 +72,7 @@ function createNotificationDelivery(state: NotificationState): HostNotificationD
   };
 }
 
-function createNotificationLifecycle(state: NotificationState): HostNotificationLifecycleProvider {
+function createNotificationLifecycle(state: NotificationState): HostNotificationLifecycleCapability {
   return {
     async destroy() {
       if (state.destroyed) return { reason: 'already-destroyed' };
@@ -82,7 +82,7 @@ function createNotificationLifecycle(state: NotificationState): HostNotification
   };
 }
 
-function createNotificationPermission(state: NotificationState): HostNotificationPermissionProvider {
+function createNotificationPermission(state: NotificationState): HostNotificationPermissionCapability {
   return {
     async getPermission() {
       try {

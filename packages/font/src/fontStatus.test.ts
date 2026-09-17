@@ -1,8 +1,8 @@
-import type { HostFontLoadingProvider } from '@flighthq/types/contract';
+import type { HostFontLoadingCapability } from '@flighthq/types/contract';
 
 import { isFontLoaded, whenFontsReady } from './fontStatus';
 
-function createMockBackend(overrides: Partial<HostFontLoadingProvider> = {}): HostFontLoadingProvider {
+function createMockBackend(overrides: Partial<HostFontLoadingCapability> = {}): HostFontLoadingCapability {
   return {
     addFontFace: vi.fn(),
     checkFontFace: vi.fn<(shorthand: string) => boolean>().mockReturnValue(true),

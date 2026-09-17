@@ -3,7 +3,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendOperationExplanation, LifecycleOperation, EntityConstruction } from '@flighthq/types/contract';
 import type {
   AppLaunchKind,
-  HostLifecycleProvider,
+  HostLifecycleCapability,
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
@@ -19,7 +19,7 @@ import type {
 // whether the derived state changed. onResume/onPause are deduped edges: 'active'→non-'active'
 // fires onPause (including the interruption edge 'active'→'inactive'); non-'active'→'active' fires
 // onResume. The 'inactive'→'background' and reverse transitions do not fire onPause/onResume again.
-export function attachAppLifecycle(hostLifecycle: Readonly<HostLifecycleProvider>, app: AppLifecycle): void {
+export function attachAppLifecycle(hostLifecycle: Readonly<HostLifecycleCapability>, app: AppLifecycle): void {
   detachAppLifecycle(app);
   const backend = hostLifecycle;
   let previous = backend.getState();
@@ -83,7 +83,7 @@ export function disposeAppLifecycle(app: AppLifecycle): void {
 // Reports whether the supplied provider implements `operation`. Optional methods that the provider
 // omits are reported as the sentinel layer so callers can distinguish absence from a real operation.
 export function explainLifecycleOperation(
-  hostLifecycle: Readonly<HostLifecycleProvider>,
+  hostLifecycle: Readonly<HostLifecycleCapability>,
   operation: LifecycleOperation,
 ): BackendOperationExplanation {
   const implemented = typeof hostLifecycle[operation] === 'function';
@@ -94,19 +94,19 @@ export function explainLifecycleOperation(
 // provider approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
 // others → 'cold'). Returns 'warm' as a safe fallback when the provider does not implement
 // getLaunchKind (legacy or minimal providers that pre-date the optional method).
-export function getAppLaunchKind(hostLifecycle: Readonly<HostLifecycleProvider>): AppLaunchKind {
+export function getAppLaunchKind(hostLifecycle: Readonly<HostLifecycleCapability>): AppLaunchKind {
   const backend = hostLifecycle;
   return backend.getLaunchKind !== undefined ? backend.getLaunchKind() : 'warm';
 }
 
 // Returns the current application lifecycle state from the supplied provider.
-export function getAppLifecycleState(hostLifecycle: Readonly<HostLifecycleProvider>): AppLifecycleState {
+export function getAppLifecycleState(hostLifecycle: Readonly<HostLifecycleCapability>): AppLifecycleState {
   return hostLifecycle.getState();
 }
 
 // Whether the supplied provider implements `operation`.
 export function hasLifecycleOperation(
-  hostLifecycle: Readonly<HostLifecycleProvider>,
+  hostLifecycle: Readonly<HostLifecycleCapability>,
   operation: LifecycleOperation,
 ): boolean {
   return explainLifecycleOperation(hostLifecycle, operation).implemented;
@@ -124,18 +124,18 @@ export function initializeAppLifecycle(out: EntityConstruction<AppLifecycle>): v
 }
 
 // Returns true when the application is in the 'active' state (visible and focused).
-export function isAppActive(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+export function isAppActive(hostLifecycle: Readonly<HostLifecycleCapability>): boolean {
   return hostLifecycle.getState() === 'active';
 }
 
 // Returns true when the application is in the 'background' state (hidden/suspended).
-export function isAppBackground(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+export function isAppBackground(hostLifecycle: Readonly<HostLifecycleCapability>): boolean {
   return hostLifecycle.getState() === 'background';
 }
 
 // Returns true when the application is in the 'inactive' state (visible but not focused —
 // e.g. app switcher, control-center overlay, incoming call).
-export function isAppInactive(hostLifecycle: Readonly<HostLifecycleProvider>): boolean {
+export function isAppInactive(hostLifecycle: Readonly<HostLifecycleCapability>): boolean {
   return hostLifecycle.getState() === 'inactive';
 }
 

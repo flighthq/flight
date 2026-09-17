@@ -7,30 +7,30 @@ import type {
   AppLoginItemLike,
   AppPathKind,
   EntityConstruction,
-  HostAppActivateProvider,
-  HostAppActivationPolicyProvider,
-  HostAppAllWindowsClosedProvider,
-  HostAppBadgeProvider,
-  HostAppDockProvider,
-  HostAppFocusProvider,
-  HostAppVisibilityQueryProvider,
-  HostAppHideProvider,
-  HostAppLocaleProvider,
-  HostAppLoginItemProvider,
-  HostAppNameProvider,
-  HostAppNameWriteProvider,
-  HostAppOpenFileProvider,
-  HostAppPathProvider,
-  HostAppQuitProvider,
-  HostAppQuitRequestProvider,
-  HostAppReadyProvider,
-  HostAppRecentDocumentsProvider,
-  HostAppRelaunchProvider,
-  HostAppSecondInstanceProvider,
-  HostAppShowProvider,
-  HostAppSingleInstanceProvider,
-  HostAppUserModelIdProvider,
-  HostAppVersionProvider,
+  HostAppActivateCapability,
+  HostAppActivationPolicyCapability,
+  HostAppAllWindowsClosedCapability,
+  HostAppBadgeCapability,
+  HostAppDockCapability,
+  HostAppFocusCapability,
+  HostAppVisibilityQueryCapability,
+  HostAppHideCapability,
+  HostAppLocaleCapability,
+  HostAppLoginItemCapability,
+  HostAppNameCapability,
+  HostAppNameWriteCapability,
+  HostAppOpenFileCapability,
+  HostAppPathCapability,
+  HostAppQuitCapability,
+  HostAppQuitRequestCapability,
+  HostAppReadyCapability,
+  HostAppRecentDocumentsCapability,
+  HostAppRelaunchCapability,
+  HostAppSecondInstanceCapability,
+  HostAppShowCapability,
+  HostAppSingleInstanceCapability,
+  HostAppUserModelIdCapability,
+  HostAppVersionCapability,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 
@@ -44,19 +44,19 @@ interface AppSubscriptions {
 }
 
 export function addAppRecentDocument(
-  hostAppRecentDocuments: Readonly<HostAppRecentDocumentsProvider>,
+  hostAppRecentDocuments: Readonly<HostAppRecentDocumentsCapability>,
   path: string,
 ): void {
   hostAppRecentDocuments.addRecentDocument(path);
 }
 
 export function attachApp(
-  hostAppActivate: Readonly<HostAppActivateProvider>,
-  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedProvider>,
-  hostAppOpenFile: Readonly<HostAppOpenFileProvider>,
-  hostAppQuitRequest: Readonly<HostAppQuitRequestProvider>,
-  hostAppReady: Readonly<HostAppReadyProvider>,
-  hostAppSecondInstance: Readonly<HostAppSecondInstanceProvider>,
+  hostAppActivate: Readonly<HostAppActivateCapability>,
+  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedCapability>,
+  hostAppOpenFile: Readonly<HostAppOpenFileCapability>,
+  hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>,
+  hostAppReady: Readonly<HostAppReadyCapability>,
+  hostAppSecondInstance: Readonly<HostAppSecondInstanceCapability>,
   app: App,
 ): void {
   detachApp(app);
@@ -68,7 +68,7 @@ export function attachApp(
   attachAppSecondInstance(hostAppSecondInstance, app);
 }
 
-export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateProvider>, app: App): void {
+export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateCapability>, app: App): void {
   replaceAppSubscription(
     app,
     'activate',
@@ -77,7 +77,7 @@ export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateProvi
 }
 
 export function attachAppAllWindowsClosed(
-  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedProvider>,
+  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedCapability>,
   app: App,
 ): void {
   replaceAppSubscription(
@@ -87,7 +87,7 @@ export function attachAppAllWindowsClosed(
   );
 }
 
-export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileProvider>, app: App): void {
+export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileCapability>, app: App): void {
   replaceAppSubscription(
     app,
     'openFile',
@@ -95,7 +95,7 @@ export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileProvi
   );
 }
 
-export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitRequestProvider>, app: App): void {
+export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>, app: App): void {
   replaceAppSubscription(
     app,
     'quitRequest',
@@ -106,7 +106,7 @@ export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitReq
   );
 }
 
-export function attachAppReady(hostAppReady: Readonly<HostAppReadyProvider>, app: App): void {
+export function attachAppReady(hostAppReady: Readonly<HostAppReadyCapability>, app: App): void {
   replaceAppSubscription(
     app,
     'ready',
@@ -115,7 +115,7 @@ export function attachAppReady(hostAppReady: Readonly<HostAppReadyProvider>, app
 }
 
 export function attachAppSecondInstance(
-  hostAppSecondInstance: Readonly<HostAppSecondInstanceProvider>,
+  hostAppSecondInstance: Readonly<HostAppSecondInstanceCapability>,
   app: App,
 ): void {
   replaceAppSubscription(
@@ -125,19 +125,19 @@ export function attachAppSecondInstance(
   );
 }
 
-export function bounceAppDock(hostAppDock: Readonly<HostAppDockProvider>): number {
+export function bounceAppDock(hostAppDock: Readonly<HostAppDockCapability>): number {
   return hostAppDock.bounceDock();
 }
 
-export function cancelAppAttention(hostAppDock: Readonly<HostAppDockProvider>, id: number): void {
+export function cancelAppAttention(hostAppDock: Readonly<HostAppDockCapability>, id: number): void {
   hostAppDock.cancelAttention(id);
 }
 
-export function cancelAppDockBounce(hostAppDock: Readonly<HostAppDockProvider>, id: number): void {
+export function cancelAppDockBounce(hostAppDock: Readonly<HostAppDockCapability>, id: number): void {
   hostAppDock.cancelDockBounce(id);
 }
 
-export function clearAppRecentDocuments(hostAppRecentDocuments: Readonly<HostAppRecentDocumentsProvider>): void {
+export function clearAppRecentDocuments(hostAppRecentDocuments: Readonly<HostAppRecentDocumentsCapability>): void {
   hostAppRecentDocuments.clearRecentDocuments();
 }
 
@@ -164,51 +164,51 @@ export function disposeApp(app: App): void {
   clearSignal(app.onSecondInstance);
 }
 
-export function focusApp(hostAppFocus: Readonly<HostAppFocusProvider>): void {
+export function focusApp(hostAppFocus: Readonly<HostAppFocusCapability>): void {
   hostAppFocus.focus();
 }
 
-export function getAppDirectoryPath(hostAppPath: Readonly<HostAppPathProvider>, kind: AppPathKind): string {
+export function getAppDirectoryPath(hostAppPath: Readonly<HostAppPathCapability>, kind: AppPathKind): string {
   return hostAppPath.getAppDirectoryPath(kind);
 }
 
-export function getAppExecutablePath(hostAppPath: Readonly<HostAppPathProvider>): string {
+export function getAppExecutablePath(hostAppPath: Readonly<HostAppPathCapability>): string {
   return hostAppPath.getExecutablePath();
 }
 
-export function getAppLocale(hostAppLocale: Readonly<HostAppLocaleProvider>): string {
+export function getAppLocale(hostAppLocale: Readonly<HostAppLocaleCapability>): string {
   return hostAppLocale.getLocale();
 }
 
-export function getAppLoginItem(hostAppLoginItem: Readonly<HostAppLoginItemProvider>): AppLoginItem {
+export function getAppLoginItem(hostAppLoginItem: Readonly<HostAppLoginItemCapability>): AppLoginItem {
   return hostAppLoginItem.getLoginItem();
 }
 
-export function getAppName(hostAppName: Readonly<HostAppNameProvider>): string {
+export function getAppName(hostAppName: Readonly<HostAppNameCapability>): string {
   return hostAppName.getName();
 }
 
-export function getAppPath(hostAppPath: Readonly<HostAppPathProvider>): string {
+export function getAppPath(hostAppPath: Readonly<HostAppPathCapability>): string {
   return hostAppPath.getAppPath();
 }
 
-export function getAppPreferredSystemLanguages(hostAppLocale: Readonly<HostAppLocaleProvider>): readonly string[] {
+export function getAppPreferredSystemLanguages(hostAppLocale: Readonly<HostAppLocaleCapability>): readonly string[] {
   return hostAppLocale.getPreferredSystemLanguages();
 }
 
-export function getAppSystemLocale(hostAppLocale: Readonly<HostAppLocaleProvider>): string {
+export function getAppSystemLocale(hostAppLocale: Readonly<HostAppLocaleCapability>): string {
   return hostAppLocale.getSystemLocale();
 }
 
-export function getAppVersion(hostAppVersion: Readonly<HostAppVersionProvider>): string {
+export function getAppVersion(hostAppVersion: Readonly<HostAppVersionCapability>): string {
   return hostAppVersion.getVersion();
 }
 
-export function hasAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceProvider>): boolean {
+export function hasAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceCapability>): boolean {
   return hostAppSingleInstance.hasSingleInstanceLock();
 }
 
-export function hideApp(hostAppHide: Readonly<HostAppHideProvider>): void {
+export function hideApp(hostAppHide: Readonly<HostAppHideCapability>): void {
   hostAppHide.hideApp();
 }
 
@@ -221,65 +221,65 @@ export function initializeApp(out: EntityConstruction<App>): void {
   out.onSecondInstance = createSignal();
 }
 
-export function isAppHidden(hostAppVisibilityQuery: Readonly<HostAppVisibilityQueryProvider>): boolean {
+export function isAppHidden(hostAppVisibilityQuery: Readonly<HostAppVisibilityQueryCapability>): boolean {
   return hostAppVisibilityQuery.isAppHidden();
 }
 
-export function quitApp(hostAppQuit: Readonly<HostAppQuitProvider>): void {
+export function quitApp(hostAppQuit: Readonly<HostAppQuitCapability>): void {
   hostAppQuit.quit();
 }
 
-export function relaunchApp(hostAppRelaunch: Readonly<HostAppRelaunchProvider>): void {
+export function relaunchApp(hostAppRelaunch: Readonly<HostAppRelaunchCapability>): void {
   hostAppRelaunch.relaunch();
 }
 
-export function releaseAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceProvider>): void {
+export function releaseAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceCapability>): void {
   hostAppSingleInstance.releaseSingleInstanceLock();
 }
 
-export function requestAppAttention(hostAppDock: Readonly<HostAppDockProvider>, critical: boolean): number {
+export function requestAppAttention(hostAppDock: Readonly<HostAppDockCapability>, critical: boolean): number {
   return hostAppDock.requestAttention(critical);
 }
 
-export function requestAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceProvider>): boolean {
+export function requestAppSingleInstanceLock(hostAppSingleInstance: Readonly<HostAppSingleInstanceCapability>): boolean {
   return hostAppSingleInstance.requestSingleInstanceLock();
 }
 
 export function setAppActivationPolicy(
-  hostAppActivationPolicy: Readonly<HostAppActivationPolicyProvider>,
+  hostAppActivationPolicy: Readonly<HostAppActivationPolicyCapability>,
   policy: AppActivationPolicy,
 ): void {
   hostAppActivationPolicy.setActivationPolicy(policy);
 }
 
-export function setAppBadgeCount(hostAppBadge: Readonly<HostAppBadgeProvider>, count: number): Promise<boolean> {
+export function setAppBadgeCount(hostAppBadge: Readonly<HostAppBadgeCapability>, count: number): Promise<boolean> {
   return hostAppBadge.setBadgeCount(count);
 }
 
-export function setAppDockBadge(hostAppDock: Readonly<HostAppDockProvider>, text: string): void {
+export function setAppDockBadge(hostAppDock: Readonly<HostAppDockCapability>, text: string): void {
   hostAppDock.setDockBadge(text);
 }
 
-export function setAppDockMenu(hostAppDock: Readonly<HostAppDockProvider>, items: readonly MenuItemTemplate[]): void {
+export function setAppDockMenu(hostAppDock: Readonly<HostAppDockCapability>, items: readonly MenuItemTemplate[]): void {
   hostAppDock.setDockMenu(items);
 }
 
 export function setAppLoginItem(
-  hostAppLoginItem: Readonly<HostAppLoginItemProvider>,
+  hostAppLoginItem: Readonly<HostAppLoginItemCapability>,
   settings: Readonly<AppLoginItemLike>,
 ): void {
   hostAppLoginItem.setLoginItem(settings);
 }
 
-export function setAppName(hostAppNameWrite: Readonly<HostAppNameWriteProvider>, name: string): void {
+export function setAppName(hostAppNameWrite: Readonly<HostAppNameWriteCapability>, name: string): void {
   hostAppNameWrite.setName(name);
 }
 
-export function setAppUserModelId(hostAppUserModelId: Readonly<HostAppUserModelIdProvider>, id: string): void {
+export function setAppUserModelId(hostAppUserModelId: Readonly<HostAppUserModelIdCapability>, id: string): void {
   hostAppUserModelId.setUserModelId(id);
 }
 
-export function showApp(hostAppShow: Readonly<HostAppShowProvider>): void {
+export function showApp(hostAppShow: Readonly<HostAppShowCapability>): void {
   hostAppShow.showApp();
 }
 

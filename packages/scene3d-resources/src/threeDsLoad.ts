@@ -1,5 +1,5 @@
 import { parse3ds } from '@flighthq/scene3d-formats/contract';
-import type { HostNetProvider, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { HostNetCapability, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -7,7 +7,7 @@ import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFrom
 // the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and resolve
 // on your own schedule. Returns null on transport failure; it never creates a renderer or GPU resource.
 export async function loadScene3DDocumentFrom3dsUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {

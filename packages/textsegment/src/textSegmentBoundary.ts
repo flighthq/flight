@@ -1,5 +1,5 @@
 import type {
-  HostTextSegmenterProvider,
+  HostTextSegmenterCapability,
   TextSegment,
   TextSegmentGranularity,
   TextSegmentRange,
@@ -9,7 +9,7 @@ import { webTextSegmenterBackend } from './textSegmenterBackend';
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
 export function getNextGraphemeBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -18,7 +18,7 @@ export function getNextGraphemeBoundary(
 }
 
 export function getNextSentenceBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -27,7 +27,7 @@ export function getNextSentenceBoundary(
 }
 
 export function getNextWordBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -36,7 +36,7 @@ export function getNextWordBoundary(
 }
 
 export function getPreviousGraphemeBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -45,7 +45,7 @@ export function getPreviousGraphemeBoundary(
 }
 
 export function getPreviousSentenceBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -54,7 +54,7 @@ export function getPreviousSentenceBoundary(
 }
 
 export function getPreviousWordBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -63,7 +63,7 @@ export function getPreviousWordBoundary(
 }
 
 export function getWordRangeAt(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   locale?: string,
@@ -111,7 +111,7 @@ function getBoundarySegmenter(locale: string | undefined, granularity: TextSegme
 }
 
 function getNextTextSegmentBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   granularity: TextSegmentGranularity,
@@ -131,7 +131,7 @@ function getNextTextSegmentBoundary(
 }
 
 function getPreviousTextSegmentBoundary(
-  textSegmenter: Readonly<HostTextSegmenterProvider>,
+  textSegmenter: Readonly<HostTextSegmenterCapability>,
   text: string,
   index: number,
   granularity: TextSegmentGranularity,

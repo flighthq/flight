@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostMidiAccessProvider,
+  HostMidiAccessCapability,
   MidiAccess,
   MidiAccessDisposeOutcome,
   MidiAccessPortsOutcome,
@@ -50,7 +50,7 @@ export function getMidiAccessOutputPorts(access: MidiAccess): MidiAccessPortsOut
 export function initializeMidiAccessResource(_out: EntityConstruction<MidiAccess>): void {}
 
 export async function requestMidiAccess(
-  hostMidiAccess: Readonly<HostMidiAccessProvider>,
+  hostMidiAccess: Readonly<HostMidiAccessCapability>,
 ): Promise<MidiAccessRequestOutcome> {
   try {
     return await hostMidiAccess.requestAccess();

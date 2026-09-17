@@ -1,11 +1,11 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
-  HostStatusBarChangeProvider,
-  HostStatusBarColorProvider,
-  HostStatusBarInfoProvider,
-  HostStatusBarOverlaysProvider,
-  HostStatusBarStyleProvider,
-  HostStatusBarVisibilityProvider,
+  HostStatusBarChangeCapability,
+  HostStatusBarColorCapability,
+  HostStatusBarInfoCapability,
+  HostStatusBarOverlaysCapability,
+  HostStatusBarStyleCapability,
+  HostStatusBarVisibilityCapability,
   StatusBarInfo,
   StatusBarStyle,
 } from '@flighthq/types/contract';
@@ -158,12 +158,12 @@ describe('setStatusBarOverlaysContent', () => {
 
 interface FakeStatusBarHost {
   readonly ui: {
-    readonly statusBarChange: HostStatusBarChangeProvider;
-    readonly statusBarColor: HostStatusBarColorProvider;
-    readonly statusBarInfo: HostStatusBarInfoProvider;
-    readonly statusBarOverlays: HostStatusBarOverlaysProvider;
-    readonly statusBarStyle: HostStatusBarStyleProvider;
-    readonly statusBarVisibility: HostStatusBarVisibilityProvider;
+    readonly statusBarChange: HostStatusBarChangeCapability;
+    readonly statusBarColor: HostStatusBarColorCapability;
+    readonly statusBarInfo: HostStatusBarInfoCapability;
+    readonly statusBarOverlays: HostStatusBarOverlaysCapability;
+    readonly statusBarStyle: HostStatusBarStyleCapability;
+    readonly statusBarVisibility: HostStatusBarVisibilityCapability;
   };
 }
 

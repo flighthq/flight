@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   EntityWithoutRuntime,
-  HostMenuApplicationProvider,
-  HostMenuHighlightProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuHighlightCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -36,7 +36,7 @@ import {
 function popupHost(
   result: string | null,
   calls: string[] = [],
-): { readonly menu: { readonly popup: HostMenuPopupProvider } } & { calls: string[] } {
+): { readonly menu: { readonly popup: HostMenuPopupCapability } } & { calls: string[] } {
   return {
     calls,
     menu: {
@@ -55,7 +55,7 @@ function popupHost(
 function applicationHost(
   accepted: boolean,
   seen: MenuItemTemplate[][] = [],
-): { readonly menu: { readonly application: HostMenuApplicationProvider } } {
+): { readonly menu: { readonly application: HostMenuApplicationCapability } } {
   return {
     menu: {
       application: (() => {
@@ -70,7 +70,7 @@ function applicationHost(
   };
 }
 
-function selectHost(): { readonly menu: { readonly select: HostMenuSelectProvider } } & {
+function selectHost(): { readonly menu: { readonly select: HostMenuSelectCapability } } & {
   emit(id: string): void;
   subscriberCount(): number;
 } {
@@ -97,7 +97,7 @@ function selectHost(): { readonly menu: { readonly select: HostMenuSelectProvide
   };
 }
 
-function highlightHost(): { readonly menu: { readonly highlight: HostMenuHighlightProvider } } & {
+function highlightHost(): { readonly menu: { readonly highlight: HostMenuHighlightCapability } } & {
   emit(id: string): void;
 } {
   const listeners = new Set<(id: string) => void>();
@@ -208,11 +208,11 @@ describe('createMenuSelect', () => {
 });
 
 describe('destroyMenuApplication', () => {
-  function applicationHostWith(provider: EntityWithoutRuntime<HostMenuApplicationProvider>): {
-    readonly menu: { readonly application: HostMenuApplicationProvider };
+  function applicationHostWith(provider: EntityWithoutRuntime<HostMenuApplicationCapability>): {
+    readonly menu: { readonly application: HostMenuApplicationCapability };
   } {
     (provider as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
-    return { menu: { application: provider as HostMenuApplicationProvider } };
+    return { menu: { application: provider as HostMenuApplicationCapability } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {

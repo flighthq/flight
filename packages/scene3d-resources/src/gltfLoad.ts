@@ -2,7 +2,7 @@ import { parseGlb, parseGltf } from '@flighthq/scene3d-formats/contract';
 import type {
   GltfDocument,
   GltfScene3DDocumentLoadOptions,
-  HostNetProvider,
+  HostNetCapability,
   Scene3DDocument,
   Scene3DDocumentLoadOptions,
 } from '@flighthq/types/contract';
@@ -17,7 +17,7 @@ import {
 // the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and load
 // resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
 export async function loadScene3DDocumentFromGlbUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
@@ -34,7 +34,7 @@ export async function loadScene3DDocumentFromGlbUrl(
 // remain unresolved resource refs carrying the model's base path. Assemble with createScene3DFromDocument and
 // load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
 export async function loadScene3DDocumentFromGltfUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
@@ -60,7 +60,7 @@ export async function loadScene3DDocumentFromGltfUrl(
 }
 
 async function loadGltfExternalBuffers(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   gltf: Readonly<GltfDocument>,
   basePath: string | null,
   options?: Readonly<Scene3DDocumentLoadOptions>,

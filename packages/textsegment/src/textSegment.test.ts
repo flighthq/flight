@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
+import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
 import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
@@ -29,7 +29,7 @@ describe('segmentGraphemes', () => {
 
   it('threads the locale argument to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const fake = allocateEntity<HostTextSegmenterProvider>();
+    const fake = allocateEntity<HostTextSegmenterCapability>();
     fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text }];
@@ -39,8 +39,8 @@ describe('segmentGraphemes', () => {
   });
 });
 
-function taggingBackend(tag: string): HostTextSegmenterProvider {
-  const out = allocateEntity<HostTextSegmenterProvider>();
+function taggingBackend(tag: string): HostTextSegmenterCapability {
+  const out = allocateEntity<HostTextSegmenterCapability>();
   out.segment = () => [{ start: 0, end: tag.length, text: tag }];
   return finishEntity(out);
 }

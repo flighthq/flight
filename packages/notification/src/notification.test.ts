@@ -3,7 +3,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationCapabilities,
   Notification,
-  HostNotificationClickProvider,
+  HostNotificationClickCapability,
   NotificationEventBackendAttachOutcome,
 } from '@flighthq/types/contract';
 
@@ -52,7 +52,7 @@ function host<const TCapabilities extends HostNotificationCapabilities>(notifica
 
 function createClickBackend(options?: Readonly<{ attachFailure?: boolean; releaseFailure?: boolean }>) {
   const listeners = new Set<(notification: Readonly<Notification>) => void>();
-  const backend: HostNotificationClickProvider = {
+  const backend: HostNotificationClickCapability = {
     async attach(listener): Promise<NotificationEventBackendAttachOutcome> {
       if (options?.attachFailure === true) {
         return {

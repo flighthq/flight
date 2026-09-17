@@ -1,7 +1,7 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   InputGamepadButtonData,
-  HostInputIngressProvider,
+  HostInputIngressCapability,
   InputIngressSink,
   InputIngressSource,
   InputKeyboardData,
@@ -55,7 +55,7 @@ type InputIngressAttachmentKind = 'gamepad' | 'keyboard' | 'pointer' | 'relative
 function createTestInputIngressBackend(
   attach: (kind: InputIngressAttachmentKind, source: InputIngressSource, sink: InputIngressSink) => () => void = () =>
     () => {},
-): HostInputIngressProvider {
+): HostInputIngressCapability {
   return {
     attachGamepad: (source, sink) => attach('gamepad', source, sink),
     attachKeyboard: (source, sink) => attach('keyboard', source, sink),

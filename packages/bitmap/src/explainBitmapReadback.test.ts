@@ -1,15 +1,15 @@
-import type { HostBitmapReadbackProvider, BitmapReadbackBackendReason } from '@flighthq/types/contract';
+import type { HostBitmapReadbackCapability, BitmapReadbackBackendReason } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
 import { createBitmapFromImageSource } from './bitmapFrom';
 import { explainBitmapReadback } from './explainBitmapReadback';
 
-function hostWith(backend: HostBitmapReadbackProvider): {
-  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+function hostWith(backend: HostBitmapReadbackCapability): {
+  readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
 } {
   return { graphics: { bitmapReadback: backend } } as {
-    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
   };
 }
 
@@ -43,7 +43,7 @@ describe('explainBitmapReadback', () => {
 
   it('returns the exact success outcome and keeps constructor/explainer parity', () => {
     const bitmap = createBitmap(8, 4);
-    const readBitmap: HostBitmapReadbackProvider['readBitmap'] = vi.fn((_source, _width, _height, mode) => ({
+    const readBitmap: HostBitmapReadbackCapability['readBitmap'] = vi.fn((_source, _width, _height, mode) => ({
       bitmap: mode === 'bitmap' ? bitmap : null,
       reason: 'ok' as const,
     }));

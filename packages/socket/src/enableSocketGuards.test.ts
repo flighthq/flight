@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { HostSocketProvider, LogEntry } from '@flighthq/types/contract';
+import type { HostSocketCapability, LogEntry } from '@flighthq/types/contract';
 
 import { areSocketGuardsEnabled, disableSocketGuards, enableSocketGuards } from './enableSocketGuards';
 import { closeSocket, createSocket, disposeSocket, enableSocketSignals, sendSocketMessage } from './socket';
@@ -15,7 +15,7 @@ function captureLog(run: () => void): readonly LogEntry[] {
   }
 }
 
-function backend(hasConnection: boolean): HostSocketProvider {
+function backend(hasConnection: boolean): HostSocketCapability {
   return {
     openSocket() {
       if (!hasConnection) return null;
@@ -28,8 +28,8 @@ afterEach(() => {
   disableSocketGuards();
 });
 
-function hostOf(backend: HostSocketProvider): { readonly net: { readonly socket: HostSocketProvider } } {
-  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketProvider } };
+function hostOf(backend: HostSocketCapability): { readonly net: { readonly socket: HostSocketCapability } } {
+  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketCapability } };
 }
 
 describe('areSocketGuardsEnabled', () => {

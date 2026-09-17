@@ -6,9 +6,9 @@ import type {
   ApplicationStepOptions,
   ApplicationWindow,
   EntityConstruction,
-  HostApplicationExitProvider,
-  HostLoopProvider,
-  HostApplicationVisibilityProvider,
+  HostApplicationExitCapability,
+  HostLoopCapability,
+  HostApplicationVisibilityCapability,
 } from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
@@ -23,7 +23,7 @@ const kPaused = Symbol();
 // -- Application entity --
 
 export function attachApplicationExit(
-  hostApplicationExit: Readonly<HostApplicationExitProvider>,
+  hostApplicationExit: Readonly<HostApplicationExitCapability>,
   app: Application,
 ): void {
   const observers = getApplicationObservers(app);
@@ -187,8 +187,8 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
 }
 
 export function startApplicationLoop(
-  hostLoop: Readonly<HostLoopProvider>,
-  hostApplicationVisibility: Readonly<HostApplicationVisibilityProvider>,
+  hostLoop: Readonly<HostLoopCapability>,
+  hostApplicationVisibility: Readonly<HostApplicationVisibilityCapability>,
   app: Application,
   options: Readonly<ApplicationLoopOptions> = {},
 ): void {

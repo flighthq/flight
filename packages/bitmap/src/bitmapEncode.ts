@@ -1,12 +1,12 @@
 import type {
   Bitmap,
   BitmapEncodeFailureExplanation,
-  HostBitmapEncodeProvider,
+  HostBitmapEncodeCapability,
   ImageFormat,
 } from '@flighthq/types/contract';
 
 export function encodeBitmap(
-  hostBitmapEncode: Readonly<HostBitmapEncodeProvider>,
+  hostBitmapEncode: Readonly<HostBitmapEncodeCapability>,
   source: Readonly<Bitmap>,
   format: ImageFormat = 'png',
   quality: number = 0.9,
@@ -17,7 +17,7 @@ export function encodeBitmap(
 }
 
 export function explainBitmapEncodeFailure(
-  hostBitmapEncode: Readonly<HostBitmapEncodeProvider>,
+  hostBitmapEncode: Readonly<HostBitmapEncodeCapability>,
   format: ImageFormat,
 ): BitmapEncodeFailureExplanation | null {
   const resolution = resolveBitmapEncode(hostBitmapEncode, format);
@@ -26,18 +26,18 @@ export function explainBitmapEncodeFailure(
 
 type BitmapEncodeResolution =
   | {
-      readonly backend: Readonly<HostBitmapEncodeProvider>;
+      readonly backend: Readonly<HostBitmapEncodeCapability>;
       readonly format: ImageFormat;
       readonly reason: null;
     }
   | {
-      readonly backend: Readonly<HostBitmapEncodeProvider> | null;
+      readonly backend: Readonly<HostBitmapEncodeCapability> | null;
       readonly format: ImageFormat;
       readonly reason: BitmapEncodeFailureExplanation['reason'];
     };
 
 function resolveBitmapEncode(
-  hostBitmapEncode: Readonly<HostBitmapEncodeProvider>,
+  hostBitmapEncode: Readonly<HostBitmapEncodeCapability>,
   format: ImageFormat,
 ): BitmapEncodeResolution {
   const normalizedFormat: ImageFormat = format === 'jpeg' ? 'jpeg' : 'png';

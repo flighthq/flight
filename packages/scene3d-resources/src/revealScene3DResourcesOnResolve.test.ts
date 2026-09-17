@@ -6,7 +6,7 @@ import { createShadedMaterial } from '@flighthq/shading/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
-import type { HostImageProvider, Scene3D } from '@flighthq/types/contract';
+import type { HostImageCapability, Scene3D } from '@flighthq/types/contract';
 import type {
   EmbeddedImageResourceReference,
   ImageResource,
@@ -20,9 +20,9 @@ import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResol
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const testResources: EmbeddedImageResourceReference[] = [];
 
 function pendingRef(): EmbeddedImageResourceReference {

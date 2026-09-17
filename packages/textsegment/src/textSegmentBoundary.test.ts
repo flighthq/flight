@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostTextSegmenterProvider } from '@flighthq/types/contract';
+import type { HostTextSegmenterCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -102,7 +102,7 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit = allocateEntity<HostTextSegmenterProvider>();
+    const explicit = allocateEntity<HostTextSegmenterCapability>();
     explicit.segment = (text: string) => [{ start: 0, end: text.length, text, isWordLike: true }];
     expect(getWordRangeAt(finishEntity(explicit), 'word', 1)).toEqual({ start: 0, end: 4 });
   });
@@ -125,7 +125,7 @@ describe('getWordRangeAt', () => {
 
   it('threads the locale to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const localeBackend = allocateEntity<HostTextSegmenterProvider>();
+    const localeBackend = allocateEntity<HostTextSegmenterCapability>();
     localeBackend.segment = (text: string, _granularity: string, locale: string) => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text, isWordLike: true }];

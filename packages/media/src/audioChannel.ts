@@ -3,7 +3,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AudioBufferHandle,
   AudioChannel,
-  HostAudioDeviceProvider,
+  HostAudioDeviceCapability,
   AudioDeviceHandle,
   AudioPlayOptions,
   AudioResource,
@@ -31,7 +31,7 @@ export function destroyAudioChannel(channel: AudioChannel): void {
 }
 
 export function fadeAudioChannelGain(
-  hostAudioDevice: Readonly<HostAudioDeviceProvider>,
+  hostAudioDevice: Readonly<HostAudioDeviceCapability>,
   channel: AudioChannel,
   targetGain: number,
   durationMs: number,
@@ -66,7 +66,7 @@ export function getAudioChannelSourceHandle(channel: Readonly<AudioChannel>): Au
   return runtime?.sourceHandle ?? INVALID_SOURCE;
 }
 
-export function hasAudioChannelFade(hostAudioDevice: Readonly<HostAudioDeviceProvider>): boolean {
+export function hasAudioChannelFade(hostAudioDevice: Readonly<HostAudioDeviceCapability>): boolean {
   return hostAudioDevice.fadeSourceGain !== undefined;
 }
 
@@ -87,7 +87,7 @@ export function pauseAudioChannel(channel: AudioChannel): void {
 }
 
 export function playAudioResource(
-  backend: Readonly<HostAudioDeviceProvider>,
+  backend: Readonly<HostAudioDeviceCapability>,
   device: AudioDeviceHandle,
   source: AudioResource,
   options?: Readonly<AudioPlayOptions>,
@@ -210,7 +210,7 @@ export function stopAudioChannel(channel: AudioChannel): void {
 }
 
 interface AudioChannelRuntime {
-  backend: Readonly<HostAudioDeviceProvider>;
+  backend: Readonly<HostAudioDeviceCapability>;
   bufferHandle: AudioBufferHandle;
   device: AudioDeviceHandle;
   loopsRemaining: number;

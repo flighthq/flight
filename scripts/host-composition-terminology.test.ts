@@ -34,7 +34,7 @@ describe('host-composition terminology', () => {
         file: 'README.md',
         source: [
           'Retired: HasSoftKeyboard, DeviceBackend, webDeviceBackend, and setDeviceBackend.',
-          'Current: HostDeviceProvider, HasTransform3D, CursorBackend, and webTextSegmenterBackend.',
+          'Current: HostDeviceCapability, HasTransform3D, CursorBackend, and webTextSegmenterBackend.',
         ].join('\n'),
       },
       {

@@ -5,7 +5,7 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { HostImageProvider, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
+import type { HostImageCapability, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
@@ -20,7 +20,7 @@ import {
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.
 export function createBuiltInScene3DResourceResolver(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
   const resolver = createScene3DResourceResolver(hostImage, options);
@@ -31,7 +31,7 @@ export function createBuiltInScene3DResourceResolver(
 }
 
 export function createScene3DResourceResolver(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
   const out = allocateEntity<Scene3DResourceResolverWithRuntime>();
@@ -54,7 +54,7 @@ export function disposeScene3DResourceResolver(resolver: Scene3DResourceResolver
 
 export function initializeScene3DResourceResolver(
   out: EntityConstruction<Scene3DResourceResolverWithRuntime>,
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): void {
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });

@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
-  HostClipboardBookmarkProvider,
-  HostClipboardChangeProvider,
-  HostClipboardFormatsProvider,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
+  HostClipboardBookmarkCapability,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
 } from '@flighthq/types/contract';
 import {
   ClipboardFormatBookmark,
@@ -256,11 +256,11 @@ describe('writeClipboardHtml', () => {
 
 interface FakeClipboardBackend
   extends
-    HostClipboardBookmarkProvider,
-    Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>,
-    HostClipboardFormatsProvider,
-    HostClipboardImageProvider,
-    HostClipboardTextProvider {
+    HostClipboardBookmarkCapability,
+    Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>,
+    HostClipboardFormatsCapability,
+    HostClipboardImageCapability,
+    HostClipboardTextCapability {
   bookmark: ClipboardBookmark | null;
   formats: Record<string, string>;
   html: string;
@@ -270,13 +270,13 @@ interface FakeClipboardBackend
   text: string;
 }
 
-type FakeClipboardHost = { readonly clipboard: { readonly bookmark: HostClipboardBookmarkProvider } } & {
+type FakeClipboardHost = { readonly clipboard: { readonly bookmark: HostClipboardBookmarkCapability } } & {
   readonly clipboard: {
-    readonly change: Required<Pick<HostClipboardChangeProvider, 'subscribe' | 'unsubscribe'>>;
+    readonly change: Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>;
   };
-} & { readonly clipboard: { readonly formats: HostClipboardFormatsProvider } } & {
-  readonly clipboard: { readonly image: HostClipboardImageProvider };
-} & { readonly clipboard: { readonly text: HostClipboardTextProvider } };
+} & { readonly clipboard: { readonly formats: HostClipboardFormatsCapability } } & {
+  readonly clipboard: { readonly image: HostClipboardImageCapability };
+} & { readonly clipboard: { readonly text: HostClipboardTextCapability } };
 
 function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
   return {

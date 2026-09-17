@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostMenuApplicationProvider,
+  HostMenuApplicationCapability,
   MenuItemTemplate,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
   TauriApi,
   TauriMenuCapabilities,
   TauriMenuItemHandle,
@@ -26,15 +26,15 @@ export function tauriHostMenu(tauri: TauriApi): TauriMenuCapabilities {
   return finishEntity(out);
 }
 
-export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationProvider {
+export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationCapability {
   return createMenuApplication(tauri, createMenuState());
 }
 
-export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
+export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupCapability {
   return createMenuPopup(tauri);
 }
 
-export function tauriHostMenuSelect(tauri: TauriApi): HostMenuSelectProvider {
+export function tauriHostMenuSelect(tauri: TauriApi): HostMenuSelectCapability {
   void tauri;
   return createMenuSelect(createMenuState());
 }
@@ -48,14 +48,14 @@ function createMenuState(): MenuState {
   return { destroyed: false, selectListener: null };
 }
 
-function createMenuApplication(tauri: TauriApi, state: MenuState): HostMenuApplicationProvider {
+function createMenuApplication(tauri: TauriApi, state: MenuState): HostMenuApplicationCapability {
   const menuModule = tauri.menu;
   // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
   // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
   // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
   // until a replacement installs its own.
-  const applicationProvider = allocateEntity<HostMenuApplicationProvider>();
+  const applicationProvider = allocateEntity<HostMenuApplicationCapability>();
   applicationProvider.destroy = (): void => {
     if (state.destroyed) return;
     state.destroyed = true;
@@ -73,9 +73,9 @@ function createMenuApplication(tauri: TauriApi, state: MenuState): HostMenuAppli
   return finishEntity(applicationProvider);
 }
 
-function createMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
+function createMenuPopup(tauri: TauriApi): HostMenuPopupCapability {
   const menuModule = tauri.menu;
-  const popupProvider = allocateEntity<HostMenuPopupProvider>();
+  const popupProvider = allocateEntity<HostMenuPopupCapability>();
   popupProvider.popup = (items, x, y): Promise<string | null> => {
     return new Promise<string | null>((resolve) => {
       void (async () => {
@@ -88,8 +88,8 @@ function createMenuPopup(tauri: TauriApi): HostMenuPopupProvider {
   return finishEntity(popupProvider);
 }
 
-function createMenuSelect(state: MenuState): HostMenuSelectProvider {
-  const selectProvider = allocateEntity<HostMenuSelectProvider>();
+function createMenuSelect(state: MenuState): HostMenuSelectCapability {
+  const selectProvider = allocateEntity<HostMenuSelectCapability>();
   selectProvider.subscribe = (listener): (() => void) => {
     state.selectListener = listener;
     return () => {
