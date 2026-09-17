@@ -3,10 +3,10 @@ import type { Node } from 'oxc-parser';
 import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
-// The backend-provider lifetime census.
+// The backend-capability lifetime census.
 //
-// P4 requires that releasing a provider must not leak what it held. The census derives, at build time,
-// which backends declare a whole-provider teardown and whether an owning lifecycle path reaches it.
+// P4 requires that releasing a capability must not leak what it held. The census derives, at build time,
+// which backends declare a whole-capability teardown and whether an owning lifecycle path reaches it.
 //
 // ★ THE EXCLUSION IS DERIVED, AND IT IS MOST OF THE POPULATION. A lifecycle path can only leak a
 // resource its backend owns, and ownership is observable: the interface declares a NO-ARGUMENT teardown member
@@ -16,9 +16,9 @@ import { getParsedOxcSource } from './oxc-source';
 // violations would report 39 leaks where there is nothing to free.
 //
 // Most ambient seams are owned by set*Backend replacement. Explicit Host slots instead have a
-// destroyThing(hostThing: Readonly<HostThingProvider>) owner: the Host's constructor/sharer decides the
+// destroyThing(hostThing: Readonly<HostThingCapability>) owner: the Host's constructor/sharer decides the
 // final release.
-// Those are separate, derived lanes so an explicit provider is never disguised as an ambient setter.
+// Those are separate, derived lanes so an explicit capability is never disguised as an ambient setter.
 
 export interface BackendLifecycleOwner {
   body: string;
@@ -92,14 +92,14 @@ export function createEmptyBackendLifecycleReport(): BackendLifecycleReport {
 // this backend owns" from "free one of the things it manages", and it is read from the signature rather
 // than guessed from the verb.
 export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
+  const backendByCapability = collectHostCapabilityBackendAliases(typeSourceFiles);
   const teardowns = new Map<string, string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByCapability);
       if (backend === null) continue;
       for (const member of declaration.body.body) {
         const name = teardownMemberName(member);
@@ -111,12 +111,11 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
   return teardowns;
 }
 
-// Explicit Host-provider lifecycle owners, keyed by the historical backend identity they release.
+// Explicit Host-capability lifecycle owners, keyed by the historical backend identity they release.
 //
-// The final composition model admits every exact `Readonly<Host*Provider>` parameter of an exported
-// destroy* boundary. Multiple providers are intentional: one boundary may own several independently
-// supplied leaves, and each must remain visible to this census. The legacy Has* shape remains understood
-// for mutation fixtures, but no production declaration depends on it.
+// The final composition model admits every exact `Readonly<Host*Capability>` parameter of an exported
+// destroy* boundary. Multiple capabilities are intentional: one boundary may own several independently
+// supplied leaves, and each must remain visible to this census.
 export function collectExplicitHostDestroyOwners(
   sourceFiles: readonly string[],
 ): ReadonlyMap<string, BackendLifecycleOwner> {
@@ -138,10 +137,11 @@ export function collectExplicitHostDestroyOwners(
         const annotation = parameter.typeAnnotation?.typeAnnotation;
         if (annotation === undefined) continue;
         const annotationText = text.slice(annotation.start, annotation.end);
-        const providers =
-          /\bReadonly\s*</u.test(annotationText) && (annotationText.match(/\bHost[A-Z][A-Za-z0-9]+Provider\b/gu) ?? []);
-        if (providers !== false && providers.length > 0) {
-          for (const provider of new Set(providers)) owners.set(legacyBackendName(provider), owner);
+        const capabilities =
+          /\bReadonly\s*</u.test(annotationText) &&
+          (annotationText.match(/\bHost[A-Z][A-Za-z0-9]+Capability\b/gu) ?? []);
+        if (capabilities !== false && capabilities.length > 0) {
+          for (const capability of new Set(capabilities)) owners.set(capabilityBackendName(capability), owner);
           continue;
         }
         if (annotation.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
@@ -153,7 +153,7 @@ export function collectExplicitHostDestroyOwners(
   return owners;
 }
 
-// Assembles the report. Ambient setters and explicit Host-provider destroy functions are supplied in
+// Assembles the report. Ambient setters and explicit Host-capability destroy functions are supplied in
 // distinct maps, so the report can state which ownership model it actually verified.
 export function createBackendLifecycleReport(
   interfaceNames: readonly string[],
@@ -195,7 +195,7 @@ export function createBackendLifecycleReport(
     }
     if (!tearsDown) {
       violations.push({
-        detail: `${owner} owns final release without calling ${teardown}, so the provider leaks`,
+        detail: `${owner} owns final release without calling ${teardown}, so the capability leaks`,
         interfaceName,
         rule: 'teardown-unwired',
       });
@@ -260,7 +260,7 @@ export function formatBackendLifecycleReport(
         counting:
           'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, structurally matched explicit Host destroy owner, or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported legacy *Backend or primary Host*Provider interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+          'every exported *Backend or primary Host*Capability interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -298,7 +298,7 @@ export function formatBackendLifecycleReport(
 // destroy releases host state they never acquired. Both are invisible here, by construction.
 //
 // It rides in the output rather than in a doc because the output is what gets pasted into reports.
-export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by an ambient setter or explicit Host-provider destroy owner, or owned by an explicit Host slot; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
+export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by an ambient setter or explicit Host-capability destroy owner, or owned by an explicit Host slot; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;
@@ -307,7 +307,6 @@ export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleRepo
 function explicitHostDestroyBackendName(functionName: string, traitName: string): string | null {
   const stem = functionName.slice('destroy'.length);
   if (stem.length === 0) return null;
-  if (traitName === `Has${stem}Provider`) return `${stem}Backend`;
   if (stem.endsWith('Capabilities')) {
     const capabilityStem = stem.slice(0, -'Capabilities'.length);
     if (capabilityStem.length > 0 && traitName === `Has${capabilityStem}Lifecycle`)
@@ -363,14 +362,14 @@ function teardownMemberName(member: Node): string | null {
 // records why. The day a property-form teardown is written, the two disagree and the comparison fails —
 // which is the correct moment for someone to update the recorded count rather than discover it later.
 export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
+  const backendByCapability = collectHostCapabilityBackendAliases(typeSourceFiles);
   const teardowns = new Map<string, string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByCapability);
       if (backend === null) continue;
       for (const member of declaration.body.body) {
         if (member.type !== 'TSMethodSignature' || member.key.type !== 'Identifier') continue;
@@ -385,34 +384,33 @@ export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[])
 
 function canonicalBackendInterfaceName(
   declarationName: string,
-  backendByProvider: ReadonlyMap<string, string>,
+  backendByCapability: ReadonlyMap<string, string>,
 ): string | null {
   if (declarationName.endsWith('Backend')) return declarationName;
-  return backendByProvider.get(declarationName) ?? null;
+  return backendByCapability.get(declarationName) ?? null;
 }
 
-function collectHostProviderBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  const backendByProvider = new Map<string, string>();
+function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByCapability = new Map<string, string>();
   const aliasPattern =
-    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Provider)(?:<[^>]+>)?;/gm;
+    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^>]+>)?;/gm;
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     const source = getParsedOxcSource(sourceFile).text;
     if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
-    for (const match of source.matchAll(aliasPattern)) backendByProvider.set(match[2], match[1]);
+    for (const match of source.matchAll(aliasPattern)) backendByCapability.set(match[2], match[1]);
   }
   const hostStart = hostSource.indexOf('export interface Host extends Entity');
-  const witnessStart = hostSource.indexOf('export interface HasAccessibilityProvider');
-  const hostShape = hostSource.slice(hostStart, witnessStart < 0 ? undefined : witnessStart);
-  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Provider)\b/g)) {
-    const provider = match[1];
-    backendByProvider.set(provider, backendByProvider.get(provider) ?? legacyBackendName(provider));
+  const hostShape = hostSource.slice(hostStart);
+  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Capability)\b/g)) {
+    const capability = match[1];
+    backendByCapability.set(capability, backendByCapability.get(capability) ?? capabilityBackendName(capability));
   }
-  return backendByProvider;
+  return backendByCapability;
 }
 
-function legacyBackendName(provider: string): string {
-  const stem = provider.slice('Host'.length, -'Provider'.length);
+function capabilityBackendName(capability: string): string {
+  const stem = capability.slice('Host'.length, -'Capability'.length);
   if (stem === 'FileSystem') return 'FileSystemHostBackend';
   if (stem === 'Video') return 'VideoCapabilityBackend';
   if (stem === 'Wgpu') return 'WgpuHostBackend';
@@ -440,7 +438,7 @@ export function compareFloorToReport(
   };
 }
 
-// Whether the lifecycle owner frees the provider, directly or through a helper it calls.
+// Whether the lifecycle owner frees the capability, directly or through a helper it calls.
 //
 // ★ One hop matters, and a text match on the owner alone is not enough. A setter that delegates to a
 // `release*Backends(previous)` helper — which is what correct layered ownership looks like, because

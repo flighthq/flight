@@ -28,7 +28,7 @@ describe('backend operation seam ratchet', () => {
   // implementation: Window became an explicit Host dependency and zero-provider LogTransportBackend was
   // deleted. They offset the immutable historical numeric floor only while their exact current shapes
   // remain true in the assertion below.
-  const RETIRED_MIGRATION_OBLIGATIONS: readonly string[] = ['LogTransport', 'Window'];
+  const RETIRED_MIGRATION_OBLIGATIONS: readonly string[] = ['LogTransport'];
 
   beforeAll(async () => {
     const names = collectBackendInterfaceNames(packageSourceFiles('types'));
@@ -101,11 +101,10 @@ describe('backend operation seam ratchet', () => {
     const byName = new Map(report.entries.map((entry) => [entry.name, entry]));
     const hostTypes = readFileSync(resolve(ROOT, 'packages/types/src/Host.ts'), 'utf8');
 
-    expect(RETIRED_MIGRATION_OBLIGATIONS).toEqual(['LogTransport', 'Window']);
+    expect(RETIRED_MIGRATION_OBLIGATIONS).toEqual(['LogTransport']);
     expect(byName.has('LogTransport')).toBe(false);
-    expect(byName.get('Window')).toMatchObject({ migrated: false, packageName: null });
     expect(hostTypes).not.toContain('logTransport');
-    expect(hostTypes).toContain('readonly window: HostWindowProvider');
+    expect(hostTypes).toContain('readonly window: HostWindowCapabilities');
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
@@ -135,8 +134,8 @@ describe('backend operation seam ratchet', () => {
 
   it('derives the explicit Screen and MediaSession Host completions by equal interface coverage', () => {
     expect(explicitHostSlots.get('ScreenQuery')).toBe('Host.screen.query');
-    expect(explicitHostSlots.get('MediaSession')).toBe('Host.media.session');
-    expect(explicitHostSlots.get('MediaSessionAction')).toBe('Host.media.sessionAction');
+    expect(explicitHostSlots.get('MediaSession')).toBe('Host.mediaSession.control');
+    expect(explicitHostSlots.get('MediaSessionAction')).toBe('Host.mediaSession.action');
     expect(explicitHostSlots.get('UpdaterCommand')).toBe('Host.updater.command');
   });
 

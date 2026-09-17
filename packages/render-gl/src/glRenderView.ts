@@ -1,3 +1,4 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
 import type {
   ApplicationRenderViewTargetOptions,
@@ -30,10 +31,11 @@ export function createGlRenderViewResources(
   render: Readonly<GlRenderOptions> = {},
   target: Readonly<ApplicationRenderViewTargetOptions> = {},
 ): GlRenderViewResources {
-  const renderState = createGlRenderState(context, pipeline, { ...render, pixelRatio: devicePixelRatio });
-  const renderTarget = createGlTextureRenderTarget(renderState, { ...target, height, width });
-  const viewport = createViewport({ devicePixelRatio, height, width });
-  return { renderState, renderTarget, viewport };
+  const out = allocateEntity<GlRenderViewResources>();
+  out.renderState = createGlRenderState(context, pipeline, { ...render, pixelRatio: devicePixelRatio });
+  out.renderTarget = createGlTextureRenderTarget(out.renderState, { ...target, height, width });
+  out.viewport = createViewport({ devicePixelRatio, height, width });
+  return finishEntity(out);
 }
 
 // Frees the storage and command state this builder allocated. The context stays caller-owned: host.gl

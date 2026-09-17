@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
 const PACKAGES = resolve(ROOT, 'packages');
-const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Provider)\b/u;
+const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Capability)\b/u;
 const LEGACY_HOST_TRAITS = /\bHas(?:Menu\w*|ShareContent|TextSegmenter|TextShaper)\b/u;
 
 interface Violation {
@@ -175,7 +175,7 @@ function isOverbroadType(type: ts.TypeNode, sourceFile: ts.SourceFile, hostGroup
 }
 
 function containsCapabilityMember(type: ts.TypeNode, sourceFile: ts.SourceFile): boolean {
-  if (/\bHost\w*Provider\b/u.test(type.getText(sourceFile))) return true;
+  if (/\bHost\w*Capability\b/u.test(type.getText(sourceFile))) return true;
   let method = false;
   const visit = (node: ts.Node): void => {
     if (

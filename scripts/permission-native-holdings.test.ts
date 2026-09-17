@@ -23,7 +23,7 @@ describe('permission host ownership', () => {
     expect(permissionTypes).toContain('requestWakeLock(): Promise<PermissionRequestOutcome>;');
 
     const hostTypes = readFileSync(resolve('packages/types/src/Host.ts'), 'utf8');
-    expect(hostTypes).toMatch(/readonly permissions\?: HostPermissionsCapability;/u);
+    expect(hostTypes).toMatch(/readonly permissions: HostPermissionsCapabilities;/u);
   });
 
   it('moves every Web permission operation behind createWebPermissionsBackend', () => {

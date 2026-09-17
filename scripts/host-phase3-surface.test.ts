@@ -15,12 +15,12 @@ const THIS_FILE = resolve(__dirname, 'host-phase3-surface.test.ts');
 const PLATFORM_ADAPTERS = ['host-capacitor', 'host-electron', 'host-tauri', 'host-web'] as const;
 
 describe('Host Phase 3 surface', () => {
-  it('keeps every platform adapter free of legacy names derived from canonical Host providers', () => {
-    const providerNames = collectHostProviderNames();
-    const legacyNames = providerNames.map(legacyBackendName);
+  it('keeps every platform adapter free of legacy names derived from canonical Host capabilities', () => {
+    const capabilityNames = collectHostCapabilityNames();
+    const legacyNames = capabilityNames.map(capabilityBackendName);
     legacyNames.push('FileSystemHostBackend', 'VideoCapabilityBackend', 'WgpuHostBackend');
 
-    expect(providerNames.length).toBeGreaterThan(0);
+    expect(capabilityNames.length).toBeGreaterThan(0);
     expect(findLegacyReferences(legacyNames)).toEqual([]);
   });
 
@@ -37,7 +37,7 @@ describe('Host Phase 3 surface', () => {
     const declarations = adapterSources.flatMap(findRemovedRuntimeDeclarations);
 
     expect(typeSources).not.toMatch(
-      /\bexport\s+type\s+[A-Z][A-Za-z0-9]*Backend\s*=\s*Host[A-Z][A-Za-z0-9]*Provider\b/u,
+      /\bexport\s+type\s+[A-Z][A-Za-z0-9]*Backend\s*=\s*Host[A-Z][A-Za-z0-9]*Capability\b/u,
     );
     expect(hostSource).not.toMatch(/\bexport\s+interface\s+Has[A-Z][A-Za-z0-9]*\b/u);
     expect(declarations).toEqual([]);
@@ -84,9 +84,9 @@ function canonicalWebHostNames(api: object): string[] {
     .sort();
 }
 
-function collectHostProviderNames(): string[] {
+function collectHostCapabilityNames(): string[] {
   const names = new Set<string>();
-  const pattern = /\bexport\s+(?:interface|type)\s+(Host[A-Z][A-Za-z0-9]*Provider)\b/gu;
+  const pattern = /\bexport\s+(?:interface|type)\s+(Host[A-Z][A-Za-z0-9]*Capability)\b/gu;
   for (const path of sourceFiles(resolve(ROOT, 'packages/types/src'))) {
     if (path.endsWith('.test.ts')) continue;
     for (const match of readSource(path).matchAll(pattern)) names.add(match[1]);
@@ -94,8 +94,8 @@ function collectHostProviderNames(): string[] {
   return [...names].sort();
 }
 
-function legacyBackendName(providerName: string): string {
-  return `${providerName.slice('Host'.length, -'Provider'.length)}Backend`;
+function capabilityBackendName(capabilityName: string): string {
+  return `${capabilityName.slice('Host'.length, -'Capability'.length)}Backend`;
 }
 
 function findLegacyReferences(legacyNames: readonly string[]): string[] {
@@ -157,7 +157,7 @@ function findRemovedRuntimeDeclarations(path: string): string[] {
     /\bexport\s+(?:const|let|var)\s+(web[A-Z][A-Za-z0-9]*Backend)\b/gu,
     /\bas\s+(web[A-Z][A-Za-z0-9]*Backend)\b/gu,
     /\bexport\s+(?:const|let|var)\s+(web(?!Host(?:\b|[A-Z]))[A-Z][A-Za-z0-9]*Host)\b/gu,
-    /\b(webPowerCapabilities|webScreenCapabilities)\b/gu,
+    /\b(webPowerCapabilities)\b/gu,
   ];
   return patterns.flatMap((pattern) =>
     [...source.matchAll(pattern)].map((match) => `${relative(ROOT, path)}: ${match[1]}`),

@@ -37,8 +37,8 @@ describe('MIDI explicit Host capability shape', () => {
     expect(adapter).not.toContain('sysex: true');
 
     const defaultHost = source('packages/host-web/src/webHost.ts');
-    const defaultGroups = source('packages/host-web/src/webDefaultHostGroups.ts');
-    expect(defaultGroups).toContain('export const webHostMidi = {} satisfies HostMidiCapabilities;');
+    const midiHost = source('packages/host-web/src/webMidiHost.ts');
+    expect(midiHost).toContain('export const webHostMidi = {} satisfies HostMidiCapabilities;');
     expect(defaultHost).toContain('midi: webHostMidi,');
     expect(defaultHost).not.toContain('requestMIDIAccess');
 

@@ -48,10 +48,10 @@ describe('Filesystem and Statusbar explicit dependency ownership', () => {
   it('publishes Web theme color without pretending Web owns a native status bar', () => {
     const webHostStatusBarColor = requiredValue<Record<string, unknown>>(hostWeb, 'webHostStatusBarColor');
     expect(Object.keys(webHostStatusBarColor)).toEqual(['setBackgroundColor']);
-    const webHost = requiredValue<{ ui: Record<string, unknown> }>(hostWeb, 'webHost');
-    expect(webHost.ui.statusBarColor).toBe(webHostStatusBarColor);
-    expect(webHost.ui).not.toHaveProperty('statusBarInfo');
-    expect(webHost.ui).not.toHaveProperty('statusBarChange');
+    const webHost = requiredValue<{ statusBar: Record<string, unknown> }>(hostWeb, 'webHost');
+    expect(webHost.statusBar.color).toBe(webHostStatusBarColor);
+    expect(webHost.statusBar).not.toHaveProperty('info');
+    expect(webHost.statusBar).not.toHaveProperty('change');
   });
 
   it('keeps style stacks isolated by explicit Host identity', () => {

@@ -64,7 +64,7 @@ describe('backend provider lifetime census', () => {
     'PowerKeepAwakeBackend',
     'ScreenQueryBackend',
     'ShortcutTriggerBackend',
-    'StorageChangeBackend',
+    'PreferencesChangeBackend',
     'UpdaterCommandBackend',
   ];
 
@@ -109,7 +109,7 @@ describe('backend provider lifetime census', () => {
     expect(teardowns.get('ConnectivityChangeBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
     expect(teardowns.get('NotificationLifecycleBackend')).toBe('destroy');
-    expect(teardowns.get('StorageChangeBackend')).toBe('destroy');
+    expect(teardowns.get('PreferencesChangeBackend')).toBe('destroy');
   });
 
   it('keeps explicit Host-provider release separate from ambient setter replacement', () => {
@@ -138,14 +138,14 @@ describe('backend provider lifetime census', () => {
     expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('ConnectivityChangeBackend');
   });
 
-  it('recognizes Storage explicit Host release without reintroducing an ambient setter', () => {
-    const storage = report.entries.find((entry) => entry.interfaceName === 'StorageChangeBackend');
-    expect(storage).toMatchObject({
+  it('recognizes Preferences explicit Host release without reintroducing an ambient setter', () => {
+    const preferences = report.entries.find((entry) => entry.interfaceName === 'PreferencesChangeBackend');
+    expect(preferences).toMatchObject({
       owner: 'destroyStorage',
       ownerKind: 'explicit-host-destroy',
       tearsDown: true,
     });
-    expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('StorageChangeBackend');
+    expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('PreferencesChangeBackend');
   });
 
   it('keeps the retired Log transport as a directly owned Entity outside the Backend census', () => {
@@ -332,25 +332,25 @@ describe('collectWholeBackendTeardowns member syntax', () => {
   });
 });
 
-describe('explicit Host-provider lifecycle owners', () => {
-  it('derives direct and legacy provider owners and rejects mismatched legacy names', () => {
+describe('explicit Host-capability lifecycle owners', () => {
+  it('derives direct and legacy capability owners and rejects mismatched legacy names', () => {
     const fixture = join(mkdtempSync(join(tmpdir(), 'backend-lifecycle-host-')), 'ExplicitHostOwnerFixture.ts');
     writeFileSync(
       fixture,
       [
-        'interface HasWidgetProvider { widget: { provider: { destroy(): void } } }',
-        'interface HasOtherProvider { other: { provider: { destroy(): void } } }',
+        'interface HasWidgetCapability { widget: { capability: { destroy(): void } } }',
+        'interface HasOtherCapability { other: { capability: { destroy(): void } } }',
         'interface HasNoticeLifecycle { notice: { lifecycle: { destroy(): void } } }',
-        'interface HostGadgetProvider { destroy(): void }',
-        'interface HostPairFirstProvider { destroy(): void }',
-        'interface HostPairSecondProvider { destroy(): void }',
-        'export function destroyWidget(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
+        'interface HostGadgetCapability { destroy(): void }',
+        'interface HostPairFirstCapability { destroy(): void }',
+        'interface HostPairSecondCapability { destroy(): void }',
+        'export function destroyWidget(hostWidget: Readonly<HostWidgetCapability>): void { hostWidget.destroy(); }',
         'export function destroyNoticeCapabilities(host: HasNoticeLifecycle): void { host.notice.lifecycle.destroy(); }',
-        'export function destroyGadget(hostGadget: Readonly<HostGadgetProvider>): void { hostGadget.destroy(); }',
-        'export function destroyPair(hostPairFirst: Readonly<HostPairFirstProvider>, hostPairSecond: Readonly<HostPairSecondProvider>): void { hostPairFirst.destroy(); hostPairSecond.destroy(); }',
-        'export function destroyMismatched(host: HasOtherProvider): void { host.other.provider.destroy(); }',
-        'export function destroyWrongCapabilities(host: HasOtherProvider): void { host.other.provider.destroy(); }',
-        'export function destroyWidgetBackend(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
+        'export function destroyGadget(hostGadget: Readonly<HostGadgetCapability>): void { hostGadget.destroy(); }',
+        'export function destroyPair(hostPairFirst: Readonly<HostPairFirstCapability>, hostPairSecond: Readonly<HostPairSecondCapability>): void { hostPairFirst.destroy(); hostPairSecond.destroy(); }',
+        'export function destroyMismatched(host: HasOtherCapability): void { host.other.capability.destroy(); }',
+        'export function destroyWrongCapabilities(host: HasOtherCapability): void { host.other.capability.destroy(); }',
+        'export function destroyWidgetBackend(hostWidget: Readonly<HostWidgetCapability>): void { hostWidget.destroy(); }',
       ].join('\n'),
       'utf-8',
     );
@@ -386,18 +386,18 @@ describe('explicit Host-provider lifecycle owners', () => {
     expect(report.violations).toEqual([]);
   });
 
-  it('fails an explicit Host owner that does not reach the provider teardown', () => {
+  it('fails an explicit Host owner that does not reach the capability teardown', () => {
     const report = createBackendLifecycleReport(
       ['WidgetBackend'],
       new Map([['WidgetBackend', 'destroy']]),
       new Map(),
       new Map(),
-      new Map([['WidgetBackend', { body: 'void host.widget.provider;', name: 'destroyWidget' }]]),
+      new Map([['WidgetBackend', { body: 'void host.widget.capability;', name: 'destroyWidget' }]]),
     );
 
     expect(report.violations).toEqual([
       {
-        detail: 'destroyWidget owns final release without calling destroy, so the provider leaks',
+        detail: 'destroyWidget owns final release without calling destroy, so the capability leaks',
         interfaceName: 'WidgetBackend',
         rule: 'teardown-unwired',
       },

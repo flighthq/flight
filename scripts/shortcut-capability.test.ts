@@ -16,8 +16,8 @@ describe('Shortcut explicit dependency structure', () => {
     expect(hostTypes).not.toContain('export interface HasShortcutQuery');
 
     const webHost = source('packages/host-web/src/webHost.ts');
-    const webDefaultGroups = source('packages/host-web/src/webDefaultHostGroups.ts');
-    expect(webDefaultGroups).toContain('export const webHostShortcut = {} satisfies HostShortcutCapabilities;');
+    const shortcutHost = source('packages/host-web/src/webShortcutHost.ts');
+    expect(shortcutHost).toContain('export const webHostShortcut = {} satisfies HostShortcutCapabilities;');
     expect(webHost).toContain('shortcut: webHostShortcut,');
     expect(source('packages/host-capacitor/src/capacitorHost.ts')).toContain('shortcut: capacitorHostShortcut(),');
     const electronHost = source('packages/host-electron/src/electronRegister.ts');
