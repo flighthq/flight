@@ -41,7 +41,7 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
   await waitFor(() => getAppName(host.app.name).length > 0);
   const name = getAppName(host.app.name);
   const version = getAppVersion(host.app.version);
-  const platform = getPlatformName(host.system.platform!);
+  const platform = getPlatformName(host.platform.info);
   return {
     changedCapabilities,
     results: [

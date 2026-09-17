@@ -12,21 +12,25 @@ export function captureHostProbeBackends(
       | 'app'
       | 'clipboard'
       | 'connectivity'
+      | 'device'
       | 'dialog'
-      | 'input'
+      | 'fileSystem'
+      | 'geolocation'
+      | 'haptics'
       | 'ipc'
       | 'menu'
       | 'notification'
+      | 'platform'
       | 'power'
+      | 'preferences'
       | 'protocol'
       | 'screen'
       | 'share'
       | 'shell'
       | 'shortcut'
-      | 'storage'
-      | 'system'
+      | 'softKeyboard'
+      | 'statusBar'
       | 'tray'
-      | 'ui'
       | 'updater'
       | 'window'
     >
@@ -34,17 +38,17 @@ export function captureHostProbeBackends(
   extras?: Readonly<{ glyphRasterizer?: unknown }>,
 ): HostProbeBackendSnapshot {
   return {
-    accessibility: host.accessibility?.provider ?? null,
+    accessibility: host.accessibility?.tree ?? null,
     app: firstProvidedSlot(host.app),
     clipboard: host.clipboard?.text ?? null,
     connectivity: host.connectivity?.status ?? null,
     cursor: null,
-    device: host.system?.device ?? null,
+    device: host.device?.info ?? null,
     dialog: host.dialog ?? null,
-    filesystem: host.storage?.fileSystem ?? null,
-    geolocation: host.system?.geolocation ?? null,
+    filesystem: host.fileSystem?.access ?? null,
+    geolocation: host.geolocation?.position ?? null,
     'glyph-rasterizer': extras?.glyphRasterizer ?? null,
-    haptics: host.input?.haptics ?? null,
+    haptics: host.haptics?.engine ?? null,
     ipc: firstProvidedSlot(host.ipc),
     loop: host.app?.loop ?? null,
     menu: firstProvidedSlot(host.menu),
@@ -59,7 +63,7 @@ export function captureHostProbeBackends(
     'notification.received': host.notification?.received ?? null,
     'notification.reply': host.notification?.reply ?? null,
     'notification.scheduling': host.notification?.scheduling ?? null,
-    platform: host.system?.platform ?? null,
+    platform: host.platform?.info ?? null,
     power: firstProvidedSlot(host.power),
     protocol: firstProvidedSlot(host.protocol),
     screen: host.screen?.query ?? null,
@@ -74,23 +78,23 @@ export function captureHostProbeBackends(
       null,
     shortcut: host.shortcut?.trigger ?? host.shortcut?.query ?? null,
     'soft-keyboard':
-      host.input?.softKeyboardInfo ??
-      host.input?.softKeyboardChange ??
-      host.input?.softKeyboardVisibility ??
-      host.input?.softKeyboardResizeModeWrite ??
-      host.input?.softKeyboardStyle ??
-      host.input?.softKeyboardAccessoryBar ??
-      host.input?.softKeyboardScrollAssist ??
+      host.softKeyboard?.info ??
+      host.softKeyboard?.change ??
+      host.softKeyboard?.visibility ??
+      host.softKeyboard?.resizeModeWrite ??
+      host.softKeyboard?.style ??
+      host.softKeyboard?.accessoryBar ??
+      host.softKeyboard?.scrollAssist ??
       null,
     statusbar:
-      host.ui?.statusBarInfo ??
-      host.ui?.statusBarColor ??
-      host.ui?.statusBarStyle ??
-      host.ui?.statusBarVisibility ??
-      host.ui?.statusBarOverlays ??
-      host.ui?.statusBarChange ??
+      host.statusBar?.info ??
+      host.statusBar?.color ??
+      host.statusBar?.style ??
+      host.statusBar?.visibility ??
+      host.statusBar?.overlays ??
+      host.statusBar?.change ??
       null,
-    storage: host.storage?.local ?? null,
+    storage: host.preferences?.local ?? null,
     tray: firstProvidedSlot(host.tray),
     updater: host.updater?.command ?? null,
     window: firstProvidedSlot(host.window),
