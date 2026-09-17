@@ -31,11 +31,11 @@ export const scale = window.devicePixelRatio || 1;
 export const minCoverage = 0;
 
 const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
-canvas.native.style.width = `${width}px`;
-canvas.native.style.height = `${height}px`;
-document.body.appendChild(canvas.native);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
+document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     antialias: false,
     contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   }),

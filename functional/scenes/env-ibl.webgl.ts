@@ -48,12 +48,12 @@ declareExpectedImageDescription(
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -178,7 +178,7 @@ function solidFaceCanvas(color: string): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 8;
   canvas.height = 8;
-  const ctx = canvas.native.getContext('2d')!;
+  const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, 8, 8);
   return canvas;

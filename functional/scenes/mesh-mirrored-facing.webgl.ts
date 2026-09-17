@@ -38,12 +38,12 @@ declareExpectedImageDescription(
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -192,7 +192,7 @@ function createBitangentTiltedNormalMap(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 2;
   canvas.height = 2;
-  const context = canvas.native.getContext('2d')!;
+  const context = canvas.getContext('2d')!;
   context.fillStyle = 'rgb(215, 215, 255)';
   context.fillRect(0, 0, 2, 2);
   return canvas;

@@ -64,14 +64,14 @@ declareExpectedImageDescription(
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.native.style.width = '800px';
-canvas.native.style.height = '600px';
-document.body.appendChild(canvas.native);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
+document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
@@ -184,7 +184,7 @@ function baseColorCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
-  const ctx = canvas.native.getContext('2d')!;
+  const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = '#cc5522';
   ctx.fillRect(0, 0, 1, 1);
   return canvas;
@@ -198,7 +198,7 @@ function alphaGradientCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = 1;
-  const ctx = canvas.native.getContext('2d')!;
+  const ctx = canvas.getContext('2d')!;
   const image = ctx.createImageData(size, 1);
   for (let x = 0; x < size; x++) {
     const i = x * 4;
