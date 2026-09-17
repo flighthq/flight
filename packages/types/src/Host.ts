@@ -76,11 +76,11 @@ import type { HostFontLoadingCapability } from './HostFontLoading';
 import type { HostElementFullscreenCapability } from './HostFullscreen';
 import type { HostImageOpenDialogCapability } from './HostImageOpenDialog';
 import type { HostInputIngressCapability } from './HostInputIngress';
-import type { HostInputTargetCapability } from './HostInputTarget';
 import type { HostMessageDialogCapability } from './HostMessageDialog';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
 import type { HostPromptDialogCapability } from './HostPromptDialog';
 import type { HostSurfaceCreateCapability } from './HostSurface';
+import type { HostTargetCapability } from './HostTarget';
 import type { HostVideoCapability } from './HostVideo';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
 import type {
@@ -362,7 +362,7 @@ export interface HostInputCapabilities {
   readonly focus?: HostInputFocusCapability;
   readonly ingress?: HostInputIngressCapability;
   readonly pointerLock?: HostInputPointerLockCapability;
-  readonly target?: HostInputTargetCapability;
+  readonly target?: HostTargetCapability;
 }
 
 export interface HostIpcCapabilities {

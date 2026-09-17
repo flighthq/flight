@@ -97,14 +97,14 @@ export {
   createWebTextureAtlasFromImageElement,
 } from './webTextureAtlas';
 export {
-  createWebInputTargetHandle,
+  createWebHostTarget,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
-  webHostInputTarget,
+  webHostTarget,
   webHostGl,
   webHostSurface,
-} from './webInputTarget';
+} from './webHostTarget';
 export {
   createWebInputIngressBackend,
   getWebCoalescedPointerEvents,
@@ -151,7 +151,7 @@ export { webHostPowerChange, webHostPowerKeepAwake, webHostPowerStatus, webHostP
 export { webHostPower } from './webPowerHost';
 export { createWebProtocolCapabilities, webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
 export { webHostProtocol } from './webProtocolHost';
-export { createWebRaster2DSurfaceCreator, webRaster2DSurfaceCreator } from './webRaster2DSurface';
+export { createWebImageSurfaceCreator, webImageSurfaceCreator } from './webImageSurface';
 export {
   createWebScreenCapabilities,
   webHostScreenChange,
