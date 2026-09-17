@@ -1,4 +1,4 @@
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -10,6 +10,7 @@ import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-w
 //
 import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
+  createGlSurface,
   scene3DGlPipeline,
   ShapeKind,
   addNodeChild,
@@ -48,15 +49,15 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio,
-  },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio,
+});
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlFilmGrainEffect(state);
 

@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -11,7 +11,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -35,16 +35,16 @@ const canvas = createSurface(webSurfaceCreateCapability, width * scale, height *
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio: scale,
-  },
-);
+
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  antialias: false,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio: scale,
+});
 const GREEN: readonly [number, number, number, number] = [24 / 255, 179 / 255, 58 / 255, 1];
 const screenTarget = createGlTextureRenderTarget(state, {
   height: canvas.height,

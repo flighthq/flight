@@ -1,8 +1,9 @@
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, GlRenderEffectPipeline, Node3D, Scene3DLights, Texture } from '@flighthq/sdk';
 import {
+  createGlSurface,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
@@ -49,13 +50,13 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  { pixelRatio },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+const state = createGlRenderState(glSurface.context, scene3DGlPipeline, { pixelRatio });
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

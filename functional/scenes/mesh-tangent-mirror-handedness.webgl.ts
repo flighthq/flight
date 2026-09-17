@@ -1,4 +1,9 @@
-import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostGl,
+  createWebImageResourceFromCanvas,
+  webSurfaceCreateCapability,
+} from '@flighthq/host-web';
 // mesh-tangent-mirror-handedness — gates the tangent-handedness half of the mirrored-model fix: that a
 // model transform with a negative determinant reaches tangent.w, so the bitangent (rebuilt in the shader
 // as w * cross(N, T)) is reconstructed with the correct hand on a mirrored instance.
@@ -38,6 +43,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
+  createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -77,15 +83,15 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio,
-  },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio,
+});
 
 const pipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

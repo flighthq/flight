@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import {
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
@@ -35,16 +35,16 @@ const canvas = createSurface(webSurfaceCreateCapability, width * scale, height *
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio: scale,
-  },
-);
+
+const hostTarget = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, hostTarget, {
+  antialias: false,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio: scale,
+});
 const pool = createGlTextureRenderTargetPool();
 const initialWidth = canvas.width >> 1;
 const initialHeight = canvas.height >> 1;

@@ -1,8 +1,9 @@
-import { createWebGlContext, webHostVideo, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webHostVideo, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
 import {
+  createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
   advanceVideoTexture,
@@ -38,13 +39,15 @@ const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 *
 canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
-export const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  scene3DGlPipeline,
-  {
-    pixelRatio,
-  },
-);
+
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio,
+});
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import {
   beginGlRenderPass,
   createGlRenderState,
@@ -34,19 +34,19 @@ const canvas = createSurface(webSurfaceCreateCapability, width * scale, height *
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
-    // color-renderable storage only, so sample with the universally valid nearest filter.
-    imageSmoothingEnabled: false,
-    pixelRatio: scale,
-  },
-);
+
+const hostTarget = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, hostTarget, {
+  antialias: false,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
+  // color-renderable storage only, so sample with the universally valid nearest filter.
+  imageSmoothingEnabled: false,
+  pixelRatio: scale,
+});
 const GREEN: readonly [number, number, number, number] = [33 / 255, 196 / 255, 90 / 255, 1];
 const descriptor = {
   colorSpace: 'srgb' as const,

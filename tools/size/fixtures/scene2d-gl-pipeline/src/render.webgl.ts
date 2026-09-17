@@ -1,4 +1,4 @@
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
@@ -12,18 +12,20 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, scene2DGlPipeline } from '@flighthq/scene2d-gl';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import { RegistryEntryState } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  scene2DGlPipeline,
-  { pixelRatio: 1 },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+const state = createGlRenderState(glSurface.context, scene2DGlPipeline, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(scene2DGlPipeline);

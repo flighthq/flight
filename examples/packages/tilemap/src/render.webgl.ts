@@ -1,6 +1,7 @@
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web/contract';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createGlSurface,
   scene3DGlPipeline,
   SpriteKind,
   TilemapKind,
@@ -23,14 +24,16 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  scene3DGlPipeline,
-  {
-    pixelRatio,
-    sceneGraphSyncPolicy: 'requiresInvalidation',
-  },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio,
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+});
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);

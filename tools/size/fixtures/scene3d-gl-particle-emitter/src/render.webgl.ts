@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
@@ -15,19 +15,19 @@ import {
 } from '@flighthq/render-gl';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
-  createGlPipeline(createEmptyGlRegistries()),
-  { pixelRatio: 1 },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+const state = createGlRenderState(glSurface.context, createGlPipeline(createEmptyGlRegistries()), { pixelRatio: 1 });
 const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();
 appendParticleEmitter3DParticle(emitter, 0, -0.65, -0.2, 0, 0, 0.5);
