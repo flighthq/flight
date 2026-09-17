@@ -30,7 +30,7 @@ function warnOnUnmixedBus(operation: AudioBusMixerOperation, bus: Readonly<Audio
     `media:unmixed-bus-${operation}`,
     LogLevel.Warn,
     {
-      message: `${setter}: bus "${bus.name ?? 'unnamed'}" belongs to no mixer, so the value was stored but reached no audio node and nothing changed audibly. Add the bus with addAudioBusToMixer(provider, mixer, bus) — or route a channel through it with routeAudioChannelToMixerBus(provider, mixer, channel, bus) — before setting its properties.`,
+      message: `${setter}: bus "${bus.name ?? 'unnamed'}" belongs to no mixer, so the value was stored but reached no audio node and nothing changed audibly. Add the bus with addAudioBusToMixer(hostAudioMixer, mixer, bus) — or route a channel through it with routeAudioChannelToMixerBus(hostAudioMixer, mixer, channel, bus) — before setting its properties.`,
     },
     'media',
   );

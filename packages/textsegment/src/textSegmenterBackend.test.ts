@@ -62,7 +62,7 @@ describe('createWebTextSegmenterBackend', () => {
 });
 
 describe('explainTextSegmenterBackend', () => {
-  it('reports the bundled Intl provider as available', () => {
+  it('reports the bundled Intl capability as available', () => {
     expect(explainTextSegmenterBackend(webTextSegmenterBackend)).toEqual({
       available: true,
       backend: 'web-intl',
@@ -70,7 +70,7 @@ describe('explainTextSegmenterBackend', () => {
     });
   });
 
-  it('identifies a custom provider independently of Intl availability', () => {
+  it('identifies a custom capability independently of Intl availability', () => {
     expect(explainTextSegmenterBackend(recordingBackend())).toEqual({
       available: true,
       backend: 'custom',
@@ -78,7 +78,7 @@ describe('explainTextSegmenterBackend', () => {
     });
   });
 
-  it('reports the bundled provider unavailable when the runtime primitive is absent', () => {
+  it('reports the bundled capability unavailable when the runtime primitive is absent', () => {
     vi.stubGlobal('Intl', { Segmenter: undefined });
     expect(explainTextSegmenterBackend(webTextSegmenterBackend)).toEqual({
       available: false,

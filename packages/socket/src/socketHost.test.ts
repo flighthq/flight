@@ -26,13 +26,13 @@ function hostWith(backend: HostSocketCapability | undefined): {
 }
 
 describe('createSocket', () => {
-  it('opens through the provider carried by the host it is given', () => {
+  it('opens through the capability carried by the host it is given', () => {
     const opened: string[] = [];
     createSocket(hostWith(recordingBackend('a', opened)).net.socket, { url: 'wss://example.test' });
     expect(opened).toEqual(['a']);
   });
 
-  // ★ HOST ISOLATION. Two hosts, two providers, two answers. Under the ambient resolver one
+  // ★ HOST ISOLATION. Two hosts, two capabilities, two answers. Under the ambient resolver one
   // process-wide backend answered for every caller, so the second host was unreachable no matter what
   // it carried — this is the property the migration exists to create.
   it('keeps two hosts independent', () => {
@@ -42,16 +42,16 @@ describe('createSocket', () => {
     expect(opened).toEqual(['first', 'second']);
   });
 
-  // ★ NO AMBIENT FALLBACK. A host that carries no socket provider must yield no connection rather than
+  // ★ NO AMBIENT FALLBACK. A host that carries no socket capability must yield no connection rather than
   // quietly reaching a process-global web backend. The socket stays 'connecting', which is the
   // documented shape for a backend that cannot open the transport.
-  it('yields no connection when the host carries no socket provider', () => {
+  it('yields no connection when the host carries no socket capability', () => {
     const socket = createSocket(hostWith(undefined).net.socket, { url: 'wss://absent.test' });
     expect(socket.runtime.connection).toBeNull();
     expect(getSocketReadyState(socket)).toBe('connecting');
   });
 
-  it('does not consult one host provider when another host is passed', () => {
+  it('does not consult one host capability when another host is passed', () => {
     const opened: string[] = [];
     const unused = recordingBackend('unused', opened);
     createSocket(hostWith(recordingBackend('used', opened)).net.socket, { url: 'wss://x.test' });
