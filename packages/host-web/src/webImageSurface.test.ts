@@ -2,25 +2,25 @@ import { invalidateImageResource, unregisterHostImageDimensionResolver } from '@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  createWebRaster2DSurfaceCreator,
-  initializeWebRaster2DSurfaceCreator,
-  webRaster2DSurfaceCreator,
-} from './webRaster2DSurface';
+  createWebImageSurfaceCreator,
+  initializeWebImageSurfaceCreator,
+  webImageSurfaceCreator,
+} from './webImageSurface';
 
-describe('createWebRaster2DSurfaceCreator', () => {
+describe('createWebImageSurfaceCreator', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createWebRaster2DSurfaceCreator()).toBe(true);
+    expect(EntityRuntimeKey in createWebImageSurfaceCreator()).toBe(true);
   });
 
   it('returns a fresh instance on each call', () => {
-    expect(createWebRaster2DSurfaceCreator()).not.toBe(createWebRaster2DSurfaceCreator());
+    expect(createWebImageSurfaceCreator()).not.toBe(createWebImageSurfaceCreator());
   });
 
   it('destroys the private canvas backing store through the shared provider contract', () => {
-    const provider = createWebRaster2DSurfaceCreator();
-    const surface = provider.createRaster2DSurface(100, 200)!;
+    const provider = createWebImageSurfaceCreator();
+    const surface = provider.createImageSurface(100, 200)!;
 
-    provider.destroyRaster2DSurface(surface);
+    provider.destroyImageSurface(surface);
 
     expect(surface.width).toBe(0);
     expect(surface.height).toBe(0);
@@ -29,7 +29,7 @@ describe('createWebRaster2DSurfaceCreator', () => {
   });
 
   it('keeps its HTML canvas private while exposing the exact shared surface contract', () => {
-    const surface = createWebRaster2DSurfaceCreator().createRaster2DSurface(100, 200)!;
+    const surface = createWebImageSurfaceCreator().createImageSurface(100, 200)!;
 
     expect(surface.width).toBe(100);
     expect(surface.height).toBe(200);
@@ -44,7 +44,7 @@ describe('createWebRaster2DSurfaceCreator', () => {
   // with a stale width and height and nothing fails loudly.
   it('carries a resize onto the image resource without any registered dimension resolver', () => {
     unregisterHostImageDimensionResolver();
-    const surface = createWebRaster2DSurfaceCreator().createRaster2DSurface(4, 4)!;
+    const surface = createWebImageSurfaceCreator().createImageSurface(4, 4)!;
     surface.width = 128;
     surface.height = 64;
     invalidateImageResource(surface.image);
@@ -54,7 +54,7 @@ describe('createWebRaster2DSurfaceCreator', () => {
   });
 
   it('forwards dimension reads and writes to the wrapped upload source', () => {
-    const surface = createWebRaster2DSurfaceCreator().createRaster2DSurface(1, 1)!;
+    const surface = createWebImageSurfaceCreator().createImageSurface(1, 1)!;
     surface.width = 320;
     surface.height = 180;
 
@@ -65,22 +65,22 @@ describe('createWebRaster2DSurfaceCreator', () => {
   });
 });
 
-describe('initializeWebRaster2DSurfaceCreator', () => {
-  it('is the construction initializer of createWebRaster2DSurfaceCreator', () => {
-    expect(typeof initializeWebRaster2DSurfaceCreator).toBe('function');
+describe('initializeWebImageSurfaceCreator', () => {
+  it('is the construction initializer of createWebImageSurfaceCreator', () => {
+    expect(typeof initializeWebImageSurfaceCreator).toBe('function');
   });
 });
-describe('webRaster2DSurfaceCreator', () => {
+describe('webImageSurfaceCreator', () => {
   it('is an Entity', () => {
-    expect(EntityRuntimeKey in webRaster2DSurfaceCreator).toBe(true);
+    expect(EntityRuntimeKey in webImageSurfaceCreator).toBe(true);
   });
 
   it('is a stable singleton', () => {
-    expect(webRaster2DSurfaceCreator).toBe(webRaster2DSurfaceCreator);
+    expect(webImageSurfaceCreator).toBe(webImageSurfaceCreator);
   });
 
   it('creates working surfaces', () => {
-    const surface = webRaster2DSurfaceCreator.createRaster2DSurface(20, 30);
+    const surface = webImageSurfaceCreator.createImageSurface(20, 30);
     expect(surface).not.toBeNull();
     expect(surface!.width).toBe(20);
     expect(surface!.height).toBe(30);

@@ -52,8 +52,8 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   // of the geometry, bounds, or batching moves with it. pixelRatio joins the invalidation check because
   // a state that changes it must re-rasterize at the new density.
   const pixelRatio = state.pixelRatio;
-  if (state.raster2DSurfaceProvider === null) return;
-  const surface = acquireGlShapeRasterSurface(state.raster2DSurfaceProvider, shapeData);
+  if (state.imageSurfaceProvider === null) return;
+  const surface = acquireGlShapeRasterSurface(state.imageSurfaceProvider, shapeData);
   if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||

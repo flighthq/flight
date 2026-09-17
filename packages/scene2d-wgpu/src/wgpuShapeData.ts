@@ -1,8 +1,8 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import type {
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   Renderable,
   RendererData,
   RenderState,
@@ -16,12 +16,12 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // tessellate never touches this, so a scene drawn entirely through the mesh path carries no raster
 // surface.
 export function acquireWgpuShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: WgpuShapeRendererData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;
@@ -65,7 +65,7 @@ export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData)
       entry.texture.destroy();
       runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
     }
-    destroyRaster2DSurface(surface);
+    destroyImageSurface(surface);
   }
   const b = shapeData.meshBuffers;
   for (const buffer of b.vertexBuffers) buffer.destroy();

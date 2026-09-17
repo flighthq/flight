@@ -1,11 +1,11 @@
-import type { Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
+import type { ImageSurface, ImageSurfaceCreator } from '@flighthq/types/contract';
 
-export function createRaster2DSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+export function createImageSurface(
+  provider: Readonly<ImageSurfaceCreator>,
   width: number,
   height: number,
-): Raster2DSurface | null {
-  const surface = provider.createRaster2DSurface(width, height);
+): ImageSurface | null {
+  const surface = provider.createImageSurface(width, height);
   if (surface !== null) _surfaceProviders.set(surface, provider);
   return surface;
 }
@@ -13,11 +13,11 @@ export function createRaster2DSurface(
 // A surface must return to the provider that allocated it even when the provider reference changes
 // during its lifetime. Delete the ownership record before invoking the provider so repeated or
 // reentrant destruction is a no-op and no non-GC resource can be freed twice.
-export function destroyRaster2DSurface(surface: Raster2DSurface): void {
+export function destroyImageSurface(surface: ImageSurface): void {
   const provider = _surfaceProviders.get(surface);
   if (provider === undefined) return;
   _surfaceProviders.delete(surface);
-  provider.destroyRaster2DSurface(surface);
+  provider.destroyImageSurface(surface);
 }
 
-const _surfaceProviders = new WeakMap<Raster2DSurface, Readonly<Raster2DSurfaceCreator>>();
+const _surfaceProviders = new WeakMap<ImageSurface, Readonly<ImageSurfaceCreator>>();

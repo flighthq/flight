@@ -5,16 +5,16 @@ import type { ImageResource } from './ImageResource';
 // The backing store is deliberately opaque: Web hosts may use a private HTMLCanvasElement, while the
 // portable contract exposes only the dimensions, drawing context, and uploadable ImageResource actually used by
 // consumers. CanvasRenderingContext2D remains a deliberate host-type residue beyond this surface seam.
-export interface Raster2DSurface extends Entity {
+export interface ImageSurface extends Entity {
   width: number;
   height: number;
   readonly context: CanvasRenderingContext2D;
   readonly image: ImageResource;
 }
 
-export interface Raster2DSurfaceCreator extends Entity {
-  createRaster2DSurface(width: number, height: number): Raster2DSurface | null;
-  // Called by @flighthq/render's destroyRaster2DSurface routing, which preserves the creator identity
+export interface ImageSurfaceCreator extends Entity {
+  createImageSurface(width: number, height: number): ImageSurface | null;
+  // Called by @flighthq/render's destroyImageSurface routing, which preserves the creator identity
   // across process-global provider changes. Consumers destroy through that free function, not directly.
-  destroyRaster2DSurface(surface: Raster2DSurface): void;
+  destroyImageSurface(surface: ImageSurface): void;
 }

@@ -3,7 +3,7 @@ import {
   createWebGlContext,
   webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
-  webRaster2DSurfaceCreator,
+  webImageSurfaceCreator,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -42,7 +42,7 @@ const pipeline = createGlPipeline({
 const state = createGlRenderState(
   createWebGlContext(canvas.native, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   pipeline,
-  { pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceCreator },
+  { pixelRatio: 1, imageSurfaceProvider: webImageSurfaceCreator },
 );
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

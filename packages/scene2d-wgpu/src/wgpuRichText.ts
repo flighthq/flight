@@ -2,7 +2,7 @@ import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contr
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -17,8 +17,8 @@ import {
 } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -37,7 +37,7 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface WgpuRichTextData extends RendererData {
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: Renderable): RendererData {
@@ -57,7 +57,7 @@ export function destroyWgpuRichTextData(state: WgpuRenderState, data: RendererDa
     entry.texture.destroy();
     cache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawWgpuRichText(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -87,8 +87,8 @@ export function drawWgpuRichTextWithOverlay(
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
-  if (richData === null || state.raster2DSurfaceProvider === null) return;
-  const surface = acquireWgpuRichTextRasterSurface(state.raster2DSurfaceProvider, richData);
+  if (richData === null || state.imageSurfaceProvider === null) return;
+  const surface = acquireWgpuRichTextRasterSurface(state.imageSurfaceProvider, richData);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);
@@ -231,11 +231,11 @@ function layoutRichText(
 }
 
 function acquireWgpuRichTextRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: WgpuRichTextData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

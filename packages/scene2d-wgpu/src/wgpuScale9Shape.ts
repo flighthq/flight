@@ -2,12 +2,12 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
+import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   RenderProxy2D,
-  Raster2DSurface,
-  Raster2DSurfaceCreator,
+  ImageSurface,
+  ImageSurfaceCreator,
   RenderState,
   Renderable,
   RendererData,
@@ -34,16 +34,16 @@ interface WgpuScale9ShapeData extends RendererData {
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
 }
 
 export function acquireWgpuScale9ShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceCreator>,
+  provider: Readonly<ImageSurfaceCreator>,
   data: WgpuScale9ShapeData,
-): Raster2DSurface | null {
+): ImageSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(provider, 1, 1);
+  const surface = createImageSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;
@@ -72,7 +72,7 @@ export function destroyWgpuScale9ShapeData(state: WgpuRenderState, data: Rendere
     entry.texture.destroy();
     cache.delete(surface.image);
   }
-  destroyRaster2DSurface(surface);
+  destroyImageSurface(surface);
 }
 
 export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -107,8 +107,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
-  if (state.raster2DSurfaceProvider === null) return;
-  const surface = acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, shapeData);
+  if (state.imageSurfaceProvider === null) return;
+  const surface = acquireWgpuScale9ShapeRasterSurface(state.imageSurfaceProvider, shapeData);
   if (surface === null) return;
 
   if (

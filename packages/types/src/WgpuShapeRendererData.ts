@@ -1,4 +1,4 @@
-import type { Raster2DSurface } from './Raster2DSurface';
+import type { ImageSurface } from './ImageSurface';
 import type { RendererData } from './RendererData';
 import type { WgpuShapeMeshBuffers } from './WgpuRenderState';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
@@ -12,7 +12,7 @@ import type { WgpuShapeMesh } from './WgpuShapeMesh';
 // plus the last* fields cache the rasterized form. A strategy touches only its own half, and the surface
 // is allocated on first rasterization rather than with the node, so a mesh-only scene carries none.
 export interface WgpuShapeRendererData extends RendererData {
-  surface: Raster2DSurface | null;
+  surface: ImageSurface | null;
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;

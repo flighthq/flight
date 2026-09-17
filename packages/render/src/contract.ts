@@ -9,7 +9,7 @@ export * from './renderMaterial';
 export * from './renderProxy';
 export * from './renderProxyAdapter';
 export * from './renderQueue';
-export * from './raster2DSurface';
+export * from './imageSurface';
 export * from './explainScene2DCoverage';
 export * from './explainScene2DPipelineCoverage';
 export * from './explainScene3DPipelineCoverage';

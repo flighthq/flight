@@ -1,10 +1,10 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasShapeCommand } from './CanvasShapeRegistry';
 import type { Entity, EntityRuntime, Kind } from './Entity';
+import type { ImageSurfaceCreator } from './ImageSurface';
 import type { Matrix } from './Matrix';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
-import type { Raster2DSurfaceCreator } from './Raster2DSurface';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { Renderable } from './Renderable';
 import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
@@ -32,7 +32,7 @@ export interface RenderState extends Entity {
   currentClipDepth: number;
   displayObjectClipHooks: Scene2DClipHooks | null;
   pixelRatio: number;
-  raster2DSurfaceProvider: Readonly<Raster2DSurfaceCreator> | null;
+  imageSurfaceProvider: Readonly<ImageSurfaceCreator> | null;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderTransform2D: Matrix | null;

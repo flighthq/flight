@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
+import type { Entity, ImageSurface, ImageSurfaceCreator } from '@flighthq/types/contract';
 
-import { createRaster2DSurface, destroyRaster2DSurface } from './raster2DSurface';
+import { createImageSurface, destroyImageSurface } from './imageSurface';
 
-function entityProvider(fields: Omit<Raster2DSurfaceCreator, keyof Entity>): Raster2DSurfaceCreator {
+function entityProvider(fields: Omit<ImageSurfaceCreator, keyof Entity>): ImageSurfaceCreator {
   return (() => {
     const out = allocateEntity<any>();
     Object.assign(out, fields);
@@ -11,64 +11,64 @@ function entityProvider(fields: Omit<Raster2DSurfaceCreator, keyof Entity>): Ras
   })();
 }
 
-describe('createRaster2DSurface', () => {
+describe('createImageSurface', () => {
   it('passes exact dimensions through the given provider and preserves its result', () => {
-    const surface = {} as Raster2DSurface;
+    const surface = {} as ImageSurface;
     const create = vi.fn(() => surface);
-    const provider = entityProvider({ createRaster2DSurface: create, destroyRaster2DSurface() {} });
+    const provider = entityProvider({ createImageSurface: create, destroyImageSurface() {} });
 
-    expect(createRaster2DSurface(provider, 30, 40)).toBe(surface);
+    expect(createImageSurface(provider, 30, 40)).toBe(surface);
     expect(create).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledWith(30, 40);
   });
 
   it('preserves provider refusal as expected absence', () => {
-    const provider = entityProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
-    expect(createRaster2DSurface(provider, 10, 20)).toBeNull();
+    const provider = entityProvider({ createImageSurface: () => null, destroyImageSurface() {} });
+    expect(createImageSurface(provider, 10, 20)).toBeNull();
   });
 });
 
-describe('destroyRaster2DSurface', () => {
+describe('destroyImageSurface', () => {
   it('routes each surface to its creator even when different providers were used', () => {
-    const firstSurface = {} as Raster2DSurface;
-    const secondSurface = {} as Raster2DSurface;
+    const firstSurface = {} as ImageSurface;
+    const secondSurface = {} as ImageSurface;
     const firstDestroy = vi.fn();
     const secondDestroy = vi.fn();
     const first = entityProvider({
-      createRaster2DSurface: () => firstSurface,
-      destroyRaster2DSurface: firstDestroy,
+      createImageSurface: () => firstSurface,
+      destroyImageSurface: firstDestroy,
     });
     const second = entityProvider({
-      createRaster2DSurface: () => secondSurface,
-      destroyRaster2DSurface: secondDestroy,
+      createImageSurface: () => secondSurface,
+      destroyImageSurface: secondDestroy,
     });
 
-    expect(createRaster2DSurface(first, 10, 20)).toBe(firstSurface);
-    expect(createRaster2DSurface(second, 30, 40)).toBe(secondSurface);
+    expect(createImageSurface(first, 10, 20)).toBe(firstSurface);
+    expect(createImageSurface(second, 30, 40)).toBe(secondSurface);
 
-    destroyRaster2DSurface(firstSurface);
-    destroyRaster2DSurface(secondSurface);
+    destroyImageSurface(firstSurface);
+    destroyImageSurface(secondSurface);
 
     expect(firstDestroy).toHaveBeenCalledExactlyOnceWith(firstSurface);
     expect(secondDestroy).toHaveBeenCalledExactlyOnceWith(secondSurface);
   });
 
   it('is a no-op after the surface has been destroyed once', () => {
-    const surface = {} as Raster2DSurface;
+    const surface = {} as ImageSurface;
     const destroy = vi.fn();
     const provider = entityProvider({
-      createRaster2DSurface: () => surface,
-      destroyRaster2DSurface: destroy,
+      createImageSurface: () => surface,
+      destroyImageSurface: destroy,
     });
-    expect(createRaster2DSurface(provider, 10, 20)).toBe(surface);
+    expect(createImageSurface(provider, 10, 20)).toBe(surface);
 
-    destroyRaster2DSurface(surface);
-    destroyRaster2DSurface(surface);
+    destroyImageSurface(surface);
+    destroyImageSurface(surface);
 
     expect(destroy).toHaveBeenCalledOnce();
   });
 
   it('is a no-op for an unknown surface', () => {
-    expect(() => destroyRaster2DSurface({} as Raster2DSurface)).not.toThrow();
+    expect(() => destroyImageSurface({} as ImageSurface)).not.toThrow();
   });
 });

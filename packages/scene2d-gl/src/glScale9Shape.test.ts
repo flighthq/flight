@@ -7,7 +7,7 @@
 import { bindGlImageResourceTexture, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
-import type { Raster2DSurface } from '@flighthq/types/contract';
+import type { ImageSurface } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -35,7 +35,7 @@ afterEach(() => {
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 const destroySurface = vi.fn();
 
-function createTestSurface(width = 1, height = 1): Raster2DSurface {
+function createTestSurface(width = 1, height = 1): ImageSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -63,11 +63,11 @@ beforeEach(() => {
   destroySurface.mockReset();
 });
 
-function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
-  state.raster2DSurfaceProvider = {
+function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
+  state.imageSurfaceProvider = {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface: createTestSurface,
-    destroyRaster2DSurface: destroySurface,
+    createImageSurface: createTestSurface,
+    destroyImageSurface: destroySurface,
   };
 }
 
@@ -76,14 +76,14 @@ describe('acquireGlScale9ShapeRasterSurface', () => {
     const surface = createTestSurface();
     const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
     const { state } = createGlState();
-    state.raster2DSurfaceProvider = {
+    state.imageSurfaceProvider = {
       [EntityRuntimeKey]: undefined,
-      createRaster2DSurface: createSurface,
-      destroyRaster2DSurface: destroySurface,
+      createImageSurface: createSurface,
+      destroyImageSurface: destroySurface,
     };
     const data = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
 
-    const provider = state.raster2DSurfaceProvider!;
+    const provider = state.imageSurfaceProvider!;
     expect(acquireGlScale9ShapeRasterSurface(provider, data)).toBeNull();
     expect(data.surface).toBeNull();
     expect(acquireGlScale9ShapeRasterSurface(provider, data)).toBe(surface);
@@ -96,8 +96,8 @@ describe('acquireGlScale9ShapeRasterSurface', () => {
     setTestRasterProvider(state);
     const firstData = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
     const secondData = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
-    const first = acquireGlScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, firstData)!;
-    const second = acquireGlScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, secondData)!;
+    const first = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, firstData)!;
+    const second = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, secondData)!;
     first.context.fillStyle = '#f00';
     first.context.fillRect(0, 0, 1, 1);
     second.context.fillStyle = '#00f';
@@ -149,7 +149,7 @@ describe('destroyGlScale9ShapeData', () => {
     const { state, gl } = createGlState();
     setTestRasterProvider(state);
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
-    const surface = acquireGlScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, getGlScale9ShapeData(data))!;
+    const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, getGlScale9ShapeData(data))!;
     const texture = {} as WebGLTexture;
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     cache.set(surface.image, { texture } as never);
@@ -175,7 +175,7 @@ describe('destroyGlScale9ShapeData', () => {
     const { state } = createGlState();
     setTestRasterProvider(state);
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
-    const surface = acquireGlScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, getGlScale9ShapeData(data))!;
+    const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, getGlScale9ShapeData(data))!;
 
     destroyGlScale9ShapeData(state, data);
 
