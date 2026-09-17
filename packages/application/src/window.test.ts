@@ -3,20 +3,38 @@ import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contr
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
-  HostFullscreenCapability,
   FullscreenTargetHandle,
+  HostFullscreenCapability,
   HostGlCapability,
-  HostSurfaceCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
+  HostInputTargetCapability,
+  HostScreenChangeCapability,
+  HostSurfaceCapability,
+  HostWindowAppearanceCapability,
+  HostWindowAttachCapability,
+  HostWindowAttentionCapability,
+  HostWindowContentProtectionCapability,
+  HostWindowFocusCapability,
+  HostWindowFullscreenCapability,
+  HostWindowGeometryCapability,
+  HostWindowHierarchyCapability,
+  HostWindowLifecycleCapability,
+  HostWindowProgressCapability,
+  HostWindowShadowCapability,
+  HostWindowShellCapability,
+  HostWindowSizeConstraintsCapability,
+  HostWindowStateCapability,
+  HostWindowVisibilityCapability,
+  HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostInputTargetCapability,
   InputTargetHandle,
   Matrix,
   RenderState,
-  HostWindowProvider,
+  ScreenChangeEvent,
+  ScreenInfo,
   WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
@@ -83,14 +101,40 @@ import {
   showWindow,
 } from './window';
 
-type RecordingWindowBackend = Required<HostWindowProvider> & {
+// The double implements every window capability, so one object stands in for the whole window
+// group at each call site: the command functions each select the single capability they need, and
+// the two that need a pair (attachWindow, openWindow) are handed the same double twice.
+type RecordingWindowBackend = Required<
+  HostWindowAppearanceCapability &
+    HostWindowAttachCapability &
+    HostWindowAttentionCapability &
+    HostWindowContentProtectionCapability &
+    HostWindowFocusCapability &
+    HostWindowFullscreenCapability &
+    HostWindowGeometryCapability &
+    HostWindowHierarchyCapability &
+    HostWindowLifecycleCapability &
+    HostWindowProgressCapability &
+    HostWindowShadowCapability &
+    HostWindowShellCapability &
+    HostWindowSizeConstraintsCapability &
+    HostWindowStateCapability &
+    HostWindowVisibilityCapability &
+    HostWindowZOrderCapability
+> & {
   readonly calls: string[];
   emitCloseRequest(): boolean;
   emitClosed(): void;
   emitMove(x: number, y: number): void;
-  emitOrientation(): void;
   emitResize(width: number, height: number, devicePixelRatio: number): void;
   emitVisibility(visible: boolean): void;
+};
+
+// Orientation is reported per display, so its recorder is the screen change capability rather
+// than a window one (host-composition-model.md §6).
+type RecordingScreenChangeBackend = HostScreenChangeCapability & {
+  readonly calls: string[];
+  emitOrientation(): void;
 };
 
 type RecordingFullscreenBackend = Required<HostFullscreenCapability> & {
@@ -129,6 +173,7 @@ type TestHost = {
     readonly focus: RecordingInputFocusBackend;
     readonly pointerLock: RecordingInputPointerLockBackend;
   };
+  readonly screen: { readonly change: RecordingScreenChangeBackend };
   readonly ui: { readonly fullscreen: RecordingFullscreenBackend };
   readonly window: RecordingWindowBackend;
 };
@@ -149,7 +194,6 @@ function recordingWindowBackend(): RecordingWindowBackend {
     readonly onCloseRequest: () => boolean;
   }>();
   const moveListeners = new Set<(x: number, y: number) => void>();
-  const orientationListeners = new Set<() => void>();
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
@@ -167,9 +211,6 @@ function recordingWindowBackend(): RecordingWindowBackend {
   };
   out.emitMove = (x, y) => {
     for (const listener of moveListeners) listener(x, y);
-  };
-  out.emitOrientation = () => {
-    for (const listener of orientationListeners) listener();
   };
   out.emitResize = (width, height, devicePixelRatio) => {
     for (const listener of resizeListeners) listener(width, height, devicePixelRatio);
@@ -280,10 +321,6 @@ function recordingWindowBackend(): RecordingWindowBackend {
     moveListeners.add(listener);
     return () => moveListeners.delete(listener);
   };
-  out.subscribeOrientation = (listener) => {
-    orientationListeners.add(listener);
-    return () => orientationListeners.delete(listener);
-  };
   out.subscribeResize = (_target, listener) => {
     resizeListeners.add(listener);
     return () => resizeListeners.delete(listener);
@@ -310,28 +347,28 @@ function createWindowResizeTarget(): WindowResizeTargetHandle {
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
   const callbacks = new Set<(fullscreen: boolean) => void>();
   const calls: string[] = [];
-  return {
-    calls,
-    emit(fullscreen) {
-      for (const callback of callbacks) callback(fullscreen);
-    },
-    async exit() {
-      calls.push('exit');
-      return true;
-    },
-    async request() {
-      calls.push('request');
-      return true;
-    },
-    subscribe(callback) {
-      calls.push('subscribe');
-      callbacks.add(callback);
-    },
-    unsubscribe(callback) {
-      calls.push('unsubscribe');
-      callbacks.delete(callback);
-    },
+  const out = allocateEntity<RecordingFullscreenBackend>();
+  out.calls = calls;
+  out.emit = (fullscreen) => {
+    for (const callback of callbacks) callback(fullscreen);
   };
+  out.exit = async () => {
+    calls.push('exit');
+    return true;
+  };
+  out.request = async () => {
+    calls.push('request');
+    return true;
+  };
+  out.subscribe = (callback) => {
+    calls.push('subscribe');
+    callbacks.add(callback);
+  };
+  out.unsubscribe = (callback) => {
+    calls.push('unsubscribe');
+    callbacks.delete(callback);
+  };
+  return finishEntity(out);
 }
 
 function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
@@ -428,6 +465,32 @@ function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   return finishEntity(out);
 }
 
+function recordingScreenChangeBackend(): RecordingScreenChangeBackend {
+  const listeners = new Set<(event: ScreenChangeEvent) => void>();
+  const calls: string[] = [];
+  const out = allocateEntity<RecordingScreenChangeBackend>();
+  out.calls = calls;
+  out.emitOrientation = () => {
+    for (const listener of listeners) listener(orientationChangeEvent());
+  };
+  out.subscribe = (listener) => {
+    calls.push('subscribe');
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+  return finishEntity(out);
+}
+
+// The command under test reads only changedMetrics.orientation, so the event carries that one
+// metric group; the affected display is allocated but otherwise unread.
+function orientationChangeEvent(): ScreenChangeEvent {
+  return {
+    changedMetrics: { bounds: false, orientation: true, scaleFactor: false, workArea: false },
+    kind: 'ScreenMetricsChanged',
+    screen: allocateEntity<ScreenInfo>(),
+  };
+}
+
 function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowBackend()): TestHost {
   return {
     graphics: { renderContext: recordingRenderContextBackend(), renderSurface: recordingRenderSurfaceBackend() },
@@ -436,6 +499,7 @@ function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowB
       focus: recordingInputFocusBackend(),
       pointerLock: recordingInputPointerLockBackend(),
     },
+    screen: { change: recordingScreenChangeBackend() },
     ui: { fullscreen: recordingFullscreenBackend() },
     window: windowBackend,
   };
@@ -459,7 +523,7 @@ describe('attachWindow', () => {
     const win = createApplicationWindow();
     const handle = { id: 41 };
 
-    expect(attachWindow(host.window, win, handle, 'host')).toBe(true);
+    expect(attachWindow(host.window, host.window, win, handle, 'host')).toBe(true);
     expect(seen).toEqual([{ handle, win }]);
   });
 
@@ -476,8 +540,8 @@ describe('attachWindow', () => {
     const first = createApplicationWindow();
     const second = createApplicationWindow();
 
-    expect(attachWindow(host.window, first, { id: 1 }, 'host')).toBe(true);
-    expect(attachWindow(host.window, second, { id: 2 }, 'flight')).toBe(true);
+    expect(attachWindow(host.window, host.window, first, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(host.window, host.window, second, { id: 2 }, 'flight')).toBe(true);
     expect(attached).toEqual([first, second]);
     expect(closeWindow(host.window, first)).toBe(true);
     expect(closeWindow(host.window, first)).toBe(true);
@@ -493,7 +557,7 @@ describe('attachWindow', () => {
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    expect(attachWindow(host.window, win, { id: 1 }, 'flight')).toBe(true);
+    expect(attachWindow(host.window, host.window, win, { id: 1 }, 'flight')).toBe(true);
     attachWindowFullscreen(host.ui.fullscreen, win);
 
     expect(closeWindow(host.window, win)).toBe(true);
@@ -510,9 +574,9 @@ describe('attachWindow', () => {
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(attachWindow(host.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(host.window, host.window, win, { id: 1 }, 'host')).toBe(true);
     expect(closeWindow(host.window, win)).toBe(true);
-    expect(attachWindow(host.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(host.window, host.window, win, { id: 1 }, 'host')).toBe(true);
     expect(closeWindow(host.window, win)).toBe(true);
     expect(closed).toBe(2);
   });
@@ -522,7 +586,7 @@ describe('attachWindow', () => {
     const active = createTestHost();
     const win = createApplicationWindow();
 
-    expect(attachWindow(origin.window, win, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(origin.window, origin.window, win, { id: 1 }, 'host')).toBe(true);
     expect(closeWindow(active.window, win)).toBe(true);
 
     expect(origin.window.calls).toEqual(['attach:host', 'close']);
@@ -679,8 +743,8 @@ describe('attachWindowOrientation', () => {
       called = true;
     });
 
-    attachWindowOrientation(host.window, win);
-    host.window.emitOrientation();
+    attachWindowOrientation(host.screen.change, win);
+    host.screen.change.emitOrientation();
     expect(called).toBe(true);
   });
 });
@@ -1044,9 +1108,9 @@ describe('detachWindowOrientation', () => {
     connectSignal(win.onOrientationChanged, () => {
       called = true;
     });
-    attachWindowOrientation(host.window, win);
+    attachWindowOrientation(host.screen.change, win);
     detachWindowOrientation(win);
-    host.window.emitOrientation();
+    host.screen.change.emitOrientation();
 
     expect(called).toBe(false);
   });
@@ -1385,7 +1449,9 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    expect(openWindow(host.window, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true })).toBe(true);
+    expect(
+      openWindow(host.window, host.window, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true }),
+    ).toBe(true);
     expect(win.title).toBe('Game');
     expect(win.width).toBe(640);
     expect(win.alwaysOnTop).toBe(true);
@@ -1396,7 +1462,7 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(host.window, win, { title: 'Centered', center: true });
+    openWindow(host.window, host.window, win, { title: 'Centered', center: true });
     expect(backend.calls.filter((call) => call === 'center')).toHaveLength(1);
   });
 
@@ -1404,7 +1470,7 @@ describe('openWindow', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(host.window, win, { title: 'Normal' });
+    openWindow(host.window, host.window, win, { title: 'Normal' });
     expect(backend.calls).not.toContain('center');
   });
 
@@ -1417,13 +1483,13 @@ describe('openWindow', () => {
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
 
-    expect(openWindow(host.window, win)).toBe(true);
+    expect(openWindow(host.window, host.window, win)).toBe(true);
     attachWindowFullscreen(host.ui.fullscreen, win);
     expect(closeWindow(host.window, win)).toBe(true);
     host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(0);
 
-    expect(openWindow(host.window, win)).toBe(true);
+    expect(openWindow(host.window, host.window, win)).toBe(true);
     attachWindowFullscreen(host.ui.fullscreen, win);
     host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(1);
@@ -1452,7 +1518,7 @@ describe('openWindow', () => {
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(openWindow(origin.window, win)).toBe(true);
+    expect(openWindow(origin.window, origin.window, win)).toBe(true);
     expect(closeWindow(active.window, win)).toBe(true);
 
     expect(calls).toEqual(['origin:open', 'origin:close']);
