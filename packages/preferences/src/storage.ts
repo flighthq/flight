@@ -428,28 +428,33 @@ export function setStorageNumber(
   return setStorageItemOnBackend(hostPreferences, key, String(value), signals);
 }
 
-function getStorageByteSizeForPrefix(backend: HostPreferencesCapability, prefix: string | null): StorageByteSizeResult {
-  const keys = backend.keys();
+function getStorageByteSizeForPrefix(
+  hostPreferences: Readonly<HostPreferencesCapability>,
+  prefix: string | null,
+): StorageByteSizeResult {
+  const keys = hostPreferences.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   let value = 0;
   for (const key of keys.value) {
     if (prefix !== null && !key.startsWith(prefix)) continue;
-    const item = backend.getItem(key);
+    const item = hostPreferences.getItem(key);
     if (item.reason !== 'ok') return { failedKey: key, reason: item.reason, value: null };
     if (item.value !== null) value += (key.length + item.value.length) * 2;
   }
   return { failedKey: null, reason: 'ok', value };
 }
 
-function getStorageEntriesForPrefix(backend: HostPreferencesCapability, prefix: string | null): StorageEntriesResult {
-  const keys = backend.keys();
+function getStorageEntriesForPrefix(
+  hostPreferences: Readonly<HostPreferencesCapability>,
+  prefix: string | null,
+): StorageEntriesResult {
+  const keys = hostPreferences.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   const value: [string, string][] = [];
   for (const key of keys.value) {
     if (prefix !== null && !key.startsWith(prefix)) continue;
-    const item = backend.getItem(key);
+    const item = hostPreferences.getItem(key);
     if (item.reason !== 'ok') return { failedKey: key, reason: item.reason, value: null };
-    // A successful null after enumeration is an ordinary concurrent removal, not provider failure.
     if (item.value !== null) value.push([key, item.value]);
   }
   return { failedKey: null, reason: 'ok', value };
@@ -460,13 +465,13 @@ function namespacedKey(namespace: Readonly<StorageNamespace>, key: string): stri
 }
 
 function removeStorageItemFromBackend(
-  backend: HostPreferencesCapability,
+  hostPreferences: Readonly<HostPreferencesCapability>,
   key: string,
   signals: StorageSignals | null,
 ): StorageRemoveItemResult {
   const active = storageSignalsActive(signals);
-  const oldValue = active ? backend.getItem(key) : null;
-  const result = backend.removeItem(key);
+  const oldValue = active ? hostPreferences.getItem(key) : null;
+  const result = hostPreferences.removeItem(key);
   if (result.reason === 'ok' && active && oldValue?.reason === 'ok' && oldValue.value !== null) {
     emitSignal(signals.onChange, { key, newValue: null, oldValue: oldValue.value });
   }
@@ -474,14 +479,14 @@ function removeStorageItemFromBackend(
 }
 
 function setStorageItemOnBackend(
-  backend: HostPreferencesCapability,
+  hostPreferences: Readonly<HostPreferencesCapability>,
   key: string,
   value: string,
   signals: StorageSignals | null,
 ): StorageSetItemResult {
   const active = storageSignalsActive(signals);
-  const oldValue = active ? backend.getItem(key) : null;
-  const result = backend.setItem(key, value);
+  const oldValue = active ? hostPreferences.getItem(key) : null;
+  const result = hostPreferences.setItem(key, value);
   if (result.reason === 'ok' && active && oldValue?.reason === 'ok' && oldValue.value !== value) {
     emitSignal(signals.onChange, { key, newValue: value, oldValue: oldValue.value });
   }
