@@ -21,6 +21,7 @@ export * from './glRenderTarget';
 export * from './glRenderTexture';
 export * from './glRenderTexturePool';
 export * from './glRenderTargetPool';
+export * from './glRenderView';
 export * from './glShader';
 export * from './glShaderBinding';
 export * from './glSkinPaletteTexture';
