@@ -2,7 +2,7 @@
 
 _2026-09-16. Architecture record — the naming, typing, structure, and decomposition of host capabilities._
 
-**Status: ratified 2026-09-16 by the user.** Read before renaming host types or consts, adding a function that consumes a host capability, creating a new host group or slot, or decomposing a provider.
+**Status: ratified 2026-09-16 by the user.** Read before renaming host types or consts, adding a function that consumes a host capability, creating a new host group or slot, or decomposing a capability.
 
 This record governs the **consumer-facing API surface** — how types, consts, parameters, groups, and slots are named and structured. The extraction mechanics (precedence, enablers, provider transitions, bundle evidence) remain in [host-web architecture](host-web-architecture.md). The explicit dependency model (no ambient state, values not singletons) remains in [explicit dependency model](explicit-dependency-model.md).
 

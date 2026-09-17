@@ -25,7 +25,7 @@ The complete recoverable-state toolkit over plain data: `captureSnapshot` (deep,
 
 - **Depends on `@flighthq/types` + `@flighthq/math`** (`lerp` for interpolation). No display, no renderer, no scene graph.
 - **Operates on the app's plain state, does not own it.** Input is a plain serializable object (numbers, strings, booleans, arrays, nested objects — JSON-shaped); the live mutable state lives in the app (or a future `@flighthq/session` container). `snapshot` only produces frozen captures and operations over them — it is not a state store.
-- **Values, not persistence or serialization format.** It yields immutable in-memory `Snapshot` values; writing them to disk is `@flighthq/storage`, and a wire/JSON format for them (if needed) is a separate concern. Class instances / entity-runtime objects are out of scope — snapshots are of plain data.
+- **Values, not persistence or serialization format.** It yields immutable in-memory `Snapshot` values; writing them to disk is `@flighthq/preferences`, and a wire/JSON format for them (if needed) is a separate concern. Class instances / entity-runtime objects are out of scope — snapshots are of plain data.
 
 ## Decisions
 

@@ -24,6 +24,6 @@ Sweep-safe changes. Builder-ready.
 - **Declare `refresh?(): void` on `DeviceBackend`** and drop the `as unknown as` cast in `refreshDeviceInfo` — small and mechanical, but it edits the `@flighthq/types` header (cross-package by the letter of the sweep boundary).
 - **Predicate conveniences** (`isDeviceTablet(info)` etc.) — charter Open direction 5; a policy call, not a sweep.
 - **`device` vs `screen` boundary ruling** for `DeviceDisplayMetrics` vs live multi-display — charter Open direction 2.
-- **`getId` durability seam** — inject `@flighthq/storage` vs direct `localStorage` — charter Open direction 3.
+- **`getId` durability seam** — inject `@flighthq/preferences` vs direct `localStorage` — charter Open direction 3.
 - **`installSource` / install provenance home** (likely `@flighthq/app`) — charter Open direction 4.
 - **Native backends** (`host-electron`/`host-capacitor` `DeviceBackend`) and **Rust crate `flighthq-device`** — cross-package / cross-boundary.
