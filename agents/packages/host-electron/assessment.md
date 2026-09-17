@@ -14,8 +14,8 @@ None — all prior items verified landed 2026-08-25.
 
 ## Approved
 
-1. **Add missing `@flighthq/storage` dependency** [2026-07-02 · blanket "platform integration suite sweep"]
-2. **Supersedes #1: `@flighthq/storage` renamed to `@flighthq/preferences`** [2026-09-17 · picked]
+1. **Add missing `@flighthq/preferences` dependency** [2026-07-02 · blanket "platform integration suite sweep"]
+2. **Supersedes #1: package was `@flighthq/storage` at time of writing; now `@flighthq/preferences`** [2026-09-17 · picked]
 
 ## Backlog
 
