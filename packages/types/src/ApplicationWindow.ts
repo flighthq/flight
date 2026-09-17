@@ -159,6 +159,9 @@ export interface HostWindowShellCapability extends Entity {
 export interface HostWindowSizeConstraintsCapability extends Entity {
   setMaximumSize(win: ApplicationWindow, width: number, height: number): void;
   setMinimumSize(win: ApplicationWindow, width: number, height: number): void;
+  // Whether the user may resize the window. Optional because absence is the structural declaration
+  // that the host cannot change it after open; web omits it, native hosts implement it.
+  setResizable?(win: ApplicationWindow, resizable: boolean): void;
 }
 
 export interface HostWindowStateCapability extends Entity {
