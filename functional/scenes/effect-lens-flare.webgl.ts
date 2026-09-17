@@ -20,7 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -40,7 +40,9 @@ declareExpectedImageDescription(
 // Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
 // frame center, run through an HDR (rgba16f) pipeline so bright spots carry the flare.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

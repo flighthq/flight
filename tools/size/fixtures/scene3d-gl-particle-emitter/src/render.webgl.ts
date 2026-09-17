@@ -4,7 +4,7 @@ import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-w
 import { createScene3DLights } from '@flighthq/lighting';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
-import { createRenderSurface, prepareScene3DRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -15,8 +15,9 @@ import {
 } from '@flighthq/render-gl';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { createSurface } from '@flighthq/surface';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

@@ -34,7 +34,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   submitWgpuFrame,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -53,7 +53,9 @@ declareExpectedImageDescription(
 // WebGPU mirror of the isolated GL sampling-control witness. Radius 1 must take the literal 3x3 path;
 // the deliberately coarse projection and negative depth bias make both controls observable in capture.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

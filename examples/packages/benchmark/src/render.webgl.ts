@@ -14,11 +14,13 @@ import {
   beginGlRenderPass,
   endGlRenderPass,
   createGlScreenRenderTarget,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 500, pixelRatio);
+export const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 500 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '500px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

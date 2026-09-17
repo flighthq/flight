@@ -1,9 +1,7 @@
 export {
   areColorAdjustmentsEnabled,
   createRaster2DSurface,
-  createRenderSurface,
   destroyRaster2DSurface,
-  destroyRenderSurface,
   disableSceneRenderGuards,
   enableColorAdjustments,
   enableSceneRenderGuards,

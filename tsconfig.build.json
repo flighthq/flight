@@ -132,6 +132,7 @@
     { "path": "./packages/spritesheet" },
     { "path": "./packages/spritesheet-formats" },
     { "path": "./packages/statusbar" },
+    { "path": "./packages/surface" },
     { "path": "./packages/preferences" },
     { "path": "./packages/swf" },
     { "path": "./packages/bitmap" },

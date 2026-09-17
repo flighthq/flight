@@ -30,7 +30,7 @@ import {
   scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -61,7 +61,9 @@ declareExpectedImageDescription(
 // WebGPU mirror of light-many-point.webgl. Four finite-range decoys come first; only per-mesh
 // contribution selection can choose the twelve nearby lights and illuminate the field.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 const webWgpuHost = createWebWgpuHostBackend();
 const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);

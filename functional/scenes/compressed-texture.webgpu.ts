@@ -27,7 +27,7 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   SpriteKind,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -61,7 +61,9 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, WIDTH, HEIGHT, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, WIDTH * pixelRatio, HEIGHT * pixelRatio);
+canvas.style.width = `${WIDTH}px`;
+canvas.style.height = `${HEIGHT}px`;
 document.body.appendChild(canvas);
 const webWgpuHost = createWebWgpuHostBackend();
 const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);

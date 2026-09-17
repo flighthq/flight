@@ -15,7 +15,7 @@ import {
   createCanvasTextureResolvers,
   createGlRenderState,
   createMatrix,
-  createRenderSurface,
+  createSurface,
   defaultGlParticleEmitter2DRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
@@ -64,7 +64,9 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
+  const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
   document.body.appendChild(canvas);
 
   const state = createGlRenderState(

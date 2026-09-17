@@ -20,7 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -45,7 +45,9 @@ const RADIAL_CENTER_Y = 0.4;
 // Radial blur: the full frame smears radially outward from the configured center, so mid-screen
 // shapes streak toward the edges like a zoom blur.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

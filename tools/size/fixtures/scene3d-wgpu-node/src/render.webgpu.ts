@@ -2,7 +2,7 @@ import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4From
 import { createVector3 } from '@flighthq/geometry';
 import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
-import { createRenderSurface, prepareScene3DRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -15,8 +15,9 @@ import {
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { createSurface } from '@flighthq/surface';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

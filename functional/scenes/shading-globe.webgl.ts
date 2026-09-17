@@ -28,7 +28,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -62,7 +62,9 @@ declareExpectedImageDescription(
 // HDR into the effect pipeline's rgba16f + depth scene target (depth-test ON so the sphere occludes
 // itself), then ends with an empty effect list to tone-present the HDR scene straight to the canvas.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

@@ -4,7 +4,6 @@ import {
   webHostImage,
   webRaster2DSurfaceCreator,
 } from '@flighthq/host-web';
-import { createRenderSurface } from '@flighthq/render';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
@@ -58,6 +57,7 @@ import {
   TextLabelKind,
   TilemapKind,
 } from '@flighthq/sdk';
+import { createSurface } from '@flighthq/surface';
 import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
@@ -66,7 +66,9 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
+  const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
   document.body.appendChild(canvas);
 
   const webWgpuHost = createWebWgpuHostBackend();

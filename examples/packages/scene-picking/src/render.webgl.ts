@@ -8,14 +8,16 @@ import {
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-export const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
+export const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 export const state = createGlRenderState(
   createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),

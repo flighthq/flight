@@ -6,7 +6,7 @@ import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene3DRender } from '@flighthq/render';
+import { prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -17,9 +17,10 @@ import {
 } from '@flighthq/render-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
+import { createSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

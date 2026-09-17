@@ -1,6 +1,6 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
-import { createRenderCache, createRenderSurface } from '@flighthq/render';
+import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
   createGlRenderState,
@@ -11,6 +11,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl';
+import { createSurface } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -30,7 +31,9 @@ export const scale = window.devicePixelRatio || 1;
 // so it always reads 0. assertRender below is the real check.
 export const minCoverage = 0;
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, scale);
+const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
+canvas.style.width = `${width}px`;
+canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 const state = createGlRenderState(
   createWebGlContext(canvas, {

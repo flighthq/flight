@@ -27,7 +27,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   skinVertices,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -55,7 +55,9 @@ declareExpectedImageDescription(
 // It is also its own negative control: if the base index stops being per-draw, the two bars collapse
 // together again, which is exactly the failure the scene was built to show.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

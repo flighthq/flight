@@ -3,7 +3,7 @@ import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter2DParticle, createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
+import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -17,11 +17,12 @@ import {
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuParticleEmitter2DRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { createSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
 import { ParticleEmitter2DKind } from '@flighthq/types';
 
-const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
+const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 if (canvas === null) throw new Error('The WebGPU ParticleEmitter2D size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

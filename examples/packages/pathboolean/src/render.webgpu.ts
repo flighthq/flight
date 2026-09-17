@@ -24,11 +24,13 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   ShapeKind,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+export const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

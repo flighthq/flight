@@ -34,7 +34,7 @@ import {
   setVector3,
   skinVertices,
   submitWgpuFrame,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -63,7 +63,9 @@ declareExpectedImageDescription(
 // through the real `skinVertices` path, from the same palette the draw uploaded, and requires the
 // rendered pixels to agree; it also re-derives the reversal so the scene cannot decay into a non-trial.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

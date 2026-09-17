@@ -684,7 +684,7 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
 }
 
 // A WebGPU page must not conjure its own PRESENTATION canvas. The canvas a screen target or an
-// acquisition is given comes from createRenderSurface(webSurfaceCreateCapability, …), the explicit
+// acquisition is given comes from createSurface(webSurfaceCreateCapability, …), the explicit
 // host capability seam that replaces the former createWebWgpuCanvasElement singleton.
 //
 // Scratch canvases a scene paints texture content into are deliberately NOT flagged here: they are a
@@ -703,7 +703,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
       ts.isIdentifier(node.name) &&
       node.initializer !== undefined &&
       ts.isCallExpression(node.initializer) &&
-      expressionName(node.initializer.expression) === 'createRenderSurface'
+      expressionName(node.initializer.expression) === 'createSurface'
     ) {
       hostCanvasBindings.add(node.name.text);
       usesHostCanvas = true;
@@ -731,7 +731,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   for (const surface of presentationSurfaces) {
     if (!hostCanvasBindings.has(surface.name)) {
       failures.push(
-        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createRenderSurface`,
+        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createSurface`,
       );
     }
   }
@@ -766,7 +766,7 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
 
   const harnessFile = 'tools/harness/webgpu.ts';
   const harnessSource = readFileSync(join(root, harnessFile), 'utf8');
-  if (!harnessSource.includes('createRenderSurface(')) {
+  if (!harnessSource.includes('createSurface(')) {
     failures.push(
       `${harnessFile}: shared WebGPU harness no longer creates its surface through the host capability seam`,
     );

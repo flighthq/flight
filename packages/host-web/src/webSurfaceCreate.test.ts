@@ -5,22 +5,20 @@ import {
 } from './webSurfaceCreate';
 
 describe('createWebSurfaceCreateCapability', () => {
-  it('returns a capability whose createRenderSurface creates a correctly sized canvas', () => {
+  it('returns a capability whose createSurface creates a canvas with the requested dimensions', () => {
     const cap = createWebSurfaceCreateCapability();
-    const canvas = cap.createRenderSurface(400, 300, 2);
+    const canvas = cap.createSurface(800, 600);
 
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
-    expect(canvas.style.width).toBe('400px');
-    expect(canvas.style.height).toBe('300px');
     expect(canvas.width).toBe(800);
     expect(canvas.height).toBe(600);
   });
 
-  it('destroyRenderSurface zeroes the backing store', () => {
+  it('destroySurface zeroes the backing store', () => {
     const cap = createWebSurfaceCreateCapability();
-    const canvas = cap.createRenderSurface(100, 100, 1);
+    const canvas = cap.createSurface(100, 100);
 
-    cap.destroyRenderSurface(canvas);
+    cap.destroySurface(canvas);
     expect(canvas.width).toBe(0);
     expect(canvas.height).toBe(0);
   });
@@ -31,17 +29,15 @@ describe('initializeWebSurfaceCreateCapability', () => {
     const out = {} as Parameters<typeof initializeWebSurfaceCreateCapability>[0];
     initializeWebSurfaceCreateCapability(out);
 
-    expect(typeof out.createRenderSurface).toBe('function');
-    expect(typeof out.destroyRenderSurface).toBe('function');
+    expect(typeof out.createSurface).toBe('function');
+    expect(typeof out.destroySurface).toBe('function');
   });
 });
 
 describe('webSurfaceCreateCapability', () => {
   it('is a pre-built instance with the same behavior', () => {
-    const canvas = webSurfaceCreateCapability.createRenderSurface(200, 150, 1);
+    const canvas = webSurfaceCreateCapability.createSurface(200, 150);
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
-    expect(canvas.style.width).toBe('200px');
-    expect(canvas.style.height).toBe('150px');
     expect(canvas.width).toBe(200);
     expect(canvas.height).toBe(150);
   });

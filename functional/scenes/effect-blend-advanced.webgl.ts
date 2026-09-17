@@ -25,7 +25,7 @@ import {
   registerGlBlendEffectBackdrop,
   registerRenderer,
   renderGlScene2D,
-  createRenderSurface,
+  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -55,7 +55,9 @@ declareExpectedImageDescription(
 //   - backdrop-only region → passes through as the layer is transparent there, reading ~backdrop colour.
 // A passthrough (blend not applied) would leave the white foreground white in the overlap — the failing case.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
+const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
