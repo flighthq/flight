@@ -11,29 +11,48 @@ import * as publicApi from './index';
 const GROUPS = [
   ['accessibility', 'electronHostAccessibilityGroup'],
   ['app', 'electronHostApp'],
+  ['audio', 'electronHostAudioGroup'],
+  ['bitmap', 'electronHostBitmapGroup'],
   ['clipboard', 'electronHostClipboard'],
-  ['connectivity', 'electronHostConnectivity'],
+  ['connectivity', 'electronHostConnectivityGroup'],
+  ['device', 'electronHostDeviceGroup'],
   ['dialog', 'electronHostDialog'],
-  ['graphics', 'electronHostGraphics'],
-  ['input', 'electronHostInput'],
+  ['fileSystem', 'electronHostFileSystemGroup'],
+  ['font', 'electronHostFontGroup'],
+  ['fullscreen', 'electronHostFullscreenGroup'],
+  ['geolocation', 'electronHostGeolocationGroup'],
+  ['gl', 'electronHostGlGroup'],
+  ['glyph', 'electronHostGlyphGroup'],
+  ['haptics', 'electronHostHapticsGroup'],
+  ['image', 'electronHostImageGroup'],
+  ['input', 'electronHostInputGroup'],
   ['ipc', 'electronHostIpc'],
-  ['media', 'electronHostMedia'],
+  ['lifecycle', 'electronHostLifecycleGroup'],
+  ['mediaSession', 'electronHostMediaSessionGroup'],
   ['menu', 'electronHostMenu'],
-  ['midi', 'electronHostMidi'],
+  ['midi', 'electronHostMidiGroup'],
   ['net', 'electronHostNetGroup'],
   ['notification', 'electronHostNotification'],
+  ['permissions', 'electronHostPermissionsGroup'],
+  ['platform', 'electronHostPlatformGroup'],
   ['power', 'electronHostPower'],
+  ['preferences', 'electronHostStorageGroup'],
   ['protocol', 'electronHostProtocol'],
   ['screen', 'electronHostScreen'],
-  ['share', 'electronHostShare'],
+  ['sensors', 'electronHostSensorsGroup'],
+  ['share', 'electronHostShareGroup'],
   ['shell', 'electronHostShell'],
   ['shortcut', 'electronHostShortcut'],
-  ['storage', 'electronHostStorageGroup'],
-  ['system', 'electronHostSystem'],
-  ['text', 'electronHostText'],
+  ['socket', 'electronHostSocketGroup'],
+  ['softKeyboard', 'electronHostSoftKeyboardGroup'],
+  ['statusBar', 'electronHostStatusBarGroup'],
+  ['surface', 'electronHostSurfaceGroup'],
+  ['textSegment', 'electronHostTextSegmentGroup'],
+  ['textShaper', 'electronHostTextShaperGroup'],
   ['tray', 'electronHostTray'],
-  ['ui', 'electronHostUi'],
   ['updater', 'electronHostUpdater'],
+  ['video', 'electronHostVideoGroup'],
+  ['wgpu', 'electronHostWgpuGroup'],
   ['window', 'electronHostWindow'],
 ] as const;
 
@@ -127,6 +146,22 @@ const LEAVES = [
   'electronHostTrayTitle',
   'electronHostTrayTooltip',
   'electronHostUpdaterCommand',
+  'electronHostWindowAppearance',
+  'electronHostWindowAttach',
+  'electronHostWindowAttention',
+  'electronHostWindowContentProtection',
+  'electronHostWindowFocus',
+  'electronHostWindowFullscreen',
+  'electronHostWindowGeometry',
+  'electronHostWindowHierarchy',
+  'electronHostWindowLifecycle',
+  'electronHostWindowProgress',
+  'electronHostWindowShadow',
+  'electronHostWindowShell',
+  'electronHostWindowSizeConstraints',
+  'electronHostWindowState',
+  'electronHostWindowVisibility',
+  'electronHostWindowZOrder',
 ] as const;
 
 const AUXILIARY_EXPORTS = [
@@ -223,7 +258,8 @@ describe('electronHost', () => {
     const host = electronHost(fakeElectron(), {
       platform: 'linux',
     });
-    expect(host.media).toEqual({});
+    expect(host.audio).toEqual({});
+    expect(host.video).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
     expect(host.dialog.fileOpen.open).toBeTypeOf('function');
@@ -240,11 +276,11 @@ describe('electronHost', () => {
     expect(host.updater.command.check).toBeTypeOf('function');
     expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.connectivity).toEqual({});
-    expect(host.storage.local.getItem('missing')).toEqual({
+    expect(host.preferences.local.getItem('missing')).toEqual({
       reason: 'ok',
       value: null,
     });
-    expect(host.window.open).toBeTypeOf('function');
+    expect(host.window.lifecycle.open).toBeTypeOf('function');
     expect(getAppName(host.app.name)).toBe('ElectronApp');
     expect(await readClipboardText(host.clipboard.text)).toBe('ELECTRON-TEXT');
   });

@@ -1,7 +1,7 @@
 import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { electronHostPlatform, electronHostSystem, populateElectronHostPlatform } from './electronPlatform';
+import { electronHostPlatform, electronHostPlatformGroup, populateElectronHostPlatform } from './electronPlatform';
 
 function fakeElectron(): ElectronApi {
   return {
@@ -31,11 +31,11 @@ describe('electronHostPlatform', () => {
   });
 });
 
-describe('electronHostSystem', () => {
-  it('constructs the Entity-backed platform slot', () => {
-    const system = electronHostSystem(fakeElectron());
-    expect(Object.keys(system)).toEqual(['platform']);
-    expect(EntityRuntimeKey in system.platform).toBe(true);
+describe('electronHostPlatformGroup', () => {
+  it('constructs the Entity-backed platform info slot', () => {
+    const platform = electronHostPlatformGroup(fakeElectron());
+    expect(Object.keys(platform)).toEqual(['info']);
+    expect(EntityRuntimeKey in platform.info).toBe(true);
   });
 });
 
