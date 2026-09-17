@@ -57,7 +57,9 @@ function fakeBackend(available: boolean = true): HostGeolocationCapability & { c
 function hostWith(backend: HostGeolocationCapability): {
   readonly system: { readonly geolocation: HostGeolocationCapability };
 } {
-  return { system: { geolocation: backend } } as { readonly system: { readonly geolocation: HostGeolocationCapability } };
+  return { system: { geolocation: backend } } as {
+    readonly system: { readonly geolocation: HostGeolocationCapability };
+  };
 }
 
 describe('clearGeolocationWatch', () => {

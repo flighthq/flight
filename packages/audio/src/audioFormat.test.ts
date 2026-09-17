@@ -9,7 +9,9 @@ import {
   inferAudioMimeType,
 } from './audioFormat';
 
-function hostWith(canPlay: (type: string) => boolean): { readonly media: { readonly audioCodec: HostAudioCapability } } {
+function hostWith(canPlay: (type: string) => boolean): {
+  readonly media: { readonly audioCodec: HostAudioCapability };
+} {
   return {
     media: {
       audioCodec: (() => {

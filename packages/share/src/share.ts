@@ -25,7 +25,10 @@ export function canShareContent(
   return hasShareContentFields(content) && hostShareContent.canShareContent(content);
 }
 
-export function canShareFiles(hostShareFiles: Readonly<HostShareFilesCapability>, files: readonly ShareFile[]): boolean {
+export function canShareFiles(
+  hostShareFiles: Readonly<HostShareFilesCapability>,
+  files: readonly ShareFile[],
+): boolean {
   const content = filesContent(files);
   return content !== null && hostShareFiles.canShareContent(content);
 }

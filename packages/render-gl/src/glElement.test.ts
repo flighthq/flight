@@ -7,7 +7,7 @@ import {
   setGlRenderSurfaceProvider,
 } from './glElement';
 
-function entityProvider(fields: Omit<GlRenderSurfaceProvider, keyof Entity>): GlRenderSurfaceProvider {
+function entityProvider(fields: Omit<GlRenderSurfaceCreator, keyof Entity>): GlRenderSurfaceCreator {
   return (() => {
     const out = allocateEntity<any>();
     Object.assign(out, fields);
@@ -28,7 +28,7 @@ describe('createGlCanvasElement', () => {
 
   it('throws an actionable Web-only setup error when the provider is absent', () => {
     expect(() => createGlCanvasElement(100, 200)).toThrowError(
-      /enableHostWebGlRenderSurface\(\).*inject a GlRenderSurfaceProvider/,
+      /enableHostWebGlRenderSurface\(\).*inject a GlRenderSurfaceCreator/,
     );
   });
 
@@ -174,4 +174,4 @@ function withThrowingDocument(run: () => void): void {
   }
 }
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, GlRenderSurfaceProvider } from '@flighthq/types/contract';
+import type { Entity, GlRenderSurfaceCreator } from '@flighthq/types/contract';

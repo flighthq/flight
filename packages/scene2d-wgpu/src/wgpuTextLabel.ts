@@ -10,7 +10,7 @@ import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@
 import type {
   Scene2DRenderer,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -188,7 +188,7 @@ export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {
 };
 
 function acquireWgpuTextLabelRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: WgpuTextLabelData,
 ): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;

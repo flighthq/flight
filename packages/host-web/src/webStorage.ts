@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostStorageChangeCapability,
+  HostPreferencesChangeCapability,
   HostPreferencesCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
@@ -9,7 +9,7 @@ import type {
   StorageSetItemFailureReason,
 } from '@flighthq/types/contract';
 
-type WebStorageBackend = HostPreferencesCapability & HostStorageChangeCapability;
+type WebStorageBackend = HostPreferencesCapability & HostPreferencesChangeCapability;
 
 export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBackend>): void {
   initializeWebStorageChangeProvider(out);
@@ -19,8 +19,8 @@ export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBa
 export const webHostStorage = createWebStorageProvider();
 export const webHostStorageChange = createWebStorageChangeProvider();
 
-function createWebStorageChangeProvider(): HostStorageChangeCapability {
-  const out = allocateEntity<HostStorageChangeCapability>();
+function createWebStorageChangeProvider(): HostPreferencesChangeCapability {
+  const out = allocateEntity<HostPreferencesChangeCapability>();
   initializeWebStorageChangeProvider(out);
   return finishEntity(out);
 }
@@ -31,7 +31,7 @@ function createWebStorageProvider(): HostPreferencesCapability {
   return finishEntity(out);
 }
 
-function initializeWebStorageChangeProvider(out: EntityConstruction<HostStorageChangeCapability>): void {
+function initializeWebStorageChangeProvider(out: EntityConstruction<HostPreferencesChangeCapability>): void {
   const releases = new Set<() => void>();
   let destroyed = false;
   out.destroy = () => {

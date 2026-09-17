@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostStoragePersistenceQueryCapability,
-  HostStoragePersistenceRequestCapability,
+  HostPreferencesPersistenceQueryCapability,
+  HostPreferencesPersistenceRequestCapability,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -45,8 +45,8 @@ describe('getStoragePersistence', () => {
     })();
     let reads = 0;
     const storage = { persistenceRequest: request } as {
-      persistenceQuery: HostStoragePersistenceQueryCapability;
-      persistenceRequest: HostStoragePersistenceRequestCapability;
+      persistenceQuery: HostPreferencesPersistenceQueryCapability;
+      persistenceRequest: HostPreferencesPersistenceRequestCapability;
     };
     Object.defineProperty(storage, 'persistenceQuery', {
       get() {
@@ -101,8 +101,8 @@ describe('requestStoragePersistence', () => {
     })();
     let reads = 0;
     const storage = { persistenceQuery: query } as {
-      persistenceQuery: HostStoragePersistenceQueryCapability;
-      persistenceRequest: HostStoragePersistenceRequestCapability;
+      persistenceQuery: HostPreferencesPersistenceQueryCapability;
+      persistenceRequest: HostPreferencesPersistenceRequestCapability;
     };
     Object.defineProperty(storage, 'persistenceRequest', {
       get() {
@@ -120,14 +120,14 @@ describe('requestStoragePersistence', () => {
   });
 });
 
-function queryHost(backend: HostStoragePersistenceQueryCapability): {
-  readonly storage: { readonly persistenceQuery: HostStoragePersistenceQueryCapability };
+function queryHost(backend: HostPreferencesPersistenceQueryCapability): {
+  readonly storage: { readonly persistenceQuery: HostPreferencesPersistenceQueryCapability };
 } {
   return { storage: { persistenceQuery: backend } };
 }
 
-function requestHost(backend: HostStoragePersistenceRequestCapability): {
-  readonly storage: { readonly persistenceRequest: HostStoragePersistenceRequestCapability };
+function requestHost(backend: HostPreferencesPersistenceRequestCapability): {
+  readonly storage: { readonly persistenceRequest: HostPreferencesPersistenceRequestCapability };
 } {
   return { storage: { persistenceRequest: backend } };
 }

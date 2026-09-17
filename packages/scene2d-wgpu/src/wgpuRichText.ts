@@ -18,7 +18,7 @@ import {
 import type {
   Scene2DRenderer,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -231,7 +231,7 @@ function layoutRichText(
 }
 
 function acquireWgpuRichTextRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: WgpuRichTextData,
 ): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;

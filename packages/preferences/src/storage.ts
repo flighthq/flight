@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostStorageChangeCapability,
+  HostPreferencesChangeCapability,
   HostPreferencesCapability,
   StorageBooleanOrResult,
   StorageBooleanResult,
@@ -35,7 +35,7 @@ import type {
 // the exact unsubscribe returned by the prior provider, so a different provider can never redirect teardown.
 // Returns false when the provider cannot establish a real subscription.
 export function attachStorage(
-  hostStorageChange: Readonly<HostStorageChangeCapability>,
+  hostStorageChange: Readonly<HostPreferencesChangeCapability>,
   signals: StorageSignals,
 ): boolean {
   detachStorage(signals);
@@ -83,7 +83,7 @@ export function createStorageSignals(): StorageSignals {
 
 // Terminal teardown of the supplied raw-change provider. Per-entity detach is separate because one
 // provider can fan out to more than one StorageSignals entity.
-export function destroyStorage(hostStorageChange: Readonly<HostStorageChangeCapability>): void {
+export function destroyStorage(hostStorageChange: Readonly<HostPreferencesChangeCapability>): void {
   hostStorageChange.destroy();
 }
 

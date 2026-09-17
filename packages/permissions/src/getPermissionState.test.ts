@@ -3,7 +3,7 @@ import type {
   HostMidiPermissionCapability,
   HostNotificationPermissionCapability,
   HostPermissionsCapability,
-  HostStoragePersistenceQueryCapability,
+  HostPreferencesPersistenceQueryCapability,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -163,15 +163,15 @@ function forbidNativeStorageOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostStoragePersistenceQueryCapability');
+          throw new Error('Permissions must delegate to HostPreferencesPersistenceQueryCapability');
         },
       },
     ),
   );
 }
 
-function persistenceProvider(provider: object): HostStoragePersistenceQueryCapability {
-  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceQueryCapability;
+function persistenceProvider(provider: object): HostPreferencesPersistenceQueryCapability {
+  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostPreferencesPersistenceQueryCapability;
 }
 
 function permissionsProvider(

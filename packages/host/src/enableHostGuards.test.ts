@@ -63,7 +63,7 @@ describe('enableHostGuards', () => {
     const data = video?.data as Readonly<Record<string, unknown>>;
 
     expect(data.group).toBe('video');
-    expect(data.provider).toBe('HostVideoCapability');
+    expect(data.capability).toBe('HostVideoCapability');
     expect(data.backends).toEqual(['webHost (@flighthq/host-web)']);
     expect(String(data.message)).toContain('getHostVideo');
   });

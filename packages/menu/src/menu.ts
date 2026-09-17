@@ -85,7 +85,9 @@ export function createMenuSelect(): MenuSelect {
 // Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
 // siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
 // failures; the ones that succeeded are forgotten and never destroyed twice.
-export function destroyMenuApplication(...hostMenuApplication: readonly Readonly<HostMenuApplicationCapability>[]): void {
+export function destroyMenuApplication(
+  ...hostMenuApplication: readonly Readonly<HostMenuApplicationCapability>[]
+): void {
   const pending = new Set<HostMenuApplicationCapability>();
   for (const provider of hostMenuApplication) {
     if (!_destroyedApplication.has(provider)) pending.add(provider);

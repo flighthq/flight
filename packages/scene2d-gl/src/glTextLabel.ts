@@ -12,7 +12,7 @@ import type {
   EntityConstruction,
   GlRenderState,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -188,7 +188,7 @@ export const defaultGlTextLabelRenderer: Scene2DRenderer = {
 };
 
 function acquireGlTextLabelRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: GlTextLabelData,
 ): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;

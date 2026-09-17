@@ -12,7 +12,7 @@ export interface Raster2DSurface extends Entity {
   readonly image: ImageResource;
 }
 
-export interface Raster2DSurfaceProvider extends Entity {
+export interface Raster2DSurfaceCreator extends Entity {
   createRaster2DSurface(width: number, height: number): Raster2DSurface | null;
   // Called by @flighthq/render's destroyRaster2DSurface routing, which preserves the creator identity
   // across process-global provider changes. Consumers destroy through that free function, not directly.

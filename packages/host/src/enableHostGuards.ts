@@ -1,5 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { Host, HostProviderExplanation } from '@flighthq/types/contract';
+import type { Host, HostCapabilityExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import {
@@ -31,7 +31,7 @@ export function enableHostGuards(host: Readonly<Host>): void {
         backends: explanation.backends.map((backend) => `${backend.entryPoint} (${backend.packageName})`),
         group: explanation.group,
         message: explanation.message,
-        provider: explanation.provider,
+        capability: explanation.capability,
         slot: explanation.slot,
       },
       'host',
@@ -41,7 +41,7 @@ export function enableHostGuards(host: Readonly<Host>): void {
 
 // The guarded set IS the set of per-capability explainers, called rather than re-derived, so a warning and
 // its explain* query cannot disagree about whether a slot is filled or about where to get it.
-const _GUARDED: readonly ((host: Readonly<Host>) => HostProviderExplanation)[] = [
+const _GUARDED: readonly ((host: Readonly<Host>) => HostCapabilityExplanation)[] = [
   explainHostAudioDevice,
   explainHostAudioMixer,
   explainHostImage,

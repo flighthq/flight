@@ -49,7 +49,10 @@ export function vibrateDevice(hostHaptics: Readonly<HostHapticsCapability>, dura
   return hostHaptics.vibrate(durationMs);
 }
 
-export function vibrateDevicePattern(hostHaptics: Readonly<HostHapticsCapability>, pattern: Readonly<number[]>): boolean {
+export function vibrateDevicePattern(
+  hostHaptics: Readonly<HostHapticsCapability>,
+  pattern: Readonly<number[]>,
+): boolean {
   if (pattern.length === 0) return false;
   return hostHaptics.vibratePattern(pattern);
 }

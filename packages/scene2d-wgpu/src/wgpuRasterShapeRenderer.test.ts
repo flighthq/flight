@@ -47,7 +47,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createTestRaster2DSurfaceProvider() {
+function createTestRaster2DSurfaceCreator() {
   return {
     [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width: number, height: number) {
@@ -145,7 +145,7 @@ describe('defaultWgpuRasterShapeRenderer', () => {
 describe('drawWgpuRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
@@ -162,7 +162,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('replays the whole command stream, not the subset a mesh path could not express', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -179,7 +179,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('reports a ShapeRasterizer miss when no rasterizer is registered', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     enableRenderRegistryGuards(state);
@@ -208,7 +208,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('does nothing without a render pass, for an empty command list, or with absent renderer data', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const rasterizer = vi.fn();

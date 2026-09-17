@@ -2,7 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostMidiPermissionCapability,
   HostPermissionsCapability,
-  HostStoragePersistenceQueryCapability,
+  HostPreferencesPersistenceQueryCapability,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -145,7 +145,7 @@ describe('getPermissionStates', () => {
       },
     };
     let active = first;
-    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostStoragePersistenceQueryCapability;
+    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostPreferencesPersistenceQueryCapability;
     vi.stubGlobal(
       'navigator',
       new Proxy(

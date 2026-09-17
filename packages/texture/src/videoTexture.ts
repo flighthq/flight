@@ -61,7 +61,10 @@ export function destroyVideoTexture(texture: Texture2D): void {
 }
 
 // Returns the decoded frame height, or -1 while the borrowed host element is absent/unready.
-export function getVideoTextureHeight(hostVideo: Readonly<HostVideoCapability>, texture: Readonly<TextureLike>): number {
+export function getVideoTextureHeight(
+  hostVideo: Readonly<HostVideoCapability>,
+  texture: Readonly<TextureLike>,
+): number {
   const source = getVideoSource(texture);
   const height = source !== null ? (hostVideo.getHeight?.(source) ?? 0) : 0;
   return height > 0 ? height : -1;

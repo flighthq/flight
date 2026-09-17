@@ -5,7 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlShapeRendererData, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { GlShapeRendererData, Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -70,7 +70,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-function createTestProvider(): Raster2DSurfaceProvider {
+function createTestProvider(): Raster2DSurfaceCreator {
   const out = allocateEntity<any>();
   out.createRaster2DSurface = createTestRaster2DSurface;
   out.destroyRaster2DSurface = destroySurface;
@@ -97,7 +97,7 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider = allocateEntity<Raster2DSurfaceProvider>();
+    const provider = allocateEntity<Raster2DSurfaceCreator>();
     provider.createRaster2DSurface = () => null;
     provider.destroyRaster2DSurface = destroySurface;
     const data = emptyData();

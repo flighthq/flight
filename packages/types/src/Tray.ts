@@ -55,7 +55,7 @@ export type TrayDropEvent =
   | { readonly files: readonly string[]; readonly type: 'files' }
   | { readonly text: string; readonly type: 'text' };
 
-export type TrayCreateProviderResult =
+export type TrayCreateCapabilityResult =
   | { readonly outcome: 'created' }
   | { readonly outcome: 'cancelled' }
   | { readonly error?: unknown; readonly outcome: 'runtime-api-unavailable' }
@@ -64,18 +64,18 @@ export type TrayCreateProviderResult =
 
 export type TrayCreateResult<Tray extends TrayIcon = TrayIcon> =
   | (Entity & { readonly outcome: 'created'; readonly tray: Tray })
-  | (Entity & Exclude<TrayCreateProviderResult, { readonly outcome: 'created' }>);
+  | (Entity & Exclude<TrayCreateCapabilityResult, { readonly outcome: 'created' }>);
 
 export interface TrayDestroyFailure {
   readonly error?: unknown;
   readonly step: 'native-resource';
 }
 
-export type TrayDestroyProviderResult =
+export type TrayDestroyCapabilityResult =
   | { readonly outcome: 'destroyed' }
   | { readonly failures: readonly TrayDestroyFailure[]; readonly outcome: 'tray-destroy-failed' };
 
-export type TrayDestroyResult = TrayDestroyProviderResult | { readonly outcome: 'already-destroyed' };
+export type TrayDestroyResult = TrayDestroyCapabilityResult | { readonly outcome: 'already-destroyed' };
 
 export type TrayImageUpdateResult =
   | { readonly outcome: 'updated' }
@@ -171,8 +171,8 @@ export type TrayAnimationStopResult = { readonly outcome: 'stopped' } | { readon
 // Provider contracts. Each shape is independently claimable by Host construction; an unsupported
 // operation has no slot and therefore no callable method or runtime `unsupported` outcome.
 export interface HostTrayLifecycleCapability extends Entity {
-  create(tray: TrayIcon, options: Readonly<TrayIconOptions>): Promise<TrayCreateProviderResult>;
-  destroy(tray: TrayIcon): Promise<TrayDestroyProviderResult>;
+  create(tray: TrayIcon, options: Readonly<TrayIconOptions>): Promise<TrayCreateCapabilityResult>;
+  destroy(tray: TrayIcon): Promise<TrayDestroyCapabilityResult>;
   isDestroyed(tray: TrayIcon): boolean;
   list(): readonly TrayIcon[];
 }

@@ -92,7 +92,9 @@ describe('createImageResourceFromBitmap', () => {
       createImageFromBitmap,
       loadImageFromUrl: vi.fn(),
     };
-    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
+    const customHost = { graphics: { image: backend } } as {
+      readonly graphics: { readonly image: HostImageCapability };
+    };
     vi.stubGlobal('document', undefined);
 
     expect(createImageResourceFromBitmap(customHost.graphics.image, bitmap)).toBe(expected);
@@ -102,7 +104,9 @@ describe('createImageResourceFromBitmap', () => {
   it('returns null for backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
     const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
-    const customHost = { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
+    const customHost = { graphics: { image: backend } } as {
+      readonly graphics: { readonly image: HostImageCapability };
+    };
 
     expect(() => createImageResourceFromBitmap(customHost.graphics.image, createTestBitmap(1, 1))).not.toThrow();
     expect(createImageResourceFromBitmap(customHost.graphics.image, createTestBitmap(1, 1))).toBeNull();

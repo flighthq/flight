@@ -1,4 +1,8 @@
-import type { BitmapReadbackExplanation, HostBitmapReadbackCapability, HostImageSource } from '@flighthq/types/contract';
+import type {
+  BitmapReadbackExplanation,
+  HostBitmapReadbackCapability,
+  HostImageSource,
+} from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
 
