@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   EntityRuntimeKey,
-  HostStorageChangeCapability,
+  HostPreferencesChangeCapability,
   HostPreferencesCapability,
   StorageChange,
   StorageClearFailureReason,
@@ -112,8 +112,8 @@ function localHost(backend: HostPreferencesCapability): {
   return { storage: { local: backend } };
 }
 
-function changeHost(backend: HostStorageChangeCapability): {
-  readonly storage: { readonly change: HostStorageChangeCapability };
+function changeHost(backend: HostPreferencesChangeCapability): {
+  readonly storage: { readonly change: HostPreferencesChangeCapability };
 } {
   return { storage: { change: backend } };
 }
@@ -123,7 +123,7 @@ describe('attachStorage', () => {
     const released: string[] = [];
     const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
     const a = (() => {
-      const out = allocateEntity<HostStorageChangeCapability>();
+      const out = allocateEntity<HostPreferencesChangeCapability>();
       out.destroy = () => {};
       out.subscribe = (listener: (change: Readonly<StorageChange>) => void) => {
         captured.listener = listener;
@@ -132,7 +132,7 @@ describe('attachStorage', () => {
       return finishEntity(out);
     })();
     const b = (() => {
-      const out = allocateEntity<HostStorageChangeCapability>();
+      const out = allocateEntity<HostPreferencesChangeCapability>();
       out.destroy = () => {};
       out.subscribe = () => {
         return () => released.push('b');
@@ -153,7 +153,7 @@ describe('attachStorage', () => {
   });
 
   it('returns false and retains no cleanup when acquisition fails', () => {
-    const provider = allocateEntity<HostStorageChangeCapability>();
+    const provider = allocateEntity<HostPreferencesChangeCapability>();
     provider.destroy = () => {};
     provider.subscribe = () => null;
     const signals = createStorageSignals();
@@ -212,7 +212,7 @@ describe('createStorageSignals', () => {
 describe('destroyStorage', () => {
   it('runs the explicit change-provider teardown', () => {
     let destroyed = 0;
-    const provider = allocateEntity<HostStorageChangeCapability>();
+    const provider = allocateEntity<HostPreferencesChangeCapability>();
     provider.destroy = () => destroyed++;
     provider.subscribe = () => null;
     destroyStorage(changeHost(finishEntity(provider)).storage.change);
@@ -223,7 +223,7 @@ describe('destroyStorage', () => {
 describe('detachStorage', () => {
   it('is idempotent', () => {
     let released = 0;
-    const provider = allocateEntity<HostStorageChangeCapability>();
+    const provider = allocateEntity<HostPreferencesChangeCapability>();
     provider.destroy = () => {};
     provider.subscribe = () => () => released++;
     const signals = createStorageSignals();

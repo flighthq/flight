@@ -66,7 +66,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-function installTestRaster2DSurfaceProvider(
+function installTestRaster2DSurfaceCreator(
   state: { raster2DSurfaceProvider: unknown },
   destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
 ): void {
@@ -105,7 +105,7 @@ describe('destroyGlRichTextData', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestRaster2DSurfaceProvider(state, (surface) => {
+    installTestRaster2DSurfaceCreator(state, (surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
     });
@@ -136,7 +136,7 @@ describe('destroyGlRichTextData', () => {
 describe('drawGlRichText', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
     const { state } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const firstData = createGlRichTextData(state, createRichText());
     const secondData = createGlRichTextData(state, createRichText());
     const first = makeRichTextNode(firstData);
@@ -163,7 +163,7 @@ describe('drawGlRichText', () => {
 
   it('binds the active bitmap shader when drawing rich text', () => {
     const { state } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
@@ -189,7 +189,7 @@ describe('drawGlRichText', () => {
 
   it('draws when text is non-empty', () => {
     const { state, gl } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     drawGlRichText(state, renderProxy);
@@ -198,7 +198,7 @@ describe('drawGlRichText', () => {
 
   it('draws resolved multi-format spans', () => {
     const { state, gl } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const renderProxy = makeRichTextNode();
     const node = renderProxy.source as RichText;
     node.data.text = 'BoldGreen';
@@ -212,7 +212,7 @@ describe('drawGlRichText', () => {
 
   it('draws field chrome even when text is empty', () => {
     const { state, gl } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.background = true;
     drawGlRichText(state, renderProxy);
@@ -223,7 +223,7 @@ describe('drawGlRichText', () => {
 describe('drawGlRichTextWithOverlay', () => {
   it('runs an optional canvas overlay after layout', () => {
     const { state } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     const overlay = vi.fn();
@@ -244,7 +244,7 @@ describe('registerGlTextInputOverlay', () => {
     const overlay = vi.fn();
     registerGlTextInputOverlay(overlay);
     const { state } = createGlState();
-    installTestRaster2DSurfaceProvider(state);
+    installTestRaster2DSurfaceCreator(state);
 
     const plain = makeRichTextNode();
     (plain.source as RichText).data.text = 'x';

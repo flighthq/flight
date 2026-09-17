@@ -6,7 +6,10 @@ import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 import { getDomRenderStateRuntime } from './domRenderState';
 import { registerDomTextureResolver } from './domTextureResolver';
 
-export function registerDomBitmapTextureResolver(hostImage: Readonly<HostImageCapability>, state: DomRenderState): void {
+export function registerDomBitmapTextureResolver(
+  hostImage: Readonly<HostImageCapability>,
+  state: DomRenderState,
+): void {
   registerDomTextureResolver(state, BitmapTextureSourceKind, (s, texture) =>
     resolveDomBitmapTexture(hostImage, s, texture),
   );

@@ -207,7 +207,10 @@ export function electronHostTrayInteractionEvents(
   return electronHostTray(electron, profile).interactionEvents;
 }
 
-export function electronHostTrayLifecycle(electron: ElectronApi, profile: DesktopOsProfile): HostTrayLifecycleCapability {
+export function electronHostTrayLifecycle(
+  electron: ElectronApi,
+  profile: DesktopOsProfile,
+): HostTrayLifecycleCapability {
   return electronHostTray(electron, profile).lifecycle;
 }
 
@@ -222,7 +225,10 @@ export function electronHostTrayMenuSelectionEvents(
   return electronHostTray(electron, profile).menuSelectionEvents;
 }
 
-export function electronHostTrayPopupMenu(electron: ElectronApi, profile: DesktopOsProfile): HostTrayPopupMenuCapability {
+export function electronHostTrayPopupMenu(
+  electron: ElectronApi,
+  profile: DesktopOsProfile,
+): HostTrayPopupMenuCapability {
   return electronHostTray(electron, profile).popupMenu;
 }
 

@@ -65,11 +65,11 @@ export interface StoragePersistenceResult {
   readonly permissionState: PermissionState | null;
 }
 
-export interface HostStoragePersistenceQueryCapability extends Entity {
+export interface HostPreferencesPersistenceQueryCapability extends Entity {
   getPersistence(): Promise<StoragePersistenceResult>;
 }
 
-export interface HostStoragePersistenceRequestCapability extends Entity {
+export interface HostPreferencesPersistenceRequestCapability extends Entity {
   requestPersistence(): Promise<StoragePersistenceResult>;
 }
 
@@ -85,12 +85,12 @@ export interface WebWindowStoragePersistenceApi extends WebWorkerStoragePersiste
 }
 
 export interface WebWorkerStoragePersistenceCapabilities extends Entity {
-  readonly persistenceQuery: HostStoragePersistenceQueryCapability;
+  readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
 }
 
 export interface WebWindowStoragePersistenceCapabilities extends Entity {
-  readonly persistenceQuery: HostStoragePersistenceQueryCapability;
-  readonly persistenceRequest: HostStoragePersistenceRequestCapability;
+  readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
+  readonly persistenceRequest: HostPreferencesPersistenceRequestCapability;
 }
 
 // Multi-key queries return no partial payload: the first failed provider read identifies its key, while
@@ -132,7 +132,7 @@ export interface HostPreferencesCapability extends Entity {
 
 // Raw provider change delivery is separate from local commands because only Web supplies it. Provider
 // destroy is terminal; the unsubscribe returned by subscribe releases one caller-owned subscription.
-export interface HostStorageChangeCapability extends Entity {
+export interface HostPreferencesChangeCapability extends Entity {
   destroy(): void;
   subscribe(listener: (change: Readonly<StorageChange>) => void): (() => void) | null;
 }

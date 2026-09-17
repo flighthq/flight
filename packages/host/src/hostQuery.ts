@@ -23,7 +23,7 @@ import type {
   HostSensorsCapability,
   HostSocketCapability,
   HostSoftKeyboardInfoCapability,
-  HostStoragePersistenceQueryCapability,
+  HostPreferencesPersistenceQueryCapability,
   HostTextSegmenterCapability,
   HostTextShaperCapability,
   HostVideoCapability,
@@ -119,6 +119,12 @@ export function getHostPreferences(host: Readonly<Host>): HostPreferencesCapabil
   return host.preferences?.local ?? null;
 }
 
+export function getHostPreferencesPersistenceQuery(
+  host: Readonly<Host>,
+): HostPreferencesPersistenceQueryCapability | null {
+  return host.preferences?.persistenceQuery ?? null;
+}
+
 export function getHostScreenQuery(host: Readonly<Host>): HostScreenQueryCapability | null {
   return host.screen?.query ?? null;
 }
@@ -133,10 +139,6 @@ export function getHostSocket(host: Readonly<Host>): HostSocketCapability | null
 
 export function getHostSoftKeyboardInfo(host: Readonly<Host>): HostSoftKeyboardInfoCapability | null {
   return host.softKeyboard?.info ?? null;
-}
-
-export function getHostStoragePersistenceQuery(host: Readonly<Host>): HostStoragePersistenceQueryCapability | null {
-  return host.preferences?.persistenceQuery ?? null;
 }
 
 export function getHostTextSegmenter(host: Readonly<Host>): HostTextSegmenterCapability | null {
@@ -231,6 +233,10 @@ export function hasHostPreferences(host: Readonly<Host>): boolean {
   return getHostPreferences(host) !== null;
 }
 
+export function hasHostPreferencesPersistenceQuery(host: Readonly<Host>): boolean {
+  return getHostPreferencesPersistenceQuery(host) !== null;
+}
+
 export function hasHostScreenQuery(host: Readonly<Host>): boolean {
   return getHostScreenQuery(host) !== null;
 }
@@ -245,10 +251,6 @@ export function hasHostSocket(host: Readonly<Host>): boolean {
 
 export function hasHostSoftKeyboardInfo(host: Readonly<Host>): boolean {
   return getHostSoftKeyboardInfo(host) !== null;
-}
-
-export function hasHostStoragePersistenceQuery(host: Readonly<Host>): boolean {
-  return getHostStoragePersistenceQuery(host) !== null;
 }
 
 export function hasHostTextSegmenter(host: Readonly<Host>): boolean {

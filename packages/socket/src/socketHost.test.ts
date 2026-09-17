@@ -17,7 +17,9 @@ function recordingBackend(label: string, opened: string[]): HostSocketCapability
   };
 }
 
-function hostWith(backend: HostSocketCapability | undefined): { readonly net: { readonly socket: HostSocketCapability } } {
+function hostWith(backend: HostSocketCapability | undefined): {
+  readonly net: { readonly socket: HostSocketCapability };
+} {
   return { net: backend === undefined ? {} : { socket: backend } } as {
     readonly net: { readonly socket: HostSocketCapability };
   };

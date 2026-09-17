@@ -36,7 +36,7 @@ beforeEach(() => {
   destroySurface.mockReset();
 });
 
-function createTestRaster2DSurfaceProvider() {
+function createTestRaster2DSurfaceCreator() {
   return {
     [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width: number, height: number) {
@@ -90,7 +90,7 @@ function emptyData(): WgpuShapeRendererData {
 
 describe('acquireWgpuShapeRasterSurface', () => {
   it('allocates once and returns the same surface thereafter', () => {
-    const provider = createTestRaster2DSurfaceProvider();
+    const provider = createTestRaster2DSurfaceCreator();
     const data = emptyData();
     const first = acquireWgpuShapeRasterSurface(provider, data);
     expect(data.surface).toBe(first);
@@ -98,7 +98,7 @@ describe('acquireWgpuShapeRasterSurface', () => {
   });
 
   it('wraps the canvas as an Image so the quad batch treats it like any other texture source', () => {
-    const surface = acquireWgpuShapeRasterSurface(createTestRaster2DSurfaceProvider(), emptyData())!;
+    const surface = acquireWgpuShapeRasterSurface(createTestRaster2DSurfaceCreator(), emptyData())!;
     expect(surface.image.source).toBe(surface.context.canvas);
     expect('canvas' in surface).toBe(false);
   });
@@ -118,7 +118,7 @@ describe('acquireWgpuShapeRasterSurface', () => {
 describe('createWgpuShapeData', () => {
   it('allocates no canvas up front, so a mesh-only scene carries none', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     const data = getWgpuShapeData(createWgpuShapeData(state, {} as never))!;
     expect(data.surface).toBeNull();
     expect(data.meshes).toBeNull();
@@ -129,7 +129,7 @@ describe('createWgpuShapeData', () => {
 describe('destroyWgpuShapeData', () => {
   it('does nothing when the shape only ever tessellated, since there is no surface to free', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     const data = createWgpuShapeData(state, {} as never);
     expect(() => destroyWgpuShapeData(state, data)).not.toThrow();
     expect(destroySurface).not.toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe('destroyWgpuShapeData', () => {
 
   it('destroys the cached GPU texture before the raster surface, then frees the mesh buffers', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     const data = createWgpuShapeData(state, {} as never);
     const shapeData = getWgpuShapeData(data)!;
     const surface = acquireWgpuShapeRasterSurface(state.raster2DSurfaceProvider!, shapeData)!;
@@ -168,7 +168,7 @@ describe('destroyWgpuShapeData', () => {
 
   it('destroys a raster surface even when it never acquired a GPU cache entry', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     const data = createWgpuShapeData(state, {} as never);
     const shapeData = getWgpuShapeData(data)!;
     const surface = acquireWgpuShapeRasterSurface(state.raster2DSurfaceProvider!, shapeData)!;
@@ -182,7 +182,7 @@ describe('destroyWgpuShapeData', () => {
 describe('getWgpuShapeData', () => {
   it('reads the shape data back out of the opaque RendererData slot', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     const data = createWgpuShapeData(state, {} as never);
     expect(getWgpuShapeData(data)?.meshVersion).toBe(-1);
   });

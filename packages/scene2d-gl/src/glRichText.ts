@@ -22,7 +22,7 @@ import type {
   GlRenderState,
   GlRichTextOverlay,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -233,7 +233,7 @@ function layoutRichText(
 }
 
 function acquireGlRichTextRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: GlRichTextData,
 ): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;

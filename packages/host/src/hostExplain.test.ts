@@ -35,24 +35,24 @@ describe('explainHost', () => {
   });
 
   it('reports every covered capability as absent on an empty host', () => {
-    const providers = explainHost(createHost()).providers;
+    const capabilities = explainHost(createHost()).capabilities;
 
-    expect(providers.length).toBeGreaterThan(0);
-    expect(providers.every((provider) => !provider.isPresent)).toBe(true);
-    expect(providers.map((provider) => `${provider.group}.${provider.slot}`)).toContain('video.playback');
+    expect(capabilities.length).toBeGreaterThan(0);
+    expect(capabilities.every((entry) => !entry.isPresent)).toBe(true);
+    expect(capabilities.map((entry) => `${entry.group}.${entry.slot}`)).toContain('video.playback');
   });
 
   it('flips a covered capability to present when its slot is filled', () => {
     const host = hostWith({ video: { playback: CAPABILITY } });
-    const video = explainHost(host).providers.find((provider) => provider.slot === 'playback');
+    const video = explainHost(host).capabilities.find((entry) => entry.slot === 'playback');
 
     expect(video?.isPresent).toBe(true);
-    expect(video?.provider).toBe('HostVideoCapability');
+    expect(video?.capability).toBe('HostVideoCapability');
   });
 
   it('covers exactly the slots hostQuery exposes accessors for, in both directions', () => {
     const censused = explainHost(createHost())
-      .providers.map((provider) => `get${provider.provider.slice(0, -'Capability'.length)}`)
+      .capabilities.map((entry) => `get${entry.capability.slice(0, -'Capability'.length)}`)
       .sort();
     const exported = Object.keys(hostQuery)
       .filter((name) => name.startsWith('getHost'))
@@ -65,8 +65,8 @@ describe('explainHost', () => {
     // The census supplies the (group, slot) pair; the accessor is the independent reading of it. A row
     // that named the wrong group — `platform.info` where `device.info` was meant, which the flat
     // structure makes a live mistake — leaves its accessor returning null here.
-    for (const coverage of explainHost(createHost()).providers) {
-      const name = `get${coverage.provider.slice(0, -'Capability'.length)}`;
+    for (const coverage of explainHost(createHost()).capabilities) {
+      const name = `get${coverage.capability.slice(0, -'Capability'.length)}`;
       const accessor = Reflect.get(hostQuery, name) as (host: Readonly<Host>) => unknown;
       const host = hostWith({ [coverage.group]: { [coverage.slot]: CAPABILITY } });
 
@@ -78,10 +78,10 @@ describe('explainHost', () => {
   it('keeps every per-capability explainer naming the backends it returns as data', () => {
     for (const explain of EXPLAINERS) {
       const explanation = explain(createHost());
-      expect(explanation.backends.length, explanation.provider).toBeGreaterThan(0);
+      expect(explanation.backends.length, explanation.capability).toBeGreaterThan(0);
       for (const backend of explanation.backends) {
-        expect(explanation.message, explanation.provider).toContain(backend.entryPoint);
-        expect(explanation.message, explanation.provider).toContain(backend.packageName);
+        expect(explanation.message, explanation.capability).toContain(backend.entryPoint);
+        expect(explanation.message, explanation.capability).toContain(backend.packageName);
       }
     }
   });
@@ -105,7 +105,7 @@ describe('explainHostAudioDevice', () => {
     expect(explanation.isPresent).toBe(false);
     expect(explanation.group).toBe('audio');
     expect(explanation.slot).toBe('device');
-    expect(explanation.provider).toBe('HostAudioDeviceCapability');
+    expect(explanation.capability).toBe('HostAudioDeviceCapability');
     expect(explanation.message).toContain('getHostAudioDevice');
     expect(explanation.backends.map((backend) => backend.packageName)).toEqual(['@flighthq/host-web']);
   });
@@ -135,7 +135,7 @@ describe('explainHostImage', () => {
 
     expect(explanation.group).toBe('image');
     expect(explanation.slot).toBe('loader');
-    expect(explanation.provider).toBe('HostImageCapability');
+    expect(explanation.capability).toBe('HostImageCapability');
     expect(explanation.isPresent).toBe(false);
   });
 });
@@ -180,7 +180,7 @@ describe('explainHostVideo', () => {
 
     expect(explanation.group).toBe('video');
     expect(explanation.slot).toBe('playback');
-    expect(explanation.provider).toBe('HostVideoCapability');
+    expect(explanation.capability).toBe('HostVideoCapability');
     expect(explanation.isPresent).toBe(false);
   });
 });

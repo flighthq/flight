@@ -110,7 +110,11 @@ export function resumeVideoChannel(provider: HostVideoCapability, channel: Video
   emitVideoChannelSignal(channel, 'onPlay');
 }
 
-export function setVideoChannelCurrentTime(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
+export function setVideoChannelCurrentTime(
+  provider: HostVideoCapability,
+  channel: VideoChannel,
+  value: number,
+): number {
   channel.currentTime = clamp(value, 0, channel.length);
   const element = getElement(channel.source);
   if (element !== null) provider.setCurrentTime!(element, channel.currentTime / 1000);
@@ -131,7 +135,11 @@ export function setVideoChannelMuted(provider: HostVideoCapability, channel: Vid
   return channel.muted;
 }
 
-export function setVideoChannelPlaybackRate(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
+export function setVideoChannelPlaybackRate(
+  provider: HostVideoCapability,
+  channel: VideoChannel,
+  value: number,
+): number {
   channel.playbackRate = value;
   const element = getElement(channel.source);
   if (element !== null) provider.setPlaybackRate!(element, value);

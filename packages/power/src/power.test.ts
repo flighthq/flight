@@ -83,7 +83,9 @@ function statusHost(status: Partial<PowerStatus>): TestPowerHost & { emitChange(
 }
 
 function keepAwakeHost(
-  overrides: Partial<{ readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } }['power']['keepAwake']> = {},
+  overrides: Partial<
+    { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } }['power']['keepAwake']
+  > = {},
 ): { readonly power: { readonly keepAwake: HostPowerKeepAwakeCapability } } {
   return {
     power: {

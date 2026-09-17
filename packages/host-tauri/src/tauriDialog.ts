@@ -53,7 +53,10 @@ export function tauriHostMessageDialog(tauri: TauriApi): HostMessageDialogCapabi
   return finishEntity(out);
 }
 
-function configureDirectoryOpenDialog(out: EntityConstruction<HostDirectoryOpenDialogCapability>, tauri: TauriApi): void {
+function configureDirectoryOpenDialog(
+  out: EntityConstruction<HostDirectoryOpenDialogCapability>,
+  tauri: TauriApi,
+): void {
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
     if (options?.signal?.aborted) return { outcome: 'cancelled' };
     const open = tauri.dialog?.open;

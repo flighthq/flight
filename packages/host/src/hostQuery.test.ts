@@ -25,7 +25,7 @@ import {
   getHostSensors,
   getHostSocket,
   getHostSoftKeyboardInfo,
-  getHostStoragePersistenceQuery,
+  getHostPreferencesPersistenceQuery,
   getHostTextSegmenter,
   getHostTextShaper,
   getHostVideo,
@@ -53,7 +53,7 @@ import {
   hasHostSensors,
   hasHostSocket,
   hasHostSoftKeyboardInfo,
-  hasHostStoragePersistenceQuery,
+  hasHostPreferencesPersistenceQuery,
   hasHostTextSegmenter,
   hasHostTextShaper,
   hasHostVideo,
@@ -336,6 +336,22 @@ describe('getHostPreferences', () => {
   });
 });
 
+describe('getHostPreferencesPersistenceQuery', () => {
+  it('returns the capability held in host.preferences.persistenceQuery', () => {
+    expect(getHostPreferencesPersistenceQuery(hostWithSlot('preferences', 'persistenceQuery'))).toBe(CAPABILITY);
+  });
+
+  it('returns null when the slot is empty', () => {
+    expect(getHostPreferencesPersistenceQuery(createHost())).toBeNull();
+  });
+
+  it('returns null when every other covered slot is filled and this one is not', () => {
+    expect(
+      getHostPreferencesPersistenceQuery(hostWithEveryCoveredSlotExcept('preferences', 'persistenceQuery')),
+    ).toBeNull();
+  });
+});
+
 describe('getHostScreenQuery', () => {
   it('returns the capability held in host.screen.query', () => {
     expect(getHostScreenQuery(hostWithSlot('screen', 'query'))).toBe(CAPABILITY);
@@ -389,22 +405,6 @@ describe('getHostSoftKeyboardInfo', () => {
 
   it('returns null when every other covered slot is filled and this one is not', () => {
     expect(getHostSoftKeyboardInfo(hostWithEveryCoveredSlotExcept('softKeyboard', 'info'))).toBeNull();
-  });
-});
-
-describe('getHostStoragePersistenceQuery', () => {
-  it('returns the capability held in host.preferences.persistenceQuery', () => {
-    expect(getHostStoragePersistenceQuery(hostWithSlot('preferences', 'persistenceQuery'))).toBe(CAPABILITY);
-  });
-
-  it('returns null when the slot is empty', () => {
-    expect(getHostStoragePersistenceQuery(createHost())).toBeNull();
-  });
-
-  it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(
-      getHostStoragePersistenceQuery(hostWithEveryCoveredSlotExcept('preferences', 'persistenceQuery')),
-    ).toBeNull();
   });
 });
 
@@ -616,6 +616,16 @@ describe('hasHostPreferences', () => {
   });
 });
 
+describe('hasHostPreferencesPersistenceQuery', () => {
+  it('is true only when host.preferences.persistenceQuery holds a capability', () => {
+    expect(hasHostPreferencesPersistenceQuery(hostWithSlot('preferences', 'persistenceQuery'))).toBe(true);
+    expect(hasHostPreferencesPersistenceQuery(hostWithEveryCoveredSlotExcept('preferences', 'persistenceQuery'))).toBe(
+      false,
+    );
+    expect(hasHostPreferencesPersistenceQuery(createHost())).toBe(false);
+  });
+});
+
 describe('hasHostScreenQuery', () => {
   it('is true only when host.screen.query holds a capability', () => {
     expect(hasHostScreenQuery(hostWithSlot('screen', 'query'))).toBe(true);
@@ -645,16 +655,6 @@ describe('hasHostSoftKeyboardInfo', () => {
     expect(hasHostSoftKeyboardInfo(hostWithSlot('softKeyboard', 'info'))).toBe(true);
     expect(hasHostSoftKeyboardInfo(hostWithEveryCoveredSlotExcept('softKeyboard', 'info'))).toBe(false);
     expect(hasHostSoftKeyboardInfo(createHost())).toBe(false);
-  });
-});
-
-describe('hasHostStoragePersistenceQuery', () => {
-  it('is true only when host.preferences.persistenceQuery holds a capability', () => {
-    expect(hasHostStoragePersistenceQuery(hostWithSlot('preferences', 'persistenceQuery'))).toBe(true);
-    expect(hasHostStoragePersistenceQuery(hostWithEveryCoveredSlotExcept('preferences', 'persistenceQuery'))).toBe(
-      false,
-    );
-    expect(hasHostStoragePersistenceQuery(createHost())).toBe(false);
   });
 });
 

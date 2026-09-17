@@ -31,7 +31,9 @@ type FakeBackend = HostLifecycleCapability & {
   fireMemory: (level: AppMemoryPressure) => void;
 };
 
-function hostOf(backend: HostLifecycleCapability): { readonly system: { readonly lifecycle: HostLifecycleCapability } } {
+function hostOf(backend: HostLifecycleCapability): {
+  readonly system: { readonly lifecycle: HostLifecycleCapability };
+} {
   return { system: { lifecycle: backend } } as { readonly system: { readonly lifecycle: HostLifecycleCapability } };
 }
 

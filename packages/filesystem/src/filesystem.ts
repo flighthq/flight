@@ -31,7 +31,11 @@ export function canAccessFile(
   return hostFileSystem.canAccessFile?.(path, mode) ?? Promise.resolve(false);
 }
 
-export function copyFile(hostFileSystem: Readonly<HostFileSystemCapability>, from: string, to: string): Promise<boolean> {
+export function copyFile(
+  hostFileSystem: Readonly<HostFileSystemCapability>,
+  from: string,
+  to: string,
+): Promise<boolean> {
   return hostFileSystem.copy?.(from, to) ?? Promise.resolve(false);
 }
 
@@ -92,7 +96,9 @@ export function getFileSystemPath(_kind: FileSystemPathKind): string {
   return '';
 }
 
-export function getFileSystemUsage(hostFileSystem: Readonly<HostFileSystemCapability>): Promise<FileSystemUsage | null> {
+export function getFileSystemUsage(
+  hostFileSystem: Readonly<HostFileSystemCapability>,
+): Promise<FileSystemUsage | null> {
   return hostFileSystem.getFileSystemUsage?.() ?? Promise.resolve(null);
 }
 

@@ -49,7 +49,10 @@ function hitTestSpriteAlpha(
   return getBitmapPixelChannel(bitmap, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
-function bitmapForImage(hostBitmapReadback: Readonly<HostBitmapReadbackCapability>, image: TextureSource): Bitmap | null {
+function bitmapForImage(
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
+  image: TextureSource,
+): Bitmap | null {
   if (image.kind === BitmapTextureSourceKind) return image as Bitmap;
   if (image.kind !== ImageTextureSourceKind) return null;
   const resource = image as ImageResource;

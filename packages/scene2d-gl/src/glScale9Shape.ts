@@ -12,7 +12,7 @@ import type {
   GlRenderState,
   MatrixLike,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -40,7 +40,7 @@ interface GlScale9ShapeData extends RendererData {
 const _remappedCommands: ShapeCommandToken[] = [];
 
 export function acquireGlScale9ShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: GlScale9ShapeData,
 ): Raster2DSurface | null {
   const existing = data.surface;

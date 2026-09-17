@@ -28,7 +28,7 @@ import type {
   TrayBalloonRemoveResult,
   TrayBoundsResult,
   TrayCreateResult,
-  TrayCreateProviderResult,
+  TrayCreateCapabilityResult,
   TrayDestroyResult,
   TrayDoubleClickPolicyUpdateResult,
   TrayDropEvent,
@@ -72,7 +72,7 @@ export async function createTrayIcon(
   options: Readonly<TrayIconOptions> = {},
 ): Promise<TrayCreateResult> {
   const tray = finishEntity(allocateEntity<TrayIcon>());
-  let result: TrayCreateProviderResult;
+  let result: TrayCreateCapabilityResult;
   try {
     result = await hostTrayLifecycle.create(tray, options);
   } catch (error) {
@@ -173,7 +173,7 @@ export function initializeTrayCreateFailedResult(
 export function initializeTrayCreateProviderFailureResult(
   out: EntityConstruction<Entity & { error?: unknown; outcome: string }>,
   error: unknown,
-  outcome: Exclude<TrayCreateProviderResult, { readonly outcome: 'created' }>['outcome'],
+  outcome: Exclude<TrayCreateCapabilityResult, { readonly outcome: 'created' }>['outcome'],
 ): void {
   out.error = error;
   out.outcome = outcome;

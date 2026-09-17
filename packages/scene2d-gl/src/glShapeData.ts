@@ -6,7 +6,7 @@ import type {
   GlRenderState,
   GlShapeRendererData,
   Raster2DSurface,
-  Raster2DSurfaceProvider,
+  Raster2DSurfaceCreator,
   Renderable,
   RendererData,
 } from '@flighthq/types/contract';
@@ -16,7 +16,7 @@ import type {
 // bumps the resource's version (invalidateImageResource), which the batch's version-aware cache uses
 // to re-upload.
 export function acquireGlShapeRasterSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   data: GlShapeRendererData,
 ): Raster2DSurface | null {
   const existing = data.surface;

@@ -3,8 +3,8 @@ import type {
   HostMidiPermissionCapability,
   HostNotificationPermissionCapability,
   HostPermissionsCapability,
-  HostStoragePersistenceQueryCapability,
-  HostStoragePersistenceRequestCapability,
+  HostPreferencesPersistenceQueryCapability,
+  HostPreferencesPersistenceRequestCapability,
   PermissionName,
   PermissionQueryOutcome,
   PermissionRequestOutcome,
@@ -17,7 +17,7 @@ import type {
 export function getPermissionState(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryCapability> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   name: PermissionName,
 ): Promise<PermissionQueryOutcome> {
   return queryPermissionState(
@@ -31,7 +31,7 @@ export function getPermissionState(
 export function getPermissionStates(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryCapability> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   names: readonly PermissionName[],
 ): Promise<PermissionQueryOutcome[]> {
   if (names.length === 0) return Promise.resolve([]);
@@ -49,7 +49,7 @@ export function getPermissionStates(
 // denial.
 export function requestPermission(
   hostPermissions: Readonly<HostPermissionsCapability>,
-  hostStoragePersistenceRequest: Readonly<HostStoragePersistenceRequestCapability> | undefined,
+  hostStoragePersistenceRequest: Readonly<HostPreferencesPersistenceRequestCapability> | undefined,
   hostGeolocation: Readonly<HostGeolocationCapability> | undefined,
   name: PermissionName,
 ): Promise<PermissionRequestOutcome> {
@@ -82,13 +82,13 @@ interface PermissionQueryOrigins {
   readonly midi: Readonly<HostMidiPermissionCapability> | null;
   readonly notification: Readonly<HostNotificationPermissionCapability> | null;
   readonly permissions: Readonly<HostPermissionsCapability> | null;
-  readonly persistence: Readonly<HostStoragePersistenceQueryCapability> | null;
+  readonly persistence: Readonly<HostPreferencesPersistenceQueryCapability> | null;
 }
 
 function capturePermissionQueryOrigins(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryCapability> | undefined,
+  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   names: readonly PermissionName[],
 ): PermissionQueryOrigins {
   const needsNotification = names.includes('notifications');
@@ -132,7 +132,7 @@ async function queryMidiPermission(
 }
 
 async function queryStoragePersistencePermission(
-  provider: Readonly<HostStoragePersistenceQueryCapability> | null,
+  provider: Readonly<HostPreferencesPersistenceQueryCapability> | null,
 ): Promise<PermissionQueryOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {
@@ -180,7 +180,7 @@ async function requestNotificationPermission(
 }
 
 async function requestStoragePersistencePermission(
-  provider: Readonly<HostStoragePersistenceRequestCapability> | null,
+  provider: Readonly<HostPreferencesPersistenceRequestCapability> | null,
 ): Promise<PermissionRequestOutcome> {
   if (provider === null) return { reason: 'unsupported' };
   try {

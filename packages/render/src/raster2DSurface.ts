@@ -1,7 +1,7 @@
-import type { Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
 
 export function createRaster2DSurface(
-  provider: Readonly<Raster2DSurfaceProvider>,
+  provider: Readonly<Raster2DSurfaceCreator>,
   width: number,
   height: number,
 ): Raster2DSurface | null {
@@ -20,4 +20,4 @@ export function destroyRaster2DSurface(surface: Raster2DSurface): void {
   provider.destroyRaster2DSurface(surface);
 }
 
-const _surfaceProviders = new WeakMap<Raster2DSurface, Readonly<Raster2DSurfaceProvider>>();
+const _surfaceProviders = new WeakMap<Raster2DSurface, Readonly<Raster2DSurfaceCreator>>();

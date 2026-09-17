@@ -65,7 +65,10 @@ export function createAudioMixer(
   return mixer;
 }
 
-export function destroyAudioMixer(hostAudioMixer: Readonly<HostAudioMixerCapability>, mixer: Readonly<AudioMixer>): void {
+export function destroyAudioMixer(
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
+  mixer: Readonly<AudioMixer>,
+): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
   // Stop every routed channel and reset its transport state.
@@ -198,7 +201,11 @@ export function setAudioBusMuted(
 }
 
 // Same unmixed-bus caveat as setAudioBusGain: panning a bus no mixer holds changes nothing audible.
-export function setAudioBusPan(hostAudioMixer: Readonly<HostAudioMixerCapability>, bus: AudioBus, value: number): number {
+export function setAudioBusPan(
+  hostAudioMixer: Readonly<HostAudioMixerCapability>,
+  bus: AudioBus,
+  value: number,
+): number {
   bus.pan = clamp(value, -1, 1);
   reportUnmixedBus(bus, 'pan');
   updateBusPannerNode(hostAudioMixer, bus);

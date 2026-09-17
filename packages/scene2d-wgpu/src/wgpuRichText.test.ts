@@ -63,7 +63,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-function createTestRaster2DSurfaceProvider(destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {}) {
+function createTestRaster2DSurfaceCreator(destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {}) {
   return {
     [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width: number, height: number) {
@@ -93,7 +93,7 @@ describe('destroyWgpuRichTextData', () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider((surface) => {
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
     });
@@ -123,7 +123,7 @@ describe('destroyWgpuRichTextData', () => {
 describe('drawWgpuRichText', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     const first = createRichText({ data: { height: 40, text: 'first', width: 100 } });
     const second = createRichText({ data: { height: 40, text: 'second', width: 100 } });
@@ -193,7 +193,7 @@ describe('registerWgpuTextInputOverlay', () => {
     const overlay = vi.fn();
     registerWgpuTextInputOverlay(overlay);
     const state = await createWgpuRenderStateForTest();
-    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
 
     const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });

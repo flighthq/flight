@@ -175,7 +175,10 @@ export function getScreenCursorPosition(
   return hostScreenQuery.getCursorPosition(out);
 }
 
-export function getScreenCursorScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): ScreenInfo {
+export function getScreenCursorScreen(
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
+  out: ScreenInfo,
+): ScreenInfo {
   getScreenCursorPosition(hostScreenQuery, _scratchPoint);
   return getScreenNearestPoint(hostScreenQuery, _scratchPoint, out);
 }

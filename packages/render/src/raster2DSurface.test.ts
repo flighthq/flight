@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { Entity, Raster2DSurface, Raster2DSurfaceCreator } from '@flighthq/types/contract';
 
 import { createRaster2DSurface, destroyRaster2DSurface } from './raster2DSurface';
 
-function entityProvider(fields: Omit<Raster2DSurfaceProvider, keyof Entity>): Raster2DSurfaceProvider {
+function entityProvider(fields: Omit<Raster2DSurfaceCreator, keyof Entity>): Raster2DSurfaceCreator {
   return (() => {
     const out = allocateEntity<any>();
     Object.assign(out, fields);

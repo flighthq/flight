@@ -290,7 +290,12 @@ interface FakeVideoHost {
 // A host that answers every video capability and records what it was asked to release. `order` is
 // shared with the URL spy in the ordering cases, so release-before-revoke is observable.
 function fakeVideoHost(state?: Readonly<{ duration?: number; height?: number; ready?: boolean; width?: number }>) {
-  const host: FakeVideoHost = { order: [], provider: null as unknown as HostVideoCapability, released: [], revoked: [] };
+  const host: FakeVideoHost = {
+    order: [],
+    provider: null as unknown as HostVideoCapability,
+    released: [],
+    revoked: [],
+  };
   host.provider = {
     canPlayType: () => true,
     getDuration: () => state?.duration ?? 0,

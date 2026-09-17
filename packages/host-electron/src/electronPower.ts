@@ -109,7 +109,9 @@ export function populateElectronHostPower(
   out.suspension = suspension;
 }
 
-export function populateElectronHostPowerBatteryHealth(out: EntityConstruction<HostPowerBatteryHealthCapability>): void {
+export function populateElectronHostPowerBatteryHealth(
+  out: EntityConstruction<HostPowerBatteryHealthCapability>,
+): void {
   out.getBatteryHealth = (out: PowerBatteryHealth): PowerBatteryHealth => {
     return out;
   };

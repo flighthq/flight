@@ -2,7 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationPermissionCapability,
   HostPermissionsCapability,
-  HostStoragePersistenceRequestCapability,
+  HostPreferencesPersistenceRequestCapability,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -189,15 +189,15 @@ function forbidNativeStorageOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostStoragePersistenceRequestCapability');
+          throw new Error('Permissions must delegate to HostPreferencesPersistenceRequestCapability');
         },
       },
     ),
   );
 }
 
-function persistenceProvider(provider: object): HostStoragePersistenceRequestCapability {
-  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceRequestCapability;
+function persistenceProvider(provider: object): HostPreferencesPersistenceRequestCapability {
+  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostPreferencesPersistenceRequestCapability;
 }
 
 interface PermissionsProviderOverrides {
