@@ -4,7 +4,7 @@ import { webHostWindowAppearance, webHostWindowGeometry, webHostWindowLifecycle 
 import { renderHostWebWindowCard } from './render.canvas';
 
 const applicationWindow = createApplicationWindow();
-const opened = openWindow(webHostWindowLifecycle, applicationWindow, {
+const opened = openWindow(webHostWindowLifecycle, webHostWindowGeometry, applicationWindow, {
   height: window.innerHeight,
   title: 'Direct Web Window',
   width: window.innerWidth,
