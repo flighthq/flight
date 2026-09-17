@@ -45,7 +45,7 @@ export async function installWebHostProbe(before: HostProbeBackendSnapshot): Pro
 }
 
 async function probeWebAccessibility(): Promise<HostProbeResult> {
-  const provider = webHost.accessibility.provider;
+  const provider = webHost.accessibility.tree;
   const id = 'flight-host-probe-accessibility';
   const outcome = provider.setNode({ id, label: 'Host probe', role: 'status' });
   const element = document.querySelector(`[data-flight-accessibility-id="${id}"]`);

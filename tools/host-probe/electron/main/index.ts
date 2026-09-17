@@ -81,7 +81,7 @@ function installElectronProbe(): HostProbeInstallResult {
   });
 
   const probeWindow = createApplicationWindow();
-  const opened = openWindow(host.window, probeWindow, {
+  const opened = openWindow(host.window.lifecycle, host.window.geometry, probeWindow, {
     height: 120,
     title: 'Flight Host Probe Child',
     visible: false,
@@ -97,7 +97,7 @@ function installElectronProbe(): HostProbeInstallResult {
     kind: 'runtime',
     status: opened && browserWindow !== null ? 'pass' : 'fail',
   });
-  closeWindow(host.window, probeWindow);
+  closeWindow(host.window.lifecycle, probeWindow);
 
   return { changedCapabilities, results };
 }
