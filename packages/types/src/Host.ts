@@ -24,7 +24,7 @@ import type {
   HostAppVersionCapability,
   HostAppShowCapability,
 } from './App';
-import type { HostApplicationExitCapability } from './ApplicationExitBackend';
+import type { HostAppExitCapability } from './ApplicationExitBackend';
 import type {
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
@@ -50,7 +50,7 @@ import type {
   HostInputPointerLockCapability,
   HostSurfaceCapability,
 } from './ApplicationWindowTargetBackend';
-import type { HostAudioCapability } from './AudioBackend';
+import type { HostAudioCodecCapability } from './AudioBackend';
 import type { HostAudioDeviceCapability } from './AudioDeviceBackend';
 import type { HostAudioMixerCapability } from './AudioMixerBackend';
 import type { HostBitmapEncodeCapability } from './BitmapEncodeBackend';
@@ -101,7 +101,7 @@ import type {
   HostSoftKeyboardVisibilityCapability,
 } from './Keyboard';
 import type { HostLifecycleCapability } from './Lifecycle';
-import type { HostLoopCapability } from './LoopBackend';
+import type { HostAppLoopCapability } from './LoopBackend';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession';
 import type {
   HostMenuApplicationCapability,
@@ -214,9 +214,11 @@ export interface Host extends Entity {
   readonly device: HostDeviceCapabilities;
   readonly dialog: HostDialogCapabilities;
   readonly fileSystem: HostFileSystemCapabilities;
+  readonly font: HostFontCapabilities;
   readonly fullscreen: HostFullscreenCapabilities;
   readonly geolocation: HostGeolocationCapabilities;
   readonly gl: HostGlCapabilities;
+  readonly glyph: HostGlyphCapabilities;
   readonly haptics: HostHapticsCapabilities;
   readonly image: HostImageCapabilities;
   readonly input: HostInputCapabilities;
@@ -241,8 +243,6 @@ export interface Host extends Entity {
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
   readonly surface: HostSurfaceCapabilities;
-  readonly font: HostFontCapabilities;
-  readonly glyph: HostGlyphCapabilities;
   readonly textSegment: HostTextSegmentCapabilities;
   readonly textShaper: HostTextShaperCapabilities;
   readonly tray: HostTrayCapabilities;
@@ -262,12 +262,12 @@ export interface HostAppCapabilities {
   readonly allWindowsClosed?: HostAppAllWindowsClosedCapability;
   readonly badge?: HostAppBadgeCapability;
   readonly dock?: HostAppDockCapability;
-  readonly exit?: HostApplicationExitCapability;
+  readonly exit?: HostAppExitCapability;
   readonly focus?: HostAppFocusCapability;
   readonly hide?: HostAppHideCapability;
   readonly locale?: HostAppLocaleCapability;
   readonly loginItem?: HostAppLoginItemCapability;
-  readonly loop?: HostLoopCapability;
+  readonly loop?: HostAppLoopCapability;
   readonly name?: HostAppNameCapability;
   readonly nameWrite?: HostAppNameWriteCapability;
   readonly openFile?: HostAppOpenFileCapability;
@@ -285,7 +285,7 @@ export interface HostAppCapabilities {
 }
 
 export interface HostAudioCapabilities {
-  readonly codec?: HostAudioCapability;
+  readonly codec?: HostAudioCodecCapability;
   readonly device?: HostAudioDeviceCapability;
   readonly mixer?: HostAudioMixerCapability;
 }
@@ -328,6 +328,10 @@ export interface HostFileSystemCapabilities {
   readonly access?: HostFileSystemCapability;
 }
 
+export interface HostFontCapabilities {
+  readonly loader?: HostFontLoadingCapability;
+}
+
 export interface HostFullscreenCapabilities {
   readonly element?: HostElementFullscreenCapability;
 }
@@ -338,6 +342,10 @@ export interface HostGeolocationCapabilities {
 
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
+}
+
+export interface HostGlyphCapabilities {
+  readonly rasterizer?: HostGlyphRasterizerCapability;
 }
 
 export interface HostHapticsCapabilities {
@@ -387,10 +395,6 @@ export interface HostMidiCapabilities {
 
 export interface HostNetCapabilities {
   readonly http?: HostNetCapability;
-}
-
-export interface HostSocketCapabilities {
-  readonly connection?: HostSocketCapability;
 }
 
 export interface HostNotificationCapabilities {
@@ -475,6 +479,10 @@ export interface HostShortcutCapabilities {
   readonly trigger?: HostShortcutTriggerCapability;
 }
 
+export interface HostSocketCapabilities {
+  readonly connection?: HostSocketCapability;
+}
+
 export interface HostSoftKeyboardCapabilities {
   readonly accessoryBar?: HostSoftKeyboardAccessoryBarCapability;
   readonly change?: HostSoftKeyboardChangeCapability;
@@ -496,14 +504,6 @@ export interface HostStatusBarCapabilities {
 
 export interface HostSurfaceCapabilities {
   readonly resize?: HostSurfaceCapability;
-}
-
-export interface HostFontCapabilities {
-  readonly loader?: HostFontLoadingCapability;
-}
-
-export interface HostGlyphCapabilities {
-  readonly rasterizer?: HostGlyphRasterizerCapability;
 }
 
 export interface HostTextSegmentCapabilities {

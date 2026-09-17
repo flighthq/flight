@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, HostAudioCapability, HostNetCapability } from '@flighthq/types/contract';
+import type { AudioDecoder, HostAudioCodecCapability, HostNetCapability } from '@flighthq/types/contract';
 
 import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
@@ -14,7 +14,7 @@ import {
 } from './audioResourceFrom';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
-  readonly media: { readonly audioCodec: HostAudioCapability };
+  readonly media: { readonly audioCodec: HostAudioCodecCapability };
 } {
   const out = allocateEntity<any>();
   out.canPlayType = canPlay;
@@ -22,7 +22,7 @@ function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
     media: {
       audioCodec: finishEntity(out),
     },
-  } as { readonly media: { readonly audioCodec: HostAudioCapability } };
+  } as { readonly media: { readonly audioCodec: HostAudioCodecCapability } };
 }
 
 function fakeNetHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
@@ -46,7 +46,7 @@ function fakeNetAudioHost(
   canPlay: (type: string) => boolean,
   backend?: Pick<HostNetCapability, 'sendNetRequest'>,
 ): { readonly net: { readonly http: HostNetCapability } } & {
-  readonly media: { readonly audioCodec: HostAudioCapability };
+  readonly media: { readonly audioCodec: HostAudioCodecCapability };
 } {
   return { ...fakeNetHost(backend), ...fakeAudioCodecHost(canPlay) };
 }
