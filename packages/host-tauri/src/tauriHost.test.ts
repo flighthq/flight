@@ -12,29 +12,48 @@ import * as publicApi from './index';
 const GROUPS = [
   ['accessibility', 'tauriHostAccessibility'],
   ['app', 'tauriHostApp'],
+  ['audio', 'tauriHostAudio'],
+  ['bitmap', 'tauriHostBitmap'],
   ['clipboard', 'tauriHostClipboard'],
   ['connectivity', 'tauriHostConnectivity'],
+  ['device', 'tauriHostDevice'],
   ['dialog', 'tauriHostDialog'],
-  ['graphics', 'tauriHostGraphics'],
+  ['fileSystem', 'tauriHostFileSystem'],
+  ['font', 'tauriHostFont'],
+  ['fullscreen', 'tauriHostFullscreen'],
+  ['geolocation', 'tauriHostGeolocation'],
+  ['gl', 'tauriHostGl'],
+  ['glyph', 'tauriHostGlyph'],
+  ['haptics', 'tauriHostHaptics'],
+  ['image', 'tauriHostImage'],
   ['input', 'tauriHostInput'],
   ['ipc', 'tauriHostIpc'],
-  ['media', 'tauriHostMedia'],
+  ['lifecycle', 'tauriHostLifecycle'],
+  ['mediaSession', 'tauriHostMediaSession'],
   ['menu', 'tauriHostMenu'],
   ['midi', 'tauriHostMidi'],
   ['net', 'tauriHostNet'],
   ['notification', 'tauriHostNotification'],
+  ['permissions', 'tauriHostPermissions'],
+  ['platform', 'tauriHostPlatformGroup'],
   ['power', 'tauriHostPower'],
+  ['preferences', 'tauriHostPreferences'],
   ['protocol', 'tauriHostProtocol'],
   ['screen', 'tauriHostScreen'],
+  ['sensors', 'tauriHostSensors'],
   ['share', 'tauriHostShare'],
   ['shell', 'tauriHostShell'],
   ['shortcut', 'tauriHostShortcut'],
-  ['storage', 'tauriHostStorage'],
-  ['system', 'tauriHostSystem'],
-  ['text', 'tauriHostText'],
+  ['socket', 'tauriHostSocket'],
+  ['softKeyboard', 'tauriHostSoftKeyboard'],
+  ['statusBar', 'tauriHostStatusBar'],
+  ['surface', 'tauriHostSurface'],
+  ['textSegment', 'tauriHostTextSegment'],
+  ['textShaper', 'tauriHostTextShaper'],
   ['tray', 'tauriHostTray'],
-  ['ui', 'tauriHostUi'],
   ['updater', 'tauriHostUpdater'],
+  ['video', 'tauriHostVideo'],
+  ['wgpu', 'tauriHostWgpu'],
   ['window', 'tauriHostWindow'],
 ] as const;
 
@@ -76,21 +95,40 @@ const LEAVES = [
 
 const UNSUPPORTED_GROUPS = [
   'accessibility',
+  'audio',
+  'bitmap',
   'connectivity',
-  'graphics',
+  'device',
+  'fileSystem',
+  'font',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'glyph',
+  'haptics',
+  'image',
   'input',
   'ipc',
-  'media',
+  'lifecycle',
+  'mediaSession',
   'midi',
   'net',
+  'permissions',
   'power',
+  'preferences',
   'protocol',
   'screen',
+  'sensors',
   'share',
-  'storage',
-  'text',
-  'ui',
+  'socket',
+  'softKeyboard',
+  'statusBar',
+  'surface',
+  'textSegment',
+  'textShaper',
   'updater',
+  'video',
+  'wgpu',
 ] as const;
 
 function fakeTauri(): TauriApi {
@@ -138,9 +176,9 @@ describe('tauriHost', () => {
     expect(Object.keys(host.notification).sort()).toEqual(['delivery', 'lifecycle', 'permission']);
     expect(Object.keys(host.shell).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
     expect(Object.keys(host.shortcut).sort()).toEqual(['query', 'trigger']);
-    expect(Object.keys(host.system)).toEqual(['platform']);
+    expect(Object.keys(host.platform)).toEqual(['info']);
     expect(Object.keys(host.tray).sort()).toEqual(['image', 'lifecycle', 'menu', 'menuSelectionEvents', 'title']);
-    expect(getPlatformName(host.system.platform)).toBe('linux');
+    expect(getPlatformName(host.platform.info)).toBe('linux');
     expect(await readClipboardText(host.clipboard.text)).toBe('TAURI-TEXT');
   });
 

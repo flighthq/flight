@@ -1,5 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostPlatformCapability, HostSystemCapabilities, PlatformName, TauriApi } from '@flighthq/types/contract';
+import type {
+  HostPlatformCapabilities,
+  HostPlatformCapability,
+  PlatformName,
+  TauriApi,
+} from '@flighthq/types/contract';
 
 export function tauriHostPlatform(tauri: TauriApi): HostPlatformCapability {
   const out = allocateEntity<HostPlatformCapability>();
@@ -25,10 +30,8 @@ export function tauriHostPlatform(tauri: TauriApi): HostPlatformCapability {
   return finishEntity(out);
 }
 
-export function tauriHostSystem(
-  tauri: TauriApi,
-): HostSystemCapabilities & Required<Pick<HostSystemCapabilities, 'platform'>> {
-  return { platform: tauriHostPlatform(tauri) };
+export function tauriHostPlatformGroup(tauri: TauriApi): Required<Pick<HostPlatformCapabilities, 'info'>> {
+  return { info: tauriHostPlatform(tauri) };
 }
 
 function toPlatformName(platform: string): PlatformName {

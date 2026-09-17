@@ -1,20 +1,39 @@
 import {
   tauriHostAccessibility,
+  tauriHostAudio,
+  tauriHostBitmap,
   tauriHostConnectivity,
-  tauriHostGraphics,
+  tauriHostDevice,
+  tauriHostFileSystem,
+  tauriHostFont,
+  tauriHostFullscreen,
+  tauriHostGeolocation,
+  tauriHostGl,
+  tauriHostGlyph,
+  tauriHostHaptics,
+  tauriHostImage,
   tauriHostInput,
   tauriHostIpc,
-  tauriHostMedia,
+  tauriHostLifecycle,
+  tauriHostMediaSession,
   tauriHostMidi,
   tauriHostNet,
+  tauriHostPermissions,
   tauriHostPower,
+  tauriHostPreferences,
   tauriHostProtocol,
   tauriHostScreen,
+  tauriHostSensors,
   tauriHostShare,
-  tauriHostStorage,
-  tauriHostText,
-  tauriHostUi,
+  tauriHostSocket,
+  tauriHostSoftKeyboard,
+  tauriHostStatusBar,
+  tauriHostSurface,
+  tauriHostTextSegment,
+  tauriHostTextShaper,
   tauriHostUpdater,
+  tauriHostVideo,
+  tauriHostWgpu,
 } from './tauriUnsupportedHostGroups';
 
 function returnsEmptyGroup(constructor: () => object): () => void {
@@ -24,18 +43,37 @@ function returnsEmptyGroup(constructor: () => object): () => void {
 }
 
 describe('tauriHostAccessibility', returnsEmptyGroup(tauriHostAccessibility));
+describe('tauriHostAudio', returnsEmptyGroup(tauriHostAudio));
+describe('tauriHostBitmap', returnsEmptyGroup(tauriHostBitmap));
 describe('tauriHostConnectivity', returnsEmptyGroup(tauriHostConnectivity));
-describe('tauriHostGraphics', returnsEmptyGroup(tauriHostGraphics));
+describe('tauriHostDevice', returnsEmptyGroup(tauriHostDevice));
+describe('tauriHostFileSystem', returnsEmptyGroup(tauriHostFileSystem));
+describe('tauriHostFont', returnsEmptyGroup(tauriHostFont));
+describe('tauriHostFullscreen', returnsEmptyGroup(tauriHostFullscreen));
+describe('tauriHostGeolocation', returnsEmptyGroup(tauriHostGeolocation));
+describe('tauriHostGl', returnsEmptyGroup(tauriHostGl));
+describe('tauriHostGlyph', returnsEmptyGroup(tauriHostGlyph));
+describe('tauriHostHaptics', returnsEmptyGroup(tauriHostHaptics));
+describe('tauriHostImage', returnsEmptyGroup(tauriHostImage));
 describe('tauriHostInput', returnsEmptyGroup(tauriHostInput));
 describe('tauriHostIpc', returnsEmptyGroup(tauriHostIpc));
-describe('tauriHostMedia', returnsEmptyGroup(tauriHostMedia));
+describe('tauriHostLifecycle', returnsEmptyGroup(tauriHostLifecycle));
+describe('tauriHostMediaSession', returnsEmptyGroup(tauriHostMediaSession));
 describe('tauriHostMidi', returnsEmptyGroup(tauriHostMidi));
 describe('tauriHostNet', returnsEmptyGroup(tauriHostNet));
+describe('tauriHostPermissions', returnsEmptyGroup(tauriHostPermissions));
 describe('tauriHostPower', returnsEmptyGroup(tauriHostPower));
+describe('tauriHostPreferences', returnsEmptyGroup(tauriHostPreferences));
 describe('tauriHostProtocol', returnsEmptyGroup(tauriHostProtocol));
 describe('tauriHostScreen', returnsEmptyGroup(tauriHostScreen));
+describe('tauriHostSensors', returnsEmptyGroup(tauriHostSensors));
 describe('tauriHostShare', returnsEmptyGroup(tauriHostShare));
-describe('tauriHostStorage', returnsEmptyGroup(tauriHostStorage));
-describe('tauriHostText', returnsEmptyGroup(tauriHostText));
-describe('tauriHostUi', returnsEmptyGroup(tauriHostUi));
+describe('tauriHostSocket', returnsEmptyGroup(tauriHostSocket));
+describe('tauriHostSoftKeyboard', returnsEmptyGroup(tauriHostSoftKeyboard));
+describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
+describe('tauriHostSurface', returnsEmptyGroup(tauriHostSurface));
+describe('tauriHostTextSegment', returnsEmptyGroup(tauriHostTextSegment));
+describe('tauriHostTextShaper', returnsEmptyGroup(tauriHostTextShaper));
 describe('tauriHostUpdater', returnsEmptyGroup(tauriHostUpdater));
+describe('tauriHostVideo', returnsEmptyGroup(tauriHostVideo));
+describe('tauriHostWgpu', returnsEmptyGroup(tauriHostWgpu));

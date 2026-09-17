@@ -49,7 +49,6 @@ const ENTITY_CONSTRUCTORS = [
   'tauriHostTrayTemplateImage',
   'tauriHostTrayTitle',
   'tauriHostTrayTooltip',
-  'tauriHostWindow',
 ] as const;
 
 const LEAF_MODULE_BY_EXPORT = {
