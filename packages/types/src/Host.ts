@@ -78,7 +78,7 @@ import type {
 } from './FileDialogBackend';
 import type { HostFileSystemCapability } from './FileSystem';
 import type { HostFontLoadingCapability } from './FontLoadingBackend';
-import type { HostElementFullscreenCapability, HostFullscreenCapability } from './FullscreenBackend';
+import type { HostElementFullscreenCapability } from './FullscreenBackend';
 import type { HostGeolocationCapability } from './Geolocation';
 import type { HostGlyphRasterizerCapability } from './GlyphSource';
 import type { HostHapticsCapability } from './Haptics';
@@ -334,7 +334,6 @@ export interface HostFileSystemCapabilities {
 
 export interface HostFullscreenCapabilities {
   readonly element?: HostElementFullscreenCapability;
-  readonly exit?: HostFullscreenCapability;
 }
 
 export interface HostGeolocationCapabilities {

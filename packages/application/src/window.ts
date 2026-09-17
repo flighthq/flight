@@ -4,7 +4,7 @@ import type {
   ApplicationWindow,
   EntityConstruction,
   FullscreenTargetHandle,
-  HostFullscreenCapability,
+  HostElementFullscreenCapability,
   HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
@@ -122,7 +122,7 @@ export function attachWindowFocus(
 }
 
 export function attachWindowFullscreen(
-  hostFullscreen: Readonly<Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>>>,
+  hostFullscreen: Readonly<Required<Pick<HostElementFullscreenCapability, 'subscribe' | 'unsubscribe'>>>,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
@@ -362,7 +362,7 @@ export function disposeApplicationWindow(win: ApplicationWindow): void {
   observers.clear();
 }
 
-export function exitApplicationFullscreen(hostFullscreen: Readonly<HostFullscreenCapability>): Promise<boolean> {
+export function exitApplicationFullscreen(hostFullscreen: Readonly<HostElementFullscreenCapability>): Promise<boolean> {
   return hostFullscreen.exit();
 }
 
@@ -540,7 +540,7 @@ export function prepareElementForInput(
 }
 
 export function requestApplicationFullscreen(
-  hostFullscreen: Readonly<HostFullscreenCapability>,
+  hostFullscreen: Readonly<HostElementFullscreenCapability>,
   target: FullscreenTargetHandle,
 ): Promise<boolean> {
   return hostFullscreen.request(target);

@@ -99,7 +99,7 @@ export type WebHost = Omit<
   >;
   readonly fileSystem: Required<Pick<HostFileSystemCapabilities, 'access'>>;
   readonly font: Required<Pick<HostFontCapabilities, 'loader'>>;
-  readonly fullscreen: Required<Pick<HostFullscreenCapabilities, 'exit'>>;
+  readonly fullscreen: Required<Pick<HostFullscreenCapabilities, 'element'>>;
   readonly geolocation: Required<Pick<HostGeolocationCapabilities, 'position'>>;
   readonly gl: Required<Pick<HostGlCapabilities, 'context'>>;
   readonly glyph: Required<Pick<HostGlyphCapabilities, 'rasterizer'>>;
