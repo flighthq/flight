@@ -38,12 +38,12 @@ const RING_SLOT_COUNT = 4096;
 // destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
-  wgpuHost: Readonly<HostWgpuCapability>,
+  hostWgpu: Readonly<HostWgpuCapability>,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
   try {
-    const acquired = await wgpuHost.acquire(surface, options);
+    const acquired = await hostWgpu.acquire(surface, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);
@@ -395,8 +395,8 @@ export function initializeWgpuOffscreenRenderStateOkResult(
   out.state = state;
 }
 
-export function isWgpuSupported(wgpuHost: Readonly<HostWgpuCapability>): boolean {
-  return wgpuHost.isSupported();
+export function isWgpuSupported(hostWgpu: Readonly<HostWgpuCapability>): boolean {
+  return hostWgpu.isSupported();
 }
 
 export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
@@ -442,10 +442,10 @@ function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDevic
 
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
 export function releaseWgpuAcquisition(
-  wgpuHost: Readonly<HostWgpuCapability>,
+  hostWgpu: Readonly<HostWgpuCapability>,
   acquisition: Readonly<WgpuHostAcquisition>,
 ): void {
-  wgpuHost.release(acquisition);
+  hostWgpu.release(acquisition);
 }
 
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {

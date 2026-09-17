@@ -174,7 +174,7 @@ export function attachWindowOrientation(
 }
 
 export function attachWindowRenderContext(
-  hostRenderContext: Readonly<HostGlCapability>,
+  hostGl: Readonly<HostGlCapability>,
   win: ApplicationWindow,
   target: InputTargetHandle,
 ): void {
@@ -182,7 +182,7 @@ export function attachWindowRenderContext(
   observers.get(kRenderContext)?.();
   observers.set(
     kRenderContext,
-    hostRenderContext.subscribe(
+    hostGl.subscribe(
       target,
       () => emitSignal(win.onRenderContextLost),
       () => emitSignal(win.onRenderContextRestored),
@@ -197,14 +197,14 @@ export function attachWindowRenderContext(
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
 // device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(
-  hostRenderSurface: Readonly<HostSurfaceCapability>,
+  hostSurface: Readonly<HostSurfaceCapability>,
   win: ApplicationWindow,
   state: RenderState,
   target: InputTargetHandle,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();
-  const renderSurface = hostRenderSurface;
+  const renderSurface = hostSurface;
   const apply = (): void => {
     renderSurface.resize(
       target,

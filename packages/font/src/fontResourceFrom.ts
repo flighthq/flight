@@ -8,40 +8,40 @@ import {
 } from './_fontFaceLoad';
 
 export async function loadFontResourceFromBytes(
-  backend: Readonly<HostFontLoadingCapability>,
+  hostFontLoading: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   bytes: Uint8Array,
 ): Promise<FontResource> {
-  const face = await _loadFontFaceFromBytes(backend, out.family, bytes);
+  const face = await _loadFontFaceFromBytes(hostFontLoading, out.family, bytes);
   out.face = face;
   return out;
 }
 
 export async function loadFontResourceFromName(
-  backend: Readonly<HostFontLoadingCapability>,
+  hostFontLoading: Readonly<HostFontLoadingCapability>,
   out: FontResource,
 ): Promise<FontResource> {
-  const faces = await _loadFontFacesFromName(backend, out.family);
+  const faces = await _loadFontFacesFromName(hostFontLoading, out.family);
   if (faces.length > 0) out.face = faces[0];
   return out;
 }
 
 export async function loadFontResourceFromUrl(
-  backend: Readonly<HostFontLoadingCapability>,
+  hostFontLoading: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   url: string,
 ): Promise<FontResource> {
-  const face = await _loadFontFaceFromUrl(backend, out.family, url);
+  const face = await _loadFontFaceFromUrl(hostFontLoading, out.family, url);
   out.face = face;
   return out;
 }
 
 export async function loadFontResourceFromUrls(
-  backend: Readonly<HostFontLoadingCapability>,
+  hostFontLoading: Readonly<HostFontLoadingCapability>,
   out: FontResource,
   sources: FontUrl[],
 ): Promise<FontResource> {
-  const face = await _loadFontFaceFromUrls(backend, out.family, sources);
+  const face = await _loadFontFaceFromUrls(hostFontLoading, out.family, sources);
   out.face = face;
   return out;
 }

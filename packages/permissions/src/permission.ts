@@ -17,11 +17,11 @@ import type {
 export function getPermissionState(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
+  hostPreferencesPersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   name: PermissionName,
 ): Promise<PermissionQueryOutcome> {
   return queryPermissionState(
-    capturePermissionQueryOrigins(hostPermissions, hostMidiPermission, hostStoragePersistenceQuery, [name]),
+    capturePermissionQueryOrigins(hostPermissions, hostMidiPermission, hostPreferencesPersistenceQuery, [name]),
     name,
   );
 }
@@ -31,14 +31,14 @@ export function getPermissionState(
 export function getPermissionStates(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
+  hostPreferencesPersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   names: readonly PermissionName[],
 ): Promise<PermissionQueryOutcome[]> {
   if (names.length === 0) return Promise.resolve([]);
   const origins = capturePermissionQueryOrigins(
     hostPermissions,
     hostMidiPermission,
-    hostStoragePersistenceQuery,
+    hostPreferencesPersistenceQuery,
     names,
   );
   return Promise.all(names.map((name) => queryPermissionState(origins, name)));
@@ -49,13 +49,13 @@ export function getPermissionStates(
 // denial.
 export function requestPermission(
   hostPermissions: Readonly<HostPermissionsCapability>,
-  hostStoragePersistenceRequest: Readonly<HostPreferencesPersistenceRequestCapability> | undefined,
+  hostPreferencesPersistenceRequest: Readonly<HostPreferencesPersistenceRequestCapability> | undefined,
   hostGeolocation: Readonly<HostGeolocationCapability> | undefined,
   name: PermissionName,
 ): Promise<PermissionRequestOutcome> {
   if (name === 'notifications') return requestNotificationPermission(hostPermissions.notification);
   if (name === 'persistent-storage') {
-    return requestStoragePersistencePermission(hostStoragePersistenceRequest ?? null);
+    return requestStoragePersistencePermission(hostPreferencesPersistenceRequest ?? null);
   }
   // Geolocation stays delegated: its capability owns the prompt mechanism and this facade projects
   // the outcome without routing through the generic permissions provider.
@@ -88,7 +88,7 @@ interface PermissionQueryOrigins {
 function capturePermissionQueryOrigins(
   hostPermissions: Readonly<HostPermissionsCapability>,
   hostMidiPermission: Readonly<HostMidiPermissionCapability> | undefined,
-  hostStoragePersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
+  hostPreferencesPersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability> | undefined,
   names: readonly PermissionName[],
 ): PermissionQueryOrigins {
   const needsNotification = names.includes('notifications');
@@ -101,7 +101,7 @@ function capturePermissionQueryOrigins(
     midi: needsMidi ? (hostMidiPermission ?? null) : null,
     notification: needsNotification ? hostPermissions.notification : null,
     permissions: needsPermissions ? hostPermissions : null,
-    persistence: needsPersistence ? (hostStoragePersistenceQuery ?? null) : null,
+    persistence: needsPersistence ? (hostPreferencesPersistenceQuery ?? null) : null,
   };
 }
 
