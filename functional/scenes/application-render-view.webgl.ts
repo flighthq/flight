@@ -1,14 +1,23 @@
-import { attachApplicationRenderView, createApplicationWindow } from '@flighthq/application';
-import { createGlApplicationRenderView } from '@flighthq/application-gl';
+import {
+  attachApplicationRenderView,
+  createApplicationRenderView,
+  createApplicationWindow,
+} from '@flighthq/application';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
+import { getWebGlContext } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
-import { beginGlRenderPass, endGlRenderPass } from '@flighthq/render-gl';
+import {
+  beginGlRenderPass,
+  createGlRenderViewResources,
+  endGlRenderPass,
+  resizeGlRenderViewResources,
+} from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
@@ -43,18 +52,41 @@ canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 
-const view = createGlApplicationRenderView(applicationWindow, canvas, {
-  context: {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  },
-  pipeline: scene3DGlPipeline,
-  render: {},
-  target: {
+// The render-layer half (context, state, storage, viewport) and the application half (the window and
+// the resize wiring between them) are composed here rather than by an assembly package: a render
+// backend may not import @flighthq/application, so the join belongs to the caller.
+const context = getWebGlContext(canvas, {
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+});
+if (context === null) {
+  throw new Error('[application-render-view] WebGL2 is unavailable');
+}
+canvas.width = Math.round(applicationWindow.width * scale);
+canvas.height = Math.round(applicationWindow.height * scale);
+const resources = createGlRenderViewResources(
+  context,
+  scene3DGlPipeline,
+  canvas.width,
+  canvas.height,
+  scale,
+  {},
+  {
     colorSpace: 'srgb',
     depth: 'depth-stencil',
     sampleCount: 1,
   },
-});
+);
+const view = createApplicationRenderView(
+  applicationWindow,
+  resources.renderState,
+  resources.renderTarget,
+  resources.viewport,
+  (_state, _target, nextWidth, nextHeight) => {
+    canvas.width = nextWidth;
+    canvas.height = nextHeight;
+    resizeGlRenderViewResources(resources, nextWidth, nextHeight);
+  },
+);
 attachApplicationRenderView(view);
 
 applicationWindow.width = width;

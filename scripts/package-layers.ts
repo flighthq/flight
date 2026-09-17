@@ -163,7 +163,6 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
   ],
   application: ['@flighthq/app', '@flighthq/application'],
   'host-tool': [
-    '@flighthq/application-gl',
     '@flighthq/host-capacitor',
     '@flighthq/host-electron',
     '@flighthq/host-tauri',

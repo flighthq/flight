@@ -325,7 +325,7 @@ function getEffectivePolicy(
       // census reported the harness default as fact for 12 scenes that had explicitly overridden it.
       if (
         callName === 'createWebGlContext' ||
-        callName === 'createGlApplicationRenderView' ||
+        callName === 'getWebGlContext' ||
         callName === 'createFunctionalTarget'
       ) {
         for (const argument of node.arguments) findNamedProperties(argument, 'antialias', antialiasValues);
@@ -333,7 +333,7 @@ function getEffectivePolicy(
       if (
         callName === 'createGlRenderEffectPipeline' ||
         callName === 'createGlTextureRenderTarget' ||
-        callName === 'createGlApplicationRenderView'
+        callName === 'createGlRenderViewResources'
       ) {
         for (const argument of node.arguments) findNamedProperties(argument, 'sampleCount', sampleCountValues);
       }
