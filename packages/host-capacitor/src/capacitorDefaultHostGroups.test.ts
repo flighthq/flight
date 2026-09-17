@@ -1,20 +1,35 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import {
   capacitorHostAccessibility,
-  capacitorHostGraphics,
+  capacitorHostAudio,
+  capacitorHostBitmap,
+  capacitorHostFont,
+  capacitorHostFullscreen,
+  capacitorHostGl,
+  capacitorHostGlyph,
+  capacitorHostImage,
+  capacitorHostInput,
   capacitorHostIpc,
-  capacitorHostMedia,
+  capacitorHostLifecycle,
+  capacitorHostMediaSession,
   capacitorHostMenu,
   capacitorHostMidi,
   capacitorHostNet,
+  capacitorHostPermissions,
+  capacitorHostPlatform,
   capacitorHostPower,
+  capacitorHostPreferences,
   capacitorHostScreen,
+  capacitorHostSensors,
   capacitorHostShell,
   capacitorHostShortcut,
-  capacitorHostText,
+  capacitorHostSocket,
+  capacitorHostSurface,
+  capacitorHostTextSegment,
+  capacitorHostTextShaper,
   capacitorHostTray,
   capacitorHostUpdater,
+  capacitorHostVideo,
+  capacitorHostWgpu,
   capacitorHostWindow,
 } from './capacitorDefaultHostGroups';
 
@@ -22,16 +37,48 @@ describe('capacitorHostAccessibility', () => {
   it('claims no accessibility slots', () => expect(capacitorHostAccessibility()).toEqual({}));
 });
 
-describe('capacitorHostGraphics', () => {
-  it('claims no graphics slots', () => expect(capacitorHostGraphics()).toEqual({}));
+describe('capacitorHostAudio', () => {
+  it('claims no audio slots', () => expect(capacitorHostAudio()).toEqual({}));
+});
+
+describe('capacitorHostBitmap', () => {
+  it('claims no bitmap slots', () => expect(capacitorHostBitmap()).toEqual({}));
+});
+
+describe('capacitorHostFont', () => {
+  it('claims no font slots', () => expect(capacitorHostFont()).toEqual({}));
+});
+
+describe('capacitorHostFullscreen', () => {
+  it('claims no fullscreen slots', () => expect(capacitorHostFullscreen()).toEqual({}));
+});
+
+describe('capacitorHostGl', () => {
+  it('claims no GL slots', () => expect(capacitorHostGl()).toEqual({}));
+});
+
+describe('capacitorHostGlyph', () => {
+  it('claims no glyph slots', () => expect(capacitorHostGlyph()).toEqual({}));
+});
+
+describe('capacitorHostImage', () => {
+  it('claims no image slots', () => expect(capacitorHostImage()).toEqual({}));
+});
+
+describe('capacitorHostInput', () => {
+  it('claims no input slots', () => expect(capacitorHostInput()).toEqual({}));
 });
 
 describe('capacitorHostIpc', () => {
   it('claims no IPC slots', () => expect(capacitorHostIpc()).toEqual({}));
 });
 
-describe('capacitorHostMedia', () => {
-  it('claims no media slots', () => expect(capacitorHostMedia()).toEqual({}));
+describe('capacitorHostLifecycle', () => {
+  it('claims no lifecycle slots', () => expect(capacitorHostLifecycle()).toEqual({}));
+});
+
+describe('capacitorHostMediaSession', () => {
+  it('claims no media-session slots', () => expect(capacitorHostMediaSession()).toEqual({}));
 });
 
 describe('capacitorHostMenu', () => {
@@ -46,12 +93,28 @@ describe('capacitorHostNet', () => {
   it('claims no net slots', () => expect(capacitorHostNet()).toEqual({}));
 });
 
+describe('capacitorHostPermissions', () => {
+  it('claims no permission slots', () => expect(capacitorHostPermissions()).toEqual({}));
+});
+
+describe('capacitorHostPlatform', () => {
+  it('claims no platform slots', () => expect(capacitorHostPlatform()).toEqual({}));
+});
+
 describe('capacitorHostPower', () => {
   it('claims no power slots', () => expect(capacitorHostPower()).toEqual({}));
 });
 
+describe('capacitorHostPreferences', () => {
+  it('claims no preference slots', () => expect(capacitorHostPreferences()).toEqual({}));
+});
+
 describe('capacitorHostScreen', () => {
   it('claims no screen slots', () => expect(capacitorHostScreen()).toEqual({}));
+});
+
+describe('capacitorHostSensors', () => {
+  it('claims no sensor slots', () => expect(capacitorHostSensors()).toEqual({}));
 });
 
 describe('capacitorHostShell', () => {
@@ -62,8 +125,20 @@ describe('capacitorHostShortcut', () => {
   it('claims no shortcut slots', () => expect(capacitorHostShortcut()).toEqual({}));
 });
 
-describe('capacitorHostText', () => {
-  it('claims no text slots', () => expect(capacitorHostText()).toEqual({}));
+describe('capacitorHostSocket', () => {
+  it('claims no socket slots', () => expect(capacitorHostSocket()).toEqual({}));
+});
+
+describe('capacitorHostSurface', () => {
+  it('claims no surface slots', () => expect(capacitorHostSurface()).toEqual({}));
+});
+
+describe('capacitorHostTextSegment', () => {
+  it('claims no text-segment slots', () => expect(capacitorHostTextSegment()).toEqual({}));
+});
+
+describe('capacitorHostTextShaper', () => {
+  it('claims no text-shaper slots', () => expect(capacitorHostTextShaper()).toEqual({}));
 });
 
 describe('capacitorHostTray', () => {
@@ -74,10 +149,14 @@ describe('capacitorHostUpdater', () => {
   it('claims no updater slots', () => expect(capacitorHostUpdater()).toEqual({}));
 });
 
+describe('capacitorHostVideo', () => {
+  it('claims no video slots', () => expect(capacitorHostVideo()).toEqual({}));
+});
+
+describe('capacitorHostWgpu', () => {
+  it('claims no WGPU slots', () => expect(capacitorHostWgpu()).toEqual({}));
+});
+
 describe('capacitorHostWindow', () => {
-  it('claims no window operations while preserving Entity construction', () => {
-    const window = capacitorHostWindow();
-    expect(Object.keys(window)).toEqual([]);
-    expect(EntityRuntimeKey in window).toBe(true);
-  });
+  it('claims no window capabilities', () => expect(capacitorHostWindow()).toEqual({}));
 });

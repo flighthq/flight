@@ -1,12 +1,12 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { capacitorHostStorage } from './capacitorStorageHost';
+import { capacitorHostFileSystemGroup } from './capacitorStorageHost';
 
-describe('capacitorHostStorage', () => {
-  it('publishes only the Entity-backed file-system slot', () => {
-    const storage = capacitorHostStorage({ filesystem: {} } as unknown as CapacitorApi);
-    expect(Object.keys(storage)).toEqual(['fileSystem']);
-    expect(EntityRuntimeKey in storage.fileSystem).toBe(true);
+describe('capacitorHostFileSystemGroup', () => {
+  it('publishes only the Entity-backed file-system access slot', () => {
+    const fileSystem = capacitorHostFileSystemGroup({ filesystem: {} } as unknown as CapacitorApi);
+    expect(Object.keys(fileSystem)).toEqual(['access']);
+    expect(EntityRuntimeKey in fileSystem.access).toBe(true);
   });
 });

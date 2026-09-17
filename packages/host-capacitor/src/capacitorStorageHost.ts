@@ -1,9 +1,9 @@
-import type { CapacitorApi, HostStorageCapabilities } from '@flighthq/types/contract';
+import type { CapacitorApi, HostFileSystemCapabilities } from '@flighthq/types/contract';
 
 import { capacitorHostFileSystem } from './capacitorFileSystem';
 
-export function capacitorHostStorage(
+export function capacitorHostFileSystemGroup(
   capacitor: CapacitorApi,
-): HostStorageCapabilities & Required<Pick<HostStorageCapabilities, 'fileSystem'>> {
-  return { fileSystem: capacitorHostFileSystem(capacitor) };
+): Required<Pick<HostFileSystemCapabilities, 'access'>> {
+  return { access: capacitorHostFileSystem(capacitor) };
 }
