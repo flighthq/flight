@@ -1,6 +1,7 @@
 import {
-  createWebGlContext,
+  createWebHostTarget,
   webCanvasRenderSurfaceCreator,
+  webHostGl,
   webHostImage,
   webImageSurfaceCreator,
   webSurfaceCreateCapability,
@@ -14,6 +15,7 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createGlRenderState,
+  createGlSurface,
   createMatrix,
   createSurface,
   defaultGlParticleEmitter2DRenderer,
@@ -69,17 +71,17 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   canvas.style.height = `${height}px`;
   document.body.appendChild(canvas);
 
-  const state = createGlRenderState(
-    createWebGlContext(canvas, {
-      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true, ...options.contextAttributes },
-    }),
-    scene3DGlPipeline,
-    {
-      pixelRatio,
-      imageSurfaceProvider: webImageSurfaceCreator,
-      sceneGraphSyncPolicy: options.syncPolicy,
-    },
-  );
+  const target = createWebHostTarget(canvas);
+  const glSurface = createGlSurface(webHostGl, target, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+  });
+  if (glSurface === null) throw new Error('createGlTarget: failed to acquire WebGL2 context');
+
+  const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+    pixelRatio,
+    imageSurfaceProvider: webImageSurfaceCreator,
+    sceneGraphSyncPolicy: options.syncPolicy,
+  });
   const screenTarget = createGlScreenRenderTarget(state.gl);
   const background = options.background ?? 0x00000000;
   const screenClear = {
