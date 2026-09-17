@@ -39,3 +39,13 @@ export interface GlApplicationRenderViewOptions {
 }
 
 export type GlApplicationRenderView = ApplicationRenderView<GlRenderState, GlTextureRenderTarget>;
+
+// The render-layer half of a GL application view: the command state, its storage and the drawable
+// rectangle a backend allocates for one acquired context. The application half — the window and the
+// resize wiring that reconciles the two — stays in @flighthq/application, which a render backend may
+// not import. A caller holding both composes them explicitly rather than through an assembly package.
+export interface GlRenderViewResources {
+  readonly renderState: GlRenderState;
+  readonly renderTarget: GlTextureRenderTarget;
+  readonly viewport: Viewport;
+}
