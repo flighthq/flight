@@ -218,7 +218,7 @@
     "@flighthq/spritesheet-formats": "*",
     "@flighthq/statechart": "*",
     "@flighthq/statusbar": "*",
-    "@flighthq/storage": "*",
+    "@flighthq/preferences": "*",
     "@flighthq/swf": "*",
     "@flighthq/text": "*",
     "@flighthq/text-markup": "*",

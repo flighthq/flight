@@ -54,7 +54,7 @@
     "@flighthq/screen": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
-    "@flighthq/storage": "*",
+    "@flighthq/preferences": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
     "@flighthq/updater": "*"

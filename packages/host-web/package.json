@@ -70,7 +70,7 @@
     "@flighthq/share": "*",
     "@flighthq/signals": "*",
     "@flighthq/statusbar": "*",
-    "@flighthq/storage": "*",
+    "@flighthq/preferences": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",

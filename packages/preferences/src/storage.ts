@@ -199,7 +199,10 @@ export function getStorageItemOr(
   return { reason: 'ok', value: result.value ?? fallback };
 }
 
-export function getStorageItemPresence(hostStorage: Readonly<HostPreferencesCapability>, key: string): StoragePresenceResult {
+export function getStorageItemPresence(
+  hostStorage: Readonly<HostPreferencesCapability>,
+  key: string,
+): StoragePresenceResult {
   const result = hostStorage.getItem(key);
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value !== null };

@@ -44,6 +44,9 @@
       "path": "../power"
     },
     {
+      "path": "../preferences"
+    },
+    {
       "path": "../protocol"
     },
     {
@@ -57,9 +60,6 @@
     },
     {
       "path": "../signals"
-    },
-    {
-      "path": "../storage"
     },
     {
       "path": "../tray"
