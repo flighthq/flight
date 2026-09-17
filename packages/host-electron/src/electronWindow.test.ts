@@ -4,6 +4,22 @@ import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } fro
 
 import {
   electronHostWindow,
+  electronHostWindowAppearance,
+  electronHostWindowAttach,
+  electronHostWindowAttention,
+  electronHostWindowContentProtection,
+  electronHostWindowFocus,
+  electronHostWindowFullscreen,
+  electronHostWindowGeometry,
+  electronHostWindowHierarchy,
+  electronHostWindowLifecycle,
+  electronHostWindowProgress,
+  electronHostWindowShadow,
+  electronHostWindowShell,
+  electronHostWindowSizeConstraints,
+  electronHostWindowState,
+  electronHostWindowVisibility,
+  electronHostWindowZOrder,
   getApplicationWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
@@ -308,6 +324,107 @@ describe('electronHostWindow', () => {
     expect(closes).toBe(1);
     expect(getApplicationWindowForElectronId(native.id)).toBeNull();
     expect(getElectronBrowserWindow(win)).toBeNull();
+  });
+});
+
+describe('electronHostWindowAppearance', () => {
+  it('publishes title, icon and opacity hooks', () => {
+    expect(Object.keys(electronHostWindowAppearance()).sort()).toEqual(['setIcon', 'setOpacity', 'setTitle']);
+  });
+});
+
+describe('electronHostWindowAttach', () => {
+  it('publishes the attach hook', () => {
+    expect(Object.keys(electronHostWindowAttach()).sort()).toEqual(['attach']);
+  });
+});
+
+describe('electronHostWindowAttention', () => {
+  it('publishes both attention hooks', () => {
+    expect(Object.keys(electronHostWindowAttention()).sort()).toEqual(['flashWindowFrame', 'requestAttention']);
+  });
+});
+
+describe('electronHostWindowContentProtection', () => {
+  it('publishes the content-protection hook', () => {
+    expect(Object.keys(electronHostWindowContentProtection()).sort()).toEqual(['setContentProtection']);
+  });
+});
+
+describe('electronHostWindowFocus', () => {
+  it('publishes the focus hook', () => {
+    expect(Object.keys(electronHostWindowFocus()).sort()).toEqual(['focus']);
+  });
+});
+
+describe('electronHostWindowFullscreen', () => {
+  it('publishes the window-fullscreen hook', () => {
+    expect(Object.keys(electronHostWindowFullscreen()).sort()).toEqual(['setFullscreen']);
+  });
+});
+
+describe('electronHostWindowGeometry', () => {
+  it('publishes the geometry hooks', () => {
+    expect(Object.keys(electronHostWindowGeometry()).sort()).toEqual(['center', 'getBounds', 'setPosition', 'setSize']);
+  });
+});
+
+describe('electronHostWindowHierarchy', () => {
+  it('publishes the parent hook', () => {
+    expect(Object.keys(electronHostWindowHierarchy()).sort()).toEqual(['setParent']);
+  });
+});
+
+describe('electronHostWindowLifecycle', () => {
+  it('publishes the open and close hooks', () => {
+    const { electron } = fakeElectron();
+    expect(Object.keys(electronHostWindowLifecycle(electron)).sort()).toEqual(['close', 'open']);
+  });
+});
+
+describe('electronHostWindowProgress', () => {
+  it('publishes the progress hook', () => {
+    expect(Object.keys(electronHostWindowProgress()).sort()).toEqual(['setProgress']);
+  });
+});
+
+describe('electronHostWindowShadow', () => {
+  it('publishes the shadow hook', () => {
+    expect(Object.keys(electronHostWindowShadow()).sort()).toEqual(['setHasShadow']);
+  });
+});
+
+describe('electronHostWindowShell', () => {
+  it('publishes both shell hooks', () => {
+    expect(Object.keys(electronHostWindowShell()).sort()).toEqual(['setMenuBarVisible', 'setSkipTaskbar']);
+  });
+});
+
+describe('electronHostWindowSizeConstraints', () => {
+  it('publishes the sizing hooks', () => {
+    expect(Object.keys(electronHostWindowSizeConstraints()).sort()).toEqual([
+      'setMaximumSize',
+      'setMinimumSize',
+      'setResizable',
+    ]);
+  });
+});
+
+describe('electronHostWindowState', () => {
+  it('publishes all three state hooks', () => {
+    expect(Object.keys(electronHostWindowState()).sort()).toEqual(['maximize', 'minimize', 'restore']);
+  });
+});
+
+describe('electronHostWindowVisibility', () => {
+  it('publishes the show and hide hooks', () => {
+    expect(Object.keys(electronHostWindowVisibility()).sort()).toEqual(['hide', 'show']);
+  });
+});
+
+describe('electronHostWindowZOrder', () => {
+  it('publishes the always-on-top hook', () => {
+    expect(Object.keys(electronHostWindowZOrder()).sort()).toEqual(['setAlwaysOnTop']);
   });
 });
 

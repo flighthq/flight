@@ -40,9 +40,7 @@ import type {
 // electron does, the subscribe hooks inside geometry, lifecycle and visibility — an attached window's
 // Tauri events are wired straight to the window's own signals in attach, so a second host-side
 // subscription would report every change twice.
-export function tauriHostWindow(
-  tauri: TauriApi,
-): HostWindowCapabilities & Required<Pick<HostWindowCapabilities, 'attach' | 'lifecycle'>> {
+export function tauriHostWindow(tauri: TauriApi): TauriHostWindowCapabilities {
   const context = buildTauriWindowContext(tauri);
   return {
     appearance: tauriHostWindowAppearance(context),
@@ -240,6 +238,29 @@ function tauriHostWindowZOrder(context: Readonly<TauriWindowContext>): HostWindo
   };
   return finishEntity(out);
 }
+
+// The window slots Tauri guarantees, mirroring TauriHost['window']. Kept in step by the
+// `satisfies Omit<TauriHost<Profile>, …>` assertion in tauriHost.ts, which fails if they diverge.
+type TauriHostWindowCapabilities = HostWindowCapabilities &
+  Required<
+    Pick<
+      HostWindowCapabilities,
+      | 'appearance'
+      | 'attach'
+      | 'attention'
+      | 'contentProtection'
+      | 'focus'
+      | 'fullscreen'
+      | 'geometry'
+      | 'lifecycle'
+      | 'shadow'
+      | 'shell'
+      | 'sizeConstraints'
+      | 'state'
+      | 'visibility'
+      | 'zOrder'
+    >
+  >;
 
 interface TauriWindowRecord {
   readonly cleanup: TauriUnlisten[];
