@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -10,7 +10,6 @@ import {
   beginGlRenderEffectPipeline,
   createDisplayObject,
   createFxaaEffect,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
@@ -21,6 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -33,8 +33,7 @@ declareExpectedImageDescription(
 // FXAA antialiases the whole frame: a full-frame edge-detect/blend pass smooths the jagged diagonal
 // edges of the rotated shapes.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

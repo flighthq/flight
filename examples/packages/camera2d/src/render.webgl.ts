@@ -3,6 +3,7 @@ import {
   webCanvasRenderSurfaceCreator,
   webHostImage,
   webRaster2DSurfaceCreator,
+  webSurfaceCreateCapability,
 } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
@@ -10,7 +11,6 @@ import {
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
-  createGlCanvasElement,
   createGlRenderState,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
@@ -29,6 +29,7 @@ import {
   beginGlRenderPass,
   endGlRenderPass,
   createGlScreenRenderTarget,
+  createRenderSurface,
 } from '@flighthq/sdk';
 
 export const CANVAS_WIDTH = 800;
@@ -36,7 +37,7 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-export const canvas = createGlCanvasElement(CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
+export const canvas = createRenderSurface(webSurfaceCreateCapability, CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

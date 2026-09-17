@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Bitmap, GlRenderEffectPipeline } from '@flighthq/sdk';
@@ -14,7 +14,6 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -36,6 +35,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -54,8 +54,7 @@ declareExpectedImageDescription(
 // to a joint rotated 70 degrees around Z, so the cast silhouette extends laterally; a bind-pose depth
 // pass instead leaves only a compact shadow near the root. The WebGPU twin is the regression target.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

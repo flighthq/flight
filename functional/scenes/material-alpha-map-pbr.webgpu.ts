@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas, createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -30,6 +30,7 @@ import {
   scene3DWgpuPipeline,
   setCamera3DViewMatrix4FromLookAt,
   setTextureUvScale,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -62,7 +63,7 @@ declareExpectedImageDescription(
 // the Wgpu one directly from its package.
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

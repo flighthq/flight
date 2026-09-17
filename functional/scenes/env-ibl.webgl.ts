@@ -1,4 +1,4 @@
-import { createWebGlContext, createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -10,7 +10,6 @@ import {
   createCamera3D,
   createCubeTexture,
   createEnvironment,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -26,6 +25,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
   setVector3,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -47,8 +47,7 @@ declareExpectedImageDescription(
 // are imported from @flighthq/scene3d-gl directly.
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

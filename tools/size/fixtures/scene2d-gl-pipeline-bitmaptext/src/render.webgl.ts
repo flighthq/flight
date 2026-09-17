@@ -1,13 +1,9 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
-import {
-  createWebGlContext,
-  createWebGlRenderSurfaceCreator,
-  createWebImageResourceFromCanvas,
-} from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -24,8 +20,7 @@ import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
 
-const canvas = createWebGlRenderSurfaceCreator().createRenderSurface(400, 300, 1);
-if (canvas === null) throw new Error('The WebGL BitmapText size fixture requires a canvas render surface.');
+const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

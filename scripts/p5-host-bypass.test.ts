@@ -15,10 +15,6 @@ import {
   p5BitmapReadbackRepairFailures,
   p5BitmapDrawTransferProgressFailures,
   p5BitmapDrawTransferRepairFailures,
-  p5GlExampleRunnerOwnershipFailures,
-  p5GlRenderSurfaceConsumerFailures,
-  p5GlRenderSurfaceConsumerSourceFailures,
-  p5GlRenderSurfaceProviderBoundaryFailures,
   p5WgpuRenderSurfaceConsumerFailures,
   p5WgpuRenderSurfaceConsumerSourceFailures,
   p5WgpuRenderSurfaceRepairFailures,
@@ -176,47 +172,6 @@ describe('P5 host-bypass derived gate', () => {
     );
   });
 
-  it('derives GL surface ownership for every direct functional consumer and both shared owners', () => {
-    expect(p5GlRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
-  });
-
-  it('mutation-proves a direct functional GL consumer cannot omit its Web enabler', () => {
-    const file = 'functional/scenes/camera-orthographic.webgl.ts';
-    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebGlRenderSurface();', '');
-    expect(p5GlRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining('GL surface creation is not immediately preceded by enableHostWebGlRenderSurface()'),
-    ]);
-  });
-
-  it('mutation-proves the shared functional harness cannot omit its Web enabler', () => {
-    const file = 'tools/harness/webgl.ts';
-    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebGlRenderSurface();', '');
-    expect(p5GlRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining('GL surface creation is not immediately preceded by enableHostWebGlRenderSurface()'),
-    ]);
-  });
-
-  it('mutation-proves the generated example WebGL owner cannot omit its Web enabler', () => {
-    const source = readFileSync(join(ROOT, 'examples/runners/web/vite.config.ts'), 'utf8').replace(
-      '`enableHostWebGlRenderSurface();`',
-      '`mutation removed WebGL surface enabler`',
-    );
-    expect(p5GlExampleRunnerOwnershipFailures(source)).toContain(
-      'examples WebGL entry does not call enableHostWebGlRenderSurface()',
-    );
-  });
-
-  it('pins the portable GL provider against DOM restoration and WGPU cross-fallback', () => {
-    const source = readFileSync(join(ROOT, 'packages/render-gl/src/glElement.ts'), 'utf8');
-    expect(p5GlRenderSurfaceProviderBoundaryFailures(source)).toEqual([]);
-    expect(p5GlRenderSurfaceProviderBoundaryFailures(`${source}\ncreateWgpuCanvasElement(1, 1);`)).toContain(
-      'portable GL surface provider crosses into the WGPU surface boundary',
-    );
-    expect(p5GlRenderSurfaceProviderBoundaryFailures(`${source}\ndocument.createElement('canvas');`)).toContain(
-      'portable GL surface provider reads document instead of returning null',
-    );
-  });
-
   it('derives WGPU surface ownership for every functional consumer and the shared harness', () => {
     expect(p5WgpuRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
   });
@@ -236,32 +191,32 @@ describe('P5 host-bypass derived gate', () => {
     ]);
   });
 
-  // ★ THE OWNERSHIP FACT SURVIVED THE SINGLETON. The enabler this used to require is deleted, so the
-  // mutation that proves the gate still bites is the one that matters now: a page that reaches for
-  // document.createElement('canvas') instead of the host's sizing helper.
+  // ★ THE OWNERSHIP FACT IS NOW ENFORCED BY THE EXPLICIT CAPABILITY SEAM. The mutation that proves the
+  // gate still bites is a page that reaches for document.createElement('canvas') instead of
+  // createRenderSurface(webSurfaceCreateCapability, ...).
   it('mutation-proves a functional WGPU consumer cannot create its own canvas', () => {
     const file = 'functional/scenes/camera-orthographic.webgpu.ts';
     const source = readFileSync(join(ROOT, file), 'utf8').replace(
-      /createWebWgpuCanvasElement\([^)]*\)/,
+      /createRenderSurface\([^)]*\)/,
       "document.createElement('canvas')",
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
-      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createRenderSurface"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createRenderSurface"),
     ]);
   });
 
   it('mutation-proves the shared functional WebGPU harness cannot create its own canvas', () => {
     const file = 'tools/harness/webgpu.ts';
     const source = readFileSync(join(ROOT, file), 'utf8').replace(
-      /createWebWgpuCanvasElement\([^)]*\)/,
+      /createRenderSurface\([^)]*\)/,
       "document.createElement('canvas')",
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
-      expect.stringContaining("presentation surface 'canvas' does not come from createWebWgpuCanvasElement"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createRenderSurface"),
+      expect.stringContaining("presentation surface 'canvas' does not come from createRenderSurface"),
     ]);
   });
 
@@ -269,8 +224,8 @@ describe('P5 host-bypass derived gate', () => {
   // bypass with its own kind and budget, and this gate flagging it would make the two indistinguishable.
   it('does not flag a scratch canvas a WGPU scene paints texture content into', () => {
     const source = [
-      "import { createWebWgpuCanvasElement } from '@flighthq/host-web';",
-      'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
+      "import { webSurfaceCreateCapability } from '@flighthq/host-web';",
+      'const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, 1);',
       'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
       'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas);',
       "const face = document.createElement('canvas');",
@@ -281,12 +236,12 @@ describe('P5 host-bypass derived gate', () => {
 
   it('mutation-proves the host-web import is required, not just the call', () => {
     const source = [
-      'const canvas = createWebWgpuCanvasElement(800, 600, 1);',
+      'const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, 1);',
       'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
     ].join('\n');
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([
-      expect.stringContaining('does not import createWebWgpuCanvasElement from @flighthq/host-web'),
+      expect.stringContaining('does not import webSurfaceCreateCapability from @flighthq/host-web'),
     ]);
   });
 

@@ -1,10 +1,9 @@
-import { createWebGlContext } from '@flighthq/host-web/contract';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   SpriteKind,
   TilemapKind,
-  createGlCanvasElement,
   createGlRenderState,
   enableFlightDiagnostics,
   defaultGlSpriteRenderer,
@@ -15,10 +14,11 @@ import {
   beginGlRenderPass,
   endGlRenderPass,
   createGlScreenRenderTarget,
+  createRenderSurface,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createGlCanvasElement(800, 600, pixelRatio);
+export const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

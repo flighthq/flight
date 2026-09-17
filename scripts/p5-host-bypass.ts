@@ -683,106 +683,9 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
   return sites;
 }
 
-export function p5GlRenderSurfaceConsumerSourceFailures(file: string, source: string): string[] {
-  const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
-  const calls: ts.CallExpression[] = [];
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node) && expressionName(node.expression) === 'createGlCanvasElement') calls.push(node);
-    ts.forEachChild(node, visit);
-  };
-  visit(parsed);
-  if (calls.length === 0) return [];
-
-  const importsEnabler = parsed.statements.some(
-    (statement) =>
-      ts.isImportDeclaration(statement) &&
-      ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === '@flighthq/host-web' &&
-      statement.importClause?.namedBindings !== undefined &&
-      ts.isNamedImports(statement.importClause.namedBindings) &&
-      statement.importClause.namedBindings.elements.some(
-        (element) => element.propertyName === undefined && element.name.text === 'enableHostWebGlRenderSurface',
-      ),
-  );
-  const failures = importsEnabler ? [] : [`${file}: GL consumer does not import enableHostWebGlRenderSurface`];
-
-  for (const call of calls) {
-    const statement = statementInList(call);
-    const position = parsed.getLineAndCharacterOfPosition(call.getStart(parsed));
-    if (statement === null) {
-      failures.push(`${file}:${position.line + 1}: GL surface creation is not owned by a statement list`);
-      continue;
-    }
-    const statements = statementList(statement.parent);
-    const previous = statements[statements.indexOf(statement) - 1];
-    if (!isEnableHostWebGlRenderSurfaceStatement(previous)) {
-      failures.push(
-        `${file}:${position.line + 1}: GL surface creation is not immediately preceded by enableHostWebGlRenderSurface()`,
-      );
-    }
-  }
-  return failures;
-}
-
-export function p5GlExampleRunnerOwnershipFailures(source: string): string[] {
-  const failures: string[] = [];
-  const branchStart = source.indexOf("if (render === 'webgl') {");
-  const nextRendererBranch = source.indexOf("if (!VERIFY_SKIP.has(name) && render === 'dom')", branchStart);
-  const exampleImport = source.indexOf("const __example = await import('___app___${name}:${render}')");
-  if (branchStart === -1 || nextRendererBranch === -1) {
-    return ['examples Web runner does not own a WebGL-only GL surface enabler branch'];
-  }
-  const branch = source.slice(branchStart, nextRendererBranch);
-  const importIndex = branch.indexOf("import { enableHostWebGlRenderSurface } from '@flighthq/host-web';");
-  const callIndex = branch.indexOf('enableHostWebGlRenderSurface();');
-  if (importIndex === -1) failures.push('examples WebGL entry does not import enableHostWebGlRenderSurface');
-  if (callIndex === -1) failures.push('examples WebGL entry does not call enableHostWebGlRenderSurface()');
-  if (importIndex !== -1 && callIndex !== -1 && importIndex > callIndex) {
-    failures.push('examples WebGL entry calls enableHostWebGlRenderSurface() before importing it');
-  }
-  if (exampleImport === -1 || branchStart > exampleImport) {
-    failures.push('examples WebGL enabler does not run before the app dynamic import');
-  }
-  return failures;
-}
-
-export function p5GlRenderSurfaceProviderBoundaryFailures(source: string): string[] {
-  const failures: string[] = [];
-  if (/render-wgpu|createWgpuCanvasElement|\bWgpu\b/.test(source)) {
-    failures.push('portable GL surface provider crosses into the WGPU surface boundary');
-  }
-  if (/\bdocument\s*(?:\.|\[)/.test(source)) {
-    failures.push('portable GL surface provider reads document instead of returning null');
-  }
-  return failures;
-}
-
-export function p5GlRenderSurfaceConsumerFailures(root: string): string[] {
-  const failures: string[] = [];
-  const functionalFiles: string[] = [];
-  collectTypeScriptFiles(join(root, 'functional'), functionalFiles);
-  for (const path of functionalFiles) {
-    const file = relative(root, path).split(sep).join('/');
-    failures.push(...p5GlRenderSurfaceConsumerSourceFailures(file, readFileSync(path, 'utf8')));
-  }
-
-  const harnessFile = 'tools/harness/webgl.ts';
-  const harnessSource = readFileSync(join(root, harnessFile), 'utf8');
-  if (!harnessSource.includes('createGlCanvasElement(')) {
-    failures.push(`${harnessFile}: shared WebGL harness no longer creates the GL surface`);
-  } else {
-    failures.push(...p5GlRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
-  }
-
-  const runnerSource = readFileSync(join(root, 'examples/runners/web/vite.config.ts'), 'utf8');
-  failures.push(...p5GlExampleRunnerOwnershipFailures(runnerSource));
-  return failures;
-}
-
-// A WebGPU page must not conjure its own PRESENTATION canvas. It used to prove that by calling a Web
-// enabler that wrote a provider singleton; the singleton is gone, and the ownership fact it stood for is
-// now direct — the canvas a screen target or an acquisition is given comes from host-web's
-// createWebWgpuCanvasElement, the one place that knows CSS size from backing-store size.
+// A WebGPU page must not conjure its own PRESENTATION canvas. The canvas a screen target or an
+// acquisition is given comes from createRenderSurface(webSurfaceCreateCapability, …), the explicit
+// host capability seam that replaces the former createWebWgpuCanvasElement singleton.
 //
 // Scratch canvases a scene paints texture content into are deliberately NOT flagged here: they are a
 // different bypass with its own kind ('scratch-surface') and its own budget. Only the surface that
@@ -800,7 +703,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
       ts.isIdentifier(node.name) &&
       node.initializer !== undefined &&
       ts.isCallExpression(node.initializer) &&
-      expressionName(node.initializer.expression) === 'createWebWgpuCanvasElement'
+      expressionName(node.initializer.expression) === 'createRenderSurface'
     ) {
       hostCanvasBindings.add(node.name.text);
       usesHostCanvas = true;
@@ -828,12 +731,12 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   for (const surface of presentationSurfaces) {
     if (!hostCanvasBindings.has(surface.name)) {
       failures.push(
-        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createWebWgpuCanvasElement`,
+        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createRenderSurface`,
       );
     }
   }
-  if (usesHostCanvas && !importsFromHostWeb(parsed, 'createWebWgpuCanvasElement')) {
-    failures.push(`${file}: WGPU consumer does not import createWebWgpuCanvasElement from @flighthq/host-web`);
+  if (usesHostCanvas && !importsFromHostWeb(parsed, 'webSurfaceCreateCapability')) {
+    failures.push(`${file}: WGPU consumer does not import webSurfaceCreateCapability from @flighthq/host-web`);
   }
   return failures;
 }
@@ -863,8 +766,10 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
 
   const harnessFile = 'tools/harness/webgpu.ts';
   const harnessSource = readFileSync(join(root, harnessFile), 'utf8');
-  if (!harnessSource.includes('createWebWgpuCanvasElement(')) {
-    failures.push(`${harnessFile}: shared WebGPU harness no longer creates its surface through host-web`);
+  if (!harnessSource.includes('createRenderSurface(')) {
+    failures.push(
+      `${harnessFile}: shared WebGPU harness no longer creates its surface through the host capability seam`,
+    );
   } else {
     failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
   }
@@ -1574,10 +1479,6 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5TextRasterSurfaceProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
     ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
-    ...p5GlRenderSurfaceProviderBoundaryFailures(
-      readFileSync(join(process.cwd(), 'packages/render-gl/src/glElement.ts'), 'utf8'),
-    ),
-    ...p5GlRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuSurfaceArgumentFailures(process.cwd()),
     ...p5WgpuRenderSurfaceRepairFailures(report),
@@ -1653,31 +1554,6 @@ function exportedFunctionParameterNames(file: string, functionName: string): rea
   };
   visit(parsed);
   return names;
-}
-
-function statementInList(node: ts.Node): ts.Statement | null {
-  let current = node;
-  while (current.parent !== undefined) {
-    const statements = statementList(current.parent);
-    if (statements.includes(current as ts.Statement)) return current as ts.Statement;
-    current = current.parent;
-  }
-  return null;
-}
-
-function statementList(node: ts.Node): readonly ts.Statement[] {
-  return ts.isSourceFile(node) || ts.isBlock(node) ? node.statements : [];
-}
-
-function isEnableHostWebGlRenderSurfaceStatement(statement: ts.Statement | undefined): boolean {
-  return (
-    statement !== undefined &&
-    ts.isExpressionStatement(statement) &&
-    ts.isCallExpression(statement.expression) &&
-    ts.isIdentifier(statement.expression.expression) &&
-    statement.expression.expression.text === 'enableHostWebGlRenderSurface' &&
-    statement.expression.arguments.length === 0
-  );
 }
 
 function classifyNode(

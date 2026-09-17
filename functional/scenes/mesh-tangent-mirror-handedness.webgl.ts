@@ -1,4 +1,4 @@
-import { createWebGlContext, createWebImageResourceFromCanvas, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
 // mesh-tangent-mirror-handedness — gates the tangent-handedness half of the mirrored-model fix: that a
 // model transform with a negative determinant reaches tangent.w, so the bitangent (rebuilt in the shader
 // as w * cross(N, T)) is reconstructed with the correct hand on a mirrored instance.
@@ -47,7 +47,6 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -62,6 +61,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -72,8 +72,7 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

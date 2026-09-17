@@ -1,8 +1,8 @@
 import { createBitmap } from '@flighthq/bitmap';
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWebWgpuHostBackend,
@@ -22,7 +22,7 @@ import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/texturea
 import { createTilemap } from '@flighthq/tilemap';
 import { StandardMaterialKind, TilemapKind } from '@flighthq/types';
 
-const canvas = createWebWgpuCanvasElement(320, 240, 1);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU Tilemap size fixture requires a canvas.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);

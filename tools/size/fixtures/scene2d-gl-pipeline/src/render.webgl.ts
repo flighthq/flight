@@ -1,8 +1,7 @@
-import { createWebGlContext } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
-  createGlCanvasElement,
   createGlRenderState,
   enableGlBlendModeSupport,
   getGlPipelineRegistries,
@@ -15,7 +14,7 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, scene2DGlPipeline } from '@flighthq/scene2d-gl';
 import { RegistryEntryState } from '@flighthq/types';
 
-const canvas = createGlCanvasElement(400, 300, 1);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

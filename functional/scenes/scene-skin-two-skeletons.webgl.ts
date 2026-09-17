@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, GlRenderEffectPipeline, Node3D, Skeleton3D } from '@flighthq/sdk';
@@ -11,7 +11,6 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
@@ -28,6 +27,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   skinVertices,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -55,8 +55,7 @@ declareExpectedImageDescription(
 // It is also its own negative control: if the base index stops being per-draw, the two bars collapse
 // together again, which is exactly the failure the scene was built to show.
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

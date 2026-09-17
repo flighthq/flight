@@ -1,4 +1,4 @@
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
@@ -10,7 +10,6 @@ import {
   beginGlRenderEffectPipeline,
   createDisplayObject,
   getBitmapPixelRgb,
-  createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createPosterizeEffect,
@@ -21,6 +20,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -38,8 +38,7 @@ declareExpectedImageDescription(
 // Full-frame posterize color grade: quantizes each channel to 4 levels. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).
 const pixelRatio = window.devicePixelRatio || 1;
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

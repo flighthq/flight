@@ -2,7 +2,6 @@ export * from './glCompressedTexture';
 export * from './glCubeRenderTarget';
 export * from './glDraw';
 export * from './glExternalTexture';
-export * from './glElement';
 export * from './enableGlRenderTextureGuards';
 export * from './enableGlRenderStateGuards';
 export * from './enableGlTextureResolverGuards';

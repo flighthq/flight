@@ -1,15 +1,14 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { createWebGlContext, enableHostWebGlRenderSurface } from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene3DRender } from '@flighthq/render';
+import { createRenderSurface, prepareScene3DRender } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
-  createGlCanvasElement,
   createGlPipeline,
   createGlRenderState,
   beginGlRenderPass,
@@ -20,8 +19,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
 import { UnlitMaterialKind } from '@flighthq/types';
 
-enableHostWebGlRenderSurface();
-const canvas = createGlCanvasElement(320, 240, 1);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 320, 240, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

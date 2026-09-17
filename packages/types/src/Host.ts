@@ -80,6 +80,7 @@ import type { HostInputTargetCapability } from './HostInputTarget';
 import type { HostMessageDialogCapability } from './HostMessageDialog';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
 import type { HostPromptDialogCapability } from './HostPromptDialog';
+import type { HostSurfaceCreateCapability } from './HostSurface';
 import type { HostVideoCapability } from './HostVideo';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
 import type {
@@ -503,6 +504,7 @@ export interface HostStatusBarCapabilities {
 }
 
 export interface HostSurfaceCapabilities {
+  readonly create?: HostSurfaceCreateCapability;
   readonly resize?: HostSurfaceCapability;
 }
 

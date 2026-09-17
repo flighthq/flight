@@ -1,10 +1,9 @@
-import { createWebGlContext, webRaster2DSurfaceCreator } from '@flighthq/host-web/contract';
+import { createWebGlContext, webRaster2DSurfaceCreator, webSurfaceCreateCapability } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene3DGlPipeline,
   QuadBatchKind,
   TextLabelKind,
-  createGlCanvasElement,
   createGlRenderState,
   enableFlightDiagnostics,
   defaultGlQuadBatchRenderer,
@@ -15,10 +14,11 @@ import {
   beginGlRenderPass,
   endGlRenderPass,
   createGlScreenRenderTarget,
+  createRenderSurface,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createGlCanvasElement(800, 500, pixelRatio);
+export const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(

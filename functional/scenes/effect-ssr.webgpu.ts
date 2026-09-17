@@ -1,5 +1,5 @@
 import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
-import { createWebWgpuCanvasElement } from '@flighthq/host-web';
+import { webSurfaceCreateCapability } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -25,6 +25,7 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   ShapeKind,
+  createRenderSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -45,7 +46,7 @@ declareExpectedImageDescription(
 export const functionalBackendSupport = 'control' as const;
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createRenderSurface(webSurfaceCreateCapability, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const webWgpuHost = createWebWgpuHostBackend();

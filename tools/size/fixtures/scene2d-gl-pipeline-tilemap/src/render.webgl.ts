@@ -1,11 +1,7 @@
-import {
-  createWebGlContext,
-  createWebGlRenderSurfaceCreator,
-  createWebImageResourceFromCanvas,
-} from '@flighthq/host-web';
+import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { createRenderSurface, prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
   createGlPipeline,
@@ -23,8 +19,7 @@ import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/texturea
 import { createTilemap } from '@flighthq/tilemap';
 import { RegistryEntryState, TilemapKind } from '@flighthq/types';
 
-const canvas = createWebGlRenderSurfaceCreator().createRenderSurface(400, 300, 1);
-if (canvas === null) throw new Error('The WebGL Tilemap size fixture requires a canvas render surface.');
+const canvas = createRenderSurface(webSurfaceCreateCapability, 400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

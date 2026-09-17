@@ -1,9 +1,9 @@
 import {
   createWebGlContext,
-  enableHostWebGlRenderSurface,
   webCanvasRenderSurfaceCreator,
   webHostImage,
   webRaster2DSurfaceCreator,
+  webSurfaceCreateCapability,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -13,9 +13,9 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
-  createGlCanvasElement,
   createGlRenderState,
   createMatrix,
+  createRenderSurface,
   defaultGlParticleEmitter2DRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
@@ -64,8 +64,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  enableHostWebGlRenderSurface();
-  const canvas = createGlCanvasElement(width, height, pixelRatio);
+  const canvas = createRenderSurface(webSurfaceCreateCapability, width, height, pixelRatio);
   document.body.appendChild(canvas);
 
   const state = createGlRenderState(
