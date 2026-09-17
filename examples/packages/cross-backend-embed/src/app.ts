@@ -40,7 +40,7 @@ const INSTANCE_COUNT = 24;
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
 const producerCanvas = createSurface(webSurfaceCreateCapability, PRODUCER_WIDTH, PRODUCER_HEIGHT);
 const producerState = createGlRenderState(
-  createWebGlContext(producerCanvas.native, {
+  createWebGlContext(producerCanvas, {
     contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -79,7 +79,7 @@ addNodeChild(producerRoot, batch);
 // The consumer is an ordinary DOM scene. Both nodes below reference the same producer canvas, but
 // their ownership contracts differ: Sprite borrows its pixels; HtmlView mounts the element itself.
 const root = createDisplayObject();
-const producerImage = createWebImageResourceFromCanvas(producerCanvas.native);
+const producerImage = createWebImageResourceFromCanvas(producerCanvas);
 const portableSprite = createSprite();
 portableSprite.data.texture = createTexture({ dimension: '2d', source: producerImage });
 portableSprite.x = 24;
@@ -88,7 +88,7 @@ invalidateNodeLocalTransform(portableSprite);
 addNodeChild(root, portableSprite);
 
 const liveView = createHtmlView();
-liveView.data.element = producerCanvas.native;
+liveView.data.element = producerCanvas;
 liveView.data.width = PRODUCER_WIDTH;
 liveView.data.height = PRODUCER_HEIGHT;
 liveView.x = 416;
@@ -105,7 +105,7 @@ addLabel('Producer owns pixels + cadence. Consumer owns placement.', 24, 336, 13
 
 let phaseOffset = 0;
 let clickCount = 0;
-producerCanvas.native.addEventListener('click', () => {
+producerCanvas.addEventListener('click', () => {
   clickCount++;
   phaseOffset += 17;
   setTextLabelString(liveEventLabel, `native canvas clicks: ${clickCount}`);

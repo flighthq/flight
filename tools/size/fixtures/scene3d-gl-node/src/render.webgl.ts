@@ -17,10 +17,10 @@ import { createSurface } from '@flighthq/surface';
 
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createWebGlContext(canvas.native, {
+  createWebGlContext(canvas, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   createGlPipeline(createEmptyGlRegistries()),

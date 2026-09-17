@@ -17,10 +17,10 @@ import { RegistryEntryState } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
-document.body.appendChild(canvas.native);
+document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createWebGlContext(canvas.native, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   scene2DGlPipeline,
   { pixelRatio: 1 },
 );

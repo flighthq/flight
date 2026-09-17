@@ -752,7 +752,6 @@ export * from './BitmapCompositeMode';
 export * from './BitmapEdgeMode';
 export * from './BitmapFingerprint';
 export * from './BitmapHistogram';
-export * from './Surface';
 export * from './SurfaceMaterial';
 export * from './SurfaceMaterialOptions';
 export * from './BitmapMismatch';
