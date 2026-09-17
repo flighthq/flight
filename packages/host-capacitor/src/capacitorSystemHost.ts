@@ -1,13 +1,14 @@
-import type { CapacitorApi, HostSystemCapabilities } from '@flighthq/types/contract';
+import type { CapacitorApi, HostDeviceCapabilities, HostGeolocationCapabilities } from '@flighthq/types/contract';
 
 import { capacitorHostDevice } from './capacitorDevice';
 import { capacitorHostGeolocation } from './capacitorGeolocation';
 
-export function capacitorHostSystem(
+export function capacitorHostDeviceGroup(capacitor: CapacitorApi): Required<Pick<HostDeviceCapabilities, 'info'>> {
+  return { info: capacitorHostDevice(capacitor) };
+}
+
+export function capacitorHostGeolocationGroup(
   capacitor: CapacitorApi,
-): HostSystemCapabilities & Required<Pick<HostSystemCapabilities, 'device' | 'geolocation'>> {
-  return {
-    device: capacitorHostDevice(capacitor),
-    geolocation: capacitorHostGeolocation(capacitor),
-  };
+): Required<Pick<HostGeolocationCapabilities, 'position'>> {
+  return { position: capacitorHostGeolocation(capacitor) };
 }

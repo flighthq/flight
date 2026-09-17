@@ -10,7 +10,7 @@ import type {
   StatusBarStyle,
   HostStatusBarStyleCapability,
   HostStatusBarVisibilityCapability,
-  HostUiCapabilities,
+  HostStatusBarCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -23,6 +23,19 @@ type CapacitorStatusBarProvider = Entity &
 
 export function capacitorHostStatusBarColor(capacitor: CapacitorApi): HostStatusBarColorCapability {
   return capacitorStatusBarProvider(capacitor);
+}
+
+export function capacitorHostStatusBarGroup(
+  capacitor: CapacitorApi,
+): Required<Pick<HostStatusBarCapabilities, 'color' | 'info' | 'overlays' | 'style' | 'visibility'>> {
+  const provider = capacitorStatusBarProvider(capacitor);
+  return {
+    color: provider,
+    info: provider,
+    overlays: provider,
+    style: provider,
+    visibility: provider,
+  };
 }
 
 export function capacitorHostStatusBarInfo(capacitor: CapacitorApi): HostStatusBarInfoCapability {
@@ -39,25 +52,6 @@ export function capacitorHostStatusBarStyle(capacitor: CapacitorApi): HostStatus
 
 export function capacitorHostStatusBarVisibility(capacitor: CapacitorApi): HostStatusBarVisibilityCapability {
   return capacitorStatusBarProvider(capacitor);
-}
-
-export function capacitorHostUi(
-  capacitor: CapacitorApi,
-): HostUiCapabilities &
-  Required<
-    Pick<
-      HostUiCapabilities,
-      'statusBarColor' | 'statusBarInfo' | 'statusBarOverlays' | 'statusBarStyle' | 'statusBarVisibility'
-    >
-  > {
-  const provider = capacitorStatusBarProvider(capacitor);
-  return {
-    statusBarColor: provider,
-    statusBarInfo: provider,
-    statusBarOverlays: provider,
-    statusBarStyle: provider,
-    statusBarVisibility: provider,
-  };
 }
 
 function capacitorStatusBarProvider(capacitor: CapacitorApi): CapacitorStatusBarProvider {

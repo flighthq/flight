@@ -75,8 +75,8 @@ describe('capacitorHost', () => {
   it('exposes the real Capacitor haptics provider', () => {
     const host = capacitorHost(fakeCapacitor(), 'ios');
     expect(EntityRuntimeKey in host).toBe(true);
-    expect(host.input.haptics).toBeDefined();
-    expect(typeof host.input.haptics?.vibrate).toBe('function');
+    expect(host.haptics.engine).toBeDefined();
+    expect(typeof host.haptics.engine?.vibrate).toBe('function');
   });
 
   // An empty group means "not yet migrated off its package-local seam", NEVER "Capacitor cannot do
@@ -93,23 +93,23 @@ describe('capacitorHost', () => {
     expect('directoryOpen' in host.dialog).toBe(false);
     expect('fileOpen' in host.dialog).toBe(false);
     expect('fileSave' in host.dialog).toBe(false);
-    expect(host.input.haptics).toBeDefined();
+    expect(host.haptics.engine).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
     expect(host.share.content).toBeDefined();
-    expect(host.storage.fileSystem).toBeDefined();
-    expect(host.ui.statusBarColor).toBeDefined();
-    expect(host.ui.statusBarInfo).toBeDefined();
-    expect(host.system.device).toBeDefined();
-    expect(host.media).toEqual({});
+    expect(host.fileSystem.access).toBeDefined();
+    expect(host.statusBar.color).toBeDefined();
+    expect(host.statusBar.info).toBeDefined();
+    expect(host.device.info).toBeDefined();
+    expect(host.audio).toEqual({});
+    expect(host.video).toEqual({});
     expect(host.shortcut).toEqual({});
     expect(host.updater).toEqual({});
   });
 
-  // Every HostWindowProvider member is optional, so a provider carrying no operation is the honest claim for
-  // a webview app with no native window operations of its own. Counted by own keys rather than compared
-  // to {}, because the backend is an Entity and carries a runtime slot that is not an operation.
+  // A webview app has no native window operations of its own, so the whole window group is absent —
+  // an empty struct of capability slots rather than a live capability with inert methods.
   it('claims no native window operations', () => {
-    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios').window)).toEqual([]);
+    expect(capacitorHost(fakeCapacitor(), 'ios').window).toEqual({});
   });
 
   it('names Shell as an exact empty capability group', () => {
@@ -128,16 +128,16 @@ describe('capacitorHost', () => {
     expect(host.protocol.open.subscribe).toBeTypeOf('function');
     expect(host.connectivity.status.getStatus).toBeTypeOf('function');
     expect(host.connectivity.change.subscribe).toBeTypeOf('function');
-    expect(host.system.device).toBeDefined();
-    expect(host.storage.fileSystem.readTextFile).toBeTypeOf('function');
-    expect(host.system.geolocation).toBeDefined();
+    expect(host.device.info).toBeDefined();
+    expect(host.fileSystem.access.readTextFile).toBeTypeOf('function');
+    expect(host.geolocation.position).toBeDefined();
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
     expect(host.share.content.canShareContent({ text: 'ready' })).toBe(true);
-    expect(host.input.softKeyboardInfo).toBeDefined();
-    expect(host.input.softKeyboardVisibility).toBeDefined();
-    expect(host.ui.statusBarColor.setBackgroundColor).toBeTypeOf('function');
-    expect(host.ui.statusBarInfo.getInfo).toBeTypeOf('function');
+    expect(host.softKeyboard.info).toBeDefined();
+    expect(host.softKeyboard.visibility).toBeDefined();
+    expect(host.statusBar.color.setBackgroundColor).toBeTypeOf('function');
+    expect(host.statusBar.info.getInfo).toBeTypeOf('function');
   });
 
   it('routes a capability call through to the Capacitor provider', async () => {

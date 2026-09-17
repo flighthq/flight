@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { capacitorHostInput } from './capacitorInputHost';
+import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost';
 
 function fakeCapacitor(): CapacitorApi {
   return {
@@ -12,19 +12,26 @@ function fakeCapacitor(): CapacitorApi {
   } as unknown as CapacitorApi;
 }
 
-describe('capacitorHostInput', () => {
-  it('publishes the exact mobile input profile as Entity-backed providers', () => {
-    const input = capacitorHostInput(fakeCapacitor());
-    expect(Object.keys(input).sort()).toEqual([
-      'haptics',
-      'softKeyboardAccessoryBar',
-      'softKeyboardChange',
-      'softKeyboardInfo',
-      'softKeyboardResizeModeWrite',
-      'softKeyboardScrollAssist',
-      'softKeyboardStyle',
-      'softKeyboardVisibility',
+describe('capacitorHostHapticsGroup', () => {
+  it('publishes the Entity-backed haptics engine slot', () => {
+    const haptics = capacitorHostHapticsGroup(fakeCapacitor());
+    expect(Object.keys(haptics)).toEqual(['engine']);
+    expect(EntityRuntimeKey in haptics.engine).toBe(true);
+  });
+});
+
+describe('capacitorHostSoftKeyboardGroup', () => {
+  it('publishes the exact mobile soft-keyboard profile as Entity-backed providers', () => {
+    const softKeyboard = capacitorHostSoftKeyboardGroup(fakeCapacitor());
+    expect(Object.keys(softKeyboard).sort()).toEqual([
+      'accessoryBar',
+      'change',
+      'info',
+      'resizeModeWrite',
+      'scrollAssist',
+      'style',
+      'visibility',
     ]);
-    for (const provider of Object.values(input)) expect(EntityRuntimeKey in provider).toBe(true);
+    for (const provider of Object.values(softKeyboard)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });

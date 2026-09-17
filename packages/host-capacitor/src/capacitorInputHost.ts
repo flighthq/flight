@@ -1,4 +1,4 @@
-import type { CapacitorApi, HostInputCapabilities } from '@flighthq/types/contract';
+import type { CapacitorApi, HostHapticsCapabilities, HostSoftKeyboardCapabilities } from '@flighthq/types/contract';
 
 import { capacitorHostHaptics } from './capacitorHaptics';
 import {
@@ -11,30 +11,28 @@ import {
   capacitorHostSoftKeyboardVisibility,
 } from './capacitorKeyboard';
 
-export function capacitorHostInput(
+// The input-domain groups Capacitor covers. `host.input` itself is empty on mobile — a Capacitor app
+// has no ingress, focus, pointer-lock or drop-file surface — while haptics and the soft keyboard are
+// independently-coverable groups in their own right.
+export function capacitorHostHapticsGroup(capacitor: CapacitorApi): Required<Pick<HostHapticsCapabilities, 'engine'>> {
+  return { engine: capacitorHostHaptics(capacitor) };
+}
+
+export function capacitorHostSoftKeyboardGroup(
   capacitor: CapacitorApi,
-): HostInputCapabilities &
-  Required<
-    Pick<
-      HostInputCapabilities,
-      | 'haptics'
-      | 'softKeyboardAccessoryBar'
-      | 'softKeyboardChange'
-      | 'softKeyboardInfo'
-      | 'softKeyboardResizeModeWrite'
-      | 'softKeyboardScrollAssist'
-      | 'softKeyboardStyle'
-      | 'softKeyboardVisibility'
-    >
-  > {
+): Required<
+  Pick<
+    HostSoftKeyboardCapabilities,
+    'accessoryBar' | 'change' | 'info' | 'resizeModeWrite' | 'scrollAssist' | 'style' | 'visibility'
+  >
+> {
   return {
-    haptics: capacitorHostHaptics(capacitor),
-    softKeyboardAccessoryBar: capacitorHostSoftKeyboardAccessoryBar(capacitor),
-    softKeyboardChange: capacitorHostSoftKeyboardChange(capacitor),
-    softKeyboardInfo: capacitorHostSoftKeyboardInfo(capacitor),
-    softKeyboardResizeModeWrite: capacitorHostSoftKeyboardResizeModeWrite(capacitor),
-    softKeyboardScrollAssist: capacitorHostSoftKeyboardScrollAssist(capacitor),
-    softKeyboardStyle: capacitorHostSoftKeyboardStyle(capacitor),
-    softKeyboardVisibility: capacitorHostSoftKeyboardVisibility(capacitor),
+    accessoryBar: capacitorHostSoftKeyboardAccessoryBar(capacitor),
+    change: capacitorHostSoftKeyboardChange(capacitor),
+    info: capacitorHostSoftKeyboardInfo(capacitor),
+    resizeModeWrite: capacitorHostSoftKeyboardResizeModeWrite(capacitor),
+    scrollAssist: capacitorHostSoftKeyboardScrollAssist(capacitor),
+    style: capacitorHostSoftKeyboardStyle(capacitor),
+    visibility: capacitorHostSoftKeyboardVisibility(capacitor),
   };
 }
