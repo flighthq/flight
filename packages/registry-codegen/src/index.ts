@@ -1,2 +1,1 @@
-export * from './contract';
-export * from './registryCodegen';
+export { createRegistryCodegenPlan } from './registryCodegen';
