@@ -10,15 +10,15 @@ import type {
 
 import { getVideoChannelSignals } from './mediaChannelSignals';
 
-export function destroyVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+export function destroyVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   const element = channelElements.get(channel) ?? getElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
     if (runtime !== undefined) {
-      provider.removeEndedListener!(element, runtime.onEnded);
+      hostVideo.removeEndedListener!(element, runtime.onEnded);
       videoChannelRuntimes.delete(element);
     }
-    provider.pause!(element);
+    hostVideo.pause!(element);
     channelElements.delete(channel);
   }
   channel.source = null;
@@ -26,24 +26,24 @@ export function destroyVideoChannel(provider: HostVideoCapability, channel: Vide
   channel.currentTime = 0;
 }
 
-export function getVideoChannelCurrentTime(provider: HostVideoCapability, channel: VideoChannel): number {
+export function getVideoChannelCurrentTime(hostVideo: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
   if (element === null || channel.state !== 'playing') return channel.currentTime;
-  return provider.getCurrentTime!(element) * 1000;
+  return hostVideo.getCurrentTime!(element) * 1000;
 }
 
 export function getVideoChannelDuration(channel: VideoChannel): number {
   return channel.length;
 }
 
-export function getVideoChannelHeight(provider: HostVideoCapability, channel: VideoChannel): number {
+export function getVideoChannelHeight(hostVideo: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
-  return element !== null ? provider.getHeight!(element) : 0;
+  return element !== null ? hostVideo.getHeight!(element) : 0;
 }
 
-export function getVideoChannelWidth(provider: HostVideoCapability, channel: VideoChannel): number {
+export function getVideoChannelWidth(hostVideo: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
-  return element !== null ? provider.getWidth!(element) : 0;
+  return element !== null ? hostVideo.getWidth!(element) : 0;
 }
 
 export function isVideoChannelMuted(channel: Readonly<VideoChannel>): boolean {
@@ -54,18 +54,18 @@ export function isVideoChannelPlaying(channel: VideoChannel): boolean {
   return channel.state === 'playing';
 }
 
-export function pauseVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+export function pauseVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
   const element = getElement(channel.source);
   if (element === null) return;
-  channel.currentTime = getVideoChannelCurrentTime(provider, channel);
+  channel.currentTime = getVideoChannelCurrentTime(hostVideo, channel);
   channel.state = 'paused';
-  provider.pause!(element);
+  hostVideo.pause!(element);
   emitVideoChannelSignal(channel, 'onPause');
 }
 
 export function playVideoResource(
-  provider: HostVideoCapability,
+  hostVideo: HostVideoCapability,
   source: VideoResource,
   options?: Readonly<VideoPlayOptions>,
 ): VideoChannel | null {
@@ -74,13 +74,13 @@ export function playVideoResource(
 
   const runtime = videoChannelRuntimes.get(element);
   if (runtime !== undefined) {
-    provider.removeEndedListener!(element, runtime.onEnded);
+    hostVideo.removeEndedListener!(element, runtime.onEnded);
   }
 
   const channel: VideoChannel = {
     currentTime: options?.currentTime ?? 0,
     gain: options?.gain ?? 1,
-    length: provider.getDuration!(element) * 1000,
+    length: hostVideo.getDuration!(element) * 1000,
     loops: options?.loops ?? 0,
     muted: false,
     playbackRate: options?.playbackRate ?? 1,
@@ -89,70 +89,70 @@ export function playVideoResource(
     onComplete: createSignal(),
   };
 
-  const onEnded = (): void => completeVideoChannel(provider, channel);
+  const onEnded = (): void => completeVideoChannel(hostVideo, channel);
   videoChannelRuntimes.set(element, { loopsRemaining: channel.loops, onEnded });
   channelElements.set(channel, element);
 
-  provider.setCurrentTime!(element, channel.currentTime / 1000);
-  provider.setVolume!(element, channel.gain);
-  provider.setPlaybackRate!(element, channel.playbackRate);
-  provider.setLoop!(element, false);
-  provider.addEndedListener!(element, onEnded);
+  hostVideo.setCurrentTime!(element, channel.currentTime / 1000);
+  hostVideo.setVolume!(element, channel.gain);
+  hostVideo.setPlaybackRate!(element, channel.playbackRate);
+  hostVideo.setLoop!(element, false);
+  hostVideo.addEndedListener!(element, onEnded);
 
-  startVideoChannel(provider, channel);
+  startVideoChannel(hostVideo, channel);
   emitVideoChannelSignal(channel, 'onPlay');
   return channel;
 }
 
-export function resumeVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+export function resumeVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state === 'playing' || getElement(channel.source) === null) return;
-  startVideoChannel(provider, channel);
+  startVideoChannel(hostVideo, channel);
   emitVideoChannelSignal(channel, 'onPlay');
 }
 
 export function setVideoChannelCurrentTime(
-  provider: HostVideoCapability,
+  hostVideo: HostVideoCapability,
   channel: VideoChannel,
   value: number,
 ): number {
   channel.currentTime = clamp(value, 0, channel.length);
   const element = getElement(channel.source);
-  if (element !== null) provider.setCurrentTime!(element, channel.currentTime / 1000);
+  if (element !== null) hostVideo.setCurrentTime!(element, channel.currentTime / 1000);
   return channel.currentTime;
 }
 
-export function setVideoChannelGain(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
+export function setVideoChannelGain(hostVideo: HostVideoCapability, channel: VideoChannel, value: number): number {
   channel.gain = value;
   const element = getElement(channel.source);
-  if (element !== null) provider.setVolume!(element, value);
+  if (element !== null) hostVideo.setVolume!(element, value);
   return channel.gain;
 }
 
-export function setVideoChannelMuted(provider: HostVideoCapability, channel: VideoChannel, value: boolean): boolean {
+export function setVideoChannelMuted(hostVideo: HostVideoCapability, channel: VideoChannel, value: boolean): boolean {
   channel.muted = value;
   const element = getElement(channel.source);
-  if (element !== null) provider.setMuted!(element, value);
+  if (element !== null) hostVideo.setMuted!(element, value);
   return channel.muted;
 }
 
 export function setVideoChannelPlaybackRate(
-  provider: HostVideoCapability,
+  hostVideo: HostVideoCapability,
   channel: VideoChannel,
   value: number,
 ): number {
   channel.playbackRate = value;
   const element = getElement(channel.source);
-  if (element !== null) provider.setPlaybackRate!(element, value);
+  if (element !== null) hostVideo.setPlaybackRate!(element, value);
   return channel.playbackRate;
 }
 
-export function stopVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+export function stopVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   const element = getElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
-    if (runtime !== undefined) provider.removeEndedListener!(element, runtime.onEnded);
-    provider.pause!(element);
-    provider.setCurrentTime!(element, 0);
+    if (runtime !== undefined) hostVideo.removeEndedListener!(element, runtime.onEnded);
+    hostVideo.pause!(element);
+    hostVideo.setCurrentTime!(element, 0);
   }
   channel.currentTime = 0;
   channel.state = 'stopped';
@@ -171,7 +171,7 @@ function getElement(resource: Readonly<VideoResource> | null): HostImageSource |
   return resource?.element ?? null;
 }
 
-function completeVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+function completeVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
   const element = getElement(channel.source);
   const runtime = element !== null ? videoChannelRuntimes.get(element) : undefined;
@@ -179,7 +179,7 @@ function completeVideoChannel(provider: HostVideoCapability, channel: VideoChann
     if (runtime.loopsRemaining > 0) runtime.loopsRemaining--;
     channel.currentTime = 0;
     emitVideoChannelSignal(channel, 'onLoop');
-    startVideoChannel(provider, channel);
+    startVideoChannel(hostVideo, channel);
     return;
   }
   channel.currentTime = channel.length;
@@ -196,12 +196,12 @@ function emitVideoChannelSignal(
   if (signals !== null) emitSignal(signals[name]);
 }
 
-function startVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
+function startVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   const element = getElement(channel.source);
   if (element === null) return;
-  provider.setCurrentTime!(element, channel.currentTime / 1000);
+  hostVideo.setCurrentTime!(element, channel.currentTime / 1000);
   channel.state = 'playing';
-  provider.play!(element).catch(() => {
+  hostVideo.play!(element).catch(() => {
     if (channel.state === 'playing') channel.state = 'stopped';
   });
 }
