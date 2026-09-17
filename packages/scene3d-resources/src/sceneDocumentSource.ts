@@ -1,5 +1,5 @@
 import { loadBytes, loadText } from '@flighthq/loader/contract';
-import type { HostNetProvider, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { HostNetCapability, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
@@ -14,7 +14,7 @@ export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
 // response, or null on any expected transport/HTTP failure. No resource resolution or renderer/GPU work
 // happens here; callers compose parsing and later resource acquisition explicitly.
 export async function loadScene3DDocumentBytesFromUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Uint8Array | null> {
@@ -25,7 +25,7 @@ export async function loadScene3DDocumentBytesFromUrl(
 // for the text document loaders (OBJ, MD5). Returns the text on a 2xx response, or null on any expected
 // transport/HTTP failure. Fetches only source text — no parsing, resource realization, or rendering work.
 export async function loadScene3DDocumentTextFromUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<string | null> {

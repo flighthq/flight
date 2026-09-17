@@ -1,7 +1,7 @@
 import type {
   HapticImpactStyle,
   HapticNotificationType,
-  HostHapticsProvider,
+  HostHapticsCapability,
   HapticsCapabilities,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -38,9 +38,9 @@ function makeCapabilities(overrides: Partial<HapticsCapabilities> = {}): Haptics
 // A host carrying a recording haptics provider. Every operation is explicit here — there is no ambient
 // slot to install into and nothing to reset between tests, which is the point of the migration: two
 // tests can hold two different providers at once without interfering.
-function makeHost(overrides: Partial<HostHapticsProvider> = {}): {
+function makeHost(overrides: Partial<HostHapticsCapability> = {}): {
   calls: RecordedCall[];
-  host: { readonly input: { readonly haptics: HostHapticsProvider } };
+  host: { readonly input: { readonly haptics: HostHapticsCapability } };
 } {
   const calls: RecordedCall[] = [];
   const record =
@@ -49,7 +49,7 @@ function makeHost(overrides: Partial<HostHapticsProvider> = {}): {
       calls.push({ args, name });
       return result;
     };
-  const haptics: HostHapticsProvider = {
+  const haptics: HostHapticsCapability = {
     [EntityRuntimeKey]: undefined,
     cancel: record('cancel', true),
     capabilities(out: HapticsCapabilities): HapticsCapabilities {
@@ -58,12 +58,12 @@ function makeHost(overrides: Partial<HostHapticsProvider> = {}): {
       out.supported = true;
       return out;
     },
-    impact: record('impact', true) as HostHapticsProvider['impact'],
-    isSupported: record('isSupported', true) as HostHapticsProvider['isSupported'],
-    notification: record('notification', true) as HostHapticsProvider['notification'],
-    selection: record('selection', true) as HostHapticsProvider['selection'],
-    vibrate: record('vibrate', true) as HostHapticsProvider['vibrate'],
-    vibratePattern: record('vibratePattern', true) as HostHapticsProvider['vibratePattern'],
+    impact: record('impact', true) as HostHapticsCapability['impact'],
+    isSupported: record('isSupported', true) as HostHapticsCapability['isSupported'],
+    notification: record('notification', true) as HostHapticsCapability['notification'],
+    selection: record('selection', true) as HostHapticsCapability['selection'],
+    vibrate: record('vibrate', true) as HostHapticsCapability['vibrate'],
+    vibratePattern: record('vibratePattern', true) as HostHapticsCapability['vibratePattern'],
     ...overrides,
   };
   return { calls, host: { input: { haptics } } };
@@ -208,7 +208,7 @@ describe('vibrateDeviceWaveform', () => {
         calls.push({ args, name: 'vibrateWaveform' });
         return true;
       },
-    } as Partial<HostHapticsProvider>);
+    } as Partial<HostHapticsCapability>);
     expect(vibrateDeviceWaveform(host.input.haptics, [10, 20], [255, 128], 1)).toBe(true);
     expect(calls[0]).toEqual({ args: [[10, 20], [255, 128], 1], name: 'vibrateWaveform' });
   });

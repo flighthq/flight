@@ -1,6 +1,6 @@
-import type { HostVideoProvider, VideoResourceUrl } from '@flighthq/types/contract';
+import type { HostVideoCapability, VideoResourceUrl } from '@flighthq/types/contract';
 
-export function canPlayVideoType(backend: Readonly<HostVideoProvider>, mimeType: string): boolean {
+export function canPlayVideoType(backend: Readonly<HostVideoCapability>, mimeType: string): boolean {
   if (mimeType === '') return false;
   return probeSelectedBackend(backend, mimeType);
 }
@@ -43,7 +43,7 @@ export function inferVideoMimeType(url: string): string | null {
 }
 
 export function selectVideoResourceUrl(
-  backend: Readonly<HostVideoProvider>,
+  backend: Readonly<HostVideoCapability>,
   sources: Readonly<VideoResourceUrl[]>,
 ): VideoResourceUrl | null {
   for (const source of sources) {
@@ -54,7 +54,7 @@ export function selectVideoResourceUrl(
   return null;
 }
 
-function probeSelectedBackend(backend: Readonly<HostVideoProvider>, mimeType: string): boolean {
+function probeSelectedBackend(backend: Readonly<HostVideoCapability>, mimeType: string): boolean {
   if (mimeType === '') return false;
   try {
     return backend.canPlayType(mimeType) === true;

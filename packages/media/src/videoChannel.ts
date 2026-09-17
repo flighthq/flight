@@ -2,7 +2,7 @@ import { clamp } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   HostImageSource,
-  HostVideoProvider,
+  HostVideoCapability,
   VideoChannel,
   VideoPlayOptions,
   VideoResource,
@@ -10,7 +10,7 @@ import type {
 
 import { getVideoChannelSignals } from './mediaChannelSignals';
 
-export function destroyVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+export function destroyVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   const element = channelElements.get(channel) ?? getElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
@@ -26,7 +26,7 @@ export function destroyVideoChannel(provider: HostVideoProvider, channel: VideoC
   channel.currentTime = 0;
 }
 
-export function getVideoChannelCurrentTime(provider: HostVideoProvider, channel: VideoChannel): number {
+export function getVideoChannelCurrentTime(provider: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
   if (element === null || channel.state !== 'playing') return channel.currentTime;
   return provider.getCurrentTime!(element) * 1000;
@@ -36,12 +36,12 @@ export function getVideoChannelDuration(channel: VideoChannel): number {
   return channel.length;
 }
 
-export function getVideoChannelHeight(provider: HostVideoProvider, channel: VideoChannel): number {
+export function getVideoChannelHeight(provider: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
   return element !== null ? provider.getHeight!(element) : 0;
 }
 
-export function getVideoChannelWidth(provider: HostVideoProvider, channel: VideoChannel): number {
+export function getVideoChannelWidth(provider: HostVideoCapability, channel: VideoChannel): number {
   const element = getElement(channel.source);
   return element !== null ? provider.getWidth!(element) : 0;
 }
@@ -54,7 +54,7 @@ export function isVideoChannelPlaying(channel: VideoChannel): boolean {
   return channel.state === 'playing';
 }
 
-export function pauseVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+export function pauseVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
   const element = getElement(channel.source);
   if (element === null) return;
@@ -65,7 +65,7 @@ export function pauseVideoChannel(provider: HostVideoProvider, channel: VideoCha
 }
 
 export function playVideoResource(
-  provider: HostVideoProvider,
+  provider: HostVideoCapability,
   source: VideoResource,
   options?: Readonly<VideoPlayOptions>,
 ): VideoChannel | null {
@@ -104,41 +104,41 @@ export function playVideoResource(
   return channel;
 }
 
-export function resumeVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+export function resumeVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state === 'playing' || getElement(channel.source) === null) return;
   startVideoChannel(provider, channel);
   emitVideoChannelSignal(channel, 'onPlay');
 }
 
-export function setVideoChannelCurrentTime(provider: HostVideoProvider, channel: VideoChannel, value: number): number {
+export function setVideoChannelCurrentTime(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
   channel.currentTime = clamp(value, 0, channel.length);
   const element = getElement(channel.source);
   if (element !== null) provider.setCurrentTime!(element, channel.currentTime / 1000);
   return channel.currentTime;
 }
 
-export function setVideoChannelGain(provider: HostVideoProvider, channel: VideoChannel, value: number): number {
+export function setVideoChannelGain(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
   channel.gain = value;
   const element = getElement(channel.source);
   if (element !== null) provider.setVolume!(element, value);
   return channel.gain;
 }
 
-export function setVideoChannelMuted(provider: HostVideoProvider, channel: VideoChannel, value: boolean): boolean {
+export function setVideoChannelMuted(provider: HostVideoCapability, channel: VideoChannel, value: boolean): boolean {
   channel.muted = value;
   const element = getElement(channel.source);
   if (element !== null) provider.setMuted!(element, value);
   return channel.muted;
 }
 
-export function setVideoChannelPlaybackRate(provider: HostVideoProvider, channel: VideoChannel, value: number): number {
+export function setVideoChannelPlaybackRate(provider: HostVideoCapability, channel: VideoChannel, value: number): number {
   channel.playbackRate = value;
   const element = getElement(channel.source);
   if (element !== null) provider.setPlaybackRate!(element, value);
   return channel.playbackRate;
 }
 
-export function stopVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+export function stopVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   const element = getElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
@@ -163,7 +163,7 @@ function getElement(resource: Readonly<VideoResource> | null): HostImageSource |
   return resource?.element ?? null;
 }
 
-function completeVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+function completeVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
   const element = getElement(channel.source);
   const runtime = element !== null ? videoChannelRuntimes.get(element) : undefined;
@@ -188,7 +188,7 @@ function emitVideoChannelSignal(
   if (signals !== null) emitSignal(signals[name]);
 }
 
-function startVideoChannel(provider: HostVideoProvider, channel: VideoChannel): void {
+function startVideoChannel(provider: HostVideoCapability, channel: VideoChannel): void {
   const element = getElement(channel.source);
   if (element === null) return;
   provider.setCurrentTime!(element, channel.currentTime / 1000);

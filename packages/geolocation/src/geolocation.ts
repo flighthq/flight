@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostGeolocationProvider,
+  HostGeolocationCapability,
   GeolocationErrorReason,
   GeolocationPosition as FlightGeolocationPosition,
   GeolocationPositionResult,
@@ -8,7 +8,7 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function clearGeolocationWatch(hostGeolocation: Readonly<HostGeolocationProvider>, id: number): void {
+export function clearGeolocationWatch(hostGeolocation: Readonly<HostGeolocationCapability>, id: number): void {
   hostGeolocation.clearWatch(id);
 }
 
@@ -19,14 +19,14 @@ export function createGeolocationPosition(): FlightGeolocationPosition {
 }
 
 export function getCurrentGeolocationPosition(
-  hostGeolocation: Readonly<HostGeolocationProvider>,
+  hostGeolocation: Readonly<HostGeolocationCapability>,
   options?: Readonly<GeolocationRequestOptions>,
 ): Promise<FlightGeolocationPosition | null> {
   return hostGeolocation.getCurrentPosition(options ?? _emptyOptions);
 }
 
 export function getCurrentGeolocationPositionResult(
-  hostGeolocation: Readonly<HostGeolocationProvider>,
+  hostGeolocation: Readonly<HostGeolocationCapability>,
   options?: Readonly<GeolocationRequestOptions>,
 ): Promise<GeolocationPositionResult> {
   return hostGeolocation.getCurrentPositionResult(options ?? _emptyOptions);
@@ -44,12 +44,12 @@ export function initializeGeolocationPosition(out: EntityConstruction<FlightGeol
   out.timestamp = 0;
 }
 
-export function isGeolocationAvailable(hostGeolocation: Readonly<HostGeolocationProvider>): boolean {
+export function isGeolocationAvailable(hostGeolocation: Readonly<HostGeolocationCapability>): boolean {
   return hostGeolocation.isAvailable();
 }
 
 export function watchGeolocationPosition(
-  hostGeolocation: Readonly<HostGeolocationProvider>,
+  hostGeolocation: Readonly<HostGeolocationCapability>,
   handler: (position: Readonly<FlightGeolocationPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
   onError?: (reason: GeolocationErrorReason) => void,

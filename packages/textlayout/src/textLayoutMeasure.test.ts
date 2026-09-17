@@ -1,4 +1,4 @@
-import type { HostTextShaperProvider } from '@flighthq/types/contract';
+import type { HostTextShaperCapability } from '@flighthq/types/contract';
 
 import { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 
@@ -12,7 +12,7 @@ describe('getTextLayoutMeasureProvider', () => {
   });
 
   it('returns a bound measure function when a host text shaper is provided', () => {
-    const backend: HostTextShaperProvider = { measureText: (text) => text.length };
+    const backend: HostTextShaperCapability = { measureText: (text) => text.length };
     const measure = getTextLayoutMeasureProvider(backend);
     expect(measure).not.toBeNull();
     expect(measure!('abc', {})).toBe(3);
@@ -20,7 +20,7 @@ describe('getTextLayoutMeasureProvider', () => {
 
   it('prefers an explicitly set provider over the host text shaper', () => {
     const explicit = (text: string) => text.length * 10;
-    const backend: HostTextShaperProvider = { measureText: () => 99 };
+    const backend: HostTextShaperCapability = { measureText: () => 99 };
     setTextLayoutMeasureProvider(explicit);
     expect(getTextLayoutMeasureProvider(backend)).toBe(explicit);
   });

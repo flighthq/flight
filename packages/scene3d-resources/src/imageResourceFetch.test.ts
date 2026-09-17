@@ -1,12 +1,12 @@
 import * as imageContract from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, HostImageProvider, ImageResource } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
-const hostImage: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+const hostImage: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
 const fetchWebImageResource = createWebImageResourceFetch(hostImage);
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {

@@ -1,7 +1,7 @@
 import type {
-  HostMenuApplicationProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -165,9 +165,9 @@ describe('electronHostMenuSelect', menuLeaf(electronHostMenuSelect));
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: ElectronApi): {
   destroy?: () => void;
-  popupContextMenu: HostMenuPopupProvider['popup'];
-  setApplicationMenu: HostMenuApplicationProvider['setApplicationMenu'];
-  subscribeSelect: HostMenuSelectProvider['subscribe'];
+  popupContextMenu: HostMenuPopupCapability['popup'];
+  setApplicationMenu: HostMenuApplicationCapability['setApplicationMenu'];
+  subscribeSelect: HostMenuSelectCapability['subscribe'];
 } {
   const { application, popup, select } = electronHostMenu(api);
   return {

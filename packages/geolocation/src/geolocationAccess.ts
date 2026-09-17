@@ -1,4 +1,4 @@
-import type { GeolocationAccessOutcome, HostGeolocationProvider } from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationCapability } from '@flighthq/types/contract';
 
 /**
  * Raises the platform's own location-access prompt through the host's geolocation provider.
@@ -12,7 +12,7 @@ import type { GeolocationAccessOutcome, HostGeolocationProvider } from '@flighth
  * capability is an expected outcome, not API misuse.
  */
 export async function promptForGeolocationAccess(
-  hostGeolocation: Readonly<HostGeolocationProvider> | undefined,
+  hostGeolocation: Readonly<HostGeolocationCapability> | undefined,
 ): Promise<GeolocationAccessOutcome> {
   if (hostGeolocation === undefined || typeof hostGeolocation.promptForAccess !== 'function') {
     return { reason: 'runtime-unavailable' };

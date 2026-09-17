@@ -78,7 +78,7 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
     expect(violations).toEqual([]);
   });
 
-  it('implements every declared HostVideoProvider operation in the web provider', () => {
+  it('implements every declared HostVideoCapability operation in the web provider', () => {
     const declaration = findHostVideoProviderDeclaration();
     const declared = declaration.members
       .map(memberName)
@@ -104,7 +104,7 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
       if (declaration === undefined) return [`${name}: missing`];
       const first = declaration.parameters[0];
       const type = first?.type?.getText(declaration.getSourceFile()) ?? '<missing>';
-      return type === 'Readonly<HostVideoProvider>' ? [] : [`${name}: ${type}`];
+      return type === 'Readonly<HostVideoCapability>' ? [] : [`${name}: ${type}`];
     });
 
     expect(violations).toEqual([]);
@@ -117,7 +117,7 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
       if (declaration === undefined) return [`${name}: missing`];
       const first = declaration.parameters[0];
       const type = first?.type?.getText(declaration.getSourceFile()) ?? '<missing>';
-      return type === 'Readonly<HostVideoProvider>' ? [] : [`${name}: ${type}`];
+      return type === 'Readonly<HostVideoCapability>' ? [] : [`${name}: ${type}`];
     });
 
     expect(violations).toEqual([]);
@@ -178,10 +178,10 @@ function findPortableViolations(source: ts.SourceFile): PortableViolation[] {
 function findHostVideoProviderDeclaration(): ts.InterfaceDeclaration {
   for (const source of typeSources()) {
     for (const statement of source.statements) {
-      if (ts.isInterfaceDeclaration(statement) && statement.name.text === 'HostVideoProvider') return statement;
+      if (ts.isInterfaceDeclaration(statement) && statement.name.text === 'HostVideoCapability') return statement;
     }
   }
-  throw new Error('HostVideoProvider declaration not found');
+  throw new Error('HostVideoCapability declaration not found');
 }
 
 function exportedVideoFunctions(): ReadonlyMap<string, ts.FunctionDeclaration> {

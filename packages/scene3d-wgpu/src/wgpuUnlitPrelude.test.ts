@@ -1,6 +1,6 @@
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { HostVideoProvider, LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
+import type { HostVideoCapability, LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -21,7 +21,7 @@ const testVideoHost = {
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,
   getWidth: (source) => (source as HTMLVideoElement).videoWidth,
   isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
-} satisfies HostVideoProvider;
+} satisfies HostVideoCapability;
 
 describe('bindWgpuUnlitSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {

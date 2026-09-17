@@ -1,4 +1,4 @@
-import type { HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
+import type { HostTextShaperCapability, ShapedRun } from '@flighthq/types/contract';
 
 import {
   clearTextShaperCache,
@@ -17,7 +17,7 @@ const _stubRun: ShapedRun = {
   script: 'Latn',
 };
 
-function _makeCountingBackend(): { backend: HostTextShaperProvider; readonly calls: number } {
+function _makeCountingBackend(): { backend: HostTextShaperCapability; readonly calls: number } {
   let calls = 0;
   return {
     backend: {
@@ -33,7 +33,7 @@ function _makeCountingBackend(): { backend: HostTextShaperProvider; readonly cal
   };
 }
 
-const _advancesOnly: HostTextShaperProvider = { measureText: (t) => t.length };
+const _advancesOnly: HostTextShaperCapability = { measureText: (t) => t.length };
 
 describe('clearTextShaperCache', () => {
   it('removes all cached entries', () => {
@@ -88,11 +88,11 @@ describe('initializeTextShaperCache', () => {
 describe('shapeTextRunCached', () => {
   it('keeps cache entries isolated when callers interleave different hosts', () => {
     const cache = createTextShaperCache();
-    const first: HostTextShaperProvider = {
+    const first: HostTextShaperCapability = {
       measureText: () => 1,
       shapeRun: () => ({ ..._stubRun, advanceWidth: 1 }),
     };
-    const second: HostTextShaperProvider = {
+    const second: HostTextShaperCapability = {
       measureText: () => 2,
       shapeRun: () => ({ ..._stubRun, advanceWidth: 2 }),
     };

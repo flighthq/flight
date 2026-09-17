@@ -7,7 +7,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
-  HostWgpuProvider,
+  HostWgpuCapability,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
@@ -38,7 +38,7 @@ const RING_SLOT_COUNT = 4096;
 // destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
-  wgpuHost: Readonly<HostWgpuProvider>,
+  wgpuHost: Readonly<HostWgpuCapability>,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
@@ -395,7 +395,7 @@ export function initializeWgpuOffscreenRenderStateOkResult(
   out.state = state;
 }
 
-export function isWgpuSupported(wgpuHost: Readonly<HostWgpuProvider>): boolean {
+export function isWgpuSupported(wgpuHost: Readonly<HostWgpuCapability>): boolean {
   return wgpuHost.isSupported();
 }
 
@@ -442,7 +442,7 @@ function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDevic
 
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
 export function releaseWgpuAcquisition(
-  wgpuHost: Readonly<HostWgpuProvider>,
+  wgpuHost: Readonly<HostWgpuCapability>,
   acquisition: Readonly<WgpuHostAcquisition>,
 ): void {
   wgpuHost.release(acquisition);

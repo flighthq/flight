@@ -4,7 +4,7 @@ import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { Camera3D, HostVideoProvider, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, HostVideoCapability, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
@@ -35,7 +35,7 @@ const testVideoHost = {
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,
   getWidth: (source) => (source as HTMLVideoElement).videoWidth,
   isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
-} satisfies HostVideoProvider;
+} satisfies HostVideoCapability;
 
 function makeProxy(): Scene3DRenderProxy {
   const geometry = createBoxMeshGeometry();

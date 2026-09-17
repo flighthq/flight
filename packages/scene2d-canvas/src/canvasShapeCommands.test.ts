@@ -28,7 +28,7 @@ import {
   PathCommand,
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider, RenderState } from '@flighthq/types/contract';
+import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -75,9 +75,9 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 const resolvers = createCanvasTextureResolvers();
 registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
 registerCanvasImageTextureResolver(resolvers);

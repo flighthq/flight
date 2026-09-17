@@ -1,4 +1,4 @@
-import type { HostSocketProvider, SocketEventSink } from '@flighthq/types/contract';
+import type { HostSocketCapability, SocketEventSink } from '@flighthq/types/contract';
 
 import { explainSocketSendFailure } from './explainSocketSendFailure';
 import { createSocket, disposeSocket, sendSocketMessage } from './socket';
@@ -6,9 +6,9 @@ import { createSocket, disposeSocket, sendSocketMessage } from './socket';
 function installBackend(
   hasConnection: boolean,
   sendResult = true,
-): { host: { readonly net: { readonly socket: HostSocketProvider } }; sink: () => SocketEventSink } {
+): { host: { readonly net: { readonly socket: HostSocketCapability } }; sink: () => SocketEventSink } {
   let sink!: SocketEventSink;
-  const backend: HostSocketProvider = {
+  const backend: HostSocketCapability = {
     openSocket(_options, events) {
       sink = events;
       if (!hasConnection) return null;
@@ -21,8 +21,8 @@ function installBackend(
   return { host: hostOf(backend), sink: () => sink };
 }
 
-function hostOf(backend: HostSocketProvider): { readonly net: { readonly socket: HostSocketProvider } } {
-  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketProvider } };
+function hostOf(backend: HostSocketCapability): { readonly net: { readonly socket: HostSocketCapability } } {
+  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketCapability } };
 }
 
 describe('explainSocketSendFailure', () => {

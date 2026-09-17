@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HostTextSegmenterProvider, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
+import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -11,7 +11,7 @@ import {
   webTextSegmenterBackend,
 } from './textSegmenterBackend';
 
-interface RecordingBackend extends HostTextSegmenterProvider {
+interface RecordingBackend extends HostTextSegmenterCapability {
   calls: Array<{ text: string; granularity: TextSegmentGranularity; locale: string | undefined }>;
 }
 

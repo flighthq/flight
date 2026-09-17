@@ -1,4 +1,4 @@
-import type { HostImageSource, HostVideoProvider } from '@flighthq/types/contract';
+import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
 
 import {
   createVideoResource,
@@ -282,7 +282,7 @@ describe('isVideoResourceReady', () => {
 
 interface FakeVideoHost {
   order: string[];
-  provider: HostVideoProvider;
+  provider: HostVideoCapability;
   released: HostImageSource[];
   revoked: string[];
 }
@@ -290,7 +290,7 @@ interface FakeVideoHost {
 // A host that answers every video capability and records what it was asked to release. `order` is
 // shared with the URL spy in the ordering cases, so release-before-revoke is observable.
 function fakeVideoHost(state?: Readonly<{ duration?: number; height?: number; ready?: boolean; width?: number }>) {
-  const host: FakeVideoHost = { order: [], provider: null as unknown as HostVideoProvider, released: [], revoked: [] };
+  const host: FakeVideoHost = { order: [], provider: null as unknown as HostVideoCapability, released: [], revoked: [] };
   host.provider = {
     canPlayType: () => true,
     getDuration: () => state?.duration ?? 0,
@@ -311,7 +311,7 @@ function fakeVideoHost(state?: Readonly<{ duration?: number; height?: number; re
 
 // A host with a video slot that carries none of the optional capabilities — the shape a non-browser
 // host takes. Every query must fall to its documented sentinel rather than throwing.
-function emptyVideoHost(): HostVideoProvider {
+function emptyVideoHost(): HostVideoCapability {
   return { canPlayType: () => false };
 }
 

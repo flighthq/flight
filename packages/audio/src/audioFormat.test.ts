@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostAudioProvider, Entity } from '@flighthq/types/contract';
+import type { HostAudioCapability, Entity } from '@flighthq/types/contract';
 
 import {
   canPlayAudioType,
@@ -9,7 +9,7 @@ import {
   inferAudioMimeType,
 } from './audioFormat';
 
-function hostWith(canPlay: (type: string) => boolean): { readonly media: { readonly audioCodec: HostAudioProvider } } {
+function hostWith(canPlay: (type: string) => boolean): { readonly media: { readonly audioCodec: HostAudioCapability } } {
   return {
     media: {
       audioCodec: (() => {
@@ -18,7 +18,7 @@ function hostWith(canPlay: (type: string) => boolean): { readonly media: { reado
         return finishEntity(out);
       })(),
     },
-  } as { readonly media: { readonly audioCodec: HostAudioProvider } };
+  } as { readonly media: { readonly audioCodec: HostAudioCapability } };
 }
 
 describe('canPlayAudioType', () => {

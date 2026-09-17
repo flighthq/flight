@@ -2,17 +2,17 @@ import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
   DownloadedUpdate,
-  HostUpdaterCommandProvider,
+  HostUpdaterCommandCapability,
 } from '@flighthq/types/contract';
 
 const CHECK_IN_PROGRESS = Object.freeze({ reason: 'check-in-progress' }) as AppUpdateCheckOutcome;
 const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateCheckOutcome;
 const OPERATION_FAILED: Readonly<{ reason: 'operation-failed' }> = Object.freeze({ reason: 'operation-failed' });
 const INSTALL_OK = Object.freeze({ reason: 'ok' }) as AppUpdateInstallOutcome;
-const _downloadOwners = new WeakMap<DownloadedUpdate, HostUpdaterCommandProvider>();
+const _downloadOwners = new WeakMap<DownloadedUpdate, HostUpdaterCommandCapability>();
 
 export async function checkForAppUpdate(
-  hostUpdaterCommand: Readonly<HostUpdaterCommandProvider>,
+  hostUpdaterCommand: Readonly<HostUpdaterCommandCapability>,
 ): Promise<AppUpdateCheckOutcome> {
   const provider = hostUpdaterCommand;
   try {
@@ -38,12 +38,12 @@ export async function checkForAppUpdate(
   }
 }
 
-export function destroyUpdater(hostUpdaterCommand: Readonly<HostUpdaterCommandProvider>): void {
+export function destroyUpdater(hostUpdaterCommand: Readonly<HostUpdaterCommandCapability>): void {
   assertSyncVoid(hostUpdaterCommand.destroy());
 }
 
 export async function installDownloadedUpdate(
-  hostUpdaterCommand: Readonly<HostUpdaterCommandProvider>,
+  hostUpdaterCommand: Readonly<HostUpdaterCommandCapability>,
   update: DownloadedUpdate,
 ): Promise<AppUpdateInstallOutcome> {
   const origin = _downloadOwners.get(update);

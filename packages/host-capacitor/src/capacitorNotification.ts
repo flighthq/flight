@@ -9,12 +9,12 @@ import type {
   CapacitorLocalNotificationAction,
   CapacitorLocalNotificationSchema,
   CapacitorNotificationCapabilities,
-  HostNotificationActionProvider,
-  HostNotificationClickProvider,
-  HostNotificationDeliveryProvider,
-  HostNotificationLifecycleProvider,
-  HostNotificationPermissionProvider,
-  HostNotificationSchedulingProvider,
+  HostNotificationActionCapability,
+  HostNotificationClickCapability,
+  HostNotificationDeliveryCapability,
+  HostNotificationLifecycleCapability,
+  HostNotificationPermissionCapability,
+  HostNotificationSchedulingCapability,
   Notification,
   NotificationEventAttachment,
   NotificationEventBackendAttachOutcome,
@@ -33,27 +33,27 @@ export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNot
   return finishEntity(out);
 }
 
-export function capacitorHostNotificationAction(capacitor: CapacitorApi): HostNotificationActionProvider {
+export function capacitorHostNotificationAction(capacitor: CapacitorApi): HostNotificationActionCapability {
   return capacitorHostNotification(capacitor).action;
 }
 
-export function capacitorHostNotificationClick(capacitor: CapacitorApi): HostNotificationClickProvider {
+export function capacitorHostNotificationClick(capacitor: CapacitorApi): HostNotificationClickCapability {
   return capacitorHostNotification(capacitor).click;
 }
 
-export function capacitorHostNotificationDelivery(capacitor: CapacitorApi): HostNotificationDeliveryProvider {
+export function capacitorHostNotificationDelivery(capacitor: CapacitorApi): HostNotificationDeliveryCapability {
   return capacitorHostNotification(capacitor).delivery;
 }
 
-export function capacitorHostNotificationLifecycle(capacitor: CapacitorApi): HostNotificationLifecycleProvider {
+export function capacitorHostNotificationLifecycle(capacitor: CapacitorApi): HostNotificationLifecycleCapability {
   return capacitorHostNotification(capacitor).lifecycle;
 }
 
-export function capacitorHostNotificationPermission(capacitor: CapacitorApi): HostNotificationPermissionProvider {
+export function capacitorHostNotificationPermission(capacitor: CapacitorApi): HostNotificationPermissionCapability {
   return capacitorHostNotification(capacitor).permission;
 }
 
-export function capacitorHostNotificationScheduling(capacitor: CapacitorApi): HostNotificationSchedulingProvider {
+export function capacitorHostNotificationScheduling(capacitor: CapacitorApi): HostNotificationSchedulingCapability {
   return capacitorHostNotification(capacitor).scheduling;
 }
 

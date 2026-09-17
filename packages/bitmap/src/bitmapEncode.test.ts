@@ -1,20 +1,20 @@
-import type { HostBitmapEncodeProvider, ImageFormat } from '@flighthq/types/contract';
+import type { HostBitmapEncodeCapability, ImageFormat } from '@flighthq/types/contract';
 
 import { createBitmap } from './bitmap';
 import { encodeBitmap, explainBitmapEncodeFailure } from './bitmapEncode';
 
 function hostWith(
-  supportedFormats: HostBitmapEncodeProvider['supportedFormats'] = ['jpeg', 'png'],
+  supportedFormats: HostBitmapEncodeCapability['supportedFormats'] = ['jpeg', 'png'],
   bytes: Uint8Array = new Uint8Array([9, 8, 7]),
-): { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeProvider } } {
+): { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeCapability } } {
   return {
     graphics: {
       bitmapEncode: {
         encodeBitmap: vi.fn(() => bytes),
         supportedFormats,
-      } satisfies HostBitmapEncodeProvider,
+      } satisfies HostBitmapEncodeCapability,
     },
-  } as { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeProvider } };
+  } as { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeCapability } };
 }
 
 describe('encodeBitmap', () => {
@@ -54,9 +54,9 @@ describe('encodeBitmap', () => {
             throw failure;
           },
           supportedFormats: ['png'],
-        } satisfies HostBitmapEncodeProvider,
+        } satisfies HostBitmapEncodeCapability,
       },
-    } as { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeProvider } };
+    } as { readonly graphics: { readonly bitmapEncode: HostBitmapEncodeCapability } };
     expect(() => encodeBitmap(host.graphics.bitmapEncode, createBitmap(1, 1))).toThrow(failure);
   });
 });

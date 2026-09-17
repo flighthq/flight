@@ -5,8 +5,8 @@ import type {
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   AudioSourceHandle,
-  HostAudioDeviceProvider,
-  HostAudioMixerProvider,
+  HostAudioDeviceCapability,
+  HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource } from './audioChannel';
@@ -32,8 +32,8 @@ import {
 } from './audioMixer';
 
 let nextSourceHandle = 1;
-let mockBackend: HostAudioDeviceProvider;
-let mockMixer: HostAudioMixerProvider;
+let mockBackend: HostAudioDeviceCapability;
+let mockMixer: HostAudioMixerCapability;
 const device = 1 as unknown as AudioDeviceHandle;
 const graph = 1 as unknown as AudioMixerGraphHandle;
 const busNode = 1 as unknown as AudioBusNodeHandle;
@@ -48,7 +48,7 @@ function createMockAudioBuffer(): AudioBuffer {
   } as unknown as AudioBuffer;
 }
 
-function createMockBackend(): HostAudioDeviceProvider {
+function createMockBackend(): HostAudioDeviceCapability {
   const out = allocateEntity<any>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
@@ -67,8 +67,8 @@ function createMockBackend(): HostAudioDeviceProvider {
   return finishEntity(out);
 }
 
-function createMockMixer(): HostAudioMixerProvider {
-  const out = allocateEntity<HostAudioMixerProvider>();
+function createMockMixer(): HostAudioMixerCapability {
+  const out = allocateEntity<HostAudioMixerCapability>();
   out.createMixerGraph = vi.fn(() => graph);
   out.destroyMixerGraph = vi.fn();
   out.createBusNode = vi.fn(() => busNode);

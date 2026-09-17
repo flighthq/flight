@@ -1,13 +1,13 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   GeolocationAccessOutcome,
-  HostGeolocationProvider,
-  HostPermissionsProvider,
+  HostGeolocationCapability,
+  HostPermissionsCapability,
 } from '@flighthq/types/contract';
 
 import { requestPermission } from './permission';
 
-function geolocationProvider(outcome: GeolocationAccessOutcome, calls?: { count: number }): HostGeolocationProvider {
+function geolocationProvider(outcome: GeolocationAccessOutcome, calls?: { count: number }): HostGeolocationCapability {
   return {
     [EntityRuntimeKey]: undefined,
     clearWatch() {},
@@ -132,7 +132,7 @@ describe('requestPermission', () => {
   });
 });
 
-function permissionsProvider(): HostPermissionsProvider {
+function permissionsProvider(): HostPermissionsCapability {
   return {
     [EntityRuntimeKey]: undefined,
     notification: {

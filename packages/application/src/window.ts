@@ -4,13 +4,13 @@ import type {
   ApplicationWindow,
   EntityConstruction,
   FullscreenTargetHandle,
-  HostRenderContextProvider,
-  HostRenderSurfaceProvider,
-  HostInputDropFileProvider,
-  HostInputFocusProvider,
-  HostInputPointerLockProvider,
-  HostInputTargetProvider,
-  HostFullscreenProvider,
+  HostGlCapability,
+  HostSurfaceCapability,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
+  HostInputTargetCapability,
+  HostFullscreenCapability,
   HostWindowProvider,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
@@ -73,7 +73,7 @@ export function attachWindowClose(
 }
 
 export function attachWindowDropFile(
-  hostInputDropFile: Readonly<HostInputDropFileProvider>,
+  hostInputDropFile: Readonly<HostInputDropFileCapability>,
   win: ApplicationWindow,
   target: InputTargetHandle,
 ): void {
@@ -86,7 +86,7 @@ export function attachWindowDropFile(
 }
 
 export function attachWindowFocus(
-  hostInputFocus: Readonly<HostInputFocusProvider>,
+  hostInputFocus: Readonly<HostInputFocusCapability>,
   win: ApplicationWindow,
   target: InputTargetHandle,
 ): void {
@@ -103,7 +103,7 @@ export function attachWindowFocus(
 }
 
 export function attachWindowFullscreen(
-  hostFullscreen: Readonly<Required<Pick<HostFullscreenProvider, 'subscribe' | 'unsubscribe'>>>,
+  hostFullscreen: Readonly<Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>>>,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
@@ -148,7 +148,7 @@ export function attachWindowOrientation(
 }
 
 export function attachWindowRenderContext(
-  hostRenderContext: Readonly<HostRenderContextProvider>,
+  hostRenderContext: Readonly<HostGlCapability>,
   win: ApplicationWindow,
   target: InputTargetHandle,
 ): void {
@@ -171,7 +171,7 @@ export function attachWindowRenderContext(
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
 // device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(
-  hostRenderSurface: Readonly<HostRenderSurfaceProvider>,
+  hostRenderSurface: Readonly<HostSurfaceCapability>,
   win: ApplicationWindow,
   state: RenderState,
   target: InputTargetHandle,
@@ -332,13 +332,13 @@ export function disposeApplicationWindow(win: ApplicationWindow): void {
   observers.clear();
 }
 
-export function exitApplicationFullscreen(hostFullscreen: Readonly<HostFullscreenProvider>): Promise<boolean> {
+export function exitApplicationFullscreen(hostFullscreen: Readonly<HostFullscreenCapability>): Promise<boolean> {
   return hostFullscreen.exit();
 }
 
 // Releases the host's active Pointer Lock, restoring cursor movement.
 export async function exitApplicationPointerLock(
-  hostInputPointerLock: Readonly<HostInputPointerLockProvider>,
+  hostInputPointerLock: Readonly<HostInputPointerLockCapability>,
 ): Promise<InputPointerLockExitOutcome> {
   const backend = _pointerLockBackend ?? hostInputPointerLock;
   const outcome = await backend.exit();
@@ -427,7 +427,7 @@ export function initializeApplicationWindow(out: EntityConstruction<ApplicationW
 // returned as method-tight outcomes. Only successful acquisition pins its eventual exit to this exact
 // provider even if the caller later supplies a different provider.
 export async function lockApplicationPointer(
-  hostInputPointerLock: Readonly<HostInputPointerLockProvider>,
+  hostInputPointerLock: Readonly<HostInputPointerLockCapability>,
   target: InputTargetHandle,
 ): Promise<InputPointerLockRequestOutcome> {
   const backend = hostInputPointerLock;
@@ -510,14 +510,14 @@ export function openWindow(
 // Prepares a provider-bound target for direct input. The provider owns platform details such as
 // browser CSS and canvas compositing; the application contract only carries opaque identity.
 export function prepareElementForInput(
-  hostInputTarget: Readonly<HostInputTargetProvider>,
+  hostInputTarget: Readonly<HostInputTargetCapability>,
   target: InputTargetHandle,
 ): void {
   hostInputTarget.prepare(target);
 }
 
 export function requestApplicationFullscreen(
-  hostFullscreen: Readonly<HostFullscreenProvider>,
+  hostFullscreen: Readonly<HostFullscreenCapability>,
   target: FullscreenTargetHandle,
 ): Promise<boolean> {
   return hostFullscreen.request(target);
@@ -736,7 +736,7 @@ const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, (
 
 const _terminalWindows = new WeakSet<ApplicationWindow>();
 const _windowBackends = new WeakMap<ApplicationWindow, Required<Pick<HostWindowProvider, 'close'>>>();
-let _pointerLockBackend: HostInputPointerLockProvider | null = null;
+let _pointerLockBackend: HostInputPointerLockCapability | null = null;
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);

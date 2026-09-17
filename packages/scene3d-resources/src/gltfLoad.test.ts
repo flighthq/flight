@@ -2,7 +2,7 @@ import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type {
   GltfExtensionHandler,
-  HostNetProvider,
+  HostNetCapability,
   ImportDiagnostic,
   NetResponse,
   Scene3DDocument,
@@ -27,8 +27,8 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
-function fakeHost(): { readonly net: { readonly http: HostNetProvider } } {
-  const host: { readonly net: { readonly http: HostNetProvider } } = {
+function fakeHost(): { readonly net: { readonly http: HostNetCapability } } {
+  const host: { readonly net: { readonly http: HostNetCapability } } = {
     net: {
       http: {
         [EntityRuntimeKey]: undefined,

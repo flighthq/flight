@@ -6,9 +6,9 @@ import type {
   ConnectivityReachabilityOptions,
   ConnectivityStatus,
   EntityConstruction,
-  HostConnectivityChangeProvider,
-  HostConnectivityReachabilityProvider,
-  HostConnectivityStatusProvider,
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
+  HostConnectivityStatusCapability,
 } from '@flighthq/types/contract';
 
 // Starts raw host-change delivery and turns it into the five core-owned diff signals. Status and
@@ -16,8 +16,8 @@ import type {
 // Re-attaching always consumes the prior provider's exact unsubscribe before touching the new one.
 // Returns false when the change provider cannot establish a real subscription.
 export function attachConnectivity(
-  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
-  hostConnectivityChange: Readonly<HostConnectivityChangeProvider>,
+  hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
+  hostConnectivityChange: Readonly<HostConnectivityChangeCapability>,
   connectivity: Connectivity,
 ): boolean {
   detachConnectivity(connectivity);
@@ -56,7 +56,7 @@ export function createConnectivity(): Connectivity {
 
 // Terminal provider teardown. This is deliberately separate from per-entity detach: a caller that
 // releases one subscription must not destroy a shared host provider.
-export function destroyConnectivity(hostConnectivityChange: Readonly<HostConnectivityChangeProvider>): void {
+export function destroyConnectivity(hostConnectivityChange: Readonly<HostConnectivityChangeCapability>): void {
   hostConnectivityChange.destroy();
 }
 
@@ -68,7 +68,7 @@ export function detachConnectivity(connectivity: Connectivity): void {
 }
 
 export function detectConnectivityReachability(
-  hostConnectivityReachability: Readonly<HostConnectivityReachabilityProvider>,
+  hostConnectivityReachability: Readonly<HostConnectivityReachabilityCapability>,
   options: Readonly<ConnectivityReachabilityOptions>,
   out: ConnectivityReachability,
 ): Promise<ConnectivityReachability> {
@@ -87,13 +87,13 @@ export function disposeConnectivity(connectivity: Connectivity): void {
 }
 
 export function getConnectivityOnline(
-  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+  hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
 ): boolean | null {
   return hostConnectivityStatus.getStatus(connectivityStatusOut()).online;
 }
 
 export function getConnectivityStatus(
-  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+  hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
   out: ConnectivityStatus,
 ): ConnectivityStatus {
   return hostConnectivityStatus.getStatus(out);
@@ -123,12 +123,12 @@ export function initializeConnectivity(out: EntityConstruction<Connectivity>): v
   out.onOnline = createSignal();
 }
 
-export function isConnectivityMetered(hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>): boolean {
+export function isConnectivityMetered(hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>): boolean {
   return hostConnectivityStatus.getStatus(connectivityStatusOut()).metered;
 }
 
 export function isConnectivitySaveDataEnabled(
-  hostConnectivityStatus: Readonly<HostConnectivityStatusProvider>,
+  hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
 ): boolean {
   return hostConnectivityStatus.getStatus(connectivityStatusOut()).saveData;
 }

@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   HostDialogCapabilities,
-  HostMessageDialogProvider,
-  HostPromptDialogProvider,
+  HostMessageDialogCapability,
+  HostPromptDialogCapability,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
@@ -16,14 +16,14 @@ export function capacitorHostDialog(
   };
 }
 
-export function capacitorHostMessageDialog(capacitor: CapacitorApi): HostMessageDialogProvider {
-  const out = allocateEntity<HostMessageDialogProvider>();
+export function capacitorHostMessageDialog(capacitor: CapacitorApi): HostMessageDialogCapability {
+  const out = allocateEntity<HostMessageDialogCapability>();
   populateCapacitorMessageDialog(out, capacitor);
   return finishEntity(out);
 }
 
-export function capacitorHostPromptDialog(capacitor: CapacitorApi): HostPromptDialogProvider {
-  const out = allocateEntity<HostPromptDialogProvider>();
+export function capacitorHostPromptDialog(capacitor: CapacitorApi): HostPromptDialogCapability {
+  const out = allocateEntity<HostPromptDialogCapability>();
   populateCapacitorPromptDialog(out, capacitor);
   return finishEntity(out);
 }
@@ -31,7 +31,7 @@ export function capacitorHostPromptDialog(capacitor: CapacitorApi): HostPromptDi
 // Maps Capacitor's alert and confirmation surfaces onto Flight's message-dialog capability. Capacitor
 // has no native file picker; consumers leave the three file-dialog slots absent instead of advertising sentinels.
 function populateCapacitorMessageDialog(
-  out: EntityConstruction<HostMessageDialogProvider>,
+  out: EntityConstruction<HostMessageDialogCapability>,
   capacitor: CapacitorApi,
 ): void {
   const dialog = capacitor.dialog;
@@ -55,7 +55,7 @@ function populateCapacitorMessageDialog(
 }
 
 function populateCapacitorPromptDialog(
-  out: EntityConstruction<HostPromptDialogProvider>,
+  out: EntityConstruction<HostPromptDialogCapability>,
   capacitor: CapacitorApi,
 ): void {
   const dialog = capacitor.dialog;

@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
-  HostImageOpenDialogProvider,
-  HostPhotoCaptureDialogProvider,
-  HostVideoCaptureDialogProvider,
+  HostImageOpenDialogCapability,
+  HostPhotoCaptureDialogCapability,
+  HostVideoCaptureDialogCapability,
   OpenImageDialogOptions,
 } from '@flighthq/types/contract';
 
@@ -16,12 +16,12 @@ describe('showCapturePhotoDialog', () => {
       outcome: 'selected' as const,
       photo: { dataUrl: 'data:image/png;base64,AA==', height: 480, mimeType: 'image/png', width: 640 },
     }));
-    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogProvider } } = {
+    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogCapability } } = {
       dialog: {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostPhotoCaptureDialogProvider;
+          return finishEntity(out) as HostPhotoCaptureDialogCapability;
         })(),
       },
     };
@@ -38,12 +38,12 @@ describe('showCapturePhotoDialog', () => {
 
   it('preserves the operation-specific failure outcome', async () => {
     const capture = async () => ({ outcome: 'photo-capture-failed' as const });
-    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogProvider } } = {
+    const host: { readonly dialog: { readonly photoCapture: HostPhotoCaptureDialogCapability } } = {
       dialog: {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostPhotoCaptureDialogProvider;
+          return finishEntity(out) as HostPhotoCaptureDialogCapability;
         })(),
       },
     };
@@ -58,12 +58,12 @@ describe('showCaptureVideoDialog', () => {
       outcome: 'selected' as const,
       video: { dataUrl: 'data:video/mp4;base64,AA==', duration: 2.5, mimeType: 'video/mp4' },
     }));
-    const host: { readonly dialog: { readonly videoCapture: HostVideoCaptureDialogProvider } } = {
+    const host: { readonly dialog: { readonly videoCapture: HostVideoCaptureDialogCapability } } = {
       dialog: {
         videoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostVideoCaptureDialogProvider;
+          return finishEntity(out) as HostVideoCaptureDialogCapability;
         })(),
       },
     };
@@ -79,12 +79,12 @@ describe('showCaptureVideoDialog', () => {
 describe('showOpenImageDialog', () => {
   it('routes selection through the explicit image-open slot and forwards cancellation', async () => {
     const open = vi.fn(async () => ({ outcome: 'cancelled' as const }));
-    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogProvider } } = {
+    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogCapability } } = {
       dialog: {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as HostImageOpenDialogProvider;
+          return finishEntity(out) as HostImageOpenDialogCapability;
         })(),
       },
     };
@@ -96,12 +96,12 @@ describe('showOpenImageDialog', () => {
 
   it('preserves the operation-specific failure outcome', async () => {
     const open = async () => ({ outcome: 'image-open-failed' as const });
-    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogProvider } } = {
+    const host: { readonly dialog: { readonly imageOpen: HostImageOpenDialogCapability } } = {
       dialog: {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as HostImageOpenDialogProvider;
+          return finishEntity(out) as HostImageOpenDialogCapability;
         })(),
       },
     };

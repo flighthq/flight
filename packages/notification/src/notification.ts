@@ -2,17 +2,17 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
-  HostNotificationActionProvider,
-  HostNotificationActiveListProvider,
-  HostNotificationClickProvider,
-  HostNotificationCloseProvider,
-  HostNotificationDeliveryProvider,
-  HostNotificationDismissProvider,
-  HostNotificationLifecycleProvider,
-  HostNotificationPermissionProvider,
-  HostNotificationReceivedProvider,
-  HostNotificationReplyProvider,
-  HostNotificationSchedulingProvider,
+  HostNotificationActionCapability,
+  HostNotificationActiveListCapability,
+  HostNotificationClickCapability,
+  HostNotificationCloseCapability,
+  HostNotificationDeliveryCapability,
+  HostNotificationDismissCapability,
+  HostNotificationLifecycleCapability,
+  HostNotificationPermissionCapability,
+  HostNotificationReceivedCapability,
+  HostNotificationReplyCapability,
+  HostNotificationSchedulingCapability,
   Notification,
   NotificationActionSubscription,
   NotificationActiveListOutcome,
@@ -41,7 +41,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export async function attachNotificationActionSubscription(
-  hostNotificationAction: Readonly<HostNotificationActionProvider>,
+  hostNotificationAction: Readonly<HostNotificationActionCapability>,
   subscription: NotificationActionSubscription,
 ): Promise<NotificationSubscriptionAttachOutcome> {
   return attachNotificationSubscription(
@@ -53,7 +53,7 @@ export async function attachNotificationActionSubscription(
 }
 
 export async function attachNotificationClickSubscription(
-  hostNotificationClick: Readonly<HostNotificationClickProvider>,
+  hostNotificationClick: Readonly<HostNotificationClickCapability>,
   subscription: NotificationClickSubscription,
 ): Promise<NotificationSubscriptionAttachOutcome> {
   return attachNotificationSubscription(
@@ -64,7 +64,7 @@ export async function attachNotificationClickSubscription(
 }
 
 export async function attachNotificationDismissSubscription(
-  hostNotificationDismiss: Readonly<HostNotificationDismissProvider>,
+  hostNotificationDismiss: Readonly<HostNotificationDismissCapability>,
   subscription: NotificationDismissSubscription,
 ): Promise<NotificationSubscriptionAttachOutcome> {
   return attachNotificationSubscription(
@@ -75,7 +75,7 @@ export async function attachNotificationDismissSubscription(
 }
 
 export async function attachNotificationReceivedSubscription(
-  hostNotificationReceived: Readonly<HostNotificationReceivedProvider>,
+  hostNotificationReceived: Readonly<HostNotificationReceivedCapability>,
   subscription: NotificationReceivedSubscription,
 ): Promise<NotificationSubscriptionAttachOutcome> {
   return attachNotificationSubscription(
@@ -86,7 +86,7 @@ export async function attachNotificationReceivedSubscription(
 }
 
 export async function attachNotificationReplySubscription(
-  hostNotificationReply: Readonly<HostNotificationReplyProvider>,
+  hostNotificationReply: Readonly<HostNotificationReplyCapability>,
   subscription: NotificationReplySubscription,
 ): Promise<NotificationSubscriptionAttachOutcome> {
   return attachNotificationSubscription(
@@ -134,7 +134,7 @@ export async function cancelScheduledNotification(
 }
 
 export function closeAllNotifications(
-  hostNotificationClose: Readonly<HostNotificationCloseProvider>,
+  hostNotificationClose: Readonly<HostNotificationCloseCapability>,
 ): Promise<NotificationLifecycleOutcome> {
   return hostNotificationClose.closeAllNotifications();
 }
@@ -203,7 +203,7 @@ export function createScheduledNotificationResource(
 }
 
 export function destroyNotificationCapabilities(
-  hostNotificationLifecycle: Readonly<HostNotificationLifecycleProvider>,
+  hostNotificationLifecycle: Readonly<HostNotificationLifecycleCapability>,
 ): Promise<NotificationLifecycleOutcome> {
   return hostNotificationLifecycle.destroy();
 }
@@ -269,19 +269,19 @@ export async function disposeNotificationReplySubscription(
 }
 
 export function getActiveNotifications(
-  hostNotificationActiveList: Readonly<HostNotificationActiveListProvider>,
+  hostNotificationActiveList: Readonly<HostNotificationActiveListCapability>,
 ): Promise<NotificationActiveListOutcome> {
   return hostNotificationActiveList.getActiveNotifications();
 }
 
 export function getNotificationPermission(
-  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
 ): Promise<NotificationPermissionQueryOutcome> {
   return hostNotificationPermission.getPermission();
 }
 
 export function getPendingNotifications(
-  hostNotificationScheduling: Readonly<HostNotificationSchedulingProvider>,
+  hostNotificationScheduling: Readonly<HostNotificationSchedulingCapability>,
 ): Promise<NotificationPendingListOutcome> {
   return hostNotificationScheduling.getPendingNotifications();
 }
@@ -311,13 +311,13 @@ export function initializeScheduledNotificationResource(
 }
 
 export function requestNotificationPermission(
-  hostNotificationPermission: Readonly<HostNotificationPermissionProvider>,
+  hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
 ): Promise<NotificationPermissionRequestOutcome> {
   return hostNotificationPermission.requestPermission();
 }
 
 export function scheduleNotification(
-  hostNotificationScheduling: Readonly<HostNotificationSchedulingProvider>,
+  hostNotificationScheduling: Readonly<HostNotificationSchedulingCapability>,
   request: Readonly<NotificationRequest>,
   schedule: Readonly<NotificationSchedule>,
 ): Promise<NotificationScheduleOutcome> {
@@ -325,7 +325,7 @@ export function scheduleNotification(
 }
 
 export function showNotification(
-  hostNotificationDelivery: Readonly<HostNotificationDeliveryProvider>,
+  hostNotificationDelivery: Readonly<HostNotificationDeliveryCapability>,
   request: Readonly<NotificationRequest>,
 ): Promise<NotificationDeliveryOutcome> {
   return hostNotificationDelivery.notify(request);

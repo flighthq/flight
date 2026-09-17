@@ -1,4 +1,4 @@
-import type { HostPlatformProvider, PlatformInfo } from '@flighthq/types/contract';
+import type { HostPlatformCapability, PlatformInfo } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as platformContract from './platform';
@@ -19,7 +19,7 @@ import {
   isPlatformWeb,
 } from './platform';
 
-function fakeBackend(info: Partial<PlatformInfo>): HostPlatformProvider {
+function fakeBackend(info: Partial<PlatformInfo>): HostPlatformCapability {
   return {
     [EntityRuntimeKey]: undefined,
     getInfo(out) {
@@ -29,7 +29,7 @@ function fakeBackend(info: Partial<PlatformInfo>): HostPlatformProvider {
   };
 }
 
-function fakeHost(info: Partial<PlatformInfo>): { readonly system: { readonly platform: HostPlatformProvider } } {
+function fakeHost(info: Partial<PlatformInfo>): { readonly system: { readonly platform: HostPlatformCapability } } {
   return { system: { platform: fakeBackend(info) } };
 }
 

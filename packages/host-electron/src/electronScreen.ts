@@ -4,27 +4,27 @@ import type {
   ElectronDisplay,
   EntityConstruction,
   HostScreenCapabilities,
-  HostScreenChangeProvider,
+  HostScreenChangeCapability,
   ScreenChangeEvent,
   ScreenChangeKind,
   ScreenColorSpace,
   ScreenInfo,
   ScreenOrientation,
-  HostScreenQueryProvider,
+  HostScreenQueryCapability,
 } from '@flighthq/types/contract';
 
 export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
   return { change: electronHostScreenChange(electron), query: electronHostScreenQuery(electron) };
 }
 
-export function electronHostScreenChange(electron: ElectronApi): HostScreenChangeProvider {
-  const out = allocateEntity<HostScreenChangeProvider>();
+export function electronHostScreenChange(electron: ElectronApi): HostScreenChangeCapability {
+  const out = allocateEntity<HostScreenChangeCapability>();
   populateElectronHostScreenChange(out, electron.screen);
   return finishEntity(out);
 }
 
-export function electronHostScreenQuery(electron: ElectronApi): HostScreenQueryProvider {
-  const out = allocateEntity<HostScreenQueryProvider>();
+export function electronHostScreenQuery(electron: ElectronApi): HostScreenQueryCapability {
+  const out = allocateEntity<HostScreenQueryCapability>();
   populateElectronHostScreenQuery(out, electron.screen);
   return finishEntity(out);
 }
@@ -58,7 +58,7 @@ function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
 }
 
 export function populateElectronHostScreenChange(
-  out: EntityConstruction<HostScreenChangeProvider>,
+  out: EntityConstruction<HostScreenChangeCapability>,
   screen: ElectronApi['screen'],
 ): void {
   out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
@@ -93,7 +93,7 @@ export function populateElectronHostScreenChange(
 }
 
 export function populateElectronHostScreenQuery(
-  out: EntityConstruction<HostScreenQueryProvider>,
+  out: EntityConstruction<HostScreenQueryCapability>,
   screen: ElectronApi['screen'],
 ): void {
   out.getCursorPosition = (target: { x: number; y: number }) => {

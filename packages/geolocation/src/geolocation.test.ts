@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
-  HostGeolocationProvider,
+  HostGeolocationCapability,
   GeolocationErrorReason,
   GeolocationPosition,
 } from '@flighthq/types/contract';
@@ -17,7 +17,7 @@ import {
   watchGeolocationPosition,
 } from './geolocation';
 
-function fakeBackend(available: boolean = true): HostGeolocationProvider & { cleared: number[]; lastWatch: number } {
+function fakeBackend(available: boolean = true): HostGeolocationCapability & { cleared: number[]; lastWatch: number } {
   const out = allocateEntity<any>();
   out.cleared = [];
   out.lastWatch = 0;
@@ -54,10 +54,10 @@ function fakeBackend(available: boolean = true): HostGeolocationProvider & { cle
   return finishEntity(out);
 }
 
-function hostWith(backend: HostGeolocationProvider): {
-  readonly system: { readonly geolocation: HostGeolocationProvider };
+function hostWith(backend: HostGeolocationCapability): {
+  readonly system: { readonly geolocation: HostGeolocationCapability };
 } {
-  return { system: { geolocation: backend } } as { readonly system: { readonly geolocation: HostGeolocationProvider } };
+  return { system: { geolocation: backend } } as { readonly system: { readonly geolocation: HostGeolocationCapability } };
 }
 
 describe('clearGeolocationWatch', () => {

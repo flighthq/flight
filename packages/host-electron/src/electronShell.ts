@@ -5,13 +5,13 @@ import type {
   DesktopOsProfile,
   EntityConstruction,
   HostShellCapabilities,
-  HostShellBeepProvider,
-  HostShellExternalProvider,
-  HostShellPathOpenProvider,
-  HostShellPathRevealProvider,
+  HostShellBeepCapability,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
   ShellShortcutLink,
-  HostShellShortcutLinkProvider,
-  HostShellTrashProvider,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
 } from '@flighthq/types/contract';
 
 // Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
@@ -32,44 +32,44 @@ export function electronHostShell(
   return { ...shared, shortcutLink: electronHostShellShortcutLink(electron) };
 }
 
-export function electronHostShellBeep(electron: ElectronApi): HostShellBeepProvider {
-  const out = allocateEntity<HostShellBeepProvider>();
+export function electronHostShellBeep(electron: ElectronApi): HostShellBeepCapability {
+  const out = allocateEntity<HostShellBeepCapability>();
   populateElectronHostShellBeep(out, electron.shell);
   return finishEntity(out);
 }
 
-export function electronHostShellExternal(electron: ElectronApi): HostShellExternalProvider {
-  const out = allocateEntity<HostShellExternalProvider>();
+export function electronHostShellExternal(electron: ElectronApi): HostShellExternalCapability {
+  const out = allocateEntity<HostShellExternalCapability>();
   populateElectronHostShellExternal(out, electron.shell);
   return finishEntity(out);
 }
 
-export function electronHostShellPathOpen(electron: ElectronApi): HostShellPathOpenProvider {
-  const out = allocateEntity<HostShellPathOpenProvider>();
+export function electronHostShellPathOpen(electron: ElectronApi): HostShellPathOpenCapability {
+  const out = allocateEntity<HostShellPathOpenCapability>();
   populateElectronHostShellPathOpen(out, electron.shell);
   return finishEntity(out);
 }
 
-export function electronHostShellPathReveal(electron: ElectronApi): HostShellPathRevealProvider {
-  const out = allocateEntity<HostShellPathRevealProvider>();
+export function electronHostShellPathReveal(electron: ElectronApi): HostShellPathRevealCapability {
+  const out = allocateEntity<HostShellPathRevealCapability>();
   populateElectronHostShellPathReveal(out, electron.shell);
   return finishEntity(out);
 }
 
-export function electronHostShellShortcutLink(electron: ElectronApi): HostShellShortcutLinkProvider {
-  const out = allocateEntity<HostShellShortcutLinkProvider>();
+export function electronHostShellShortcutLink(electron: ElectronApi): HostShellShortcutLinkCapability {
+  const out = allocateEntity<HostShellShortcutLinkCapability>();
   populateElectronHostShellShortcutLink(out, electron.shell);
   return finishEntity(out);
 }
 
-export function electronHostShellTrash(electron: ElectronApi): HostShellTrashProvider {
-  const out = allocateEntity<HostShellTrashProvider>();
+export function electronHostShellTrash(electron: ElectronApi): HostShellTrashCapability {
+  const out = allocateEntity<HostShellTrashCapability>();
   populateElectronHostShellTrash(out, electron.shell);
   return finishEntity(out);
 }
 
 export function populateElectronHostShellBeep(
-  out: EntityConstruction<HostShellBeepProvider>,
+  out: EntityConstruction<HostShellBeepCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.beep = () => {
@@ -78,7 +78,7 @@ export function populateElectronHostShellBeep(
 }
 
 export function populateElectronHostShellExternal(
-  out: EntityConstruction<HostShellExternalProvider>,
+  out: EntityConstruction<HostShellExternalCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.open = async (url) => {
@@ -92,7 +92,7 @@ export function populateElectronHostShellExternal(
 }
 
 export function populateElectronHostShellPathOpen(
-  out: EntityConstruction<HostShellPathOpenProvider>,
+  out: EntityConstruction<HostShellPathOpenCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.open = async (path) => {
@@ -106,7 +106,7 @@ export function populateElectronHostShellPathOpen(
 }
 
 export function populateElectronHostShellPathReveal(
-  out: EntityConstruction<HostShellPathRevealProvider>,
+  out: EntityConstruction<HostShellPathRevealCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.reveal = async (path) => {
@@ -120,7 +120,7 @@ export function populateElectronHostShellPathReveal(
 }
 
 export function populateElectronHostShellShortcutLink(
-  out: EntityConstruction<HostShellShortcutLinkProvider>,
+  out: EntityConstruction<HostShellShortcutLinkCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.read = async (shortcutPath) => {
@@ -159,7 +159,7 @@ export function populateElectronHostShellShortcutLink(
 }
 
 export function populateElectronHostShellTrash(
-  out: EntityConstruction<HostShellTrashProvider>,
+  out: EntityConstruction<HostShellTrashCapability>,
   shell: ElectronApi['shell'],
 ): void {
   out.moveToTrash = async (path) => {

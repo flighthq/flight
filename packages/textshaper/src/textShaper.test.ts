@@ -1,11 +1,11 @@
-import type { HostTextShaperProvider, TextShaperOperation } from '@flighthq/types/contract';
+import type { HostTextShaperCapability, TextShaperOperation } from '@flighthq/types/contract';
 
 import { explainTextShaperOperation, hasTextShaperOperation, measureText } from './textShaper';
 
 describe('explainTextShaperOperation', () => {
   it('reports an operation the backend provides', () => {
     const operation = OPTIONAL_OPERATIONS[0];
-    const backend = { ...partialBackend(), [operation]: () => undefined } as HostTextShaperProvider;
+    const backend = { ...partialBackend(), [operation]: () => undefined } as HostTextShaperCapability;
     expect(explainTextShaperOperation(backend, operation)).toEqual({
       implemented: true,
       layer: 'host',
@@ -37,13 +37,13 @@ describe('hasTextShaperOperation', () => {
 
 describe('measureText', () => {
   it('delegates to the backend', () => {
-    const backend: HostTextShaperProvider = { measureText: (text) => text.length * 7 };
+    const backend: HostTextShaperCapability = { measureText: (text) => text.length * 7 };
     expect(measureText(backend, 'abc', {})).toBe(21);
   });
 
   it('isolates callers that interleave different backends', () => {
-    const first: HostTextShaperProvider = { measureText: () => 1 };
-    const second: HostTextShaperProvider = { measureText: () => 2 };
+    const first: HostTextShaperCapability = { measureText: () => 1 };
+    const second: HostTextShaperCapability = { measureText: () => 2 };
     expect(measureText(first, 'x', {})).toBe(1);
     expect(measureText(second, 'x', {})).toBe(2);
     expect(measureText(first, 'x', {})).toBe(1);
@@ -63,8 +63,8 @@ const OPTIONAL_OPERATIONS: readonly TextShaperOperation[] = [
 ];
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): HostTextShaperProvider {
+function partialBackend(): HostTextShaperCapability {
   return {
     measureText: (() => undefined) as never,
-  } as HostTextShaperProvider;
+  } as HostTextShaperCapability;
 }

@@ -1,5 +1,5 @@
 import { sendNetRequest } from '@flighthq/net/contract';
-import type { AudioResource, AudioResourceUrl, HostAudioProvider, HostNetProvider } from '@flighthq/types/contract';
+import type { AudioResource, AudioResourceUrl, HostAudioCapability, HostNetCapability } from '@flighthq/types/contract';
 
 import { hasAudioDecoder } from './audioDecoderRegistry';
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
@@ -58,7 +58,7 @@ export async function loadAudioResourceFromBytes(
 }
 
 export async function loadAudioResourceFromUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   context: AudioContext,
   url: string,
   signal?: AbortSignal,
@@ -67,7 +67,7 @@ export async function loadAudioResourceFromUrl(
 }
 
 async function _loadAudioResourceFromUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   context: AudioContext,
   url: string,
   mimeType: string | undefined,
@@ -78,7 +78,7 @@ async function _loadAudioResourceFromUrl(
     { method: 'GET', responseType: 'arraybuffer', url },
     signal === undefined ? undefined : { signal },
   );
-  // The HostNetProvider reports network failures and non-2xx responses alike through the response, before
+  // The HostNetCapability reports network failures and non-2xx responses alike through the response, before
   // the audio decoder can misdiagnose an HTTP error body as invalid audio. This function retains its
   // existing reject-on-failure contract; the transport itself remains caller-replaceable.
   if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
@@ -92,8 +92,8 @@ async function _loadAudioResourceFromUrl(
 }
 
 export async function loadAudioResourceFromUrls(
-  hostNet: Readonly<HostNetProvider>,
-  hostAudio: Readonly<HostAudioProvider>,
+  hostNet: Readonly<HostNetCapability>,
+  hostAudio: Readonly<HostAudioCapability>,
   context: AudioContext,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
@@ -105,14 +105,14 @@ export async function loadAudioResourceFromUrls(
 }
 
 export function selectAudioResourceUrl(
-  hostAudio: Readonly<HostAudioProvider>,
+  hostAudio: Readonly<HostAudioCapability>,
   sources: readonly AudioResourceUrl[],
 ): string | null {
   return _selectAudioResourceSource(hostAudio, sources)?.url ?? null;
 }
 
 function _selectAudioResourceSource(
-  hostAudio: Readonly<HostAudioProvider>,
+  hostAudio: Readonly<HostAudioCapability>,
   sources: readonly AudioResourceUrl[],
 ): AudioResourceUrl | null {
   for (const source of sources) {

@@ -1,18 +1,18 @@
 import type {
-  HostStoragePersistenceQueryProvider,
-  HostStoragePersistenceRequestProvider,
+  HostStoragePersistenceQueryCapability,
+  HostStoragePersistenceRequestCapability,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 
 export function getStoragePersistence(
-  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryProvider>,
+  hostStoragePersistenceQuery: Readonly<HostStoragePersistenceQueryCapability>,
 ): Promise<StoragePersistenceResult> {
   const backend = hostStoragePersistenceQuery;
   return backend.getPersistence();
 }
 
 export function requestStoragePersistence(
-  hostStoragePersistenceRequest: Readonly<HostStoragePersistenceRequestProvider>,
+  hostStoragePersistenceRequest: Readonly<HostStoragePersistenceRequestCapability>,
 ): Promise<StoragePersistenceResult> {
   const backend = hostStoragePersistenceRequest;
   return backend.requestPersistence();

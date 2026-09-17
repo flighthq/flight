@@ -3,19 +3,19 @@ import type {
   ElectronApi,
   ElectronPowerCapabilities,
   PowerBatteryHealth,
-  HostPowerBatteryHealthProvider,
-  HostPowerChangeProvider,
-  HostPowerIdleProvider,
+  HostPowerBatteryHealthCapability,
+  HostPowerChangeCapability,
+  HostPowerIdleCapability,
   PowerIdleState,
   PowerKeepAwakeAcquireResult,
-  HostPowerKeepAwakeProvider,
+  HostPowerKeepAwakeCapability,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
-  HostPowerSessionLockProvider,
+  HostPowerSessionLockCapability,
   PowerStatus,
-  HostPowerStatusProvider,
-  HostPowerSuspensionProvider,
-  HostPowerThermalProvider,
+  HostPowerStatusCapability,
+  HostPowerSuspensionCapability,
+  HostPowerThermalCapability,
   PowerThermalState,
   Entity,
   EntityConstruction,
@@ -55,50 +55,50 @@ export function electronHostPower(electron: ElectronApi): ElectronPowerCapabilit
   return finishEntity(providers);
 }
 
-export function electronHostPowerBatteryHealth(_electron: ElectronApi): HostPowerBatteryHealthProvider {
+export function electronHostPowerBatteryHealth(_electron: ElectronApi): HostPowerBatteryHealthCapability {
   return finishProvider(populateElectronHostPowerBatteryHealth);
 }
 
-export function electronHostPowerChange(electron: ElectronApi): HostPowerChangeProvider {
+export function electronHostPowerChange(electron: ElectronApi): HostPowerChangeCapability {
   return finishProvider((out) => populateElectronHostPowerChange(out, electron.powerMonitor));
 }
 
-export function electronHostPowerIdle(electron: ElectronApi): HostPowerIdleProvider {
+export function electronHostPowerIdle(electron: ElectronApi): HostPowerIdleCapability {
   return finishProvider((out) => populateElectronHostPowerIdle(out, electron.powerMonitor));
 }
 
-export function electronHostPowerKeepAwake(electron: ElectronApi): HostPowerKeepAwakeProvider {
+export function electronHostPowerKeepAwake(electron: ElectronApi): HostPowerKeepAwakeCapability {
   return finishProvider((out) => populateElectronHostPowerKeepAwake(out, electron.powerSaveBlocker));
 }
 
-export function electronHostPowerSessionLock(electron: ElectronApi): HostPowerSessionLockProvider {
+export function electronHostPowerSessionLock(electron: ElectronApi): HostPowerSessionLockCapability {
   return finishProvider((out) => populateElectronHostPowerSessionLock(out, electron.powerMonitor));
 }
 
-export function electronHostPowerStatus(electron: ElectronApi): HostPowerStatusProvider {
+export function electronHostPowerStatus(electron: ElectronApi): HostPowerStatusCapability {
   return finishProvider((out) => populateElectronHostPowerStatus(out, electron.powerMonitor));
 }
 
-export function electronHostPowerSuspension(electron: ElectronApi): HostPowerSuspensionProvider {
+export function electronHostPowerSuspension(electron: ElectronApi): HostPowerSuspensionCapability {
   return finishProvider((out) => populateElectronHostPowerSuspension(out, electron.powerMonitor));
 }
 
-export function electronHostPowerThermal(electron: ElectronApi): HostPowerThermalProvider | undefined {
+export function electronHostPowerThermal(electron: ElectronApi): HostPowerThermalCapability | undefined {
   if (typeof electron.powerMonitor.getCurrentThermalState !== 'function') return undefined;
-  return finishProvider<HostPowerThermalProvider>((out) =>
+  return finishProvider<HostPowerThermalCapability>((out) =>
     populateElectronHostPowerThermal(out, electron.powerMonitor),
   );
 }
 
 export function populateElectronHostPower(
   out: EntityConstruction<ElectronPowerCapabilities>,
-  batteryHealth: HostPowerBatteryHealthProvider,
-  change: HostPowerChangeProvider,
-  idle: HostPowerIdleProvider,
-  keepAwake: HostPowerKeepAwakeProvider,
-  sessionLock: HostPowerSessionLockProvider,
-  status: HostPowerStatusProvider,
-  suspension: HostPowerSuspensionProvider,
+  batteryHealth: HostPowerBatteryHealthCapability,
+  change: HostPowerChangeCapability,
+  idle: HostPowerIdleCapability,
+  keepAwake: HostPowerKeepAwakeCapability,
+  sessionLock: HostPowerSessionLockCapability,
+  status: HostPowerStatusCapability,
+  suspension: HostPowerSuspensionCapability,
 ): void {
   out.batteryHealth = batteryHealth;
   out.change = change;
@@ -109,14 +109,14 @@ export function populateElectronHostPower(
   out.suspension = suspension;
 }
 
-export function populateElectronHostPowerBatteryHealth(out: EntityConstruction<HostPowerBatteryHealthProvider>): void {
+export function populateElectronHostPowerBatteryHealth(out: EntityConstruction<HostPowerBatteryHealthCapability>): void {
   out.getBatteryHealth = (out: PowerBatteryHealth): PowerBatteryHealth => {
     return out;
   };
 }
 
 export function populateElectronHostPowerChange(
-  out: EntityConstruction<HostPowerChangeProvider>,
+  out: EntityConstruction<HostPowerChangeCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribe = (listener: () => void): (() => void) => {
@@ -130,7 +130,7 @@ export function populateElectronHostPowerChange(
 }
 
 export function populateElectronHostPowerIdle(
-  out: EntityConstruction<HostPowerIdleProvider>,
+  out: EntityConstruction<HostPowerIdleCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getIdleState = (thresholdSeconds: number): PowerIdleState => {
@@ -142,7 +142,7 @@ export function populateElectronHostPowerIdle(
 }
 
 export function populateElectronHostPowerKeepAwake(
-  out: EntityConstruction<HostPowerKeepAwakeProvider>,
+  out: EntityConstruction<HostPowerKeepAwakeCapability>,
   powerSaveBlocker: ElectronApi['powerSaveBlocker'],
 ): void {
   let blockerId = -1;
@@ -180,7 +180,7 @@ export function populateElectronHostPowerKeepAwake(
 }
 
 export function populateElectronHostPowerSessionLock(
-  out: EntityConstruction<HostPowerSessionLockProvider>,
+  out: EntityConstruction<HostPowerSessionLockCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribeLock = (listener: () => void): (() => void) => {
@@ -194,7 +194,7 @@ export function populateElectronHostPowerSessionLock(
 }
 
 export function populateElectronHostPowerStatus(
-  out: EntityConstruction<HostPowerStatusProvider>,
+  out: EntityConstruction<HostPowerStatusCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getStatus = (out: PowerStatus): PowerStatus => {
@@ -212,7 +212,7 @@ export function populateElectronHostPowerStatus(
 }
 
 export function populateElectronHostPowerSuspension(
-  out: EntityConstruction<HostPowerSuspensionProvider>,
+  out: EntityConstruction<HostPowerSuspensionCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.subscribeResume = (listener: () => void): (() => void) => {
@@ -226,7 +226,7 @@ export function populateElectronHostPowerSuspension(
 }
 
 export function populateElectronHostPowerThermal(
-  out: EntityConstruction<HostPowerThermalProvider>,
+  out: EntityConstruction<HostPowerThermalCapability>,
   powerMonitor: ElectronApi['powerMonitor'],
 ): void {
   out.getThermalState = (): PowerThermalState => {

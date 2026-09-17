@@ -1,8 +1,8 @@
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, HostImageProvider, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 export function createImageResourceFromBitmap(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   bitmap: Readonly<Bitmap>,
 ): ImageResource | null {
   const backend = hostImage;
@@ -20,7 +20,7 @@ export function isImageUrlSameOrigin(url: string): boolean {
 }
 
 export async function loadImageResourceFromBase64(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
@@ -29,7 +29,7 @@ export async function loadImageResourceFromBase64(
 }
 
 export async function loadImageResourceFromBlob(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   blob: Blob,
   signal?: AbortSignal,
 ): Promise<ImageResource> {
@@ -42,7 +42,7 @@ export async function loadImageResourceFromBlob(
 }
 
 export async function loadImageResourceFromBytes(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
@@ -56,7 +56,7 @@ export async function loadImageResourceFromBytes(
 }
 
 export async function loadImageResourceFromUrl(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,

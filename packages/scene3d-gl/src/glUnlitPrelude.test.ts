@@ -14,7 +14,7 @@ import {
   createTexture,
   createVideoTexture,
 } from '@flighthq/texture/contract';
-import type { GlUnlitDefineKey, HostVideoProvider, LinearColor } from '@flighthq/types/contract';
+import type { GlUnlitDefineKey, HostVideoCapability, LinearColor } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -50,7 +50,7 @@ const testVideoHost = {
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,
   getWidth: (source) => (source as HTMLVideoElement).videoWidth,
   isReady: (source) => (source as HTMLVideoElement).readyState >= 2,
-} satisfies HostVideoProvider;
+} satisfies HostVideoCapability;
 
 describe('bindGlUnlitSurface', () => {
   it('uploads the color, intensity, and alpha cutoff', () => {

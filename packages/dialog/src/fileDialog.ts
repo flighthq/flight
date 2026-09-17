@@ -6,9 +6,9 @@ import type {
   FileDialogHandleRuntime,
   FileOpenDialogResult,
   FileSaveDialogResult,
-  HostDirectoryOpenDialogProvider,
-  HostFileOpenDialogProvider,
-  HostFileSaveDialogProvider,
+  HostDirectoryOpenDialogCapability,
+  HostFileOpenDialogCapability,
+  HostFileSaveDialogCapability,
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
@@ -54,21 +54,21 @@ export function initializeFileDialogHandle(
 }
 
 export function showOpenDirectoryDialog(
-  hostDirectoryOpenDialog: Readonly<HostDirectoryOpenDialogProvider>,
+  hostDirectoryOpenDialog: Readonly<HostDirectoryOpenDialogCapability>,
   options?: Readonly<OpenDirectoryDialogOptions>,
 ): Promise<DirectoryOpenDialogResult> {
   return options === undefined ? hostDirectoryOpenDialog.open() : hostDirectoryOpenDialog.open(options);
 }
 
 export function showOpenFileDialog(
-  hostFileOpenDialog: Readonly<HostFileOpenDialogProvider>,
+  hostFileOpenDialog: Readonly<HostFileOpenDialogCapability>,
   options: Readonly<OpenFileDialogOptions>,
 ): Promise<FileOpenDialogResult> {
   return hostFileOpenDialog.open(options);
 }
 
 export function showSaveFileDialog(
-  hostFileSaveDialog: Readonly<HostFileSaveDialogProvider>,
+  hostFileSaveDialog: Readonly<HostFileSaveDialogCapability>,
   options: Readonly<SaveFileDialogOptions>,
 ): Promise<FileSaveDialogResult> {
   return hostFileSaveDialog.save(options);

@@ -1,4 +1,4 @@
-import type { FontMetrics, GlyphExtents, HostTextShaperProvider, ShapedRun } from '@flighthq/types/contract';
+import type { FontMetrics, GlyphExtents, HostTextShaperCapability, ShapedRun } from '@flighthq/types/contract';
 
 import {
   clearShapedRun,
@@ -44,7 +44,7 @@ const _testMetrics: FontMetrics = {
 
 const _testExtents: GlyphExtents = { height: 10, width: 6, xBearing: 0, yBearing: -8 };
 
-function _makeFullBackend(): HostTextShaperProvider {
+function _makeFullBackend(): HostTextShaperCapability {
   return {
     getCodePointForGlyph: (id) => (id === 10 ? 65 : -1),
     getFontMetrics: () => ({ ..._testMetrics }),
@@ -56,7 +56,7 @@ function _makeFullBackend(): HostTextShaperProvider {
   };
 }
 
-function _makeAdvancesOnlyBackend(): HostTextShaperProvider {
+function _makeAdvancesOnlyBackend(): HostTextShaperCapability {
   return { measureText: (t) => t.length };
 }
 
@@ -263,7 +263,7 @@ describe('shapeTextRun', () => {
 
   it('passes options to the backend', () => {
     let capturedOptions: unknown;
-    const backend: HostTextShaperProvider = {
+    const backend: HostTextShaperCapability = {
       measureText: () => 0,
       shapeRun: (_t, _f, opts) => {
         capturedOptions = opts;
@@ -294,7 +294,7 @@ describe('shapeTextRunInto', () => {
 
   it('forwards options to the backend', () => {
     let capturedOptions: unknown;
-    const backend: HostTextShaperProvider = {
+    const backend: HostTextShaperCapability = {
       measureText: () => 0,
       shapeRun: (_t, _f, opts) => {
         capturedOptions = opts;

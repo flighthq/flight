@@ -1,5 +1,5 @@
 import type {
-  HostVideoProvider,
+  HostVideoCapability,
   VideoResource,
   VideoResourceLoadOptions,
   VideoResourceUrl,
@@ -9,7 +9,7 @@ import { selectVideoResourceUrl } from './videoFormat';
 import { createVideoResource } from './videoResource';
 
 export async function loadVideoResourceFromBlob(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   blob: Blob,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,
@@ -30,7 +30,7 @@ export async function loadVideoResourceFromBlob(
 }
 
 export function loadVideoResourceFromUrl(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   url: string,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,
@@ -40,7 +40,7 @@ export function loadVideoResourceFromUrl(
 }
 
 export function loadVideoResourceFromUrls(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   sources: Readonly<VideoResourceUrl[]>,
   options?: Readonly<VideoResourceLoadOptions>,
   signal?: AbortSignal,

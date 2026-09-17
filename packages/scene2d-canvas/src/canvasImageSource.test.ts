@@ -5,7 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { HostImageProvider, TextureSource } from '@flighthq/types/contract';
+import type { HostImageCapability, TextureSource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -32,7 +32,7 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-function createTestImageBackend(): HostImageProvider {
+function createTestImageBackend(): HostImageCapability {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -45,9 +45,9 @@ function createTestImageBackend(): HostImageProvider {
   };
 }
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: createTestImageBackend() },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 
 describe('explainCanvasImageSource', () => {
   it('reports element for a host-element-backed resource', () => {

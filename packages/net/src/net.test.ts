@@ -1,11 +1,11 @@
-import type { HostNetProvider, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
+import type { HostNetCapability, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as netContract from './net';
 import { explainNetResponse, sendNetRequest, setNetGuard } from './net';
 
-function fakeHost(backend?: Pick<HostNetProvider, 'sendNetRequest'>): {
-  readonly net: { readonly http: HostNetProvider };
+function fakeHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
+  readonly net: { readonly http: HostNetCapability };
 } {
   return {
     net: {
@@ -69,7 +69,7 @@ describe('R3 boundary', () => {
 describe('sendNetRequest', () => {
   it('dispatches through the host backend and passes options', async () => {
     let received: { request?: Readonly<NetRequest>; options?: unknown } = {};
-    const backend: Pick<HostNetProvider, 'sendNetRequest'> = {
+    const backend: Pick<HostNetCapability, 'sendNetRequest'> = {
       sendNetRequest: async (request, options) => {
         received = { request, options };
         return stubResponse();

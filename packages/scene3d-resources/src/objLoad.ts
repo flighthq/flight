@@ -1,6 +1,6 @@
 import { parseObj } from '@flighthq/scene3d-formats/contract';
 import type {
-  HostNetProvider,
+  HostNetCapability,
   ObjMaterialLibrary,
   Scene3DDocument,
   Scene3DDocumentLoadOptions,
@@ -14,7 +14,7 @@ import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromU
 // with createScene3DFromDocument and resolve on your own schedule. Returns null on transport failure; it
 // never creates a renderer or GPU resource.
 export async function loadScene3DDocumentFromObjUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   materials?: Readonly<ObjMaterialLibrary>,
   options?: Readonly<Scene3DDocumentLoadOptions>,

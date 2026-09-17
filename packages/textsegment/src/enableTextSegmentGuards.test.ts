@@ -39,7 +39,7 @@ describe('enableTextSegmentGuards', () => {
     segmentGraphemes(backend, 'first');
     segmentGraphemes(backend, 'second');
     expect(entries).toHaveLength(1);
-    expect(String((entries[0].data as { message?: unknown }).message)).toContain('HostTextSegmenterProvider');
+    expect(String((entries[0].data as { message?: unknown }).message)).toContain('HostTextSegmenterCapability');
   });
 
   it('stays silent when the bundled Intl provider is available', () => {

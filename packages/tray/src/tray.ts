@@ -3,21 +3,21 @@ import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  HostTrayBalloonEventsProvider,
-  HostTrayBalloonProvider,
-  HostTrayBoundsProvider,
-  HostTrayDoubleClickPolicyProvider,
-  HostTrayDropEventsProvider,
-  HostTrayImageProvider,
-  HostTrayInteractionEventsProvider,
-  HostTrayLifecycleProvider,
-  HostTrayMenuProvider,
-  HostTrayMenuSelectionEventsProvider,
-  HostTrayPopupMenuProvider,
-  HostTrayPressedImageProvider,
-  HostTrayTemplateImageProvider,
-  HostTrayTitleProvider,
-  HostTrayTooltipProvider,
+  HostTrayBalloonEventsCapability,
+  HostTrayBalloonCapability,
+  HostTrayBoundsCapability,
+  HostTrayDoubleClickPolicyCapability,
+  HostTrayDropEventsCapability,
+  HostTrayImageCapability,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayPopupMenuCapability,
+  HostTrayPressedImageCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
   MenuItemTemplate,
   Signal,
   TrayAnimationStartResult,
@@ -58,7 +58,7 @@ interface TrayRuntime extends ReturnType<typeof createEntityRuntime> {
   animationTimer: ReturnType<typeof setInterval> | null;
   animationWriteTail: Promise<void>;
   destroyPromise: Promise<TrayDestroyResult> | null;
-  lifecycle: Readonly<HostTrayLifecycleProvider>;
+  lifecycle: Readonly<HostTrayLifecycleCapability>;
   releases: Set<TrayReleaseRuntime>;
   state: 'active' | 'destroying' | 'partially-destroyed' | 'destroyed';
 }
@@ -68,7 +68,7 @@ interface TrayReleaseRuntime extends TrayEventRelease {
 }
 
 export async function createTrayIcon(
-  hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>,
+  hostTrayLifecycle: Readonly<HostTrayLifecycleCapability>,
   options: Readonly<TrayIconOptions> = {},
 ): Promise<TrayCreateResult> {
   const tray = finishEntity(allocateEntity<TrayIcon>());
@@ -111,7 +111,7 @@ export function destroyTrayIcon(tray: TrayIcon): Promise<TrayDestroyResult> {
 }
 
 export function displayTrayBalloon(
-  hostTrayBalloon: Readonly<HostTrayBalloonProvider>,
+  hostTrayBalloon: Readonly<HostTrayBalloonCapability>,
   tray: TrayIcon,
   options: Readonly<TrayBalloonOptions>,
 ): Promise<TrayBalloonDisplayResult> {
@@ -119,7 +119,7 @@ export function displayTrayBalloon(
 }
 
 export function getTrayIconBounds(
-  hostTrayBounds: Readonly<HostTrayBoundsProvider>,
+  hostTrayBounds: Readonly<HostTrayBoundsCapability>,
   tray: TrayIcon,
 ): Promise<TrayBoundsResult> {
   return invokeRead(hostTrayBounds, tray, 'bounds-read-failed', (provider) => provider.get(tray));
@@ -143,19 +143,19 @@ async function destroyTrayRuntime(tray: TrayIcon, runtime: TrayRuntime): Promise
   return result;
 }
 
-export function getTrayIcons(hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>): readonly TrayIcon[] {
+export function getTrayIcons(hostTrayLifecycle: Readonly<HostTrayLifecycleCapability>): readonly TrayIcon[] {
   return hostTrayLifecycle.list();
 }
 
 export function getTrayIconTitle(
-  hostTrayTitle: Readonly<HostTrayTitleProvider>,
+  hostTrayTitle: Readonly<HostTrayTitleCapability>,
   tray: TrayIcon,
 ): Promise<TrayTitleReadResult> {
   return invokeRead(hostTrayTitle, tray, 'title-read-failed', (provider) => provider.get(tray));
 }
 
 export function getTrayIconTooltip(
-  hostTrayTooltip: Readonly<HostTrayTooltipProvider>,
+  hostTrayTooltip: Readonly<HostTrayTooltipCapability>,
   tray: TrayIcon,
 ): Promise<TrayTooltipReadResult> {
   return invokeRead(hostTrayTooltip, tray, 'tooltip-read-failed', (provider) => provider.get(tray));
@@ -198,7 +198,7 @@ export function isTrayIconAnimating(tray: Readonly<TrayIcon>): boolean {
 }
 
 export function onTrayBalloonEvent(
-  hostTrayBalloonEvents: Readonly<HostTrayBalloonEventsProvider>,
+  hostTrayBalloonEvents: Readonly<HostTrayBalloonEventsCapability>,
   tray: TrayIcon,
   listener: (event: Readonly<TrayBalloonEvent>) => void,
 ): TrayEventAttachResult {
@@ -206,7 +206,7 @@ export function onTrayBalloonEvent(
 }
 
 export function onTrayDrop(
-  hostTrayDropEvents: Readonly<HostTrayDropEventsProvider>,
+  hostTrayDropEvents: Readonly<HostTrayDropEventsCapability>,
   tray: TrayIcon,
   listener: (event: Readonly<TrayDropEvent>) => void,
 ): TrayEventAttachResult {
@@ -214,7 +214,7 @@ export function onTrayDrop(
 }
 
 export function onTrayInteraction(
-  hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsProvider>,
+  hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsCapability>,
   tray: TrayIcon,
   listener: (event: Readonly<TrayInteractionEvent>) => void,
 ): TrayEventAttachResult {
@@ -222,7 +222,7 @@ export function onTrayInteraction(
 }
 
 export function onTrayMenuSelection(
-  hostTrayMenuSelectionEvents: Readonly<HostTrayMenuSelectionEventsProvider>,
+  hostTrayMenuSelectionEvents: Readonly<HostTrayMenuSelectionEventsCapability>,
   tray: TrayIcon,
   listener: (event: Readonly<TrayMenuSelectionEvent>) => void,
 ): TrayEventAttachResult {
@@ -230,7 +230,7 @@ export function onTrayMenuSelection(
 }
 
 export function popupTrayContextMenu(
-  hostTrayPopupMenu: Readonly<HostTrayPopupMenuProvider>,
+  hostTrayPopupMenu: Readonly<HostTrayPopupMenuCapability>,
   tray: TrayIcon,
   position?: Readonly<Vector2Like>,
 ): Promise<TrayPopupMenuResult> {
@@ -238,7 +238,7 @@ export function popupTrayContextMenu(
 }
 
 export function removeTrayBalloon(
-  hostTrayBalloon: Readonly<HostTrayBalloonProvider>,
+  hostTrayBalloon: Readonly<HostTrayBalloonCapability>,
   tray: TrayIcon,
 ): Promise<TrayBalloonRemoveResult> {
   return invokeUpdate(hostTrayBalloon, tray, 'balloon-remove-failed', (provider) => provider.remove(tray));
@@ -251,7 +251,7 @@ export function setTrayAnimationGuard(
 }
 
 export function setTrayIcon(
-  hostTrayImage: Readonly<HostTrayImageProvider>,
+  hostTrayImage: Readonly<HostTrayImageCapability>,
   tray: TrayIcon,
   icon: TrayIconSource,
 ): Promise<TrayImageUpdateResult> {
@@ -259,7 +259,7 @@ export function setTrayIcon(
 }
 
 export function setTrayIconContextMenu(
-  hostTrayMenu: Readonly<HostTrayMenuProvider>,
+  hostTrayMenu: Readonly<HostTrayMenuCapability>,
   tray: TrayIcon,
   items: readonly MenuItemTemplate[],
 ): Promise<TrayMenuUpdateResult> {
@@ -267,7 +267,7 @@ export function setTrayIconContextMenu(
 }
 
 export function setTrayIconTemplate(
-  hostTrayTemplateImage: Readonly<HostTrayTemplateImageProvider>,
+  hostTrayTemplateImage: Readonly<HostTrayTemplateImageCapability>,
   tray: TrayIcon,
   isTemplate: boolean,
 ): Promise<TrayTemplateImageUpdateResult> {
@@ -277,7 +277,7 @@ export function setTrayIconTemplate(
 }
 
 export function setTrayIconTitle(
-  hostTrayTitle: Readonly<HostTrayTitleProvider>,
+  hostTrayTitle: Readonly<HostTrayTitleCapability>,
   tray: TrayIcon,
   title: string,
 ): Promise<TrayTitleUpdateResult> {
@@ -285,7 +285,7 @@ export function setTrayIconTitle(
 }
 
 export function setTrayIconTooltip(
-  hostTrayTooltip: Readonly<HostTrayTooltipProvider>,
+  hostTrayTooltip: Readonly<HostTrayTooltipCapability>,
   tray: TrayIcon,
   tooltip: string,
 ): Promise<TrayTooltipUpdateResult> {
@@ -329,7 +329,7 @@ function attachTrayEvent<Event extends object>(
 }
 
 export function setTrayIgnoreDoubleClickEvents(
-  hostTrayDoubleClickPolicy: Readonly<HostTrayDoubleClickPolicyProvider>,
+  hostTrayDoubleClickPolicy: Readonly<HostTrayDoubleClickPolicyCapability>,
   tray: TrayIcon,
   ignore: boolean,
 ): Promise<TrayDoubleClickPolicyUpdateResult> {
@@ -339,7 +339,7 @@ export function setTrayIgnoreDoubleClickEvents(
 }
 
 export function setTrayPressedIcon(
-  hostTrayPressedImage: Readonly<HostTrayPressedImageProvider>,
+  hostTrayPressedImage: Readonly<HostTrayPressedImageCapability>,
   tray: TrayIcon,
   icon: TrayIconSource,
 ): Promise<TrayPressedImageUpdateResult> {
@@ -349,7 +349,7 @@ export function setTrayPressedIcon(
 }
 
 export async function startTrayIconAnimation(
-  hostTrayImage: Readonly<HostTrayImageProvider>,
+  hostTrayImage: Readonly<HostTrayImageCapability>,
   tray: TrayIcon,
   frames: readonly TrayIconSource[],
   intervalMs: number,
@@ -381,7 +381,7 @@ export async function startTrayIconAnimation(
 }
 
 async function queueAnimationWrite(
-  hostTrayImage: Readonly<HostTrayImageProvider>,
+  hostTrayImage: Readonly<HostTrayImageCapability>,
   tray: TrayIcon,
   runtime: TrayRuntime,
   generation: number,

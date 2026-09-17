@@ -3,7 +3,7 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type {
   Bitmap,
-  HostBitmapReadbackProvider,
+  HostBitmapReadbackCapability,
   ImageResource,
   Node2D,
   NodeAny,
@@ -15,7 +15,7 @@ import { BitmapTextureSourceKind, ImageChannel, ImageTextureSourceKind, SpriteKi
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
 
 export function registerSpriteHitTest(
-  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
   alphaThreshold: number = 1,
 ): void {
   registerHitTestPrecise(SpriteKind, (source, x, y) =>
@@ -25,7 +25,7 @@ export function registerSpriteHitTest(
 
 // Returns 0 on a hit (opaque pixel, or bounds fallback when pixels are unreadable), -1 on a miss.
 function hitTestSpriteAlpha(
-  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
   source: NodeAny,
   x: number,
   y: number,
@@ -49,7 +49,7 @@ function hitTestSpriteAlpha(
   return getBitmapPixelChannel(bitmap, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
-function bitmapForImage(hostBitmapReadback: Readonly<HostBitmapReadbackProvider>, image: TextureSource): Bitmap | null {
+function bitmapForImage(hostBitmapReadback: Readonly<HostBitmapReadbackCapability>, image: TextureSource): Bitmap | null {
   if (image.kind === BitmapTextureSourceKind) return image as Bitmap;
   if (image.kind !== ImageTextureSourceKind) return null;
   const resource = image as ImageResource;

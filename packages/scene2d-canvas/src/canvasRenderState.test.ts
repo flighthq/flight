@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderOptions, HostImageProvider } from '@flighthq/types/contract';
+import type { CanvasRenderOptions, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -95,9 +95,9 @@ describe('getCanvasRenderStateTextureResolvers', () => {
     const resolvers = getCanvasRenderStateTextureResolvers(state);
 
     expect(resolvers).toBe(getCanvasRenderStateTextureResolvers(state));
-    const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+    const host: { readonly graphics: { readonly image: HostImageCapability } } = {
       graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-    } as { readonly graphics: { readonly image: HostImageProvider } };
+    } as { readonly graphics: { readonly image: HostImageCapability } };
     registerCanvasBitmapTextureResolver(host.graphics.image, resolvers);
     expect(resolvers.registry?.size).toBe(1);
   });

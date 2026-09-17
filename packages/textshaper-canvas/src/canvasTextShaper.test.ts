@@ -71,7 +71,7 @@ describe('createCanvasTextShaperBackend', () => {
     expect(widthB2).toBeCloseTo(widthB, 5);
   });
 
-  it('satisfies the HostTextShaperProvider contract', () => {
+  it('satisfies the HostTextShaperCapability contract', () => {
     const backend = createCanvasTextShaperBackend();
     expect(typeof backend.measureText).toBe('function');
   });

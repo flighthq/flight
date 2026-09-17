@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, HostAudioProvider, HostNetProvider } from '@flighthq/types/contract';
+import type { AudioDecoder, HostAudioCapability, HostNetCapability } from '@flighthq/types/contract';
 
 import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
@@ -14,7 +14,7 @@ import {
 } from './audioResourceFrom';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
-  readonly media: { readonly audioCodec: HostAudioProvider };
+  readonly media: { readonly audioCodec: HostAudioCapability };
 } {
   const out = allocateEntity<any>();
   out.canPlayType = canPlay;
@@ -22,13 +22,13 @@ function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
     media: {
       audioCodec: finishEntity(out),
     },
-  } as { readonly media: { readonly audioCodec: HostAudioProvider } };
+  } as { readonly media: { readonly audioCodec: HostAudioCapability } };
 }
 
-function fakeNetHost(backend?: Pick<HostNetProvider, 'sendNetRequest'>): {
-  readonly net: { readonly http: HostNetProvider };
+function fakeNetHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
+  readonly net: { readonly http: HostNetCapability };
 } {
-  const out = allocateEntity<HostNetProvider>();
+  const out = allocateEntity<HostNetCapability>();
   Object.assign(
     out,
     backend ?? {
@@ -44,9 +44,9 @@ function fakeNetHost(backend?: Pick<HostNetProvider, 'sendNetRequest'>): {
 
 function fakeNetAudioHost(
   canPlay: (type: string) => boolean,
-  backend?: Pick<HostNetProvider, 'sendNetRequest'>,
-): { readonly net: { readonly http: HostNetProvider } } & {
-  readonly media: { readonly audioCodec: HostAudioProvider };
+  backend?: Pick<HostNetCapability, 'sendNetRequest'>,
+): { readonly net: { readonly http: HostNetCapability } } & {
+  readonly media: { readonly audioCodec: HostAudioCapability };
 } {
   return { ...fakeNetHost(backend), ...fakeAudioCodecHost(canPlay) };
 }

@@ -3,7 +3,7 @@ import type {
   ElectronApi,
   Entity,
   HostStorageCapabilities,
-  HostStorageProvider,
+  HostPreferencesCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
@@ -16,8 +16,8 @@ type StorageRecordResult =
   | { readonly reason: 'ok'; readonly value: StorageRecord }
   | { readonly reason: StorageGetItemFailureReason; readonly value: null };
 
-export function electronHostStorage(electron: ElectronApi, fileName = 'storage.json'): HostStorageProvider & Entity {
-  const out = allocateEntity<HostStorageProvider>();
+export function electronHostStorage(electron: ElectronApi, fileName = 'storage.json'): HostPreferencesCapability & Entity {
+  const out = allocateEntity<HostPreferencesCapability>();
   populateElectronHostStorage(out, electron, fileName);
   return finishEntity(out);
 }
@@ -34,7 +34,7 @@ export function electronHostStorageGroup(
 // target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
 // not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
 export function populateElectronHostStorage(
-  out: EntityConstruction<HostStorageProvider>,
+  out: EntityConstruction<HostPreferencesCapability>,
   electron: ElectronApi,
   fileName = 'storage.json',
 ): void {

@@ -1,9 +1,9 @@
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
-  HostImageOpenDialogProvider,
-  HostPhotoCaptureDialogProvider,
-  HostVideoCaptureDialogProvider,
+  HostImageOpenDialogCapability,
+  HostPhotoCaptureDialogCapability,
+  HostVideoCaptureDialogCapability,
   ImageOpenDialogResult,
   OpenImageDialogOptions,
   PhotoCaptureDialogResult,
@@ -11,21 +11,21 @@ import type {
 } from '@flighthq/types/contract';
 
 export function showCapturePhotoDialog(
-  hostPhotoCaptureDialog: Readonly<HostPhotoCaptureDialogProvider>,
+  hostPhotoCaptureDialog: Readonly<HostPhotoCaptureDialogCapability>,
   options?: Readonly<CapturePhotoDialogOptions>,
 ): Promise<PhotoCaptureDialogResult> {
   return options === undefined ? hostPhotoCaptureDialog.capture() : hostPhotoCaptureDialog.capture(options);
 }
 
 export function showCaptureVideoDialog(
-  hostVideoCaptureDialog: Readonly<HostVideoCaptureDialogProvider>,
+  hostVideoCaptureDialog: Readonly<HostVideoCaptureDialogCapability>,
   options?: Readonly<CaptureVideoDialogOptions>,
 ): Promise<VideoCaptureDialogResult> {
   return options === undefined ? hostVideoCaptureDialog.capture() : hostVideoCaptureDialog.capture(options);
 }
 
 export function showOpenImageDialog(
-  hostImageOpenDialog: Readonly<HostImageOpenDialogProvider>,
+  hostImageOpenDialog: Readonly<HostImageOpenDialogCapability>,
   options?: Readonly<OpenImageDialogOptions>,
 ): Promise<ImageOpenDialogResult> {
   return options === undefined ? hostImageOpenDialog.open() : hostImageOpenDialog.open(options);

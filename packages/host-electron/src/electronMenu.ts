@@ -3,9 +3,9 @@ import type {
   ElectronApi,
   ElectronMenuCapabilities,
   EntityConstruction,
-  HostMenuApplicationProvider,
-  HostMenuPopupProvider,
-  HostMenuSelectProvider,
+  HostMenuApplicationCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
@@ -19,14 +19,14 @@ function menuState(): ElectronMenuState {
   return { destroyed: false, selectListener: null };
 }
 
-function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostMenuApplicationProvider {
-  const out = allocateEntity<HostMenuApplicationProvider>();
+function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostMenuApplicationCapability {
+  const out = allocateEntity<HostMenuApplicationCapability>();
   populateElectronHostMenuApplication(out, electron, state);
   return finishEntity(out);
 }
 
-function menuSelect(state: ElectronMenuState): HostMenuSelectProvider {
-  const out = allocateEntity<HostMenuSelectProvider>();
+function menuSelect(state: ElectronMenuState): HostMenuSelectCapability {
+  const out = allocateEntity<HostMenuSelectCapability>();
   populateElectronHostMenuSelect(out, state);
   return finishEntity(out);
 }
@@ -51,25 +51,25 @@ export function electronHostMenu(electron: ElectronApi): ElectronMenuCapabilitie
   return finishEntity(out);
 }
 
-export function electronHostMenuApplication(electron: ElectronApi): HostMenuApplicationProvider {
+export function electronHostMenuApplication(electron: ElectronApi): HostMenuApplicationCapability {
   return menuApplication(electron, menuState());
 }
 
-export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupProvider {
-  const out = allocateEntity<HostMenuPopupProvider>();
+export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupCapability {
+  const out = allocateEntity<HostMenuPopupCapability>();
   populateElectronHostMenuPopup(out, electron);
   return finishEntity(out);
 }
 
-export function electronHostMenuSelect(): HostMenuSelectProvider {
+export function electronHostMenuSelect(): HostMenuSelectCapability {
   return menuSelect(menuState());
 }
 
 export function populateElectronHostMenu(
   out: EntityConstruction<ElectronMenuCapabilities>,
-  application: HostMenuApplicationProvider,
-  popup: HostMenuPopupProvider,
-  select: HostMenuSelectProvider,
+  application: HostMenuApplicationCapability,
+  popup: HostMenuPopupCapability,
+  select: HostMenuSelectCapability,
 ): void {
   out.application = application;
   out.popup = popup;
@@ -77,7 +77,7 @@ export function populateElectronHostMenu(
 }
 
 export function populateElectronHostMenuApplication(
-  out: EntityConstruction<HostMenuApplicationProvider>,
+  out: EntityConstruction<HostMenuApplicationCapability>,
   electron: ElectronApi,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
@@ -97,7 +97,7 @@ export function populateElectronHostMenuApplication(
 }
 
 export function populateElectronHostMenuPopup(
-  out: EntityConstruction<HostMenuPopupProvider>,
+  out: EntityConstruction<HostMenuPopupCapability>,
   electron: ElectronApi,
 ): void {
   // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
@@ -116,7 +116,7 @@ export function populateElectronHostMenuPopup(
 }
 
 export function populateElectronHostMenuSelect(
-  out: EntityConstruction<HostMenuSelectProvider>,
+  out: EntityConstruction<HostMenuSelectCapability>,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
   out.subscribe = (listener): (() => void) => {

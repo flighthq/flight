@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity, stripEntityRuntime } from '@flighthq/enti
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostScreenChangeProvider,
-  HostScreenDetailsProvider,
-  HostScreenPermissionChangeProvider,
-  HostScreenQueryProvider,
+  HostScreenChangeCapability,
+  HostScreenDetailsCapability,
+  HostScreenPermissionChangeCapability,
+  HostScreenQueryCapability,
   RectangleLike,
   ScreenInfo,
   ScreenMode,
@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function attachScreenPermissionChange(
-  hostScreenPermissionChange: Readonly<HostScreenPermissionChangeProvider>,
+  hostScreenPermissionChange: Readonly<HostScreenPermissionChangeCapability>,
   permissionChange: ScreenPermissionChange,
 ): void {
   detachScreenPermissionChange(permissionChange);
@@ -25,7 +25,7 @@ export function attachScreenPermissionChange(
 }
 
 export function attachScreenSignals(
-  hostScreenChange: Readonly<HostScreenChangeProvider>,
+  hostScreenChange: Readonly<HostScreenChangeCapability>,
   signals: ScreenSignals,
 ): void {
   detachScreenSignals(signals);
@@ -105,7 +105,7 @@ export function disposeScreenSignals(signals: ScreenSignals): void {
   clearSignal(signals.onScreenRemoved);
 }
 
-export function getPrimaryScreen(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo): ScreenInfo {
+export function getPrimaryScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): ScreenInfo {
   return hostScreenQuery.getPrimaryScreen(out);
 }
 
@@ -121,7 +121,7 @@ export function getScreenBounds(
 }
 
 export function getScreenById(
-  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
   id: number,
   out: ScreenInfo,
 ): ScreenInfo | null {
@@ -135,7 +135,7 @@ export function getScreenById(
 }
 
 export function getScreenContainingRect(
-  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
 ): ScreenInfo {
@@ -169,25 +169,25 @@ export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMo
 }
 
 export function getScreenCursorPosition(
-  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
   out: { x: number; y: number },
 ): { x: number; y: number } {
   return hostScreenQuery.getCursorPosition(out);
 }
 
-export function getScreenCursorScreen(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo): ScreenInfo {
+export function getScreenCursorScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): ScreenInfo {
   getScreenCursorPosition(hostScreenQuery, _scratchPoint);
   return getScreenNearestPoint(hostScreenQuery, _scratchPoint, out);
 }
 
 export function getScreenDetailPermission(
-  hostScreenDetails: Readonly<HostScreenDetailsProvider>,
+  hostScreenDetails: Readonly<HostScreenDetailsCapability>,
 ): Promise<ScreenPermissionState> {
   return hostScreenDetails.queryPermission();
 }
 
 export function getScreenNearestPoint(
-  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
   point: Readonly<Vector2Like>,
   out: ScreenInfo,
 ): ScreenInfo {
@@ -222,7 +222,7 @@ export function getScreenNearestPoint(
 }
 
 export function getScreenNearestRect(
-  hostScreenQuery: Readonly<HostScreenQueryProvider>,
+  hostScreenQuery: Readonly<HostScreenQueryCapability>,
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
 ): ScreenInfo {
@@ -243,7 +243,7 @@ export function getScreenNearestRect(
   return getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
 }
 
-export function getScreens(hostScreenQuery: Readonly<HostScreenQueryProvider>, out: ScreenInfo[]): ScreenInfo[] {
+export function getScreens(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo[]): ScreenInfo[] {
   return hostScreenQuery.getScreens(out);
 }
 
@@ -304,7 +304,7 @@ export function initializeScreenSignals(out: EntityConstruction<ScreenSignals>):
   out.onScreenRemoved = createSignal();
 }
 
-export function requestScreenDetails(hostScreenDetails: Readonly<HostScreenDetailsProvider>): Promise<boolean> {
+export function requestScreenDetails(hostScreenDetails: Readonly<HostScreenDetailsCapability>): Promise<boolean> {
   return hostScreenDetails.request();
 }
 

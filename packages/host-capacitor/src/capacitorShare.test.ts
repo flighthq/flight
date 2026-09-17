@@ -1,4 +1,4 @@
-import type { CapacitorApi, HostShareContentProvider } from '@flighthq/types/contract';
+import type { CapacitorApi, HostShareContentCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHostShare, capacitorHostShareContent } from './capacitorShare';
@@ -47,7 +47,7 @@ describe('capacitorHostShareContent', () => {
     const backend = capacitorHostShareContent(capacitor);
     expect(await backend.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
     expect(shared[0]?.dialogTitle).toBe('Choose an app');
-    const portable: HostShareContentProvider = backend;
+    const portable: HostShareContentCapability = backend;
     // @ts-expect-error the portable content slot has no Capacitor chooser parameter
     expect(await portable.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
   });

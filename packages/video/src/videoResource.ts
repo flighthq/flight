@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, HostImageSource, HostVideoProvider, VideoResource } from '@flighthq/types/contract';
+import type { EntityConstruction, HostImageSource, HostVideoCapability, VideoResource } from '@flighthq/types/contract';
 
 // No provider parameter: this only stores a source the caller already holds, and storing it needs
 // nothing from a host. Every export that READS video state takes the provider first; these two do not
@@ -18,7 +18,7 @@ export function createVideoResource(
 // — which detaches any live capture stream without stopping caller-owned tracks; for borrowed
 // elements, only drops the reference. Revokes a held object URL in either case, since that URL is the
 // resource's to manage regardless of element ownership.
-export function destroyVideoResource(hostVideo: Readonly<HostVideoProvider>, resource: VideoResource): void {
+export function destroyVideoResource(hostVideo: Readonly<HostVideoCapability>, resource: VideoResource): void {
   const element = resource.element;
   if (element !== null && resource.ownsElement) hostVideo.releaseElement?.(element);
   releaseVideoResourceObjectUrl(hostVideo, resource);
@@ -29,7 +29,7 @@ export function destroyVideoResource(hostVideo: Readonly<HostVideoProvider>, res
 // Legacy unconditional teardown — releases the element regardless of ownership. Callers that know
 // they own the element (e.g. loader error paths that just created it) can still use this; for
 // caller-provided elements, prefer destroyVideoResource, which respects the ownership flag.
-export function disposeVideoResource(hostVideo: Readonly<HostVideoProvider>, resource: VideoResource): void {
+export function disposeVideoResource(hostVideo: Readonly<HostVideoCapability>, resource: VideoResource): void {
   const element = resource.element;
   if (element !== null) hostVideo.releaseElement?.(element);
   releaseVideoResourceObjectUrl(hostVideo, resource);
@@ -41,7 +41,7 @@ export function disposeVideoResource(hostVideo: Readonly<HostVideoProvider>, res
 // carries no video capability. May be NaN before metadata has loaded and Infinity for open-ended live
 // streams — both come straight from the host.
 export function getVideoResourceDuration(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   resource: Readonly<VideoResource>,
 ): number {
   const element = resource.element;
@@ -49,7 +49,7 @@ export function getVideoResourceDuration(
 }
 
 export function getVideoResourceHeight(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   resource: Readonly<VideoResource>,
 ): number {
   const element = resource.element;
@@ -57,7 +57,7 @@ export function getVideoResourceHeight(
 }
 
 export function getVideoResourceWidth(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   resource: Readonly<VideoResource>,
 ): number {
   const element = resource.element;
@@ -89,7 +89,7 @@ export function initializeVideoResource(
 // Empty when there is no element, when the host cannot report dimensions, or when the reported frame
 // has no area yet — all three mean there is nothing to sample.
 export function isVideoResourceEmpty(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   resource: Readonly<VideoResource>,
 ): boolean {
   return getVideoResourceWidth(hostVideo, resource) <= 0 || getVideoResourceHeight(hostVideo, resource) <= 0;
@@ -98,7 +98,7 @@ export function isVideoResourceEmpty(
 // True once the host reports at least the current frame decoded, so the resource's width and height
 // are known and a frame is available to sample or upload to a texture.
 export function isVideoResourceReady(
-  hostVideo: Readonly<HostVideoProvider>,
+  hostVideo: Readonly<HostVideoCapability>,
   resource: Readonly<VideoResource>,
 ): boolean {
   const element = resource.element;
@@ -108,7 +108,7 @@ export function isVideoResourceReady(
 // The object URL is the resource's own, so it is revoked on every teardown path — through the host,
 // which owns the object-URL lifecycle, rather than through a browser global in portable source. Kept
 // in one place so destroy and dispose cannot drift apart on it.
-function releaseVideoResourceObjectUrl(hostVideo: Readonly<HostVideoProvider>, resource: VideoResource): void {
+function releaseVideoResourceObjectUrl(hostVideo: Readonly<HostVideoCapability>, resource: VideoResource): void {
   if (resource.objectUrl === null) return;
   hostVideo.revokeObjectUrl?.(resource.objectUrl);
   resource.objectUrl = null;

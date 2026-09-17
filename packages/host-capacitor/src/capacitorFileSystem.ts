@@ -5,16 +5,16 @@ import type {
   FileEntry,
   FileStat,
   EntityConstruction,
-  HostFileSystemProvider,
+  HostFileSystemCapability,
 } from '@flighthq/types/contract';
 
-export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemProvider & Entity {
-  const out = allocateEntity<HostFileSystemProvider & Entity>();
+export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemCapability & Entity {
+  const out = allocateEntity<HostFileSystemCapability & Entity>();
   populateCapacitorFileSystem(out, capacitor);
   return finishEntity(out);
 }
 
-// Maps Flight's honest HostFileSystemProvider onto Capacitor's async `@capacitor/filesystem`. Both sides are
+// Maps Flight's honest HostFileSystemCapability onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64
 // (Capacitor omits `encoding` for binary and crosses bytes as a Base64 string), plus
 // exists/remove/mkdir/readdir/stat/rename/copy/append. Reads resolve to null / [] and writes to false on
@@ -23,7 +23,7 @@ export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystem
 //
 // Operations the plugin cannot perform are absent from the returned provider.
 function populateCapacitorFileSystem(
-  out: EntityConstruction<HostFileSystemProvider & Entity>,
+  out: EntityConstruction<HostFileSystemCapability & Entity>,
   capacitor: CapacitorApi,
 ): void {
   const filesystem = capacitor.filesystem;

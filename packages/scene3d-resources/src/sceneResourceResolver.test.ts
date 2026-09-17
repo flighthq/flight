@@ -1,5 +1,5 @@
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import {
   ResourceResolutionState,
   EntityRuntimeKey,
@@ -19,9 +19,9 @@ import {
   initializeScene3DResourceResolver,
 } from './sceneResourceResolver';
 
-const host: { readonly graphics: { readonly image: HostImageProvider } } = {
+const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
-} as { readonly graphics: { readonly image: HostImageProvider } };
+} as { readonly graphics: { readonly image: HostImageCapability } };
 
 describe('createBuiltInScene3DResourceResolver', () => {
   it('assembles Standard PBR and Unlit discovery only through the explicit built-in constructor', () => {

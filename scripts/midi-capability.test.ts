@@ -11,8 +11,8 @@ describe('MIDI explicit Host capability shape', () => {
     expect(host).toContain('readonly midi: HostMidiCapabilities;');
     const body = interfaceBody(host, 'HostMidiCapabilities');
     expect(propertyNames(body)).toEqual(['access', 'permission']);
-    expect(body).toContain('readonly access?: HostMidiAccessProvider;');
-    expect(body).toContain('readonly permission?: HostMidiPermissionProvider;');
+    expect(body).toContain('readonly access?: HostMidiAccessCapability;');
+    expect(body).toContain('readonly permission?: HostMidiPermissionCapability;');
     expect(host).not.toContain('export interface HasMidiAccess');
     expect(host).not.toContain('export interface HasMidiPermission');
   });

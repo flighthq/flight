@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostStorageChangeProvider,
-  HostStorageProvider,
+  HostStorageChangeCapability,
+  HostPreferencesCapability,
   StorageBooleanOrResult,
   StorageBooleanResult,
   StorageByteSizeResult,
@@ -35,7 +35,7 @@ import type {
 // the exact unsubscribe returned by the prior provider, so a different provider can never redirect teardown.
 // Returns false when the provider cannot establish a real subscription.
 export function attachStorage(
-  hostStorageChange: Readonly<HostStorageChangeProvider>,
+  hostStorageChange: Readonly<HostStorageChangeCapability>,
   signals: StorageSignals,
 ): boolean {
   detachStorage(signals);
@@ -46,7 +46,7 @@ export function attachStorage(
 }
 
 export function clearStorage(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   signals: StorageSignals | null = null,
 ): StorageClearResult {
   const result = hostStorage.clear();
@@ -57,7 +57,7 @@ export function clearStorage(
 }
 
 export function clearStorageNamespace(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
   signals: StorageSignals | null = null,
 ): StorageClearNamespaceResult {
@@ -83,7 +83,7 @@ export function createStorageSignals(): StorageSignals {
 
 // Terminal teardown of the supplied raw-change provider. Per-entity detach is separate because one
 // provider can fan out to more than one StorageSignals entity.
-export function destroyStorage(hostStorageChange: Readonly<HostStorageChangeProvider>): void {
+export function destroyStorage(hostStorageChange: Readonly<HostStorageChangeCapability>): void {
   hostStorageChange.destroy();
 }
 
@@ -100,14 +100,14 @@ export function disposeStorage(signals: StorageSignals): void {
 }
 
 export function getNamespacedStorageByteSize(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
 ): StorageByteSizeResult {
   return getStorageByteSizeForPrefix(hostStorage, namespace.prefix + '.');
 }
 
 export function getNamespacedStorageEntries(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
 ): StorageEntriesResult {
   const prefix = namespace.prefix + '.';
@@ -121,7 +121,7 @@ export function getNamespacedStorageEntries(
 }
 
 export function getNamespacedStorageItem(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
   key: string,
 ): StorageGetItemResult {
@@ -129,7 +129,7 @@ export function getNamespacedStorageItem(
 }
 
 export function getNamespacedStorageItemPresence(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
   key: string,
 ): StoragePresenceResult {
@@ -137,7 +137,7 @@ export function getNamespacedStorageItemPresence(
 }
 
 export function getNamespacedStorageKeys(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
 ): StorageKeysResult {
   const prefix = namespace.prefix + '.';
@@ -149,7 +149,7 @@ export function getNamespacedStorageKeys(
   };
 }
 
-export function getStorageBoolean(hostStorage: Readonly<HostStorageProvider>, key: string): StorageBooleanResult {
+export function getStorageBoolean(hostStorage: Readonly<HostPreferencesCapability>, key: string): StorageBooleanResult {
   const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: null };
@@ -159,7 +159,7 @@ export function getStorageBoolean(hostStorage: Readonly<HostStorageProvider>, ke
 }
 
 export function getStorageBooleanOr(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   fallback: boolean,
 ): StorageBooleanOrResult {
@@ -171,26 +171,26 @@ export function getStorageBooleanOr(
   return { reason: 'parse-failed', value: fallback };
 }
 
-export function getStorageByteSize(hostStorage: Readonly<HostStorageProvider>): StorageByteSizeResult {
+export function getStorageByteSize(hostStorage: Readonly<HostPreferencesCapability>): StorageByteSizeResult {
   return getStorageByteSizeForPrefix(hostStorage, null);
 }
 
-export function getStorageEntries(hostStorage: Readonly<HostStorageProvider>): StorageEntriesResult {
+export function getStorageEntries(hostStorage: Readonly<HostPreferencesCapability>): StorageEntriesResult {
   return getStorageEntriesForPrefix(hostStorage, null);
 }
 
-export function getStorageItem(hostStorage: Readonly<HostStorageProvider>, key: string): StorageGetItemResult {
+export function getStorageItem(hostStorage: Readonly<HostPreferencesCapability>, key: string): StorageGetItemResult {
   return hostStorage.getItem(key);
 }
 
-export function getStorageItemCount(hostStorage: Readonly<HostStorageProvider>): StorageItemCountResult {
+export function getStorageItemCount(hostStorage: Readonly<HostPreferencesCapability>): StorageItemCountResult {
   const result = hostStorage.keys();
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value.length };
 }
 
 export function getStorageItemOr(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   fallback: string,
 ): StorageItemOrResult {
@@ -199,14 +199,14 @@ export function getStorageItemOr(
   return { reason: 'ok', value: result.value ?? fallback };
 }
 
-export function getStorageItemPresence(hostStorage: Readonly<HostStorageProvider>, key: string): StoragePresenceResult {
+export function getStorageItemPresence(hostStorage: Readonly<HostPreferencesCapability>, key: string): StoragePresenceResult {
   const result = hostStorage.getItem(key);
   if (result.reason !== 'ok') return result;
   return { reason: 'ok', value: result.value !== null };
 }
 
 export function getStorageItems(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   keys: readonly string[],
 ): StorageItemsResult {
   const out: (string | null)[] = [];
@@ -219,7 +219,7 @@ export function getStorageItems(
 }
 
 export function getStorageJSON<Value>(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
 ): StorageJsonResult<Value> {
   const raw = hostStorage.getItem(key);
@@ -233,7 +233,7 @@ export function getStorageJSON<Value>(
 }
 
 export function getStorageJSONOr<Value>(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   fallback: Value,
 ): StorageJsonOrResult<Value> {
@@ -247,11 +247,11 @@ export function getStorageJSONOr<Value>(
   }
 }
 
-export function getStorageKeys(hostStorage: Readonly<HostStorageProvider>): StorageKeysResult {
+export function getStorageKeys(hostStorage: Readonly<HostPreferencesCapability>): StorageKeysResult {
   return hostStorage.keys();
 }
 
-export function getStorageNumber(hostStorage: Readonly<HostStorageProvider>, key: string): StorageNumberResult {
+export function getStorageNumber(hostStorage: Readonly<HostPreferencesCapability>, key: string): StorageNumberResult {
   const raw = hostStorage.getItem(key);
   if (raw.reason !== 'ok') return raw;
   if (raw.value === null) return { reason: 'ok', value: null };
@@ -260,7 +260,7 @@ export function getStorageNumber(hostStorage: Readonly<HostStorageProvider>, key
 }
 
 export function getStorageNumberOr(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   fallback: number,
 ): StorageNumberOrResult {
@@ -279,7 +279,7 @@ export function initializeStorageSignals(out: EntityConstruction<StorageSignals>
 // immediately by its own checkpoint. A checkpoint failure leaves callback effects visible and causes that
 // version to replay next time, so callbacks must be idempotent; exceptions propagate and nothing rolls back.
 export function migrateStorage(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace> | null,
   migrations: readonly Readonly<StorageMigration>[],
   signals: StorageSignals | null = null,
@@ -318,7 +318,7 @@ export function migrateStorage(
 }
 
 export function removeNamespacedStorageItem(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
   key: string,
   signals: StorageSignals | null = null,
@@ -327,7 +327,7 @@ export function removeNamespacedStorageItem(
 }
 
 export function removeStorageItem(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   signals: StorageSignals | null = null,
 ): StorageRemoveItemResult {
@@ -335,7 +335,7 @@ export function removeStorageItem(
 }
 
 export function removeStorageItems(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   keys: readonly string[],
   signals: StorageSignals | null = null,
 ): StorageRemoveItemsResult {
@@ -349,7 +349,7 @@ export function removeStorageItems(
 }
 
 export function setNamespacedStorageItem(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   namespace: Readonly<StorageNamespace>,
   key: string,
   value: string,
@@ -359,7 +359,7 @@ export function setNamespacedStorageItem(
 }
 
 export function setStorageBoolean(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   value: boolean,
   signals: StorageSignals | null = null,
@@ -368,7 +368,7 @@ export function setStorageBoolean(
 }
 
 export function setStorageItem(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   value: string,
   signals: StorageSignals | null = null,
@@ -377,7 +377,7 @@ export function setStorageItem(
 }
 
 export function setStorageItems(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   record: Readonly<Record<string, string>>,
   signals: StorageSignals | null = null,
 ): StorageSetItemsResult {
@@ -391,7 +391,7 @@ export function setStorageItems(
 }
 
 export function setStorageJSON<Value>(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   value: Value,
   signals: StorageSignals | null = null,
@@ -407,7 +407,7 @@ export function setStorageJSON<Value>(
 }
 
 export function setStorageNumber(
-  hostStorage: Readonly<HostStorageProvider>,
+  hostStorage: Readonly<HostPreferencesCapability>,
   key: string,
   value: number,
   signals: StorageSignals | null = null,
@@ -416,7 +416,7 @@ export function setStorageNumber(
   return setStorageItemOnBackend(hostStorage, key, String(value), signals);
 }
 
-function getStorageByteSizeForPrefix(backend: HostStorageProvider, prefix: string | null): StorageByteSizeResult {
+function getStorageByteSizeForPrefix(backend: HostPreferencesCapability, prefix: string | null): StorageByteSizeResult {
   const keys = backend.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   let value = 0;
@@ -429,7 +429,7 @@ function getStorageByteSizeForPrefix(backend: HostStorageProvider, prefix: strin
   return { failedKey: null, reason: 'ok', value };
 }
 
-function getStorageEntriesForPrefix(backend: HostStorageProvider, prefix: string | null): StorageEntriesResult {
+function getStorageEntriesForPrefix(backend: HostPreferencesCapability, prefix: string | null): StorageEntriesResult {
   const keys = backend.keys();
   if (keys.reason !== 'ok') return { failedKey: null, reason: keys.reason, value: null };
   const value: [string, string][] = [];
@@ -448,7 +448,7 @@ function namespacedKey(namespace: Readonly<StorageNamespace>, key: string): stri
 }
 
 function removeStorageItemFromBackend(
-  backend: HostStorageProvider,
+  backend: HostPreferencesCapability,
   key: string,
   signals: StorageSignals | null,
 ): StorageRemoveItemResult {
@@ -462,7 +462,7 @@ function removeStorageItemFromBackend(
 }
 
 function setStorageItemOnBackend(
-  backend: HostStorageProvider,
+  backend: HostPreferencesCapability,
   key: string,
   value: string,
   signals: StorageSignals | null,

@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostMessageDialogProvider } from '@flighthq/types/contract';
+import type { HostMessageDialogCapability } from '@flighthq/types/contract';
 
 import {
   showConfirmDialog,
@@ -43,7 +43,7 @@ function severityHost(observed: string[]) {
         out.confirm = async () => {
           return true;
         };
-        out.message = async (options: Parameters<HostMessageDialogProvider['message']>[0]) => {
+        out.message = async (options: Parameters<HostMessageDialogCapability['message']>[0]) => {
           observed.push(options.kind ?? 'none');
           return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
         };

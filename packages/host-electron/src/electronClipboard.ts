@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
   HostClipboardCapabilities,
-  HostClipboardBookmarkProvider,
-  HostClipboardFormatsProvider,
-  HostClipboardImageProvider,
-  HostClipboardTextProvider,
+  HostClipboardBookmarkCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
   ElectronApi,
   ElectronClipboardData,
   Entity,
@@ -23,26 +23,26 @@ export function electronHostClipboard(
   };
 }
 
-export function electronHostClipboardBookmark(electron: ElectronApi): HostClipboardBookmarkProvider {
-  return finishClipboardProvider<HostClipboardBookmarkProvider>((out) =>
+export function electronHostClipboardBookmark(electron: ElectronApi): HostClipboardBookmarkCapability {
+  return finishClipboardProvider<HostClipboardBookmarkCapability>((out) =>
     populateElectronHostClipboardBookmark(out, electron.clipboard),
   );
 }
 
-export function electronHostClipboardFormats(electron: ElectronApi): HostClipboardFormatsProvider {
-  return finishClipboardProvider<HostClipboardFormatsProvider>((out) =>
+export function electronHostClipboardFormats(electron: ElectronApi): HostClipboardFormatsCapability {
+  return finishClipboardProvider<HostClipboardFormatsCapability>((out) =>
     populateElectronHostClipboardFormats(out, electron.clipboard),
   );
 }
 
-export function electronHostClipboardImage(electron: ElectronApi): HostClipboardImageProvider {
-  return finishClipboardProvider<HostClipboardImageProvider>((out) =>
+export function electronHostClipboardImage(electron: ElectronApi): HostClipboardImageCapability {
+  return finishClipboardProvider<HostClipboardImageCapability>((out) =>
     populateElectronHostClipboardImage(out, electron),
   );
 }
 
-export function electronHostClipboardText(electron: ElectronApi): HostClipboardTextProvider {
-  return finishClipboardProvider<HostClipboardTextProvider>((out) =>
+export function electronHostClipboardText(electron: ElectronApi): HostClipboardTextCapability {
+  return finishClipboardProvider<HostClipboardTextCapability>((out) =>
     populateElectronHostClipboardText(out, electron.clipboard),
   );
 }
@@ -51,7 +51,7 @@ export function electronHostClipboardText(electron: ElectronApi): HostClipboardT
 // the async Promise contracts. Images cross the seam as data URLs (Flight's convention), converted
 // via nativeImage. Reads resolve to sentinels ('' / null / false) on failure rather than throwing.
 function populateElectronHostClipboardBookmark(
-  out: EntityConstruction<HostClipboardBookmarkProvider>,
+  out: EntityConstruction<HostClipboardBookmarkCapability>,
   cb: ElectronApi['clipboard'],
 ): void {
   out.readBookmark = async () => {
@@ -75,7 +75,7 @@ function populateElectronHostClipboardBookmark(
 }
 
 function populateElectronHostClipboardFormats(
-  out: EntityConstruction<HostClipboardFormatsProvider>,
+  out: EntityConstruction<HostClipboardFormatsCapability>,
   cb: ElectronApi['clipboard'],
 ): void {
   out.getFormats = async () => {
@@ -163,7 +163,7 @@ function populateElectronHostClipboardFormats(
 }
 
 function populateElectronHostClipboardImage(
-  out: EntityConstruction<HostClipboardImageProvider>,
+  out: EntityConstruction<HostClipboardImageCapability>,
   electron: ElectronApi,
 ): void {
   const cb = electron.clipboard;
@@ -193,7 +193,7 @@ function populateElectronHostClipboardImage(
 }
 
 function populateElectronHostClipboardText(
-  out: EntityConstruction<HostClipboardTextProvider>,
+  out: EntityConstruction<HostClipboardTextCapability>,
   cb: ElectronApi['clipboard'],
 ): void {
   out.clear = async () => {

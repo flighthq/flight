@@ -1,5 +1,5 @@
 import type {
-  HostNetProvider,
+  HostNetCapability,
   NetGuard,
   NetRequest,
   NetRequestOptions,
@@ -28,7 +28,7 @@ export function explainNetResponse(response: Readonly<NetResponse>): NetResponse
 }
 
 export function sendNetRequest(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   request: Readonly<NetRequest>,
   options?: Readonly<NetRequestOptions>,
 ): Promise<NetResponse> {

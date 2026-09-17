@@ -1,16 +1,16 @@
-import type { Bitmap, HostBitmapReadbackProvider, HostImageSource, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, HostBitmapReadbackCapability, HostImageSource, ImageResource } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
 
 export function captureBitmapFromImageResource(
-  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
   resource: Readonly<ImageResource>,
 ): Bitmap | null {
   return createBitmapFromImageSource(hostBitmapReadback, resource.source, resource.width, resource.height);
 }
 
 export function createBitmapFromImageSource(
-  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
   source: HostImageSource,
   width: number,
   height: number,

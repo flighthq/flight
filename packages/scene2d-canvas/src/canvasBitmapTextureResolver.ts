@@ -1,12 +1,12 @@
 import { createImageResourceFromBitmap } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CanvasTextureResolvers, HostImageProvider, Texture } from '@flighthq/types/contract';
+import type { Bitmap, CanvasTextureResolvers, HostImageCapability, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
 
 export function registerCanvasBitmapTextureResolver(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   resolvers: CanvasTextureResolvers,
 ): void {
   registerCanvasTextureResolver(resolvers, BitmapTextureSourceKind, (r, texture) =>
@@ -15,7 +15,7 @@ export function registerCanvasBitmapTextureResolver(
 }
 
 function resolveCanvasBitmapTexture(
-  hostImage: Readonly<HostImageProvider>,
+  hostImage: Readonly<HostImageCapability>,
   resolvers: CanvasTextureResolvers,
   texture: Readonly<Texture>,
 ): CanvasImageSource | null {

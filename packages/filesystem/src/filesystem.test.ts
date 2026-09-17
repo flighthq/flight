@@ -1,5 +1,5 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import type { HostFileSystemProvider } from '@flighthq/types/contract';
+import type { HostFileSystemCapability } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as filesystem from './filesystem';
@@ -373,6 +373,6 @@ describe('writeTextFile', () => {
   });
 });
 
-function hostWith(fileSystem: HostFileSystemProvider = {}): HostFileSystemProvider {
+function hostWith(fileSystem: HostFileSystemCapability = {}): HostFileSystemCapability {
   return fileSystem;
 }

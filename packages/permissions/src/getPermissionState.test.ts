@@ -1,9 +1,9 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostMidiPermissionProvider,
-  HostNotificationPermissionProvider,
-  HostPermissionsProvider,
-  HostStoragePersistenceQueryProvider,
+  HostMidiPermissionCapability,
+  HostNotificationPermissionCapability,
+  HostPermissionsCapability,
+  HostStoragePersistenceQueryCapability,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -86,7 +86,7 @@ describe('getPermissionState', () => {
 
   it('projects MIDI from only Host.midi.permission without touching Web globals or access', async () => {
     const getPermission = vi.fn(async () => ({ reason: 'ok' as const, state: 'prompt' as const }));
-    const provider = { [EntityRuntimeKey]: undefined, getPermission } as HostMidiPermissionProvider;
+    const provider = { [EntityRuntimeKey]: undefined, getPermission } as HostMidiPermissionCapability;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -135,7 +135,7 @@ function forbidNativeNotificationOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostNotificationPermissionProvider');
+          throw new Error('Permissions must delegate to HostNotificationPermissionCapability');
         },
       },
     ),
@@ -149,7 +149,7 @@ function forbidNativePermissionQuery(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostPermissionsProvider');
+          throw new Error('Permissions must delegate to HostPermissionsCapability');
         },
       },
     ),
@@ -163,24 +163,24 @@ function forbidNativeStorageOwner(): void {
       {},
       {
         get() {
-          throw new Error('Permissions must delegate to HostStoragePersistenceQueryProvider');
+          throw new Error('Permissions must delegate to HostStoragePersistenceQueryCapability');
         },
       },
     ),
   );
 }
 
-function persistenceProvider(provider: object): HostStoragePersistenceQueryProvider {
-  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceQueryProvider;
+function persistenceProvider(provider: object): HostStoragePersistenceQueryCapability {
+  return { [EntityRuntimeKey]: undefined, ...provider } as unknown as HostStoragePersistenceQueryCapability;
 }
 
 function permissionsProvider(
-  notification: HostNotificationPermissionProvider = {
+  notification: HostNotificationPermissionCapability = {
     getPermission: async () => ({ permission: 'default', reason: 'ok' }),
     requestPermission: async () => ({ reason: 'dismissed' }),
   },
-  queryPermission: HostPermissionsProvider['queryPermission'] = async () => ({ reason: 'unsupported' }),
-): HostPermissionsProvider {
+  queryPermission: HostPermissionsCapability['queryPermission'] = async () => ({ reason: 'unsupported' }),
+): HostPermissionsCapability {
   return {
     [EntityRuntimeKey]: undefined,
     notification,

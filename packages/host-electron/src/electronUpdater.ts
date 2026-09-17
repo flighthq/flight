@@ -5,7 +5,7 @@ import type {
   DownloadedUpdate,
   ElectronApi,
   UpdateInfo,
-  HostUpdaterCommandProvider,
+  HostUpdaterCommandCapability,
   HostUpdaterCapabilities,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -31,8 +31,8 @@ export function electronHostUpdater(
   return { command: electronHostUpdaterCommand(electron, feedUrl) };
 }
 
-export function electronHostUpdaterCommand(electron: ElectronApi, feedUrl?: string): HostUpdaterCommandProvider {
-  const out = allocateEntity<HostUpdaterCommandProvider>();
+export function electronHostUpdaterCommand(electron: ElectronApi, feedUrl?: string): HostUpdaterCommandCapability {
+  const out = allocateEntity<HostUpdaterCommandCapability>();
   populateElectronHostUpdaterCommand(out, electron, feedUrl);
   return finishEntity(out);
 }
@@ -40,7 +40,7 @@ export function electronHostUpdaterCommand(electron: ElectronApi, feedUrl?: stri
 // Electron's built-in Squirrel updater downloads as part of checkForUpdates. Native events are scoped
 // to one awaited transaction here and never escape as a second public event surface.
 export function populateElectronHostUpdaterCommand(
-  out: EntityConstruction<HostUpdaterCommandProvider>,
+  out: EntityConstruction<HostUpdaterCommandCapability>,
   electron: ElectronApi,
   feedUrl?: string,
 ): void {

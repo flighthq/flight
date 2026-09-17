@@ -1,6 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
-  HostSocketProvider,
+  HostSocketCapability,
   SocketCloseInfo,
   SocketConnection,
   SocketEventSink,
@@ -23,7 +23,7 @@ import {
 } from './socket';
 
 interface FakeSocket {
-  backend: HostSocketProvider;
+  backend: HostSocketCapability;
   sink: SocketEventSink;
   sent: (string | ArrayBuffer)[];
   closes: { code?: number; reason?: string }[];
@@ -43,7 +43,7 @@ function fakeBackend(): FakeSocket {
     sendReturns: true,
     lastOptions: null,
     sink: null as unknown as SocketEventSink,
-    backend: null as unknown as HostSocketProvider,
+    backend: null as unknown as HostSocketCapability,
   };
   state.backend = {
     openSocket(options, events): SocketConnection | null {
@@ -68,8 +68,8 @@ afterEach(() => {
   setSocketGuard(null);
 });
 
-function hostOf(backend: HostSocketProvider): { readonly net: { readonly socket: HostSocketProvider } } {
-  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketProvider } };
+function hostOf(backend: HostSocketCapability): { readonly net: { readonly socket: HostSocketCapability } } {
+  return { net: { socket: backend } } as { readonly net: { readonly socket: HostSocketCapability } };
 }
 
 function tcpConnection(): TcpSocketConnection {
@@ -305,7 +305,7 @@ describe('openTcpSocket', () => {
     const expected = tcpConnection();
     const options: TcpSocketOptions = { host: 'db.internal', port: 5432 };
     const openTcpSocketBackend = vi.fn(() => expected);
-    const backend: HostSocketProvider = {
+    const backend: HostSocketCapability = {
       openSocket: vi.fn(() => null),
       openTcpSocket: openTcpSocketBackend,
     };
@@ -315,7 +315,7 @@ describe('openTcpSocket', () => {
   });
 
   it('returns null when the host carries no socket backend', () => {
-    const host = { net: {} } as { readonly net: { readonly socket: HostSocketProvider } };
+    const host = { net: {} } as { readonly net: { readonly socket: HostSocketCapability } };
     expect(openTcpSocket(host.net.socket, { host: 'localhost', port: 9000 })).toBeNull();
   });
 
@@ -323,7 +323,7 @@ describe('openTcpSocket', () => {
   // Raw TCP must then report absence rather than falling through to openSocket and reinterpreting the
   // endpoint as a WebSocket URL.
   it('returns null for a framed-only backend without attempting framed openSocket', () => {
-    const backend: HostSocketProvider = { openSocket: vi.fn(() => null) };
+    const backend: HostSocketCapability = { openSocket: vi.fn(() => null) };
     const openSocket = vi.spyOn(backend, 'openSocket');
 
     expect(openTcpSocket(hostOf(backend).net.socket, { host: 'localhost', port: 9000 })).toBeNull();
@@ -331,7 +331,7 @@ describe('openTcpSocket', () => {
   });
 
   it('preserves an explicit null from a backend that cannot open the endpoint', () => {
-    const backend: HostSocketProvider = {
+    const backend: HostSocketCapability = {
       openSocket: vi.fn(() => null),
       openTcpSocket: vi.fn(() => null),
     };

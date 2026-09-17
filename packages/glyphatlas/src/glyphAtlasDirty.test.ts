@@ -1,11 +1,11 @@
-import type { HostGlyphRasterizerProvider } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas } from './glyphAtlas';
 import { clearGlyphAtlasDirty, getGlyphAtlasDirtyRegion } from './glyphAtlasDirty';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 
-const defaultBackend: HostGlyphRasterizerProvider = { rasterize: () => null };
+const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 
 describe('clearGlyphAtlasDirty', () => {
   it('resets the dirty region to null', () => {
@@ -79,7 +79,7 @@ describe('getGlyphAtlasDirtyRegion', () => {
   });
 });
 
-function createMockRasterizerBackend(): HostGlyphRasterizerProvider {
+function createMockRasterizerBackend(): HostGlyphRasterizerCapability {
   return {
     rasterize(codepoint) {
       const size = 8 + (codepoint % 4);

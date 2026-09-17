@@ -8,7 +8,7 @@ import type {
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
-  HostInputIngressProvider,
+  HostInputIngressCapability,
   InputIngressSink,
   InputIngressSource,
   InputKeyboardData,
@@ -74,7 +74,7 @@ export function applyGamepadStickDeadZone(out: { x: number; y: number }, x: numb
 }
 
 export function attachGamepadInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
@@ -84,7 +84,7 @@ export function attachGamepadInput(
 }
 
 export function attachKeyboardInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
@@ -94,7 +94,7 @@ export function attachKeyboardInput(
 }
 
 export function attachPointerInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
@@ -104,7 +104,7 @@ export function attachPointerInput(
 }
 
 export function attachRelativePointerInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
@@ -114,7 +114,7 @@ export function attachRelativePointerInput(
 }
 
 export function attachTextInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
@@ -124,7 +124,7 @@ export function attachTextInput(
 }
 
 export function attachWheelInput(
-  inputIngress: Readonly<HostInputIngressProvider>,
+  inputIngress: Readonly<HostInputIngressCapability>,
   manager: InputManager,
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,

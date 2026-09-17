@@ -5,7 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageProvider } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
@@ -20,7 +20,7 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function createTestImageBackend(): HostImageProvider {
+function createTestImageBackend(): HostImageCapability {
   return {
     [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
@@ -33,10 +33,10 @@ function createTestImageBackend(): HostImageProvider {
   };
 }
 
-function imageHost(backend: HostImageProvider = createTestImageBackend()): {
-  readonly graphics: { readonly image: HostImageProvider };
+function imageHost(backend: HostImageCapability = createTestImageBackend()): {
+  readonly graphics: { readonly image: HostImageCapability };
 } {
-  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageProvider } };
+  return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };
 }
 
 afterEach(() => {
@@ -55,7 +55,7 @@ describe('registerDomBitmapTextureResolver', () => {
   });
 
   it('refuses Bitmap resolution without materialization support', () => {
-    const backend: HostImageProvider = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     const host = imageHost(backend);
     const state = createDomRenderState(document.createElement('div'));
     const bitmap = createBitmap(2, 2, 0xffffffff);

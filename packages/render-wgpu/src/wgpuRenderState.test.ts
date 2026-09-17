@@ -22,7 +22,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
-  HostWgpuProvider,
+  HostWgpuCapability,
   WgpuPipeline,
   WgpuRenderOptions,
   WgpuRenderState,
@@ -82,7 +82,7 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
   return createWgpuRenderStateRuntimeWithPipeline(deviceState, _testPipeline);
 }
 
-function entityHostBackend(fields: Omit<HostWgpuProvider, keyof Entity>): HostWgpuProvider {
+function entityHostBackend(fields: Omit<HostWgpuCapability, keyof Entity>): HostWgpuCapability {
   return (() => {
     const out = allocateEntity<any>();
     Object.assign(out, fields);

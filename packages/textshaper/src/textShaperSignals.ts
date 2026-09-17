@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, HostTextShaperProvider, TextShaperSignals } from '@flighthq/types/contract';
+import type { EntityConstruction, HostTextShaperCapability, TextShaperSignals } from '@flighthq/types/contract';
 
 export function disposeTextShaperSignals(): void {
   if (_signals === null) return;
@@ -23,7 +23,7 @@ export function getTextShaperSignals(): TextShaperSignals | null {
 }
 
 export function initializeTextShaperSignals(out: EntityConstruction<TextShaperSignals>): void {
-  out.onBackendChanged = createSignal<(backend: HostTextShaperProvider | null) => void>();
+  out.onBackendChanged = createSignal<(backend: HostTextShaperCapability | null) => void>();
 }
 
 let _signals: TextShaperSignals | null = null;

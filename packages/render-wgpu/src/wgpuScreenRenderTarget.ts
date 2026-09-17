@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostWgpuProvider,
+  HostWgpuCapability,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuScreenRenderTarget,
@@ -30,7 +30,7 @@ export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuS
 // A screen target's whole point is that it presents; a texture target's is that it can be sampled. Both
 // creations are Entity allocations, so a factory is the only place either capability is decided.
 export function createWgpuScreenRenderTarget(
-  wgpuHost: Readonly<HostWgpuProvider>,
+  wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
@@ -65,7 +65,7 @@ export function endWgpuScreenRenderTargetFrame(target: WgpuScreenRenderTarget): 
 
 export function initializeWgpuScreenRenderTarget(
   out: EntityConstruction<WgpuScreenRenderTarget>,
-  wgpuHost: Readonly<HostWgpuProvider>,
+  wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
   surface: WgpuScreenSurface,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},

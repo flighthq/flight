@@ -1,21 +1,21 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
-  HostTrayBalloonProvider,
-  HostTrayBalloonEventsProvider,
-  HostTrayBoundsProvider,
-  HostTrayDoubleClickPolicyProvider,
-  HostTrayDropEventsProvider,
-  HostTrayImageProvider,
-  HostTrayInteractionEventsProvider,
-  HostTrayLifecycleProvider,
-  HostTrayMenuProvider,
-  HostTrayMenuSelectionEventsProvider,
-  HostTrayPopupMenuProvider,
-  HostTrayPressedImageProvider,
-  HostTrayTemplateImageProvider,
-  HostTrayTitleProvider,
-  HostTrayTooltipProvider,
+  HostTrayBalloonCapability,
+  HostTrayBalloonEventsCapability,
+  HostTrayBoundsCapability,
+  HostTrayDoubleClickPolicyCapability,
+  HostTrayDropEventsCapability,
+  HostTrayImageCapability,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayPopupMenuCapability,
+  HostTrayPressedImageCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
   RectangleLike,
   Signal,
   TrayBalloonEvent,
@@ -57,24 +57,24 @@ import {
   stopTrayIconAnimation,
 } from './tray';
 
-type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleProvider } } & {
-  readonly tray: { readonly image: HostTrayImageProvider };
-} & { readonly tray: { readonly title: HostTrayTitleProvider } } & {
-  readonly tray: { readonly tooltip: HostTrayTooltipProvider };
-} & { readonly tray: { readonly menu: HostTrayMenuProvider } } & {
-  readonly tray: { readonly templateImage: HostTrayTemplateImageProvider };
-} & { readonly tray: { readonly bounds: HostTrayBoundsProvider } } & {
-  readonly tray: { readonly popupMenu: HostTrayPopupMenuProvider };
-} & { readonly tray: { readonly doubleClickPolicy: HostTrayDoubleClickPolicyProvider } } & {
-  readonly tray: { readonly pressedImage: HostTrayPressedImageProvider };
-} & { readonly tray: { readonly balloon: HostTrayBalloonProvider } } & {
-  readonly tray: { readonly interactionEvents: HostTrayInteractionEventsProvider };
+type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleCapability } } & {
+  readonly tray: { readonly image: HostTrayImageCapability };
+} & { readonly tray: { readonly title: HostTrayTitleCapability } } & {
+  readonly tray: { readonly tooltip: HostTrayTooltipCapability };
+} & { readonly tray: { readonly menu: HostTrayMenuCapability } } & {
+  readonly tray: { readonly templateImage: HostTrayTemplateImageCapability };
+} & { readonly tray: { readonly bounds: HostTrayBoundsCapability } } & {
+  readonly tray: { readonly popupMenu: HostTrayPopupMenuCapability };
+} & { readonly tray: { readonly doubleClickPolicy: HostTrayDoubleClickPolicyCapability } } & {
+  readonly tray: { readonly pressedImage: HostTrayPressedImageCapability };
+} & { readonly tray: { readonly balloon: HostTrayBalloonCapability } } & {
+  readonly tray: { readonly interactionEvents: HostTrayInteractionEventsCapability };
 } & {
   readonly tray: {
-    readonly menuSelectionEvents: HostTrayMenuSelectionEventsProvider;
+    readonly menuSelectionEvents: HostTrayMenuSelectionEventsCapability;
   };
-} & { readonly tray: { readonly balloonEvents: HostTrayBalloonEventsProvider } } & {
-  readonly tray: { readonly dropEvents: HostTrayDropEventsProvider };
+} & { readonly tray: { readonly balloonEvents: HostTrayBalloonEventsCapability } } & {
+  readonly tray: { readonly dropEvents: HostTrayDropEventsCapability };
 };
 
 interface TestState {

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  HostSocketProvider,
+  HostSocketCapability,
   Socket,
   SocketCloseInfo,
   SocketEventSink,
@@ -43,7 +43,7 @@ export function closeSocket(socket: Socket, code?: number, reason?: string): voi
 // socket starts in 'connecting' and is left attached (delivering). Enable signals with
 // enableSocketSignals to observe events. A provider that does not support the transport yields a null
 // connection and the socket stays in 'connecting' until closed.
-export function createSocket(hostSocket: Readonly<HostSocketProvider>, options: Readonly<SocketOptions>): Socket {
+export function createSocket(hostSocket: Readonly<HostSocketCapability>, options: Readonly<SocketOptions>): Socket {
   const runtime: SocketRuntime = {
     connection: null,
     signals: null,
@@ -112,7 +112,7 @@ export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState 
 // other framed-only providers omit openTcpSocket, so unsupported raw TCP returns null without trying
 // openSocket or interpreting the endpoint as a WebSocket URL.
 export function openTcpSocket(
-  hostSocket: Readonly<HostSocketProvider>,
+  hostSocket: Readonly<HostSocketCapability>,
   options: Readonly<TcpSocketOptions>,
 ): TcpSocketConnection | null {
   return hostSocket?.openTcpSocket?.(options) ?? null;

@@ -7,14 +7,14 @@ import type {
   GlyphOutlineSource,
   GlyphRasterizeOptions,
   GlyphRasterizedBitmap,
-  HostGlyphRasterizerProvider,
+  HostGlyphRasterizerCapability,
   RectangleLike,
 } from '@flighthq/types/contract';
 
 export function createGlyphRasterizerBackendFromGlyphOutlineSource(
   source: GlyphOutlineSource,
-): HostGlyphRasterizerProvider & Entity {
-  const out = allocateEntity<HostGlyphRasterizerProvider & Entity>();
+): HostGlyphRasterizerCapability & Entity {
+  const out = allocateEntity<HostGlyphRasterizerCapability & Entity>();
   initializeGlyphRasterizerBackendFromGlyphOutlineSource(out, source);
   return finishEntity(out);
 }
@@ -25,7 +25,7 @@ export function createGlyphRasterizerBackendFromGlyphOutlineSource(
 // portable 4x4 coverage scan over flattened contours: it needs no DOM/canvas and therefore works for
 // imported fonts in browser, worker, native-host, and headless environments alike.
 export function initializeGlyphRasterizerBackendFromGlyphOutlineSource(
-  out: EntityConstruction<HostGlyphRasterizerProvider & Entity>,
+  out: EntityConstruction<HostGlyphRasterizerCapability & Entity>,
   source: GlyphOutlineSource,
 ): void {
   out.measureMetrics = (options): GlyphMetrics | null => {

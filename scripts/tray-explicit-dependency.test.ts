@@ -54,9 +54,9 @@ describe('Tray explicit dependency structure', () => {
   });
 
   it('passes operation-tight providers instead of capturing Host slots in the Tray entity', () => {
-    expect(trayCoreSource).toContain('hostTrayLifecycle: Readonly<HostTrayLifecycleProvider>');
-    expect(trayCoreSource).toContain('hostTrayImage: Readonly<HostTrayImageProvider>');
-    expect(trayCoreSource).toContain('hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsProvider>');
+    expect(trayCoreSource).toContain('hostTrayLifecycle: Readonly<HostTrayLifecycleCapability>');
+    expect(trayCoreSource).toContain('hostTrayImage: Readonly<HostTrayImageCapability>');
+    expect(trayCoreSource).toContain('hostTrayInteractionEvents: Readonly<HostTrayInteractionEventsCapability>');
     expect(trayCoreSource).not.toContain('HostTrayCapabilities');
     expect(trayCoreSource).not.toContain('runtime.capabilities');
     expect(trayTypeSource).not.toMatch(/TrayIconForHost|TrayWith[A-Z]/u);

@@ -2,7 +2,7 @@ import type {
   Bitmap,
   BitmapReadbackBlockReason,
   BitmapReadbackMode,
-  HostBitmapReadbackProvider,
+  HostBitmapReadbackCapability,
   HostImageSource,
 } from '@flighthq/types/contract';
 
@@ -12,7 +12,7 @@ interface BitmapReadbackResolution {
 }
 
 export function resolveBitmapReadback(
-  hostBitmapReadback: Readonly<HostBitmapReadbackProvider>,
+  hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
   source: HostImageSource,
   width: number,
   height: number,

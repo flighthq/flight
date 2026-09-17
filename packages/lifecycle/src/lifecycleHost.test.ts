@@ -1,16 +1,16 @@
-import type { AppLifecycleState, HostLifecycleProvider } from '@flighthq/types/contract';
+import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
 
 import { getAppLaunchKind, getAppLifecycleState, isAppActive, isAppBackground, isAppInactive } from './lifecycle';
 
-function hostWith(backend: Partial<HostLifecycleProvider>): {
-  readonly system: { readonly lifecycle: HostLifecycleProvider };
+function hostWith(backend: Partial<HostLifecycleCapability>): {
+  readonly system: { readonly lifecycle: HostLifecycleCapability };
 } {
-  return { system: { lifecycle: backend as HostLifecycleProvider } } as {
-    readonly system: { readonly lifecycle: HostLifecycleProvider };
+  return { system: { lifecycle: backend as HostLifecycleCapability } } as {
+    readonly system: { readonly lifecycle: HostLifecycleCapability };
   };
 }
 
-function stateHost(state: AppLifecycleState): { readonly system: { readonly lifecycle: HostLifecycleProvider } } {
+function stateHost(state: AppLifecycleState): { readonly system: { readonly lifecycle: HostLifecycleCapability } } {
   return hostWith({ getState: () => state, subscribe: () => () => {} });
 }
 

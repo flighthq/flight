@@ -1,5 +1,5 @@
 import { parseMd5Mesh } from '@flighthq/scene3d-formats/contract';
-import type { HostNetProvider, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { HostNetCapability, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -8,7 +8,7 @@ import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromU
 // texture refs stay unresolved; assemble with createScene3DFromDocument and resolve on your own schedule with
 // loadScene3DResources. Returns null on transport failure; it never creates a renderer or GPU resource.
 export async function loadScene3DDocumentFromMd5MeshUrl(
-  hostNet: Readonly<HostNetProvider>,
+  hostNet: Readonly<HostNetCapability>,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {

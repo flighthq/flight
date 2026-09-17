@@ -4,7 +4,7 @@ import type {
   AudioBusNodeHandle,
   AudioDeviceHandle,
   AudioMixerGraphHandle,
-  HostAudioMixerProvider,
+  HostAudioMixerCapability,
   LogEntry,
 } from '@flighthq/types/contract';
 
@@ -15,7 +15,7 @@ const device = 1 as AudioDeviceHandle;
 const graph = 1 as AudioMixerGraphHandle;
 const busNode = 1 as AudioBusNodeHandle;
 const mixerProvider = (() => {
-  const out = allocateEntity<HostAudioMixerProvider>();
+  const out = allocateEntity<HostAudioMixerCapability>();
   out.createMixerGraph = () => graph;
   out.destroyMixerGraph = () => {};
   out.createBusNode = () => busNode;

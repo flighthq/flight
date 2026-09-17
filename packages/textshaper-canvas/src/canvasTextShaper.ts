@@ -18,7 +18,7 @@ export function clearCanvasTextShaperBackendCache(backend: CanvasTextShaperBacke
 
 // Builds the Canvas 2D text-shaper backend: advances-only shaping over a private context's
 // measureText, plus font-level metrics derived from TextMetrics bounding-box fields. Pass it as
-// the HostTextShaperProvider parameter to text-shaping and text-layout functions.
+// the HostTextShaperCapability parameter to text-shaping and text-layout functions.
 //
 // Uses the same canvas measureText and font string (computeTextFormatFontString) the renderers use,
 // so shaped advances match what gets rasterized. Each backend instance owns exactly one private
@@ -32,7 +32,7 @@ export function clearCanvasTextShaperBackendCache(backend: CanvasTextShaperBacke
 // metrics for previously-measured strings.
 //
 // This is the extraction of the former createCanvasTextMeasure — the SDK's existing measurement,
-// formalized as a HostTextShaperProvider.
+// formalized as a HostTextShaperCapability.
 export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
   const ctx = _createContext();
   if (ctx === null) {

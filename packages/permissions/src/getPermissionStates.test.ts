@@ -1,8 +1,8 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostMidiPermissionProvider,
-  HostPermissionsProvider,
-  HostStoragePersistenceQueryProvider,
+  HostMidiPermissionCapability,
+  HostPermissionsCapability,
+  HostStoragePersistenceQueryCapability,
   StoragePersistenceResult,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -64,7 +64,7 @@ describe('getPermissionStates', () => {
     let active: {
       getPermission(): Promise<{ reason: 'ok'; state: 'denied' | 'granted' }>;
     } = first;
-    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostMidiPermissionProvider;
+    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostMidiPermissionCapability;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -124,7 +124,7 @@ describe('getPermissionStates', () => {
           throw new Error('empty batch resolved an owner');
         },
       },
-    ) as HostPermissionsProvider;
+    ) as HostPermissionsCapability;
 
     await expect(getPermissionStates(provider, undefined, undefined, [])).resolves.toEqual([]);
   });
@@ -145,7 +145,7 @@ describe('getPermissionStates', () => {
       },
     };
     let active = first;
-    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostStoragePersistenceQueryProvider;
+    const provider = { [EntityRuntimeKey]: undefined, ...first } as HostStoragePersistenceQueryCapability;
     vi.stubGlobal(
       'navigator',
       new Proxy(
@@ -174,8 +174,8 @@ function permissionsProvider(
   events: string[] = [],
   label = 'permission',
   beforeReturn?: () => void,
-  queryPermission?: HostPermissionsProvider['queryPermission'],
-): HostPermissionsProvider {
+  queryPermission?: HostPermissionsCapability['queryPermission'],
+): HostPermissionsCapability {
   return {
     [EntityRuntimeKey]: undefined,
     notification: {

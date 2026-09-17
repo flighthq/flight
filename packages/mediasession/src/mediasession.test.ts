@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  HostMediaSessionActionProvider,
+  HostMediaSessionActionCapability,
   MediaSessionActionDetails,
-  HostMediaSessionProvider,
+  HostMediaSessionCapability,
   MediaSessionPositionState,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -23,8 +23,8 @@ import {
   setMediaSessionPositionState,
 } from './mediasession';
 
-function commandBackend(overrides: Partial<HostMediaSessionProvider> = {}): HostMediaSessionProvider {
-  const out = allocateEntity<HostMediaSessionProvider>();
+function commandBackend(overrides: Partial<HostMediaSessionCapability> = {}): HostMediaSessionCapability {
+  const out = allocateEntity<HostMediaSessionCapability>();
   out.clearMetadata = () => ({ reason: 'ok' as const });
   out.clearPositionState = () => ({ reason: 'ok' as const });
   out.destroy = () => {};
@@ -35,8 +35,8 @@ function commandBackend(overrides: Partial<HostMediaSessionProvider> = {}): Host
   return finishEntity(out);
 }
 
-function actionBackend(overrides: Partial<HostMediaSessionActionProvider> = {}): HostMediaSessionActionProvider {
-  const out = allocateEntity<HostMediaSessionActionProvider>();
+function actionBackend(overrides: Partial<HostMediaSessionActionCapability> = {}): HostMediaSessionActionCapability {
+  const out = allocateEntity<HostMediaSessionActionCapability>();
   out.destroy = () => {};
   out.subscribe = () => () => {};
   Object.assign(out, overrides);
@@ -145,7 +145,7 @@ describe('destroyMediaSession', () => {
 
   it('deduplicates an aliased provider identity across both Host slots', () => {
     const destroy = vi.fn();
-    const _shared = allocateEntity<HostMediaSessionProvider & HostMediaSessionActionProvider>();
+    const _shared = allocateEntity<HostMediaSessionCapability & HostMediaSessionActionCapability>();
     _shared.clearMetadata = () => ({ reason: 'ok' as const });
     _shared.clearPositionState = () => ({ reason: 'ok' as const });
     _shared.destroy = destroy;

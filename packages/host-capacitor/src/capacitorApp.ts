@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostAppActivateProvider,
-  HostAppHideProvider,
-  HostAppNameProvider,
-  HostAppQuitProvider,
-  HostAppVersionProvider,
+  HostAppActivateCapability,
+  HostAppHideCapability,
+  HostAppNameCapability,
+  HostAppQuitCapability,
+  HostAppVersionCapability,
   CapacitorApi,
   CapacitorAndroidAppCapabilities,
   CapacitorAppCapabilitiesFor,
@@ -37,23 +37,23 @@ export function capacitorHostApp(
   return finishEntity(android);
 }
 
-export function capacitorHostAppActivate(capacitor: CapacitorApi): HostAppActivateProvider {
+export function capacitorHostAppActivate(capacitor: CapacitorApi): HostAppActivateCapability {
   return capacitorHostApp(capacitor, 'ios').activate;
 }
 
-export function capacitorHostAppHide(capacitor: CapacitorApi): HostAppHideProvider {
+export function capacitorHostAppHide(capacitor: CapacitorApi): HostAppHideCapability {
   return capacitorHostApp(capacitor, 'android').hide;
 }
 
-export function capacitorHostAppName(capacitor: CapacitorApi): HostAppNameProvider {
+export function capacitorHostAppName(capacitor: CapacitorApi): HostAppNameCapability {
   return capacitorHostApp(capacitor, 'ios').name;
 }
 
-export function capacitorHostAppQuit(capacitor: CapacitorApi): HostAppQuitProvider {
+export function capacitorHostAppQuit(capacitor: CapacitorApi): HostAppQuitCapability {
   return capacitorHostApp(capacitor, 'android').quit;
 }
 
-export function capacitorHostAppVersion(capacitor: CapacitorApi): HostAppVersionProvider {
+export function capacitorHostAppVersion(capacitor: CapacitorApi): HostAppVersionCapability {
   return capacitorHostApp(capacitor, 'ios').version;
 }
 
@@ -63,11 +63,11 @@ function populateCapacitorAndroidApp(
   capacitor: CapacitorApi,
 ): void {
   out.activate = common.activate;
-  const h = allocateEntity<HostAppHideProvider>();
+  const h = allocateEntity<HostAppHideCapability>();
   h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
   out.hide = finishEntity(h);
   out.name = common.name;
-  const q = allocateEntity<HostAppQuitProvider>();
+  const q = allocateEntity<HostAppQuitCapability>();
   q.quit = () => void capacitor.app.exitApp().catch(() => {});
   out.quit = finishEntity(q);
   out.version = common.version;
@@ -86,7 +86,7 @@ function populateCapacitorCommonApp(
       version = info.version;
     })
     .catch(() => {});
-  const a = allocateEntity<HostAppActivateProvider>();
+  const a = allocateEntity<HostAppActivateCapability>();
   a.subscribe = (listener: () => void) =>
     toCapacitorUnsubscribe(
       capacitor.app.addListener('appStateChange', (state) => {
@@ -94,10 +94,10 @@ function populateCapacitorCommonApp(
       }),
     );
   out.activate = finishEntity(a);
-  const n = allocateEntity<HostAppNameProvider>();
+  const n = allocateEntity<HostAppNameCapability>();
   n.getName = () => name;
   out.name = finishEntity(n);
-  const v = allocateEntity<HostAppVersionProvider>();
+  const v = allocateEntity<HostAppVersionCapability>();
   v.getVersion = () => version;
   out.version = finishEntity(v);
 }

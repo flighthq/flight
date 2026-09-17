@@ -1,30 +1,30 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostAppActivateProvider,
-  HostAppActivationPolicyProvider,
-  HostAppAllWindowsClosedProvider,
-  HostAppBadgeProvider,
-  HostAppDockProvider,
-  HostAppFocusProvider,
-  HostAppLocaleProvider,
+  HostAppActivateCapability,
+  HostAppActivationPolicyCapability,
+  HostAppAllWindowsClosedCapability,
+  HostAppBadgeCapability,
+  HostAppDockCapability,
+  HostAppFocusCapability,
+  HostAppLocaleCapability,
   AppLoginItem,
-  HostAppLoginItemProvider,
-  HostAppNameProvider,
-  HostAppNameWriteProvider,
-  HostAppOpenFileProvider,
-  HostAppPathProvider,
+  HostAppLoginItemCapability,
+  HostAppNameCapability,
+  HostAppNameWriteCapability,
+  HostAppOpenFileCapability,
+  HostAppPathCapability,
   AppPathKind,
-  HostAppQuitProvider,
-  HostAppQuitRequestProvider,
-  HostAppReadyProvider,
-  HostAppRecentDocumentsProvider,
-  HostAppRelaunchProvider,
-  HostAppSecondInstanceProvider,
-  HostAppShowProvider,
-  HostAppSingleInstanceProvider,
-  HostAppUserModelIdProvider,
-  HostAppVersionProvider,
-  HostAppVisibilityQueryProvider,
+  HostAppQuitCapability,
+  HostAppQuitRequestCapability,
+  HostAppReadyCapability,
+  HostAppRecentDocumentsCapability,
+  HostAppRelaunchCapability,
+  HostAppSecondInstanceCapability,
+  HostAppShowCapability,
+  HostAppSingleInstanceCapability,
+  HostAppUserModelIdCapability,
+  HostAppVersionCapability,
+  HostAppVisibilityQueryCapability,
   DesktopOsProfile,
   ElectronApi,
   ElectronAppCapabilitiesFor,
@@ -34,7 +34,7 @@ import type {
   ElectronWindowsAppCapabilities,
   Entity,
   EntityConstruction,
-  HostAppHideProvider,
+  HostAppHideCapability,
   HostAppCapabilities,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
@@ -117,127 +117,127 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
   return finishEntity(linux) as ElectronAppCapabilitiesFor<Profile>;
 }
 
-export function electronHostAppActivate(electron: ElectronApi): HostAppActivateProvider {
+export function electronHostAppActivate(electron: ElectronApi): HostAppActivateCapability {
   return finishProvider((out) => populateElectronHostAppActivate(out, appSubscribe(electron)));
 }
 
-export function electronHostAppActivationPolicy(electron: ElectronApi): HostAppActivationPolicyProvider {
+export function electronHostAppActivationPolicy(electron: ElectronApi): HostAppActivationPolicyCapability {
   return finishProvider((out) => populateElectronHostAppActivationPolicy(out, electron.app));
 }
 
-export function electronHostAppAllWindowsClosed(electron: ElectronApi): HostAppAllWindowsClosedProvider {
+export function electronHostAppAllWindowsClosed(electron: ElectronApi): HostAppAllWindowsClosedCapability {
   return finishProvider((out) => populateElectronHostAppAllWindowsClosed(out, appSubscribe(electron)));
 }
 
-export function electronHostAppBadge(electron: ElectronApi): HostAppBadgeProvider {
+export function electronHostAppBadge(electron: ElectronApi): HostAppBadgeCapability {
   return finishProvider((out) => populateElectronHostAppBadge(out, electron.app));
 }
 
-export function electronHostAppDock(electron: ElectronApi): HostAppDockProvider {
+export function electronHostAppDock(electron: ElectronApi): HostAppDockCapability {
   const dock = electron.app.dock;
   if (dock === undefined) throw new Error('Electron macOS app capabilities require app.dock');
   return finishProvider((out) => populateElectronHostAppDock(out, dock, electron));
 }
 
-export function electronHostAppFocus(electron: ElectronApi): HostAppFocusProvider {
+export function electronHostAppFocus(electron: ElectronApi): HostAppFocusCapability {
   return finishProvider((out) => populateElectronHostAppFocus(out, electron.app));
 }
 
-export function electronHostAppHiddenQuery(electron: ElectronApi): HostAppVisibilityQueryProvider {
+export function electronHostAppHiddenQuery(electron: ElectronApi): HostAppVisibilityQueryCapability {
   return finishProvider((out) => populateElectronHostAppHiddenQuery(out, electron.app));
 }
 
-export function electronHostAppHide(electron: ElectronApi): HostAppHideProvider {
+export function electronHostAppHide(electron: ElectronApi): HostAppHideCapability {
   return finishProvider((out) => populateElectronHostAppHide(out, electron.app));
 }
 
-export function electronHostAppLocale(electron: ElectronApi): HostAppLocaleProvider {
+export function electronHostAppLocale(electron: ElectronApi): HostAppLocaleCapability {
   return finishProvider((out) => populateElectronHostAppLocale(out, electron.app));
 }
 
-export function electronHostAppLoginItem(electron: ElectronApi): HostAppLoginItemProvider {
+export function electronHostAppLoginItem(electron: ElectronApi): HostAppLoginItemCapability {
   return finishProvider((out) => populateElectronHostAppLoginItem(out, electron));
 }
 
-export function electronHostAppName(electron: ElectronApi): HostAppNameProvider {
+export function electronHostAppName(electron: ElectronApi): HostAppNameCapability {
   return finishProvider((out) => populateElectronHostAppName(out, electron.app));
 }
 
-export function electronHostAppNameWrite(electron: ElectronApi): HostAppNameWriteProvider {
+export function electronHostAppNameWrite(electron: ElectronApi): HostAppNameWriteCapability {
   return finishProvider((out) => populateElectronHostAppNameWrite(out, electron.app));
 }
 
-export function electronHostAppOpenFile(electron: ElectronApi): HostAppOpenFileProvider {
+export function electronHostAppOpenFile(electron: ElectronApi): HostAppOpenFileCapability {
   return finishProvider((out) => populateElectronHostAppOpenFile(out, appSubscribe(electron)));
 }
 
-export function electronHostAppPath(electron: ElectronApi): HostAppPathProvider {
+export function electronHostAppPath(electron: ElectronApi): HostAppPathCapability {
   return finishProvider((out) => populateElectronHostAppPath(out, electron.app));
 }
 
-export function electronHostAppQuit(electron: ElectronApi): HostAppQuitProvider {
+export function electronHostAppQuit(electron: ElectronApi): HostAppQuitCapability {
   return finishProvider((out) => populateElectronHostAppQuit(out, electron.app));
 }
 
-export function electronHostAppQuitRequest(electron: ElectronApi): HostAppQuitRequestProvider {
+export function electronHostAppQuitRequest(electron: ElectronApi): HostAppQuitRequestCapability {
   return finishProvider((out) => populateElectronHostAppQuitRequest(out, appSubscribe(electron)));
 }
 
-export function electronHostAppReady(electron: ElectronApi): HostAppReadyProvider {
+export function electronHostAppReady(electron: ElectronApi): HostAppReadyCapability {
   return finishProvider((out) => populateElectronHostAppReady(out, appSubscribe(electron)));
 }
 
-export function electronHostAppRecentDocuments(electron: ElectronApi): HostAppRecentDocumentsProvider {
+export function electronHostAppRecentDocuments(electron: ElectronApi): HostAppRecentDocumentsCapability {
   return finishProvider((out) => populateElectronHostAppRecentDocuments(out, electron));
 }
 
-export function electronHostAppRelaunch(electron: ElectronApi): HostAppRelaunchProvider {
+export function electronHostAppRelaunch(electron: ElectronApi): HostAppRelaunchCapability {
   return finishProvider((out) => populateElectronHostAppRelaunch(out, electron.app));
 }
 
-export function electronHostAppSecondInstance(electron: ElectronApi): HostAppSecondInstanceProvider {
+export function electronHostAppSecondInstance(electron: ElectronApi): HostAppSecondInstanceCapability {
   return finishProvider((out) => populateElectronHostAppSecondInstance(out, appSubscribe(electron)));
 }
 
-export function electronHostAppShow(electron: ElectronApi): HostAppShowProvider {
+export function electronHostAppShow(electron: ElectronApi): HostAppShowCapability {
   return finishProvider((out) => populateElectronHostAppShow(out, electron.app));
 }
 
-export function electronHostAppSingleInstance(electron: ElectronApi): HostAppSingleInstanceProvider {
+export function electronHostAppSingleInstance(electron: ElectronApi): HostAppSingleInstanceCapability {
   return finishProvider((out) => populateElectronHostAppSingleInstance(out, electron.app));
 }
 
-export function electronHostAppUserModelId(electron: ElectronApi): HostAppUserModelIdProvider {
+export function electronHostAppUserModelId(electron: ElectronApi): HostAppUserModelIdCapability {
   return finishProvider((out) => populateElectronHostAppUserModelId(out, electron.app));
 }
 
-export function electronHostAppVersion(electron: ElectronApi): HostAppVersionProvider {
+export function electronHostAppVersion(electron: ElectronApi): HostAppVersionCapability {
   return finishProvider((out) => populateElectronHostAppVersion(out, electron.app));
 }
 
 export function populateElectronHostAppActivate(
-  out: EntityConstruction<HostAppActivateProvider>,
+  out: EntityConstruction<HostAppActivateCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('activate', listener);
 }
 
 export function populateElectronHostAppActivationPolicy(
-  out: EntityConstruction<HostAppActivationPolicyProvider>,
+  out: EntityConstruction<HostAppActivationPolicyCapability>,
   app: ElectronApi['app'],
 ): void {
   out.setActivationPolicy = (policy: 'accessory' | 'prohibited' | 'regular') => app.setActivationPolicy(policy);
 }
 
 export function populateElectronHostAppAllWindowsClosed(
-  out: EntityConstruction<HostAppAllWindowsClosedProvider>,
+  out: EntityConstruction<HostAppAllWindowsClosedCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('window-all-closed', listener);
 }
 
 export function populateElectronHostAppBadge(
-  out: EntityConstruction<HostAppBadgeProvider>,
+  out: EntityConstruction<HostAppBadgeCapability>,
   app: ElectronApi['app'],
 ): void {
   out.setBadgeCount = async (count: number) => app.setBadgeCount(count);
@@ -245,19 +245,19 @@ export function populateElectronHostAppBadge(
 
 export function populateElectronHostAppCommon(
   out: EntityConstruction<ElectronCommonAppCapabilities>,
-  allWindowsClosed: HostAppAllWindowsClosedProvider,
-  focus: HostAppFocusProvider,
-  locale: HostAppLocaleProvider,
-  name: HostAppNameProvider,
-  nameWrite: HostAppNameWriteProvider,
-  path: HostAppPathProvider,
-  quit: HostAppQuitProvider,
-  quitRequest: HostAppQuitRequestProvider,
-  ready: HostAppReadyProvider,
-  relaunch: HostAppRelaunchProvider,
-  secondInstance: HostAppSecondInstanceProvider,
-  singleInstance: HostAppSingleInstanceProvider,
-  version: HostAppVersionProvider,
+  allWindowsClosed: HostAppAllWindowsClosedCapability,
+  focus: HostAppFocusCapability,
+  locale: HostAppLocaleCapability,
+  name: HostAppNameCapability,
+  nameWrite: HostAppNameWriteCapability,
+  path: HostAppPathCapability,
+  quit: HostAppQuitCapability,
+  quitRequest: HostAppQuitRequestCapability,
+  ready: HostAppReadyCapability,
+  relaunch: HostAppRelaunchCapability,
+  secondInstance: HostAppSecondInstanceCapability,
+  singleInstance: HostAppSingleInstanceCapability,
+  version: HostAppVersionCapability,
 ): void {
   out.allWindowsClosed = allWindowsClosed;
   out.focus = focus;
@@ -275,7 +275,7 @@ export function populateElectronHostAppCommon(
 }
 
 export function populateElectronHostAppDock(
-  out: EntityConstruction<HostAppDockProvider>,
+  out: EntityConstruction<HostAppDockCapability>,
   dock: NonNullable<ElectronApi['app']['dock']>,
   electron: ElectronApi,
 ): void {
@@ -289,21 +289,21 @@ export function populateElectronHostAppDock(
 }
 
 export function populateElectronHostAppFocus(
-  out: EntityConstruction<HostAppFocusProvider>,
+  out: EntityConstruction<HostAppFocusCapability>,
   app: ElectronApi['app'],
 ): void {
   out.focus = () => app.focus();
 }
 
 export function populateElectronHostAppHiddenQuery(
-  out: EntityConstruction<HostAppVisibilityQueryProvider>,
+  out: EntityConstruction<HostAppVisibilityQueryCapability>,
   app: ElectronApi['app'],
 ): void {
   out.isAppHidden = () => app.isHidden();
 }
 
 export function populateElectronHostAppHide(
-  out: EntityConstruction<HostAppHideProvider>,
+  out: EntityConstruction<HostAppHideCapability>,
   app: ElectronApi['app'],
 ): void {
   out.hideApp = () => app.hide();
@@ -312,7 +312,7 @@ export function populateElectronHostAppHide(
 export function populateElectronHostAppLinux(
   out: EntityConstruction<ElectronLinuxAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  badge: HostAppBadgeProvider,
+  badge: HostAppBadgeCapability,
 ): void {
   out.allWindowsClosed = common.allWindowsClosed;
   out.badge = badge;
@@ -331,7 +331,7 @@ export function populateElectronHostAppLinux(
 }
 
 export function populateElectronHostAppLocale(
-  out: EntityConstruction<HostAppLocaleProvider>,
+  out: EntityConstruction<HostAppLocaleCapability>,
   app: ElectronApi['app'],
 ): void {
   out.getLocale = () => app.getLocale();
@@ -340,7 +340,7 @@ export function populateElectronHostAppLocale(
 }
 
 export function populateElectronHostAppLoginItem(
-  out: EntityConstruction<HostAppLoginItemProvider>,
+  out: EntityConstruction<HostAppLoginItemCapability>,
   electron: ElectronApi,
 ): void {
   out.getLoginItem = () => {
@@ -365,16 +365,16 @@ export function populateElectronHostAppLoginItem(
 export function populateElectronHostAppMacos(
   out: EntityConstruction<ElectronMacosAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  activate: HostAppActivateProvider,
-  activationPolicy: HostAppActivationPolicyProvider,
-  badge: HostAppBadgeProvider,
-  dock: HostAppDockProvider,
-  hide: HostAppHideProvider,
-  hiddenQuery: HostAppVisibilityQueryProvider,
-  loginItem: HostAppLoginItemProvider,
-  openFile: HostAppOpenFileProvider,
-  recentDocuments: HostAppRecentDocumentsProvider,
-  show: HostAppShowProvider,
+  activate: HostAppActivateCapability,
+  activationPolicy: HostAppActivationPolicyCapability,
+  badge: HostAppBadgeCapability,
+  dock: HostAppDockCapability,
+  hide: HostAppHideCapability,
+  hiddenQuery: HostAppVisibilityQueryCapability,
+  loginItem: HostAppLoginItemCapability,
+  openFile: HostAppOpenFileCapability,
+  recentDocuments: HostAppRecentDocumentsCapability,
+  show: HostAppShowCapability,
 ): void {
   out.activate = activate;
   out.activationPolicy = activationPolicy;
@@ -402,21 +402,21 @@ export function populateElectronHostAppMacos(
 }
 
 export function populateElectronHostAppName(
-  out: EntityConstruction<HostAppNameProvider>,
+  out: EntityConstruction<HostAppNameCapability>,
   app: ElectronApi['app'],
 ): void {
   out.getName = () => app.getName();
 }
 
 export function populateElectronHostAppNameWrite(
-  out: EntityConstruction<HostAppNameWriteProvider>,
+  out: EntityConstruction<HostAppNameWriteCapability>,
   app: ElectronApi['app'],
 ): void {
   out.setName = (name: string) => app.setName(name);
 }
 
 export function populateElectronHostAppOpenFile(
-  out: EntityConstruction<HostAppOpenFileProvider>,
+  out: EntityConstruction<HostAppOpenFileCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (path: string) => void) => {
@@ -425,7 +425,7 @@ export function populateElectronHostAppOpenFile(
 }
 
 export function populateElectronHostAppPath(
-  out: EntityConstruction<HostAppPathProvider>,
+  out: EntityConstruction<HostAppPathCapability>,
   app: ElectronApi['app'],
 ): void {
   out.getAppDirectoryPath = (kind: AppPathKind) => app.getPath(toElectronPathName(kind));
@@ -434,14 +434,14 @@ export function populateElectronHostAppPath(
 }
 
 export function populateElectronHostAppQuit(
-  out: EntityConstruction<HostAppQuitProvider>,
+  out: EntityConstruction<HostAppQuitCapability>,
   app: ElectronApi['app'],
 ): void {
   out.quit = () => app.quit();
 }
 
 export function populateElectronHostAppQuitRequest(
-  out: EntityConstruction<HostAppQuitRequestProvider>,
+  out: EntityConstruction<HostAppQuitRequestCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (cancelHost: () => void) => void) => {
@@ -453,14 +453,14 @@ export function populateElectronHostAppQuitRequest(
 }
 
 export function populateElectronHostAppReady(
-  out: EntityConstruction<HostAppReadyProvider>,
+  out: EntityConstruction<HostAppReadyCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('ready', listener);
 }
 
 export function populateElectronHostAppRecentDocuments(
-  out: EntityConstruction<HostAppRecentDocumentsProvider>,
+  out: EntityConstruction<HostAppRecentDocumentsCapability>,
   electron: ElectronApi,
 ): void {
   out.addRecentDocument = (path: string) => electron.app.addRecentDocument(path);
@@ -468,14 +468,14 @@ export function populateElectronHostAppRecentDocuments(
 }
 
 export function populateElectronHostAppRelaunch(
-  out: EntityConstruction<HostAppRelaunchProvider>,
+  out: EntityConstruction<HostAppRelaunchCapability>,
   app: ElectronApi['app'],
 ): void {
   out.relaunch = () => app.relaunch();
 }
 
 export function populateElectronHostAppSecondInstance(
-  out: EntityConstruction<HostAppSecondInstanceProvider>,
+  out: EntityConstruction<HostAppSecondInstanceCapability>,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (argv: readonly string[]) => void) => {
@@ -484,14 +484,14 @@ export function populateElectronHostAppSecondInstance(
 }
 
 export function populateElectronHostAppShow(
-  out: EntityConstruction<HostAppShowProvider>,
+  out: EntityConstruction<HostAppShowCapability>,
   app: ElectronApi['app'],
 ): void {
   out.showApp = () => app.show();
 }
 
 export function populateElectronHostAppSingleInstance(
-  out: EntityConstruction<HostAppSingleInstanceProvider>,
+  out: EntityConstruction<HostAppSingleInstanceCapability>,
   app: ElectronApi['app'],
 ): void {
   out.hasSingleInstanceLock = () => app.hasSingleInstanceLock();
@@ -500,14 +500,14 @@ export function populateElectronHostAppSingleInstance(
 }
 
 export function populateElectronHostAppUserModelId(
-  out: EntityConstruction<HostAppUserModelIdProvider>,
+  out: EntityConstruction<HostAppUserModelIdCapability>,
   app: ElectronApi['app'],
 ): void {
   out.setUserModelId = (id: string) => app.setAppUserModelId(id);
 }
 
 export function populateElectronHostAppVersion(
-  out: EntityConstruction<HostAppVersionProvider>,
+  out: EntityConstruction<HostAppVersionCapability>,
   app: ElectronApi['app'],
 ): void {
   out.getVersion = () => app.getVersion();
@@ -516,9 +516,9 @@ export function populateElectronHostAppVersion(
 export function populateElectronHostAppWindows(
   out: EntityConstruction<ElectronWindowsAppCapabilities>,
   common: Readonly<ElectronCommonAppCapabilities>,
-  loginItem: HostAppLoginItemProvider,
-  recentDocuments: HostAppRecentDocumentsProvider,
-  userModelId: HostAppUserModelIdProvider,
+  loginItem: HostAppLoginItemCapability,
+  recentDocuments: HostAppRecentDocumentsCapability,
+  userModelId: HostAppUserModelIdCapability,
 ): void {
   out.allWindowsClosed = common.allWindowsClosed;
   out.focus = common.focus;

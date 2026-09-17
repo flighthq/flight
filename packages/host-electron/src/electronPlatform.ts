@@ -2,14 +2,14 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
-  HostPlatformProvider,
+  HostPlatformCapability,
   HostSystemCapabilities,
   PlatformName,
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-export function electronHostPlatform(electron: ElectronApi): HostPlatformProvider & Entity {
-  const out = allocateEntity<HostPlatformProvider>();
+export function electronHostPlatform(electron: ElectronApi): HostPlatformCapability & Entity {
+  const out = allocateEntity<HostPlatformCapability>();
   populateElectronHostPlatform(out, electron);
   return finishEntity(out);
 }
@@ -18,12 +18,12 @@ export function electronHostSystem(electron: ElectronApi): Required<Pick<HostSys
   return { platform: electronHostPlatform(electron) };
 }
 
-// Maps Flight's HostPlatformProvider onto the Node `process` running the Electron main process, with the
+// Maps Flight's HostPlatformCapability onto the Node `process` running the Electron main process, with the
 // locale sourced from Electron's `app`. `process` is accessed defensively (it may be absent and is not
 // typed without @types/node) and falls back to '' / 'unknown' sentinels. Writes into caller-owned
 // `out` so callers control allocation.
 export function populateElectronHostPlatform(
-  out: EntityConstruction<HostPlatformProvider>,
+  out: EntityConstruction<HostPlatformCapability>,
   electron: ElectronApi,
 ): void {
   out.getInfo = (out) => {

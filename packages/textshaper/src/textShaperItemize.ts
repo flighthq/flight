@@ -1,5 +1,5 @@
 import type {
-  HostTextShaperProvider,
+  HostTextShaperCapability,
   ShapedRun,
   TextFormat,
   TextItem,
@@ -80,7 +80,7 @@ export function itemizeText(
 // This is the primary convenience entry point for multi-script strings: `itemizeText` handles the
 // script/direction split, then `shapeTextRun` produces glyph ids and positions for each sub-run.
 export function shapeTextRuns(
-  hostTextShaper: Readonly<HostTextShaperProvider>,
+  hostTextShaper: Readonly<HostTextShaperCapability>,
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<TextShaperOptions>,

@@ -1,15 +1,15 @@
-import type { HostBitmapReadbackProvider, HostImageSource } from '@flighthq/types/contract';
+import type { HostBitmapReadbackCapability, HostImageSource } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
 
 function hostWith(
   readBitmap: {
-    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
   }['graphics']['bitmapReadback']['readBitmap'],
-): { readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider } } {
+): { readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability } } {
   return { graphics: { bitmapReadback: { readBitmap } } } as {
-    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackProvider };
+    readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
   };
 }
 
