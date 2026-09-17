@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/preferences'
+package: '@flighthq/storage'
 updated: 2026-07-07
 basedOn: ./review.md
 ---

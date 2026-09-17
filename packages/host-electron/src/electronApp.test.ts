@@ -27,7 +27,6 @@ import {
   populateElectronHostAppSingleInstance,
   populateElectronHostAppUserModelId,
   populateElectronHostAppVersion,
-  populateElectronHostAppHiddenQuery,
   populateElectronHostAppCommon,
   populateElectronHostAppLinux,
   populateElectronHostAppMacos,
@@ -144,10 +143,9 @@ describe('electronHostApp', () => {
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
-  it('publishes macOS-only dock, visibility, login, open-file, and activation slots', () => {
+  it('publishes macOS-only dock, login, open-file, and activation slots', () => {
     const fake = fakeElectron();
     const app = electronHostApp(fake.electron, 'macos');
-    expect(app.hiddenQuery.isAppHidden()).toBe(true);
     app.dock.setDockMenu([{ id: 'a', label: 'A', submenu: [{ id: 'b', label: 'B' }] }]);
     expect(fake.dockMenuTemplate?.[0]?.submenu).toHaveLength(1);
     expect(app.dock.requestAttention(true)).toBe(7);
@@ -252,12 +250,6 @@ describe('populateElectronHostAppDock', () => {
 describe('populateElectronHostAppFocus', () => {
   it('is the construction initializer of electronHostAppFocus', () => {
     expect(typeof populateElectronHostAppFocus).toBe('function');
-  });
-});
-
-describe('populateElectronHostAppHiddenQuery', () => {
-  it('is the construction initializer of electronHostAppVisibilityQuery', () => {
-    expect(typeof populateElectronHostAppHiddenQuery).toBe('function');
   });
 });
 

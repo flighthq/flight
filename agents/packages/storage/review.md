@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/preferences'
+package: '@flighthq/storage'
 status: solid
 score: 88
 updated: 2026-09-02

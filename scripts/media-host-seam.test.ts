@@ -141,8 +141,8 @@ describe('media host-seam closure', () => {
     expect(notGraphFirst).toEqual([]);
     expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
     expect(interfaceHeritage('HostAudioMixerCapability')).toEqual(['Entity']);
-    expect(interfacePropertySignatures('HostMediaCapabilities', new Set(['audioMixer']))).toEqual([
-      'readonly audioMixer?: HostAudioMixerCapability',
+    expect(interfacePropertySignatures('HostAudioCapabilities', new Set(['mixer']))).toEqual([
+      'readonly mixer?: HostAudioMixerCapability',
     ]);
   });
 
@@ -234,7 +234,7 @@ describe('media host-seam closure', () => {
       const source = declaration.getSourceFile();
       const positions = declaration.parameters
         .map((parameter, index) =>
-          /\bHost[A-Za-z]*Provider\b/u.test(parameter.type?.getText(source) ?? '') ? index : -1,
+          /\bHost[A-Za-z]*Capability\b/u.test(parameter.type?.getText(source) ?? '') ? index : -1,
         )
         .filter((index) => index !== -1);
       return positions.length === 0 || (positions.length === 1 && positions[0] === 0)
@@ -407,10 +407,16 @@ function providerOperationNames(value: unknown): string[] {
 function composedMediaProvider(name: string): unknown {
   const host = exportedValue(hostWebContract, 'webHost');
   if (host === null || typeof host !== 'object') return undefined;
-  const media = Reflect.get(host, 'media') as unknown;
-  if (media === null || typeof media !== 'object') return undefined;
-  const slot = name === 'webHostAudioDevice' ? 'audioDevice' : name === 'webHostAudioMixer' ? 'audioMixer' : 'video';
-  return Reflect.get(media, slot);
+  if (name === 'webHostAudioDevice') {
+    const audio = Reflect.get(host, 'audio') as unknown;
+    return audio !== null && typeof audio === 'object' ? Reflect.get(audio, 'device') : undefined;
+  }
+  if (name === 'webHostAudioMixer') {
+    const audio = Reflect.get(host, 'audio') as unknown;
+    return audio !== null && typeof audio === 'object' ? Reflect.get(audio, 'mixer') : undefined;
+  }
+  const video = Reflect.get(host, 'video') as unknown;
+  return video !== null && typeof video === 'object' ? Reflect.get(video, 'playback') : undefined;
 }
 
 function exportedMediaFunctions(): ReadonlyMap<string, ts.FunctionDeclaration> {

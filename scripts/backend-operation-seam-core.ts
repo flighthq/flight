@@ -49,18 +49,18 @@ export function createEmptyBackendOperationSeamReport(): BackendOperationSeamRep
   return { enforced: 0, entries: [], notMigrated: 0, total: 0, violations: [] };
 }
 
-// Every legacy `*Backend` or primary `Host*Provider` interface declared in `@flighthq/types`.
-// Canonical providers retain their historical Backend report identities so the long-lived ratchet
+// Every legacy `*Backend` or primary `Host*Capability` interface declared in `@flighthq/types`.
+// Canonical capabilities retain their historical Backend report identities so the long-lived ratchet
 // remains comparable after the transitional public aliases are removed.
 export function collectBackendInterfaceNames(typeSourceFiles: readonly string[]): string[] {
-  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
+  const backendByCapability = collectHostCapabilityBackendAliases(typeSourceFiles);
   const names = new Set<string>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByCapability);
       if (backend === null) continue;
       names.add(backend.slice(0, -'Backend'.length));
     }
@@ -69,8 +69,8 @@ export function collectBackendInterfaceNames(typeSourceFiles: readonly string[])
 }
 
 // Derives explicit Host completion without a capability roster. The canonical Host group declarations
-// give us the provider-to-slot relationship; the provider declaration gives us its operation population;
-// production source must accept that exact Readonly provider and directly call every non-lifecycle
+// give us the capability-to-slot relationship; the capability declaration gives us its operation population;
+// production source must accept that exact Readonly capability and directly call every non-lifecycle
 // operation through the parameter.
 // `destroy`/`dispose` are deliberately excluded here because their ownership is enforced by the separate
 // backend-lifecycle census.
@@ -78,16 +78,16 @@ export function collectExplicitHostOperationSeams(
   typeSourceFiles: readonly string[],
   productionSourceFiles: readonly string[],
 ): ReadonlyMap<string, string> {
-  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
-  const providerByBackend = new Map([...backendByProvider].map(([provider, backend]) => [backend, provider]));
-  const slotByProvider = collectHostProviderSlots(typeSourceFiles);
+  const backendByCapability = collectHostCapabilityBackendAliases(typeSourceFiles);
+  const capabilityByBackend = new Map([...backendByCapability].map(([capability, backend]) => [backend, capability]));
+  const slotByCapability = collectHostCapabilitySlots(typeSourceFiles);
   const methodsByBackend = new Map<string, Set<string>>();
   for (const sourceFile of typeSourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
       if (statement.type !== 'ExportNamedDeclaration') continue;
       const declaration = statement.declaration;
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
-      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByProvider);
+      const backend = canonicalBackendInterfaceName(declaration.id.name, backendByCapability);
       if (backend === null) continue;
       const methods = new Set<string>();
       for (const member of declaration.body.body) {
@@ -107,14 +107,14 @@ export function collectExplicitHostOperationSeams(
     }
   }
 
-  const usesByProvider = collectDirectHostProviderUses(productionSourceFiles);
+  const usesByCapability = collectDirectHostCapabilityUses(productionSourceFiles);
   const explicit = new Map<string, string>();
   for (const [backend, methods] of methodsByBackend) {
-    const provider = providerByBackend.get(backend);
-    if (provider === undefined) continue;
-    const slot = slotByProvider.get(provider);
+    const capability = capabilityByBackend.get(backend);
+    if (capability === undefined) continue;
+    const slot = slotByCapability.get(capability);
     if (slot === undefined) continue;
-    const uses = usesByProvider.get(provider) ?? [];
+    const uses = usesByCapability.get(capability) ?? [];
     const covered = [...methods].every((method) =>
       uses.some(({ body, parameter }) => new RegExp(`\\b${parameter}\\s*\\.\\s*${method}\\s*\\(`).test(body)),
     );
@@ -124,19 +124,19 @@ export function collectExplicitHostOperationSeams(
 }
 
 // A narrower companion for lifecycle ownership. Calling every operation does not prove that a direct
-// provider can be released (Menu is the live counterexample), so this predicate additionally requires an
-// exported destroy* boundary whose parameter names the exact Readonly Host provider. Screen's older
+// capability can be released (Menu is the live counterexample), so this predicate additionally requires an
+// exported destroy* boundary whose parameter names the exact Readonly Host capability. Screen's older
 // whole-group ownership predates this derivation and remains an explicit historical input at the caller.
 export function collectExplicitHostLifecycleSlots(
   typeSourceFiles: readonly string[],
   productionSourceFiles: readonly string[],
 ): ReadonlyMap<string, string> {
-  const backendByProvider = collectHostProviderBackendAliases(typeSourceFiles);
-  const slotByProvider = collectHostProviderSlots(typeSourceFiles);
+  const backendByCapability = collectHostCapabilityBackendAliases(typeSourceFiles);
+  const slotByCapability = collectHostCapabilitySlots(typeSourceFiles);
   const explicit = new Map<string, string>();
-  for (const [provider, uses] of collectDirectHostProviderUses(productionSourceFiles, true)) {
-    const backend = backendByProvider.get(provider);
-    const slot = slotByProvider.get(provider);
+  for (const [capability, uses] of collectDirectHostCapabilityUses(productionSourceFiles, true)) {
+    const backend = backendByCapability.get(capability);
+    const slot = slotByCapability.get(capability);
     if (backend === undefined || slot === undefined) continue;
     if (uses.some(({ functionName }) => functionName.startsWith('destroy'))) explicit.set(backend, slot);
   }
@@ -189,7 +189,7 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
         counting:
           'one unit = one interface; enforced = its owning package exports explain<Name>Operation or a derived explicit Host slot is called for every non-lifecycle method; enforced + notMigrated is asserted equal to total',
         scope:
-          'every exported legacy *Backend or primary Host*Provider interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
+          'every exported *Backend or primary Host*Capability interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -240,17 +240,17 @@ export function isAggregatorContractLane(source: string): boolean {
   return /^export \* from '@flighthq\//m.test(source);
 }
 
-interface DirectHostProviderUse {
+interface DirectHostCapabilityUse {
   body: string;
   functionName: string;
   parameter: string;
 }
 
-function collectDirectHostProviderUses(
+function collectDirectHostCapabilityUses(
   sourceFiles: readonly string[],
   destroyOnly = false,
-): ReadonlyMap<string, readonly DirectHostProviderUse[]> {
-  const uses = new Map<string, DirectHostProviderUse[]>();
+): ReadonlyMap<string, readonly DirectHostCapabilityUse[]> {
+  const uses = new Map<string, DirectHostCapabilityUse[]>();
   for (const sourceFile of sourceFiles) {
     const { program, text } = getParsedOxcSource(sourceFile);
     for (const statement of program.body) {
@@ -268,11 +268,11 @@ function collectDirectHostProviderUses(
         if (annotation === undefined) continue;
         const annotationText = text.slice(annotation.start, annotation.end);
         if (!/\bReadonly\s*</u.test(annotationText)) continue;
-        const providers = new Set(annotationText.match(/\bHost[A-Z][A-Za-z0-9]+Provider\b/gu) ?? []);
-        for (const provider of providers) {
-          const entries = uses.get(provider) ?? [];
+        const capabilities = new Set(annotationText.match(/\bHost[A-Z][A-Za-z0-9]+Capability\b/gu) ?? []);
+        for (const capability of capabilities) {
+          const entries = uses.get(capability) ?? [];
           entries.push({ body, functionName, parameter: parameter.name });
-          uses.set(provider, entries);
+          uses.set(capability, entries);
         }
       }
     }
@@ -280,7 +280,7 @@ function collectDirectHostProviderUses(
   return uses;
 }
 
-function collectHostProviderSlots(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+function collectHostCapabilitySlots(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     if (!sourceFile.endsWith('/Host.ts') && !sourceFile.endsWith('\\Host.ts')) continue;
@@ -289,25 +289,19 @@ function collectHostProviderSlots(typeSourceFiles: readonly string[]): ReadonlyM
   }
   const hostBody = /export interface Host extends Entity \{([\s\S]*?)\n\}/u.exec(hostSource)?.[1] ?? '';
   const groupByType = new Map<string, string>();
-  for (const match of hostBody.matchAll(
-    /^\s*readonly ([A-Za-z0-9]+): (Host[A-Za-z0-9]+(?:Capabilities|Provider));$/gmu,
-  )) {
+  for (const match of hostBody.matchAll(/^\s*readonly ([A-Za-z0-9]+): (Host[A-Za-z0-9]+Capabilities);$/gmu)) {
     groupByType.set(match[2], match[1]);
   }
 
   const slots = new Map<string, string>();
   for (const [groupType, group] of groupByType) {
-    if (groupType.endsWith('Provider')) {
-      slots.set(groupType, `Host.${group}`);
-      continue;
-    }
     const escapedGroupType = groupType.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     const groupBody = new RegExp(`export interface ${escapedGroupType} \\{([\\s\\S]*?)\\n\\}`, 'u').exec(
       hostSource,
     )?.[1];
     if (groupBody === undefined) continue;
     for (const match of groupBody.matchAll(
-      /^\s*readonly ([A-Za-z0-9]+)\??: (Host[A-Z][A-Za-z0-9]+Provider)(?:<[^;]+>)?;$/gmu,
+      /^\s*readonly ([A-Za-z0-9]+)\??: (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^;]+>)?;$/gmu,
     )) {
       slots.set(match[2], `Host.${group}.${match[1]}`);
     }
@@ -317,34 +311,33 @@ function collectHostProviderSlots(typeSourceFiles: readonly string[]): ReadonlyM
 
 function canonicalBackendInterfaceName(
   declarationName: string,
-  backendByProvider: ReadonlyMap<string, string>,
+  backendByCapability: ReadonlyMap<string, string>,
 ): string | null {
   if (declarationName.endsWith('Backend')) return declarationName;
-  return backendByProvider.get(declarationName) ?? null;
+  return backendByCapability.get(declarationName) ?? null;
 }
 
-function collectHostProviderBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  const backendByProvider = new Map<string, string>();
+function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const backendByCapability = new Map<string, string>();
   const aliasPattern =
-    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Provider)(?:<[^>]+>)?;/gm;
+    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^>]+>)?;/gm;
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     const source = readFileSync(sourceFile, 'utf-8');
     if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
-    for (const match of source.matchAll(aliasPattern)) backendByProvider.set(match[2], match[1]);
+    for (const match of source.matchAll(aliasPattern)) backendByCapability.set(match[2], match[1]);
   }
   const hostStart = hostSource.indexOf('export interface Host extends Entity');
-  const witnessStart = hostSource.indexOf('export interface HasAccessibilityProvider');
-  const hostShape = hostSource.slice(hostStart, witnessStart < 0 ? undefined : witnessStart);
-  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Provider)\b/g)) {
-    const provider = match[1];
-    backendByProvider.set(provider, backendByProvider.get(provider) ?? legacyBackendName(provider));
+  const hostShape = hostSource.slice(hostStart);
+  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Capability)\b/g)) {
+    const capability = match[1];
+    backendByCapability.set(capability, backendByCapability.get(capability) ?? capabilityBackendName(capability));
   }
-  return backendByProvider;
+  return backendByCapability;
 }
 
-function legacyBackendName(provider: string): string {
-  const stem = provider.slice('Host'.length, -'Provider'.length);
+function capabilityBackendName(capability: string): string {
+  const stem = capability.slice('Host'.length, -'Capability'.length);
   if (stem === 'FileSystem') return 'FileSystemHostBackend';
   if (stem === 'Video') return 'VideoCapabilityBackend';
   if (stem === 'Wgpu') return 'WgpuHostBackend';

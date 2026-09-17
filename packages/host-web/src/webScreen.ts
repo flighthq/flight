@@ -325,12 +325,12 @@ export function initializeWebScreenCapabilities(
   out.query = query;
 }
 
-const webScreenCapabilities = createWebScreenCapabilities();
+const screenGroup = createWebScreenCapabilities();
 
-export const webHostScreenChange = webScreenCapabilities.change;
-export const webHostScreenDetails = webScreenCapabilities.details;
-export const webHostScreenPermissionChange = webScreenCapabilities.permissionChange;
-export const webHostScreenQuery = webScreenCapabilities.query;
+export const webHostScreenChange = screenGroup.change;
+export const webHostScreenDetails = screenGroup.details;
+export const webHostScreenPermissionChange = screenGroup.permissionChange;
+export const webHostScreenQuery = screenGroup.query;
 
 function media(query: string): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;

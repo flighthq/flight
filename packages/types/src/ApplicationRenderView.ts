@@ -44,7 +44,7 @@ export type GlApplicationRenderView = ApplicationRenderView<GlRenderState, GlTex
 // rectangle a backend allocates for one acquired context. The application half — the window and the
 // resize wiring that reconciles the two — stays in @flighthq/application, which a render backend may
 // not import. A caller holding both composes them explicitly rather than through an assembly package.
-export interface GlRenderViewResources {
+export interface GlRenderViewResources extends Entity {
   readonly renderState: GlRenderState;
   readonly renderTarget: GlTextureRenderTarget;
   readonly viewport: Viewport;

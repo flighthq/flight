@@ -1008,7 +1008,10 @@ describe('P5 host-bypass derived gate', () => {
        }`,
     ],
   ])('mutation-proves that %s fails exact input listener pairing', (_name, source) => {
-    const report = createP5HostBypassReport(1, scanP5HostBypassSource('packages/host-web/src/webInputHost.ts', source));
+    const report = createP5HostBypassReport(
+      1,
+      scanP5HostBypassSource('packages/host-web/src/webInputIngress.ts', source),
+    );
     expect(p5InputIngressPairingFailures(deriveP5InputIngressListenerOperations(report))).not.toEqual([]);
   });
 
