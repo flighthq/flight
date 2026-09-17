@@ -29,8 +29,8 @@ The Electron main-process host adapter -- concrete implementations of Flight's p
 - **[2026-08-30] Updater is an explicit Squirrel transaction.** The provider is returned at
   `Host.updater.command`; feed URL is construction policy, native events settle one awaited check, and
   downloaded handles retain exact provider origin. No `@flighthq/updater` ambient registration remains.
-- **[2026-07-02] Fix missing `@flighthq/storage` dependency.** `@flighthq/storage` is imported but not listed in `package.json` dependencies. Add it.
-- **[2026-09-17] `@flighthq/storage` renamed to `@flighthq/preferences`.** Supersedes the 2026-07-02 dependency entry above: the import target is now `@flighthq/preferences`.
+- **[2026-07-02] Fix missing `@flighthq/preferences` dependency.** `@flighthq/preferences` is imported but not listed in `package.json` dependencies. Add it.
+- **[2026-09-17] Supersedes 2026-07-02 dependency entry: package was `@flighthq/storage` at time of writing; now `@flighthq/preferences`.**
 - **[2026-07-02] Not a `*Backend` package itself.** `host-electron` is the host that provides backends to capability packages. It is not a backend -- it is the adapter that creates and registers backends. The distinction matters: capability packages define the seam, `host-electron` fills it.
 - **[2026-07-02] No Rust crate.** Electron's substrate does not exist in the Rust box. Native Rust hosts are `host-winit` and `host-sdl`.
 
