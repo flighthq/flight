@@ -2,9 +2,9 @@ import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   AppLifecycleState,
-  HostApplicationExitCapability,
+  HostAppExitCapability,
   HostLifecycleCapability,
-  HostLoopCapability,
+  HostAppLoopCapability,
 } from '@flighthq/types/contract';
 
 import {
@@ -31,7 +31,7 @@ import {
 } from './application';
 import { createApplicationWindow } from './window';
 
-function makeManualLoopBackend(): HostLoopCapability & { tick: (time: number) => void; cancelCount: number } {
+function makeManualLoopBackend(): HostAppLoopCapability & { tick: (time: number) => void; cancelCount: number } {
   let callback: ((time: number) => void) | null = null;
   let cancelCount = 0;
   return {
@@ -58,12 +58,12 @@ type RecordingLifecycleBackend = HostLifecycleCapability & { state: AppLifecycle
 
 type LoopTestHost = {
   readonly app: {
-    readonly loop: HostLoopCapability;
+    readonly loop: HostAppLoopCapability;
     readonly lifecycle: RecordingLifecycleBackend;
   };
 };
 
-function createLoopTestHost(loop: HostLoopCapability, visible = true): LoopTestHost {
+function createLoopTestHost(loop: HostAppLoopCapability, visible = true): LoopTestHost {
   const impl = {
     state: (visible ? 'active' : 'background') as AppLifecycleState,
     getState(): AppLifecycleState {
@@ -76,7 +76,7 @@ function createLoopTestHost(loop: HostLoopCapability, visible = true): LoopTestH
   return { app: { loop, lifecycle: impl as unknown as RecordingLifecycleBackend } };
 }
 
-type RecordingApplicationExitBackend = HostApplicationExitCapability & {
+type RecordingApplicationExitBackend = HostAppExitCapability & {
   readonly calls: string[];
   emit(): void;
 };

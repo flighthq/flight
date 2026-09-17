@@ -1,5 +1,10 @@
 import { sendNetRequest } from '@flighthq/net/contract';
-import type { AudioResource, AudioResourceUrl, HostAudioCapability, HostNetCapability } from '@flighthq/types/contract';
+import type {
+  AudioResource,
+  AudioResourceUrl,
+  HostAudioCodecCapability,
+  HostNetCapability,
+} from '@flighthq/types/contract';
 
 import { hasAudioDecoder } from './audioDecoderRegistry';
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
@@ -93,7 +98,7 @@ async function _loadAudioResourceFromUrl(
 
 export async function loadAudioResourceFromUrls(
   hostNet: Readonly<HostNetCapability>,
-  hostAudio: Readonly<HostAudioCapability>,
+  hostAudio: Readonly<HostAudioCodecCapability>,
   context: AudioContext,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
@@ -105,14 +110,14 @@ export async function loadAudioResourceFromUrls(
 }
 
 export function selectAudioResourceUrl(
-  hostAudio: Readonly<HostAudioCapability>,
+  hostAudio: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
 ): string | null {
   return _selectAudioResourceSource(hostAudio, sources)?.url ?? null;
 }
 
 function _selectAudioResourceSource(
-  hostAudio: Readonly<HostAudioCapability>,
+  hostAudio: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
 ): AudioResourceUrl | null {
   for (const source of sources) {

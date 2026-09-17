@@ -1,6 +1,6 @@
-import type { HostLoopCapability } from '@flighthq/types/contract';
+import type { HostAppLoopCapability } from '@flighthq/types/contract';
 
-export const webHostLoop: HostLoopCapability = {
+export const webHostLoop: HostAppLoopCapability = {
   cancelFrame(handle) {
     cancelAnimationFrame(handle as number);
   },
