@@ -440,7 +440,7 @@ describe('web media-session provider composition', () => {
     expect(EntityRuntimeKey in webHostMediaSessionAction).toBe(true);
     expect(EntityRuntimeKey in createWebMediaSessionBackend()).toBe(true);
     expect(EntityRuntimeKey in createWebMediaSessionActionBackend()).toBe(true);
-    expect(webHost.mediaSession.session).toBe(webHostMediaSession);
+    expect(webHost.mediaSession.control).toBe(webHostMediaSession);
     expect(webHost.mediaSession.action).toBe(webHostMediaSessionAction);
   });
 });

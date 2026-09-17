@@ -35,6 +35,7 @@ import { webHostSensorsGroup } from './webSensorsHost';
 import { webHostShare } from './webShareHost';
 import { webHostShell } from './webShellHost';
 import { webHostShortcut } from './webShortcutHost';
+import { webHostSocketGroup } from './webSocketHost';
 import { webHostSoftKeyboard } from './webSoftKeyboardHost';
 import { webHostStatusBar } from './webStatusBarHost';
 import { webHostSurfaceGroup } from './webSurfaceHost';
@@ -88,6 +89,7 @@ const groups = {
   share: webHostShare,
   shell: webHostShell,
   shortcut: webHostShortcut,
+  socket: webHostSocketGroup,
   softKeyboard: webHostSoftKeyboard,
   statusBar: webHostStatusBar,
   surface: webHostSurfaceGroup,

@@ -74,6 +74,7 @@ export * from './webShareHost';
 export * from './webShell';
 export * from './webShellHost';
 export * from './webSocket';
+export * from './webSocketHost';
 export * from './webSoftKeyboardHost';
 export * from './webServiceWorkerNotification';
 export * from './webStatusbar';
