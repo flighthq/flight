@@ -1,4 +1,4 @@
-import { createWebGlContext } from './webGlContext';
+import { createWebGlContext, getWebGlContext } from './webGlContext';
 
 function makeGL(): WebGL2RenderingContext {
   return document.createElement('canvas').getContext('webgl2')!;
@@ -45,5 +45,16 @@ describe('createWebGlContext', () => {
 
   it('throws when the canvas has no WebGL2 context', () => {
     expect(() => createWebGlContext(makeCanvas(null))).toThrow('Failed to get WebGL2 context.');
+  });
+});
+
+describe('getWebGlContext', () => {
+  it('returns the canvas WebGL2 context', () => {
+    const gl = makeGL();
+    expect(getWebGlContext(makeCanvas(gl))).toBe(gl);
+  });
+
+  it('returns null instead of throwing when the browser refuses WebGL2', () => {
+    expect(getWebGlContext(makeCanvas(null))).toBeNull();
   });
 });
