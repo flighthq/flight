@@ -24,7 +24,6 @@ import type {
   HostAppVersionCapability,
   HostAppShowCapability,
 } from './App';
-import type { HostAppExitCapability } from './ApplicationExitBackend';
 import type {
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
@@ -44,18 +43,6 @@ import type {
   HostWindowZOrderCapability,
 } from './ApplicationWindow';
 import type {
-  HostGlCapability,
-  HostInputDropFileCapability,
-  HostInputFocusCapability,
-  HostInputPointerLockCapability,
-  HostSurfaceCapability,
-} from './ApplicationWindowTargetBackend';
-import type { HostAudioCodecCapability } from './AudioBackend';
-import type { HostAudioDeviceCapability } from './AudioDeviceBackend';
-import type { HostAudioMixerCapability } from './AudioMixerBackend';
-import type { HostBitmapEncodeCapability } from './BitmapEncodeBackend';
-import type { HostBitmapReadbackCapability } from './BitmapReadbackBackend';
-import type {
   HostClipboardBookmarkCapability,
   HostClipboardChangeCapability,
   HostClipboardFormatsCapability,
@@ -69,21 +56,40 @@ import type {
 } from './Connectivity';
 import type { HostDeviceCapability } from './Device';
 import type { Entity } from './Entity';
+import type { HostFileSystemCapability } from './FileSystem';
+import type { HostGeolocationCapability } from './Geolocation';
+import type { HostGlyphRasterizerCapability } from './GlyphSource';
+import type { HostHapticsCapability } from './Haptics';
+import type { HostAppExitCapability } from './HostAppExit';
+import type { HostAppLoopCapability } from './HostAppLoop';
+import type { HostAudioCodecCapability } from './HostAudioCodec';
+import type { HostAudioDeviceCapability } from './HostAudioDevice';
+import type { HostAudioMixerCapability } from './HostAudioMixer';
+import type { HostBitmapEncodeCapability } from './HostBitmapEncode';
+import type { HostBitmapReadbackCapability } from './HostBitmapReadback';
 import type {
   HostDirectoryOpenDialogCapability,
   HostFileOpenDialogCapability,
   HostFileSaveDialogCapability,
-} from './FileDialogBackend';
-import type { HostFileSystemCapability } from './FileSystem';
-import type { HostFontLoadingCapability } from './FontLoadingBackend';
-import type { HostElementFullscreenCapability } from './FullscreenBackend';
-import type { HostGeolocationCapability } from './Geolocation';
-import type { HostGlyphRasterizerCapability } from './GlyphSource';
-import type { HostHapticsCapability } from './Haptics';
-import type { HostImageOpenDialogCapability } from './ImageOpenDialogBackend';
+} from './HostFileDialog';
+import type { HostFontLoadingCapability } from './HostFontLoading';
+import type { HostElementFullscreenCapability } from './HostFullscreen';
+import type { HostImageOpenDialogCapability } from './HostImageOpenDialog';
+import type { HostInputIngressCapability } from './HostInputIngress';
+import type { HostInputTargetCapability } from './HostInputTarget';
+import type { HostMessageDialogCapability } from './HostMessageDialog';
+import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
+import type { HostPromptDialogCapability } from './HostPromptDialog';
+import type { HostVideoCapability } from './HostVideo';
+import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
+import type {
+  HostGlCapability,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
+  HostSurfaceCapability,
+} from './HostWindowTarget';
 import type { HostImageCapability } from './ImageResource';
-import type { HostInputIngressCapability } from './InputIngressBackend';
-import type { HostInputTargetCapability } from './InputTargetBackend';
 import type {
   HostIpcHandleCapability,
   HostIpcInvokeCapability,
@@ -101,7 +107,6 @@ import type {
   HostSoftKeyboardVisibilityCapability,
 } from './Keyboard';
 import type { HostLifecycleCapability } from './Lifecycle';
-import type { HostAppLoopCapability } from './LoopBackend';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession';
 import type {
   HostMenuApplicationCapability,
@@ -109,7 +114,6 @@ import type {
   HostMenuPopupCapability,
   HostMenuSelectCapability,
 } from './Menu';
-import type { HostMessageDialogCapability } from './MessageDialogBackend';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi';
 import type { HostNetCapability } from './Net';
 import type {
@@ -126,7 +130,6 @@ import type {
   HostNotificationSchedulingCapability,
 } from './Notification';
 import type { HostPermissionsCapability } from './Permission';
-import type { HostPhotoCaptureDialogCapability } from './PhotoCaptureDialogBackend';
 import type { HostPlatformCapability } from './Platform';
 import type {
   HostPowerBatteryHealthCapability,
@@ -138,7 +141,6 @@ import type {
   HostPowerSuspensionCapability,
   HostPowerThermalCapability,
 } from './Power';
-import type { HostPromptDialogCapability } from './PromptDialogBackend';
 import type {
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
@@ -200,8 +202,6 @@ import type {
   HostTrayTooltipCapability,
 } from './Tray';
 import type { HostUpdaterCommandCapability } from './Updater';
-import type { HostVideoCapability } from './VideoCapabilityBackend';
-import type { HostVideoCaptureDialogCapability } from './VideoCaptureDialogBackend';
 import type { HostWgpuCapability } from './WgpuHost';
 
 export interface Host extends Entity {
