@@ -13,7 +13,7 @@ export function disableNetGuards(): void {
   _enabled = false;
 }
 
-// Installs opt-in warnings for invalid request descriptors and successful requests whose provider
+// Installs opt-in warnings for invalid request descriptors and successful requests whose capability
 // ignored a supplied progress signal. Omitting this module sheds the guidance strings and
 // @flighthq/log dependency from the transport path.
 export function enableNetGuards(): void {
@@ -28,10 +28,10 @@ function warnOnNetMisuse(notice: Readonly<NetGuardNotice>): void {
     message = `sendNetRequest: ${method.toUpperCase()} requests do not carry a body — remove request.body or use a body-bearing method`;
   } else if (notice.reason === 'negative-timeout') {
     message =
-      'sendNetRequest: timeoutMs is negative, so the provider cannot schedule a timeout — pass zero or a positive duration';
+      'sendNetRequest: timeoutMs is negative, so the capability cannot schedule a timeout — pass zero or a positive duration';
   } else {
     message =
-      'sendNetRequest: the provider completed successfully without emitting the supplied progress signal — use a provider that supports download progress';
+      'sendNetRequest: the capability completed successfully without emitting the supplied progress signal — use a capability that supports download progress';
   }
   logOnce(
     `net:${notice.operation}:${notice.reason}`,
