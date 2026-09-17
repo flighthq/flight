@@ -4,14 +4,30 @@ import type {
   ApplicationWindow,
   EntityConstruction,
   FullscreenTargetHandle,
+  HostFullscreenCapability,
   HostGlCapability,
-  HostSurfaceCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
   HostInputTargetCapability,
-  HostFullscreenCapability,
-  HostWindowProvider,
+  HostScreenChangeCapability,
+  HostSurfaceCapability,
+  HostWindowAppearanceCapability,
+  HostWindowAttachCapability,
+  HostWindowAttentionCapability,
+  HostWindowContentProtectionCapability,
+  HostWindowFocusCapability,
+  HostWindowFullscreenCapability,
+  HostWindowGeometryCapability,
+  HostWindowHierarchyCapability,
+  HostWindowLifecycleCapability,
+  HostWindowProgressCapability,
+  HostWindowShadowCapability,
+  HostWindowShellCapability,
+  HostWindowSizeConstraintsCapability,
+  HostWindowStateCapability,
+  HostWindowVisibilityCapability,
+  HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
   InputTargetHandle,
@@ -36,17 +52,18 @@ const kResize = Symbol();
 const kVisibility = Symbol();
 
 // Attaches an existing native window without requiring an Application. A false result leaves the
-// window's current lifecycle unchanged; success pins its eventual close to this exact host provider.
+// window's current lifecycle unchanged; success pins its eventual close to this exact lifecycle
+// capability, so a later closeWindow reaches the host that adopted the handle.
 export function attachWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'attach' | 'close'>>>,
+  hostWindowAttach: Readonly<HostWindowAttachCapability>,
+  hostWindowLifecycle: Readonly<HostWindowLifecycleCapability>,
   win: ApplicationWindow,
   handle: NativeWindowHandle,
   ownership: WindowAttachmentOwnership,
 ): boolean {
-  const backend = hostWindow;
-  const attached = backend.attach(win, handle, ownership);
+  const attached = hostWindowAttach.attach(win, handle, ownership);
   if (attached) {
-    _windowBackends.set(win, backend);
+    _windowBackends.set(win, hostWindowLifecycle);
     _terminalWindows.delete(win);
   }
   return attached;
@@ -55,14 +72,16 @@ export function attachWindow(
 // Wires the host's close-request and terminal-close sources to the window's signals. A vetoed
 // request is reported back to the host so it can keep the native window alive. Idempotent.
 export function attachWindowClose(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'subscribeClose'>>>,
+  hostWindowLifecycle: Readonly<
+    HostWindowLifecycleCapability & Required<Pick<HostWindowLifecycleCapability, 'subscribeClose'>>
+  >,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kClose)?.();
   observers.set(
     kClose,
-    hostWindow.subscribeClose(
+    hostWindowLifecycle.subscribeClose(
       () => {
         emitSignal(win.onCloseRequest);
         return win.onCloseRequest.data?.cancelled === true;
@@ -118,14 +137,16 @@ export function attachWindowFullscreen(
 
 // Wires host-originated window movement to the entity and its onMove signal.
 export function attachWindowMove(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'subscribeMove'>>>,
+  hostWindowGeometry: Readonly<
+    HostWindowGeometryCapability & Required<Pick<HostWindowGeometryCapability, 'subscribeMove'>>
+  >,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kMove)?.();
   observers.set(
     kMove,
-    hostWindow.subscribeMove((x, y) => {
+    hostWindowGeometry.subscribeMove((x, y) => {
       if (win.x !== x || win.y !== y) {
         win.x = x;
         win.y = y;
@@ -135,15 +156,20 @@ export function attachWindowMove(
   );
 }
 
+// Orientation is a property of the display, not the window, so this consumes the screen change
+// capability and forwards only the orientation metric of a change event
+// (see host-composition-model.md §6).
 export function attachWindowOrientation(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'subscribeOrientation'>>>,
+  hostScreenChange: Readonly<HostScreenChangeCapability>,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kOrientation)?.();
   observers.set(
     kOrientation,
-    hostWindow.subscribeOrientation(() => emitSignal(win.onOrientationChanged)),
+    hostScreenChange.subscribe((event) => {
+      if (event.changedMetrics?.orientation === true) emitSignal(win.onOrientationChanged);
+    }),
   );
 }
 
@@ -193,7 +219,9 @@ export function attachWindowRenderState(
 }
 
 export function attachWindowResize(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'subscribeResize'>>>,
+  hostWindowGeometry: Readonly<
+    HostWindowGeometryCapability & Required<Pick<HostWindowGeometryCapability, 'subscribeResize'>>
+  >,
   win: ApplicationWindow,
   target: WindowResizeTargetHandle,
 ): void {
@@ -201,7 +229,7 @@ export function attachWindowResize(
   observers.get(kResize)?.();
   observers.set(
     kResize,
-    hostWindow.subscribeResize(target, (width, height, devicePixelRatio) => {
+    hostWindowGeometry.subscribeResize(target, (width, height, devicePixelRatio) => {
       win.width = width;
       win.height = height;
       win.devicePixelRatio = devicePixelRatio;
@@ -211,37 +239,39 @@ export function attachWindowResize(
 }
 
 export function attachWindowVisibility(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'subscribeVisibility'>>>,
+  hostWindowVisibility: Readonly<
+    HostWindowVisibilityCapability & Required<Pick<HostWindowVisibilityCapability, 'subscribeVisibility'>>
+  >,
   win: ApplicationWindow,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kVisibility)?.();
   observers.set(
     kVisibility,
-    hostWindow.subscribeVisibility((visible) => {
+    hostWindowVisibility.subscribeVisibility((visible) => {
       emitSignal(visible ? win.onActivate : win.onDeactivate);
     }),
   );
 }
 
-// Centers the window on its current display through the supplied provider.
+// Centers the window on its current display through the supplied geometry capability.
 export function centerWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'center'>>>,
+  hostWindowGeometry: Readonly<HostWindowGeometryCapability & Required<Pick<HostWindowGeometryCapability, 'center'>>>,
   win: ApplicationWindow,
 ): void {
-  hostWindow.center(win);
+  hostWindowGeometry.center(win);
 }
 
 // Closes the window. First emits onCloseRequest; if a listener vetoes (cancelSignal), the close is
-// aborted and this returns false. Otherwise the origin provider closes the window, onClose fires, and it
-// returns true.
+// aborted and this returns false. Otherwise the pinned lifecycle capability closes the window, onClose
+// fires, and it returns true.
 export function closeWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'close'>>>,
+  hostWindowLifecycle: Readonly<HostWindowLifecycleCapability>,
   win: ApplicationWindow,
 ): boolean {
   if (_terminalWindows.has(win)) return true;
   if (!requestWindowClose(win)) return false;
-  (_windowBackends.get(win) ?? hostWindow).close(win);
+  (_windowBackends.get(win) ?? hostWindowLifecycle).close(win);
   notifyWindowClosed(win);
   return true;
 }
@@ -346,41 +376,40 @@ export async function exitApplicationPointerLock(
   return outcome;
 }
 
-// Briefly flashes the window frame to attract attention. Native hosts may implement it through their
-// HostWindowProvider (for example Electron window.flashFrame(true)).
+// Briefly flashes the window frame to attract attention. Native hosts may implement it through
+// HostWindowAttentionCapability (for example Electron window.flashFrame(true)).
 export function flashWindowFrame(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'flashWindowFrame'>>>,
+  hostWindowAttention: Readonly<
+    HostWindowAttentionCapability & Required<Pick<HostWindowAttentionCapability, 'flashWindowFrame'>>
+  >,
   win: ApplicationWindow,
 ): void {
-  hostWindow.flashWindowFrame(win);
+  hostWindowAttention.flashWindowFrame(win);
 }
 
 // Brings the window to the foreground and marks it focused.
-export function focusWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'focus'>>>,
-  win: ApplicationWindow,
-): void {
+export function focusWindow(hostWindowFocus: Readonly<HostWindowFocusCapability>, win: ApplicationWindow): void {
   win.focused = true;
-  hostWindow.focus(win);
+  hostWindowFocus.focus(win);
 }
 
 // Fills `out` with the host window's current screen bounds and returns it.
 export function getWindowBounds(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'getBounds'>>>,
+  hostWindowGeometry: Readonly<HostWindowGeometryCapability>,
   win: Readonly<ApplicationWindow>,
   out: WindowBounds,
 ): WindowBounds {
-  return hostWindow.getBounds(win as ApplicationWindow, out);
+  return hostWindowGeometry.getBounds(win as ApplicationWindow, out);
 }
 
 // Hides the window without closing it.
 export function hideWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'hide'>>>,
+  hostWindowVisibility: Readonly<HostWindowVisibilityCapability>,
   win: ApplicationWindow,
 ): void {
   if (!win.visible) return;
   win.visible = false;
-  hostWindow.hide(win);
+  hostWindowVisibility.hide(win);
 }
 
 export function initializeApplicationWindow(out: EntityConstruction<ApplicationWindow>): void {
@@ -437,24 +466,18 @@ export async function lockApplicationPointer(
 }
 
 // Maximizes the window. Updates state and emits onMaximize when the state changes.
-export function maximizeWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'maximize'>>>,
-  win: ApplicationWindow,
-): void {
+export function maximizeWindow(hostWindowState: Readonly<HostWindowStateCapability>, win: ApplicationWindow): void {
   if (win.maximized) return;
   win.maximized = true;
-  hostWindow.maximize(win);
+  hostWindowState.maximize(win);
   emitSignal(win.onMaximize);
 }
 
 // Minimizes the window. Updates state and emits onMinimize when the state changes.
-export function minimizeWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'minimize'>>>,
-  win: ApplicationWindow,
-): void {
+export function minimizeWindow(hostWindowState: Readonly<HostWindowStateCapability>, win: ApplicationWindow): void {
   if (win.minimized) return;
   win.minimized = true;
-  hostWindow.minimize(win);
+  hostWindowState.minimize(win);
   emitSignal(win.onMinimize);
 }
 
@@ -474,10 +497,11 @@ export function notifyWindowClosed(win: ApplicationWindow): void {
 }
 
 // Opens (or configures) the window from options, applying each provided field to the entity and
-// delegating to the supplied provider. Returns whether the host opened a window. On web this configures the
-// existing page-window; native hosts create a real OS window.
+// delegating to the supplied lifecycle capability. Returns whether the host opened a window. On web
+// this configures the existing page-window; native hosts create a real OS window.
 export function openWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'close' | 'open'>>>,
+  hostWindowLifecycle: Readonly<HostWindowLifecycleCapability>,
+  hostWindowGeometry: Readonly<HostWindowGeometryCapability>,
   win: ApplicationWindow,
   options: Readonly<WindowOptions> = {},
 ): boolean {
@@ -496,14 +520,13 @@ export function openWindow(
   if (options.minHeight !== undefined) win.minHeight = options.minHeight;
   if (options.maxWidth !== undefined) win.maxWidth = options.maxWidth;
   if (options.maxHeight !== undefined) win.maxHeight = options.maxHeight;
-  const backend = hostWindow;
-  const result = backend.open(win, options);
+  const result = hostWindowLifecycle.open(win, options);
   if (result) {
-    _windowBackends.set(win, backend);
+    _windowBackends.set(win, hostWindowLifecycle);
     _terminalWindows.delete(win);
   }
-  // Apply center after open so the provider has registered the OS window before moving it.
-  if (result && options.center === true) backend.center?.(win);
+  // Apply center after open so the host has registered the OS window before moving it.
+  if (result && options.center === true) hostWindowGeometry.center?.(win);
   return result;
 }
 
@@ -525,11 +548,11 @@ export function requestApplicationFullscreen(
 
 // Requests user attention on the window (taskbar flash / dock bounce); pass false to stop.
 export function requestWindowAttention(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'requestAttention'>>>,
+  hostWindowAttention: Readonly<HostWindowAttentionCapability>,
   win: ApplicationWindow,
   attention: boolean,
 ): void {
-  hostWindow.requestAttention(win, attention);
+  hostWindowAttention.requestAttention(win, attention);
 }
 
 // Emits onCloseRequest and returns whether the close may proceed (false when a listener vetoed by
@@ -540,193 +563,197 @@ export function requestWindowClose(win: ApplicationWindow): boolean {
 }
 
 // Restores the window from a minimized/maximized state. Emits onRestore when state changed.
-export function restoreWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'restore'>>>,
-  win: ApplicationWindow,
-): void {
+export function restoreWindow(hostWindowState: Readonly<HostWindowStateCapability>, win: ApplicationWindow): void {
   if (!win.minimized && !win.maximized) return;
   win.minimized = false;
   win.maximized = false;
-  hostWindow.restore(win);
+  hostWindowState.restore(win);
   emitSignal(win.onRestore);
 }
 
 // Sets whether the window floats above others.
 export function setWindowAlwaysOnTop(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setAlwaysOnTop'>>>,
+  hostWindowZOrder: Readonly<HostWindowZOrderCapability>,
   win: ApplicationWindow,
   alwaysOnTop: boolean,
 ): void {
   win.alwaysOnTop = alwaysOnTop;
-  hostWindow.setAlwaysOnTop(win, alwaysOnTop);
+  hostWindowZOrder.setAlwaysOnTop(win, alwaysOnTop);
 }
 
 // Prevents (or allows) the window contents from being captured in screenshots or screen sharing.
-// Native hosts may implement it through their HostWindowProvider (for example Electron setContentProtection).
+// Native hosts may implement it through HostWindowContentProtectionCapability
+// (for example Electron setContentProtection).
 export function setWindowContentProtection(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setContentProtection'>>>,
+  hostWindowContentProtection: Readonly<HostWindowContentProtectionCapability>,
   win: ApplicationWindow,
   enabled: boolean,
 ): void {
-  hostWindow.setContentProtection(win, enabled);
+  hostWindowContentProtection.setContentProtection(win, enabled);
 }
 
 // Sets fullscreen state. Updates state and emits onFullscreenChanged when the state changes.
 export function setWindowFullscreen(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setFullscreen'>>>,
+  hostWindowFullscreen: Readonly<HostWindowFullscreenCapability>,
   win: ApplicationWindow,
   fullscreen: boolean,
 ): void {
   if (win.fullscreen === fullscreen) return;
   win.fullscreen = fullscreen;
-  hostWindow.setFullscreen(win, fullscreen);
+  hostWindowFullscreen.setFullscreen(win, fullscreen);
   emitSignal(win.onFullscreenChanged);
 }
 
 // Shows or hides the native drop shadow around the window when the host supports it.
 export function setWindowHasShadow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setHasShadow'>>>,
+  hostWindowShadow: Readonly<HostWindowShadowCapability>,
   win: ApplicationWindow,
   hasShadow: boolean,
 ): void {
-  hostWindow.setHasShadow(win, hasShadow);
+  hostWindowShadow.setHasShadow(win, hasShadow);
 }
 
 // Sets the window icon (path/URL). On web this updates the page favicon.
 export function setWindowIcon(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setIcon'>>>,
+  hostWindowAppearance: Readonly<
+    HostWindowAppearanceCapability & Required<Pick<HostWindowAppearanceCapability, 'setIcon'>>
+  >,
   win: ApplicationWindow,
   icon: string,
 ): void {
   win.icon = icon;
-  hostWindow.setIcon(win, icon);
+  hostWindowAppearance.setIcon(win, icon);
 }
 
 // Sets the maximum window size in logical pixels (-1 for unbounded).
 export function setWindowMaximumSize(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setMaximumSize'>>>,
+  hostWindowSizeConstraints: Readonly<HostWindowSizeConstraintsCapability>,
   win: ApplicationWindow,
   width: number,
   height: number,
 ): void {
   win.maxWidth = width;
   win.maxHeight = height;
-  hostWindow.setMaximumSize(win, width, height);
+  hostWindowSizeConstraints.setMaximumSize(win, width, height);
 }
 
 // Shows or hides the window's menu bar when the host supports it.
 export function setWindowMenuBarVisible(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setMenuBarVisible'>>>,
+  hostWindowShell: Readonly<HostWindowShellCapability & Required<Pick<HostWindowShellCapability, 'setMenuBarVisible'>>>,
   win: ApplicationWindow,
   visible: boolean,
 ): void {
-  hostWindow.setMenuBarVisible(win, visible);
+  hostWindowShell.setMenuBarVisible(win, visible);
 }
 
 // Sets the minimum window size in logical pixels.
 export function setWindowMinimumSize(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setMinimumSize'>>>,
+  hostWindowSizeConstraints: Readonly<HostWindowSizeConstraintsCapability>,
   win: ApplicationWindow,
   width: number,
   height: number,
 ): void {
   win.minWidth = width;
   win.minHeight = height;
-  hostWindow.setMinimumSize(win, width, height);
+  hostWindowSizeConstraints.setMinimumSize(win, width, height);
 }
 
 // Sets the window opacity in [0, 1].
 export function setWindowOpacity(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setOpacity'>>>,
+  hostWindowAppearance: Readonly<
+    HostWindowAppearanceCapability & Required<Pick<HostWindowAppearanceCapability, 'setOpacity'>>
+  >,
   win: ApplicationWindow,
   opacity: number,
 ): void {
   win.opacity = opacity;
-  hostWindow.setOpacity(win, opacity);
+  hostWindowAppearance.setOpacity(win, opacity);
 }
 
 // Sets the window's parent (for modal/child relationships); pass null to detach. Native hosts only.
 export function setWindowParent(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setParent'>>>,
+  hostWindowHierarchy: Readonly<HostWindowHierarchyCapability>,
   win: ApplicationWindow,
   parent: ApplicationWindow | null,
 ): void {
-  hostWindow.setParent(win, parent);
+  hostWindowHierarchy.setParent(win, parent);
 }
 
 // Moves the window's top-left to (x, y) in screen coordinates. Updates state and emits onMove.
 export function setWindowPosition(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setPosition'>>>,
+  hostWindowGeometry: Readonly<HostWindowGeometryCapability>,
   win: ApplicationWindow,
   x: number,
   y: number,
 ): void {
   win.x = x;
   win.y = y;
-  hostWindow.setPosition(win, x, y);
+  hostWindowGeometry.setPosition(win, x, y);
   emitSignal(win.onMove);
 }
 
 // Sets the taskbar/dock progress indicator in [0, 1]; a negative value clears it.
 export function setWindowProgress(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setProgress'>>>,
+  hostWindowProgress: Readonly<HostWindowProgressCapability>,
   win: ApplicationWindow,
   progress: number,
 ): void {
-  hostWindow.setProgress(win, progress);
+  hostWindowProgress.setProgress(win, progress);
 }
 
 // Sets whether the user can resize the window.
 export function setWindowResizable(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setResizable'>>>,
+  hostWindowSizeConstraints: Readonly<
+    HostWindowSizeConstraintsCapability & Required<Pick<HostWindowSizeConstraintsCapability, 'setResizable'>>
+  >,
   win: ApplicationWindow,
   resizable: boolean,
 ): void {
   win.resizable = resizable;
-  hostWindow.setResizable(win, resizable);
+  hostWindowSizeConstraints.setResizable(win, resizable);
 }
 
 // Resizes the window to width x height (logical pixels). Updates state and emits onResize.
 export function setWindowSize(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setSize'>>>,
+  hostWindowGeometry: Readonly<HostWindowGeometryCapability>,
   win: ApplicationWindow,
   width: number,
   height: number,
 ): void {
   win.width = width;
   win.height = height;
-  hostWindow.setSize(win, width, height);
+  hostWindowGeometry.setSize(win, width, height);
   emitSignal(win.onResize);
 }
 
 // Sets whether the window is hidden from the taskbar/dock switcher.
 export function setWindowSkipTaskbar(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setSkipTaskbar'>>>,
+  hostWindowShell: Readonly<HostWindowShellCapability & Required<Pick<HostWindowShellCapability, 'setSkipTaskbar'>>>,
   win: ApplicationWindow,
   skip: boolean,
 ): void {
   win.skipTaskbar = skip;
-  hostWindow.setSkipTaskbar(win, skip);
+  hostWindowShell.setSkipTaskbar(win, skip);
 }
 
 // Sets the window title text.
 export function setWindowTitle(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'setTitle'>>>,
+  hostWindowAppearance: Readonly<HostWindowAppearanceCapability>,
   win: ApplicationWindow,
   title: string,
 ): void {
   win.title = title;
-  hostWindow.setTitle(win, title);
+  hostWindowAppearance.setTitle(win, title);
 }
 
 // Shows a hidden window.
 export function showWindow(
-  hostWindow: Readonly<HostWindowProvider & Required<Pick<HostWindowProvider, 'show'>>>,
+  hostWindowVisibility: Readonly<HostWindowVisibilityCapability>,
   win: ApplicationWindow,
 ): void {
   if (win.visible) return;
   win.visible = true;
-  hostWindow.show(win);
+  hostWindowVisibility.show(win);
 }
 
 // Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
@@ -735,7 +762,7 @@ export function showWindow(
 const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, () => void>>();
 
 const _terminalWindows = new WeakSet<ApplicationWindow>();
-const _windowBackends = new WeakMap<ApplicationWindow, Required<Pick<HostWindowProvider, 'close'>>>();
+const _windowBackends = new WeakMap<ApplicationWindow, HostWindowLifecycleCapability>();
 let _pointerLockBackend: HostInputPointerLockCapability | null = null;
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
