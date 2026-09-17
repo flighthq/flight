@@ -3,9 +3,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
 
-// The canvas getContext mock returns this; acquire only has to hand back what the canvas produced.
-const FAKE_GL = { fake: 'gl' } as unknown as WebGL2RenderingContext;
-
 import { webHost } from './webHost';
 import {
   createWebInputTargetHandle,
@@ -26,6 +23,9 @@ afterEach(() => {
   Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: undefined });
   resetWebInputTargetBackendForTest();
 });
+
+// The canvas getContext mock returns this; acquire only has to hand back what the canvas produced.
+const FAKE_GL = { fake: 'gl' } as unknown as WebGL2RenderingContext;
 
 describe('createWebInputTargetHandle', () => {
   it('constructs an opaque Entity bound to the provider', () => {
