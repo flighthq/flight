@@ -102,8 +102,26 @@ describe('tauriHostWindow', () => {
     const { tauri } = fakeTauri();
     const backend = tauriHostWindow(tauri);
 
-    expect(EntityRuntimeKey in backend).toBe(true);
-    expect(Object.keys(backend)).toEqual(
+    // The group is a plain struct of capability slots; each slot is the Entity that carries the hooks.
+    for (const capability of Object.values(backend)) expect(EntityRuntimeKey in capability!).toBe(true);
+    expect(Object.keys(backend).sort()).toEqual([
+      'appearance',
+      'attach',
+      'attention',
+      'contentProtection',
+      'focus',
+      'fullscreen',
+      'geometry',
+      'lifecycle',
+      'shadow',
+      'shell',
+      'sizeConstraints',
+      'state',
+      'visibility',
+      'zOrder',
+    ]);
+    const operations = Object.values(backend).flatMap((capability) => Object.keys(capability ?? {}));
+    expect(operations).toEqual(
       expect.arrayContaining([
         'center',
         'close',
@@ -132,7 +150,7 @@ describe('tauriHostWindow', () => {
       ]),
     );
     for (const falseMember of ['setMenuBarVisible', 'setOpacity', 'setParent', 'setProgress']) {
-      expect(backend, falseMember).not.toHaveProperty(falseMember);
+      expect(operations, falseMember).not.toContain(falseMember);
     }
   });
 
@@ -140,7 +158,9 @@ describe('tauriHostWindow', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
-    expect(backend.open!(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true })).toBe(true);
+    expect(
+      backend.lifecycle!.open(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true }),
+    ).toBe(true);
     expect(methods(state)).toContain('setTitle');
     expect(methods(state)).toContain('setSize');
     expect(methods(state)).toContain('setResizable');
@@ -153,7 +173,7 @@ describe('tauriHostWindow', () => {
     const win = createApplicationWindow();
     let moves = 0;
     connectSignal(win.onMove, () => moves++);
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     state.moved!({ payload: { x: 12, y: 34 } });
     expect(win.x).toBe(12);
     expect(win.y).toBe(34);
@@ -170,14 +190,14 @@ describe('tauriHostWindow', () => {
     const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
     // Not opened yet: nothing routes through.
-    backend.setTitle!(win, 'ignored');
+    backend.appearance!.setTitle(win, 'ignored');
     expect(state.calls).toHaveLength(0);
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     state.calls.length = 0;
-    backend.setTitle!(win, 'New');
-    backend.minimize!(win);
-    backend.setFullscreen!(win, true);
-    backend.requestAttention!(win, true);
+    backend.appearance!.setTitle(win, 'New');
+    backend.state!.minimize(win);
+    backend.fullscreen!.setFullscreen(win, true);
+    backend.attention!.requestAttention(win, true);
     expect(methods(state)).toEqual(['setTitle', 'minimize', 'setFullscreen', 'requestUserAttention']);
   });
 
@@ -189,9 +209,9 @@ describe('tauriHostWindow', () => {
     win.y = 6;
     win.width = 100;
     win.height = 200;
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(backend.getBounds!(win, out)).toBe(out);
+    expect(backend.geometry!.getBounds(win, out)).toBe(out);
     expect(out).toEqual({ x: 5, y: 6, width: 100, height: 200 });
   });
 
@@ -200,9 +220,9 @@ describe('tauriHostWindow', () => {
     const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
 
-    expect(backend.attach?.(win, window, 'host')).toBe(true);
-    expect(backend.attach?.(win, window, 'host')).toBe(true);
-    expect(backend.attach?.(createApplicationWindow(), window, 'host')).toBe(false);
+    expect(backend.attach!.attach(win, window, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, window, 'host')).toBe(true);
+    expect(backend.attach!.attach(createApplicationWindow(), window, 'host')).toBe(false);
     expect(state.subscriptions).toEqual(['moved', 'resized', 'focusChanged', 'closeRequested']);
   });
 
@@ -210,10 +230,10 @@ describe('tauriHostWindow', () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
-    expect(backend.attach?.(win, window, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, window, 'host')).toBe(true);
 
-    backend.close!(win);
-    backend.close!(win);
+    backend.lifecycle!.close(win);
+    backend.lifecycle!.close(win);
     await Promise.resolve();
 
     expect(methods(state)).not.toContain('close');
@@ -224,10 +244,10 @@ describe('tauriHostWindow', () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
     const win = createApplicationWindow();
-    expect(backend.attach?.(win, window, 'flight')).toBe(true);
+    expect(backend.attach!.attach(win, window, 'flight')).toBe(true);
 
-    backend.close!(win);
-    backend.close!(win);
+    backend.lifecycle!.close(win);
+    backend.lifecycle!.close(win);
 
     expect(methods(state).filter((method) => method === 'close')).toHaveLength(1);
   });
@@ -238,7 +258,7 @@ describe('tauriHostWindow', () => {
     const win = createApplicationWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
-    expect(backend.attach?.(win, window, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, window, 'host')).toBe(true);
 
     state.closeRequested!();
     state.closeRequested!();
@@ -252,7 +272,7 @@ describe('tauriHostWindow', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
 
-    expect(openWindow({ window: backend }.window, createApplicationWindow(), { center: true })).toBe(true);
+    expect(openWindow(backend.lifecycle, backend.geometry!, createApplicationWindow(), { center: true })).toBe(true);
 
     expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });
@@ -276,11 +296,11 @@ describe('tauriHostWindow close when the platform close rejects', () => {
       // close path only calls the platform close for a window Flight itself owns. Driving this through
       // `open` exercises a branch that never calls `close()` at all, so the test would pass with the
       // `.catch` deleted — which is exactly what it did before this line was corrected.
-      expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
+      expect(backend.attach!.attach(win, window as never, 'flight')).toBe(true);
 
-      expect(() => backend.close!(win)).not.toThrow();
+      expect(() => backend.lifecycle!.close(win)).not.toThrow();
       // Detached synchronously, so a rejected close cannot strand the window as still attached.
-      expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
+      expect(backend.attach!.attach(win, window as never, 'flight')).toBe(true);
 
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(unhandled).toEqual([]);

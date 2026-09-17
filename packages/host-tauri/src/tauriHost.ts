@@ -1,32 +1,51 @@
 import { createHost } from '@flighthq/host/contract';
-import type { DesktopOsProfile, TauriApi, TauriHost } from '@flighthq/types/contract';
+import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { tauriHostApp } from './tauriApp';
 import { tauriHostClipboard } from './tauriClipboard';
 import { tauriHostDialog } from './tauriDialog';
 import { tauriHostMenu } from './tauriMenu';
 import { tauriHostNotification } from './tauriNotification';
-import { tauriHostSystem } from './tauriPlatform';
+import { tauriHostPlatformGroup } from './tauriPlatform';
 import { tauriHostShell } from './tauriShell';
 import { tauriHostShortcut } from './tauriShortcut';
 import { tauriHostTray } from './tauriTray';
 import {
   tauriHostAccessibility,
+  tauriHostAudio,
+  tauriHostBitmap,
   tauriHostConnectivity,
-  tauriHostGraphics,
+  tauriHostDevice,
+  tauriHostFileSystem,
+  tauriHostFont,
+  tauriHostFullscreen,
+  tauriHostGeolocation,
+  tauriHostGl,
+  tauriHostGlyph,
+  tauriHostHaptics,
+  tauriHostImage,
   tauriHostInput,
   tauriHostIpc,
-  tauriHostMedia,
+  tauriHostLifecycle,
+  tauriHostMediaSession,
   tauriHostMidi,
   tauriHostNet,
+  tauriHostPermissions,
   tauriHostPower,
+  tauriHostPreferences,
   tauriHostProtocol,
   tauriHostScreen,
+  tauriHostSensors,
   tauriHostShare,
-  tauriHostStorage,
-  tauriHostText,
-  tauriHostUi,
+  tauriHostSocket,
+  tauriHostSoftKeyboard,
+  tauriHostStatusBar,
+  tauriHostSurface,
+  tauriHostTextSegment,
+  tauriHostTextShaper,
   tauriHostUpdater,
+  tauriHostVideo,
+  tauriHostWgpu,
 } from './tauriUnsupportedHostGroups';
 import { tauriHostWindow } from './tauriWindow';
 
@@ -36,29 +55,48 @@ export function tauriHost<Profile extends DesktopOsProfile>(tauri: TauriApi, pro
   return createHost({
     accessibility: tauriHostAccessibility(),
     app: tauriHostApp(tauri),
+    audio: tauriHostAudio(),
+    bitmap: tauriHostBitmap(),
     clipboard: tauriHostClipboard(tauri),
     connectivity: tauriHostConnectivity(),
+    device: tauriHostDevice(),
     dialog: tauriHostDialog(tauri),
-    graphics: tauriHostGraphics(),
+    fileSystem: tauriHostFileSystem(),
+    font: tauriHostFont(),
+    fullscreen: tauriHostFullscreen(),
+    geolocation: tauriHostGeolocation(),
+    gl: tauriHostGl(),
+    glyph: tauriHostGlyph(),
+    haptics: tauriHostHaptics(),
+    image: tauriHostImage(),
     input: tauriHostInput(),
     ipc: tauriHostIpc(),
-    media: tauriHostMedia(),
+    lifecycle: tauriHostLifecycle(),
+    mediaSession: tauriHostMediaSession(),
     menu: tauriHostMenu(tauri),
     midi: tauriHostMidi(),
     net: tauriHostNet(),
     notification: tauriHostNotification(tauri),
+    permissions: tauriHostPermissions(),
+    platform: tauriHostPlatformGroup(tauri),
     power: tauriHostPower(),
+    preferences: tauriHostPreferences(),
     protocol: tauriHostProtocol(),
     screen: tauriHostScreen(),
+    sensors: tauriHostSensors(),
     share: tauriHostShare(),
     shell: tauriHostShell(tauri),
     shortcut: tauriHostShortcut(tauri),
-    storage: tauriHostStorage(),
-    system: tauriHostSystem(tauri),
-    text: tauriHostText(),
+    socket: tauriHostSocket(),
+    softKeyboard: tauriHostSoftKeyboard(),
+    statusBar: tauriHostStatusBar(),
+    surface: tauriHostSurface(),
+    textSegment: tauriHostTextSegment(),
+    textShaper: tauriHostTextShaper(),
     tray: tauriHostTray(tauri, profile),
-    ui: tauriHostUi(),
     updater: tauriHostUpdater(),
+    video: tauriHostVideo(),
+    wgpu: tauriHostWgpu(),
     window: tauriHostWindow(tauri),
-  });
+  } as const satisfies Omit<TauriHost<Profile>, typeof EntityRuntimeKey>);
 }

@@ -1,6 +1,6 @@
 import type { PlatformInfo, TauriApi } from '@flighthq/types/contract';
 
-import { tauriHostPlatform, tauriHostSystem } from './tauriPlatform';
+import { tauriHostPlatform, tauriHostPlatformGroup } from './tauriPlatform';
 
 function fakeTauri(platform: string): TauriApi {
   return {
@@ -55,10 +55,10 @@ describe('tauriHostPlatform', () => {
   });
 });
 
-describe('tauriHostSystem', () => {
-  it('constructs exactly the platform group', () => {
-    const group = tauriHostSystem(fakeTauri('linux'));
-    expect(Object.keys(group)).toEqual(['platform']);
-    expect(group.platform.getInfo({} as PlatformInfo).name).toBe('linux');
+describe('tauriHostPlatformGroup', () => {
+  it('constructs exactly the platform info slot', () => {
+    const group = tauriHostPlatformGroup(fakeTauri('linux'));
+    expect(Object.keys(group)).toEqual(['info']);
+    expect(group.info.getInfo({} as PlatformInfo).name).toBe('linux');
   });
 });
