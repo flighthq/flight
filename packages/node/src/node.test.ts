@@ -9,6 +9,7 @@ import {
   createNodeRuntime,
   createNodeSignals,
   defaultNodeRuntimeCanAddChild,
+  initializeNode,
   disposeNode,
   enableNodeSignals,
   getNodeRuntime,
@@ -232,6 +233,18 @@ describe('getNodeSignals', () => {
     const node = createNode(NodeTestKind);
     const signals = enableNodeSignals(node);
     expect(getNodeSignals(node)).toBe(signals);
+  });
+});
+
+describe('initializeNode', () => {
+  it('populates fields on an allocated entity', () => {
+    const out = allocateEntity<Node>();
+    initializeNode(out, NodeTestKind, { name: 'test', enabled: false });
+    const node = finishEntity(out);
+    expect(node.kind).toBe(NodeTestKind);
+    expect(node.name).toBe('test');
+    expect(node.enabled).toBe(false);
+    expect(node.data).toBeNull();
   });
 });
 

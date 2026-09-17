@@ -1,5 +1,5 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  createNode,
   createNodeRuntime,
   getNodeRuntime,
   initAppearanceTrait,
@@ -7,6 +7,7 @@ import {
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
   initClipTrait,
+  initializeNode,
   initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
@@ -32,19 +33,21 @@ export function createNode2D<R extends Node2DRuntime>(
   createData?: Node2DDataFactory,
   createNode2DRuntimeFactory?: Node2DRuntimeFactory<R>,
 ): Node2D {
-  const out = createNode(
+  const out = allocateEntity<Node2D>();
+  initializeNode(
+    out,
     kind,
     obj,
     createData,
     createNode2DRuntimeFactory ?? (createNode2DRuntime as unknown as NodeRuntimeFactory<R>),
-  ) as Node2D;
+  );
   initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   initBlendModeTrait(out, obj);
   initMaterialTrait(out, obj);
   initClipTrait(out, obj);
-  return out;
+  return finishEntity(out);
 }
 
 export function createNode2DRuntime(

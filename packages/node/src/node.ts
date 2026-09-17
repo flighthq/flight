@@ -28,15 +28,9 @@ export function createNode<
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
 ): Node<Traits> & Traits {
-  const runtimeFactory = createNodeRuntimeFactory ?? (createNodeRuntime as unknown as NodeRuntimeFactory<Runtime>);
-  const out = {
-    data: createData !== undefined ? createData(obj?.data as Partial<Data>) : null,
-    name: obj?.name ?? null,
-    kind: nodeKind,
-    [EntityRuntimeKey]: runtimeFactory(),
-  } as Node<Traits> & Traits;
-  out.enabled = obj?.enabled ?? true;
-  return out;
+  const out = allocateEntity<Node<Traits> & Traits>();
+  initializeNode(out, nodeKind, obj, createData, createNodeRuntimeFactory);
+  return finishEntity(out);
 }
 
 export function createNodeRuntime<Traits extends object = NodeTraits>(
@@ -149,6 +143,26 @@ export function getNodeRuntime<Traits extends object = NodeTraits>(
 
 export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals | null {
   return (getEntityRuntime(source) as NodeRuntime<Traits>).nodeSignals;
+}
+
+export function initializeNode<
+  Traits extends object = NodeTraits,
+  Data extends NodeData = NodeData,
+  Runtime extends NodeRuntime<Traits> = NodeRuntime<Traits>,
+>(
+  out: EntityConstruction<Node<Traits> & Traits>,
+  nodeKind: Kind,
+  obj?: Readonly<PartialNode<Node<Traits>>>,
+  createData?: NodeDataFactory<Data>,
+  createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
+): void {
+  const runtimeFactory = createNodeRuntimeFactory ?? (createNodeRuntime as unknown as NodeRuntimeFactory<Runtime>);
+  const node = out as EntityConstruction<Node<Traits>>;
+  (node as { [EntityRuntimeKey]?: unknown })[EntityRuntimeKey] = runtimeFactory();
+  node.data = createData !== undefined ? createData(obj?.data as Partial<Data>) : null;
+  node.name = obj?.name ?? null;
+  node.kind = nodeKind;
+  node.enabled = obj?.enabled ?? true;
 }
 
 export function initializeNodeSignals(out: EntityConstruction<NodeSignals>): void {
