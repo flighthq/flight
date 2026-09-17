@@ -10,7 +10,10 @@ import type {
   HostGlCapability,
   HostSurfaceCapability,
   EntityConstruction,
+  GlContextOptions,
 } from '@flighthq/types/contract';
+
+import { getWebGlContext } from './webGlContext';
 
 interface WebInputTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
@@ -110,11 +113,19 @@ export const webHostInputTarget = (() => {
 
 export const webHostGl = (() => {
   const out = allocateEntity<HostGlCapability>();
+  out.acquire = (target: InputTargetHandle, options?: Readonly<GlContextOptions>) => {
+    const element = getCanvasForTarget(target);
+    // null covers both reasons the slot cannot hand out a context: an unregistered target, and a
+    // canvas the browser refuses WebGL2 on. The caller distinguishes them with its own target record.
+    return element === null ? null : getWebGlContext(element, options);
+  };
+  out.release = (_target: InputTargetHandle) => {
+    // The DOM owns context lifetime: a canvas's WebGL2 context is released with the canvas, so the web
+    // host holds no GPU resource to free. A native host frees one here.
+  };
   out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
-    const element = _inputTargets.get(target);
-    if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
-      return noop;
-    }
+    const element = getCanvasForTarget(target);
+    if (element === null) return noop;
     const onContextLost = (event: Event): void => {
       event.preventDefault();
       onLost();
@@ -132,10 +143,8 @@ export const webHostGl = (() => {
 export const webHostSurface = (() => {
   const out = allocateEntity<HostSurfaceCapability>();
   out.resize = (target: InputTargetHandle, width: number, height: number) => {
-    const element = _inputTargets.get(target);
-    if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
-      return;
-    }
+    const element = getCanvasForTarget(target);
+    if (element === null) return;
     element.width = width;
     element.height = height;
   };
@@ -164,6 +173,15 @@ export function resetWebInputTargetBackendForTest(): void {
 
 let _inputTargets = new WeakMap<InputTargetHandle, HTMLElement>();
 const _inputTargetSubscriptionCleanups = new Set<() => void>();
+
+// The canvas a GL or surface hook addresses, or null when the target is unregistered or is not a
+// canvas. Both of those are the same sentinel to the capability: there is no drawable to operate on.
+function getCanvasForTarget(target: InputTargetHandle): HTMLCanvasElement | null {
+  const element = _inputTargets.get(target);
+  if (element === undefined) return null;
+  if (typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) return null;
+  return element;
+}
 
 function noop(): void {}
 

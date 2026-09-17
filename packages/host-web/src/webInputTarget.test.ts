@@ -1,7 +1,10 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { EntityWithoutRuntime, HostInputPointerLockCapability } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
+
+// The canvas getContext mock returns this; acquire only has to hand back what the canvas produced.
+const FAKE_GL = { fake: 'gl' } as unknown as WebGL2RenderingContext;
 
 import { webHost } from './webHost';
 import {
@@ -65,6 +68,27 @@ describe('resetWebInputTargetBackendForTest', () => {
 });
 
 describe('webHostGl', () => {
+  it('acquires the canvas context the target was registered with', () => {
+    const canvas = document.createElement('canvas');
+    canvas.getContext = vi.fn().mockReturnValue(FAKE_GL) as typeof canvas.getContext;
+
+    expect(webHostGl.acquire(createWebInputTargetHandle(canvas))).toBe(FAKE_GL);
+  });
+
+  it('reports null for a target this host never registered', () => {
+    expect(webHostGl.acquire(finishEntity(allocateEntity<InputTargetHandle>()))).toBeNull();
+  });
+
+  it('reports null for a registered target that is not a canvas', () => {
+    expect(webHostGl.acquire(createWebInputTargetHandle(document.createElement('div')))).toBeNull();
+  });
+
+  it('degrades release to a no-op because the DOM owns context lifetime', () => {
+    const target = createWebInputTargetHandle(document.createElement('canvas'));
+
+    expect(() => webHostGl.release(target)).not.toThrow();
+  });
+
   it('forwards context loss/restoration and removes the exact canvas listeners', () => {
     const canvas = document.createElement('canvas');
     const onLost = vi.fn();

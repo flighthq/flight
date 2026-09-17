@@ -61,7 +61,7 @@ export { webHostDialog } from './webDialogHost';
 export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 export { createWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
-export { createWebGlContext } from './webGlContext';
+export { createWebGlContext, getWebGlContext } from './webGlContext';
 export { createWebGlRenderSurfaceCreator, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostBitmap } from './webBitmapHost';
