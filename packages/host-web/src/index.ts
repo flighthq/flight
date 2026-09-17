@@ -205,3 +205,4 @@ export {
 export { webHostWindow } from './webWindowHost';
 export { createWebWgpuCanvasElement } from './webWgpuCanvasElement';
 export { createWebSocketBackend, webHostSocket } from './webSocket';
+export { webHostSocketGroup } from './webSocketHost';

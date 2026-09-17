@@ -94,7 +94,7 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
     expect(declared.length).toBeGreaterThan(0);
     expect(implemented).toEqual(declared);
     expect(hostWebPublic.webHostVideo).toBe(hostWebContract.webHostVideo);
-    expect(hostWebContract.webHost.media.video).toBe(hostWebContract.webHostVideo);
+    expect(hostWebContract.webHost.video.playback).toBe(hostWebContract.webHostVideo);
   });
 
   it('makes every host-touching portable operation explicitly provider-first', () => {

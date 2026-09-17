@@ -4,5 +4,5 @@ import { webHostMediaSession, webHostMediaSessionAction } from './webMediasessio
 
 export const webHostMediaSessionGroup = {
   action: webHostMediaSessionAction,
-  session: webHostMediaSession,
+  control: webHostMediaSession,
 } satisfies HostMediaSessionCapabilities;
