@@ -42,13 +42,13 @@ declareExpectedImageDescription(
 // encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+canvas.native.style.width = '800px';
+canvas.native.style.height = '600px';
+document.body.appendChild(canvas.native);
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
@@ -135,7 +135,7 @@ function makeAtlasCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = ATLAS_SIZE;
   canvas.height = ATLAS_SIZE;
-  const context = canvas.getContext('2d')!;
+  const context = canvas.native.getContext('2d')!;
   context.fillStyle = 'rgba(224,96,48,0.5)';
   context.fillRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
   return canvas;

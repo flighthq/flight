@@ -63,12 +63,12 @@ declareExpectedImageDescription(
 // itself), then ends with an empty effect list to tone-present the HDR scene straight to the canvas.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+canvas.native.style.width = '800px';
+canvas.native.style.height = '600px';
+document.body.appendChild(canvas.native);
 
 export const state = createGlRenderState(
-  createWebGlContext(canvas, {
+  createWebGlContext(canvas.native, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -197,7 +197,7 @@ function oceanNormalCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.native.getContext('2d')!;
   ctx.fillStyle = '#8080ff';
   ctx.fillRect(0, 0, 64, 64);
   for (let i = 0; i < 24; i++) {
@@ -215,7 +215,7 @@ function cityLightsCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.native.getContext('2d')!;
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, 64, 64);
   ctx.fillStyle = '#ffffff';

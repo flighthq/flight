@@ -22,7 +22,7 @@ import { UnlitMaterialKind } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
-document.body.appendChild(canvas);
+document.body.appendChild(canvas.native);
 
 const registries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({
@@ -34,7 +34,7 @@ const pipeline = createGlPipeline({
   ),
 });
 const state = createGlRenderState(
-  createWebGlContext(canvas, {
+  createWebGlContext(canvas.native, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   pipeline,

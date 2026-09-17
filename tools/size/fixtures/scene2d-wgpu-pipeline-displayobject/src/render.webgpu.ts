@@ -18,14 +18,14 @@ import { createSurface } from '@flighthq/surface';
 const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 if (canvas === null) throw new Error('The WebGPU DisplayObject size control requires a canvas.');
 document.body.style.margin = '0';
-document.body.appendChild(canvas);
+document.body.appendChild(canvas.native);
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({ ...registries });
 const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const acquisition = await createWgpuAcquisition(webWgpuHost, canvas.native);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas.native, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });

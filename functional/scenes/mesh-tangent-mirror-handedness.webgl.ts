@@ -73,12 +73,12 @@ declareExpectedImageDescription(
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+canvas.native.style.width = '800px';
+canvas.native.style.height = '600px';
+document.body.appendChild(canvas.native);
 
 export const state = createGlRenderState(
-  createWebGlContext(canvas, {
+  createWebGlContext(canvas.native, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   }),
   scene3DGlPipeline,
@@ -208,7 +208,7 @@ function createBitangentTiltedNormalMap(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 2;
   canvas.height = 2;
-  const context = canvas.getContext('2d')!;
+  const context = canvas.native.getContext('2d')!;
   // Tilted along the BITANGANT axis only (x ≈ 0, y > 0): the X component is what a mirror along X
   // leaves invariant, so a tilt carrying one would blunt the very difference this scene reads.
   context.fillStyle = 'rgb(128, 180, 255)';
