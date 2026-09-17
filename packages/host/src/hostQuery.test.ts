@@ -365,8 +365,8 @@ describe('getHostSensors', () => {
 });
 
 describe('getHostSocket', () => {
-  it('returns the capability held in host.net.socket', () => {
-    expect(getHostSocket(hostWithSlot('net', 'socket'))).toBe(CAPABILITY);
+  it('returns the capability held in host.socket.connection', () => {
+    expect(getHostSocket(hostWithSlot('socket', 'connection'))).toBe(CAPABILITY);
   });
 
   it('returns null when the slot is empty', () => {
@@ -374,7 +374,7 @@ describe('getHostSocket', () => {
   });
 
   it('returns null when every other covered slot is filled and this one is not', () => {
-    expect(getHostSocket(hostWithEveryCoveredSlotExcept('net', 'socket'))).toBeNull();
+    expect(getHostSocket(hostWithEveryCoveredSlotExcept('socket', 'connection'))).toBeNull();
   });
 });
 
@@ -633,9 +633,9 @@ describe('hasHostSensors', () => {
 });
 
 describe('hasHostSocket', () => {
-  it('is true only when host.net.socket holds a capability', () => {
-    expect(hasHostSocket(hostWithSlot('net', 'socket'))).toBe(true);
-    expect(hasHostSocket(hostWithEveryCoveredSlotExcept('net', 'socket'))).toBe(false);
+  it('is true only when host.socket.connection holds a capability', () => {
+    expect(hasHostSocket(hostWithSlot('socket', 'connection'))).toBe(true);
+    expect(hasHostSocket(hostWithEveryCoveredSlotExcept('socket', 'connection'))).toBe(false);
     expect(hasHostSocket(createHost())).toBe(false);
   });
 });
@@ -717,7 +717,7 @@ const COVERED_SLOTS: readonly (readonly [string, string])[] = [
   ['preferences', 'local'],
   ['screen', 'query'],
   ['sensors', 'query'],
-  ['net', 'socket'],
+  ['socket', 'connection'],
   ['softKeyboard', 'info'],
   ['preferences', 'persistenceQuery'],
   ['textSegment', 'segmenter'],
