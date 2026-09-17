@@ -1,6 +1,7 @@
 import { createRectangle } from '@flighthq/geometry';
 import {
-  createWebGlContext,
+  createWebHostTarget,
+  webHostGl,
   webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webImageSurfaceCreator,
@@ -27,23 +28,28 @@ import {
   renderGlScene2D,
 } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
 
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
 const emptyRegistries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, defaultGlScale9ShapeRenderer),
 });
-const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  pipeline,
-  { pixelRatio: 1, imageSurfaceProvider: webImageSurfaceCreator },
-);
+const state = createGlRenderState(glSurface.context, pipeline, {
+  pixelRatio: 1,
+  imageSurfaceProvider: webImageSurfaceCreator,
+});
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(pipeline);

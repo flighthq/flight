@@ -2,7 +2,7 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
 import { createVector3 } from '@flighthq/geometry';
-import { createWebGlContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
@@ -23,7 +23,7 @@ import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -55,16 +55,16 @@ const canvas = createSurface(webSurfaceCreateCapability, width * scale, height *
 canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
-const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio: scale,
-  },
-);
+
+const hostTarget = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, hostTarget, {
+  antialias: false,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio: scale,
+});
 const target = createGlTextureRenderTarget(state, {
   colorSpace: 'srgb',
   depth: 'depth-stencil',

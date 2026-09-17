@@ -1,4 +1,9 @@
-import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  createWebImageResourceFromCanvas,
+  webHostGl,
+  webSurfaceCreateCapability,
+} from '@flighthq/host-web';
 import {
   scene3DGlPipeline,
   addNodeChild,
@@ -8,10 +13,12 @@ import {
   createDisplayObject,
   createGlRenderState,
   createGlScreenRenderTarget,
+  createGlSurface,
   createHtmlView,
   createQuadBatch,
   createRectangle,
   createSprite,
+  createSurface,
   createTextLabel,
   createTexture,
   createTextureAtlas,
@@ -26,7 +33,6 @@ import {
   registerRenderer,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
-  createSurface,
 } from '@flighthq/sdk';
 
 import { render } from './render';
@@ -39,15 +45,14 @@ const INSTANCE_COUNT = 24;
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
 const producerCanvas = createSurface(webSurfaceCreateCapability, PRODUCER_WIDTH, PRODUCER_HEIGHT);
-const producerState = createGlRenderState(
-  createWebGlContext(producerCanvas, {
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    sceneGraphSyncPolicy: 'requiresInvalidation',
-  },
-);
+const producerTarget = createWebHostTarget(producerCanvas);
+const producerGlSurface = createGlSurface(webHostGl, producerTarget, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (producerGlSurface === null) throw new Error('Failed to acquire WebGL2 context');
+const producerState = createGlRenderState(producerGlSurface.context, scene3DGlPipeline, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+});
 registerGlImageTextureResolver(producerState);
 registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);
 const producerScreenTarget = createGlScreenRenderTarget(producerState.gl);

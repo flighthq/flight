@@ -1,6 +1,11 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
-import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceFromCanvas } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostGl,
+  webSurfaceCreateCapability,
+  createWebImageResourceFromCanvas,
+} from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -16,7 +21,7 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlBitmapTextRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
@@ -25,16 +30,18 @@ const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
 const emptyRegistries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, BitmapTextKind, defaultGlBitmapTextRenderer),
 });
-const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  pipeline,
-  { pixelRatio: 1 },
-);
+const state = createGlRenderState(glSurface.context, pipeline, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(pipeline);

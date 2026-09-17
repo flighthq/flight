@@ -1,4 +1,9 @@
-import { createWebGlContext, webSurfaceCreateCapability, createWebImageResourceFromCanvas } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostGl,
+  webSurfaceCreateCapability,
+  createWebImageResourceFromCanvas,
+} from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -15,7 +20,7 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlParticleEmitter2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
-import { createSurface } from '@flighthq/surface';
+import { createGlSurface, createSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
 import { ParticleEmitter2DKind, RegistryEntryState } from '@flighthq/types';
@@ -23,6 +28,12 @@ import { ParticleEmitter2DKind, RegistryEntryState } from '@flighthq/types';
 const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
+
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 
 const emptyRegistries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({
@@ -33,11 +44,7 @@ const pipeline = createGlPipeline({
     defaultGlParticleEmitter2DRenderer,
   ),
 });
-const state = createGlRenderState(
-  createWebGlContext(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  pipeline,
-  { pixelRatio: 1 },
-);
+const state = createGlRenderState(glSurface.context, pipeline, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = getGlPipelineRegistries(pipeline);

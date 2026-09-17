@@ -1,4 +1,9 @@
-import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostGl,
+  createWebImageResourceFromCanvas,
+  webSurfaceCreateCapability,
+} from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
 // committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
@@ -9,6 +14,7 @@ import { createWebGlContext, createWebImageResourceFromCanvas, webSurfaceCreateC
 //
 import type { Bitmap, Node2D, GlRenderEffectPipeline, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
+  createGlSurface,
   scene3DGlPipeline,
   ParticleEmitter2DKind,
   addNodeChild,
@@ -60,15 +66,15 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(
-  createWebGlContext(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
-  scene3DGlPipeline,
-  {
-    pixelRatio,
-  },
-);
+const target = createWebHostTarget(canvas);
+const glSurface = createGlSurface(webHostGl, target, {
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+});
+if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+
+export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+  pixelRatio,
+});
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
