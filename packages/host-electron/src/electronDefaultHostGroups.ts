@@ -1,40 +1,103 @@
 import type {
   ElectronApi,
   HostAccessibilityCapabilities,
+  HostAudioCapabilities,
+  HostBitmapCapabilities,
   HostConnectivityCapabilities,
-  HostGraphicsCapabilities,
+  HostDeviceCapabilities,
+  HostFileSystemCapabilities,
+  HostFontCapabilities,
+  HostFullscreenCapabilities,
+  HostGeolocationCapabilities,
+  HostGlCapabilities,
+  HostGlyphCapabilities,
+  HostHapticsCapabilities,
+  HostImageCapabilities,
   HostInputCapabilities,
-  HostMediaCapabilities,
+  HostLifecycleCapabilities,
+  HostMediaSessionCapabilities,
   HostMidiCapabilities,
   HostNetCapabilities,
+  HostPermissionsCapabilities,
+  HostSensorsCapabilities,
   HostShareCapabilities,
-  HostTextCapabilities,
-  HostUiCapabilities,
+  HostSocketCapabilities,
+  HostSoftKeyboardCapabilities,
+  HostStatusBarCapabilities,
+  HostSurfaceCapabilities,
+  HostTextSegmentCapabilities,
+  HostTextShaperCapabilities,
+  HostVideoCapabilities,
+  HostWgpuCapabilities,
 } from '@flighthq/types/contract';
 
 // Unsupported groups still have named constructors so the full Electron host has the same explicit
-// 26-group composition boundary as every other canonical Host. Empty means absent, never stubbed.
+// 45-group composition boundary as every other canonical Host. Empty means absent, never stubbed.
 export function electronHostAccessibilityGroup(_electron: ElectronApi): HostAccessibilityCapabilities {
   return {};
 }
 
-export function electronHostConnectivity(_electron: ElectronApi): HostConnectivityCapabilities {
+export function electronHostAudioGroup(_electron: ElectronApi): HostAudioCapabilities {
   return {};
 }
 
-export function electronHostGraphics(_electron: ElectronApi): HostGraphicsCapabilities {
+export function electronHostBitmapGroup(_electron: ElectronApi): HostBitmapCapabilities {
   return {};
 }
 
-export function electronHostInput(_electron: ElectronApi): HostInputCapabilities {
+export function electronHostConnectivityGroup(_electron: ElectronApi): HostConnectivityCapabilities {
   return {};
 }
 
-export function electronHostMedia(_electron: ElectronApi): HostMediaCapabilities {
+export function electronHostDeviceGroup(_electron: ElectronApi): HostDeviceCapabilities {
   return {};
 }
 
-export function electronHostMidi(_electron: ElectronApi): HostMidiCapabilities {
+export function electronHostFileSystemGroup(_electron: ElectronApi): HostFileSystemCapabilities {
+  return {};
+}
+
+export function electronHostFontGroup(_electron: ElectronApi): HostFontCapabilities {
+  return {};
+}
+
+export function electronHostFullscreenGroup(_electron: ElectronApi): HostFullscreenCapabilities {
+  return {};
+}
+
+export function electronHostGeolocationGroup(_electron: ElectronApi): HostGeolocationCapabilities {
+  return {};
+}
+
+export function electronHostGlGroup(_electron: ElectronApi): HostGlCapabilities {
+  return {};
+}
+
+export function electronHostGlyphGroup(_electron: ElectronApi): HostGlyphCapabilities {
+  return {};
+}
+
+export function electronHostHapticsGroup(_electron: ElectronApi): HostHapticsCapabilities {
+  return {};
+}
+
+export function electronHostImageGroup(_electron: ElectronApi): HostImageCapabilities {
+  return {};
+}
+
+export function electronHostInputGroup(_electron: ElectronApi): HostInputCapabilities {
+  return {};
+}
+
+export function electronHostLifecycleGroup(_electron: ElectronApi): HostLifecycleCapabilities {
+  return {};
+}
+
+export function electronHostMediaSessionGroup(_electron: ElectronApi): HostMediaSessionCapabilities {
+  return {};
+}
+
+export function electronHostMidiGroup(_electron: ElectronApi): HostMidiCapabilities {
   return {};
 }
 
@@ -42,14 +105,46 @@ export function electronHostNetGroup(_electron: ElectronApi): HostNetCapabilitie
   return {};
 }
 
-export function electronHostShare(_electron: ElectronApi): HostShareCapabilities {
+export function electronHostPermissionsGroup(_electron: ElectronApi): HostPermissionsCapabilities {
   return {};
 }
 
-export function electronHostText(_electron: ElectronApi): HostTextCapabilities {
+export function electronHostSensorsGroup(_electron: ElectronApi): HostSensorsCapabilities {
   return {};
 }
 
-export function electronHostUi(_electron: ElectronApi): HostUiCapabilities {
+export function electronHostShareGroup(_electron: ElectronApi): HostShareCapabilities {
+  return {};
+}
+
+export function electronHostSocketGroup(_electron: ElectronApi): HostSocketCapabilities {
+  return {};
+}
+
+export function electronHostSoftKeyboardGroup(_electron: ElectronApi): HostSoftKeyboardCapabilities {
+  return {};
+}
+
+export function electronHostStatusBarGroup(_electron: ElectronApi): HostStatusBarCapabilities {
+  return {};
+}
+
+export function electronHostSurfaceGroup(_electron: ElectronApi): HostSurfaceCapabilities {
+  return {};
+}
+
+export function electronHostTextSegmentGroup(_electron: ElectronApi): HostTextSegmentCapabilities {
+  return {};
+}
+
+export function electronHostTextShaperGroup(_electron: ElectronApi): HostTextShaperCapabilities {
+  return {};
+}
+
+export function electronHostVideoGroup(_electron: ElectronApi): HostVideoCapabilities {
+  return {};
+}
+
+export function electronHostWgpuGroup(_electron: ElectronApi): HostWgpuCapabilities {
   return {};
 }

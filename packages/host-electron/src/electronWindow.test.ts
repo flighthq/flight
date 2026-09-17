@@ -7,7 +7,6 @@ import {
   getApplicationWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
-  populateElectronHostWindow,
   resetElectronHostWindowForTest,
 } from './electronWindow';
 
@@ -145,11 +144,30 @@ function fakeElectron(): { electron: ElectronApi; created: FakeBrowserWindow[] }
 beforeEach(() => resetElectronHostWindowForTest());
 
 describe('electronHostWindow', () => {
-  it('adapter-roster axis: publishes every P1 operation without false omissions', () => {
+  it('adapter-roster axis: publishes every window capability and P1 operation without false omissions', () => {
     const { electron } = fakeElectron();
     const backend = electronHostWindow(electron);
 
-    expect(Object.keys(backend)).toEqual(
+    expect(Object.keys(backend).sort()).toEqual([
+      'appearance',
+      'attach',
+      'attention',
+      'contentProtection',
+      'focus',
+      'fullscreen',
+      'geometry',
+      'hierarchy',
+      'lifecycle',
+      'progress',
+      'shadow',
+      'shell',
+      'sizeConstraints',
+      'state',
+      'visibility',
+      'zOrder',
+    ]);
+    const operations = Object.values(backend).flatMap((capability) => Object.keys(capability ?? {}));
+    expect(operations).toEqual(
       expect.arrayContaining([
         'center',
         'close',
@@ -187,10 +205,10 @@ describe('electronHostWindow', () => {
     const { electron, created } = fakeElectron();
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    expect(backend.open!(win, { title: 'Flight', width: 640, height: 480 })).toBe(true);
+    expect(backend.lifecycle!.open(win, { title: 'Flight', width: 640, height: 480 })).toBe(true);
     expect(created).toHaveLength(1);
     expect(created[0].options.title).toBe('Flight');
-    backend.setTitle!(win, 'Renamed');
+    backend.appearance!.setTitle(win, 'Renamed');
     expect(created[0].calls).toContainEqual({ method: 'setTitle', args: ['Renamed'] });
   });
 
@@ -198,10 +216,10 @@ describe('electronHostWindow', () => {
     const { electron, created } = fakeElectron();
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     created[0].bounds = { x: 10, y: 20, width: 300, height: 400 };
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    const result = backend.getBounds!(win, out);
+    const result = backend.geometry!.getBounds(win, out);
     expect(result).toBe(out);
     expect(out).toEqual({ x: 10, y: 20, width: 300, height: 400 });
   });
@@ -215,7 +233,7 @@ describe('electronHostWindow', () => {
     win.width = 70;
     win.height = 80;
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    backend.getBounds!(win, out);
+    backend.geometry!.getBounds(win, out);
     expect(out).toEqual({ x: 5, y: 6, width: 70, height: 80 });
   });
 
@@ -223,7 +241,7 @@ describe('electronHostWindow', () => {
     const { electron, created } = fakeElectron();
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     let emitted = false;
     connectSignal(win.onMinimize, () => {
       emitted = true;
@@ -239,9 +257,9 @@ describe('electronHostWindow', () => {
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
 
-    expect(backend.attach?.(win, native, 'host')).toBe(true);
-    expect(backend.attach?.(win, native, 'host')).toBe(true);
-    expect(backend.attach?.(createApplicationWindow(), native, 'host')).toBe(false);
+    expect(backend.attach!.attach(win, native, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, native, 'host')).toBe(true);
+    expect(backend.attach!.attach(createApplicationWindow(), native, 'host')).toBe(false);
     expect(created).toHaveLength(1);
     expect(getElectronBrowserWindow(win)).toBe(native);
     expect(native.listenerCount('move')).toBe(1);
@@ -252,10 +270,10 @@ describe('electronHostWindow', () => {
     const native = new electron.BrowserWindow({}) as unknown as FakeBrowserWindow;
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    expect(backend.attach?.(win, native, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, native, 'host')).toBe(true);
 
-    backend.close!(win);
-    backend.close!(win);
+    backend.lifecycle!.close(win);
+    backend.lifecycle!.close(win);
 
     expect(native.calls.filter((call) => call.method === 'close')).toHaveLength(0);
     expect(native.listenerCount('move')).toBe(0);
@@ -267,10 +285,10 @@ describe('electronHostWindow', () => {
     const native = new electron.BrowserWindow({}) as unknown as FakeBrowserWindow;
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    expect(backend.attach?.(win, native, 'flight')).toBe(true);
+    expect(backend.attach!.attach(win, native, 'flight')).toBe(true);
 
-    backend.close!(win);
-    backend.close!(win);
+    backend.lifecycle!.close(win);
+    backend.lifecycle!.close(win);
 
     expect(native.calls.filter((call) => call.method === 'close')).toHaveLength(1);
   });
@@ -282,7 +300,7 @@ describe('electronHostWindow', () => {
     const win = createApplicationWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
-    expect(backend.attach?.(win, native, 'host')).toBe(true);
+    expect(backend.attach!.attach(win, native, 'host')).toBe(true);
 
     native.fire('closed');
     native.fire('closed');
@@ -298,7 +316,7 @@ describe('getApplicationWindowForElectronId', () => {
     const { electron, created } = fakeElectron();
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     const id = created[0].id;
     expect(getApplicationWindowForElectronId(id)).toBe(win);
     expect(getApplicationWindowForElectronId(9999)).toBeNull();
@@ -311,7 +329,7 @@ describe('getElectronBrowserWindow', () => {
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
     expect(getElectronBrowserWindow(win)).toBeNull();
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     expect(getElectronBrowserWindow(win)).toBe(created[0]);
   });
 });
@@ -322,23 +340,18 @@ describe('getElectronWindowId', () => {
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
     expect(getElectronWindowId(win)).toBe(-1);
-    backend.open!(win, {});
+    backend.lifecycle!.open(win, {});
     const expectedId = created[0].id;
     expect(getElectronWindowId(win)).toBe(expectedId);
   });
 });
 
-describe('populateElectronHostWindow', () => {
-  it('is the construction initializer of electronHostWindow', () => {
-    expect(typeof populateElectronHostWindow).toBe('function');
-  });
-});
 describe('resetElectronHostWindowForTest', () => {
   it('clears the window identity maps', () => {
     const { electron, created } = fakeElectron();
     const backend = electronHostWindow(electron);
     const win = createApplicationWindow();
-    expect(backend.open!(win, {})).toBe(true);
+    expect(backend.lifecycle!.open(win, {})).toBe(true);
     expect(getElectronBrowserWindow(win)).toBe(created[0]);
 
     resetElectronHostWindowForTest();

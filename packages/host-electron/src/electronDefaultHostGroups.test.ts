@@ -2,15 +2,34 @@ import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
   electronHostAccessibilityGroup,
-  electronHostConnectivity,
-  electronHostGraphics,
-  electronHostInput,
-  electronHostMedia,
-  electronHostMidi,
+  electronHostAudioGroup,
+  electronHostBitmapGroup,
+  electronHostConnectivityGroup,
+  electronHostDeviceGroup,
+  electronHostFileSystemGroup,
+  electronHostFontGroup,
+  electronHostFullscreenGroup,
+  electronHostGeolocationGroup,
+  electronHostGlGroup,
+  electronHostGlyphGroup,
+  electronHostHapticsGroup,
+  electronHostImageGroup,
+  electronHostInputGroup,
+  electronHostLifecycleGroup,
+  electronHostMediaSessionGroup,
+  electronHostMidiGroup,
   electronHostNetGroup,
-  electronHostShare,
-  electronHostText,
-  electronHostUi,
+  electronHostPermissionsGroup,
+  electronHostSensorsGroup,
+  electronHostShareGroup,
+  electronHostSocketGroup,
+  electronHostSoftKeyboardGroup,
+  electronHostStatusBarGroup,
+  electronHostSurfaceGroup,
+  electronHostTextSegmentGroup,
+  electronHostTextShaperGroup,
+  electronHostVideoGroup,
+  electronHostWgpuGroup,
 } from './electronDefaultHostGroups';
 
 const electron = {} as ElectronApi;
@@ -24,23 +43,61 @@ function emptyGroup(factory: () => object): () => void {
 }
 
 const accessibilityGroup = emptyGroup(() => electronHostAccessibilityGroup(electron));
-const connectivityGroup = emptyGroup(() => electronHostConnectivity(electron));
-const graphicsGroup = emptyGroup(() => electronHostGraphics(electron));
-const inputGroup = emptyGroup(() => electronHostInput(electron));
-const mediaGroup = emptyGroup(() => electronHostMedia(electron));
-const midiGroup = emptyGroup(() => electronHostMidi(electron));
+const audioGroup = emptyGroup(() => electronHostAudioGroup(electron));
+const bitmapGroup = emptyGroup(() => electronHostBitmapGroup(electron));
+const connectivityGroup = emptyGroup(() => electronHostConnectivityGroup(electron));
+const deviceGroup = emptyGroup(() => electronHostDeviceGroup(electron));
+const fileSystemGroup = emptyGroup(() => electronHostFileSystemGroup(electron));
+const fontGroup = emptyGroup(() => electronHostFontGroup(electron));
+const fullscreenGroup = emptyGroup(() => electronHostFullscreenGroup(electron));
+const geolocationGroup = emptyGroup(() => electronHostGeolocationGroup(electron));
+const glGroup = emptyGroup(() => electronHostGlGroup(electron));
+const glyphGroup = emptyGroup(() => electronHostGlyphGroup(electron));
+const hapticsGroup = emptyGroup(() => electronHostHapticsGroup(electron));
+const imageGroup = emptyGroup(() => electronHostImageGroup(electron));
+const inputGroup = emptyGroup(() => electronHostInputGroup(electron));
+const lifecycleGroup = emptyGroup(() => electronHostLifecycleGroup(electron));
+const mediaSessionGroup = emptyGroup(() => electronHostMediaSessionGroup(electron));
+const midiGroup = emptyGroup(() => electronHostMidiGroup(electron));
 const netGroup = emptyGroup(() => electronHostNetGroup(electron));
-const shareGroup = emptyGroup(() => electronHostShare(electron));
-const textGroup = emptyGroup(() => electronHostText(electron));
-const uiGroup = emptyGroup(() => electronHostUi(electron));
+const permissionsGroup = emptyGroup(() => electronHostPermissionsGroup(electron));
+const sensorsGroup = emptyGroup(() => electronHostSensorsGroup(electron));
+const shareGroup = emptyGroup(() => electronHostShareGroup(electron));
+const socketGroup = emptyGroup(() => electronHostSocketGroup(electron));
+const softKeyboardGroup = emptyGroup(() => electronHostSoftKeyboardGroup(electron));
+const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
+const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
+const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
+const textShaperGroup = emptyGroup(() => electronHostTextShaperGroup(electron));
+const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
+const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
 
 describe('electronHostAccessibilityGroup', accessibilityGroup);
-describe('electronHostConnectivity', connectivityGroup);
-describe('electronHostGraphics', graphicsGroup);
-describe('electronHostInput', inputGroup);
-describe('electronHostMedia', mediaGroup);
-describe('electronHostMidi', midiGroup);
+describe('electronHostAudioGroup', audioGroup);
+describe('electronHostBitmapGroup', bitmapGroup);
+describe('electronHostConnectivityGroup', connectivityGroup);
+describe('electronHostDeviceGroup', deviceGroup);
+describe('electronHostFileSystemGroup', fileSystemGroup);
+describe('electronHostFontGroup', fontGroup);
+describe('electronHostFullscreenGroup', fullscreenGroup);
+describe('electronHostGeolocationGroup', geolocationGroup);
+describe('electronHostGlGroup', glGroup);
+describe('electronHostGlyphGroup', glyphGroup);
+describe('electronHostHapticsGroup', hapticsGroup);
+describe('electronHostImageGroup', imageGroup);
+describe('electronHostInputGroup', inputGroup);
+describe('electronHostLifecycleGroup', lifecycleGroup);
+describe('electronHostMediaSessionGroup', mediaSessionGroup);
+describe('electronHostMidiGroup', midiGroup);
 describe('electronHostNetGroup', netGroup);
-describe('electronHostShare', shareGroup);
-describe('electronHostText', textGroup);
-describe('electronHostUi', uiGroup);
+describe('electronHostPermissionsGroup', permissionsGroup);
+describe('electronHostSensorsGroup', sensorsGroup);
+describe('electronHostShareGroup', shareGroup);
+describe('electronHostSocketGroup', socketGroup);
+describe('electronHostSoftKeyboardGroup', softKeyboardGroup);
+describe('electronHostStatusBarGroup', statusBarGroup);
+describe('electronHostSurfaceGroup', surfaceGroup);
+describe('electronHostTextSegmentGroup', textSegmentGroup);
+describe('electronHostTextShaperGroup', textShaperGroup);
+describe('electronHostVideoGroup', videoGroup);
+describe('electronHostWgpuGroup', wgpuGroup);

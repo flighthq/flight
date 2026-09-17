@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
+  HostPlatformCapabilities,
   HostPlatformCapability,
-  HostSystemCapabilities,
   PlatformName,
   EntityConstruction,
 } from '@flighthq/types/contract';
@@ -14,8 +14,8 @@ export function electronHostPlatform(electron: ElectronApi): HostPlatformCapabil
   return finishEntity(out);
 }
 
-export function electronHostSystem(electron: ElectronApi): Required<Pick<HostSystemCapabilities, 'platform'>> {
-  return { platform: electronHostPlatform(electron) };
+export function electronHostPlatformGroup(electron: ElectronApi): Required<Pick<HostPlatformCapabilities, 'info'>> {
+  return { info: electronHostPlatform(electron) };
 }
 
 // Maps Flight's HostPlatformCapability onto the Node `process` running the Electron main process, with the

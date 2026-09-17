@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
-  HostStorageCapabilities,
+  HostPreferencesCapabilities,
   HostPreferencesCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
@@ -16,7 +16,10 @@ type StorageRecordResult =
   | { readonly reason: 'ok'; readonly value: StorageRecord }
   | { readonly reason: StorageGetItemFailureReason; readonly value: null };
 
-export function electronHostStorage(electron: ElectronApi, fileName = 'storage.json'): HostPreferencesCapability & Entity {
+export function electronHostStorage(
+  electron: ElectronApi,
+  fileName = 'storage.json',
+): HostPreferencesCapability & Entity {
   const out = allocateEntity<HostPreferencesCapability>();
   populateElectronHostStorage(out, electron, fileName);
   return finishEntity(out);
@@ -25,7 +28,7 @@ export function electronHostStorage(electron: ElectronApi, fileName = 'storage.j
 export function electronHostStorageGroup(
   electron: ElectronApi,
   fileName = 'storage.json',
-): Required<Pick<HostStorageCapabilities, 'local'>> {
+): Required<Pick<HostPreferencesCapabilities, 'local'>> {
   return { local: electronHostStorage(electron, fileName) };
 }
 
