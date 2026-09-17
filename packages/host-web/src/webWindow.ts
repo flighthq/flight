@@ -4,7 +4,7 @@ import type {
   ApplicationWindow,
   EntityConstruction,
   FullscreenTargetHandle,
-  HostFullscreenCapability,
+  HostElementFullscreenCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowFocusCapability,
@@ -264,7 +264,8 @@ let _windowResizeTargets = new WeakMap<WindowResizeTargetHandle, Element>();
 
 // What each web window capability actually supplies, required on the const's type: the optional hook is
 // present here, so a caller reads the operations rather than testing each one for absent-ness.
-type WebFullscreen = HostFullscreenCapability & Required<Pick<HostFullscreenCapability, 'subscribe' | 'unsubscribe'>>;
+type WebFullscreen = HostElementFullscreenCapability &
+  Required<Pick<HostElementFullscreenCapability, 'subscribe' | 'unsubscribe'>>;
 type WebWindowAppearance = HostWindowAppearanceCapability & Required<Pick<HostWindowAppearanceCapability, 'setIcon'>>;
 type WebWindowGeometry = HostWindowGeometryCapability &
   Required<Pick<HostWindowGeometryCapability, 'center' | 'subscribeMove' | 'subscribeResize'>>;

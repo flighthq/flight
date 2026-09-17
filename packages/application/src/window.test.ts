@@ -4,7 +4,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
   FullscreenTargetHandle,
-  HostFullscreenCapability,
+  HostElementFullscreenCapability,
   HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
@@ -137,7 +137,7 @@ type RecordingScreenChangeBackend = HostScreenChangeCapability & {
   emitOrientation(): void;
 };
 
-type RecordingFullscreenBackend = Required<HostFullscreenCapability> & {
+type RecordingFullscreenBackend = Required<HostElementFullscreenCapability> & {
   readonly calls: string[];
   emit(fullscreen: boolean): void;
 };
