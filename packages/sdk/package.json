@@ -96,7 +96,6 @@
     "@flighthq/animation": "*",
     "@flighthq/app": "*",
     "@flighthq/application": "*",
-    "@flighthq/application-gl": "*",
     "@flighthq/assets": "*",
     "@flighthq/audio": "*",
     "@flighthq/binpack": "*",
