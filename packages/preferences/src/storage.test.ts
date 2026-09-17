@@ -106,7 +106,9 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   return finishEntity(out);
 }
 
-function localHost(backend: HostPreferencesCapability): { readonly storage: { readonly local: HostPreferencesCapability } } {
+function localHost(backend: HostPreferencesCapability): {
+  readonly storage: { readonly local: HostPreferencesCapability };
+} {
   return { storage: { local: backend } };
 }
 

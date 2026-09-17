@@ -97,6 +97,9 @@
       "path": "../host"
     },
     {
+      "path": "../preferences"
+    },
+    {
       "path": "../scene2d"
     },
     {
@@ -389,9 +392,6 @@
     },
     {
       "path": "../statusbar"
-    },
-    {
-      "path": "../storage"
     },
     {
       "path": "../swf"

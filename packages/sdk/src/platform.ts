@@ -25,7 +25,7 @@ export * from '@flighthq/shell';
 export * from '@flighthq/shortcut';
 export * from '@flighthq/socket';
 export * from '@flighthq/statusbar';
-export * from '@flighthq/storage';
+export * from '@flighthq/preferences';
 export * from '@flighthq/tray';
 export * from '@flighthq/updater';
 export * from '@flighthq/webcam';
