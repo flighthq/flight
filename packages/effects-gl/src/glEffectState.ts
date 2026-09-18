@@ -23,13 +23,13 @@ import {
 import type {
   Adjustment,
   EntityConstruction,
-  GlRenderEffectPipeline,
-  GlRenderEffectPipelineSkipGuard,
+  GlEffectState,
+  GlEffectStateSkipGuard,
   GlRenderPass,
   GlRenderState,
   GlTextureRenderTarget,
   RenderEffect,
-  RenderEffectPipelineOptions,
+  EffectStateOptions,
   RenderTargetClear,
   RenderTargetColorSpace,
 } from '@flighthq/types/contract';
@@ -43,9 +43,9 @@ import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 // ping-ponging pooled targets, then presents to the canvas. The default render loop imports none of
 // this. The effect list is per-frame data; only the scene target and pool are retained.
 
-export function beginGlRenderEffectPipeline(
+export function beginGlEffectState(
   state: GlRenderState,
-  pipeline: GlRenderEffectPipeline,
+  pipeline: GlEffectState,
   colorSpace: RenderTargetColorSpace = 'srgb',
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
 ): GlRenderPass {
@@ -69,16 +69,13 @@ export function beginGlRenderEffectPipeline(
   return beginGlRenderPass(state, pipeline.sceneTarget, colorSpace === 'linear' ? linearizeClear(clear) : clear);
 }
 
-export function createGlRenderEffectPipeline(
-  _state: GlRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
-): GlRenderEffectPipeline {
-  const out = allocateEntity<GlRenderEffectPipeline>();
-  initializeGlRenderEffectPipeline(out, _state, options);
+export function createGlEffectState(_state: GlRenderState, options: Readonly<EffectStateOptions> = {}): GlEffectState {
+  const out = allocateEntity<GlEffectState>();
+  initializeGlEffectState(out, _state, options);
   return finishEntity(out);
 }
 
-export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
+export function destroyGlEffectState(state: GlRenderState, pipeline: GlEffectState): void {
   if (pipeline.sceneTarget) {
     destroyGlTextureRenderTarget(pipeline.sceneTarget);
     pipeline.sceneTarget = null;
@@ -93,9 +90,9 @@ export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: Gl
   pipeline.lutCache.lut = null;
 }
 
-export function endGlRenderEffectPipeline(
+export function endGlEffectState(
   pass: GlRenderPass,
-  pipeline: GlRenderEffectPipeline,
+  pipeline: GlEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const state = pass.state;
@@ -150,7 +147,7 @@ export function endGlRenderEffectPipeline(
     }
     const runner = getGlRenderEffectRunner(state, operation.kind);
     if (runner === null) {
-      reportGlRenderEffectPipelineSkip(state, operation.kind);
+      reportGlEffectStateSkip(state, operation.kind);
       continue;
     }
     flushAdjustments();
@@ -179,10 +176,10 @@ export function endGlRenderEffectPipeline(
   if (scratchB !== null) releaseGlTextureRenderTarget(pipeline.pool, scratchB);
 }
 
-export function initializeGlRenderEffectPipeline(
-  out: EntityConstruction<GlRenderEffectPipeline>,
+export function initializeGlEffectState(
+  out: EntityConstruction<GlEffectState>,
   _state: GlRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
+  options: Readonly<EffectStateOptions> = {},
 ): void {
   out.options = { ...options };
   out.sceneTarget = null;
@@ -197,19 +194,16 @@ export function initializeGlRenderEffectPipeline(
 // The diagnostics seam. Core stays message-free; enableGlRenderEffectGuards installs the reporter that
 // turns a dropped effect into a caller-facing warning. Mirrors setGlRenderEffectApplicationGuard, which
 // covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
-export function setGlRenderEffectPipelineSkipGuard(
-  state: GlRenderState,
-  guard: GlRenderEffectPipelineSkipGuard | null,
-): void {
+export function setGlEffectStateSkipGuard(state: GlRenderState, guard: GlEffectStateSkipGuard | null): void {
   if (guard === null) _skipGuards.delete(state);
   else _skipGuards.set(state, guard);
 }
 
-export function setGlRenderEffectVelocityTexture(pipeline: GlRenderEffectPipeline, texture: WebGLTexture | null): void {
+export function setGlRenderEffectVelocityTexture(pipeline: GlEffectState, texture: WebGLTexture | null): void {
   pipeline.velocityTexture = texture;
 }
 
-function reportGlRenderEffectPipelineSkip(state: GlRenderState, kind: string): void {
+function reportGlEffectStateSkip(state: GlRenderState, kind: string): void {
   _skipGuards.get(state)?.(state, kind);
 }
 
@@ -231,4 +225,4 @@ function linearizeClear(clear: Readonly<RenderTargetClear>): RenderTargetClear {
   return out;
 }
 
-const _skipGuards = new WeakMap<GlRenderState, GlRenderEffectPipelineSkipGuard>();
+const _skipGuards = new WeakMap<GlRenderState, GlEffectStateSkipGuard>();

@@ -3,18 +3,18 @@ import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2
 import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
   acquireCanvasRenderTarget,
-  beginCanvasRenderEffectPipeline,
-  createCanvasRenderEffectPipeline,
+  beginCanvasEffectState,
+  createCanvasEffectState,
   createCanvasTextureRenderTargetPool,
-  destroyCanvasRenderEffectPipeline,
-  endCanvasRenderEffectPipeline,
-  initializeCanvasRenderEffectPipeline,
+  destroyCanvasEffectState,
+  endCanvasEffectState,
+  initializeCanvasEffectState,
   initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasRenderEffectPipeline';
+} from './canvasEffectState';
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 describe('acquireCanvasRenderTarget', () => {
@@ -23,15 +23,15 @@ describe('acquireCanvasRenderTarget', () => {
   });
 });
 
-describe('beginCanvasRenderEffectPipeline', () => {
+describe('beginCanvasEffectState', () => {
   it('is a function', () => {
-    expect(typeof beginCanvasRenderEffectPipeline).toBe('function');
+    expect(typeof beginCanvasEffectState).toBe('function');
   });
 });
 
-describe('createCanvasRenderEffectPipeline', () => {
+describe('createCanvasEffectState', () => {
   it('is a function', () => {
-    expect(typeof createCanvasRenderEffectPipeline).toBe('function');
+    expect(typeof createCanvasEffectState).toBe('function');
   });
 });
 
@@ -47,15 +47,15 @@ describe('createCanvasTextureRenderTargetPool', () => {
   });
 });
 
-describe('destroyCanvasRenderEffectPipeline', () => {
+describe('destroyCanvasEffectState', () => {
   it('is a function', () => {
-    expect(typeof destroyCanvasRenderEffectPipeline).toBe('function');
+    expect(typeof destroyCanvasEffectState).toBe('function');
   });
 });
 
-describe('endCanvasRenderEffectPipeline', () => {
+describe('endCanvasEffectState', () => {
   it('is a function', () => {
-    expect(typeof endCanvasRenderEffectPipeline).toBe('function');
+    expect(typeof endCanvasEffectState).toBe('function');
   });
 
   // Ending the scene pass restores whatever was installed before it, which is nothing when the chain ran
@@ -66,14 +66,14 @@ describe('endCanvasRenderEffectPipeline', () => {
     canvas.width = 4;
     canvas.height = 4;
     const state = createCanvasRenderState(canvas);
-    const pipeline = createCanvasRenderEffectPipeline(state);
+    const pipeline = createCanvasEffectState(state);
     const screenPass = getCanvasActiveRenderPass(state)!;
     // Closing the screen pass before the chain opens leaves the scene pass alone on the stack, so ending
-    // it inside endCanvasRenderEffectPipeline leaves nothing to present into.
+    // it inside endCanvasEffectState leaves nothing to present into.
     endCanvasRenderPass(screenPass);
-    const scenePass = beginCanvasRenderEffectPipeline(screenPass, pipeline);
+    const scenePass = beginCanvasEffectState(screenPass, pipeline);
 
-    expect(() => endCanvasRenderEffectPipeline(scenePass, pipeline, [])).toThrow(/no enclosing pass/u);
+    expect(() => endCanvasEffectState(scenePass, pipeline, [])).toThrow(/no enclosing pass/u);
   });
 
   it('writes an unregistered effect destination before chaining and presenting it', () => {
@@ -81,8 +81,8 @@ describe('endCanvasRenderEffectPipeline', () => {
     canvas.width = 4;
     canvas.height = 4;
     const state = createCanvasRenderState(canvas);
-    const pipeline = createCanvasRenderEffectPipeline(state);
-    const scenePass = beginCanvasRenderEffectPipeline(getCanvasActiveRenderPass(state)!, pipeline);
+    const pipeline = createCanvasEffectState(state);
+    const scenePass = beginCanvasEffectState(getCanvasActiveRenderPass(state)!, pipeline);
     const scene = pipeline.sceneTarget!;
     scene.context.fillStyle = '#ff0000';
     scene.context.fillRect(0, 0, 4, 4);
@@ -92,7 +92,7 @@ describe('endCanvasRenderEffectPipeline', () => {
     });
     registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
 
-    endCanvasRenderEffectPipeline(scenePass, pipeline, [
+    endCanvasEffectState(scenePass, pipeline, [
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'UnregisteredEffect';
@@ -118,9 +118,9 @@ describe('endCanvasRenderEffectPipeline', () => {
   });
 });
 
-describe('initializeCanvasRenderEffectPipeline', () => {
-  it('is the construction initializer of createCanvasRenderEffectPipeline', () => {
-    expect(typeof initializeCanvasRenderEffectPipeline).toBe('function');
+describe('initializeCanvasEffectState', () => {
+  it('is the construction initializer of createCanvasEffectState', () => {
+    expect(typeof initializeCanvasEffectState).toBe('function');
   });
 });
 describe('initializeCanvasRenderTargetPool', () => {

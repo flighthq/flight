@@ -16,7 +16,7 @@ import {
 } from '@flighthq/scene2d-canvas/contract';
 import type {
   Adjustment,
-  CanvasRenderEffectPipeline,
+  CanvasEffectState,
   CanvasRenderPass,
   CanvasRenderState,
   CanvasRenderSurfaceCreator,
@@ -24,7 +24,7 @@ import type {
   CanvasRenderTargetPool,
   EntityConstruction,
   RenderEffect,
-  RenderEffectPipelineOptions,
+  EffectStateOptions,
   RenderTargetClear,
 } from '@flighthq/types/contract';
 
@@ -59,9 +59,9 @@ export function acquireCanvasRenderTarget(
 // `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
 // value, not a property the render state carries around. Returns the pass the scene draws into; the
 // enclosing pass — the screen, ordinarily — is what the finished chain composites back onto.
-export function beginCanvasRenderEffectPipeline(
+export function beginCanvasEffectState(
   pass: CanvasRenderPass,
-  pipeline: CanvasRenderEffectPipeline,
+  pipeline: CanvasEffectState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0] },
 ): CanvasRenderPass {
   const state = pass.state;
@@ -75,12 +75,12 @@ export function beginCanvasRenderEffectPipeline(
   return beginCanvasRenderPass(state, pipeline.sceneTarget, clear);
 }
 
-export function createCanvasRenderEffectPipeline(
+export function createCanvasEffectState(
   state: CanvasRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
-): CanvasRenderEffectPipeline {
-  const out = allocateEntity<CanvasRenderEffectPipeline>();
-  initializeCanvasRenderEffectPipeline(out, state, options);
+  options: Readonly<EffectStateOptions> = {},
+): CanvasEffectState {
+  const out = allocateEntity<CanvasEffectState>();
+  initializeCanvasEffectState(out, state, options);
   return finishEntity(out);
 }
 
@@ -92,10 +92,7 @@ export function createCanvasTextureRenderTargetPool(
   return finishEntity(out);
 }
 
-export function destroyCanvasRenderEffectPipeline(
-  _state: CanvasRenderState,
-  pipeline: CanvasRenderEffectPipeline,
-): void {
+export function destroyCanvasEffectState(_state: CanvasRenderState, pipeline: CanvasEffectState): void {
   // Canvas elements are plain GC-managed memory with no GPU handles to free; drop references so the
   // pool and scene canvas become eligible for collection.
   pipeline.sceneTarget = null;
@@ -105,9 +102,9 @@ export function destroyCanvasRenderEffectPipeline(
   pipeline.lutCache.lut = null;
 }
 
-export function endCanvasRenderEffectPipeline(
+export function endCanvasEffectState(
   scenePass: CanvasRenderPass,
-  pipeline: CanvasRenderEffectPipeline,
+  pipeline: CanvasEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const state = scenePass.state;
@@ -173,10 +170,10 @@ export function endCanvasRenderEffectPipeline(
   if (scratchB !== null) releaseCanvasRenderTarget(pool, scratchB);
 }
 
-export function initializeCanvasRenderEffectPipeline(
-  out: EntityConstruction<CanvasRenderEffectPipeline>,
+export function initializeCanvasEffectState(
+  out: EntityConstruction<CanvasEffectState>,
   state: CanvasRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
+  options: Readonly<EffectStateOptions> = {},
 ): void {
   out.options = { ...options };
   out.sceneTarget = null;
@@ -209,7 +206,7 @@ export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: 
 function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
   const pass = getCanvasActiveRenderPass(state);
   if (pass === null) {
-    throw new Error('endCanvasRenderEffectPipeline: no enclosing pass is open to present the result into');
+    throw new Error('endCanvasEffectState: no enclosing pass is open to present the result into');
   }
   const context = pass.context;
   context.save();

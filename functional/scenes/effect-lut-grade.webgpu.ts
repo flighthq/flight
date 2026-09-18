@@ -12,16 +12,16 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   bakeColorLut,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createDisplayObject,
   createLookupTableGradeAdjustment,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -77,7 +77,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -86,11 +86,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [
-    createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 }),
-  ]);
+  endWgpuEffectState(scenePass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
   endWgpuRenderPass(pass);
 }
 

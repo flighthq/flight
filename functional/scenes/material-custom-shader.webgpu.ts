@@ -10,7 +10,7 @@ import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createCamera3D,
   createCustomShaderMaterial,
@@ -19,10 +19,10 @@ import {
   createScene3DLights,
   createSphereMeshGeometry,
   createVector3,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
@@ -121,7 +121,7 @@ struct VertexOutput {
 `,
 );
 
-const pipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline = createWgpuEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -135,10 +135,10 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   // Custom mesh shaders produce the same linear scene color as built-in 3D materials. Declare that
   // before the pass opens so its packed sRGB background is decoded before the linear present encodes it.
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

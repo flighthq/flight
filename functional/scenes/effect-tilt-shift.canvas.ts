@@ -5,10 +5,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginCanvasRenderEffectPipeline,
+  beginCanvasEffectState,
   beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderEffectPipeline,
+  createCanvasEffectState,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
@@ -18,7 +18,7 @@ import {
   createTiltShiftEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  endCanvasRenderEffectPipeline,
+  endCanvasEffectState,
   endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -68,7 +68,7 @@ registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasTiltShiftEffect(state);
 
-const pipeline = createCanvasRenderEffectPipeline(state);
+const pipeline = createCanvasEffectState(state);
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -83,9 +83,9 @@ const TILT_WIDTH = 0.25;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginCanvasRenderPass(state, screen, screenClear);
-  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginCanvasEffectState(pass, pipeline, screenClear);
   renderCanvasScene2D(scenePass, root);
-  endCanvasRenderEffectPipeline(scenePass, pipeline, [
+  endCanvasEffectState(scenePass, pipeline, [
     createTiltShiftEffect({ center: TILT_CENTER, width: TILT_WIDTH, blur: 6 }),
   ]);
   endCanvasRenderPass(pass);

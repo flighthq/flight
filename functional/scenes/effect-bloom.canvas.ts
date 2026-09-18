@@ -5,11 +5,11 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginCanvasRenderEffectPipeline,
+  beginCanvasEffectState,
   beginCanvasRenderPass,
   createBloomEffect,
   createCanvasElement,
-  createCanvasRenderEffectPipeline,
+  createCanvasEffectState,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
@@ -18,7 +18,7 @@ import {
   createShape,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  endCanvasRenderEffectPipeline,
+  endCanvasEffectState,
   endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -80,7 +80,7 @@ registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasBloomEffect(state);
 
-const pipeline = createCanvasRenderEffectPipeline(state);
+const pipeline = createCanvasEffectState(state);
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -89,9 +89,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginCanvasRenderPass(state, screen, screenClear);
-  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginCanvasEffectState(pass, pipeline, screenClear);
   renderCanvasScene2D(scenePass, root);
-  endCanvasRenderEffectPipeline(scenePass, pipeline, [createBloomEffect({ threshold: 0.6, intensity: 1.4 })]);
+  endCanvasEffectState(scenePass, pipeline, [createBloomEffect({ threshold: 0.6, intensity: 1.4 })]);
   endCanvasRenderPass(pass);
 }
 

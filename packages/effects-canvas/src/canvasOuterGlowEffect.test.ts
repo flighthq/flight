@@ -1,13 +1,13 @@
 import { createOuterGlowEffect } from '@flighthq/effects/contract';
 
 import * as canvasEffectCompositing from './canvasEffectCompositing';
+import * as canvasEffectState from './canvasEffectState';
 import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
 import {
   applyOuterGlowEffectToCanvas,
   defaultCanvasOuterGlowEffectRunner,
   registerCanvasOuterGlowEffect,
 } from './canvasOuterGlowEffect';
-import * as canvasRenderEffectPipeline from './canvasRenderEffectPipeline';
 import * as canvasSourceModeCompositing from './canvasSourceModeCompositing';
 
 let nextTargetId = 0;
@@ -17,7 +17,7 @@ beforeEach(() => {
 
   vi.spyOn(canvasEffectCompositing, 'drawCanvasEffectPass').mockImplementation((() => {}) as never);
 
-  vi.spyOn(canvasRenderEffectPipeline, 'acquireCanvasRenderTarget').mockImplementation(((
+  vi.spyOn(canvasEffectState, 'acquireCanvasRenderTarget').mockImplementation(((
     _pool: never,
     width: number,
     height: number,
@@ -28,11 +28,11 @@ beforeEach(() => {
     width,
     height,
   })) as never);
-  vi.spyOn(canvasRenderEffectPipeline, 'createCanvasTextureRenderTargetPool').mockImplementation((() => ({
+  vi.spyOn(canvasEffectState, 'createCanvasTextureRenderTargetPool').mockImplementation((() => ({
     free: [],
     inUse: [],
   })) as never);
-  vi.spyOn(canvasRenderEffectPipeline, 'releaseCanvasRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(canvasEffectState, 'releaseCanvasRenderTarget').mockImplementation((() => {}) as never);
 
   vi.spyOn(canvasSourceModeCompositing, 'clearCanvasTarget').mockImplementation((() => {}) as never);
   vi.spyOn(canvasSourceModeCompositing, 'compositeCanvasImage').mockImplementation((() => {}) as never);

@@ -23,11 +23,7 @@ import {
   disableWgpuRenderEffectGuards,
   enableWgpuRenderEffectGuards,
 } from './enableWgpuRenderEffectGuards';
-import {
-  beginWgpuRenderEffectPipeline,
-  createWgpuRenderEffectPipeline,
-  endWgpuRenderEffectPipeline,
-} from './wgpuRenderEffectPipeline';
+import { beginWgpuEffectState, createWgpuEffectState, endWgpuEffectState } from './wgpuEffectState';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 import { applyWgpuRenderEffectsToRenderTexture } from './wgpuRenderTextureEffect';
 
@@ -100,7 +96,7 @@ describe('enableWgpuRenderEffectGuards', () => {
   it('WARNS that a pipeline pass DROPPED an effect kind with no runner, once per kind', async () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const chain = [
       (() => {
         const out = allocateEntity<any>();
@@ -111,7 +107,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
     const entries = captureLog(() => {
       const screenPass = beginWgpuScreenRenderPassForTest(state);
-      endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, chain);
+      endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, chain);
       endWgpuRenderPass(screenPass);
     });
 
@@ -123,7 +119,7 @@ describe('enableWgpuRenderEffectGuards', () => {
     // and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
       const screenPass = beginWgpuScreenRenderPassForTest(state);
-      endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, chain);
+      endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, chain);
       endWgpuRenderPass(screenPass);
     });
 
@@ -134,10 +130,10 @@ describe('enableWgpuRenderEffectGuards', () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
 
-    let pipeline = createWgpuRenderEffectPipeline(state);
+    let pipeline = createWgpuEffectState(state);
     const entries = captureLog(() => {
-      pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
-      createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
+      pipeline = createWgpuEffectState(state, { sampleCount: 8 });
+      createWgpuEffectState(state, { sampleCount: 8 });
     });
 
     expect(pipeline.options.sampleCount).toBe(4);
@@ -154,8 +150,8 @@ describe('enableWgpuRenderEffectGuards', () => {
     enableWgpuRenderEffectGuards(state);
 
     const entries = captureLog(() => {
-      expect(createWgpuRenderEffectPipeline(state, { sampleCount: 1 }).options.sampleCount).toBe(1);
-      expect(createWgpuRenderEffectPipeline(state, { sampleCount: 4 }).options.sampleCount).toBe(4);
+      expect(createWgpuEffectState(state, { sampleCount: 1 }).options.sampleCount).toBe(1);
+      expect(createWgpuEffectState(state, { sampleCount: 4 }).options.sampleCount).toBe(4);
     });
 
     expect(entries).toHaveLength(0);

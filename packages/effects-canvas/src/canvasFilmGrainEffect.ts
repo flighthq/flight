@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
+import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Film grain (REAL): draw the scene, then overlay a tiled noise pattern at `intensity` via the

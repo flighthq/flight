@@ -105,14 +105,14 @@ export type GlCustomShaderSourceGuard = (
 // Observed when a pipeline pass drops an effect because its kind has no registered runner. The kind is
 // the whole observation: the effect is skipped silently, produces no draw and no error, and nothing
 // downstream can tell a skipped effect from one that ran and had no visible result.
-export type GlRenderEffectPipelineSkipGuard = (state: GlRenderState, kind: string) => void;
+export type GlEffectStateSkipGuard = (state: GlRenderState, kind: string) => void;
 
 export type GlRenderEffectApplicationGuard = (
   state: GlRenderState,
   explanation: Readonly<GlRenderEffectApplicationExplanation>,
 ) => void;
 
-export interface RenderEffectPipelineOptions {
+export interface EffectStateOptions {
   // Depth attachment for depth-dependent effects (SSAO, DoF, fog). Default 'none'.
   depth?: RenderTargetDepth;
   // 'rgba16f' gives bloom/tone-mapping HDR headroom. Default 'rgba8'.
@@ -123,14 +123,14 @@ export interface RenderEffectPipelineOptions {
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
 // into and the intermediate-target pool. The per-frame effect list is data passed to
-// endGlRenderEffectPipeline, not retained here.
-export interface GlRenderEffectPipeline extends Entity {
-  readonly options: Readonly<RenderEffectPipelineOptions>;
+// endGlEffectState, not retained here.
+export interface GlEffectState extends Entity {
+  readonly options: Readonly<EffectStateOptions>;
   sceneTarget: GlTextureRenderTarget | null;
   readonly pool: GlTextureRenderTargetPool;
   // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
   // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
-  // owns a GPU texture destroyed by destroyGlRenderEffectPipeline.
+  // owns a GPU texture destroyed by destroyGlEffectState.
   readonly lutCache: ColorLutCache;
   readonly lutTexture: GlColorLutTextureCache;
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion

@@ -1,4 +1,4 @@
-import type { CanvasRenderTargetPool } from './CanvasRenderEffectPipeline';
+import type { CanvasRenderTargetPool } from './CanvasEffectState';
 import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { Entity } from './Entity';

@@ -10,7 +10,7 @@ import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scen
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createAmbientLight,
   createBlinnPhongMaterial,
@@ -22,10 +22,10 @@ import {
   createScene3DLights,
   createSpotLight,
   createVector3,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
@@ -85,7 +85,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x08 / 0xff, 0x0a / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
-const pipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline = createWgpuEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
@@ -157,11 +157,11 @@ const lights = createScene3DLights({
 });
 
 const pass = beginWgpuRenderPass(state, screen, screenClear);
-const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareWgpuScene3DForwardLights(state, renderList, lights);
 drawWgpuScene3D(scenePass, scene, camera, lights, forwardLights);
-endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+endWgpuEffectState(scenePass, pipeline, []);
 endWgpuRenderPass(pass);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all

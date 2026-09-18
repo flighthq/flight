@@ -7,13 +7,13 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { Bitmap, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   configureDirectionalShadowCamera3D,
   copyQuaternion,
   createAabb,
@@ -21,7 +21,7 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
@@ -32,7 +32,7 @@ import {
   createQuaternion,
   createSkeleton3D,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   getNode3DWorldBounds,
   invalidateNodeLocalTransform,
@@ -75,7 +75,7 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
@@ -174,12 +174,12 @@ configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 drawGlScene3D(pass, scene, camera, lights);
-endGlRenderEffectPipeline(pass, pipeline, []);
+endGlEffectState(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const lit = getBitmapPixelLuminance(bitmap, Math.floor(bitmap.width * 0.2), Math.floor(bitmap.height * 0.8));

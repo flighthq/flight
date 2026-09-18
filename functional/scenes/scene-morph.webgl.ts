@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -16,7 +16,7 @@ import {
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
@@ -24,8 +24,8 @@ import {
   createScene3D,
   createUnlitMaterial,
   createVector3,
-  beginGlRenderEffectPipeline,
-  endGlRenderEffectPipeline,
+  beginGlEffectState,
+  endGlEffectState,
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DMorph,
@@ -72,7 +72,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -85,7 +85,7 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
@@ -93,7 +93,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   prepareScene3DMorph(scene);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 const logicalWidth = width / scale;

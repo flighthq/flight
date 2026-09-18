@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -13,14 +13,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
   createDropShadowEffect,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlDropShadowEffect,
@@ -68,7 +68,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlDropShadowEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
 });
 
@@ -84,9 +84,9 @@ export function render(root: Node2D): void {
   // The background is drawn OUTSIDE the effect pipeline on purpose. A drop shadow works on the source
   // SILHOUETTE, and drawing an opaque background into the pipeline first makes the silhouette the whole
   // frame — the offset shadow then lands underneath opaque pixels and nothing is visible anywhere.
-  const pass = beginGlRenderEffectPipeline(state, pipeline);
+  const pass = beginGlEffectState(state, pipeline);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [
+  endGlEffectState(pass, pipeline, [
     createDropShadowEffect({
       angle: SHADOW_ANGLE,
       blurX: 8,

@@ -185,7 +185,7 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, screen: Wgp
   enableWgpuScreenRenderTargetCapture(screen);
   // Every functional WGPU scene passes through here, INCLUDING the ~100 that build their own render
   // state instead of going through the harness — which is where the sampleCount requests live. Without
-  // this, `createWgpuRenderEffectPipeline` downgrades a requested sampleCount of 4 to 1 in silence, and
+  // this, `createWgpuEffectState` downgrades a requested sampleCount of 4 to 1 in silence, and
   // a capture of a scene that asked for MSAA is indistinguishable from one that got it.
   enableWgpuRenderEffectGuards(state);
   registerFunctionalTarget({
