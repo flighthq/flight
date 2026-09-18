@@ -6,15 +6,15 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
-  beginGlRenderEffectPipeline,
-  createGlRenderEffectPipeline,
+  beginGlEffectState,
+  createGlEffectState,
   createGlRenderState,
   enableFlightDiagnostics,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   prepareScene3DRender,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -37,7 +37,7 @@ const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 enableFlightDiagnostics(state);
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -51,12 +51,12 @@ export const supportsVertexColor0 = true;
 const screenClear = { color: [0x07 / 0xff, 0x0a / 0xff, 0x11 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }

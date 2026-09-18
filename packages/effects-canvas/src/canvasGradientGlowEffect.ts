@@ -7,12 +7,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasRenderEffectPipeline';
+} from './canvasEffectState';
+import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing';
 

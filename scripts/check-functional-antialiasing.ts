@@ -303,7 +303,7 @@ function getEffectivePolicy(
     // made it allocate a 2x-per-axis supersampled target instead. A census that keeps reciting the old
     // behaviour reports `no-aa` for every WebGPU cell including the ones that now genuinely antialias —
     // and it reports it in the column a reader consults precisely to find that kind of drift.
-    const samples = readMaxEffectTargetSampleCount(source, 'createWgpuRenderEffectPipeline');
+    const samples = readMaxEffectTargetSampleCount(source, 'createWgpuEffectState');
     if (samples === null)
       return { policy: 'unknown', reason: 'WebGPU effect-target sampleCount is not a static number' };
     return samples > 1
@@ -331,7 +331,7 @@ function getEffectivePolicy(
         for (const argument of node.arguments) findNamedProperties(argument, 'antialias', antialiasValues);
       }
       if (
-        callName === 'createGlRenderEffectPipeline' ||
+        callName === 'createGlEffectState' ||
         callName === 'createGlTextureRenderTarget' ||
         callName === 'createGlRenderViewResources'
       ) {

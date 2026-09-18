@@ -14,11 +14,11 @@ import {
   scene3DGlPipeline,
   createScene3DLights,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAmbientLight,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
@@ -26,7 +26,7 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelChannel,
   ImageChannel,
   normalizeVector3,
@@ -80,7 +80,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline = createGlRenderEffectPipeline(state, {
+const pipeline = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -93,14 +93,14 @@ export const height = 600;
 const screenClear = { color: [0, 0x28 / 0xff, 0x50 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // material-alpha-map-pbr — proves the STANDARD-PBR shader path samples the alpha (opacity) map AND that

@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,15 +14,15 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDirectionalBlurEffect,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   registerGlDirectionalBlurEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -63,7 +63,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlDirectionalBlurEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -73,9 +73,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createDirectionalBlurEffect({ angle: 28.65, length: 24, samples: 12 })]);
+  endGlEffectState(pass, pipeline, [createDirectionalBlurEffect({ angle: 28.65, length: 24, samples: 12 })]);
 }
 
 // A few mid-screen shapes spaced along the horizontal axis with gaps between them, so a full-frame

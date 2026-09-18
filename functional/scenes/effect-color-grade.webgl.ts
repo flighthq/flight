@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,14 +14,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createColorGradeAdjustment,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -61,7 +61,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -71,11 +71,9 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [
-    createColorGradeAdjustment({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
-  ]);
+  endGlEffectState(pass, pipeline, [createColorGradeAdjustment({ saturation: 1.5, contrast: 1.2, temperature: 0.2 })]);
 }
 
 // A spread of distinct, saturated colors so the grade's saturation/contrast/temperature shifts are

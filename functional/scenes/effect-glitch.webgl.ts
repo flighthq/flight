@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,16 +14,16 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   getBitmapPixelRgb,
   createGlitchEffect,
   createShape,
   registerGlGlitchEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -56,7 +56,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlGlitchEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -66,11 +66,9 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [
-    createGlitchEffect({ intensity: 0.7, blockSize: 22, colorShift: 12, seed: 3 }),
-  ]);
+  endGlEffectState(pass, pipeline, [createGlitchEffect({ intensity: 0.7, blockSize: 22, colorShift: 12, seed: 3 })]);
 }
 
 // Bright horizontal colour bars — the structure glitch tears: each block of rows is displaced and the

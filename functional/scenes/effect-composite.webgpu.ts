@@ -11,18 +11,18 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   CompositeOperator,
   createCompositeEffect,
   createDisplayObject,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWgpuTextureRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -73,7 +73,7 @@ const screenClear = { color: [0, 0, 0, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuCompositeEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba8' });
+const pipeline = createWgpuEffectState(state, { sampleCount: 1, format: 'rgba8' });
 const backdropTarget: WgpuTextureRenderTarget = createWgpuTextureRenderTarget(
   state,
   screen.width,
@@ -119,9 +119,9 @@ if (prepareScene2DRender(state, backdropRoot)) {
 registerWgpuBlendEffectBackdrop(state, 'scene', backdropTarget);
 
 if (prepareScene2DRender(state, layerRoot)) {
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, layerRoot);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [
+  endWgpuEffectState(scenePass, pipeline, [
     createCompositeEffect(CompositeOperator.SourceIn, { backdropKey: 'scene' }),
   ]);
 }

@@ -5,11 +5,11 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginCanvasRenderEffectPipeline,
+  beginCanvasEffectState,
   beginCanvasRenderPass,
   createBloomEffect,
   createCanvasElement,
-  createCanvasRenderEffectPipeline,
+  createCanvasEffectState,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
@@ -20,7 +20,7 @@ import {
   createVignetteEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  endCanvasRenderEffectPipeline,
+  endCanvasEffectState,
   endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -81,7 +81,7 @@ registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasBloomEffect(state);
 registerCanvasVignetteEffect(state);
 
-const pipeline = createCanvasRenderEffectPipeline(state);
+const pipeline = createCanvasEffectState(state);
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -90,9 +90,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginCanvasRenderPass(state, screen, screenClear);
-  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginCanvasEffectState(pass, pipeline, screenClear);
   renderCanvasScene2D(scenePass, root);
-  endCanvasRenderEffectPipeline(scenePass, pipeline, [
+  endCanvasEffectState(scenePass, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),

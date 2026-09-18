@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,15 +14,15 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
   createFxaaEffect,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   registerGlFxaaEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -57,7 +57,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlFxaaEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,
   format: 'rgba8',
 });
@@ -70,9 +70,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
+  endGlEffectState(pass, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
 }
 
 // FXAA antialiases the whole frame. Rotated, high-contrast rectangles present jagged diagonal edges

@@ -20,7 +20,7 @@ import {
   addNodeChild,
   addTextureAtlasRegion,
   beginVelocityFrame,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createMotionBlurEffect,
   createParticleEmitter2D,
@@ -28,13 +28,13 @@ import {
   createTexture,
   createTextureAtlas,
   createVelocityField,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWgpuVelocityTarget,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -94,7 +94,7 @@ registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRende
 registerWgpuMotionBlurEffect(state);
 registerWgpuVelocityWriter(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DVelocityWriter);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 const velocityTarget = createWgpuVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
@@ -110,9 +110,9 @@ export function render(root: Node2D): void {
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endWgpuEffectState(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
   endWgpuRenderPass(pass);
 }
 

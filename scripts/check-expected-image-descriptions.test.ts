@@ -83,7 +83,7 @@ describe('findExpectedImageDescriptionCellScope', () => {
   it('treats declareExpectedImageDescription as description-capable', () => {
     writeFileSync(
       join(root, 'functional', 'scenes', 'effect-bloom.webgl.ts'),
-      'declareExpectedImageDescription("bloom halo"); beginGlRenderEffectPipeline(state, pipeline);',
+      'declareExpectedImageDescription("bloom halo"); beginGlEffectState(state, pipeline);',
     );
 
     const { reachableCells, structurallyUnableCells } = findExpectedImageDescriptionCellScope(root);
@@ -129,7 +129,7 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'has-declare.webgl.ts'),
-      'declareExpectedImageDescription("bloom halo"); beginGlRenderEffectPipeline(state, pipeline);',
+      'declareExpectedImageDescription("bloom halo"); beginGlEffectState(state, pipeline);',
     );
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
@@ -139,7 +139,7 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'empty-declare.webgl.ts'),
-      'declareExpectedImageDescription(""); beginGlRenderEffectPipeline(state, pipeline);',
+      'declareExpectedImageDescription(""); beginGlEffectState(state, pipeline);',
     );
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-declare.webgl']);
@@ -195,7 +195,7 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'concatenated-declare.webgl.ts'),
-      'declareExpectedImageDescription("a " + "bloom " + "halo"); beginGlRenderEffectPipeline(state, pipeline);',
+      'declareExpectedImageDescription("a " + "bloom " + "halo"); beginGlEffectState(state, pipeline);',
     );
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
@@ -235,7 +235,7 @@ describe('findScenesWithWithheldExpectedImageDescription', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'withheld.webgl.ts'),
-      'declareExpectedImageDescriptionWithheld("shader bug: sectors degenerate"); beginGlRenderEffectPipeline(s, p);',
+      'declareExpectedImageDescriptionWithheld("shader bug: sectors degenerate"); beginGlEffectState(s, p);',
     );
 
     expect(findScenesWithWithheldExpectedImageDescription(scenesDir)).toEqual(['withheld.webgl']);
@@ -248,7 +248,7 @@ describe('findScenesWithWithheldExpectedImageDescription', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'unexplained.webgl.ts'),
-      'declareExpectedImageDescriptionWithheld(""); beginGlRenderEffectPipeline(s, p);',
+      'declareExpectedImageDescriptionWithheld(""); beginGlEffectState(s, p);',
     );
 
     expect(findScenesWithWithheldExpectedImageDescription(scenesDir)).toEqual([]);

@@ -6,15 +6,15 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuRenderEffectPipeline } from '@flighthq/sdk';
+import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuEffectState } from '@flighthq/sdk';
 import {
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   enableFlightDiagnostics,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   prepareScene3DRender,
   registerWgpuBloomEffect,
@@ -53,7 +53,7 @@ registerWgpuBloomEffect(state);
 registerWgpuToneMapEffect(state);
 registerWgpuVignetteEffect(state);
 
-const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline: WgpuEffectState = createWgpuEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -68,9 +68,9 @@ export function render(
   effects: readonly RenderEffect[],
 ): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, effects);
+  endWgpuEffectState(scenePass, pipeline, effects);
   endWgpuRenderPass(pass);
 }

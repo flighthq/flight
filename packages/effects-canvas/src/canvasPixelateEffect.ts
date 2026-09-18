@@ -6,7 +6,7 @@ import type {
   PixelateEffect,
 } from '@flighthq/types/contract';
 
-import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
+import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Pixelate (REAL): downscale the scene to (width/size, height/size) on a scratch canvas, then upscale

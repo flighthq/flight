@@ -7,22 +7,15 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type {
-  Bitmap,
-  Camera3D,
-  GlRenderEffectPipeline,
-  Node3D,
-  Scene3DLights,
-  VertexAttributeLayout,
-} from '@flighthq/sdk';
+import type { Bitmap, Camera3D, GlEffectState, Node3D, Scene3DLights, VertexAttributeLayout } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAmbientLight,
   createCamera3D,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
@@ -30,7 +23,7 @@ import {
   createScene3DLights,
   createVector3,
   createVertexColorMaterial,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelChannel,
   ImageChannel,
   prepareScene3DRender,
@@ -61,7 +54,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -74,7 +67,7 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   const gl = state.gl;
   gl.depthMask(true);
@@ -82,7 +75,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // BACKEND CAVEAT — scoped to WebGL, and the scoping is the finding rather than a convenience. The Wgpu

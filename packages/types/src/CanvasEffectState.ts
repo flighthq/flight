@@ -3,7 +3,7 @@ import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
 import type { Entity } from './Entity';
-import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
+import type { EffectStateOptions } from './GlEffectState';
 import type { RenderEffect } from './RenderEffect';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
@@ -41,10 +41,10 @@ export interface CanvasRenderTargetPool extends Entity {
 
 // Retains the offscreen canvases an effect pass needs across frames: the scene target the pipeline
 // renders into and the intermediate-target pool. The per-frame effect list is data passed to
-// endCanvasRenderEffectPipeline, not retained here. `options.sampleCount`, `format`, and `depth` are
+// endCanvasEffectState, not retained here. `options.sampleCount`, `format`, and `depth` are
 // accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
-export interface CanvasRenderEffectPipeline extends Entity {
-  readonly options: Readonly<RenderEffectPipelineOptions>;
+export interface CanvasEffectState extends Entity {
+  readonly options: Readonly<EffectStateOptions>;
   sceneTarget: CanvasTextureRenderTarget | null;
   readonly pool: CanvasRenderTargetPool;
   // Bake memo for the fused LUT-tier adjustment run, so a static grade does not re-bake its size³ cells

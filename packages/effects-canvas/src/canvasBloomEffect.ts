@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass, drawCanvasImageDataPass } from './canvasEffectCompositing';
-import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
+import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Bloom (REAL): bright-pass → blur the bright branch → additively composite back, matching the Gl/Wgpu

@@ -11,16 +11,16 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createDisplayObject,
   createInvertAdjustment,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -67,7 +67,7 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 // WebGPU effect targets are single-sample and the pipeline rejects multisample requests rather than
 // discarding that axis. Its WebGL companion independently requests the backend's supported 4x target.
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -76,9 +76,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [createInvertAdjustment({ intensity: 1 })]);
+  endWgpuEffectState(scenePass, pipeline, [createInvertAdjustment({ intensity: 1 })]);
   endWgpuRenderPass(pass);
 }
 

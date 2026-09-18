@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,15 +14,15 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
   createDitherEffect,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   registerGlDitherEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -63,7 +63,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlDitherEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 // What the effect pipeline's scene target is cleared to. The background is a per-pass value now,
 // and the chain's scene target is the pass the scene draws into — leave it at the pipeline's
 // transparent default and the background never reaches the presented frame.
@@ -75,9 +75,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createDitherEffect({ levels: 4 })]);
+  endGlEffectState(pass, pipeline, [createDitherEffect({ levels: 4 })]);
 }
 
 // Many small, rotated, overlapping shapes pack the frame with fine detail and diagonal edges, giving

@@ -10,7 +10,7 @@ import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap, Camera3D, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
@@ -24,10 +24,10 @@ import {
   createPerspectiveProjection,
   createScene3DLights,
   createVector3,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   prepareScene3DRender,
@@ -66,7 +66,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
-const pipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline = createWgpuEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -78,10 +78,10 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

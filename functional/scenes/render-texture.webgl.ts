@@ -7,17 +7,17 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
+import type { GlEffectState, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAmbientLight,
   createBoxMeshGeometry,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createOrthographicProjection,
@@ -25,7 +25,7 @@ import {
   createRenderTexture,
   createUnlitMaterial,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
@@ -126,16 +126,16 @@ setCamera3DViewMatrix4FromLookAt(
   createVector3(0, 1, 0),
 );
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
 });
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
-const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 drawGlScene3D(pass, consumerScene, consumerCamera, lights);
-endGlRenderEffectPipeline(pass, pipeline, []);
+endGlEffectState(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const topSample = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42));

@@ -7,22 +7,22 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Bitmap, Camera3D, GlRenderEffectPipeline, Node3D, Scene3DLights } from '@flighthq/sdk';
+import type { Bitmap, Camera3D, GlEffectState, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createCamera3D,
   createDepthMaterial,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createOrthographicProjection,
   createScene3DLights,
   createSphereMeshGeometry,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
@@ -67,7 +67,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
@@ -80,14 +80,14 @@ export const scale = pixelRatio;
 export const width = 800;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 const scene = createScene3D().root;

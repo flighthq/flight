@@ -11,27 +11,27 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import {
-  beginWgpuRenderEffectPipeline,
-  createWgpuRenderEffectPipeline,
-  destroyWgpuRenderEffectPipeline,
-  endWgpuRenderEffectPipeline,
-  initializeWgpuRenderEffectPipeline,
-  setWgpuRenderEffectPipelineSampleCountGuard,
-  setWgpuRenderEffectPipelineSkipGuard,
+  beginWgpuEffectState,
+  createWgpuEffectState,
+  destroyWgpuEffectState,
+  endWgpuEffectState,
+  initializeWgpuEffectState,
+  setWgpuEffectStateSampleCountGuard,
+  setWgpuEffectStateSkipGuard,
   setWgpuRenderEffectVelocityTexture,
-} from './wgpuRenderEffectPipeline';
+} from './wgpuEffectState';
 
 beforeAll(() => installWgpuMock());
 
-describe('beginWgpuRenderEffectPipeline', () => {
+describe('beginWgpuEffectState', () => {
   it('allocates the scene target on first begin and reuses the same one afterwards', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
     const first = pipeline.sceneTarget;
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
 
     expect(first).not.toBeNull();
     // The retained-target contract: begin resizes rather than reallocating, so a per-frame pipeline
@@ -42,13 +42,13 @@ describe('beginWgpuRenderEffectPipeline', () => {
 
   it('stamps the requested color space onto the scene target before the pass opens', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline, undefined, 'linear');
+    const scenePass = beginWgpuEffectState(screenPass, pipeline, undefined, 'linear');
 
     expect(pipeline.sceneTarget?.colorSpace).toBe('linear');
-    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+    endWgpuEffectState(scenePass, pipeline, []);
     endWgpuRenderPass(screenPass);
   });
 
@@ -57,12 +57,12 @@ describe('beginWgpuRenderEffectPipeline', () => {
   // carried around and every caller shared. It is per-pass data and now arrives as one.
   it('clears the scene target to the colour it is given', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const screenPass = beginWgpuScreenRenderPassForTest(state);
     const { getWgpuRenderStateRuntime } = await import('@flighthq/render-wgpu/contract');
     const beginRenderPass = vi.spyOn(getWgpuRenderStateRuntime(state).commandEncoder!, 'beginRenderPass');
 
-    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline, {
+    const scenePass = beginWgpuEffectState(screenPass, pipeline, {
       color: [0x40 / 255, 0x80 / 255, 0xc0 / 255, 1],
       depth: 1.0,
     });
@@ -73,46 +73,46 @@ describe('beginWgpuRenderEffectPipeline', () => {
     expect(clearValue.g).toBeCloseTo(0x80 / 255);
     expect(clearValue.b).toBeCloseTo(0xc0 / 255);
     expect(clearValue.a).toBe(1);
-    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+    endWgpuEffectState(scenePass, pipeline, []);
     endWgpuRenderPass(screenPass);
   });
 
   it('clears to transparent black when the caller names no colour', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const screenPass = beginWgpuScreenRenderPassForTest(state);
     const { getWgpuRenderStateRuntime } = await import('@flighthq/render-wgpu/contract');
     const beginRenderPass = vi.spyOn(getWgpuRenderStateRuntime(state).commandEncoder!, 'beginRenderPass');
 
-    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline);
+    const scenePass = beginWgpuEffectState(screenPass, pipeline);
 
     const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
     const clearValue = attachment.clearValue as GPUColorDict;
     expect([clearValue.r, clearValue.g, clearValue.b, clearValue.a]).toEqual([0, 0, 0, 0]);
-    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+    endWgpuEffectState(scenePass, pipeline, []);
     endWgpuRenderPass(screenPass);
   });
 
   it('realizes a four-sample scene target at twice the canvas extent', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+    const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline);
+    const scenePass = beginWgpuEffectState(screenPass, pipeline);
 
     expect(pipeline.sceneTarget?.width).toBe(screenPass.viewport.width * 2);
     expect(pipeline.sceneTarget?.height).toBe(screenPass.viewport.height * 2);
     expect(pipeline.sceneTarget?.sampleCount).toBe(4);
-    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+    endWgpuEffectState(scenePass, pipeline, []);
     endWgpuRenderPass(screenPass);
   });
 });
 
-describe('createWgpuRenderEffectPipeline', () => {
+describe('createWgpuEffectState', () => {
   it('returns a pipeline with nothing allocated yet', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
     expect(pipeline.sceneTarget).toBeNull();
     expect(pipeline.velocityTexture).toBeNull();
@@ -124,7 +124,7 @@ describe('createWgpuRenderEffectPipeline', () => {
     const state = await createWgpuRenderStateForTest();
     const options = { format: 'rgba16f' as const };
 
-    const pipeline = createWgpuRenderEffectPipeline(state, options);
+    const pipeline = createWgpuEffectState(state, options);
     options.format = 'rgba8' as unknown as 'rgba16f';
 
     // The pipeline outlives the call; an alias would let a caller retune the format of a pipeline
@@ -135,24 +135,24 @@ describe('createWgpuRenderEffectPipeline', () => {
   it('retains the supported four-sample request', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+    const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 
     expect(pipeline.options.sampleCount).toBe(4);
   });
 
-  describe('setWgpuRenderEffectPipelineSampleCountGuard', () => {
+  describe('setWgpuEffectStateSampleCountGuard', () => {
     it('reports the requested and applied sample counts through the optional diagnostics seam', async () => {
       const state = await createWgpuRenderStateForTest();
       const substitutions: Array<[number, number]> = [];
-      setWgpuRenderEffectPipelineSampleCountGuard(state, (_state, requested, applied) => {
+      setWgpuEffectStateSampleCountGuard(state, (_state, requested, applied) => {
         substitutions.push([requested, applied]);
       });
 
-      createWgpuRenderEffectPipeline(state, { sampleCount: 2 });
+      createWgpuEffectState(state, { sampleCount: 2 });
       expect(substitutions).toEqual([[2, 4]]);
 
-      setWgpuRenderEffectPipelineSampleCountGuard(state, null);
-      createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
+      setWgpuEffectStateSampleCountGuard(state, null);
+      createWgpuEffectState(state, { sampleCount: 8 });
       expect(substitutions).toEqual([[2, 4]]);
     });
   });
@@ -160,8 +160,8 @@ describe('createWgpuRenderEffectPipeline', () => {
   it('gives each pipeline its own pool and caches', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    const a = createWgpuRenderEffectPipeline(state);
-    const b = createWgpuRenderEffectPipeline(state);
+    const a = createWgpuEffectState(state);
+    const b = createWgpuEffectState(state);
 
     expect(a.pool).not.toBe(b.pool);
     expect(a.lutCache).not.toBe(b.lutCache);
@@ -169,16 +169,16 @@ describe('createWgpuRenderEffectPipeline', () => {
   });
 });
 
-describe('destroyWgpuRenderEffectPipeline', () => {
+describe('destroyWgpuEffectState', () => {
   it('releases the scene target and clears the LUT caches', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
     endWgpuRenderPass(screenPass);
     expect(pipeline.sceneTarget).not.toBeNull();
 
-    destroyWgpuRenderEffectPipeline(state, pipeline);
+    destroyWgpuEffectState(state, pipeline);
 
     expect(pipeline.sceneTarget).toBeNull();
     expect(pipeline.lutTexture).toEqual({ texture: null, size: 0, lut: null });
@@ -188,35 +188,35 @@ describe('destroyWgpuRenderEffectPipeline', () => {
 
   it('is safe on a pipeline that never began a frame', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
-    expect(() => destroyWgpuRenderEffectPipeline(state, pipeline)).not.toThrow();
+    expect(() => destroyWgpuEffectState(state, pipeline)).not.toThrow();
     expect(pipeline.sceneTarget).toBeNull();
   });
 
   it('is idempotent — a second destroy neither throws nor resurrects state', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
     endWgpuRenderPass(screenPass);
 
-    destroyWgpuRenderEffectPipeline(state, pipeline);
-    expect(() => destroyWgpuRenderEffectPipeline(state, pipeline)).not.toThrow();
+    destroyWgpuEffectState(state, pipeline);
+    expect(() => destroyWgpuEffectState(state, pipeline)).not.toThrow();
     expect(pipeline.sceneTarget).toBeNull();
   });
 });
 
-describe('endWgpuRenderEffectPipeline', () => {
+describe('endWgpuEffectState', () => {
   it('returns without touching the pipeline when no scene target was begun', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const pool = pipeline.pool;
 
     // The early return is the only thing standing between an unbegun pipeline and endWgpuRenderPass
     // closing a pass the pipeline never opened, so it is asserted rather than assumed.
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    expect(() => endWgpuRenderEffectPipeline(screenPass, pipeline, [])).not.toThrow();
+    expect(() => endWgpuEffectState(screenPass, pipeline, [])).not.toThrow();
     endWgpuRenderPass(screenPass);
     expect(pipeline.sceneTarget).toBeNull();
     expect(pipeline.pool).toBe(pool);
@@ -234,10 +234,10 @@ describe('endWgpuRenderEffectPipeline', () => {
   // what lets this run on the mock device, and it fails the moment the call site opts back into 'premul'.
   it('presents with a blend the enclosing clear cannot contribute to', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
     endWgpuRenderPass(screenPass);
 
     const present = getWgpuEffectPipeline(state, 'effect.present', '') as unknown as {
@@ -252,10 +252,10 @@ describe('endWgpuRenderEffectPipeline', () => {
 
   it('runs an empty operation list without allocating scratch targets', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, []);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, []);
     endWgpuRenderPass(screenPass);
 
     // Every acquire must be matched by a release before end returns; a pool holding entries after an
@@ -265,12 +265,12 @@ describe('endWgpuRenderEffectPipeline', () => {
 
   it('presents the final result with replace blend so transparent pixels overwrite the screen clear', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state, { format: 'rgba16f' });
+    const pipeline = createWgpuEffectState(state, { format: 'rgba16f' });
     const createRenderPipeline = vi.spyOn(state.device, 'createRenderPipeline');
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    const scenePass = beginWgpuRenderEffectPipeline(screenPass, pipeline, undefined, 'linear');
-    endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+    const scenePass = beginWgpuEffectState(screenPass, pipeline, undefined, 'linear');
+    endWgpuEffectState(scenePass, pipeline, []);
 
     const presentCall = createRenderPipeline.mock.calls.at(-1)![0] as GPURenderPipelineDescriptor;
     const blend = (presentCall.fragment!.targets as GPUColorTargetState[])[0].blend!;
@@ -283,7 +283,7 @@ describe('endWgpuRenderEffectPipeline', () => {
 
   it('returns pooled scratch targets after running a chain', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const chain = [
       (() => {
         const out = allocateEntity<any>();
@@ -293,7 +293,7 @@ describe('endWgpuRenderEffectPipeline', () => {
     ];
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(screenPass, pipeline), pipeline, chain);
+    endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, chain);
     endWgpuRenderPass(screenPass);
 
     // An unregistered kind is skipped, so the chain does no work — but the bracketing still has to
@@ -302,16 +302,16 @@ describe('endWgpuRenderEffectPipeline', () => {
   });
 });
 
-describe('initializeWgpuRenderEffectPipeline', () => {
-  it('is the construction initializer of createWgpuRenderEffectPipeline', () => {
-    expect(typeof initializeWgpuRenderEffectPipeline).toBe('function');
+describe('initializeWgpuEffectState', () => {
+  it('is the construction initializer of createWgpuEffectState', () => {
+    expect(typeof initializeWgpuEffectState).toBe('function');
   });
 });
 
-describe('setWgpuRenderEffectPipelineSkipGuard', () => {
+describe('setWgpuEffectStateSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', async () => {
     const state = await createWgpuRenderStateForTest();
-    const pipeline = createWgpuRenderEffectPipeline(state);
+    const pipeline = createWgpuEffectState(state);
     const dropped: string[] = [];
     const chain = [
       (() => {
@@ -321,18 +321,18 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
       })() as RenderEffect,
     ];
 
-    setWgpuRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
+    setWgpuEffectStateSkipGuard(state, (_state, kind) => dropped.push(kind));
     const guarded = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(guarded, pipeline), pipeline, chain);
+    endWgpuEffectState(beginWgpuEffectState(guarded, pipeline), pipeline, chain);
     endWgpuRenderPass(guarded);
 
     expect(dropped).toEqual(['test.wgpu-pipeline-skip-seam']);
 
     // Clearing must restore the original silence exactly: the seam is the ONLY path by which a dropped
     // effect is observable, so a stale guard would be the difference between a diagnostic and a leak.
-    setWgpuRenderEffectPipelineSkipGuard(state, null);
+    setWgpuEffectStateSkipGuard(state, null);
     const silent = beginWgpuScreenRenderPassForTest(state);
-    endWgpuRenderEffectPipeline(beginWgpuRenderEffectPipeline(silent, pipeline), pipeline, chain);
+    endWgpuEffectState(beginWgpuEffectState(silent, pipeline), pipeline, chain);
     endWgpuRenderPass(silent);
 
     expect(dropped).toEqual(['test.wgpu-pipeline-skip-seam']);

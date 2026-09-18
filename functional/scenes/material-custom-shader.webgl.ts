@@ -7,22 +7,22 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   createScene3DLights,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createCamera3D,
   createCustomShaderMaterial,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
   createSphereMeshGeometry,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   prepareScene3DRender,
@@ -97,7 +97,7 @@ void main() {
 }`,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -110,10 +110,10 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // The same CustomShaderMaterial instance shape is consumed by both backend scenes. Deliberately reverse

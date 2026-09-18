@@ -23,11 +23,7 @@ import {
   enableGlRenderEffectGuards,
 } from './enableGlRenderEffectGuards';
 import { registerGlCustomShaderSource } from './glCustomShaderEffect';
-import {
-  beginGlRenderEffectPipeline,
-  createGlRenderEffectPipeline,
-  endGlRenderEffectPipeline,
-} from './glRenderEffectPipeline';
+import { beginGlEffectState, createGlEffectState, endGlEffectState } from './glEffectState';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { applyGlRenderEffectsToRenderTexture } from './glRenderTextureEffect';
 
@@ -155,11 +151,11 @@ describe('enableGlRenderEffectGuards', () => {
   it('WARNS that a pipeline pass DROPPED an effect kind with no runner, once per kind', () => {
     const state = createState();
     enableGlRenderEffectGuards(state);
-    const pipeline = createGlRenderEffectPipeline(state);
+    const pipeline = createGlEffectState(state);
 
     const entries = captureLog(() => {
-      const pass = beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(pass, pipeline, [
+      const pass = beginGlEffectState(state, pipeline);
+      endGlEffectState(pass, pipeline, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
@@ -175,8 +171,8 @@ describe('enableGlRenderEffectGuards', () => {
     // Once per KIND, not once per frame: a chain missing the same effect every frame is one
     // observation, and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
-      const pass = beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(pass, pipeline, [
+      const pass = beginGlEffectState(state, pipeline);
+      endGlEffectState(pass, pipeline, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';

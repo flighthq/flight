@@ -12,16 +12,16 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createBevelEffect,
   createDisplayObject,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -72,7 +72,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuBevelEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline = createWgpuEffectState(state, {
   sampleCount: 1,
 });
 
@@ -92,9 +92,9 @@ const SQUARE_Y = 200;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, { color: [0, 0, 0, 1], depth: 1.0 });
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline);
+  const scenePass = beginWgpuEffectState(pass, pipeline);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [
+  endWgpuEffectState(scenePass, pipeline, [
     createBevelEffect({
       angle: BEVEL_ANGLE,
       blurX: 8,

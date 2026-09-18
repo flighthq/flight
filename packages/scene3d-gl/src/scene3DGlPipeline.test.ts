@@ -13,7 +13,6 @@ import {
   DissolveModifierKind,
   EmissiveMaterialKind,
   EmissiveModifierKind,
-  EntityRuntimeKey,
   EnvReflectModifierKind,
   ExtendedPbrMaterialKind,
   FogModifierKind,
@@ -50,10 +49,6 @@ function expectExactKeys(table: Readonly<KeyedTable<unknown>>, expected: readonl
 }
 
 describe('scene3DGlPipeline', () => {
-  it('is an Entity with EntityRuntimeKey', () => {
-    expect(EntityRuntimeKey in scene3DGlPipeline).toBe(true);
-  });
-
   it('inherits every unchanged Scene2D GL registry table', () => {
     const scene2D = getGlPipelineRegistries(scene2DGlPipeline);
     const scene3D = getGlPipelineRegistries(scene3DGlPipeline);

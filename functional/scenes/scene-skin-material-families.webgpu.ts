@@ -10,7 +10,7 @@ import type { Bitmap, Camera3D, Material, Node3D, Scene3DLights } from '@flighth
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   copyQuaternion,
   createAmbientLight,
@@ -28,11 +28,11 @@ import {
   createScene3DLights,
   createSkeleton3D,
   createVector3,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWireframeMaterial,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -79,7 +79,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 });
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
-const pipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline = createWgpuEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -91,11 +91,11 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

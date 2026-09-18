@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,15 +14,15 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createPixelateEffect,
   createShape,
   registerGlPixelateEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -63,7 +63,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlPixelateEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -73,9 +73,9 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createPixelateEffect({ size: 24 })]);
+  endGlEffectState(pass, pipeline, [createPixelateEffect({ size: 24 })]);
 }
 
 // Many small, rotated, overlapping shapes pack the frame with fine detail and diagonal edges, so the

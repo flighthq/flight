@@ -6,15 +6,15 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Camera3D, GlRenderEffectPipeline, Node3D, RenderEffect, Scene3DLightsLike } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Node3D, RenderEffect, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
-  beginGlRenderEffectPipeline,
-  createGlRenderEffectPipeline,
+  beginGlEffectState,
+  createGlEffectState,
   createGlRenderState,
   enableFlightDiagnostics,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   prepareScene3DRender,
   registerGlBloomEffect,
   registerGlToneMapEffect,
@@ -45,7 +45,7 @@ registerGlBloomEffect(state);
 registerGlToneMapEffect(state);
 registerGlVignetteEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -62,8 +62,8 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   effects: readonly RenderEffect[],
 ): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, effects);
+  endGlEffectState(pass, pipeline, effects);
 }

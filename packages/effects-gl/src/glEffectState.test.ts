@@ -9,18 +9,18 @@ import {
 import type { RenderEffect } from '@flighthq/types/contract';
 
 import {
-  beginGlRenderEffectPipeline,
-  createGlRenderEffectPipeline,
-  destroyGlRenderEffectPipeline,
-  endGlRenderEffectPipeline,
-  initializeGlRenderEffectPipeline,
-  setGlRenderEffectPipelineSkipGuard,
+  beginGlEffectState,
+  createGlEffectState,
+  destroyGlEffectState,
+  endGlEffectState,
+  initializeGlEffectState,
+  setGlEffectStateSkipGuard,
   setGlRenderEffectVelocityTexture,
-} from './glRenderEffectPipeline';
+} from './glEffectState';
 
-describe('beginGlRenderEffectPipeline', () => {
+describe('beginGlEffectState', () => {
   it('is a function', () => {
-    expect(typeof beginGlRenderEffectPipeline).toBe('function');
+    expect(typeof beginGlEffectState).toBe('function');
   });
 
   it('redeclares the explicit color space on a reused scene target', () => {
@@ -28,49 +28,49 @@ describe('beginGlRenderEffectPipeline', () => {
       createWebGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
-    const pipeline = createGlRenderEffectPipeline(state);
+    const pipeline = createGlEffectState(state);
 
-    const pass = beginGlRenderEffectPipeline(state, pipeline);
+    const pass = beginGlEffectState(state, pipeline);
     const target = pipeline.sceneTarget;
     endGlRenderPass(pass);
-    beginGlRenderEffectPipeline(state, pipeline, 'linear');
+    beginGlEffectState(state, pipeline, 'linear');
 
     expect(pipeline.sceneTarget).toBe(target);
     expect(target?.colorSpace).toBe('linear');
   });
 });
 
-describe('createGlRenderEffectPipeline', () => {
+describe('createGlEffectState', () => {
   it('is a function', () => {
-    expect(typeof createGlRenderEffectPipeline).toBe('function');
+    expect(typeof createGlEffectState).toBe('function');
   });
 });
 
-describe('destroyGlRenderEffectPipeline', () => {
+describe('destroyGlEffectState', () => {
   it('is a function', () => {
-    expect(typeof destroyGlRenderEffectPipeline).toBe('function');
+    expect(typeof destroyGlEffectState).toBe('function');
   });
 });
 
-describe('endGlRenderEffectPipeline', () => {
+describe('endGlEffectState', () => {
   it('is a function', () => {
-    expect(typeof endGlRenderEffectPipeline).toBe('function');
+    expect(typeof endGlEffectState).toBe('function');
   });
 });
 
-describe('initializeGlRenderEffectPipeline', () => {
-  it('is the construction initializer of createGlRenderEffectPipeline', () => {
-    expect(typeof initializeGlRenderEffectPipeline).toBe('function');
+describe('initializeGlEffectState', () => {
+  it('is the construction initializer of createGlEffectState', () => {
+    expect(typeof initializeGlEffectState).toBe('function');
   });
 });
 
-describe('setGlRenderEffectPipelineSkipGuard', () => {
+describe('setGlEffectStateSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
       createGlPipeline(createEmptyGlRegistries()),
     );
-    const pipeline = createGlRenderEffectPipeline(state);
+    const pipeline = createGlEffectState(state);
     const dropped: string[] = [];
     const chain = [
       (() => {
@@ -80,17 +80,17 @@ describe('setGlRenderEffectPipelineSkipGuard', () => {
       })() as RenderEffect,
     ];
 
-    setGlRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
-    let pass = beginGlRenderEffectPipeline(state, pipeline);
-    endGlRenderEffectPipeline(pass, pipeline, chain);
+    setGlEffectStateSkipGuard(state, (_state, kind) => dropped.push(kind));
+    let pass = beginGlEffectState(state, pipeline);
+    endGlEffectState(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
 
     // Clearing must restore the original silence exactly: the seam is the ONLY path by which a dropped
     // effect is observable, so a stale guard would be the difference between a diagnostic and a leak.
-    setGlRenderEffectPipelineSkipGuard(state, null);
-    pass = beginGlRenderEffectPipeline(state, pipeline);
-    endGlRenderEffectPipeline(pass, pipeline, chain);
+    setGlEffectStateSkipGuard(state, null);
+    pass = beginGlEffectState(state, pipeline);
+    endGlEffectState(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });

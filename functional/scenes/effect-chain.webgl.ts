@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -14,11 +14,11 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createBloomEffect,
   createColorGradeAdjustment,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createShape,
   getBitmapPixelRgb,
@@ -26,7 +26,7 @@ import {
   registerGlBloomEffect,
   defaultGlShapeRenderer,
   registerGlVignetteEffect,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -75,7 +75,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlBloomEffect(state);
 registerGlVignetteEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',
 });
@@ -88,9 +88,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [
+  endGlEffectState(pass, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),

@@ -11,7 +11,7 @@ import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasRenderEffectPipeline';
+} from './canvasEffectState';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,

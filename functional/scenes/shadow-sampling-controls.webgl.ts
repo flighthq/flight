@@ -7,19 +7,19 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { Bitmap, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createOrthographicProjection,
@@ -27,7 +27,7 @@ import {
   createPlaneMeshGeometry,
   createSphereMeshGeometry,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   getNode3DWorldBounds,
   invalidateNodeLocalTransform,
@@ -68,7 +68,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -122,12 +122,12 @@ shadowCamera.projection = createOrthographicProjection({ halfHeight: 40, halfWid
 
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 drawGlScene3D(pass, scene, camera, lights);
-endGlRenderEffectPipeline(pass, pipeline, []);
+endGlEffectState(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const x = Math.floor(bitmap.width / 2);

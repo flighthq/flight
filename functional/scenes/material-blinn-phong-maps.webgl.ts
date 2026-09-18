@@ -7,18 +7,18 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Bitmap, Camera3D, GlRenderEffectPipeline, Node3D, Scene3DLights, Texture } from '@flighthq/sdk';
+import type { Bitmap, Camera3D, GlEffectState, Node3D, Scene3DLights, Texture } from '@flighthq/sdk';
 import {
   createGlSurface,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAmbientLight,
   createBitmap,
   createBlinnPhongMaterial,
   createQuadMeshGeometry,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
@@ -26,7 +26,7 @@ import {
   createScene3DLights,
   createTexture,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -64,7 +64,7 @@ appendWebSurface(glSurface, document.body);
 
 const state = createGlRenderState(glSurface.context, scene3DGlPipeline, { pixelRatio });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
@@ -141,14 +141,14 @@ const lights = createScene3DLights({
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 render(scene, camera, lights);

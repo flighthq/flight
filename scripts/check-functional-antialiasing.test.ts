@@ -138,7 +138,7 @@ describe('analyzeFunctionalAntialiasing', () => {
     writeScene(
       'multisample.webgl.ts',
       "declareAntialiasingPolicy('aa'); createWebGlContext(canvas, { antialias: false }); " +
-        'createGlRenderEffectPipeline(state, { sampleCount: 4 });',
+        'createGlEffectState(state, { sampleCount: 4 });',
     );
 
     const [cell] = analyzeFunctionalAntialiasing(root, []).cells;
@@ -151,7 +151,7 @@ describe('analyzeFunctionalAntialiasing', () => {
     writeScene(
       'single.webgl.ts',
       "declareAntialiasingPolicy('no-aa'); createWebGlContext(canvas, { contextAttributes: { antialias: false } }); " +
-        'createGlRenderEffectPipeline(state, { sampleCount: 1 });',
+        'createGlEffectState(state, { sampleCount: 1 });',
     );
 
     const [cell] = analyzeFunctionalAntialiasing(root, []).cells;

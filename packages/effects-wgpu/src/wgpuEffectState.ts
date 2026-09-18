@@ -25,12 +25,12 @@ import type {
   Adjustment,
   EntityConstruction,
   RenderEffect,
-  RenderEffectPipelineOptions,
+  EffectStateOptions,
   RenderTargetClear,
   RenderTargetColorSpace,
-  WgpuRenderEffectPipeline,
-  WgpuRenderEffectPipelineSampleCountGuard,
-  WgpuRenderEffectPipelineSkipGuard,
+  WgpuEffectState,
+  WgpuEffectStateSampleCountGuard,
+  WgpuEffectStateSkipGuard,
   WgpuRenderPass,
   WgpuRenderState,
   WgpuTextureRenderTarget,
@@ -42,11 +42,11 @@ import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
-// Opt-in post-process pipeline, the Wgpu mirror of effects-gl's renderEffectPipeline. The caller opens a
+// Opt-in post-process pipeline, the Wgpu mirror of effects-gl's effectState. The caller opens a
 // pass on the screen, then:
-//   beginWgpuRenderEffectPipeline(pass, …) -> opens a pass into the pipeline's offscreen scene target
+//   beginWgpuEffectState(pass, …) -> opens a pass into the pipeline's offscreen scene target
 //   ...draw the scene tree into the returned pass...
-//   endWgpuRenderEffectPipeline(scenePass, pipeline, effects) -> ends it, runs the agnostic effect list
+//   endWgpuEffectState(scenePass, pipeline, effects) -> ends it, runs the agnostic effect list
 //     through the per-state registry ping-ponging pooled targets, and presents into the enclosing pass
 // The default render loop imports none of this. The effect list is per-frame data; only the scene target
 // and pool are retained. Depth/velocity G-buffers are not yet produced (follow-up); depth- and
@@ -55,9 +55,9 @@ import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 // `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
 // value, not a property the render state carries around. It defaults to transparent black with the depth
 // buffer reset, which is what an effect chain compositing over the frame beneath it wants.
-export function beginWgpuRenderEffectPipeline(
+export function beginWgpuEffectState(
   pass: WgpuRenderPass,
-  pipeline: WgpuRenderEffectPipeline,
+  pipeline: WgpuEffectState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
   colorSpace: RenderTargetColorSpace = 'srgb',
 ): WgpuRenderPass {
@@ -74,16 +74,16 @@ export function beginWgpuRenderEffectPipeline(
   return beginWgpuRenderPass(state, pipeline.sceneTarget, colorSpace === 'linear' ? linearizeClear(clear) : clear);
 }
 
-export function createWgpuRenderEffectPipeline(
+export function createWgpuEffectState(
   state: WgpuRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
-): WgpuRenderEffectPipeline {
-  const out = allocateEntity<WgpuRenderEffectPipeline>();
-  initializeWgpuRenderEffectPipeline(out, state, options);
+  options: Readonly<EffectStateOptions> = {},
+): WgpuEffectState {
+  const out = allocateEntity<WgpuEffectState>();
+  initializeWgpuEffectState(out, state, options);
   return finishEntity(out);
 }
 
-export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {
+export function destroyWgpuEffectState(state: WgpuRenderState, pipeline: WgpuEffectState): void {
   if (pipeline.sceneTarget) {
     destroyWgpuTextureRenderTarget(pipeline.sceneTarget);
     pipeline.sceneTarget = null;
@@ -97,9 +97,9 @@ export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline
   pipeline.lutCache.lut = null;
 }
 
-export function endWgpuRenderEffectPipeline(
+export function endWgpuEffectState(
   scenePass: WgpuRenderPass,
-  pipeline: WgpuRenderEffectPipeline,
+  pipeline: WgpuEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const state = scenePass.state;
@@ -149,7 +149,7 @@ export function endWgpuRenderEffectPipeline(
     }
     const runner = getWgpuRenderEffectRunner(state, operation.kind);
     if (runner === null) {
-      reportWgpuRenderEffectPipelineSkip(state, operation.kind);
+      reportWgpuEffectStateSkip(state, operation.kind);
       continue;
     }
     flushAdjustments();
@@ -183,10 +183,10 @@ export function endWgpuRenderEffectPipeline(
   if (scratchB !== null) releaseWgpuTextureRenderTarget(pipeline.pool, scratchB);
 }
 
-export function initializeWgpuRenderEffectPipeline(
-  out: EntityConstruction<WgpuRenderEffectPipeline>,
+export function initializeWgpuEffectState(
+  out: EntityConstruction<WgpuEffectState>,
   state: WgpuRenderState,
-  options: Readonly<RenderEffectPipelineOptions> = {},
+  options: Readonly<EffectStateOptions> = {},
 ): void {
   const requestedSampleCount = options.sampleCount ?? 1;
   const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
@@ -203,9 +203,9 @@ export function initializeWgpuRenderEffectPipeline(
 
 // The diagnostics seam for sample-count substitutions. Core stays free of warning strings and
 // @flighthq/log; the separately-importable guard module installs the reporter when wanted.
-export function setWgpuRenderEffectPipelineSampleCountGuard(
+export function setWgpuEffectStateSampleCountGuard(
   state: WgpuRenderState,
-  guard: WgpuRenderEffectPipelineSampleCountGuard | null,
+  guard: WgpuEffectStateSampleCountGuard | null,
 ): void {
   if (guard === null) _sampleCountGuards.delete(state);
   else _sampleCountGuards.set(state, guard);
@@ -216,18 +216,12 @@ export function setWgpuRenderEffectPipelineSampleCountGuard(
 // The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
 // turns a dropped effect into a caller-facing warning. Mirrors setWgpuRenderEffectApplicationGuard, which
 // covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
-export function setWgpuRenderEffectPipelineSkipGuard(
-  state: WgpuRenderState,
-  guard: WgpuRenderEffectPipelineSkipGuard | null,
-): void {
+export function setWgpuEffectStateSkipGuard(state: WgpuRenderState, guard: WgpuEffectStateSkipGuard | null): void {
   if (guard === null) _skipGuards.delete(state);
   else _skipGuards.set(state, guard);
 }
 
-export function setWgpuRenderEffectVelocityTexture(
-  pipeline: WgpuRenderEffectPipeline,
-  texture: GPUTexture | null,
-): void {
+export function setWgpuRenderEffectVelocityTexture(pipeline: WgpuEffectState, texture: GPUTexture | null): void {
   pipeline.velocityTexture = texture;
 }
 
@@ -284,7 +278,7 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return vec4f(linearToSrgb(linear.rgb), linear.a);
 }`;
 
-function reportWgpuRenderEffectPipelineSkip(state: WgpuRenderState, kind: string): void {
+function reportWgpuEffectStateSkip(state: WgpuRenderState, kind: string): void {
   _skipGuards.get(state)?.(state, kind);
 }
 
@@ -306,5 +300,5 @@ function linearizeClear(clear: Readonly<RenderTargetClear>): RenderTargetClear {
   return out;
 }
 
-const _skipGuards = new WeakMap<WgpuRenderState, WgpuRenderEffectPipelineSkipGuard>();
-const _sampleCountGuards = new WeakMap<WgpuRenderState, WgpuRenderEffectPipelineSampleCountGuard>();
+const _skipGuards = new WeakMap<WgpuRenderState, WgpuEffectStateSkipGuard>();
+const _sampleCountGuards = new WeakMap<WgpuRenderState, WgpuEffectStateSampleCountGuard>();

@@ -12,7 +12,7 @@ import type {
   Bitmap,
   Camera3D,
   Environment,
-  GlRenderEffectPipeline,
+  GlEffectState,
   Node3D,
   Scene3DLights,
   VertexAttributeLayout,
@@ -21,7 +21,7 @@ import {
   createGlSurface,
   ImageChannel,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAnisotropyPbrExtension,
   createCamera3D,
   createClearcoatPbrExtension,
@@ -29,7 +29,7 @@ import {
   createDirectionalLight,
   createEnvironment,
   createExtendedPbrMaterial,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
@@ -41,7 +41,7 @@ import {
   createTexture,
   createVector2,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelChannel,
   getBitmapPixelLuminance,
   normalizeVector3,
@@ -77,7 +77,7 @@ appendWebSurface(glSurface, document.body);
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, { pixelRatio });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 1,
@@ -101,14 +101,14 @@ export function render(
     bakeGlEnvironmentIbl(state, environment);
     baked = true;
   }
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // The extension maps deliberately disagree. UV0 runs left-to-right; UV1.x runs bottom-to-top.

@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
+import type { Node2D, GlEffectState, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -16,17 +16,17 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   beginGlRenderPass,
   createBlendEffect,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createGlTextureRenderTarget,
   createShape,
   registerGlBlendEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   endGlRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -81,7 +81,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlBlendEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba8',
 });
@@ -113,11 +113,9 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
 
 export function render(layerRoot: Node2D): void {
   if (!prepareScene2DRender(state, layerRoot)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, layerRoot);
-  endGlRenderEffectPipeline(pass, pipeline, [
-    createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),
-  ]);
+  endGlEffectState(pass, pipeline, [createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY })]);
 }
 
 const logicalWidth = width / scale;

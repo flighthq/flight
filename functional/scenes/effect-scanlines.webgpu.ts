@@ -11,16 +11,16 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createDisplayObject,
   createScanlinesEffect,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -72,7 +72,7 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuScanlinesEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -81,9 +81,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [createScanlinesEffect({ count: 240, intensity: 0.5 })]);
+  endWgpuEffectState(scenePass, pipeline, [createScanlinesEffect({ count: 240, intensity: 0.5 })]);
   endWgpuRenderPass(pass);
 }
 

@@ -5,10 +5,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginCanvasRenderEffectPipeline,
+  beginCanvasEffectState,
   beginCanvasRenderPass,
   createCanvasElement,
-  createCanvasRenderEffectPipeline,
+  createCanvasEffectState,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
@@ -18,7 +18,7 @@ import {
   createShape,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  endCanvasRenderEffectPipeline,
+  endCanvasEffectState,
   endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -61,7 +61,7 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1] } as con
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
-const pipeline = createCanvasRenderEffectPipeline(state);
+const pipeline = createCanvasEffectState(state);
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -70,9 +70,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginCanvasRenderPass(state, screen, screenClear);
-  const scenePass = beginCanvasRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginCanvasEffectState(pass, pipeline, screenClear);
   renderCanvasScene2D(scenePass, root);
-  endCanvasRenderEffectPipeline(scenePass, pipeline, [
+  endCanvasEffectState(scenePass, pipeline, [
     createHueSaturationAdjustment({ hue: 90, saturation: 0.4, lightness: 0 }),
   ]);
   endCanvasRenderPass(pass);

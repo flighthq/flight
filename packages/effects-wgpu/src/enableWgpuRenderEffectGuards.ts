@@ -2,10 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { WgpuRenderEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import {
-  setWgpuRenderEffectPipelineSampleCountGuard,
-  setWgpuRenderEffectPipelineSkipGuard,
-} from './wgpuRenderEffectPipeline';
+import { setWgpuEffectStateSampleCountGuard, setWgpuEffectStateSkipGuard } from './wgpuEffectState';
 import { setWgpuRenderEffectApplicationGuard } from './wgpuRenderTextureEffect';
 
 export function areWgpuRenderEffectGuardsEnabled(state: WgpuRenderState): boolean {
@@ -14,8 +11,8 @@ export function areWgpuRenderEffectGuardsEnabled(state: WgpuRenderState): boolea
 
 export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
   setWgpuRenderEffectApplicationGuard(state, null);
-  setWgpuRenderEffectPipelineSampleCountGuard(state, null);
-  setWgpuRenderEffectPipelineSkipGuard(state, null);
+  setWgpuEffectStateSampleCountGuard(state, null);
+  setWgpuEffectStateSkipGuard(state, null);
   _guardedStates.delete(state);
 }
 
@@ -29,15 +26,15 @@ export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
 // source re-registration because WGPU has no custom-shader effect.
 export function enableWgpuRenderEffectGuards(state: WgpuRenderState): void {
   setWgpuRenderEffectApplicationGuard(state, warnWgpuRenderEffectApplication);
-  setWgpuRenderEffectPipelineSampleCountGuard(state, warnWgpuRenderEffectPipelineSampleCount);
-  setWgpuRenderEffectPipelineSkipGuard(state, warnWgpuRenderEffectPipelineSkip);
+  setWgpuEffectStateSampleCountGuard(state, warnWgpuEffectStateSampleCount);
+  setWgpuEffectStateSkipGuard(state, warnWgpuEffectStateSkip);
   _guardedStates.add(state);
 }
 
 // WGPU effect targets support one or four coverage samples. Counts outside that set are substituted
 // rather than rejected so module-scope pipeline construction remains loadable; the guard makes the
 // applied count explicit. Warn once per requested count.
-function warnWgpuRenderEffectPipelineSampleCount(
+function warnWgpuEffectStateSampleCount(
   _state: WgpuRenderState,
   requestedSampleCount: number,
   appliedSampleCount: number,
@@ -47,7 +44,7 @@ function warnWgpuRenderEffectPipelineSampleCount(
     LogLevel.Warn,
     {
       appliedSampleCount,
-      message: `createWgpuRenderEffectPipeline: sampleCount ${requestedSampleCount} requested, but WGPU effect targets support 1 or 4 — continuing with sampleCount ${appliedSampleCount}`,
+      message: `createWgpuEffectState: sampleCount ${requestedSampleCount} requested, but WGPU effect targets support 1 or 4 — continuing with sampleCount ${appliedSampleCount}`,
       requestedSampleCount,
     },
     'effects-wgpu',
@@ -96,7 +93,7 @@ function warnWgpuRenderEffectApplication(
 // artifact. Seven effect kinds ship a descriptor and a constructor with no runner on ANY backend
 // (AutoExposure, BarrelDistortion, FilmEmulation, PanniniProjection, Ssr, Taa, VolumetricLight), so a
 // caller can build one into a chain and watch nothing happen with nothing to grep for.
-function warnWgpuRenderEffectPipelineSkip(_state: WgpuRenderState, kind: string): void {
+function warnWgpuEffectStateSkip(_state: WgpuRenderState, kind: string): void {
   // Keyed by kind, not by frame: the same missing kind every frame is one observation, and a second kind
   // going missing is a new one worth reporting.
   logOnce(
@@ -104,7 +101,7 @@ function warnWgpuRenderEffectPipelineSkip(_state: WgpuRenderState, kind: string)
     LogLevel.Warn,
     {
       kind,
-      message: `endWgpuRenderEffectPipeline: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
+      message: `endWgpuEffectState: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-wgpu',
   );

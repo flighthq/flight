@@ -14,7 +14,7 @@ import {
 // There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
 // subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
 //
-import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -23,14 +23,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createLiftGammaGainAdjustment,
   createShape,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -63,7 +63,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -73,9 +73,9 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [
+  endGlEffectState(pass, pipeline, [
     createLiftGammaGainAdjustment({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
   ]);
 }

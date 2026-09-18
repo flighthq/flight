@@ -1,7 +1,7 @@
 import type { BlendMode } from './BlendMode';
+import type { CanvasRenderEffectRunner } from './CanvasEffectState';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasPipeline } from './CanvasPipeline';
-import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
 import type { CanvasRenderPass } from './CanvasRenderPass';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';

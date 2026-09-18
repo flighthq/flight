@@ -8,20 +8,20 @@ import {
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   createScene3DLights,
   addNodeChild,
   beginGlRenderPass,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   createAmbientLight,
   createBoxMeshGeometry,
   createCamera3D,
   createDirectionalLight,
   createExtendedPbrMaterial,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createGlTextureRenderTarget,
   createMesh,
@@ -31,7 +31,7 @@ import {
   createTransmissionVolumePbrExtension,
   createUnlitMaterial,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   endGlRenderPass,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -66,7 +66,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -104,14 +104,14 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
     width: opaqueSceneTarget.width,
   });
 
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // material-transmission-volume proves explicit opaque capture/resolve, projected refraction,

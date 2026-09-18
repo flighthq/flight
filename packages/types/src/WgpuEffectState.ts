@@ -1,6 +1,6 @@
 import type { ColorLutCache } from './ColorLutCache';
 import type { Entity } from './Entity';
-import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
+import type { EffectStateOptions } from './GlEffectState';
 import type { RenderEffect } from './RenderEffect';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
 import type { WgpuRenderState } from './WgpuRenderState';
@@ -35,15 +35,15 @@ export interface WgpuRenderEffectRegistration {
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
 // into and the intermediate-target pool. The per-frame effect list is data passed to
-// endWgpuRenderEffectPipeline, not retained here. Mirrors GlRenderEffectPipeline; shares
-// RenderEffectPipelineOptions with the Gl pipeline.
-export interface WgpuRenderEffectPipeline extends Entity {
-  readonly options: Readonly<RenderEffectPipelineOptions>;
+// endWgpuEffectState, not retained here. Mirrors GlEffectState; shares
+// EffectStateOptions with the Gl pipeline.
+export interface WgpuEffectState extends Entity {
+  readonly options: Readonly<EffectStateOptions>;
   sceneTarget: WgpuTextureRenderTarget | null;
   readonly pool: WgpuRenderTargetPool;
   // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
   // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
-  // owns a GPU texture destroyed by destroyWgpuRenderEffectPipeline.
+  // owns a GPU texture destroyed by destroyWgpuEffectState.
   readonly lutCache: ColorLutCache;
   readonly lutTexture: WgpuColorLutTextureCache;
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
@@ -77,11 +77,11 @@ export interface WgpuRenderEffectApplicationExplanation {
 // Observed when a pipeline pass drops an effect because its kind has no registered runner. The kind is
 // the whole observation: the effect is skipped silently, produces no draw and no error, and nothing
 // downstream can tell a skipped effect from one that ran and had no visible result.
-export type WgpuRenderEffectPipelineSkipGuard = (state: WgpuRenderState, kind: string) => void;
+export type WgpuEffectStateSkipGuard = (state: WgpuRenderState, kind: string) => void;
 
 // Observed when the WGPU effect pipeline substitutes its supported four-coverage-sample target for a
 // different requested count. Both values are explicit so diagnostics report the applied configuration.
-export type WgpuRenderEffectPipelineSampleCountGuard = (
+export type WgpuEffectStateSampleCountGuard = (
   state: WgpuRenderState,
   requestedSampleCount: number,
   appliedSampleCount: number,

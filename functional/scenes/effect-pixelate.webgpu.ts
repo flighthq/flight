@@ -11,17 +11,17 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createDisplayObject,
   createPixelateEffect,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   enableWgpuRenderEffectGuards,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -74,7 +74,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuPixelateEffect(state);
 enableWgpuRenderEffectGuards(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -83,9 +83,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [createPixelateEffect({ size: 24 })]);
+  endWgpuEffectState(scenePass, pipeline, [createPixelateEffect({ size: 24 })]);
   endWgpuRenderPass(pass);
 }
 

@@ -6,16 +6,16 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
+import type { Camera3D, Scene3DLightsLike, Node3D, WgpuEffectState } from '@flighthq/sdk';
 import {
   beginWgpuFrame,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   enableFlightDiagnostics,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   prepareScene3DRender,
   scene3DWgpuPipeline,
@@ -46,7 +46,7 @@ export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeli
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
+const pipeline: WgpuEffectState = createWgpuEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -64,9 +64,9 @@ export function render(
   beginWgpuFrame(state);
   drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   drawWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, []);
+  endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
   submitWgpuFrame(state);
 }

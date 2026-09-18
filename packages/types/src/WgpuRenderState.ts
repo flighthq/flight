@@ -17,13 +17,13 @@ import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploa
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
 import type { WgpuDeviceState } from './WgpuDeviceState';
+import type { WgpuRenderEffectRegistration } from './WgpuEffectState';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuPipeline } from './WgpuPipeline';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
-import type { WgpuRenderEffectRegistration } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';

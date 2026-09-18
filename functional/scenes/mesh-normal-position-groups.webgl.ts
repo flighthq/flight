@@ -12,7 +12,7 @@ import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
   computeMeshGeometryPositionGroups,
@@ -20,14 +20,14 @@ import {
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
   createPerspectiveProjection,
   createScene3DLights,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
@@ -57,7 +57,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline = createGlRenderEffectPipeline(state, {
+const pipeline = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -70,14 +70,14 @@ export const height = 600;
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 // Two perpendicular triangles duplicate their vertical shared edge so each side can carry distinct

@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, GlRenderEffectPipeline, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlEffectState, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
@@ -15,11 +15,11 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   beginVelocityFrame,
   contributeVelocity,
   createDisplayObject,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createGlVelocityTarget,
   createMotionBlurEffect,
@@ -29,7 +29,7 @@ import {
   registerDefaultShapeBoundsCommands,
   registerGlMotionBlurEffect,
   defaultGlShapeRenderer,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelRgb,
   getNodeChildAt,
   getNodeChildCount,
@@ -75,7 +75,7 @@ registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 
 // Velocity target is sized to the canvas backing store (logical size * pixelRatio).
 const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
@@ -100,9 +100,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endGlEffectState(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // A few solid shapes spread across the frame. Velocity is contributed in render.webgl.ts (one static

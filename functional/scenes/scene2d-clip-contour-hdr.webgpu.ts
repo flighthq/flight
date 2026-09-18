@@ -13,19 +13,19 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
   beginWgpuRenderPass,
   createBloomEffect,
   createClipRegionFromPath,
   createDisplayObject,
   createPath,
   createShape,
-  createWgpuRenderEffectPipeline,
+  createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   enableWgpuClipSupport,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -77,7 +77,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 enableWgpuClipSupport(state);
 registerWgpuBloomEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba16f' });
+const pipeline = createWgpuEffectState(state, { sampleCount: 1, format: 'rgba16f' });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -86,9 +86,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuRenderEffectPipeline(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuRenderEffectPipeline(scenePass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
+  endWgpuEffectState(scenePass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
   endWgpuRenderPass(pass);
 }
 

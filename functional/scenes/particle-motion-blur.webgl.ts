@@ -15,16 +15,16 @@ import {
 // The limitation is structural — the fingerprint cannot represent this subject — rather than a missing
 // capability, so this must never be filed later as an unfixed gap.
 //
-import type { Bitmap, Node2D, GlRenderEffectPipeline, GlTextureRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlEffectState, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
   createGlSurface,
   scene3DGlPipeline,
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   beginVelocityFrame,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createGlVelocityTarget,
   createMotionBlurEffect,
@@ -36,7 +36,7 @@ import {
   registerGlMotionBlurEffect,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerGlVelocityWriter,
@@ -83,7 +83,7 @@ registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRendere
 registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
@@ -101,9 +101,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
   renderGlScene2D(pass, root);
-  endGlRenderEffectPipeline(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endGlEffectState(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // Per-particle motion blur: eight particles arranged in a ring, each given a velocity pointing radially

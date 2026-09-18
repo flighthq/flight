@@ -1,7 +1,7 @@
 export {
   applyWgpuRenderEffectsToRenderTexture,
-  beginWgpuRenderEffectPipeline,
-  createWgpuRenderEffectPipeline,
+  beginWgpuEffectState,
+  createWgpuEffectState,
   disableWgpuRenderEffectGuards,
   enableWgpuRenderEffectGuards,
   defaultWgpuBevelEffectRunner,
@@ -49,7 +49,7 @@ export {
   defaultWgpuToneMapEffectRunner,
   defaultWgpuVignetteEffectRunner,
   defaultWgpuWhiteBalanceEffectRunner,
-  endWgpuRenderEffectPipeline,
+  endWgpuEffectState,
   registerWgpuBlendEffectBackdrop,
   registerWgpuBevelEffect,
   registerWgpuBitmapDisplacementEffect,

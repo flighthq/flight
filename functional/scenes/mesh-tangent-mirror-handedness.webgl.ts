@@ -48,14 +48,14 @@ import {
   createGlSurface,
   scene3DGlPipeline,
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginGlEffectState,
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryTangents,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
   createDirectionalLight,
-  createGlRenderEffectPipeline,
+  createGlEffectState,
   createGlRenderState,
   createMesh,
   createMeshGeometry,
@@ -63,7 +63,7 @@ import {
   createScene3DLights,
   createTexture,
   createVector3,
-  endGlRenderEffectPipeline,
+  endGlEffectState,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
@@ -95,7 +95,7 @@ export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });
 
-const pipeline = createGlRenderEffectPipeline(state, {
+const pipeline = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -115,14 +115,14 @@ const SAMPLE_FRACTION_CENTRE = 0.5;
 const SAMPLE_FRACTION_RIGHT = 0.832;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlRenderEffectPipeline(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
-  endGlRenderEffectPipeline(pass, pipeline, []);
+  endGlEffectState(pass, pipeline, []);
 }
 
 const material = createBlinnPhongMaterial({

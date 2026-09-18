@@ -66,7 +66,7 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 // issues the per-subset indexed draw. A subset whose material resolves to no renderer (and no
 // StandardMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
 // material renderer's bind; the surrounding rgba16f + MSAA + depth scene target is the effect
-// pipeline's (beginGlRenderEffectPipeline), not drawGlScene3D's.
+// pipeline's (beginGlEffectState), not drawGlScene3D's.
 //
 // Draw-entry pools and per-frame draw lists are held on the GlScene3DRuntime so two independent render
 // states never share allocation (module-level singletons would interleave if two states drew in the
