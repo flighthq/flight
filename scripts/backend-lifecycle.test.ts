@@ -56,10 +56,10 @@ describe('backend provider lifetime census', () => {
 
   const REQUIRED_ENFORCED_NAMES: readonly string[] = [
     'AccessibilityBackend',
+    'AppMenuBackend',
     'ConnectivityChangeBackend',
     'MediaSessionActionBackend',
     'MediaSessionBackend',
-    'MenuApplicationBackend',
     'NotificationLifecycleBackend',
     'PowerKeepAwakeBackend',
     'ScreenQueryBackend',
@@ -256,7 +256,7 @@ describe('backend provider lifetime census', () => {
 
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
     const delta = compareFloorToReport(HISTORICAL_BASELINE, report, RETIRED_HISTORICAL_NAMES);
-    expect(delta.enforcedGained).toContain('MenuApplicationBackend');
+    expect(delta.enforcedGained).toContain('AppMenuBackend');
     expect(delta.enforcedGained).toContain('NotificationLifecycleBackend');
     expect(delta.enforcedGained).toContain('PowerKeepAwakeBackend');
     expect(delta.enforcedGained).toContain('ScreenQueryBackend');
@@ -268,9 +268,9 @@ describe('backend provider lifetime census', () => {
     expect(missing).toEqual([]);
   });
 
-  it('would fail if MenuApplicationBackend were removed from the required set but still enforced', () => {
-    const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'MenuApplicationBackend');
-    expect(withoutMenu).not.toContain('MenuApplicationBackend');
+  it('would fail if AppMenuBackend were removed from the required set but still enforced', () => {
+    const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'AppMenuBackend');
+    expect(withoutMenu).not.toContain('AppMenuBackend');
     expect(withoutMenu.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
   });
 
@@ -288,11 +288,11 @@ describe('backend provider lifetime census', () => {
 
   it('would lose progression visibility if historical baseline absorbed Menu and Power', () => {
     const absorbedBaseline: BackendLifecycleFloor = {
-      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuApplicationBackend', 'PowerKeepAwakeBackend'].sort(),
+      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'AppMenuBackend', 'PowerKeepAwakeBackend'].sort(),
       total: HISTORICAL_BASELINE.total,
     };
     const delta = compareFloorToReport(absorbedBaseline, report, RETIRED_HISTORICAL_NAMES);
-    expect(delta.enforcedGained).not.toContain('MenuApplicationBackend');
+    expect(delta.enforcedGained).not.toContain('AppMenuBackend');
     expect(delta.enforcedGained).not.toContain('PowerKeepAwakeBackend');
   });
 });

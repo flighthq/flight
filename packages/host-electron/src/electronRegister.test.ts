@@ -93,7 +93,7 @@ const LEAVES = [
   'electronHostIpcMessage',
   'electronHostIpcSend',
   'electronHostIpcTargetedSend',
-  'electronHostMenuApplication',
+  'electronHostAppMenu',
   'electronHostMenuPopup',
   'electronHostMenuSelect',
   'electronHostMessageDialog',
@@ -204,7 +204,7 @@ function fakeElectron(): ElectronApi {
     dialog: {},
     Menu: {
       buildFromTemplate: () => ({ popup: noop }),
-      setApplicationMenu: noop,
+      setAppMenu: noop,
     },
     // The remaining members are unused at registration time.
     _off: off,

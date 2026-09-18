@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -85,11 +85,9 @@ export function createMenuSelect(): MenuSelect {
 // Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
 // siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
 // failures; the ones that succeeded are forgotten and never destroyed twice.
-export function destroyMenuApplication(
-  ...hostMenuApplication: readonly Readonly<HostMenuApplicationCapability>[]
-): void {
-  const pending = new Set<HostMenuApplicationCapability>();
-  for (const provider of hostMenuApplication) {
+export function destroyAppMenu(...hostAppMenu: readonly Readonly<HostAppMenuCapability>[]): void {
+  const pending = new Set<HostAppMenuCapability>();
+  for (const provider of hostAppMenu) {
     if (!_destroyedAppLoop.has(provider)) pending.add(provider);
   }
   let failure: unknown = null;
@@ -159,11 +157,8 @@ export function initializeMenuSelect(out: EntityConstruction<MenuSelect>): void 
 // Installs the application menu bar through the host's provider. Returns false when the install did
 // not take effect. A host without a native menu bar omits the slot entirely, so this cannot be reached
 // with a stub that always answers false.
-export function setApplicationMenu(
-  hostMenuApplication: Readonly<HostMenuApplicationCapability>,
-  items: readonly MenuItemTemplate[],
-): boolean {
-  return hostMenuApplication.setApplicationMenu(items);
+export function setAppMenu(hostAppMenu: Readonly<HostAppMenuCapability>, items: readonly MenuItemTemplate[]): boolean {
+  return hostAppMenu.setAppMenu(items);
 }
 
 // Pops up a context menu through the host's provider and resolves the chosen item id, or null when
@@ -256,7 +251,7 @@ const _selectUnsubscribe = new WeakMap<MenuSelect, () => void>();
 
 // Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
 // retries exactly the failed obligations and never re-destroys a successful one.
-const _destroyedAppLoop = new WeakSet<HostMenuApplicationCapability>();
+const _destroyedAppLoop = new WeakSet<HostAppMenuCapability>();
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

@@ -78,12 +78,7 @@ export {
   electronHostIpcSend,
   electronHostIpcTargetedSend,
 } from './electronIpc';
-export {
-  electronHostMenu,
-  electronHostMenuApplication,
-  electronHostMenuPopup,
-  electronHostMenuSelect,
-} from './electronMenu';
+export { electronHostMenu, electronHostAppMenu, electronHostMenuPopup, electronHostMenuSelect } from './electronMenu';
 export {
   electronHostNotification,
   electronHostNotificationAction,

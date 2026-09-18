@@ -53,9 +53,9 @@ export interface MenuItemTemplate {
 
 // Installs the application menu bar. Returns false when the install did not take effect. Only hosts with
 // a real native menu bar expose this slot at all; a host without one omits it rather than returning false.
-export interface HostMenuApplicationCapability extends Entity {
+export interface HostAppMenuCapability extends Entity {
   destroy?(): void;
-  setApplicationMenu(items: readonly MenuItemTemplate[]): boolean;
+  setAppMenu(items: readonly MenuItemTemplate[]): boolean;
 }
 
 // Delivers item-highlight notifications (hover / keyboard focus) by item id. Only a provider that
@@ -78,7 +78,6 @@ export interface HostMenuSelectCapability extends Entity {
 
 // These concrete bundles are identity-bearing results of platform factories. HostMenuCapabilities
 // stays structural so generic host composition remains structural.
-export type ElectronMenuCapabilities = Entity &
-  Required<Pick<HostMenuCapabilities, 'application' | 'popup' | 'select'>>;
+export type ElectronMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;
 
-export type TauriMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'application' | 'popup' | 'select'>>;
+export type TauriMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;

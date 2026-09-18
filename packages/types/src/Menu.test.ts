@@ -2,7 +2,7 @@ import type { Entity } from './Entity';
 import type { HostMenuCapabilities } from './Host';
 import type {
   ElectronMenuCapabilities,
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -10,7 +10,7 @@ import type {
 } from './Menu';
 
 type MenuProvidersAreEntities = [
-  HostMenuApplicationCapability extends Entity ? true : false,
+  HostAppMenuCapability extends Entity ? true : false,
   HostMenuHighlightCapability extends Entity ? true : false,
   HostMenuPopupCapability extends Entity ? true : false,
   HostMenuSelectCapability extends Entity ? true : false,
@@ -23,7 +23,7 @@ type ConcreteMenuBundlesAreEntities = [
 
 type GenericMenuContractsAreStructural = [
   HostMenuCapabilities extends Entity ? true : false,
-  { readonly menu: { readonly application: HostMenuApplicationCapability } } extends Entity ? true : false,
+  { readonly menu: { readonly application: HostAppMenuCapability } } extends Entity ? true : false,
   { readonly menu: { readonly highlight: HostMenuHighlightCapability } } extends Entity ? true : false,
   { readonly menu: { readonly popup: HostMenuPopupCapability } } extends Entity ? true : false,
   { readonly menu: { readonly select: HostMenuSelectCapability } } extends Entity ? true : false,

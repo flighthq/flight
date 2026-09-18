@@ -71,7 +71,7 @@ const LEAVES = [
   ['dialog', 'fileOpen', 'tauriHostFileOpenDialog'],
   ['dialog', 'fileSave', 'tauriHostFileSaveDialog'],
   ['dialog', 'message', 'tauriHostMessageDialog'],
-  ['menu', 'application', 'tauriHostMenuApplication'],
+  ['menu', 'application', 'tauriHostAppMenu'],
   ['menu', 'popup', 'tauriHostMenuPopup'],
   ['menu', 'select', 'tauriHostMenuSelect'],
   ['notification', 'delivery', 'tauriHostNotificationDelivery'],
@@ -174,7 +174,7 @@ describe('tauriHost', () => {
     expect(Object.keys(host.app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
     expect(Object.keys(host.clipboard)).toEqual(['text']);
     expect(Object.keys(host.dialog).sort()).toEqual(['directoryOpen', 'fileOpen', 'fileSave', 'message']);
-    expect(Object.keys(host.menu).sort()).toEqual(['application', 'popup', 'select']);
+    expect(Object.keys(host.menu).sort()).toEqual(['app', 'popup', 'select']);
     expect(Object.keys(host.notification).sort()).toEqual(['delivery', 'lifecycle', 'permission']);
     expect(Object.keys(host.shell).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
     expect(Object.keys(host.shortcut).sort()).toEqual(['query', 'trigger']);

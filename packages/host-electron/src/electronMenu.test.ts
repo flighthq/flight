@@ -1,5 +1,5 @@
 import type {
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
@@ -8,11 +8,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostMenu,
-  electronHostMenuApplication,
+  electronHostAppMenu,
   electronHostMenuPopup,
   electronHostMenuSelect,
   populateElectronHostMenu,
-  populateElectronHostMenuApplication,
+  populateElectronHostAppMenu,
   populateElectronHostMenuPopup,
   populateElectronHostMenuSelect,
 } from './electronMenu';
@@ -69,6 +69,11 @@ function menuLeaf(factory: () => object): () => void {
   };
 }
 
+const menuApp = menuLeaf(() => electronHostAppMenu(fakeElectron().electron));
+const menuPopup = menuLeaf(() => electronHostMenuPopup(fakeElectron().electron));
+
+describe('electronHostAppMenu', menuApp);
+
 describe('electronHostMenu', () => {
   it('returns an Entity-composed capability bundle and providers', () => {
     const capabilities = electronHostMenu(fakeElectron().electron);
@@ -82,7 +87,7 @@ describe('electronHostMenu', () => {
     const seen: string[] = [];
     backend.subscribeSelect((id: string) => seen.push(id));
     expect(
-      backend.setApplicationMenu([
+      backend.setAppMenu([
         { id: 'open', label: 'Open' },
         { label: 'Edit', submenu: [{ id: 'copy', label: 'Copy' }] },
       ]),
@@ -98,7 +103,7 @@ describe('electronHostMenu', () => {
     const backend = _slots(electron);
     const seen: string[] = [];
     const unsubscribe = backend.subscribeSelect((id: string) => seen.push(id));
-    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    backend.setAppMenu([{ id: 'a', label: 'A' }]);
     unsubscribe();
     clickItem(built, 'a');
     expect(seen).toEqual([]);
@@ -107,7 +112,7 @@ describe('electronHostMenu', () => {
   it('clears the native application menu on destroy', () => {
     const { electron, applied } = fakeElectron();
     const backend = _slots(electron);
-    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    backend.setAppMenu([{ id: 'a', label: 'A' }]);
     expect(applied.length).toBe(1);
     backend.destroy?.();
     expect(applied.length).toBe(2);
@@ -117,7 +122,7 @@ describe('electronHostMenu', () => {
   it('clears the native application menu exactly once on double destroy', () => {
     const { electron, applied } = fakeElectron();
     const backend = _slots(electron);
-    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    backend.setAppMenu([{ id: 'a', label: 'A' }]);
     expect(applied.length).toBe(1);
     backend.destroy?.();
     backend.destroy?.();
@@ -133,7 +138,7 @@ describe('electronHostMenu', () => {
     const backend = _slots(electron);
     const seen: string[] = [];
     const unsubscribe = backend.subscribeSelect((id: string) => seen.push(id));
-    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    backend.setAppMenu([{ id: 'a', label: 'A' }]);
     backend.destroy?.();
     clickItem(built, 'a');
     expect(seen).toEqual(['a']);
@@ -153,10 +158,6 @@ describe('electronHostMenu', () => {
     expect(await pending).toBe('paste');
   });
 });
-const menuApplication = menuLeaf(() => electronHostMenuApplication(fakeElectron().electron));
-const menuPopup = menuLeaf(() => electronHostMenuPopup(fakeElectron().electron));
-
-describe('electronHostMenuApplication', menuApplication);
 describe('electronHostMenuPopup', menuPopup);
 
 describe('electronHostMenuSelect', menuLeaf(electronHostMenuSelect));
@@ -166,26 +167,26 @@ describe('electronHostMenuSelect', menuLeaf(electronHostMenuSelect));
 function _slots(api: ElectronApi): {
   destroy?: () => void;
   popupContextMenu: HostMenuPopupCapability['popup'];
-  setApplicationMenu: HostMenuApplicationCapability['setApplicationMenu'];
+  setAppMenu: HostAppMenuCapability['setAppMenu'];
   subscribeSelect: HostMenuSelectCapability['subscribe'];
 } {
-  const { application, popup, select } = electronHostMenu(api);
+  const { app, popup, select } = electronHostMenu(api);
   return {
-    destroy: application.destroy?.bind(application),
+    destroy: app.destroy?.bind(app),
     popupContextMenu: popup.popup,
-    setApplicationMenu: application.setApplicationMenu,
+    setAppMenu: app.setAppMenu,
     subscribeSelect: select.subscribe,
   };
 }
-describe('populateElectronHostMenu', () => {
-  it('is the construction initializer of electronHostMenu', () => {
-    expect(typeof populateElectronHostMenu).toBe('function');
+describe('populateElectronHostAppMenu', () => {
+  it('is the construction initializer of electronHostMenuApplication', () => {
+    expect(typeof populateElectronHostAppMenu).toBe('function');
   });
 });
 
-describe('populateElectronHostMenuApplication', () => {
-  it('is the construction initializer of electronHostMenuApplication', () => {
-    expect(typeof populateElectronHostMenuApplication).toBe('function');
+describe('populateElectronHostMenu', () => {
+  it('is the construction initializer of electronHostMenu', () => {
+    expect(typeof populateElectronHostMenu).toBe('function');
   });
 });
 
