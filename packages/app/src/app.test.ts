@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   addAppRecentDocument,
-  attachApp,
+  attachAppEvents,
   attachAppActivate,
   attachAppAllWindowsClosed,
   attachAppOpenFile,
@@ -16,9 +16,9 @@ import {
   cancelAppAttention,
   cancelAppDockBounce,
   clearAppRecentDocuments,
-  createApp,
-  detachApp,
-  disposeApp,
+  createAppEvents,
+  detachAppEvents,
+  disposeAppEvents,
   focusApp,
   getAppDirectoryPath,
   getAppExecutablePath,
@@ -31,7 +31,7 @@ import {
   getAppVersion,
   hasAppSingleInstanceLock,
   hideApp,
-  initializeApp,
+  initializeAppEvents,
   isAppHidden,
   quitApp,
   relaunchApp,
@@ -202,12 +202,36 @@ describe('addAppRecentDocument', () => {
   });
 });
 
-describe('attachApp', () => {
+describe('attachAppActivate', () => {
+  it('forwards activation', () => {
+    const { host, listeners } = createFixture();
+    const app = createAppEvents();
+    const receive = vi.fn();
+    connectSignal(app.onActivate, receive);
+    attachAppActivate(host.app.activate, app);
+    listeners.activate?.();
+    expect(receive).toHaveBeenCalledOnce();
+  });
+});
+
+describe('attachAppAllWindowsClosed', () => {
+  it('forwards all-windows-closed', () => {
+    const { host, listeners } = createFixture();
+    const app = createAppEvents();
+    const receive = vi.fn();
+    connectSignal(app.onAllWindowsClosed, receive);
+    attachAppAllWindowsClosed(host.app.allWindowsClosed, app);
+    listeners.allWindowsClosed?.();
+    expect(receive).toHaveBeenCalledOnce();
+  });
+});
+
+describe('attachAppEvents', () => {
   it('attaches all six event providers and replaces a prior attachment', () => {
     const first = createFixture();
     const second = createFixture();
-    const app = createApp();
-    attachApp(
+    const app = createAppEvents();
+    attachAppEvents(
       first.host.app.activate,
       first.host.app.allWindowsClosed,
       first.host.app.openFile,
@@ -216,7 +240,7 @@ describe('attachApp', () => {
       first.host.app.secondInstance,
       app,
     );
-    attachApp(
+    attachAppEvents(
       second.host.app.activate,
       second.host.app.allWindowsClosed,
       second.host.app.openFile,
@@ -229,34 +253,10 @@ describe('attachApp', () => {
   });
 });
 
-describe('attachAppActivate', () => {
-  it('forwards activation', () => {
-    const { host, listeners } = createFixture();
-    const app = createApp();
-    const receive = vi.fn();
-    connectSignal(app.onActivate, receive);
-    attachAppActivate(host.app.activate, app);
-    listeners.activate?.();
-    expect(receive).toHaveBeenCalledOnce();
-  });
-});
-
-describe('attachAppAllWindowsClosed', () => {
-  it('forwards all-windows-closed', () => {
-    const { host, listeners } = createFixture();
-    const app = createApp();
-    const receive = vi.fn();
-    connectSignal(app.onAllWindowsClosed, receive);
-    attachAppAllWindowsClosed(host.app.allWindowsClosed, app);
-    listeners.allWindowsClosed?.();
-    expect(receive).toHaveBeenCalledOnce();
-  });
-});
-
 describe('attachAppOpenFile', () => {
   it('forwards the opened path', () => {
     const { host, listeners } = createFixture();
-    const app = createApp();
+    const app = createAppEvents();
     const receive = vi.fn();
     connectSignal(app.onOpenFile, receive);
     attachAppOpenFile(host.app.openFile, app);
@@ -268,7 +268,7 @@ describe('attachAppOpenFile', () => {
 describe('attachAppQuitRequest', () => {
   it('translates signal cancellation to the native veto callback', () => {
     const { host, listeners } = createFixture();
-    const app = createApp();
+    const app = createAppEvents();
     const cancelHost = vi.fn();
     connectSignal(app.onQuitRequest, () => cancelSignal(app.onQuitRequest));
     attachAppQuitRequest(host.app.quitRequest, app);
@@ -280,7 +280,7 @@ describe('attachAppQuitRequest', () => {
 describe('attachAppReady', () => {
   it('forwards ready', () => {
     const { host, listeners } = createFixture();
-    const app = createApp();
+    const app = createAppEvents();
     const receive = vi.fn();
     connectSignal(app.onReady, receive);
     attachAppReady(host.app.ready, app);
@@ -292,7 +292,7 @@ describe('attachAppReady', () => {
 describe('attachAppSecondInstance', () => {
   it('forwards argv', () => {
     const { host, listeners } = createFixture();
-    const app = createApp();
+    const app = createAppEvents();
     const receive = vi.fn();
     connectSignal(app.onSecondInstance, receive);
     attachAppSecondInstance(host.app.secondInstance, app);
@@ -327,9 +327,9 @@ describe('clearAppRecentDocuments', () => {
     expect(calls).toContain('clearRecent');
   });
 });
-describe('createApp', () => {
+describe('createAppEvents', () => {
   it('creates an Entity carrying all application signals', () => {
-    const app = createApp();
+    const app = createAppEvents();
     expect(EntityRuntimeKey in app).toBe(true);
     expect(app).toMatchObject({
       onActivate: expect.any(Object),
@@ -341,11 +341,11 @@ describe('createApp', () => {
     });
   });
 });
-describe('detachApp', () => {
+describe('detachAppEvents', () => {
   it('unsubscribes every attached provider', () => {
     const { host, unsubscribes } = createFixture();
-    const app = createApp();
-    attachApp(
+    const app = createAppEvents();
+    attachAppEvents(
       host.app.activate,
       host.app.allWindowsClosed,
       host.app.openFile,
@@ -354,17 +354,17 @@ describe('detachApp', () => {
       host.app.secondInstance,
       app,
     );
-    detachApp(app);
+    detachAppEvents(app);
     expect(Object.values(unsubscribes).every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
 });
-describe('disposeApp', () => {
+describe('disposeAppEvents', () => {
   it('detaches providers and clears signal listeners', () => {
     const { host, listeners, unsubscribes } = createFixture();
-    const app = createApp();
+    const app = createAppEvents();
     const receive = vi.fn();
     connectSignal(app.onReady, receive);
-    attachApp(
+    attachAppEvents(
       host.app.activate,
       host.app.allWindowsClosed,
       host.app.openFile,
@@ -373,7 +373,7 @@ describe('disposeApp', () => {
       host.app.secondInstance,
       app,
     );
-    disposeApp(app);
+    disposeAppEvents(app);
     listeners.ready?.();
     expect(unsubscribes.ready).toHaveBeenCalledOnce();
     expect(receive).not.toHaveBeenCalled();
@@ -427,9 +427,9 @@ describe('hideApp', () => {
     expect(calls).toContain('hide');
   });
 });
-describe('initializeApp', () => {
+describe('initializeAppEvents', () => {
   it('is the construction initializer of createApp', () => {
-    expect(typeof initializeApp).toBe('function');
+    expect(typeof initializeAppEvents).toBe('function');
   });
 });
 describe('isAppHidden', () => {

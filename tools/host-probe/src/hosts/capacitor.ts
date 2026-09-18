@@ -1,4 +1,4 @@
-import { App } from '@capacitor/app';
+import { AppEvents } from '@capacitor/app';
 import { Clipboard } from '@capacitor/clipboard';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
@@ -22,7 +22,7 @@ import { createHostProbeNotificationProfileResult } from '#host-probe/expectatio
 
 export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   const capacitorApi: CapacitorApi = {
-    app: App,
+    app: AppEvents,
     clipboard: Clipboard,
     device: Device,
     dialog: Dialog,

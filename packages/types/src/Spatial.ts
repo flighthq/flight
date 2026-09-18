@@ -121,7 +121,7 @@ export interface SpatialIndexBackend2D {
   querySpatialRay(x: number, y: number, dx: number, dy: number, out: SpatialObjectId[]): void;
 }
 
-// Opaque per-index runtime: the active backend the public operations dispatch through. AppLoop
+// Opaque per-index runtime: the active backend the public operations dispatch through. Application
 // code treats this as internal; it is read and written only by the `@flighthq/spatial` functions.
 export interface SpatialIndexRuntime2D {
   backend: SpatialIndexBackend2D;
@@ -174,7 +174,7 @@ export interface SpatialIndexBackend3D {
   querySpatialRay(x: number, y: number, z: number, dx: number, dy: number, dz: number, out: SpatialObjectId[]): void;
 }
 
-// Opaque per-index runtime: the active 3D backend the public operations dispatch through. AppLoop
+// Opaque per-index runtime: the active 3D backend the public operations dispatch through. Application
 // code treats this as internal; it is read and written only by the `@flighthq/spatial` functions.
 export interface SpatialIndexRuntime3D {
   backend: SpatialIndexBackend3D;

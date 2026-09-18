@@ -35,7 +35,7 @@ export interface WgpuHostAcquisitionOptions {
 }
 
 // Process-wide host seam for acquiring a WebGPU device and presentation context. A native host may
-// return its own structurally compatible handles without coupling render-wgpu to AppLoop or a
+// return its own structurally compatible handles without coupling render-wgpu to the app layer or a
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuCapability extends Entity {

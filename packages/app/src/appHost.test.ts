@@ -3,7 +3,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { attachApp, createApp, focusApp, getAppName, quitApp, setAppBadgeCount } from './app';
+import { attachAppEvents, createAppEvents, focusApp, getAppName, quitApp, setAppBadgeCount } from './app';
 import * as appContract from './contract';
 
 describe('app explicit Host ownership', () => {
@@ -60,11 +60,11 @@ describe('app explicit Host ownership', () => {
       out.subscribe = subscribe;
       return finishEntity(out);
     })();
-    const app = createApp();
+    const app = createAppEvents();
     let readyCount = 0;
     connectSignal(app.onReady, () => readyCount++);
 
-    attachApp(inert, inert, inert, inert, hostAppReady, inert, app);
+    attachAppEvents(inert, inert, inert, inert, hostAppReady, inert, app);
     listeners.ready?.();
 
     expect(subscribe).toHaveBeenCalledOnce();
