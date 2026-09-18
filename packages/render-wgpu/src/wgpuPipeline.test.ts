@@ -1,8 +1,8 @@
-import { createEmptyWgpuRenderRegistry, initializeEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries, initializeEmptyWgpuRenderRegistries } from './wgpuPipeline';
 
-describe('createEmptyWgpuRenderRegistry', () => {
+describe('createEmptyWgpuRenderRegistries', () => {
   it('creates empty tables for every required WGPU policy seam', () => {
-    const registries = createEmptyWgpuRenderRegistry();
+    const registries = createEmptyWgpuRenderRegistries();
     expect(registries.renderers.shape).toBe('keyed');
     expect(registries.compressedTextureDecoder.shape).toBe('slot');
     expect(registries.compressedTextureUpload.shape).toBe('slot');
@@ -19,8 +19,8 @@ describe('createEmptyWgpuRenderRegistry', () => {
   });
 });
 
-describe('initializeEmptyWgpuRenderRegistry', () => {
-  it('is the construction initializer of createEmptyWgpuRenderRegistry', () => {
-    expect(typeof initializeEmptyWgpuRenderRegistry).toBe('function');
+describe('initializeEmptyWgpuRenderRegistries', () => {
+  it('is the construction initializer of createEmptyWgpuRenderRegistries', () => {
+    expect(typeof initializeEmptyWgpuRenderRegistries).toBe('function');
   });
 });

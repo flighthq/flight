@@ -7,7 +7,7 @@ import {
   createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget,
   createCanvasTextureResolvers,
   registerCanvasSurfaceCreator,
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasRenderOptions,
@@ -46,7 +46,7 @@ export function createCanvasRenderState(
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
   const state = createExplicitCanvasRenderState(
-    defaultScene2DCanvasRenderRegistry,
+    defaultScene2DCanvasRenderRegistries,
     createCanvasTextureResolvers(canvasTestSurfaceCreator),
     options,
   );
@@ -61,7 +61,7 @@ export function createCanvasRenderState(
 // A state with no pass open, for tests about registration or construction rather than about drawing.
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
   const state = createExplicitCanvasRenderState(
-    defaultScene2DCanvasRenderRegistry,
+    defaultScene2DCanvasRenderRegistries,
     createCanvasTextureResolvers(canvasTestSurfaceCreator),
     options,
   );

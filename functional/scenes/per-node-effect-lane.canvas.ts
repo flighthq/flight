@@ -75,7 +75,7 @@ const { render, state, width } = target;
 // The state owns no surface any more, so the creator comes from the host directly — the same one the
 // harness registered on the state for its own offscreen work.
 const offscreenState = createCanvasOffscreenRenderState(
-  state.registry,
+  state.registries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio: state.pixelRatio },
 );

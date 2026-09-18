@@ -12,7 +12,7 @@ import {
 import type { Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistry,
+  defaultScene3DGlRenderRegistries,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
@@ -54,7 +54,7 @@ appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
 document.body.style.margin = '0';
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   imageSurfaceProvider: webImageSurfaceCreator,

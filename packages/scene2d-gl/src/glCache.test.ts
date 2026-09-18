@@ -80,7 +80,7 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-const testPipeline = renderGl.createEmptyGlRenderRegistry();
+const testPipeline = renderGl.createEmptyGlRenderRegistries();
 
 function fakeScreen(options = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;
@@ -111,7 +111,7 @@ describe('createGlCacheState', () => {
     const teardown = vi.fn();
     renderGl.getGlRenderStateRuntime(screen).context.teardowns.push(teardown);
 
-    createGlCacheState(screen, screen.registry);
+    createGlCacheState(screen, screen.registries);
     renderGl.destroyGlRenderState(screen);
 
     expect(teardown).toHaveBeenCalledOnce();
@@ -208,7 +208,7 @@ describe('getGlRenderCacheTarget', () => {
 describe('refreshGlRenderCache', () => {
   it('bakes on the first call and allocates the target on the screen state', () => {
     const screen = fakeScreen();
-    const cacheState = createGlCacheState(screen, screen.registry);
+    const cacheState = createGlCacheState(screen, screen.registries);
     const cache = createRenderCache();
     const obj = createDisplayObject();
     const rebaked = refreshGlRenderCache(screen, cacheState, cache, obj, { padding: 5 });
@@ -221,7 +221,7 @@ describe('refreshGlRenderCache', () => {
 
   it('skips the bake under requiresInvalidation when nothing changed', () => {
     const screen = fakeScreen({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const cacheState = createGlCacheState(screen, screen.registry, {
+    const cacheState = createGlCacheState(screen, screen.registries, {
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
     const cache = createRenderCache();

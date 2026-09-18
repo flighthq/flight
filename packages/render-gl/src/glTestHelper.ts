@@ -4,7 +4,7 @@ import type { EntityConstruction, GlBitmapShader, GlRenderState, GlRenderStateRu
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
-import { createEmptyGlRenderRegistry } from './glPipeline';
+import { createEmptyGlRenderRegistries } from './glPipeline';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
 
 export function createGlState(options?: { allowSmoothing?: boolean }): {
@@ -18,7 +18,7 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
   canvas.height = 100;
   const gl = makeGL();
   const contextState = createGlContextState(gl);
-  const registry = createEmptyGlRenderRegistry();
+  const registry = createEmptyGlRenderRegistries();
   const shaderLoc = makeShaderLoc();
   const state = createRenderState({
     allowSmoothing: options?.allowSmoothing ?? true,

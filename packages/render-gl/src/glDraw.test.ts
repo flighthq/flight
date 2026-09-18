@@ -31,12 +31,12 @@ import {
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
-import { createEmptyGlRenderRegistry } from './glPipeline';
+import { createEmptyGlRenderRegistries } from './glPipeline';
 import { createGlRenderState, getGlRenderStateRuntime, invalidateGlRenderStateCache } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState, makeGL } from './glTestHelper';
 
-const testPipeline = createEmptyGlRenderRegistry();
+const testPipeline = createEmptyGlRenderRegistries();
 
 function createTestGlRenderState(gl: WebGL2RenderingContext) {
   return createGlRenderState(gl, testPipeline);

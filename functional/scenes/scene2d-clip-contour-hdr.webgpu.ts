@@ -32,7 +32,7 @@ import {
   registerRenderer,
   registerWgpuBloomEffect,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistry,
+  defaultScene3DWgpuRenderRegistries,
   setNode2DClip,
   ShapeKind,
   createWgpuSurface,
@@ -67,7 +67,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });

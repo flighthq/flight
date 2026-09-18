@@ -37,8 +37,8 @@ describe('Scene3D size fixture isolation', () => {
     const source = readFileSync(resolve(fixturesRoot, spec.name, 'src', `render.${spec.renderer}.ts`), 'utf8');
     const banned = [
       '@flighthq/sdk',
-      'defaultScene2DGlRenderRegistry',
-      'defaultScene2DWgpuRenderRegistry',
+      'defaultScene2DGlRenderRegistries',
+      'defaultScene2DWgpuRenderRegistries',
       'scene3dGlPipeline',
       'scene3dWgpuPipeline',
       'registerGlUnlitMaterial',

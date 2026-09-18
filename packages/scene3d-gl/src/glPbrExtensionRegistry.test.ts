@@ -2,7 +2,7 @@ import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   getGlRenderStateRuntime,
   registerGlTextureResolver,
 } from '@flighthq/render-gl/contract';

@@ -1,6 +1,6 @@
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
-import { defaultScene2DWgpuRenderRegistry } from '@flighthq/scene2d-wgpu/contract';
+import { defaultScene2DWgpuRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
 import type { RegistryTable } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
@@ -48,7 +48,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { defaultScene3DWgpuRenderRegistry } from './scene3DWgpuPipeline';
+import { defaultScene3DWgpuRenderRegistries } from './scene3DWgpuPipeline';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { defaultWgpuSkinningAdapter } from './wgpuSkinPalette';
@@ -59,9 +59,9 @@ function registryKeys(table: Readonly<RegistryTable<unknown>>): string[] {
   return keys;
 }
 
-describe('defaultScene3DWgpuRenderRegistry', () => {
-  const registries = defaultScene3DWgpuRenderRegistry;
-  const scene2dRegistries = defaultScene2DWgpuRenderRegistry;
+describe('defaultScene3DWgpuRenderRegistries', () => {
+  const registries = defaultScene3DWgpuRenderRegistries;
+  const scene2dRegistries = defaultScene2DWgpuRenderRegistries;
 
   it('retains the complete standard Scene2D registry surface', () => {
     expect(registries.renderers).toBe(scene2dRegistries.renderers);
@@ -131,7 +131,7 @@ describe('defaultScene3DWgpuRenderRegistry', () => {
       value: defaultWgpuSkinningAdapter,
     });
 
-    const { state } = makeWgpuScene3DState(defaultScene3DWgpuRenderRegistry);
+    const { state } = makeWgpuScene3DState(defaultScene3DWgpuRenderRegistries);
     expect(getWgpuSkinningAdapter(state)).toBe(defaultWgpuSkinningAdapter);
   });
 

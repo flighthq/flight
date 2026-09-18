@@ -22,7 +22,7 @@ import {
 // live registry; `catalog`, the caller's complete WebGPU inventory, supplies the primary remedy only
 // for a shortfall.
 //
-// Proactive, unlike explainRenderRegistryMisses, which reports what already missed during a frame. Ask
+// Proactive, unlike explainRenderRegistriesMisses, which reports what already missed during a frame. Ask
 // this after loading a document and before the first draw, while the answer is still actionable.
 export function explainWgpuScene3DCoverage(
   out: SceneCoverageEntry[],

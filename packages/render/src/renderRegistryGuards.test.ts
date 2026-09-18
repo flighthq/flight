@@ -5,28 +5,28 @@ import { RenderRegistryTable } from '@flighthq/types/contract';
 import { registerRenderer } from './renderer';
 import { createRenderProxy } from './renderProxy';
 import {
-  areRenderRegistryGuardsEnabled,
-  enableRenderRegistryGuards,
-  explainRenderRegistryMisses,
+  areRenderRegistriesGuardsEnabled,
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
 } from './renderRegistryGuards';
 import { enableRenderRegistrySignals } from './renderRegistrySignals';
 import { createRenderState } from './renderState';
 
-describe('areRenderRegistryGuardsEnabled', () => {
+describe('areRenderRegistriesGuardsEnabled', () => {
   it('reports whether the state-local registry guard is enabled', () => {
     const state = createRenderState();
-    expect(areRenderRegistryGuardsEnabled(state)).toBe(false);
-    enableRenderRegistryGuards(state);
-    expect(areRenderRegistryGuardsEnabled(state)).toBe(true);
+    expect(areRenderRegistriesGuardsEnabled(state)).toBe(false);
+    enableRenderRegistriesGuards(state);
+    expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
   });
 });
 
-describe('enableRenderRegistryGuards', () => {
+describe('enableRenderRegistriesGuards', () => {
   it('is idempotent', () => {
     const state = createRenderState();
-    enableRenderRegistryGuards(state);
-    enableRenderRegistryGuards(state);
-    expect(areRenderRegistryGuardsEnabled(state)).toBe(true);
+    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state);
+    expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
   });
 
   it('warns once per state, registry, and kind', () => {
@@ -34,8 +34,8 @@ describe('enableRenderRegistryGuards', () => {
     const secondState = createRenderState();
     const sink = createMemoryLogSink(4);
     addLogSink(sink.sink);
-    enableRenderRegistryGuards(firstState);
-    enableRenderRegistryGuards(secondState);
+    enableRenderRegistriesGuards(firstState);
+    enableRenderRegistriesGuards(secondState);
     try {
       createRenderProxy(firstState, { kind: 'acme.Missing' } as never);
       createRenderProxy(firstState, { kind: 'acme.Missing' } as never);
@@ -58,7 +58,7 @@ describe('enableRenderRegistryGuards', () => {
     const state = createRenderState();
     const sink = createMemoryLogSink(1);
     addLogSink(sink.sink);
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     registerRenderer(state, 'acme.Registered', { createData: () => null, submit: () => {} });
     try {
       createRenderProxy(state, { kind: 'acme.Registered' } as never);
@@ -69,16 +69,16 @@ describe('enableRenderRegistryGuards', () => {
   });
 });
 
-describe('explainRenderRegistryMisses', () => {
+describe('explainRenderRegistriesMisses', () => {
   it('returns each recorded registry and kind pair once in event order', () => {
     const state = createRenderState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     const signals = enableRenderRegistrySignals(state);
     emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
     emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
     emitSignal(signals.onRegistryMiss, RenderRegistryTable.ShapeCommandHandler, 'acme.ShapeCommand');
 
-    expect(explainRenderRegistryMisses(state)).toEqual({
+    expect(explainRenderRegistriesMisses(state)).toEqual({
       misses: [
         { kind: 'acme.Texture', registry: RenderRegistryTable.TextureResolver },
         { kind: 'acme.ShapeCommand', registry: RenderRegistryTable.ShapeCommandHandler },
@@ -89,6 +89,6 @@ describe('explainRenderRegistryMisses', () => {
 
   it('returns a complete empty explanation before any miss is recorded', () => {
     const state = createRenderState();
-    expect(explainRenderRegistryMisses(state)).toEqual({ misses: [], status: 'complete' });
+    expect(explainRenderRegistriesMisses(state)).toEqual({ misses: [], status: 'complete' });
   });
 });

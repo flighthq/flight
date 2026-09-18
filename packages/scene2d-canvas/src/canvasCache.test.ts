@@ -38,7 +38,7 @@ function makeCacheNode(source: unknown): any {
 
 function makeCacheState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
   const ownerRuntime = getCanvasRenderStateRuntime(ownerState);
-  return createCanvasCacheState(ownerState, ownerState.registry, createCanvasTextureResolvers(), {
+  return createCanvasCacheState(ownerState, ownerState.registries, createCanvasTextureResolvers(), {
     imageSmoothingEnabled: ownerRuntime.imageSmoothingEnabled,
     imageSmoothingQuality: ownerRuntime.imageSmoothingQuality,
     pixelRatio: ownerState.pixelRatio,
@@ -49,7 +49,7 @@ function makeCacheState(ownerState: ReturnType<typeof makeCanvasState>, options 
 }
 
 function makeOffscreenState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
-  return createCanvasOffscreenRenderState(ownerState.registry, createCanvasTextureResolvers(), options);
+  return createCanvasOffscreenRenderState(ownerState.registries, createCanvasTextureResolvers(), options);
 }
 
 describe('createCanvasCacheState', () => {
@@ -78,7 +78,7 @@ describe('createCanvasCacheState', () => {
     const cacheState = makeCacheState(screen);
     const cacheRuntime = getCanvasRenderStateRuntime(cacheState);
 
-    expect(cacheState.registry).toBe(screen.registry);
+    expect(cacheState.registries).toBe(screen.registries);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
     expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
   });
@@ -105,7 +105,7 @@ describe('createCanvasOffscreenRenderState', () => {
     Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined });
 
     try {
-      expect(() => createCanvasOffscreenRenderState(screen.registry, resolvers)).not.toThrow();
+      expect(() => createCanvasOffscreenRenderState(screen.registries, resolvers)).not.toThrow();
     } finally {
       Object.defineProperty(globalThis, 'document', documentDescriptor);
     }

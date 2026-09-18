@@ -1,16 +1,16 @@
 import { logOnce } from '@flighthq/log/contract';
-import { areRenderRegistryGuardsEnabled, enableRenderRegistryGuards } from '@flighthq/render/contract';
+import { areRenderRegistriesGuardsEnabled, enableRenderRegistriesGuards } from '@flighthq/render/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 export function areWgpuTextureResolverGuardsEnabled(state: WgpuRenderState): boolean {
-  return areRenderRegistryGuardsEnabled(state);
+  return areRenderRegistriesGuardsEnabled(state);
 }
 
 export function enableWgpuTextureResolverGuards(state: WgpuRenderState): void {
-  enableRenderRegistryGuards(state);
+  enableRenderRegistriesGuards(state);
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.mipmapDegradedGuard = warnOnMipmapDegradation;
 }

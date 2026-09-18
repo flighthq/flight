@@ -27,7 +27,7 @@ import type {
   Scene2DRenderer,
   GlRenderState,
   GlRenderOptions,
-  GlRenderRegistry,
+  GlRenderRegistries,
   GlTextureRenderTarget,
   Matrix,
   RenderCache,
@@ -40,7 +40,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 export function createGlCacheState(
   ownerState: GlRenderState,
-  registry: Readonly<GlRenderRegistry>,
+  registry: Readonly<GlRenderRegistries>,
   options: GlRenderOptions = {},
 ): GlRenderState {
   const cacheState = createGlRenderState(ownerState.gl, registry, options);

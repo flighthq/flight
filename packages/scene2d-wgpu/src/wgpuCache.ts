@@ -32,7 +32,7 @@ import type {
   Scene2DRenderer,
   WgpuDeviceState,
   WgpuRenderOptions,
-  WgpuRenderRegistry,
+  WgpuRenderRegistries,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
@@ -51,7 +51,7 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 export function createWgpuCacheState(
   ownerState: WgpuRenderState,
   deviceState: Readonly<WgpuDeviceState>,
-  registry: Readonly<WgpuRenderRegistry>,
+  registry: Readonly<WgpuRenderRegistries>,
   options: Readonly<WgpuRenderOptions> = {},
 ): WgpuRenderState {
   const cacheState = createWgpuOffscreenRenderState(deviceState, registry, options);

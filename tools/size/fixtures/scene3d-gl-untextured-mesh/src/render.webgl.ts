@@ -9,7 +9,7 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -29,7 +29,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const registries = createEmptyGlRenderRegistry();
+const registries = createEmptyGlRenderRegistries();
 const registry = {
   ...registries,
   meshMaterialRenderers: withRegistryTableEntry(

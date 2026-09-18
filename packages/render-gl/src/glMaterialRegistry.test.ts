@@ -1,4 +1,4 @@
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import type { GlMaterialRenderer, Material } from '@flighthq/types/contract';
 import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
@@ -65,12 +65,12 @@ describe('resolveGlMaterialRenderer', () => {
 
   it('reports the missing kind, so an unresolved material is not an invisible node with clean logs', () => {
     const { state } = createGlState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
 
     resolveGlMaterialRenderer(state, makeMaterial(TestKind));
     resolveGlMaterialRenderer(state, null);
 
-    expect(explainRenderRegistryMisses(state)).toEqual({
+    expect(explainRenderRegistriesMisses(state)).toEqual({
       misses: [
         { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
         { kind: StandardMaterialKind, registry: RenderRegistryTable.MaterialRenderer },
@@ -81,25 +81,25 @@ describe('resolveGlMaterialRenderer', () => {
 
   it('reports a kind that StandardMaterialKind silently stood in for', () => {
     const { state } = createGlState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     registerGlMaterialRenderer(state, StandardMaterialKind, testRenderer);
 
     // Substituting a different shading family draws something, but not what was asked for, so it is
     // reported even though the node is visible.
     expect(resolveGlMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
 
-    expect(explainRenderRegistryMisses(state).misses).toEqual([
+    expect(explainRenderRegistriesMisses(state).misses).toEqual([
       { kind: 'Other', registry: RenderRegistryTable.MaterialRenderer },
     ]);
   });
 
   it('records nothing once the kind resolves', () => {
     const { state } = createGlState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     registerGlMaterialRenderer(state, TestKind, testRenderer);
 
     resolveGlMaterialRenderer(state, makeMaterial(TestKind));
 
-    expect(explainRenderRegistryMisses(state)).toEqual({ misses: [], status: 'complete' });
+    expect(explainRenderRegistriesMisses(state)).toEqual({ misses: [], status: 'complete' });
   });
 });

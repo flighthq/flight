@@ -4,7 +4,7 @@ import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
   createWgpuOffscreenRenderState,
-  createEmptyWgpuRenderRegistry,
+  createEmptyWgpuRenderRegistries,
   createWgpuRenderStateForTest,
   createWgpuRenderTexturePool,
   getWgpuRenderStateRuntime,

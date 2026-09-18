@@ -141,7 +141,7 @@ function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
   const device = {} as GPUDevice;
   const deviceState = renderWgpu.createWgpuDeviceState(device);
-  const pipeline = renderWgpu.createEmptyWgpuRenderRegistry();
+  const pipeline = renderWgpu.createEmptyWgpuRenderRegistries();
   Object.assign(state, {
     context: {} as GPUCanvasContext,
     device,

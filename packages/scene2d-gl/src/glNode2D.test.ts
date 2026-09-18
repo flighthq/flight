@@ -1,5 +1,5 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
-import { createEmptyGlRenderRegistry, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
@@ -11,7 +11,7 @@ function makeState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  return createGlRenderState(canvas.getContext('webgl2')!, createEmptyGlRenderRegistry());
+  return createGlRenderState(canvas.getContext('webgl2')!, createEmptyGlRenderRegistries());
 }
 
 function mockPass(state: GlRenderState): GlRenderPass {

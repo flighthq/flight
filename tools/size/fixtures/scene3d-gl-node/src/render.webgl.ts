@@ -5,7 +5,7 @@ import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecy
 import { createScene3DLights } from '@flighthq/lighting';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -24,7 +24,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const state = createGlRenderState(glSurface.context, createEmptyGlRenderRegistry(), {
+const state = createGlRenderState(glSurface.context, createEmptyGlRenderRegistries(), {
   pixelRatio: 1,
 });
 const scene = createNode3D(Node3DKind);

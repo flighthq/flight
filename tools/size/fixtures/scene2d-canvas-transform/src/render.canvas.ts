@@ -8,7 +8,7 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRenderRegistry,
+  createEmptyCanvasRenderRegistries,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -47,7 +47,7 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRenderRegistry();
+const emptyRegistries = createEmptyCanvasRenderRegistries();
 const registry = { ...emptyRegistries };
 
 const screen = createCanvasScreenRenderTarget(

@@ -1,5 +1,5 @@
 import { beginWgpuFrame, retireWgpuBuffer, retireWgpuTexture, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 

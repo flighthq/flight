@@ -10,7 +10,7 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRenderRegistry,
+  createEmptyCanvasRenderRegistries,
   defaultCanvasBeginFill,
   defaultCanvasDrawPath,
   defaultCanvasEndFill,
@@ -46,7 +46,7 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRenderRegistry();
+const emptyRegistries = createEmptyCanvasRenderRegistries();
 let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
 for (const command of [defaultCanvasBeginFill, defaultCanvasDrawPath, defaultCanvasEndFill]) {
   shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);

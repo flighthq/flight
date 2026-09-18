@@ -4,7 +4,7 @@ import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  createEmptyWgpuRenderRegistry,
+  createEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';

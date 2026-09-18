@@ -3,7 +3,7 @@ import type { RenderRegistrySignals, RenderState, RenderStateRuntime } from '@fl
 
 import { getRenderStateRuntime } from './renderState';
 
-type RenderRegistryMissEmitter = NonNullable<RenderStateRuntime['registryMiss']>;
+type RenderRegistriesMissEmitter = NonNullable<RenderStateRuntime['registryMiss']>;
 
 // Allocates the single opt-in signal seam shared by kind-keyed render registries. Core dispatch owns
 // only a nullable callback, so release bundles that do not import this diagnostics lane carry neither
@@ -12,7 +12,8 @@ export function enableRenderRegistrySignals(state: RenderState): RenderRegistryS
   const runtime = getRenderStateRuntime(state);
   if (runtime.registryMiss !== null) return runtime.registryMiss.signals;
   const signals: RenderRegistrySignals = { onRegistryMiss: createSignal() };
-  const emitter = ((registry, kind) => emitSignal(signals.onRegistryMiss, registry, kind)) as RenderRegistryMissEmitter;
+  const emitter = ((registry, kind) =>
+    emitSignal(signals.onRegistryMiss, registry, kind)) as RenderRegistriesMissEmitter;
   Object.assign(emitter, {
     clear: () => clearSignal(signals.onRegistryMiss),
     signals,

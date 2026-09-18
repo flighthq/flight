@@ -21,7 +21,7 @@ import {
 // owns the GL registries — says which of those it can serve. The verdict reads the live registry;
 // `catalog`, the caller's complete GL inventory, supplies the primary remedy only for a shortfall.
 //
-// Proactive, unlike explainRenderRegistryMisses, which reports what already missed during a frame. Ask
+// Proactive, unlike explainRenderRegistriesMisses, which reports what already missed during a frame. Ask
 // this after loading a document and before the first draw, while the answer is still actionable.
 //
 // The debug-class tier: it allocates a gap per shortfall and distinguishes a downgrade from a total

@@ -67,7 +67,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgl') throw new Error('per-node-effect-glow-shadow requires WebGL');
 const { render, state, width } = target;
 
-const offscreenState = createGlRenderState(state.gl, state.registry);
+const offscreenState = createGlRenderState(state.gl, state.registries);
 const pool = createGlRenderTexturePool();
 registerGlOuterGlowEffect(offscreenState);
 registerGlDropShadowEffect(offscreenState);

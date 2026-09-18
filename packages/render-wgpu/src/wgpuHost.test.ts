@@ -3,7 +3,7 @@ import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
   createWgpuRenderState,
@@ -14,7 +14,7 @@ import { installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(installWgpuMock);
 
-const _pipeline = createEmptyWgpuRenderRegistry();
+const _pipeline = createEmptyWgpuRenderRegistries();
 
 describe('createTestWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {

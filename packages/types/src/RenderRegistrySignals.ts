@@ -18,13 +18,13 @@ export enum RenderRegistryTable {
   TextureResolver,
 }
 
-export interface RenderRegistryMiss {
+export interface RenderRegistriesMiss {
   readonly kind: Kind;
   readonly registry: RenderRegistryTable;
 }
 
-export interface RenderRegistryMissExplanation {
-  readonly misses: readonly Readonly<RenderRegistryMiss>[];
+export interface RenderRegistriesMissExplanation {
+  readonly misses: readonly Readonly<RenderRegistriesMiss>[];
   readonly status: 'complete' | 'misses-recorded';
 }
 

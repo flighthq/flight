@@ -10,7 +10,7 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
@@ -182,11 +182,11 @@ describe('drawWgpuRasterShape', () => {
     state.imageSurfaceProvider = createTestImageSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
 
     drawWgpuRasterShape(state, makeShapeProxy({ commands: solidShape().data.commands, version: 1 }));
 
-    expect(explainRenderRegistryMisses(state).misses).toContainEqual({
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',
       registry: RenderRegistryTable.ShapeRasterizer,
     });

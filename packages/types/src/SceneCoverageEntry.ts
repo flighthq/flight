@@ -26,7 +26,7 @@ export type SceneCoverage = (typeof SceneCoverage)[keyof typeof SceneCoverage];
 // needs answered. The boolean tier stays gap-only — see the has* functions.
 //
 // `registry` reuses RenderRegistryTable so an entry is comparable with the misses
-// `explainRenderRegistryMisses` records after the fact — the same vocabulary, asked before the frame
+// `explainRenderRegistriesMisses` records after the fact — the same vocabulary, asked before the frame
 // instead of after it.
 interface SceneCoverageEntryBase {
   readonly facet: RequirementFacet;

@@ -1,11 +1,11 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderRegistry, KeyedTable, Renderer } from '@flighthq/types/contract';
+import type { GlRenderRegistries, KeyedTable, Renderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -39,7 +39,7 @@ import { defaultGlTextLabelRenderer } from './glTextLabel';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
 function buildScene2DGlRenderers(): KeyedTable<Renderer> {
-  const registries = createEmptyGlRenderRegistry();
+  const registries = createEmptyGlRenderRegistries();
   let table = registries.renderers;
   table = withRegistryTableEntry(table, BitmapTextKind, defaultGlBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, defaultGlScene2DRenderer);
@@ -57,17 +57,17 @@ function buildScene2DGlRenderers(): KeyedTable<Renderer> {
   return table;
 }
 
-export const defaultScene2DGlRenderRegistry: Readonly<GlRenderRegistry> = {
-  ...createEmptyGlRenderRegistry(),
+export const defaultScene2DGlRenderRegistries: Readonly<GlRenderRegistries> = {
+  ...createEmptyGlRenderRegistries(),
   blendRealizations: standardGlBlendRealizations,
   materialRenderers: withRegistryTableEntry(
-    createEmptyGlRenderRegistry().materialRenderers,
+    createEmptyGlRenderRegistries().materialRenderers,
     StandardMaterialKind,
     standardGlMaterialRenderer,
   ),
   renderers: buildScene2DGlRenderers(),
   strokeTessellator: {
-    ...createEmptyGlRenderRegistry().strokeTessellator,
+    ...createEmptyGlRenderRegistries().strokeTessellator,
     entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },
   },
   textureResolvers: standardGlTextureResolvers,

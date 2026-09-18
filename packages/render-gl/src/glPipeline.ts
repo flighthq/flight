@@ -1,13 +1,13 @@
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { GlRenderRegistry } from '@flighthq/types/contract';
+import type { GlRenderRegistries } from '@flighthq/types/contract';
 
-export function createEmptyGlRenderRegistry(): GlRenderRegistry {
-  const out = {} as GlRenderRegistry;
-  initializeEmptyGlRenderRegistry(out);
+export function createEmptyGlRenderRegistries(): GlRenderRegistries {
+  const out = {} as GlRenderRegistries;
+  initializeEmptyGlRenderRegistries(out);
   return out;
 }
 
-export function initializeEmptyGlRenderRegistry(out: GlRenderRegistry): void {
+export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void {
   out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
   out.compressedTextureDecoder = createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('GlCompressedTextureUpload', 'Unregistered');

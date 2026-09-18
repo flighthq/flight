@@ -1,10 +1,10 @@
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   createGlContextState,
   createGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlContext, GlRenderRegistry, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContext, GlRenderRegistries, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // A minimal fake WebGL2 context for scene-gl unit tests. vitest-webgl-canvas-mock only mocks the
@@ -346,7 +346,7 @@ function validateFakeGlDrawElements(
 // getGlScene3DRuntime, exactly as in production.
 export function makeGlScene3DState(
   gl?: FakeGl2,
-  registry: Readonly<GlRenderRegistry> = createEmptyGlRenderRegistry(),
+  registry: Readonly<GlRenderRegistries> = createEmptyGlRenderRegistries(),
 ): { state: GlRenderState; gl: FakeGl2 } {
   const context = gl ?? makeFakeGl2();
   const canvas = { width: 256, height: 256 } as HTMLCanvasElement;

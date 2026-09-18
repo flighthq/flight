@@ -297,14 +297,14 @@ describe('WebGL Scene2D size fixtures', () => {
         expect(renderers).toEqual([profile.renderer]);
         expect(source.match(/withRegistryTableEntry\s*\(/g)).toHaveLength(1);
         expect(source).toContain('createGlSurface(webHostGl,');
-        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|defaultScene2DGlRenderRegistry|webHost)\b/);
+        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|defaultScene2DGlRenderRegistries|webHost)\b/);
       });
 
       it('threads the feature through the complete rendering call chain', () => {
         const source = readFileSync(resolve(directory, 'src', 'render.webgl.ts'), 'utf8');
         for (const call of [
           'createGlSurface',
-          'createEmptyGlRenderRegistry',
+          'createEmptyGlRenderRegistries',
           'createGlRenderState',
           'prepareScene2DRender',
           'renderGlScene2D',

@@ -17,7 +17,7 @@ import {
   isGlRenderTargetFormatSupported,
   presentGlRenderTarget,
 } from '@flighthq/render-gl/contract';
-import { defaultScene3DGlRenderRegistry } from '@flighthq/scene3d-gl/contract';
+import { defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl/contract';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -49,7 +49,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
+const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
   // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
   // color-renderable storage only, so sample with the universally valid nearest filter.
   imageSmoothingEnabled: false,

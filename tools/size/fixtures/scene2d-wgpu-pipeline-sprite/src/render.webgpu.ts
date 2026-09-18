@@ -16,7 +16,7 @@ import {
   endWgpuRenderPass,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRenderRegistry } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { defaultWgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
@@ -30,7 +30,7 @@ document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 const canvas = getWebSurfaceElement(wgpuSurface)!;
 
-const emptyRegistries = createEmptyWgpuRenderRegistry();
+const emptyRegistries = createEmptyWgpuRenderRegistries();
 const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, defaultWgpuSpriteRenderer),

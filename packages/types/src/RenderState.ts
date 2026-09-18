@@ -42,7 +42,7 @@ export interface RenderState extends Entity {
 
 // Pure registration policy shared by every render backend. Members remain optional when importing the
 // corresponding registrar is optional, so an unwired base state carries no table metadata.
-export interface RenderRegistry {
+export interface RenderRegistries {
   canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
   // Opt-in color-adjustment accumulation. The empty slot keeps adjustment/material math out of the
   // base walk; a bound pure function is safe to snapshot across derived pipelines.
@@ -109,7 +109,7 @@ export interface RenderStateRuntime extends EntityRuntime {
         readonly signals: RenderRegistrySignals;
       })
     | null;
-  registries: RenderRegistry;
+  registries: RenderRegistries;
   // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
   // renderer before reuse. The table itself lives in registries.renderers with the rest of the policy.
   rendererMapId: number;
