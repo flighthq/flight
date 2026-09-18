@@ -28,7 +28,8 @@ import type {
   HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
-  HostSurfaceCapabilities,
+  HostCanvasCapabilities,
+  HostTargetCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostUpdaterCapabilities,
@@ -47,6 +48,10 @@ export function tauriHostAudio(): HostAudioCapabilities {
 }
 
 export function tauriHostBitmap(): HostBitmapCapabilities {
+  return {};
+}
+
+export function tauriHostCanvas(): HostCanvasCapabilities {
   return {};
 }
 
@@ -154,7 +159,7 @@ export function tauriHostStatusBar(): HostStatusBarCapabilities {
   return {};
 }
 
-export function tauriHostSurface(): HostSurfaceCapabilities {
+export function tauriHostTarget(): HostTargetCapabilities {
   return {};
 }
 

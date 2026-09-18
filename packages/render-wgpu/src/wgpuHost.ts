@@ -21,6 +21,12 @@ export function createTestWgpuHostBackend(): HostWgpuCapability {
 }
 
 function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
+  out.create = (width, height): HostTarget => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return createTestHostTarget(canvas);
+  };
   out.acquire = async (target, options): Promise<WgpuHostAcquisition> => {
     const canvas = _testTargets.get(target);
     if (canvas === undefined) throw new Error('Test target not registered.');

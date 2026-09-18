@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -14,18 +14,15 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultGlMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { createGlSurface, createSurface } from '@flighthq/surface';
+import { createGlSurface } from '@flighthq/surface';
 import { RegistryEntryState, ShapeKind } from '@flighthq/types';
 
-const canvas = createSurface(webSurfaceCreateCapability, 400, 300);
-document.body.style.margin = '0';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+appendWebSurface(glSurface, document.body);
+document.body.style.margin = '0';
 
 const emptyRegistries = createEmptyGlRegistries();
 const pipeline = createGlPipeline({

@@ -11,7 +11,7 @@ import type {
   HostInputPointerLockCapability,
   HostTargetCapability,
   HostScreenChangeCapability,
-  HostSurfaceCapability,
+  HostTargetResizeCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -197,16 +197,15 @@ export function attachWindowRenderContext(
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
 // device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(
-  hostSurface: Readonly<HostSurfaceCapability>,
+  hostTargetResize: Readonly<HostTargetResizeCapability>,
   win: ApplicationWindow,
   state: RenderState,
   target: HostTarget,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();
-  const renderSurface = hostSurface;
   const apply = (): void => {
-    renderSurface.resize(
+    hostTargetResize.resize(
       target,
       Math.round(win.width * win.devicePixelRatio),
       Math.round(win.height * win.devicePixelRatio),

@@ -1,4 +1,3 @@
-export { createCanvasSurface } from './contract';
-export { createGlSurface, destroyGlSurface } from './contract';
-export { createSurface, destroySurface } from './contract';
-export { createWgpuSurface, destroyWgpuSurface } from './contract';
+export { createCanvasSurface, createCanvasSurfaceFromTarget, destroyCanvasSurface } from './contract';
+export { createGlSurface, createGlSurfaceFromTarget, destroyGlSurface } from './contract';
+export { createWgpuSurface, createWgpuSurfaceFromTarget, destroyWgpuSurface } from './contract';

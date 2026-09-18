@@ -1,8 +1,8 @@
 import {
-  createWebHostTarget,
   webHostWgpuContext,
   createWebImageResourceFromCanvas,
-  webSurfaceCreateCapability,
+  appendWebSurface,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
@@ -20,7 +20,6 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createVector3,
-  createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -34,7 +33,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
   setVector3,
-  createSurface,
+  createWgpuSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -54,15 +53,13 @@ declareExpectedImageDescription(
 // WebGPU mirror of env-ibl.webgl: two PBR spheres have no punctual lights, so visible diffuse and
 // specular response can only come from the baked environment set.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
+setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
+const acquisition = wgpuSurface.acquisition;
 
-const target = createWebHostTarget(canvas);
-
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

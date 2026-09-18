@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostWgpuContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import { createCompressedImageResource } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
@@ -8,7 +8,6 @@ import {
   createPixelArtSampler,
   createSprite,
   createTexture,
-  createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuScene2DRenderer,
@@ -26,7 +25,7 @@ import {
   renderWgpuScene2D,
   scene3DWgpuPipeline,
   SpriteKind,
-  createSurface,
+  createWgpuSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -60,15 +59,13 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, WIDTH * pixelRatio, HEIGHT * pixelRatio);
-canvas.style.width = `${WIDTH}px`;
-canvas.style.height = `${HEIGHT}px`;
-document.body.appendChild(canvas);
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, WIDTH * pixelRatio, HEIGHT * pixelRatio);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
+setWebSurfaceDisplaySize(wgpuSurface, WIDTH, HEIGHT);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
+const acquisition = wgpuSurface.acquisition;
 
-const target = createWebHostTarget(canvas);
-
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

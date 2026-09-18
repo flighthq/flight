@@ -62,12 +62,19 @@ export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
 export { createWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
 export { createWebGlContext, getWebGlContext } from './webGlContext';
-export { createWebSurfaceCreateCapability, webSurfaceCreateCapability } from './webSurfaceCreate';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostBitmap } from './webBitmapHost';
 export { webHostGlGroup } from './webGlHost';
 export { webHostImageGroup } from './webImageHost';
-export { webHostSurfaceGroup } from './webSurfaceHost';
+export { webHostTargetGroup } from './webTargetHost';
+export { webHostCanvasGroup } from './webCanvasHost';
+export { createWebHostCanvas, webHostCanvas } from './webHostCanvas';
+export {
+  appendWebSurface,
+  getWebSurfaceCanvas,
+  getWebSurfaceElement,
+  setWebSurfaceDisplaySize,
+} from './webSurfacePresentation';
 export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
 export { webHostHaptics } from './webHaptics';
@@ -98,13 +105,13 @@ export {
   createWebTextureAtlasFromImageElement,
 } from './webTextureAtlas';
 export {
-  createWebHostTarget,
+  createWebHostTargetFromElement,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
   webHostTarget,
   webHostGl,
-  webHostSurface,
+  webHostTargetResize,
 } from './webHostTarget';
 export {
   createWebInputIngressBackend,

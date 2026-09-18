@@ -5,16 +5,18 @@ import type { EntityWithoutRuntime, HostInputPointerLockCapability, HostTarget }
 
 import { webHost } from './webHost';
 import {
-  createWebHostTarget,
+  allocateWebHostTargetCanvas,
+  createWebHostTargetFromElement,
   getCanvasForTarget,
-  initializeWebHostTarget,
+  getElementForTarget,
+  initializeWebHostTargetFromElement,
   resetWebHostTargetBackendForTest,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
   webHostTarget,
   webHostGl,
-  webHostSurface,
+  webHostTargetResize,
 } from './webHostTarget';
 
 afterEach(() => {
@@ -28,10 +30,32 @@ afterEach(() => {
 // The canvas getContext mock returns this; acquire only has to hand back what the canvas produced.
 const FAKE_GL = { fake: 'gl' } as unknown as WebGL2RenderingContext;
 
-describe('createWebHostTarget', () => {
+describe('allocateWebHostTargetCanvas', () => {
+  it('allocates a canvas sized in device pixels and registers it as a target', () => {
+    const target = allocateWebHostTargetCanvas(1600, 1000);
+    const canvas = getCanvasForTarget(target);
+
+    expect(canvas).not.toBeNull();
+    expect(canvas!.width).toBe(1600);
+    expect(canvas!.height).toBe(1000);
+  });
+
+  it('does not present the drawable it allocates', () => {
+    const target = allocateWebHostTargetCanvas(8, 8);
+
+    expect(getCanvasForTarget(target)!.parentElement).toBeNull();
+    expect(getCanvasForTarget(target)!.style.width).toBe('');
+  });
+
+  it('returns a distinct target per call', () => {
+    expect(allocateWebHostTargetCanvas(4, 4)).not.toBe(allocateWebHostTargetCanvas(4, 4));
+  });
+});
+
+describe('createWebHostTargetFromElement', () => {
   it('constructs an opaque Entity bound to the provider', () => {
     const element = document.createElement('div');
-    const target = createWebHostTarget(element);
+    const target = createWebHostTargetFromElement(element);
 
     expect(EntityRuntimeKey in target).toBe(true);
     webHostTarget.prepare(target);
@@ -42,34 +66,49 @@ describe('createWebHostTarget', () => {
 describe('getCanvasForTarget', () => {
   it('resolves a canvas-backed target to its HTMLCanvasElement', () => {
     const canvas = document.createElement('canvas');
-    const target = createWebHostTarget(canvas);
+    const target = createWebHostTargetFromElement(canvas);
     expect(getCanvasForTarget(target)).toBe(canvas);
   });
 
   it('returns null for a non-canvas element', () => {
     const div = document.createElement('div');
-    const target = createWebHostTarget(div);
+    const target = createWebHostTargetFromElement(div);
     expect(getCanvasForTarget(target)).toBeNull();
   });
 
   it('returns null for an unregistered target', () => {
     const canvas = document.createElement('canvas');
-    const target = createWebHostTarget(canvas);
+    const target = createWebHostTargetFromElement(canvas);
     resetWebHostTargetBackendForTest();
     expect(getCanvasForTarget(target)).toBeNull();
   });
 });
 
-describe('initializeWebHostTarget', () => {
-  it('is the construction initializer of createWebHostTarget', () => {
-    expect(typeof initializeWebHostTarget).toBe('function');
+describe('getElementForTarget', () => {
+  it('returns the element a target names, canvas or not', () => {
+    const div = document.createElement('div');
+
+    expect(getElementForTarget(createWebHostTargetFromElement(div))).toBe(div);
+  });
+
+  it('returns null for a target this host never registered', () => {
+    const foreign = allocateEntity<HostTarget>();
+    foreign.__brand = 'HostTarget' as const;
+
+    expect(getElementForTarget(finishEntity(foreign))).toBeNull();
+  });
+});
+
+describe('initializeWebHostTargetFromElement', () => {
+  it('is the construction initializer of createWebHostTargetFromElement', () => {
+    expect(typeof initializeWebHostTargetFromElement).toBe('function');
   });
 });
 
 describe('resetWebHostTargetBackendForTest', () => {
   it('forgets existing target bindings', () => {
     const element = document.createElement('div');
-    const target = createWebHostTarget(element);
+    const target = createWebHostTargetFromElement(element);
 
     resetWebHostTargetBackendForTest();
     webHostTarget.prepare(target);
@@ -80,7 +119,7 @@ describe('resetWebHostTargetBackendForTest', () => {
   it('releases active event subscriptions before forgetting targets', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    webHostInputFocus.subscribe(createWebHostTarget(element), listener, vi.fn());
+    webHostInputFocus.subscribe(createWebHostTargetFromElement(element), listener, vi.fn());
 
     resetWebHostTargetBackendForTest();
     element.dispatchEvent(new Event('focus'));
@@ -94,7 +133,7 @@ describe('webHostGl', () => {
     const canvas = document.createElement('canvas');
     canvas.getContext = vi.fn().mockReturnValue(FAKE_GL) as typeof canvas.getContext;
 
-    expect(webHostGl.acquire(createWebHostTarget(canvas))).toBe(FAKE_GL);
+    expect(webHostGl.acquire(createWebHostTargetFromElement(canvas))).toBe(FAKE_GL);
   });
 
   it('reports null for a target this host never registered', () => {
@@ -102,11 +141,11 @@ describe('webHostGl', () => {
   });
 
   it('reports null for a registered target that is not a canvas', () => {
-    expect(webHostGl.acquire(createWebHostTarget(document.createElement('div')))).toBeNull();
+    expect(webHostGl.acquire(createWebHostTargetFromElement(document.createElement('div')))).toBeNull();
   });
 
   it('degrades release to a no-op because the DOM owns context lifetime', () => {
-    const target = createWebHostTarget(document.createElement('canvas'));
+    const target = createWebHostTargetFromElement(document.createElement('canvas'));
 
     expect(() => webHostGl.release(target)).not.toThrow();
   });
@@ -115,7 +154,7 @@ describe('webHostGl', () => {
     const canvas = document.createElement('canvas');
     const onLost = vi.fn();
     const onRestored = vi.fn();
-    const release = webHostGl.subscribe(createWebHostTarget(canvas), onLost, onRestored);
+    const release = webHostGl.subscribe(createWebHostTargetFromElement(canvas), onLost, onRestored);
     const lost = new Event('webglcontextlost', { cancelable: true });
 
     canvas.dispatchEvent(lost);
@@ -130,7 +169,11 @@ describe('webHostGl', () => {
 
   it('truthfully leaves a non-canvas target inert', () => {
     const listener = vi.fn();
-    const release = webHostGl.subscribe(createWebHostTarget(document.createElement('div')), listener, listener);
+    const release = webHostGl.subscribe(
+      createWebHostTargetFromElement(document.createElement('div')),
+      listener,
+      listener,
+    );
 
     expect(release).toBeTypeOf('function');
     expect(listener).not.toHaveBeenCalled();
@@ -141,7 +184,7 @@ describe('webHostInputDropFile', () => {
   it('forwards every dropped file name and removes the exact listeners', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
-    const release = webHostInputDropFile.subscribe(createWebHostTarget(element), listener);
+    const release = webHostInputDropFile.subscribe(createWebHostTargetFromElement(element), listener);
     const event = new Event('drop', { cancelable: true });
     Object.defineProperty(event, 'dataTransfer', { value: { files: [{ name: 'a.txt' }, { name: 'b.png' }] } });
 
@@ -162,7 +205,7 @@ describe('webHostInputFocus', () => {
     const element = document.createElement('div');
     const onFocus = vi.fn();
     const onBlur = vi.fn();
-    const release = webHostInputFocus.subscribe(createWebHostTarget(element), onFocus, onBlur);
+    const release = webHostInputFocus.subscribe(createWebHostTargetFromElement(element), onFocus, onBlur);
 
     element.dispatchEvent(new Event('focus'));
     element.dispatchEvent(new Event('blur'));
@@ -177,7 +220,7 @@ describe('webHostInputFocus', () => {
 
 describe('webHostInputPointerLock', () => {
   it('does not pin the Web provider when the target is unknown', async () => {
-    const target = createWebHostTarget(document.createElement('div'));
+    const target = createWebHostTargetFromElement(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
     const fallbackBackend = (() => {
       const out = allocateEntity<any>();
@@ -202,7 +245,7 @@ describe('webHostInputPointerLock', () => {
     const element = document.createElement('div');
     Object.defineProperty(element, 'requestPointerLock', { configurable: true, value: undefined });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'api-unavailable',
     });
   });
@@ -231,7 +274,7 @@ describe('webHostInputPointerLock', () => {
           : () => Promise.reject(error),
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({ reason });
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({ reason });
   });
 
   it('observes a legacy request error and removes both exact listeners', async () => {
@@ -243,7 +286,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockerror')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
 
@@ -270,7 +313,7 @@ describe('webHostInputPointerLock', () => {
       },
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -289,7 +332,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -302,7 +345,7 @@ describe('webHostInputPointerLock', () => {
       value: () => document.dispatchEvent(new Event('pointerlockchange')),
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'operation-failed',
     });
   });
@@ -394,7 +437,7 @@ describe('webHostInputPointerLock', () => {
       value: () => thenable,
     });
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'ok',
     });
   });
@@ -404,7 +447,7 @@ describe('webHostInputPointerLock', () => {
     const request = vi.fn().mockResolvedValue(undefined);
     element.requestPointerLock = request;
 
-    await expect(webHostInputPointerLock.request(createWebHostTarget(element))).resolves.toEqual({
+    await expect(webHostInputPointerLock.request(createWebHostTargetFromElement(element))).resolves.toEqual({
       reason: 'ok',
     });
 
@@ -412,30 +455,18 @@ describe('webHostInputPointerLock', () => {
   });
 
   it('reports an unknown provider-bound target', async () => {
-    const target = createWebHostTarget(document.createElement('div'));
+    const target = createWebHostTargetFromElement(document.createElement('div'));
     resetWebHostTargetBackendForTest();
 
     await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
   });
 });
 
-describe('webHostSurface', () => {
-  it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
-    const canvas = document.createElement('canvas');
-    const div = document.createElement('div');
-
-    webHostSurface.resize(createWebHostTarget(canvas), 640, 480);
-    webHostSurface.resize(createWebHostTarget(div), 1, 1);
-
-    expect(canvas.width).toBe(640);
-    expect(canvas.height).toBe(480);
-  });
-});
 describe('webHostTarget', () => {
   it('prepares the bound element without exposing DOM through the neutral contract', () => {
     const element = document.createElement('div');
 
-    webHostTarget.prepare(createWebHostTarget(element));
+    webHostTarget.prepare(createWebHostTargetFromElement(element));
 
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
@@ -449,8 +480,8 @@ describe('webHostTarget', () => {
     const canvas = document.createElement('canvas');
     const div = document.createElement('div');
 
-    webHostTarget.prepare(createWebHostTarget(canvas));
-    webHostTarget.prepare(createWebHostTarget(div));
+    webHostTarget.prepare(createWebHostTargetFromElement(canvas));
+    webHostTarget.prepare(createWebHostTargetFromElement(div));
 
     expect(canvas.style.transform).toBe('translateZ(0)');
     expect(div.style.transform).toBe('');
@@ -458,18 +489,36 @@ describe('webHostTarget', () => {
 
   it('is an Entity provider value', () => {
     expect(EntityRuntimeKey in webHostTarget).toBe(true);
-    expect(webHost.input.target).toBe(webHostTarget);
+    expect(webHost.target.prepare).toBe(webHostTarget);
   });
 
   it('keeps command and event slots separate while every provider remains an Entity', () => {
-    const providers = [webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostGl, webHostSurface];
+    const providers = [
+      webHostInputDropFile,
+      webHostInputFocus,
+      webHostInputPointerLock,
+      webHostGl,
+      webHostTargetResize,
+    ];
 
     expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
     expect(webHost.input.dropFile).toBe(webHostInputDropFile);
     expect(webHost.input.focus).toBe(webHostInputFocus);
     expect(webHost.input.pointerLock).toBe(webHostInputPointerLock);
     expect(webHost.gl.context).toBe(webHostGl);
-    expect(webHost.surface.resize).toBe(webHostSurface);
+    expect(webHost.target.resize).toBe(webHostTargetResize);
     expect(new Set(providers).size).toBe(5);
+  });
+});
+describe('webHostTargetResize', () => {
+  it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
+    const canvas = document.createElement('canvas');
+    const div = document.createElement('div');
+
+    webHostTargetResize.resize(createWebHostTargetFromElement(canvas), 640, 480);
+    webHostTargetResize.resize(createWebHostTargetFromElement(div), 1, 1);
+
+    expect(canvas.width).toBe(640);
+    expect(canvas.height).toBe(480);
   });
 });

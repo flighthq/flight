@@ -23,7 +23,8 @@ import {
   capacitorHostShell,
   capacitorHostShortcut,
   capacitorHostSocket,
-  capacitorHostSurface,
+  capacitorHostCanvas,
+  capacitorHostTarget,
   capacitorHostTextSegment,
   capacitorHostTextShaper,
   capacitorHostTray,
@@ -43,6 +44,10 @@ describe('capacitorHostAudio', () => {
 
 describe('capacitorHostBitmap', () => {
   it('claims no bitmap slots', () => expect(capacitorHostBitmap()).toEqual({}));
+});
+
+describe('capacitorHostCanvas', () => {
+  it('claims no canvas slots', () => expect(capacitorHostCanvas()).toEqual({}));
 });
 
 describe('capacitorHostFont', () => {
@@ -129,8 +134,8 @@ describe('capacitorHostSocket', () => {
   it('claims no socket slots', () => expect(capacitorHostSocket()).toEqual({}));
 });
 
-describe('capacitorHostSurface', () => {
-  it('claims no surface slots', () => expect(capacitorHostSurface()).toEqual({}));
+describe('capacitorHostTarget', () => {
+  it('claims no surface slots', () => expect(capacitorHostTarget()).toEqual({}));
 });
 
 describe('capacitorHostTextSegment', () => {

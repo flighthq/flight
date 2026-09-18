@@ -17,6 +17,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.app = (capabilities.app ?? {}) as Host['app'];
   out.audio = (capabilities.audio ?? {}) as Host['audio'];
   out.bitmap = (capabilities.bitmap ?? {}) as Host['bitmap'];
+  out.canvas = (capabilities.canvas ?? {}) as Host['canvas'];
   out.clipboard = (capabilities.clipboard ?? {}) as Host['clipboard'];
   out.connectivity = (capabilities.connectivity ?? {}) as Host['connectivity'];
   out.device = (capabilities.device ?? {}) as Host['device'];
@@ -50,7 +51,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.socket = (capabilities.socket ?? {}) as Host['socket'];
   out.softKeyboard = (capabilities.softKeyboard ?? {}) as Host['softKeyboard'];
   out.statusBar = (capabilities.statusBar ?? {}) as Host['statusBar'];
-  out.surface = (capabilities.surface ?? {}) as Host['surface'];
+  out.target = (capabilities.target ?? {}) as Host['target'];
   out.textSegment = (capabilities.textSegment ?? {}) as Host['textSegment'];
   out.textShaper = (capabilities.textShaper ?? {}) as Host['textShaper'];
   out.tray = (capabilities.tray ?? {}) as Host['tray'];

@@ -1,10 +1,10 @@
 import {
-  createWebHostTarget,
   webHostWgpuContext,
-  webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webHostImage,
   webImageSurfaceCreator,
+  appendWebSurface,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -16,7 +16,6 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createMatrix,
-  createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuParticleEmitter2DRenderer,
@@ -57,8 +56,8 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
+  createWgpuSurface,
 } from '@flighthq/sdk';
-import { createSurface } from '@flighthq/surface';
 import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
@@ -67,14 +66,12 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createSurface(webSurfaceCreateCapability, width * pixelRatio, height * pixelRatio);
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  document.body.appendChild(canvas);
-
-  const target = createWebHostTarget(canvas);
-  const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-  if (acquisition === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
+  const wgpuSurface = await createWgpuSurface(webHostWgpuContext, width * pixelRatio, height * pixelRatio);
+  if (wgpuSurface === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
+  setWebSurfaceDisplaySize(wgpuSurface, width, height);
+  appendWebSurface(wgpuSurface, document.body);
+  const target = wgpuSurface.target;
+  const acquisition = wgpuSurface.acquisition;
   const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
     format: acquisition.format,
   });

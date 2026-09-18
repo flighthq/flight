@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { createWebHostTarget, webHostWgpuContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
@@ -9,7 +9,6 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -18,14 +17,14 @@ import {
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
-import { createSurface } from '@flighthq/surface';
+import { createWgpuSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
-const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 320, 240);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
 document.body.style.margin = '0';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -37,8 +36,7 @@ const pipeline = createWgpuPipeline({
   ),
 });
 
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

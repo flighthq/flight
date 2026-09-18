@@ -28,7 +28,8 @@ import {
   tauriHostSocket,
   tauriHostSoftKeyboard,
   tauriHostStatusBar,
-  tauriHostSurface,
+  tauriHostCanvas,
+  tauriHostTarget,
   tauriHostTextSegment,
   tauriHostTextShaper,
   tauriHostUpdater,
@@ -45,6 +46,9 @@ function returnsEmptyGroup(constructor: () => object): () => void {
 describe('tauriHostAccessibility', returnsEmptyGroup(tauriHostAccessibility));
 describe('tauriHostAudio', returnsEmptyGroup(tauriHostAudio));
 describe('tauriHostBitmap', returnsEmptyGroup(tauriHostBitmap));
+describe('tauriHostCanvas', () => {
+  it('claims no canvas slots', () => expect(tauriHostCanvas()).toEqual({}));
+});
 describe('tauriHostConnectivity', returnsEmptyGroup(tauriHostConnectivity));
 describe('tauriHostDevice', returnsEmptyGroup(tauriHostDevice));
 describe('tauriHostFileSystem', returnsEmptyGroup(tauriHostFileSystem));
@@ -71,7 +75,8 @@ describe('tauriHostShare', returnsEmptyGroup(tauriHostShare));
 describe('tauriHostSocket', returnsEmptyGroup(tauriHostSocket));
 describe('tauriHostSoftKeyboard', returnsEmptyGroup(tauriHostSoftKeyboard));
 describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
-describe('tauriHostSurface', returnsEmptyGroup(tauriHostSurface));
+
+describe('tauriHostTarget', returnsEmptyGroup(tauriHostTarget));
 describe('tauriHostTextSegment', returnsEmptyGroup(tauriHostTextSegment));
 describe('tauriHostTextShaper', returnsEmptyGroup(tauriHostTextShaper));
 describe('tauriHostUpdater', returnsEmptyGroup(tauriHostUpdater));

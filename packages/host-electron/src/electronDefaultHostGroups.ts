@@ -24,7 +24,8 @@ import type {
   HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
-  HostSurfaceCapabilities,
+  HostCanvasCapabilities,
+  HostTargetCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostVideoCapabilities,
@@ -42,6 +43,10 @@ export function electronHostAudioGroup(_electron: ElectronApi): HostAudioCapabil
 }
 
 export function electronHostBitmapGroup(_electron: ElectronApi): HostBitmapCapabilities {
+  return {};
+}
+
+export function electronHostCanvasGroup(_electron: ElectronApi): HostCanvasCapabilities {
   return {};
 }
 
@@ -129,7 +134,7 @@ export function electronHostStatusBarGroup(_electron: ElectronApi): HostStatusBa
   return {};
 }
 
-export function electronHostSurfaceGroup(_electron: ElectronApi): HostSurfaceCapabilities {
+export function electronHostTargetGroup(_electron: ElectronApi): HostTargetCapabilities {
   return {};
 }
 

@@ -1,4 +1,4 @@
-import { createWebHostTarget, resetWebHostTargetBackendForTest } from './webHostTarget';
+import { createWebHostTargetFromElement, resetWebHostTargetBackendForTest } from './webHostTarget';
 import { createWebHostWgpuContext, initializeWebHostWgpuContext } from './webHostWgpuContext';
 
 function installMinimalWgpuMock(): void {
@@ -49,7 +49,7 @@ describe('createWebHostWgpuContext', () => {
   it('returns an entity that can acquire a WebGPU device through a registered HostTarget', async () => {
     const context = createWebHostWgpuContext();
     const canvas = document.createElement('canvas');
-    const target = createWebHostTarget(canvas);
+    const target = createWebHostTargetFromElement(canvas);
     const acquisition = await context.acquire(target, {});
 
     expect(acquisition.device).toBeDefined();
@@ -67,7 +67,7 @@ describe('createWebHostWgpuContext', () => {
   it('returns null from attachSurface when the target is not registered', () => {
     const context = createWebHostWgpuContext();
     const canvas = document.createElement('canvas');
-    const unregisteredTarget = createWebHostTarget(canvas);
+    const unregisteredTarget = createWebHostTargetFromElement(canvas);
     resetWebHostTargetBackendForTest();
 
     expect(
