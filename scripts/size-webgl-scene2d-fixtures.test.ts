@@ -19,6 +19,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/texture',
       '@flighthq/textureatlas',
       '@flighthq/types',
@@ -37,6 +38,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/types',
     ],
     kind: 'DisplayObjectKind',
@@ -56,6 +58,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/shape',
       '@flighthq/types',
     ],
@@ -75,6 +78,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/texture',
       '@flighthq/textureatlas',
       '@flighthq/types',
@@ -94,6 +98,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/text',
       '@flighthq/types',
     ],
@@ -114,6 +119,7 @@ const profiles = [
       '@flighthq/scene2d',
       '@flighthq/scene2d-canvas',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/shape',
       '@flighthq/types',
     ],
@@ -132,6 +138,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/text',
       '@flighthq/types',
     ],
@@ -150,6 +157,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/texture',
       '@flighthq/textureatlas',
       '@flighthq/tilemap',
@@ -170,6 +178,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/texture',
       '@flighthq/types',
     ],
@@ -188,6 +197,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/shape',
       '@flighthq/types',
     ],
@@ -207,6 +217,7 @@ const profiles = [
       '@flighthq/render-gl',
       '@flighthq/scene2d',
       '@flighthq/scene2d-gl',
+      '@flighthq/surface',
       '@flighthq/texture',
       '@flighthq/textureatlas',
       '@flighthq/types',
@@ -274,14 +285,14 @@ describe('WebGL Scene2D size fixtures', () => {
         expect(registrations).toEqual([...profile.registrations].sort());
         expect(renderers).toEqual([profile.renderer]);
         expect(source.match(/withRegistryTableEntry\s*\(/g)).toHaveLength(1);
-        expect(source).toContain('createWebGlRenderSurfaceCreator');
+        expect(source).toContain('createGlSurface(webHostGl,');
         expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|scene2DGlPipeline|webHost)\b/);
       });
 
       it('threads the feature through the complete rendering call chain', () => {
         const source = readFileSync(resolve(directory, 'src', 'render.webgl.ts'), 'utf8');
         for (const call of [
-          'createWebGlContext',
+          'createGlSurface',
           'createGlPipeline',
           'createGlRenderState',
           'prepareScene2DRender',
