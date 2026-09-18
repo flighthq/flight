@@ -12,7 +12,7 @@ import {
   resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
-import { createSurface } from '@flighthq/surface/contract';
+import { createGlSurface, createSurface } from '@flighthq/surface/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
