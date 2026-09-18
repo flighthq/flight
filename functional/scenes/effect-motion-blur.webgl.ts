@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -32,7 +32,6 @@ import {
   renderGlScene2D,
   renderGlVelocity,
   setGlRenderEffectVelocityTexture,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -47,16 +46,13 @@ declareExpectedImageDescription(
 // contribute a screen-space velocity to each shape before rendering the velocity pass. That makes the
 // blur visible in a single deterministic capture instead of requiring real motion across frames.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, 800, 600);
+appendWebSurface(glSurface, document.body);
+const canvas = getWebSurfaceCanvas(glSurface)!;
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,

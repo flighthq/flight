@@ -1,8 +1,8 @@
 import {
-  createWebHostTarget,
   webHostGl,
   createWebImageResourceFromCanvas,
-  webSurfaceCreateCapability,
+  appendWebSurface,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -27,7 +27,6 @@ import {
   prepareScene3DRender,
   reserveParticleEmitter3D,
   setCamera3DViewMatrix4FromLookAt,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -41,16 +40,13 @@ declareExpectedImageDescription(
 // colored, partially-transparent sRGB atlas distinguishes post-decode shader premultiplication from an
 // encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, 800, 600);
+appendWebSurface(glSurface, document.body);
+
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });

@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -21,7 +21,6 @@ import {
   registerRenderer,
   renderGlScene2D,
   getBitmapPixelRgb,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -33,16 +32,12 @@ declareExpectedImageDescription(
 
 // outline: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, 800, 600);
+appendWebSurface(glSurface, document.body);
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,

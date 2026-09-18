@@ -40,6 +40,10 @@ export interface WgpuHostAcquisitionOptions {
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuCapability extends Entity {
   acquire(target: HostTarget, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  // The allocating lane, matching HostGlCapability.create: the host makes a drawable of its own and
+  // returns its identity. Separate from `acquire` because a device is adapter-scoped and outlives any
+  // one drawable, so allocation cannot imply device acquisition.
+  create(width: number, height: number): HostTarget | null;
   // Binds a device to a presentation surface and returns its configured swap-chain context together with
   // the resolved presentation surface, or null when the target cannot present. Separate from `acquire`
   // because a device outlives any one surface: a second window attaches its own surface to the device

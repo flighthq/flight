@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostWgpuContext, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -14,7 +14,6 @@ import {
   createDisplayObject,
   createPath,
   createShape,
-  createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -30,7 +29,7 @@ import {
   scene3DWgpuPipeline,
   setNode2DClip,
   ShapeKind,
-  createSurface,
+  createWgpuSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -48,15 +47,13 @@ declareExpectedImageDescription(
 // The contour clip's stencil pipeline runs inside the rgba16float scene target, so its color-target format
 // must match — this exercises the per-format clip-contour pipeline keying on Wgpu.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
+setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
+const acquisition = wgpuSurface.acquisition;
 
-const target = createWebHostTarget(canvas);
-
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

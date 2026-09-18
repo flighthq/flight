@@ -1,5 +1,4 @@
 import type { Entity } from './Entity';
-import type { GlContext, GlContextOptions } from './GlContext';
 import type { HostTarget } from './HostTarget';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
@@ -31,19 +30,4 @@ export type InputPointerLockRequestOutcome =
 export interface HostInputPointerLockCapability extends Entity {
   exit(): Promise<InputPointerLockExitOutcome>;
   request(target: HostTarget): Promise<InputPointerLockRequestOutcome>;
-}
-
-// GL context lifecycle for a provider-bound target. `acquire` is the slot's primary purpose — a caller
-// that needs a context asks the host for one rather than reaching for a platform API. It returns null
-// when the target holds no drawable surface, the sentinel the target-scoped hooks above use for a
-// lookup that cannot succeed. `release` drops the host's record for that target; it does not force
-// context loss, which the driver owns and `subscribe` reports.
-export interface HostGlCapability extends Entity {
-  acquire(target: HostTarget, options?: Readonly<GlContextOptions>): GlContext | null;
-  release(target: HostTarget): void;
-  subscribe(target: HostTarget, onLost: () => void, onRestored: () => void): () => void;
-}
-
-export interface HostSurfaceCapability extends Entity {
-  resize(target: HostTarget, width: number, height: number): void;
 }

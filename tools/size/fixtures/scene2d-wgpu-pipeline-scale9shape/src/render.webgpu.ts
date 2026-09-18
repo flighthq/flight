@@ -1,16 +1,14 @@
 import {
-  createWebHostTarget,
   webHostWgpuContext,
-  webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webImageSurfaceCreator,
+  appendWebSurface,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -27,15 +25,14 @@ import {
   renderWgpuScene2D,
 } from '@flighthq/scene2d-wgpu';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
-import { createSurface } from '@flighthq/surface';
+import { createWgpuSurface } from '@flighthq/surface';
 import { Scale9ShapeKind } from '@flighthq/types';
 
-const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
-if (canvas === null) throw new Error('The WebGPU Scale9Shape size fixture requires a canvas.');
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 320, 240);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
 document.body.style.margin = '0';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -43,8 +40,7 @@ const pipeline = createWgpuPipeline({
   renderers: withRegistryTableEntry(registries.renderers, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer),
 });
 
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

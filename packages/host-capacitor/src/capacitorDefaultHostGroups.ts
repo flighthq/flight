@@ -23,7 +23,8 @@ import type {
   HostShellCapabilities,
   HostShortcutCapabilities,
   HostSocketCapabilities,
-  HostSurfaceCapabilities,
+  HostCanvasCapabilities,
+  HostTargetCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostTrayCapabilities,
@@ -45,6 +46,10 @@ export function capacitorHostAudio(): HostAudioCapabilities {
 }
 
 export function capacitorHostBitmap(): HostBitmapCapabilities {
+  return {};
+}
+
+export function capacitorHostCanvas(): HostCanvasCapabilities {
   return {};
 }
 
@@ -132,7 +137,7 @@ export function capacitorHostSocket(): HostSocketCapabilities {
   return {};
 }
 
-export function capacitorHostSurface(): HostSurfaceCapabilities {
+export function capacitorHostTarget(): HostTargetCapabilities {
   return {};
 }
 

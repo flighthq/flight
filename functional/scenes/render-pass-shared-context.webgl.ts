@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -11,7 +11,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl';
-import { createGlSurface, createSurface } from '@flighthq/surface';
+import { createGlSurface } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -31,17 +31,15 @@ export const scale = window.devicePixelRatio || 1;
 // so it always reads 0. assertRender below is the real check.
 export const minCoverage = 0;
 
-const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
-canvas.style.width = `${width}px`;
-canvas.style.height = `${height}px`;
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, width * scale, height * scale, {
   antialias: false,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, width, height);
+appendWebSurface(glSurface, document.body);
+const canvas = getWebSurfaceCanvas(glSurface)!;
+
 const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio: scale,
 });

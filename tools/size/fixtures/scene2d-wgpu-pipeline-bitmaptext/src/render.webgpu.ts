@@ -1,17 +1,11 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas';
-import {
-  createWebHostTarget,
-  webHostWgpuContext,
-  webSurfaceCreateCapability,
-  webHostGlyphRasterizer,
-} from '@flighthq/host-web';
+import { webHostWgpuContext, webHostGlyphRasterizer, appendWebSurface } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -22,15 +16,14 @@ import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
-import { createSurface } from '@flighthq/surface';
+import { createWgpuSurface } from '@flighthq/surface';
 import { BitmapTextKind, StandardMaterialKind } from '@flighthq/types';
 
-const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
-if (canvas === null) throw new Error('The WebGPU BitmapText size fixture requires a canvas.');
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 320, 240);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
 document.body.style.margin = '0';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
+appendWebSurface(wgpuSurface, document.body);
+const target = wgpuSurface.target;
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -43,8 +36,7 @@ const pipeline = createWgpuPipeline({
   renderers: withRegistryTableEntry(registries.renderers, BitmapTextKind, defaultWgpuBitmapTextRenderer),
 });
 
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
+const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

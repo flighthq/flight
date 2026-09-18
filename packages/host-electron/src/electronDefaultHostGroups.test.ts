@@ -25,7 +25,8 @@ import {
   electronHostSocketGroup,
   electronHostSoftKeyboardGroup,
   electronHostStatusBarGroup,
-  electronHostSurfaceGroup,
+  electronHostCanvasGroup,
+  electronHostTargetGroup,
   electronHostTextSegmentGroup,
   electronHostTextShaperGroup,
   electronHostVideoGroup,
@@ -66,7 +67,8 @@ const shareGroup = emptyGroup(() => electronHostShareGroup(electron));
 const socketGroup = emptyGroup(() => electronHostSocketGroup(electron));
 const softKeyboardGroup = emptyGroup(() => electronHostSoftKeyboardGroup(electron));
 const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
-const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
+const canvasGroup = emptyGroup(() => electronHostCanvasGroup(electron));
+const surfaceGroup = emptyGroup(() => electronHostTargetGroup(electron));
 const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
 const textShaperGroup = emptyGroup(() => electronHostTextShaperGroup(electron));
 const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
@@ -75,6 +77,7 @@ const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
 describe('electronHostAccessibilityGroup', accessibilityGroup);
 describe('electronHostAudioGroup', audioGroup);
 describe('electronHostBitmapGroup', bitmapGroup);
+describe('electronHostCanvasGroup', canvasGroup);
 describe('electronHostConnectivityGroup', connectivityGroup);
 describe('electronHostDeviceGroup', deviceGroup);
 describe('electronHostFileSystemGroup', fileSystemGroup);
@@ -96,7 +99,7 @@ describe('electronHostShareGroup', shareGroup);
 describe('electronHostSocketGroup', socketGroup);
 describe('electronHostSoftKeyboardGroup', softKeyboardGroup);
 describe('electronHostStatusBarGroup', statusBarGroup);
-describe('electronHostSurfaceGroup', surfaceGroup);
+describe('electronHostTargetGroup', surfaceGroup);
 describe('electronHostTextSegmentGroup', textSegmentGroup);
 describe('electronHostTextShaperGroup', textShaperGroup);
 describe('electronHostVideoGroup', videoGroup);

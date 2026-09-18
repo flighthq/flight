@@ -8,7 +8,7 @@ import type {
   HostTargetCapability,
   HostTarget,
   HostGlCapability,
-  HostSurfaceCapability,
+  HostTargetResizeCapability,
   EntityConstruction,
   GlContextOptions,
 } from '@flighthq/types/contract';
@@ -113,6 +113,9 @@ export const webHostTarget = (() => {
 
 export const webHostGl = (() => {
   const out = allocateEntity<HostGlCapability>();
+  // Allocation only. Whether the browser will grant WebGL2 on the new canvas is reported by acquire, so
+  // the two sentinels stay distinct: null here means no drawable, null there means no context.
+  out.create = (width: number, height: number) => allocateWebHostTargetCanvas(width, height);
   out.acquire = (target: HostTarget, options?: Readonly<GlContextOptions>) => {
     const element = getCanvasForTarget(target);
     // null covers both reasons the slot cannot hand out a context: an unregistered target, and a
@@ -140,8 +143,8 @@ export const webHostGl = (() => {
   return finishEntity(out);
 })();
 
-export const webHostSurface = (() => {
-  const out = allocateEntity<HostSurfaceCapability>();
+export const webHostTargetResize = (() => {
+  const out = allocateEntity<HostTargetResizeCapability>();
   out.resize = (target: HostTarget, width: number, height: number) => {
     const element = getCanvasForTarget(target);
     if (element === null) return;
@@ -151,12 +154,25 @@ export const webHostSurface = (() => {
   return finishEntity(out);
 })();
 
-export function createWebHostTarget(element: HTMLElement): HostTarget {
+// Allocates a canvas of the given backing-store size and registers it as a target. This is the web's
+// answer to "make me a drawable": the element factory and the drawable are the same call here, which is
+// why no separate target-allocation capability exists. Presentation (anchoring in the document, display
+// size) is deliberately not done here — see webSurfacePresentation.
+export function allocateWebHostTargetCanvas(width: number, height: number): HostTarget {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return createWebHostTargetFromElement(canvas);
+}
+
+export function createWebHostTargetFromElement(element: HTMLElement): HostTarget {
   const target = allocateEntity<HostTarget>();
-  initializeWebHostTarget(target, element);
+  initializeWebHostTargetFromElement(target, element);
   return finishEntity(target);
 }
 
+// The canvas a drawable hook addresses, or null when the target is unregistered or is not a canvas.
+// Both are the same sentinel to the capability: there is no drawable to operate on.
 export function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null {
   const element = _hostTargets.get(target);
   if (element === undefined) return null;
@@ -164,7 +180,13 @@ export function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null
   return element;
 }
 
-export function initializeWebHostTarget(target: EntityConstruction<HostTarget>, element: HTMLElement): void {
+// The element a target names, or null when it was never registered with this host. Presentation helpers
+// use this where a canvas is not required; drawable hooks use getCanvasForTarget.
+export function getElementForTarget(target: HostTarget): HTMLElement | null {
+  return _hostTargets.get(target) ?? null;
+}
+
+export function initializeWebHostTargetFromElement(target: EntityConstruction<HostTarget>, element: HTMLElement): void {
   target.__brand = 'HostTarget' as const;
   _hostTargets.set(target, element);
 }

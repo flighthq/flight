@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
@@ -25,7 +25,6 @@ import {
   prepareScene3DRender,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -43,16 +42,13 @@ declareExpectedImageDescription(
 const WIDTH = 800;
 const HEIGHT = 600;
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, WIDTH * pixelRatio, HEIGHT * pixelRatio);
-canvas.style.width = `${WIDTH}px`;
-canvas.style.height = `${HEIGHT}px`;
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, WIDTH * pixelRatio, HEIGHT * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, WIDTH, HEIGHT);
+appendWebSurface(glSurface, document.body);
+
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
 });

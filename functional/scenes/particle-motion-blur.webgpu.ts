@@ -1,8 +1,9 @@
 import {
-  createWebHostTarget,
   webHostWgpuContext,
   createWebImageResourceFromCanvas,
-  webSurfaceCreateCapability,
+  appendWebSurface,
+  getWebSurfaceCanvas,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
@@ -25,7 +26,6 @@ import {
   createTexture,
   createTextureAtlas,
   createVelocityField,
-  createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -47,7 +47,7 @@ import {
   reserveParticleEmitter2D,
   scene3DWgpuPipeline,
   setWgpuRenderEffectVelocityTexture,
-  createSurface,
+  createWgpuSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -66,15 +66,14 @@ declareExpectedImageDescription(
 // Wgpu parity column for per-particle motion blur: the particle velocity writer rasterizes each
 // particle's own velocity into the G-buffer, which the motion-blur runner smears along — a radial star.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
+if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
+setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+appendWebSurface(wgpuSurface, document.body);
+const canvas = getWebSurfaceCanvas(wgpuSurface)!;
+const target = wgpuSurface.target;
+const acquisition = wgpuSurface.acquisition;
 
-const target = createWebHostTarget(canvas);
-
-const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
-if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });

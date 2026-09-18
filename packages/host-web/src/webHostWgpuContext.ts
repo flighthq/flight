@@ -6,7 +6,7 @@ import type {
   WgpuSurfaceAttachResult,
 } from '@flighthq/types/contract';
 
-import { getCanvasForTarget } from './webHostTarget';
+import { allocateWebHostTargetCanvas, getCanvasForTarget } from './webHostTarget';
 
 export function createWebHostWgpuContext(): HostWgpuCapability {
   const out = allocateEntity<HostWgpuCapability>();
@@ -66,6 +66,9 @@ export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCap
     });
     return { context, surface: canvas };
   };
+  // Allocation only: a device is adapter-scoped and is acquired separately, so making a drawable
+  // cannot imply requesting one.
+  out.create = (width: number, height: number) => allocateWebHostTargetCanvas(width, height);
   out.isSupported = (): boolean => {
     return getWebWgpu() !== null;
   };

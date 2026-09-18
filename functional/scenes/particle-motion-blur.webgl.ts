@@ -1,8 +1,9 @@
 import {
-  createWebHostTarget,
   webHostGl,
   createWebImageResourceFromCanvas,
-  webSurfaceCreateCapability,
+  appendWebSurface,
+  getWebSurfaceCanvas,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
@@ -43,7 +44,6 @@ import {
   reserveParticleEmitter2D,
   setGlRenderEffectVelocityTexture,
   getBitmapPixelRgb,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -61,16 +61,13 @@ declareExpectedImageDescription(
 // The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
 // the particle writer); the motion-blur effect then smears each particle along its own ring-radial vector.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, 800, 600);
+appendWebSurface(glSurface, document.body);
+const canvas = getWebSurfaceCanvas(glSurface)!;
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,

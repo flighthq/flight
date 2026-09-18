@@ -12,6 +12,7 @@ const GROUPS = [
   ['app', 'webHostApp'],
   ['audio', 'webHostAudioGroup'],
   ['bitmap', 'webHostBitmap'],
+  ['canvas', 'webHostCanvasGroup'],
   ['clipboard', 'webHostClipboard'],
   ['connectivity', 'webHostConnectivity'],
   ['device', 'webHostDeviceGroup'],
@@ -45,7 +46,7 @@ const GROUPS = [
   ['socket', 'webHostSocketGroup'],
   ['softKeyboard', 'webHostSoftKeyboard'],
   ['statusBar', 'webHostStatusBar'],
-  ['surface', 'webHostSurfaceGroup'],
+  ['target', 'webHostTargetGroup'],
   ['textSegment', 'webHostTextSegment'],
   ['textShaper', 'webHostTextShaper'],
   ['tray', 'webHostTray'],
@@ -74,6 +75,7 @@ const LEAVES = [
   ['audio', 'mixer', 'webHostAudioMixer'],
   ['bitmap', 'encode', 'webHostBitmapEncode'],
   ['bitmap', 'readback', 'webHostBitmapReadback'],
+  ['canvas', 'context', 'webHostCanvas'],
   ['clipboard', 'change', 'webHostClipboardChange'],
   ['clipboard', 'formats', 'webHostClipboardFormats'],
   ['clipboard', 'image', 'webHostClipboardImage'],
@@ -102,7 +104,6 @@ const LEAVES = [
   ['input', 'focus', 'webHostInputFocus'],
   ['input', 'ingress', 'webHostInputIngress'],
   ['input', 'pointerLock', 'webHostInputPointerLock'],
-  ['input', 'target', 'webHostTarget'],
   ['lifecycle', 'state', 'webHostLifecycle'],
   ['mediaSession', 'action', 'webHostMediaSessionAction'],
   ['mediaSession', 'control', 'webHostMediaSession'],
@@ -135,7 +136,8 @@ const LEAVES = [
   ['softKeyboard', 'info', 'webHostSoftKeyboardInfo'],
   ['softKeyboard', 'visibility', 'webHostSoftKeyboardVisibility'],
   ['statusBar', 'color', 'webHostStatusBarColor'],
-  ['surface', 'resize', 'webHostSurface'],
+  ['target', 'prepare', 'webHostTarget'],
+  ['target', 'resize', 'webHostTargetResize'],
   ['video', 'playback', 'webHostVideo'],
   ['window', 'appearance', 'webHostWindowAppearance'],
   ['window', 'attach', 'webHostWindowAttach'],
@@ -149,6 +151,7 @@ const LEAVES = [
 const GROUP_SUFFIXED = [
   'webHostAccessibilityGroup',
   'webHostAudioGroup',
+  'webHostCanvasGroup',
   'webHostDeviceGroup',
   'webHostFileSystemGroup',
   'webHostFullscreenGroup',
@@ -163,7 +166,7 @@ const GROUP_SUFFIXED = [
   'webHostPlatformGroup',
   'webHostSensorsGroup',
   'webHostSocketGroup',
-  'webHostSurfaceGroup',
+  'webHostTargetGroup',
   'webHostVideoGroup',
 ];
 
@@ -212,6 +215,7 @@ describe('webHost', () => {
         .sort(),
     ).toEqual(GROUP_SUFFIXED);
     expect(publicApi.webHostAccessibilityGroup.tree).toBe(publicApi.webHostAccessibility);
+    expect(publicApi.webHostCanvasGroup.context).toBe(publicApi.webHostCanvas);
     expect(publicApi.webHostNetGroup.http).toBe(publicApi.webHostNet);
     expect(publicApi.webHostPreferences.local).toBe(publicApi.webHostStorage);
     expect(publicApi.webHostGlGroup.context).toBe(publicApi.webHostGl);

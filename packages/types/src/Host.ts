@@ -67,6 +67,7 @@ import type { HostAudioDeviceCapability } from './HostAudioDevice';
 import type { HostAudioMixerCapability } from './HostAudioMixer';
 import type { HostBitmapEncodeCapability } from './HostBitmapEncode';
 import type { HostBitmapReadbackCapability } from './HostBitmapReadback';
+import type { HostCanvasCapability } from './HostCanvas';
 import type {
   HostDirectoryOpenDialogCapability,
   HostFileOpenDialogCapability,
@@ -74,22 +75,20 @@ import type {
 } from './HostFileDialog';
 import type { HostFontLoadingCapability } from './HostFontLoading';
 import type { HostElementFullscreenCapability } from './HostFullscreen';
+import type { HostGlCapability } from './HostGl';
 import type { HostImageOpenDialogCapability } from './HostImageOpenDialog';
+import type {
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputPointerLockCapability,
+} from './HostInput';
 import type { HostInputIngressCapability } from './HostInputIngress';
 import type { HostMessageDialogCapability } from './HostMessageDialog';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
 import type { HostPromptDialogCapability } from './HostPromptDialog';
-import type { HostSurfaceCreateCapability } from './HostSurface';
-import type { HostTargetCapability } from './HostTarget';
+import type { HostTargetCapability, HostTargetResizeCapability } from './HostTarget';
 import type { HostVideoCapability } from './HostVideo';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
-import type {
-  HostGlCapability,
-  HostInputDropFileCapability,
-  HostInputFocusCapability,
-  HostInputPointerLockCapability,
-  HostSurfaceCapability,
-} from './HostWindowTarget';
 import type { HostImageCapability } from './ImageResource';
 import type {
   HostIpcHandleCapability,
@@ -210,6 +209,7 @@ export interface Host extends Entity {
   readonly app: HostAppCapabilities;
   readonly audio: HostAudioCapabilities;
   readonly bitmap: HostBitmapCapabilities;
+  readonly canvas: HostCanvasCapabilities;
   readonly clipboard: HostClipboardCapabilities;
   readonly connectivity: HostConnectivityCapabilities;
   readonly device: HostDeviceCapabilities;
@@ -243,7 +243,7 @@ export interface Host extends Entity {
   readonly socket: HostSocketCapabilities;
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
-  readonly surface: HostSurfaceCapabilities;
+  readonly target: HostTargetCapabilities;
   readonly textSegment: HostTextSegmentCapabilities;
   readonly textShaper: HostTextShaperCapabilities;
   readonly tray: HostTrayCapabilities;
@@ -341,6 +341,10 @@ export interface HostGeolocationCapabilities {
   readonly position?: HostGeolocationCapability;
 }
 
+export interface HostCanvasCapabilities {
+  readonly context?: HostCanvasCapability;
+}
+
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
 }
@@ -362,7 +366,6 @@ export interface HostInputCapabilities {
   readonly focus?: HostInputFocusCapability;
   readonly ingress?: HostInputIngressCapability;
   readonly pointerLock?: HostInputPointerLockCapability;
-  readonly target?: HostTargetCapability;
 }
 
 export interface HostIpcCapabilities {
@@ -503,9 +506,9 @@ export interface HostStatusBarCapabilities {
   readonly visibility?: HostStatusBarVisibilityCapability;
 }
 
-export interface HostSurfaceCapabilities {
-  readonly create?: HostSurfaceCreateCapability;
-  readonly resize?: HostSurfaceCapability;
+export interface HostTargetCapabilities {
+  readonly prepare?: HostTargetCapability;
+  readonly resize?: HostTargetResizeCapability;
 }
 
 export interface HostTextSegmentCapabilities {

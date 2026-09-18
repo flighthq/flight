@@ -1,10 +1,11 @@
 import {
-  createWebHostTarget,
   webHostGl,
   webCanvasRenderSurfaceCreator,
   webHostImage,
   webImageSurfaceCreator,
-  webSurfaceCreateCapability,
+  appendWebSurface,
+  getWebSurfaceElement,
+  setWebSurfaceDisplaySize,
 } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
@@ -31,7 +32,6 @@ import {
   beginGlRenderPass,
   endGlRenderPass,
   createGlScreenRenderTarget,
-  createSurface,
 } from '@flighthq/sdk';
 
 export const CANVAS_WIDTH = 800;
@@ -39,17 +39,13 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-export const canvas = createSurface(webSurfaceCreateCapability, CANVAS_WIDTH * pixelRatio, CANVAS_HEIGHT * pixelRatio);
-canvas.style.width = `${CANVAS_WIDTH}px`;
-canvas.style.height = `${CANVAS_HEIGHT}px`;
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, CANVAS_WIDTH * pixelRatio, CANVAS_HEIGHT * pixelRatio, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-
+setWebSurfaceDisplaySize(glSurface, CANVAS_WIDTH, CANVAS_HEIGHT);
+appendWebSurface(glSurface, document.body);
+export const canvas = getWebSurfaceElement(glSurface)!;
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',

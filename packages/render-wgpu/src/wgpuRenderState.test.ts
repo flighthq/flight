@@ -146,6 +146,7 @@ describe('createWgpuAcquisition', () => {
         throw new Error('no adapter');
       }),
       attachSurface: vi.fn(() => null),
+      create: vi.fn(() => null),
       isSupported: vi.fn(() => false),
       release: vi.fn(),
     });
@@ -898,6 +899,7 @@ describe('releaseWgpuAcquisition', () => {
     const recordingBackend = entityHostBackend({
       acquire: vi.fn(async () => acquisition),
       attachSurface: vi.fn(() => null),
+      create: vi.fn(() => null),
       isSupported: vi.fn(() => true),
       release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
     });

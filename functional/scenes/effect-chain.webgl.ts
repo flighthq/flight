@@ -1,4 +1,4 @@
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -24,7 +24,6 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
-  createSurface,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -51,16 +50,12 @@ declareExpectedImageDescription(
 // vignette. The pipeline ping-pongs between offscreen targets so each scene2d reads the previous
 // scene2d's output, proving multi-scene2d ordering. HDR (rgba16f) keeps the bright pass for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 * pixelRatio);
-canvas.style.width = '800px';
-canvas.style.height = '600px';
-document.body.appendChild(canvas);
-
-const target = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, target, {
+const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, 800, 600);
+appendWebSurface(glSurface, document.body);
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   pixelRatio,

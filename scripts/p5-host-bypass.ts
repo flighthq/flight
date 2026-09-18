@@ -683,10 +683,10 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
   return sites;
 }
 
-// A WebGPU page must not conjure its own PRESENTATION canvas. The canvas a screen target or an
-// acquisition is given comes through the host capability seam: either directly from
-// createSurface(webSurfaceCreateCapability, …) or wrapped in a HostTarget via
-// createWebHostTarget(canvas).
+// A WebGPU page must not conjure its own PRESENTATION drawable. The target a screen target or an
+// acquisition is given comes through the host capability seam: allocated by createWgpuSurface(host, w, h)
+// and read off `surface.target`, or adopted from an existing element via
+// createWebHostTargetFromElement(canvas).
 //
 // Scratch canvases a scene paints texture content into are deliberately NOT flagged here: they are a
 // different bypass with its own kind ('scratch-surface') and its own budget. Only the surface that
@@ -699,24 +699,35 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   let usesHostCanvas = false;
 
   const visit = (node: ts.Node): void => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer !== undefined) {
+      // createWgpuSurface is async, so the binding's initializer is an await wrapping the call.
+      const initializer = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
+      if (ts.isCallExpression(initializer)) {
+        const calledName = expressionName(initializer.expression);
+        if (calledName === 'createWgpuSurface') {
+          hostCanvasBindings.add(node.name.text);
+          usesHostCanvas = true;
+        } else if (
+          calledName === 'createWebHostTargetFromElement' &&
+          initializer.arguments.length >= 1 &&
+          ts.isIdentifier(initializer.arguments[0])
+        ) {
+          hostCanvasBindings.add(node.name.text);
+        }
+      }
+    }
+    // `const target = wgpuSurface.target` carries the provenance of the surface it is read from: the
+    // allocating seam returns the surface, and the target is the identity that surface already owns.
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.initializer !== undefined &&
-      ts.isCallExpression(node.initializer)
+      ts.isPropertyAccessExpression(node.initializer) &&
+      node.initializer.name.text === 'target' &&
+      ts.isIdentifier(node.initializer.expression) &&
+      hostCanvasBindings.has(node.initializer.expression.text)
     ) {
-      const calledName = expressionName(node.initializer.expression);
-      if (calledName === 'createSurface') {
-        hostCanvasBindings.add(node.name.text);
-        usesHostCanvas = true;
-      } else if (
-        calledName === 'createWebHostTarget' &&
-        node.initializer.arguments.length >= 1 &&
-        ts.isIdentifier(node.initializer.arguments[0]) &&
-        hostCanvasBindings.has(node.initializer.arguments[0].text)
-      ) {
-        hostCanvasBindings.add(node.name.text);
-      }
+      hostCanvasBindings.add(node.name.text);
     }
     if (ts.isCallExpression(node)) {
       const called = expressionName(node.expression);
@@ -741,12 +752,12 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   for (const surface of presentationSurfaces) {
     if (!hostCanvasBindings.has(surface.name)) {
       failures.push(
-        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createSurface or createWebHostTarget`,
+        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createWgpuSurface or createWebHostTargetFromElement`,
       );
     }
   }
-  if (usesHostCanvas && !importsFromHostWeb(parsed, 'webSurfaceCreateCapability')) {
-    failures.push(`${file}: WGPU consumer does not import webSurfaceCreateCapability from @flighthq/host-web`);
+  if (usesHostCanvas && !importsFromHostWeb(parsed, 'webHostWgpuContext')) {
+    failures.push(`${file}: WGPU consumer does not import webHostWgpuContext from @flighthq/host-web`);
   }
   return failures;
 }
@@ -776,7 +787,7 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
 
   const harnessFile = 'tools/harness/webgpu.ts';
   const harnessSource = readFileSync(join(root, harnessFile), 'utf8');
-  if (!harnessSource.includes('createSurface(')) {
+  if (!harnessSource.includes('createWgpuSurface(')) {
     failures.push(
       `${harnessFile}: shared WebGPU harness no longer creates its surface through the host capability seam`,
     );

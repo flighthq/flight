@@ -12,6 +12,7 @@ const GROUP_MODULES = [
   { file: 'webAppHost.ts', group: 'app', name: 'webHostApp' },
   { file: 'webAudioHost.ts', group: 'audio', name: 'webHostAudioGroup' },
   { file: 'webBitmapHost.ts', group: 'bitmap', name: 'webHostBitmap' },
+  { file: 'webCanvasHost.ts', group: 'canvas', name: 'webHostCanvasGroup' },
   { file: 'webClipboardHost.ts', group: 'clipboard', name: 'webHostClipboard' },
   { file: 'webConnectivityHost.ts', group: 'connectivity', name: 'webHostConnectivity' },
   { file: 'webDeviceHost.ts', group: 'device', name: 'webHostDeviceGroup' },
@@ -42,7 +43,7 @@ const GROUP_MODULES = [
   { file: 'webSocketHost.ts', group: 'socket', name: 'webHostSocketGroup' },
   { file: 'webSoftKeyboardHost.ts', group: 'softKeyboard', name: 'webHostSoftKeyboard' },
   { file: 'webStatusBarHost.ts', group: 'statusBar', name: 'webHostStatusBar' },
-  { file: 'webSurfaceHost.ts', group: 'surface', name: 'webHostSurfaceGroup' },
+  { file: 'webTargetHost.ts', group: 'target', name: 'webHostTargetGroup' },
   { file: 'webVideoHost.ts', group: 'video', name: 'webHostVideoGroup' },
   { file: 'webWindowHost.ts', group: 'window', name: 'webHostWindow' },
 ] as const;

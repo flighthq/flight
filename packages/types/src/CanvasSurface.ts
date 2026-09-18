@@ -1,11 +1,10 @@
-import type { Entity } from './Entity';
-import type { HostTarget } from './HostTarget';
+import type { Surface } from './HostTarget';
 
-// A Canvas 2D rendering surface: the binding of a HostTarget to a 2D rendering context. Created
-// by createCanvasSurface, which acquires the CanvasRenderingContext2D from the target's underlying
-// drawable and bundles it with the target identity.
-export interface CanvasSurface extends Entity {
+// A Canvas 2D rendering surface: the binding of a target to a 2D drawing context. Created by
+// createCanvasSurface, which allocates the drawable through HostCanvasCapability, or by
+// createCanvasSurfaceFromTarget for a target the host already holds. Backing store dimensions are read
+// live from the drawable rather than mirrored here.
+export interface CanvasSurface extends Surface {
   readonly __brand: 'CanvasSurface';
   readonly context: CanvasRenderingContext2D;
-  readonly target: HostTarget;
 }

@@ -11,7 +11,7 @@ import type {
   HostInputPointerLockCapability,
   HostTargetCapability,
   HostScreenChangeCapability,
-  HostSurfaceCapability,
+  HostTargetResizeCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -161,7 +161,7 @@ type RecordingRenderContextBackend = HostGlCapability & {
   emitRestored(): void;
 };
 
-type RecordingRenderSurfaceBackend = HostSurfaceCapability & { readonly calls: string[] };
+type RecordingRenderSurfaceBackend = HostTargetResizeCapability & { readonly calls: string[] };
 
 type TestHost = {
   readonly graphics: {
@@ -179,7 +179,7 @@ type TestHost = {
 };
 
 type WindowTargetHost = { readonly graphics: { readonly renderContext: HostGlCapability } } & {
-  readonly graphics: { readonly renderSurface: HostSurfaceCapability };
+  readonly graphics: { readonly renderSurface: HostTargetResizeCapability };
 } & { readonly input: { readonly dropFile: HostInputDropFileCapability } } & {
   readonly input: { readonly focus: HostInputFocusCapability };
 } & { readonly input: { readonly pointerLock: HostInputPointerLockCapability } };

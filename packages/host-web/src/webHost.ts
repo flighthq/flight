@@ -5,6 +5,7 @@ import { webHostAccessibilityGroup } from './webAccessibilityHost';
 import { webHostApp } from './webAppHost';
 import { webHostAudioGroup } from './webAudioHost';
 import { webHostBitmap } from './webBitmapHost';
+import { webHostCanvasGroup } from './webCanvasHost';
 import { webHostClipboard } from './webClipboardHost';
 import { webHostConnectivity } from './webConnectivityHost';
 import { webHostDeviceGroup } from './webDeviceHost';
@@ -38,7 +39,7 @@ import { webHostShortcut } from './webShortcutHost';
 import { webHostSocketGroup } from './webSocketHost';
 import { webHostSoftKeyboard } from './webSoftKeyboardHost';
 import { webHostStatusBar } from './webStatusBarHost';
-import { webHostSurfaceGroup } from './webSurfaceHost';
+import { webHostTargetGroup } from './webTargetHost';
 import { webHostTextSegment } from './webTextSegmentHost';
 import { webHostTextShaper } from './webTextShaperHost';
 import { webHostTray } from './webTrayHost';
@@ -59,6 +60,7 @@ const groups = {
   app: webHostApp,
   audio: webHostAudioGroup,
   bitmap: webHostBitmap,
+  canvas: webHostCanvasGroup,
   clipboard: webHostClipboard,
   connectivity: webHostConnectivity,
   device: webHostDeviceGroup,
@@ -92,7 +94,7 @@ const groups = {
   socket: webHostSocketGroup,
   softKeyboard: webHostSoftKeyboard,
   statusBar: webHostStatusBar,
-  surface: webHostSurfaceGroup,
+  target: webHostTargetGroup,
   textSegment: webHostTextSegment,
   textShaper: webHostTextShaper,
   tray: webHostTray,

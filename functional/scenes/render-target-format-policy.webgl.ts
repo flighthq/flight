@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { createWebHostTarget, webHostGl, webSurfaceCreateCapability } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
 import {
   beginGlRenderPass,
   createGlRenderState,
@@ -10,7 +10,7 @@ import {
   presentGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
-import { createGlSurface, createSurface } from '@flighthq/surface/contract';
+import { createGlSurface } from '@flighthq/surface/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -30,17 +30,15 @@ export const scale = window.devicePixelRatio || 1;
 // produced a usable target rather than a blank/incomplete framebuffer.
 export const minCoverage = 0;
 
-const canvas = createSurface(webSurfaceCreateCapability, width * scale, height * scale);
-canvas.style.width = `${width}px`;
-canvas.style.height = `${height}px`;
-document.body.appendChild(canvas);
-
-const hostTarget = createWebHostTarget(canvas);
-const glSurface = createGlSurface(webHostGl, hostTarget, {
+const glSurface = createGlSurface(webHostGl, width * scale, height * scale, {
   antialias: false,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
+setWebSurfaceDisplaySize(glSurface, width, height);
+appendWebSurface(glSurface, document.body);
+const canvas = getWebSurfaceCanvas(glSurface)!;
+
 const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
   // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
   // color-renderable storage only, so sample with the universally valid nearest filter.
