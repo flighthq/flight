@@ -688,7 +688,7 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
 // A WebGPU page must not conjure its own PRESENTATION drawable. The target a screen target or an
 // acquisition is given comes through the host capability seam: allocated by createWgpuSurface(host, w, h)
 // and read off `surface.target`, or adopted from an existing element via
-// createWebHostTargetFromElement(canvas).
+// createWebSurfaceFromElement(canvas).
 //
 // Scratch canvases a scene paints texture content into are deliberately NOT flagged here: they are a
 // different bypass with its own kind ('scratch-surface') and its own budget. Only the surface that
@@ -710,7 +710,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
           hostCanvasBindings.add(node.name.text);
           usesHostCanvas = true;
         } else if (
-          calledName === 'createWebHostTargetFromElement' &&
+          calledName === 'createWebSurfaceFromElement' &&
           initializer.arguments.length >= 1 &&
           ts.isIdentifier(initializer.arguments[0])
         ) {
@@ -754,7 +754,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   for (const surface of presentationSurfaces) {
     if (!hostCanvasBindings.has(surface.name)) {
       failures.push(
-        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createWgpuSurface or createWebHostTargetFromElement`,
+        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createWgpuSurface or createWebSurfaceFromElement`,
       );
     }
   }

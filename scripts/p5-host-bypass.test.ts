@@ -202,9 +202,7 @@ describe('P5 host-bypass derived gate', () => {
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining(
-        "presentation surface 'target' does not come from createWgpuSurface or createWebHostTargetFromElement",
-      ),
+      expect.stringContaining('does not come from createWgpuSurface or createWebSurfaceFromElement'),
     ]);
   });
 
@@ -216,9 +214,7 @@ describe('P5 host-bypass derived gate', () => {
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining(
-        "presentation surface 'target' does not come from createWgpuSurface or createWebHostTargetFromElement",
-      ),
+      expect.stringContaining('does not come from createWgpuSurface or createWebSurfaceFromElement'),
     ]);
   });
 
@@ -227,10 +223,9 @@ describe('P5 host-bypass derived gate', () => {
   it('does not flag a scratch canvas a WGPU scene paints texture content into', () => {
     const source = [
       "import { webHostWgpuContext } from '@flighthq/host-web';",
-      'const surface = await createWgpuSurface(webHostWgpuContext, 800, 600);',
-      'const target = surface.target;',
-      'const acquisition = await createWgpuAcquisition(webWgpuHost, target);',
-      'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, target);',
+      'const surface = await createWgpuSurface(webHostWgpuContext, appWindow, 800, 600);',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, surface);',
+      'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, surface);',
       "const face = document.createElement('canvas');",
     ].join('\n');
 
@@ -239,9 +234,8 @@ describe('P5 host-bypass derived gate', () => {
 
   it('mutation-proves the host-web import is required, not just the call', () => {
     const source = [
-      'const surface = await createWgpuSurface(webHostWgpuContext, 800, 600);',
-      'const target = surface.target;',
-      'const acquisition = await createWgpuAcquisition(webWgpuHost, target);',
+      'const surface = await createWgpuSurface(webHostWgpuContext, appWindow, 800, 600);',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, surface);',
     ].join('\n');
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([

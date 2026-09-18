@@ -10,6 +10,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createBitmapText'],
     imports: [
+      '@flighthq/application',
       '@flighthq/bitmapfont',
       '@flighthq/bitmaptext',
       '@flighthq/host-web',
@@ -32,6 +33,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/registry',
       '@flighthq/render',
@@ -50,6 +52,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createMorphShape'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/path',
@@ -70,6 +73,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createParticleEmitter2D'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/particleemitter',
@@ -91,6 +95,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createRichText'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/registry',
@@ -110,6 +115,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createScale9Shape'],
     imports: [
+      '@flighthq/application',
       '@flighthq/geometry',
       '@flighthq/host-web',
       '@flighthq/node',
@@ -131,6 +137,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createTextLabel'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/registry',
@@ -150,6 +157,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createTilemap'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/registry',
@@ -171,6 +179,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createSprite'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/registry',
@@ -190,6 +199,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createShape'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/registry',
@@ -209,6 +219,7 @@ const profiles = [
   {
     constructors: ['createDisplayObject', 'createQuadBatch'],
     imports: [
+      '@flighthq/application',
       '@flighthq/host-web',
       '@flighthq/node',
       '@flighthq/quadbatch',
