@@ -63,13 +63,13 @@ function populateCapacitorAndroidApp(
   capacitor: CapacitorApi,
 ): void {
   out.activate = common.activate;
-  const h = allocateEntity<HostAppHideCapability>();
+  const h = {} as HostAppHideCapability;
   h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
-  out.hide = finishEntity(h);
+  out.hide = h;
   out.name = common.name;
-  const q = allocateEntity<HostAppQuitCapability>();
+  const q = {} as HostAppQuitCapability;
   q.quit = () => void capacitor.app.exitApp().catch(() => {});
-  out.quit = finishEntity(q);
+  out.quit = q;
   out.version = common.version;
 }
 
@@ -86,20 +86,20 @@ function populateCapacitorCommonApp(
       version = info.version;
     })
     .catch(() => {});
-  const a = allocateEntity<HostAppActivateCapability>();
+  const a = {} as HostAppActivateCapability;
   a.subscribe = (listener: () => void) =>
     toCapacitorUnsubscribe(
       capacitor.app.addListener('appStateChange', (state) => {
         if (state.isActive) listener();
       }),
     );
-  out.activate = finishEntity(a);
-  const n = allocateEntity<HostAppNameCapability>();
+  out.activate = a;
+  const n = {} as HostAppNameCapability;
   n.getName = () => name;
-  out.name = finishEntity(n);
-  const v = allocateEntity<HostAppVersionCapability>();
+  out.name = n;
+  const v = {} as HostAppVersionCapability;
   v.getVersion = () => version;
-  out.version = finishEntity(v);
+  out.version = v;
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

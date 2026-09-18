@@ -94,34 +94,34 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
 export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
 
-export interface HostWindowAppearanceCapability extends Entity {
+export interface HostWindowAppearanceCapability {
   setIcon?(win: AppWindow, icon: string): void;
   setOpacity?(win: AppWindow, opacity: number): void;
   setTitle(win: AppWindow, title: string): void;
 }
 
-export interface HostWindowAttachCapability extends Entity {
+export interface HostWindowAttachCapability {
   attach(win: AppWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
 }
 
-export interface HostWindowAttentionCapability extends Entity {
+export interface HostWindowAttentionCapability {
   flashWindowFrame?(win: AppWindow): void;
   requestAttention(win: AppWindow, attention: boolean): void;
 }
 
-export interface HostWindowContentProtectionCapability extends Entity {
+export interface HostWindowContentProtectionCapability {
   setContentProtection(win: AppWindow, enabled: boolean): void;
 }
 
-export interface HostWindowFocusCapability extends Entity {
+export interface HostWindowFocusCapability {
   focus(win: AppWindow): void;
 }
 
-export interface HostWindowFullscreenCapability extends Entity {
+export interface HostWindowFullscreenCapability {
   setFullscreen(win: AppWindow, fullscreen: boolean): void;
 }
 
-export interface HostWindowGeometryCapability extends Entity {
+export interface HostWindowGeometryCapability {
   center?(win: AppWindow): void;
   getBounds(win: AppWindow, out: WindowBounds): WindowBounds;
   setPosition(win: AppWindow, x: number, y: number): void;
@@ -133,30 +133,30 @@ export interface HostWindowGeometryCapability extends Entity {
   ): () => void;
 }
 
-export interface HostWindowHierarchyCapability extends Entity {
+export interface HostWindowHierarchyCapability {
   setParent(win: AppWindow, parent: AppWindow | null): void;
 }
 
-export interface HostWindowLifecycleCapability extends Entity {
+export interface HostWindowLifecycleCapability {
   close(win: AppWindow): void;
   open(win: AppWindow, options: Readonly<WindowOptions>): boolean;
   subscribeClose?(onCloseRequest: () => boolean, onClose: () => void): () => void;
 }
 
-export interface HostWindowProgressCapability extends Entity {
+export interface HostWindowProgressCapability {
   setProgress(win: AppWindow, progress: number): void;
 }
 
-export interface HostWindowShadowCapability extends Entity {
+export interface HostWindowShadowCapability {
   setHasShadow(win: AppWindow, hasShadow: boolean): void;
 }
 
-export interface HostWindowShellCapability extends Entity {
+export interface HostWindowShellCapability {
   setMenuBarVisible?(win: AppWindow, visible: boolean): void;
   setSkipTaskbar?(win: AppWindow, skip: boolean): void;
 }
 
-export interface HostWindowSizeConstraintsCapability extends Entity {
+export interface HostWindowSizeConstraintsCapability {
   setMaximumSize(win: AppWindow, width: number, height: number): void;
   setMinimumSize(win: AppWindow, width: number, height: number): void;
   // Whether the user may resize the window. Optional because absence is the structural declaration
@@ -164,18 +164,18 @@ export interface HostWindowSizeConstraintsCapability extends Entity {
   setResizable?(win: AppWindow, resizable: boolean): void;
 }
 
-export interface HostWindowStateCapability extends Entity {
+export interface HostWindowStateCapability {
   maximize(win: AppWindow): void;
   minimize(win: AppWindow): void;
   restore(win: AppWindow): void;
 }
 
-export interface HostWindowVisibilityCapability extends Entity {
+export interface HostWindowVisibilityCapability {
   hide(win: AppWindow): void;
   show(win: AppWindow): void;
   subscribeVisibility?(listener: (visible: boolean) => void): () => void;
 }
 
-export interface HostWindowZOrderCapability extends Entity {
+export interface HostWindowZOrderCapability {
   setAlwaysOnTop(win: AppWindow, alwaysOnTop: boolean): void;
 }

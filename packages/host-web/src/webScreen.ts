@@ -1,15 +1,15 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
   EntityConstruction,
-  ScreenChangeEvent,
   HostScreenChangeCapability,
   HostScreenDetailsCapability,
   HostScreenPermissionChangeCapability,
   HostScreenQueryCapability,
+  ScreenChangeEvent,
   ScreenInfo,
-  WebScreenCapabilities,
   ScreenPermissionState,
+  WebScreenCapabilities,
 } from '@flighthq/types/contract';
 
 interface DetailedScreen {
@@ -185,7 +185,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
     };
 
   const query = (() => {
-    const out = allocateEntity<HostScreenQueryCapability>();
+    const out = {} as HostScreenQueryCapability;
     out.destroy = () => {
       if (typeof window !== 'undefined') {
         for (const subscription of subscriptions) {
@@ -226,11 +226,11 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       return fillCurrent(out);
     };
     out.getScreens = enumerate;
-    return finishEntity(out);
+    return out;
   })();
 
   const change = (() => {
-    const out = allocateEntity<HostScreenChangeCapability>();
+    const out = {} as HostScreenChangeCapability;
     out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
       if (typeof window === 'undefined') return () => {};
       const subscription: DisplaySubscription = {
@@ -249,11 +249,11 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         subscriptions.delete(subscription);
       };
     };
-    return finishEntity(out);
+    return out;
   })();
 
   const detailsBackend = (() => {
-    const out = allocateEntity<HostScreenDetailsCapability>();
+    const out = {} as HostScreenDetailsCapability;
     out.queryPermission = async (): Promise<ScreenPermissionState> => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return 'prompt';
       try {
@@ -281,11 +281,11 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         return false;
       }
     };
-    return finishEntity(out);
+    return out;
   })();
 
   const permissionChange = (() => {
-    const out = allocateEntity<HostScreenPermissionChangeCapability>();
+    const out = {} as HostScreenPermissionChangeCapability;
     out.subscribe = (listener: (state: ScreenPermissionState) => void) => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return () => {};
       let cancelled = false;
@@ -304,12 +304,12 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         status?.removeEventListener('change', handle);
       };
     };
-    return finishEntity(out);
+    return out;
   })();
 
   const out = allocateEntity<WebScreenCapabilities>();
   initializeWebScreenCapabilities(out, change, detailsBackend, permissionChange, query);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeWebScreenCapabilities(

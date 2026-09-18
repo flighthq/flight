@@ -99,7 +99,7 @@ export type MediaSessionClearPositionStateOutcome = MediaSessionOperationOutcome
 
 // Web-only today. Slot absence on Host.media is capability absence; these method results describe
 // runtime availability and operation failure after a host has supplied the command capability.
-export interface HostMediaSessionCapability extends Entity {
+export interface HostMediaSessionCapability {
   clearMetadata(): MediaSessionClearMetadataOutcome;
   clearPositionState(): MediaSessionClearPositionStateOutcome;
   // Releases only the metadata/playback/position lanes this exact provider still owns. A failed
@@ -112,7 +112,7 @@ export interface HostMediaSessionCapability extends Entity {
 
 // Event capability split from HostMediaSessionCapability even though both are Web-only: commands and
 // subscriptions have incompatible shapes and independent teardown obligations.
-export interface HostMediaSessionActionCapability extends Entity {
+export interface HostMediaSessionActionCapability {
   // Releases every surviving native action registration owned by this provider. Individual
   // subscriptions are still released through their exact returned unsubscribe.
   destroy(): void;

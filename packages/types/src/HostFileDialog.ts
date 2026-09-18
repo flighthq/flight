@@ -6,16 +6,15 @@ import type {
   OpenFileDialogOptions,
   SaveFileDialogOptions,
 } from './Dialog';
-import type { Entity } from './Entity';
 
-export interface HostDirectoryOpenDialogCapability extends Entity {
+export interface HostDirectoryOpenDialogCapability {
   open(options?: Readonly<OpenDirectoryDialogOptions>): Promise<DirectoryOpenDialogResult>;
 }
 
-export interface HostFileOpenDialogCapability extends Entity {
+export interface HostFileOpenDialogCapability {
   open(options: Readonly<OpenFileDialogOptions>): Promise<FileOpenDialogResult>;
 }
 
-export interface HostFileSaveDialogCapability extends Entity {
+export interface HostFileSaveDialogCapability {
   save(options: Readonly<SaveFileDialogOptions>): Promise<FileSaveDialogResult>;
 }

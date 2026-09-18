@@ -18,7 +18,7 @@ function hostOf(sendNetRequestBackend: HostNetCapability['sendNetRequest']): {
 } {
   return {
     net: {
-      http: { [EntityRuntimeKey]: undefined, sendNetRequest: sendNetRequestBackend },
+      http: { sendNetRequest: sendNetRequestBackend },
     },
   };
 }

@@ -12,7 +12,6 @@ import type {
   HostFileSaveDialogCapability,
   FileSaveDialogResult,
   HostMessageDialogCapability,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function electronHostDialog(
@@ -27,31 +26,31 @@ export function electronHostDialog(
 }
 
 export function electronHostDirectoryOpenDialog(electron: ElectronApi): HostDirectoryOpenDialogCapability & Entity {
-  const out = allocateEntity<HostDirectoryOpenDialogCapability>();
+  const out = allocateEntity<HostDirectoryOpenDialogCapability & Entity>();
   populateElectronHostDirectoryOpenDialog(out, electron);
   return finishEntity(out);
 }
 
 export function electronHostFileOpenDialog(electron: ElectronApi): HostFileOpenDialogCapability & Entity {
-  const out = allocateEntity<HostFileOpenDialogCapability>();
+  const out = allocateEntity<HostFileOpenDialogCapability & Entity>();
   populateElectronHostFileOpenDialog(out, electron);
   return finishEntity(out);
 }
 
 export function electronHostFileSaveDialog(electron: ElectronApi): HostFileSaveDialogCapability & Entity {
-  const out = allocateEntity<HostFileSaveDialogCapability>();
+  const out = allocateEntity<HostFileSaveDialogCapability & Entity>();
   populateElectronHostFileSaveDialog(out, electron);
   return finishEntity(out);
 }
 
 export function electronHostMessageDialog(electron: ElectronApi): HostMessageDialogCapability {
-  const out = allocateEntity<HostMessageDialogCapability>();
+  const out = {} as HostMessageDialogCapability;
   populateElectronHostMessageDialog(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
 export function populateElectronHostDirectoryOpenDialog(
-  out: EntityConstruction<HostDirectoryOpenDialogCapability>,
+  out: HostDirectoryOpenDialogCapability,
   electron: ElectronApi,
 ): void {
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
@@ -73,10 +72,7 @@ export function populateElectronHostDirectoryOpenDialog(
   };
 }
 
-export function populateElectronHostFileOpenDialog(
-  out: EntityConstruction<HostFileOpenDialogCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostFileOpenDialog(out: HostFileOpenDialogCapability, electron: ElectronApi): void {
   out.open = async (options): Promise<FileOpenDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const dialog = electron.dialog;
@@ -101,10 +97,7 @@ export function populateElectronHostFileOpenDialog(
   };
 }
 
-export function populateElectronHostFileSaveDialog(
-  out: EntityConstruction<HostFileSaveDialogCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostFileSaveDialog(out: HostFileSaveDialogCapability, electron: ElectronApi): void {
   out.save = async (options): Promise<FileSaveDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const dialog = electron.dialog;
@@ -125,10 +118,7 @@ export function populateElectronHostFileSaveDialog(
 
 // Electron provides message boxes and confirmation, but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
-export function populateElectronHostMessageDialog(
-  out: EntityConstruction<HostMessageDialogCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostMessageDialog(out: HostMessageDialogCapability, electron: ElectronApi): void {
   const dialog = electron.dialog;
   out.message = async (options) => {
     if (options.signal?.aborted) {

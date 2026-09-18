@@ -60,7 +60,7 @@ export type GeolocationAccessOutcome = {
     | 'timeout';
 };
 
-export interface HostGeolocationCapability extends Entity {
+export interface HostGeolocationCapability {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeolocationPositionResult>;
   // Reports whether this provider can acquire positions now; permission denial is a separate state.

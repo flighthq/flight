@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
@@ -20,7 +19,6 @@ interface FakeBackend extends HostUpdaterCommandCapability {
 
 function downloadedUpdate(version = '1.2.3'): DownloadedUpdate {
   return Object.freeze({
-    [EntityRuntimeKey]: undefined,
     info: Object.freeze({
       downloadSizeBytes: null,
       isMandatory: null,
@@ -39,7 +37,6 @@ function fakeBackend(
 ): FakeBackend {
   const calls = { check: 0, destroy: 0, install: [] as DownloadedUpdate[] };
   return {
-    [EntityRuntimeKey]: undefined,
     calls,
     async check() {
       calls.check++;

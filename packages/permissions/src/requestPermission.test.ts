@@ -209,7 +209,6 @@ interface PermissionsProviderOverrides {
 
 function permissionsProvider(overrides: Readonly<PermissionsProviderOverrides> = {}): HostPermissionsCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     notification: overrides.notification ?? {
       getPermission: async () => ({ permission: 'default', reason: 'ok' }),
       requestPermission: async () => ({ reason: 'dismissed' }),

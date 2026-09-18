@@ -1,6 +1,5 @@
 import type { PromptDialogOptions } from './Dialog';
-import type { Entity } from './Entity';
 
-export interface HostPromptDialogCapability extends Entity {
+export interface HostPromptDialogCapability {
   prompt(options: Readonly<PromptDialogOptions>): Promise<string | null>;
 }

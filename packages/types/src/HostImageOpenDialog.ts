@@ -1,6 +1,5 @@
 import type { ImageOpenDialogResult, OpenImageDialogOptions } from './Dialog';
-import type { Entity } from './Entity';
 
-export interface HostImageOpenDialogCapability extends Entity {
+export interface HostImageOpenDialogCapability {
   open(options?: Readonly<OpenImageDialogOptions>): Promise<ImageOpenDialogResult>;
 }

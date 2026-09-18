@@ -1,6 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostPermissionsCapability,
   PermissionName,
   PermissionQueryOutcome,
@@ -9,12 +7,14 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebPermissionsBackend(): HostPermissionsCapability {
-  const out = allocateEntity<HostPermissionsCapability>();
+  const out = {} as HostPermissionsCapability;
   initializeWebPermissionsBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebPermissionsBackend(out: EntityConstruction<HostPermissionsCapability>): void {
+export function initializeWebPermissionsBackend(out: {
+  -readonly [K in keyof HostPermissionsCapability]: HostPermissionsCapability[K];
+}): void {
   out.notification = {
     async getPermission() {
       if (typeof Notification === 'undefined') return { reason: 'operation-failed' };

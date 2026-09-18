@@ -55,7 +55,7 @@ function createAppMenu(tauri: TauriApi, state: MenuState): HostAppMenuCapability
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
   // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
   // until a replacement installs its own.
-  const applicationProvider = allocateEntity<HostAppMenuCapability>();
+  const applicationProvider = {} as HostAppMenuCapability;
   applicationProvider.destroy = (): void => {
     if (state.destroyed) return;
     state.destroyed = true;
@@ -70,12 +70,12 @@ function createAppMenu(tauri: TauriApi, state: MenuState): HostAppMenuCapability
     });
     return true;
   };
-  return finishEntity(applicationProvider);
+  return applicationProvider;
 }
 
 function createMenuPopup(tauri: TauriApi): HostMenuPopupCapability {
   const menuModule = tauri.menu;
-  const popupProvider = allocateEntity<HostMenuPopupCapability>();
+  const popupProvider = {} as HostMenuPopupCapability;
   popupProvider.popup = (items, x, y): Promise<string | null> => {
     return new Promise<string | null>((resolve) => {
       void (async () => {
@@ -85,18 +85,18 @@ function createMenuPopup(tauri: TauriApi): HostMenuPopupCapability {
       })().catch(() => resolve(null));
     });
   };
-  return finishEntity(popupProvider);
+  return popupProvider;
 }
 
 function createMenuSelect(state: MenuState): HostMenuSelectCapability {
-  const selectProvider = allocateEntity<HostMenuSelectCapability>();
+  const selectProvider = {} as HostMenuSelectCapability;
   selectProvider.subscribe = (listener): (() => void) => {
     state.selectListener = listener;
     return () => {
       if (state.selectListener === listener) state.selectListener = null;
     };
   };
-  return finishEntity(selectProvider);
+  return selectProvider;
 }
 
 // Recursively builds Tauri menu item handles from Flight templates. Separators become a predefined

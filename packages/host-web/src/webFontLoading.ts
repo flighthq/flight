@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostFontLoadingCapability, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, EntityConstruction, HostFontLoadingCapability } from '@flighthq/types/contract';
 
 export function createWebFontLoadingBackend(): HostFontLoadingCapability & Entity {
   const out = allocateEntity<HostFontLoadingCapability & Entity>();

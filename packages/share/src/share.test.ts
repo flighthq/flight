@@ -32,12 +32,12 @@ function contentHost(overrides: Partial<HostShareContentCapability> = {}): {
   return {
     share: {
       content: (() => {
-        const out = allocateEntity<HostShareContentCapability>();
+        const out = {} as HostShareContentCapability;
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
         Object.assign(out, overrides);
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -49,12 +49,12 @@ function filesHost(overrides: Partial<HostShareFilesCapability> = {}): {
   return {
     share: {
       files: (() => {
-        const out = allocateEntity<HostShareFilesCapability>();
+        const out = {} as HostShareFilesCapability;
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
         Object.assign(out, overrides);
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

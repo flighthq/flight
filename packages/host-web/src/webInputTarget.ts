@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
+  HostInputTargetCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostInputTargetCapability,
   InputTargetHandle,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 interface WebHostTargetStyle extends CSSStyleDeclaration {
@@ -15,7 +15,7 @@ interface WebHostTargetStyle extends CSSStyleDeclaration {
 }
 
 export const webHostInputDropFile = (() => {
-  const out = allocateEntity<HostInputDropFileCapability>();
+  const out = {} as HostInputDropFileCapability;
   out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -31,11 +31,11 @@ export const webHostInputDropFile = (() => {
       element.removeEventListener('drop', onDrop);
     });
   };
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostInputFocus = (() => {
-  const out = allocateEntity<HostInputFocusCapability>();
+  const out = {} as HostInputFocusCapability;
   out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
@@ -46,11 +46,11 @@ export const webHostInputFocus = (() => {
       element.removeEventListener('blur', onBlur);
     });
   };
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostInputPointerLock = (() => {
-  const out = allocateEntity<HostInputPointerLockCapability>();
+  const out = {} as HostInputPointerLockCapability;
   out.exit = () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
@@ -89,11 +89,11 @@ export const webHostInputPointerLock = (() => {
       (error: unknown) => classifyPointerLockRequestFailure(error),
     );
   };
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostInputTarget = (() => {
-  const out = allocateEntity<HostInputTargetCapability>();
+  const out = {} as HostInputTargetCapability;
   out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
@@ -103,7 +103,7 @@ export const webHostInputTarget = (() => {
     (element.style as WebHostTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
   };
-  return finishEntity(out);
+  return out;
 })();
 
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {

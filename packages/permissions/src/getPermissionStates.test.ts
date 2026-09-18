@@ -177,7 +177,6 @@ function permissionsProvider(
   queryPermission?: HostPermissionsCapability['queryPermission'],
 ): HostPermissionsCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     notification: {
       async getPermission() {
         events.push(`work:${label}`);

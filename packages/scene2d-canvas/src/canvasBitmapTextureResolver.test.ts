@@ -6,7 +6,6 @@ import {
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import {
@@ -31,7 +30,6 @@ function imageHost(backend: HostImageCapability = createTestImageBackend()): {
 
 function createTestImageBackend(): HostImageCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -61,7 +59,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
   });
 
   it('refuses Bitmap resolution without materialization support', () => {
-    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageCapability = { loadImageFromUrl: vi.fn() };
     const host = imageHost(backend);
     const state = createCanvasRenderState(document.createElement('canvas'));
     const bitmap = createBitmap(2, 2, 0xffffffff);

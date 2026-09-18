@@ -46,7 +46,7 @@ export interface SafeAreaInsets extends Entity {
 
 // The swappable backend behind @flighthq/device. Each read fills the caller's `out` value and returns
 // it; unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface HostDeviceCapability extends Entity {
+export interface HostDeviceCapability {
   getCapabilities(out: DeviceCapabilities): DeviceCapabilities;
   getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics;
   getId(): string;

@@ -20,7 +20,7 @@ function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
   out.canPlayType = canPlay;
   return {
     media: {
-      audioCodec: finishEntity(out),
+      audioCodec: out,
     },
   } as { readonly media: { readonly audioCodec: HostAudioCodecCapability } };
 }
@@ -28,7 +28,7 @@ function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
 function fakeNetHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
   readonly net: { readonly http: HostNetCapability };
 } {
-  const out = allocateEntity<HostNetCapability>();
+  const out = {} as HostNetCapability;
   Object.assign(
     out,
     backend ?? {
@@ -37,7 +37,7 @@ function fakeNetHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
   );
   return {
     net: {
-      http: finishEntity(out),
+      http: out,
     },
   };
 }

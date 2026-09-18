@@ -167,7 +167,7 @@ const LEAVES = [
 const AUXILIARY_EXPORTS = ['getAppWindowForElectronId', 'getElectronBrowserWindow', 'getElectronWindowId'] as const;
 
 type ElectronLeafResult = ReturnType<(typeof publicApi)[(typeof LEAVES)[number]]>;
-type ElectronLeafProvidersAreEntities = Exclude<ElectronLeafResult, undefined> extends Entity ? true : false;
+type ElectronLeafProvidersAreAllEntities = Exclude<ElectronLeafResult, undefined> extends Entity ? true : false;
 type ElectronFullHostIsEntity = ReturnType<typeof publicApi.electronHost> extends Entity ? true : false;
 
 // A fake Electron API broad enough that every host constructor can close over its injected dependency
@@ -231,9 +231,9 @@ describe('electronHost', () => {
     for (const name of expected) expect(Reflect.get(publicApi, name)).toBe(Reflect.get(contractApi, name));
   });
 
-  it('types the full host and every supported leaf result as an Entity', () => {
+  it('types the full host as an Entity and leaf capabilities as structural', () => {
     expectTypeOf<ElectronFullHostIsEntity>().toEqualTypeOf<true>();
-    expectTypeOf<ElectronLeafProvidersAreEntities>().toEqualTypeOf<true>();
+    expectTypeOf<ElectronLeafProvidersAreAllEntities>().toEqualTypeOf<false>();
   });
 
   it('constructs every Host group through explicit canonical boundaries', () => {

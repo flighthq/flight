@@ -24,9 +24,9 @@ export function tauriHostApp(tauri: TauriApi): TauriAppCapabilities {
 }
 
 export function tauriHostAppHide(tauri: TauriApi): HostAppHideCapability {
-  const provider = allocateEntity<HostAppHideCapability>();
+  const provider = {} as HostAppHideCapability;
   provider.hideApp = () => void tauri.app.hide().catch(() => {});
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppLocale(tauri: TauriApi): HostAppLocaleCapability {
@@ -35,11 +35,11 @@ export function tauriHostAppLocale(tauri: TauriApi): HostAppLocaleCapability {
     .locale()
     .then((value) => (locale = value ?? ''))
     .catch(() => {});
-  const provider = allocateEntity<HostAppLocaleCapability>();
+  const provider = {} as HostAppLocaleCapability;
   provider.getLocale = () => locale;
   provider.getPreferredSystemLanguages = () => (locale === '' ? [] : [locale]);
   provider.getSystemLocale = () => locale;
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppName(tauri: TauriApi): HostAppNameCapability {
@@ -48,27 +48,27 @@ export function tauriHostAppName(tauri: TauriApi): HostAppNameCapability {
     .getName()
     .then((value) => (name = value))
     .catch(() => {});
-  const provider = allocateEntity<HostAppNameCapability>();
+  const provider = {} as HostAppNameCapability;
   provider.getName = () => name;
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppQuit(tauri: TauriApi): HostAppQuitCapability {
-  const provider = allocateEntity<HostAppQuitCapability>();
+  const provider = {} as HostAppQuitCapability;
   provider.quit = () => void tauri.process.exit(0).catch(() => {});
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppRelaunch(tauri: TauriApi): HostAppRelaunchCapability {
-  const provider = allocateEntity<HostAppRelaunchCapability>();
+  const provider = {} as HostAppRelaunchCapability;
   provider.relaunch = () => void tauri.process.relaunch().catch(() => {});
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppShow(tauri: TauriApi): HostAppShowCapability {
-  const provider = allocateEntity<HostAppShowCapability>();
+  const provider = {} as HostAppShowCapability;
   provider.showApp = () => void tauri.app.show().catch(() => {});
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostAppVersion(tauri: TauriApi): HostAppVersionCapability {
@@ -77,7 +77,7 @@ export function tauriHostAppVersion(tauri: TauriApi): HostAppVersionCapability {
     .getVersion()
     .then((value) => (version = value))
     .catch(() => {});
-  const provider = allocateEntity<HostAppVersionCapability>();
+  const provider = {} as HostAppVersionCapability;
   provider.getVersion = () => version;
-  return finishEntity(provider);
+  return provider;
 }

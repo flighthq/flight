@@ -1,11 +1,10 @@
 import type { AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle';
-import type { Entity } from './Entity';
 
 export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandle' };
 
 export type AudioMixerGraphHandle = number & { readonly __brand: 'AudioMixerGraphHandle' };
 
-export interface HostAudioMixerCapability extends Entity {
+export interface HostAudioMixerCapability {
   createMixerGraph(device: AudioDeviceHandle, masterGain: number): AudioMixerGraphHandle;
   destroyMixerGraph(graph: AudioMixerGraphHandle): void;
   createBusNode(graph: AudioMixerGraphHandle, gain: number, pan: number): AudioBusNodeHandle;

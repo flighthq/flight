@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
-const hostImage: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+const hostImage: HostImageCapability = { loadImageFromUrl: vi.fn() };
 const fetchWebImageResource = createWebImageResourceFetch(hostImage);
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {

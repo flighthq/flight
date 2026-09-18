@@ -146,11 +146,11 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = allocateEntity<HostShellPathOpenCapability>();
+    const provider = {} as HostShellPathOpenCapability;
     provider.open = async () => {
       return { message: '', reason: 'operation-failed' as const };
     };
-    await expect(openShellPath(pathOpenHost(finishEntity(provider)).shell.pathOpen, '/missing')).resolves.toEqual({
+    await expect(openShellPath(pathOpenHost(provider).shell.pathOpen, '/missing')).resolves.toEqual({
       message: '',
       reason: 'operation-failed',
     });

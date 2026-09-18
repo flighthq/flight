@@ -1,6 +1,5 @@
 import type { CapturePhotoDialogOptions, PhotoCaptureDialogResult } from './Dialog';
-import type { Entity } from './Entity';
 
-export interface HostPhotoCaptureDialogCapability extends Entity {
+export interface HostPhotoCaptureDialogCapability {
   capture(options?: Readonly<CapturePhotoDialogOptions>): Promise<PhotoCaptureDialogResult>;
 }

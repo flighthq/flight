@@ -4,27 +4,27 @@ import type {
   DesktopOsProfile,
   Entity,
   EntityConstruction,
+  HostTrayImageCapability,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
   MenuItemTemplate,
   Signal,
   TauriApi,
   TauriMenu,
   TauriMenuItemHandle,
+  TauriTrayCapabilitiesFor,
   TauriTrayIcon,
   TauriTrayIconEvent,
   TauriTrayIconOptions,
-  TauriTrayCapabilitiesFor,
   TrayIcon,
   TrayIconOptions,
-  HostTrayImageCapability,
   TrayInteractionEvent,
-  HostTrayInteractionEventsCapability,
-  HostTrayLifecycleCapability,
-  HostTrayMenuCapability,
   TrayMenuSelectionEvent,
-  HostTrayMenuSelectionEventsCapability,
-  HostTrayTemplateImageCapability,
-  HostTrayTitleCapability,
-  HostTrayTooltipCapability,
 } from '@flighthq/types/contract';
 
 interface TrayRecord {
@@ -168,7 +168,7 @@ function createTrayLifecycle(
   profile: DesktopOsProfile,
   records: Map<TrayIcon, TrayRecord>,
 ): HostTrayLifecycleCapability {
-  const out = allocateEntity<HostTrayLifecycleCapability>();
+  const out = {} as HostTrayLifecycleCapability;
   out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
     if (options.signal?.aborted) return { outcome: 'cancelled' as const };
     const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
@@ -239,19 +239,19 @@ function createTrayLifecycle(
   };
   out.isDestroyed = (tray: TrayIcon) => records.get(tray)?.destroying ?? true;
   out.list = () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray);
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayImageCapability {
-  const out = allocateEntity<HostTrayImageCapability>();
+  const out = {} as HostTrayImageCapability;
   out.set = async (tray: TrayIcon, icon: string) => {
     return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayMenuCapability {
-  const out = allocateEntity<HostTrayMenuCapability>();
+  const out = {} as HostTrayMenuCapability;
   out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
     const record = activeRecord(records, tray);
     if (record === null) return { outcome: 'tray-destroyed' as const };
@@ -312,35 +312,35 @@ function createTrayMenu(tauri: TauriApi, records: ReadonlyMap<TrayIcon, TrayReco
       finishOperation();
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayMenuSelectionEvents(
   records: ReadonlyMap<TrayIcon, TrayRecord>,
 ): HostTrayMenuSelectionEventsCapability {
-  const out = allocateEntity<HostTrayMenuSelectionEventsCapability>();
+  const out = {} as HostTrayMenuSelectionEventsCapability;
   out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null;
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayInteractionEvents(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayInteractionEventsCapability {
-  const out = allocateEntity<HostTrayInteractionEventsCapability>();
+  const out = {} as HostTrayInteractionEventsCapability;
   out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayTemplateImage(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTemplateImageCapability {
-  const out = allocateEntity<HostTrayTemplateImageCapability>();
+  const out = {} as HostTrayTemplateImageCapability;
   out.set = async (tray: TrayIcon, isTemplate: boolean) => {
     return update(records, tray, 'template-image-update-failed', async (record) =>
       record.icon.setIconAsTemplate(isTemplate),
     );
   };
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTitleCapability {
-  const out = allocateEntity<HostTrayTitleCapability>();
+  const out = {} as HostTrayTitleCapability;
   out.get = async (tray: TrayIcon) => {
     const record = activeRecord(records, tray);
     return record === null
@@ -352,11 +352,11 @@ function createTrayTitle(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTi
     if (result.outcome === 'updated') records.get(tray)!.title = value;
     return result;
   };
-  return finishEntity(out);
+  return out;
 }
 
 function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTrayTooltipCapability {
-  const out = allocateEntity<HostTrayTooltipCapability>();
+  const out = {} as HostTrayTooltipCapability;
   out.get = async (tray: TrayIcon) => {
     const record = activeRecord(records, tray);
     return record === null
@@ -370,7 +370,7 @@ function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTray
     if (result.outcome === 'updated') records.get(tray)!.tooltip = value;
     return result;
   };
-  return finishEntity(out);
+  return out;
 }
 
 function configureTray(

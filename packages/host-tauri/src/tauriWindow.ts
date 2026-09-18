@@ -1,5 +1,4 @@
 import { notifyWindowClosed } from '@flighthq/app/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   AppWindow,
@@ -61,27 +60,27 @@ export function tauriHostWindow(tauri: TauriApi): TauriHostWindowCapabilities {
 }
 
 function tauriHostWindowAppearance(context: Readonly<TauriWindowContext>): HostWindowAppearanceCapability {
-  const out = allocateEntity<HostWindowAppearanceCapability>();
+  const out = {} as HostWindowAppearanceCapability;
   out.setTitle = (win, title) => {
     context.run(win, (w) => w.setTitle(title));
   };
   out.setIcon = (win, icon) => {
     context.run(win, (w) => w.setIcon(icon));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowAttach(context: Readonly<TauriWindowContext>): HostWindowAttachCapability {
-  const out = allocateEntity<HostWindowAttachCapability>();
+  const out = {} as HostWindowAttachCapability;
   out.attach = (win, handle, ownership) => {
     if (!isTauriWindow(handle)) return false;
     return context.attach(win, handle, ownership);
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowAttention(context: Readonly<TauriWindowContext>): HostWindowAttentionCapability {
-  const out = allocateEntity<HostWindowAttentionCapability>();
+  const out = {} as HostWindowAttentionCapability;
   out.requestAttention = (win, attention) => {
     // Tauri's requestUserAttention takes a UserAttentionType (1 = Critical) or null to cancel.
     context.run(win, (w) => w.requestUserAttention(attention ? 1 : null));
@@ -90,37 +89,37 @@ function tauriHostWindowAttention(context: Readonly<TauriWindowContext>): HostWi
     // Map a one-shot frame flash to an informational (2) attention request.
     context.run(win, (w) => w.requestUserAttention(2));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowContentProtection(
   context: Readonly<TauriWindowContext>,
 ): HostWindowContentProtectionCapability {
-  const out = allocateEntity<HostWindowContentProtectionCapability>();
+  const out = {} as HostWindowContentProtectionCapability;
   out.setContentProtection = (win, enabled) => {
     context.run(win, (w) => w.setContentProtected(enabled));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowFocus(context: Readonly<TauriWindowContext>): HostWindowFocusCapability {
-  const out = allocateEntity<HostWindowFocusCapability>();
+  const out = {} as HostWindowFocusCapability;
   out.focus = (win) => {
     context.run(win, (w) => w.setFocus());
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowFullscreen(context: Readonly<TauriWindowContext>): HostWindowFullscreenCapability {
-  const out = allocateEntity<HostWindowFullscreenCapability>();
+  const out = {} as HostWindowFullscreenCapability;
   out.setFullscreen = (win, fullscreen) => {
     context.run(win, (w) => w.setFullscreen(fullscreen));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowGeometry(context: Readonly<TauriWindowContext>): HostWindowGeometryCapability {
-  const out = allocateEntity<HostWindowGeometryCapability>();
+  const out = {} as HostWindowGeometryCapability;
   out.setPosition = (win, x, y) => {
     context.run(win, (w) => w.setPosition(new context.windowModule.LogicalPosition(x, y)));
   };
@@ -138,11 +137,11 @@ function tauriHostWindowGeometry(context: Readonly<TauriWindowContext>): HostWin
   out.center = (win) => {
     context.run(win, (w) => w.center());
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowLifecycle(context: Readonly<TauriWindowContext>): HostWindowLifecycleCapability {
-  const out = allocateEntity<HostWindowLifecycleCapability>();
+  const out = {} as HostWindowLifecycleCapability;
   out.open = (win, options) => {
     const windowModule = context.windowModule;
     const w = windowModule.getCurrentWindow();
@@ -173,27 +172,27 @@ function tauriHostWindowLifecycle(context: Readonly<TauriWindowContext>): HostWi
     const record = context.detach(win);
     if (record?.ownership === 'flight') record.handle.close().catch(() => {});
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowShadow(context: Readonly<TauriWindowContext>): HostWindowShadowCapability {
-  const out = allocateEntity<HostWindowShadowCapability>();
+  const out = {} as HostWindowShadowCapability;
   out.setHasShadow = (win, hasShadow) => {
     context.run(win, (w) => w.setShadow(hasShadow));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowShell(context: Readonly<TauriWindowContext>): HostWindowShellCapability {
-  const out = allocateEntity<HostWindowShellCapability>();
+  const out = {} as HostWindowShellCapability;
   out.setSkipTaskbar = (win, skip) => {
     context.run(win, (w) => w.setSkipTaskbar(skip));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowSizeConstraints(context: Readonly<TauriWindowContext>): HostWindowSizeConstraintsCapability {
-  const out = allocateEntity<HostWindowSizeConstraintsCapability>();
+  const out = {} as HostWindowSizeConstraintsCapability;
   out.setMinimumSize = (win, width, height) => {
     context.run(win, (w) => w.setMinSize(new context.windowModule.LogicalSize(width, height)));
   };
@@ -203,11 +202,11 @@ function tauriHostWindowSizeConstraints(context: Readonly<TauriWindowContext>): 
   out.setResizable = (win, resizable) => {
     context.run(win, (w) => w.setResizable(resizable));
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowState(context: Readonly<TauriWindowContext>): HostWindowStateCapability {
-  const out = allocateEntity<HostWindowStateCapability>();
+  const out = {} as HostWindowStateCapability;
   out.minimize = (win) => {
     context.run(win, (w) => w.minimize());
   };
@@ -217,26 +216,26 @@ function tauriHostWindowState(context: Readonly<TauriWindowContext>): HostWindow
   out.restore = (win) => {
     context.run(win, (w) => w.unmaximize());
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowVisibility(context: Readonly<TauriWindowContext>): HostWindowVisibilityCapability {
-  const out = allocateEntity<HostWindowVisibilityCapability>();
+  const out = {} as HostWindowVisibilityCapability;
   out.show = (win) => {
     context.run(win, (w) => w.show());
   };
   out.hide = (win) => {
     context.run(win, (w) => w.hide());
   };
-  return finishEntity(out);
+  return out;
 }
 
 function tauriHostWindowZOrder(context: Readonly<TauriWindowContext>): HostWindowZOrderCapability {
-  const out = allocateEntity<HostWindowZOrderCapability>();
+  const out = {} as HostWindowZOrderCapability;
   out.setAlwaysOnTop = (win, alwaysOnTop) => {
     context.run(win, (w) => w.setAlwaysOnTop(alwaysOnTop));
   };
-  return finishEntity(out);
+  return out;
 }
 
 // The window slots Tauri guarantees, mirroring TauriHost['window']. Kept in step by the

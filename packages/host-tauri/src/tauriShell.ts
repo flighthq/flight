@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostShellCapabilities,
   HostShellExternalCapability,
@@ -20,7 +19,7 @@ export function tauriHostShell(
 }
 
 export function tauriHostShellExternal(tauri: TauriApi): HostShellExternalCapability {
-  const provider = allocateEntity<HostShellExternalCapability>();
+  const provider = {} as HostShellExternalCapability;
   provider.open = async (url) => {
     try {
       await tauri.opener.openUrl(url);
@@ -29,11 +28,11 @@ export function tauriHostShellExternal(tauri: TauriApi): HostShellExternalCapabi
       return { reason: 'operation-failed' };
     }
   };
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostShellPathOpen(tauri: TauriApi): HostShellPathOpenCapability {
-  const provider = allocateEntity<HostShellPathOpenCapability>();
+  const provider = {} as HostShellPathOpenCapability;
   provider.open = async (path) => {
     try {
       await tauri.opener.openPath(path);
@@ -42,11 +41,11 @@ export function tauriHostShellPathOpen(tauri: TauriApi): HostShellPathOpenCapabi
       return { message: errorMessage(error), reason: 'operation-failed' };
     }
   };
-  return finishEntity(provider);
+  return provider;
 }
 
 export function tauriHostShellPathReveal(tauri: TauriApi): HostShellPathRevealCapability {
-  const provider = allocateEntity<HostShellPathRevealCapability>();
+  const provider = {} as HostShellPathRevealCapability;
   provider.reveal = async (path) => {
     try {
       await tauri.opener.revealItemInDir(path);
@@ -55,7 +54,7 @@ export function tauriHostShellPathReveal(tauri: TauriApi): HostShellPathRevealCa
       return { reason: 'operation-failed' };
     }
   };
-  return finishEntity(provider);
+  return provider;
 }
 
 function errorMessage(error: unknown): string {

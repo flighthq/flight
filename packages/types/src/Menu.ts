@@ -53,7 +53,7 @@ export interface MenuItemTemplate {
 
 // Installs the application menu bar. Returns false when the install did not take effect. Only hosts with
 // a real native menu bar expose this slot at all; a host without one omits it rather than returning false.
-export interface HostAppMenuCapability extends Entity {
+export interface HostAppMenuCapability {
   destroy?(): void;
   setAppMenu(items: readonly MenuItemTemplate[]): boolean;
 }
@@ -61,18 +61,18 @@ export interface HostAppMenuCapability extends Entity {
 // Delivers item-highlight notifications (hover / keyboard focus) by item id. Only a provider that
 // renders the menu itself can observe highlight, which today is the web DOM overlay — native hosts hand
 // the menu to the OS and never see it. `subscribe` returns the unsubscribe for THAT subscription only.
-export interface HostMenuHighlightCapability extends Entity {
+export interface HostMenuHighlightCapability {
   subscribe(listener: (id: string) => void): () => void;
 }
 
 // Pops up a context menu at (x, y) and resolves the chosen item id, or null when dismissed.
-export interface HostMenuPopupCapability extends Entity {
+export interface HostMenuPopupCapability {
   popup(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
 }
 
 // Delivers application menu-bar selections by item id. `subscribe` returns the unsubscribe for THAT
 // subscription only.
-export interface HostMenuSelectCapability extends Entity {
+export interface HostMenuSelectCapability {
   subscribe(listener: (id: string) => void): () => void;
 }
 

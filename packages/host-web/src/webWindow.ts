@@ -1,5 +1,5 @@
 import { notifyWindowClosed } from '@flighthq/app/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   AppWindow,
   EntityConstruction,
@@ -27,9 +27,8 @@ import type {
 // not capability absence — absence is a missing slot, and a caller asking "can I set the title?" deserves
 // a yes here rather than a `| undefined` it has to guess about.
 
-export const webHostFullscreen: WebFullscreen = (() => {
-  const out = allocateEntity<WebFullscreen>();
-  out.exit = async () => {
+export const webHostFullscreen: WebFullscreen = {
+  exit: async () => {
     if (typeof document === 'undefined' || typeof document.exitFullscreen !== 'function') return false;
     try {
       await document.exitFullscreen();
@@ -37,8 +36,8 @@ export const webHostFullscreen: WebFullscreen = (() => {
     } catch {
       return false;
     }
-  };
-  out.request = async (target) => {
+  },
+  request: async (target) => {
     const element = _fullscreenTargets.get(target);
     if (element === undefined || typeof element.requestFullscreen !== 'function') return false;
     try {
@@ -47,26 +46,24 @@ export const webHostFullscreen: WebFullscreen = (() => {
     } catch {
       return false;
     }
-  };
-  out.subscribe = (callback) => {
-    out.unsubscribe(callback);
+  },
+  subscribe: (callback) => {
+    webHostFullscreen.unsubscribe(callback);
     if (typeof document === 'undefined') return;
     const handler = (): void => callback(document.fullscreenElement !== null);
     _fullscreenListeners.set(callback, handler);
     document.addEventListener('fullscreenchange', handler);
-  };
-  out.unsubscribe = (callback) => {
+  },
+  unsubscribe: (callback) => {
     const handler = _fullscreenListeners.get(callback);
     if (handler === undefined) return;
     _fullscreenListeners.delete(callback);
     if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
-export const webHostWindowAppearance: WebWindowAppearance = (() => {
-  const out = allocateEntity<WebWindowAppearance>();
-  out.setIcon = (win, icon) => {
+export const webHostWindowAppearance: WebWindowAppearance = {
+  setIcon: (win, icon) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
@@ -76,37 +73,31 @@ export const webHostWindowAppearance: WebWindowAppearance = (() => {
       document.head.appendChild(link);
     }
     link.href = icon;
-  };
-  out.setTitle = (win, title) => {
+  },
+  setTitle: (win, title) => {
     const document = getWebWindowHandle(win)?.document;
     if (document !== undefined) document.title = title;
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
-export const webHostWindowAttach = (() => {
-  const out = allocateEntity<HostWindowAttachCapability>();
-  out.attach = (win, handle, ownership) => {
+export const webHostWindowAttach: HostWindowAttachCapability = {
+  attach: (win, handle, ownership) => {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
-export const webHostWindowFocus = (() => {
-  const out = allocateEntity<HostWindowFocusCapability>();
-  out.focus = (win) => {
+export const webHostWindowFocus: HostWindowFocusCapability = {
+  focus: (win) => {
     const handle = getWebWindowHandle(win);
     if (handle !== null && typeof handle.focus === 'function') handle.focus();
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
 // Page fullscreen, the window-level counterpart of the element-level `host.fullscreen` capability: the
 // subject here is the window handle, the browser's only scripting surface for it being the document.
-export const webHostWindowFullscreen = (() => {
-  const out = allocateEntity<HostWindowFullscreenCapability>();
-  out.setFullscreen = (win, fullscreen) => {
+export const webHostWindowFullscreen: HostWindowFullscreenCapability = {
+  setFullscreen: (win, fullscreen) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     try {
@@ -115,13 +106,11 @@ export const webHostWindowFullscreen = (() => {
     } catch {
       /* browser rejected the fullscreen request synchronously */
     }
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
-export const webHostWindowGeometry: WebWindowGeometry = (() => {
-  const out = allocateEntity<WebWindowGeometry>();
-  out.center = (win) => {
+export const webHostWindowGeometry: WebWindowGeometry = {
+  center: (win) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -132,16 +121,16 @@ export const webHostWindowGeometry: WebWindowGeometry = (() => {
     } catch {
       /* browser rejected script-driven movement */
     }
-  };
-  out.getBounds = (win, out) => {
+  },
+  getBounds: (win, out) => {
     const handle = getWebWindowHandle(win);
     out.x = handle?.screenX ?? win.x;
     out.y = handle?.screenY ?? win.y;
     out.width = handle?.innerWidth ?? win.width;
     out.height = handle?.innerHeight ?? win.height;
     return out;
-  };
-  out.setPosition = (win, x, y) => {
+  },
+  setPosition: (win, x, y) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -149,8 +138,8 @@ export const webHostWindowGeometry: WebWindowGeometry = (() => {
     } catch {
       /* browser rejected script-driven movement */
     }
-  };
-  out.setSize = (win, width, height) => {
+  },
+  setSize: (win, width, height) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.resizeTo !== 'function') return;
     try {
@@ -158,8 +147,8 @@ export const webHostWindowGeometry: WebWindowGeometry = (() => {
     } catch {
       /* browser rejected script-driven resizing */
     }
-  };
-  out.subscribeMove = (listener) => {
+  },
+  subscribeMove: (listener) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const handler = (): void => {
@@ -169,8 +158,8 @@ export const webHostWindowGeometry: WebWindowGeometry = (() => {
     };
     pageWindow.addEventListener('resize', handler);
     return trackWebWindowSubscription(() => pageWindow.removeEventListener('resize', handler));
-  };
-  out.subscribeResize = (target, listener) => {
+  },
+  subscribeResize: (target, listener) => {
     const element = _windowResizeTargets.get(target);
     if (element === undefined || typeof ResizeObserver === 'undefined') return noop;
     const observer = new ResizeObserver((entries) => {
@@ -184,19 +173,17 @@ export const webHostWindowGeometry: WebWindowGeometry = (() => {
     });
     observer.observe(element);
     return trackWebWindowSubscription(() => observer.disconnect());
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
-export const webHostWindowLifecycle: WebWindowLifecycle = (() => {
-  const out = allocateEntity<WebWindowLifecycle>();
-  out.close = (win) => {
+export const webHostWindowLifecycle: WebWindowLifecycle = {
+  close: (win) => {
     detachWebWindow(win, true);
-  };
-  out.open = (win) => {
+  },
+  open: (win) => {
     return typeof window !== 'undefined' && attachWebWindow(win, window, 'host');
-  };
-  out.subscribeClose = (onCloseRequest, onClose) => {
+  },
+  subscribeClose: (onCloseRequest, onClose) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const onBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -210,9 +197,8 @@ export const webHostWindowLifecycle: WebWindowLifecycle = (() => {
       pageWindow.removeEventListener('beforeunload', onBeforeUnload);
       pageWindow.removeEventListener('pagehide', onClose);
     });
-  };
-  return finishEntity(out);
-})();
+  },
+};
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
   const target = allocateEntity<FullscreenTargetHandle>();

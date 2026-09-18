@@ -1,10 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   HostCapacitorShareContentCapability,
   HostShareCapabilities,
   ShareContent,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function capacitorHostShare(
@@ -14,17 +12,14 @@ export function capacitorHostShare(
 }
 
 export function capacitorHostShareContent(capacitor: CapacitorApi): HostCapacitorShareContentCapability {
-  const out = allocateEntity<HostCapacitorShareContentCapability>();
+  const out = {} as HostCapacitorShareContentCapability;
   populateCapacitorShareContent(out, capacitor);
-  return finishEntity(out);
+  return out;
 }
 
 // Capacitor's provider is present synchronously. Platform rejection is reported by the command
 // outcome; construction never starts an async availability probe or caches a transient false value.
-function populateCapacitorShareContent(
-  out: EntityConstruction<HostCapacitorShareContentCapability>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorShareContent(out: HostCapacitorShareContentCapability, capacitor: CapacitorApi): void {
   const share = capacitor.share;
   out.canShareContent = hasShareableContent;
   out.shareContent = async (content, options) => {

@@ -4,8 +4,8 @@ import type { AppWindow, Entity, HostWgpuCapability, WgpuHostAcquisition, WgpuSu
 import { allocateSurface, getSurfaceHandle } from './surface';
 import { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './wgpuSurface';
 
-function wgpuCapability(fields: Omit<HostWgpuCapability, keyof Entity>): HostWgpuCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as HostWgpuCapability;
+function wgpuCapability(fields: HostWgpuCapability): HostWgpuCapability {
+  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostWgpuCapability;
 }
 
 const appWindow = {} as AppWindow;

@@ -1,14 +1,13 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostAudioCodecCapability, EntityConstruction } from '@flighthq/types/contract';
+import type { HostAudioCodecCapability } from '@flighthq/types/contract';
 
-export function initializeWebAudioBackend(out: EntityConstruction<HostAudioCodecCapability>): void {
+export function initializeWebAudioBackend(out: HostAudioCodecCapability): void {
   out.canPlayType = (mimeType: string): boolean => {
     return new Audio().canPlayType(mimeType) !== '';
   };
 }
 
 export const webHostAudio = (() => {
-  const out = allocateEntity<HostAudioCodecCapability>();
+  const out = {} as HostAudioCodecCapability;
   initializeWebAudioBackend(out);
-  return finishEntity(out);
+  return out;
 })();

@@ -1,5 +1,4 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
@@ -7,7 +6,6 @@ import type {
   DialogVideo,
   HostDirectoryOpenDialogCapability,
   DirectoryOpenDialogResult,
-  EntityConstruction,
   FileDialogFilter,
   FileDialogHandleOperations,
   HostFileOpenDialogCapability,
@@ -28,25 +26,23 @@ import type {
   VideoCaptureDialogResult,
 } from '@flighthq/types/contract';
 
-export function initializeWebDirectoryOpenDialogBackend(
-  out: EntityConstruction<HostDirectoryOpenDialogCapability>,
-): void {
+export function initializeWebDirectoryOpenDialogBackend(out: HostDirectoryOpenDialogCapability): void {
   out.open = openDirectory;
 }
 
-export function initializeWebFileOpenDialogBackend(out: EntityConstruction<HostFileOpenDialogCapability>): void {
+export function initializeWebFileOpenDialogBackend(out: HostFileOpenDialogCapability): void {
   out.open = openFile;
 }
 
-export function initializeWebFileSaveDialogBackend(out: EntityConstruction<HostFileSaveDialogCapability>): void {
+export function initializeWebFileSaveDialogBackend(out: HostFileSaveDialogCapability): void {
   out.save = saveFile;
 }
 
-export function initializeWebImageOpenDialogBackend(out: EntityConstruction<HostImageOpenDialogCapability>): void {
+export function initializeWebImageOpenDialogBackend(out: HostImageOpenDialogCapability): void {
   out.open = openImage;
 }
 
-export function initializeWebMessageDialogBackend(out: EntityConstruction<HostMessageDialogCapability>): void {
+export function initializeWebMessageDialogBackend(out: HostMessageDialogCapability): void {
   out.confirm = async (options) => {
     if (options.signal?.aborted) return false;
     if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
@@ -71,13 +67,11 @@ export function initializeWebMessageDialogBackend(out: EntityConstruction<HostMe
   };
 }
 
-export function initializeWebPhotoCaptureDialogBackend(
-  out: EntityConstruction<HostPhotoCaptureDialogCapability>,
-): void {
+export function initializeWebPhotoCaptureDialogBackend(out: HostPhotoCaptureDialogCapability): void {
   out.capture = capturePhoto;
 }
 
-export function initializeWebPromptDialogBackend(out: EntityConstruction<HostPromptDialogCapability>): void {
+export function initializeWebPromptDialogBackend(out: HostPromptDialogCapability): void {
   out.prompt = async (options) => {
     if (options.signal?.aborted) return null;
     if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
@@ -89,58 +83,56 @@ export function initializeWebPromptDialogBackend(out: EntityConstruction<HostPro
   };
 }
 
-export function initializeWebVideoCaptureDialogBackend(
-  out: EntityConstruction<HostVideoCaptureDialogCapability>,
-): void {
+export function initializeWebVideoCaptureDialogBackend(out: HostVideoCaptureDialogCapability): void {
   out.capture = captureVideo;
 }
 
 export const webHostDirectoryOpenDialog = (() => {
-  const out = allocateEntity<HostDirectoryOpenDialogCapability>();
+  const out = {} as HostDirectoryOpenDialogCapability;
   initializeWebDirectoryOpenDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostFileOpenDialog = (() => {
-  const out = allocateEntity<HostFileOpenDialogCapability>();
+  const out = {} as HostFileOpenDialogCapability;
   initializeWebFileOpenDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostFileSaveDialog = (() => {
-  const out = allocateEntity<HostFileSaveDialogCapability>();
+  const out = {} as HostFileSaveDialogCapability;
   initializeWebFileSaveDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostImageOpenDialog = (() => {
-  const out = allocateEntity<HostImageOpenDialogCapability>();
+  const out = {} as HostImageOpenDialogCapability;
   initializeWebImageOpenDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostMessageDialog = (() => {
-  const out = allocateEntity<HostMessageDialogCapability>();
+  const out = {} as HostMessageDialogCapability;
   initializeWebMessageDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostPhotoCaptureDialog = (() => {
-  const out = allocateEntity<HostPhotoCaptureDialogCapability>();
+  const out = {} as HostPhotoCaptureDialogCapability;
   initializeWebPhotoCaptureDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostPromptDialog = (() => {
-  const out = allocateEntity<HostPromptDialogCapability>();
+  const out = {} as HostPromptDialogCapability;
   initializeWebPromptDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostVideoCaptureDialog = (() => {
-  const out = allocateEntity<HostVideoCaptureDialogCapability>();
+  const out = {} as HostVideoCaptureDialogCapability;
   initializeWebVideoCaptureDialogBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 async function openDirectory(options: Readonly<OpenDirectoryDialogOptions> = {}): Promise<DirectoryOpenDialogResult> {

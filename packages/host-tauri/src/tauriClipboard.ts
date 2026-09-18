@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostClipboardCapabilities, HostClipboardTextCapability, TauriApi } from '@flighthq/types/contract';
 
 export function tauriHostClipboard(
@@ -11,7 +10,7 @@ export function tauriHostClipboard(
 // capability slots are deliberately absent from the Tauri host rather than simulated by sentinels.
 export function tauriHostClipboardText(tauri: TauriApi): HostClipboardTextCapability {
   const clipboard = tauri.clipboard;
-  const provider = allocateEntity<HostClipboardTextCapability>();
+  const provider = {} as HostClipboardTextCapability;
   provider.clear = async () => {
     try {
       await clipboard.clear();
@@ -42,5 +41,5 @@ export function tauriHostClipboardText(tauri: TauriApi): HostClipboardTextCapabi
       return false;
     }
   };
-  return finishEntity(provider);
+  return provider;
 }

@@ -38,7 +38,7 @@ export interface WgpuHostAcquisitionOptions {
 // return its own structurally compatible handles without coupling render-wgpu to the app layer or a
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
-export interface HostWgpuCapability extends Entity {
+export interface HostWgpuCapability {
   acquire(surface: Readonly<Surface>, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
   // The allocating lane, matching HostGlCapability.create: the host makes a drawable of its own and
   // returns its identity. Separate from `acquire` because a device is adapter-scoped and outlives any

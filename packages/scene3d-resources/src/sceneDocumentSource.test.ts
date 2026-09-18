@@ -15,10 +15,10 @@ import {
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
-function fakeNetHost(backend: Omit<HostNetCapability, typeof EntityRuntimeKey>): {
+function fakeNetHost(backend: HostNetCapability): {
   readonly net: { readonly http: HostNetCapability };
 } {
-  return { net: { http: { ...backend, [EntityRuntimeKey]: undefined } } };
+  return { net: { http: backend } };
 }
 
 function okResponse(body: string | ArrayBuffer): NetResponse {

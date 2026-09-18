@@ -1,6 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   HostIpcHandleCapability,
   HostIpcInvokeCapability,
   HostIpcMessageCapability,
@@ -23,14 +21,14 @@ function messageHost(): { readonly ipc: { readonly message: HostIpcMessageCapabi
     },
     ipc: {
       message: (() => {
-        const out = allocateEntity<any>();
+        const out = {} as HostIpcMessageCapability;
         out.subscribe = (channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
           const set = channels.get(channel) ?? new Set();
           channels.set(channel, set);
           set.add(listener);
           return () => set.delete(listener);
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
     subscriberCount(channel: string): number {
@@ -70,36 +68,36 @@ function operationHost(): { readonly ipc: { readonly handle: HostIpcHandleCapabi
     invocations,
     ipc: {
       handle: (() => {
-        const out = allocateEntity<HostIpcHandleCapability>();
+        const out = {} as HostIpcHandleCapability;
         out.handle = (channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>) => {
           handlers.set(channel, handler);
           return () => {
             if (handlers.get(channel) === handler) handlers.delete(channel);
           };
         };
-        return finishEntity(out);
+        return out;
       })(),
       invoke: (() => {
-        const out = allocateEntity<HostIpcInvokeCapability>();
+        const out = {} as HostIpcInvokeCapability;
         out.invoke = (channel: string, args: readonly unknown[]) => {
           invocations.push({ args, channel });
           return Promise.resolve({ args, channel });
         };
-        return finishEntity(out);
+        return out;
       })(),
       send: (() => {
-        const out = allocateEntity<HostIpcSendCapability>();
+        const out = {} as HostIpcSendCapability;
         out.send = (channel: string, args: readonly unknown[]) => {
           sent.push({ args, channel });
         };
-        return finishEntity(out);
+        return out;
       })(),
       targetedSend: (() => {
-        const out = allocateEntity<HostIpcTargetedSendCapability<TestIpcTarget>>();
+        const out = {} as HostIpcTargetedSendCapability<TestIpcTarget>;
         out.send = (target: TestIpcTarget, channel: string, args: readonly unknown[]) => {
           sentTo.push({ args, channel, target });
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
     sent,
@@ -146,11 +144,11 @@ describe('onceIpcMessage', () => {
     const host: { readonly ipc: { readonly message: HostIpcMessageCapability } } = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<any>();
+          const out = {} as HostIpcMessageCapability;
           out.subscribe = (): (() => void) => {
             return () => releases++;
           };
-          return finishEntity(out);
+          return out;
         })(),
       },
     };
@@ -168,12 +166,12 @@ describe('onceIpcMessage', () => {
     const host: { readonly ipc: { readonly message: HostIpcMessageCapability } } = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<HostIpcMessageCapability>();
+          const out = {} as HostIpcMessageCapability;
           out.subscribe = (_channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
             listener([42]);
             return () => (released = true);
           };
-          return finishEntity(out);
+          return out;
         })(),
       },
     };

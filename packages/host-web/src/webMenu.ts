@@ -1,10 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  HostMenuHighlightCapability,
-  MenuItemTemplate,
-  HostMenuPopupCapability,
-} from '@flighthq/types/contract';
+import type { HostMenuHighlightCapability, MenuItemTemplate, HostMenuPopupCapability } from '@flighthq/types/contract';
 
 // The web menu providers. Web renders context menus itself in the DOM, so it exposes POPUP and — because
 // it owns that rendering — HIGHLIGHT. It exposes neither `application` nor `select`: a browser has no
@@ -12,7 +6,7 @@ import type {
 // setApplicationMenu with an unconditional `false` and subscribeSelect with a no-op unsubscribe, which
 // made web structurally indistinguishable from a host that really implements them.
 
-export function initializeWebMenuHighlightBackend(out: EntityConstruction<HostMenuHighlightCapability>): void {
+export function initializeWebMenuHighlightBackend(out: HostMenuHighlightCapability): void {
   out.subscribe = (listener: (id: string) => void): (() => void) => {
     _highlightListeners.add(listener);
     return () => {
@@ -21,22 +15,22 @@ export function initializeWebMenuHighlightBackend(out: EntityConstruction<HostMe
   };
 }
 
-export function initializeWebMenuPopupBackend(out: EntityConstruction<HostMenuPopupCapability>): void {
+export function initializeWebMenuPopupBackend(out: HostMenuPopupCapability): void {
   out.popup = (items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
     return showWebContextMenu(items, x, y);
   };
 }
 
 export const webHostMenuHighlight = (() => {
-  const out = allocateEntity<HostMenuHighlightCapability>();
+  const out = {} as HostMenuHighlightCapability;
   initializeWebMenuHighlightBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 export const webHostMenuPopup = (() => {
-  const out = allocateEntity<HostMenuPopupCapability>();
+  const out = {} as HostMenuPopupCapability;
   initializeWebMenuPopupBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {

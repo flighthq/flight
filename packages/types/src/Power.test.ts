@@ -14,7 +14,7 @@ import type {
   WebPowerReadingCapabilities,
 } from './Power';
 
-type PowerProvidersAreEntities = [
+type PowerCapabilitiesAreStructural = [
   HostPowerBatteryHealthCapability extends Entity ? true : false,
   HostPowerChangeCapability extends Entity ? true : false,
   HostPowerIdleCapability extends Entity ? true : false,
@@ -44,8 +44,13 @@ type GenericPowerContractsAreStructural = [
 ];
 
 describe('power Entity boundaries', () => {
-  it('makes individual providers and concrete platform bundles entities', () => {
-    expectTypeOf<PowerProvidersAreEntities>().toEqualTypeOf<[true, true, true, true, true, true, true, true]>();
+  it('keeps individual capabilities structural', () => {
+    expectTypeOf<PowerCapabilitiesAreStructural>().toEqualTypeOf<
+      [false, false, false, false, false, false, false, false]
+    >();
+  });
+
+  it('makes concrete platform bundles entities', () => {
     expectTypeOf<ConcretePowerBundlesAreEntities>().toEqualTypeOf<[true, true, true]>();
   });
 

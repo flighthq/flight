@@ -24,7 +24,7 @@ import {
 } from './mediasession';
 
 function commandBackend(overrides: Partial<HostMediaSessionCapability> = {}): HostMediaSessionCapability {
-  const out = allocateEntity<HostMediaSessionCapability>();
+  const out = {} as HostMediaSessionCapability;
   out.clearMetadata = () => ({ reason: 'ok' as const });
   out.clearPositionState = () => ({ reason: 'ok' as const });
   out.destroy = () => {};
@@ -32,15 +32,15 @@ function commandBackend(overrides: Partial<HostMediaSessionCapability> = {}): Ho
   out.setPlaybackState = () => ({ reason: 'ok' as const });
   out.setPositionState = () => ({ reason: 'ok' as const });
   Object.assign(out, overrides);
-  return finishEntity(out);
+  return out;
 }
 
 function actionBackend(overrides: Partial<HostMediaSessionActionCapability> = {}): HostMediaSessionActionCapability {
-  const out = allocateEntity<HostMediaSessionActionCapability>();
+  const out = {} as HostMediaSessionActionCapability;
   out.destroy = () => {};
   out.subscribe = () => () => {};
   Object.assign(out, overrides);
-  return finishEntity(out);
+  return out;
 }
 
 function host(commands = commandBackend(), actions = actionBackend()) {
@@ -145,7 +145,7 @@ describe('destroyMediaSession', () => {
 
   it('deduplicates an aliased provider identity across both Host slots', () => {
     const destroy = vi.fn();
-    const _shared = allocateEntity<HostMediaSessionCapability & HostMediaSessionActionCapability>();
+    const _shared = {} as HostMediaSessionCapability & HostMediaSessionActionCapability;
     _shared.clearMetadata = () => ({ reason: 'ok' as const });
     _shared.clearPositionState = () => ({ reason: 'ok' as const });
     _shared.destroy = destroy;
@@ -153,7 +153,7 @@ describe('destroyMediaSession', () => {
     _shared.setPlaybackState = () => ({ reason: 'ok' as const });
     _shared.setPositionState = () => ({ reason: 'ok' as const });
     _shared.subscribe = () => () => {};
-    const shared = finishEntity(_shared);
+    const shared = _shared;
     destroyMediaSession(host(shared, shared).media.session, host(shared, shared).media.sessionAction);
     expect(destroy).toHaveBeenCalledOnce();
   });

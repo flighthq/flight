@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   Entity,
+  EntityConstruction,
   FileEntry,
   FileStat,
-  EntityConstruction,
   HostFileSystemCapability,
 } from '@flighthq/types/contract';
 

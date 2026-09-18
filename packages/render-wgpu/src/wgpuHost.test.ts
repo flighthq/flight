@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -69,14 +69,13 @@ describe('createTestWgpuHostBackend', () => {
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
-    const backend = (() => {
-      const out = allocateEntity<typeof web>();
-      out.acquire = vi.fn(async () => acquisition);
-      out.attachSurface = vi.fn(() => null);
-      out.isSupported = vi.fn(() => true);
-      out.release = vi.fn();
-      return finishEntity(out);
-    })();
+    const backend: typeof web = {
+      acquire: vi.fn(async () => acquisition),
+      attachSurface: vi.fn(() => null),
+      create: vi.fn(),
+      isSupported: vi.fn(() => true),
+      release: vi.fn(),
+    } as typeof web;
     const routeTarget = createTestWgpuSurface(document.createElement('canvas'));
 
     const routed = await createWgpuAcquisition(backend, routeTarget);

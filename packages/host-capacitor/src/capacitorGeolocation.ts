@@ -6,11 +6,10 @@ import type {
   CapacitorApi,
   CapacitorPosition,
   Entity,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocationCapability & Entity {
-  const out = allocateEntity<HostGeolocationCapability>();
+  const out = allocateEntity<HostGeolocationCapability & Entity>();
   populateCapacitorGeolocation(out, capacitor);
   return finishEntity(out);
 }
@@ -22,10 +21,7 @@ export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocati
 // id against the number once it resolves; clearWatch resolves the number back to that string (and cancels
 // a watch that was cleared before it even started). Capacitor has no permission-change event, so
 // subscribePermission is inert.
-function populateCapacitorGeolocation(
-  out: EntityConstruction<HostGeolocationCapability>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorGeolocation(out: HostGeolocationCapability, capacitor: CapacitorApi): void {
   const geolocation = capacitor.geolocation;
   let nextWatchId = 1;
   // The Capacitor string callback id keyed by the numeric id handed to the caller; null while the async
@@ -96,7 +92,7 @@ function toGeolocationPosition(position: Readonly<CapacitorPosition>): Geolocati
   out.heading = coords.heading ?? 0;
   out.speed = coords.speed ?? 0;
   out.timestamp = position.timestamp;
-  return finishEntity(out);
+  return out;
 }
 
 // Capacitor reports 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'; the last folds to 'prompt'.

@@ -1,31 +1,31 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronProtocolCapabilities,
+  EntityConstruction,
   HostProtocolDefaultCapability,
   HostProtocolOpenCapability,
   HostProtocolRegistrationCapability,
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 function protocolDefault(electron: ElectronApi, registered: Set<string>): HostProtocolDefaultCapability {
-  const out = allocateEntity<HostProtocolDefaultCapability>();
+  const out = {} as HostProtocolDefaultCapability;
   populateElectronHostProtocolDefault(out, electron.app, registered);
-  return finishEntity(out);
+  return out;
 }
 
 function protocolRegistration(electron: ElectronApi, registered: Set<string>): HostProtocolRegistrationCapability {
-  const out = allocateEntity<HostProtocolRegistrationCapability>();
+  const out = {} as HostProtocolRegistrationCapability;
   populateElectronHostProtocolRegistration(out, electron.app, registered);
-  return finishEntity(out);
+  return out;
 }
 
 function protocolUnregistration(electron: ElectronApi, registered: Set<string>): HostProtocolUnregistrationCapability {
-  const out = allocateEntity<HostProtocolUnregistrationCapability>();
+  const out = {} as HostProtocolUnregistrationCapability;
   populateElectronHostProtocolUnregistration(out, electron.app, registered);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostProtocol(electron: ElectronApi): ElectronProtocolCapabilities {
@@ -39,7 +39,7 @@ export function electronHostProtocol(electron: ElectronApi): ElectronProtocolCap
     electronHostProtocolRegistrationQuery(electron),
     protocolUnregistration(electron, registered),
   );
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostProtocolDefault(electron: ElectronApi): HostProtocolDefaultCapability {
@@ -47,9 +47,9 @@ export function electronHostProtocolDefault(electron: ElectronApi): HostProtocol
 }
 
 export function electronHostProtocolOpen(electron: ElectronApi): HostProtocolOpenCapability {
-  const out = allocateEntity<HostProtocolOpenCapability>();
+  const out = {} as HostProtocolOpenCapability;
   populateElectronHostProtocolOpen(out, electron.app);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostProtocolRegistration(electron: ElectronApi): HostProtocolRegistrationCapability {
@@ -57,9 +57,9 @@ export function electronHostProtocolRegistration(electron: ElectronApi): HostPro
 }
 
 export function electronHostProtocolRegistrationQuery(electron: ElectronApi): HostProtocolRegistrationQueryCapability {
-  const out = allocateEntity<HostProtocolRegistrationQueryCapability>();
+  const out = {} as HostProtocolRegistrationQueryCapability;
   populateElectronHostProtocolRegistrationQuery(out, electron.app);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostProtocolUnregistration(electron: ElectronApi): HostProtocolUnregistrationCapability {
@@ -82,7 +82,7 @@ export function populateElectronHostProtocol(
 }
 
 export function populateElectronHostProtocolDefault(
-  out: EntityConstruction<HostProtocolDefaultCapability>,
+  out: HostProtocolDefaultCapability,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -95,10 +95,7 @@ export function populateElectronHostProtocolDefault(
   };
 }
 
-export function populateElectronHostProtocolOpen(
-  out: EntityConstruction<HostProtocolOpenCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostProtocolOpen(out: HostProtocolOpenCapability, app: ElectronApi['app']): void {
   out.subscribe = (listener: (url: string) => void) => {
     const handler = (...args: unknown[]): void => listener(String(args[1] ?? ''));
     app.on('open-url', handler);
@@ -107,7 +104,7 @@ export function populateElectronHostProtocolOpen(
 }
 
 export function populateElectronHostProtocolRegistration(
-  out: EntityConstruction<HostProtocolRegistrationCapability>,
+  out: HostProtocolRegistrationCapability,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {
@@ -120,14 +117,14 @@ export function populateElectronHostProtocolRegistration(
 }
 
 export function populateElectronHostProtocolRegistrationQuery(
-  out: EntityConstruction<HostProtocolRegistrationQueryCapability>,
+  out: HostProtocolRegistrationQueryCapability,
   app: ElectronApi['app'],
 ): void {
   out.isRegistered = (scheme: string) => app.isDefaultProtocolClient(scheme);
 }
 
 export function populateElectronHostProtocolUnregistration(
-  out: EntityConstruction<HostProtocolUnregistrationCapability>,
+  out: HostProtocolUnregistrationCapability,
   app: ElectronApi['app'],
   registered: Set<string>,
 ): void {

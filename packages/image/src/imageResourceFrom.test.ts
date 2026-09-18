@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createImageResource } from './imageResource';
 import {
@@ -25,7 +25,6 @@ function webHost(): { readonly graphics: { readonly image: HostImageCapability }
   return {
     graphics: {
       image: {
-        [EntityRuntimeKey]: undefined,
         createImageFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {
           const canvas = document.createElement('canvas');
           canvas.width = bitmap.width;
@@ -88,7 +87,6 @@ describe('createImageResourceFromBitmap', () => {
     const expected = {} as ImageResource;
     const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
     const backend: HostImageCapability = {
-      [EntityRuntimeKey]: undefined,
       createImageFromBitmap,
       loadImageFromUrl: vi.fn(),
     };
@@ -103,7 +101,7 @@ describe('createImageResourceFromBitmap', () => {
 
   it('returns null for backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
-    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageCapability = { loadImageFromUrl: vi.fn() };
     const customHost = { graphics: { image: backend } } as {
       readonly graphics: { readonly image: HostImageCapability };
     };

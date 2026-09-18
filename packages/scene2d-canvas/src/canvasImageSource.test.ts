@@ -6,7 +6,6 @@ import {
 } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { HostImageCapability, TextureSource } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { explainCanvasImageSource } from './canvasImageSource';
@@ -34,7 +33,6 @@ function makeState() {
 
 function createTestImageBackend(): HostImageCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;

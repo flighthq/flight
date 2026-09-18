@@ -1,5 +1,3 @@
-import type { Entity } from './Entity';
-
-export interface HostAudioCodecCapability extends Entity {
+export interface HostAudioCodecCapability {
   canPlayType(mimeType: string): boolean;
 }

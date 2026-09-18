@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorConnectionStatus,
@@ -8,7 +7,6 @@ import type {
   ConnectivityConnectionType,
   ConnectivityStatus,
   HostConnectivityStatusCapability,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorConnectivityProvider = HostConnectivityStatusCapability & HostConnectivityChangeCapability;
@@ -29,19 +27,16 @@ export function capacitorHostConnectivityStatus(capacitor: CapacitorApi): HostCo
 }
 
 function capacitorConnectivityProvider(capacitor: CapacitorApi): CapacitorConnectivityProvider {
-  const out = allocateEntity<CapacitorConnectivityProvider>();
+  const out = {} as CapacitorConnectivityProvider;
   populateCapacitorConnectivity(out, capacitor);
-  return finishEntity(out);
+  return out;
 }
 
 // Capacitor's async getStatus cannot truthfully fill a synchronous snapshot during construction, so
 // the mirror starts UNKNOWN (`online: null`) rather than making an unmeasured offline claim. One native
 // listener owns the mirror and fans out to every core entity; per-entity unsubscribe only leaves that
 // local subscriber set. Provider destroy owns the one native handle.
-function populateCapacitorConnectivity(
-  out: EntityConstruction<CapacitorConnectivityProvider>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorConnectivity(out: CapacitorConnectivityProvider, capacitor: CapacitorApi): void {
   const network = capacitor.network;
   const subscribers = new Set<() => void>();
   const mirror = unknownStatus();

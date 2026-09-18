@@ -1,5 +1,4 @@
-import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget, Entity } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget } from '@flighthq/types/contract';
 
 import {
   electronHostIpc,
@@ -65,10 +64,9 @@ function fakeRenderer(): {
 }
 
 describe('electronHostIpc', () => {
-  it('constructs the exact Entity-backed main-process IPC group', () => {
+  it('constructs the main-process IPC group', () => {
     const ipc = electronHostIpc(fakeElectron().electron);
     expect(Object.keys(ipc).sort()).toEqual(['handle', 'message', 'targetedSend']);
-    for (const provider of Object.values(ipc)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
 
@@ -84,11 +82,6 @@ describe('electronHostIpcHandle', () => {
     stop();
     expect(handlers.has('double')).toBe(false);
   });
-
-  it('returns an Entity', () => {
-    const backend: Entity = electronHostIpcHandle(fakeElectron().electron);
-    expect(EntityRuntimeKey in backend).toBe(true);
-  });
 });
 
 describe('electronHostIpcInvoke', () => {
@@ -99,19 +92,9 @@ describe('electronHostIpcInvoke', () => {
     await expect(backend.invoke('compute', [1, 2])).resolves.toEqual({ args: [1, 2], channel: 'compute' });
     expect(invocations).toEqual([{ args: [1, 2], channel: 'compute' }]);
   });
-
-  it('returns an Entity', () => {
-    const backend: Entity = electronHostIpcInvoke(fakeRenderer().renderer);
-    expect(EntityRuntimeKey in backend).toBe(true);
-  });
 });
 
 describe('electronHostIpcMessage', () => {
-  it('returns an Entity in both runtime and type', () => {
-    const backend: Entity = electronHostIpcMessage(fakeElectron().electron);
-    expect(EntityRuntimeKey in backend).toBe(true);
-  });
-
   it('delivers a renderer message with its arguments, dropping the event object', () => {
     const { electron, channels } = fakeElectron();
     const backend = electronHostIpcMessage(electron);
@@ -153,11 +136,6 @@ describe('electronHostIpcSend', () => {
 
     expect(sent).toEqual([{ args: ['hello', 7], channel: 'log' }]);
   });
-
-  it('returns an Entity', () => {
-    const backend: Entity = electronHostIpcSend(fakeRenderer().renderer);
-    expect(EntityRuntimeKey in backend).toBe(true);
-  });
 });
 
 describe('electronHostIpcTargetedSend', () => {
@@ -174,11 +152,6 @@ describe('electronHostIpcTargetedSend', () => {
     backend.send(target, 'refresh', [1, 2]);
 
     expect(sent).toEqual([{ args: [1, 2], channel: 'refresh' }]);
-  });
-
-  it('returns an Entity', () => {
-    const backend: Entity = electronHostIpcTargetedSend<ElectronIpcTarget>();
-    expect(EntityRuntimeKey in backend).toBe(true);
   });
 });
 describe('populateElectronHostIpcHandle', () => {

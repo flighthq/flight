@@ -1,9 +1,7 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
   DesktopOsProfile,
-  EntityConstruction,
   HostShellCapabilities,
   HostShellBeepCapability,
   HostShellExternalCapability,
@@ -33,54 +31,48 @@ export function electronHostShell(
 }
 
 export function electronHostShellBeep(electron: ElectronApi): HostShellBeepCapability {
-  const out = allocateEntity<HostShellBeepCapability>();
+  const out = {} as HostShellBeepCapability;
   populateElectronHostShellBeep(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostShellExternal(electron: ElectronApi): HostShellExternalCapability {
-  const out = allocateEntity<HostShellExternalCapability>();
+  const out = {} as HostShellExternalCapability;
   populateElectronHostShellExternal(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostShellPathOpen(electron: ElectronApi): HostShellPathOpenCapability {
-  const out = allocateEntity<HostShellPathOpenCapability>();
+  const out = {} as HostShellPathOpenCapability;
   populateElectronHostShellPathOpen(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostShellPathReveal(electron: ElectronApi): HostShellPathRevealCapability {
-  const out = allocateEntity<HostShellPathRevealCapability>();
+  const out = {} as HostShellPathRevealCapability;
   populateElectronHostShellPathReveal(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostShellShortcutLink(electron: ElectronApi): HostShellShortcutLinkCapability {
-  const out = allocateEntity<HostShellShortcutLinkCapability>();
+  const out = {} as HostShellShortcutLinkCapability;
   populateElectronHostShellShortcutLink(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostShellTrash(electron: ElectronApi): HostShellTrashCapability {
-  const out = allocateEntity<HostShellTrashCapability>();
+  const out = {} as HostShellTrashCapability;
   populateElectronHostShellTrash(out, electron.shell);
-  return finishEntity(out);
+  return out;
 }
 
-export function populateElectronHostShellBeep(
-  out: EntityConstruction<HostShellBeepCapability>,
-  shell: ElectronApi['shell'],
-): void {
+export function populateElectronHostShellBeep(out: HostShellBeepCapability, shell: ElectronApi['shell']): void {
   out.beep = () => {
     shell.beep();
   };
 }
 
-export function populateElectronHostShellExternal(
-  out: EntityConstruction<HostShellExternalCapability>,
-  shell: ElectronApi['shell'],
-): void {
+export function populateElectronHostShellExternal(out: HostShellExternalCapability, shell: ElectronApi['shell']): void {
   out.open = async (url) => {
     try {
       await shell.openExternal(url);
@@ -91,10 +83,7 @@ export function populateElectronHostShellExternal(
   };
 }
 
-export function populateElectronHostShellPathOpen(
-  out: EntityConstruction<HostShellPathOpenCapability>,
-  shell: ElectronApi['shell'],
-): void {
+export function populateElectronHostShellPathOpen(out: HostShellPathOpenCapability, shell: ElectronApi['shell']): void {
   out.open = async (path) => {
     try {
       const message = await shell.openPath(path);
@@ -106,7 +95,7 @@ export function populateElectronHostShellPathOpen(
 }
 
 export function populateElectronHostShellPathReveal(
-  out: EntityConstruction<HostShellPathRevealCapability>,
+  out: HostShellPathRevealCapability,
   shell: ElectronApi['shell'],
 ): void {
   out.reveal = async (path) => {
@@ -120,7 +109,7 @@ export function populateElectronHostShellPathReveal(
 }
 
 export function populateElectronHostShellShortcutLink(
-  out: EntityConstruction<HostShellShortcutLinkCapability>,
+  out: HostShellShortcutLinkCapability,
   shell: ElectronApi['shell'],
 ): void {
   out.read = async (shortcutPath) => {
@@ -158,10 +147,7 @@ export function populateElectronHostShellShortcutLink(
   };
 }
 
-export function populateElectronHostShellTrash(
-  out: EntityConstruction<HostShellTrashCapability>,
-  shell: ElectronApi['shell'],
-): void {
+export function populateElectronHostShellTrash(out: HostShellTrashCapability, shell: ElectronApi['shell']): void {
   out.moveToTrash = async (path) => {
     try {
       await shell.trashItem(path);

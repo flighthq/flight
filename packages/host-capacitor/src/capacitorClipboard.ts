@@ -1,10 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   HostClipboardCapabilities,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type CapacitorClipboardProvider = HostClipboardImageCapability & HostClipboardTextCapability;
@@ -27,15 +25,12 @@ export function capacitorHostClipboardText(capacitor: CapacitorApi): HostClipboa
 }
 
 function capacitorClipboardProvider(capacitor: CapacitorApi): CapacitorClipboardProvider {
-  const out = allocateEntity<CapacitorClipboardProvider>();
+  const out = {} as CapacitorClipboardProvider;
   populateCapacitorClipboard(out, capacitor.clipboard);
-  return finishEntity(out);
+  return out;
 }
 
-function populateCapacitorClipboard(
-  out: EntityConstruction<CapacitorClipboardProvider>,
-  clipboard: CapacitorApi['clipboard'],
-): void {
+function populateCapacitorClipboard(out: CapacitorClipboardProvider, clipboard: CapacitorApi['clipboard']): void {
   // Capacitor has no clear call; overwriting with empty text is the closest honest equivalent.
   out.clear = async () => {
     try {

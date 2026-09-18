@@ -379,12 +379,12 @@ describe('getPowerBatteryHealth', () => {
   it('fills and returns the caller-owned out parameter', () => {
     const out = makePowerBatteryHealth();
     const provider = (() => {
-      const target = allocateEntity<HostPowerBatteryHealthCapability>();
+      const target = {} as HostPowerBatteryHealthCapability;
       target.getBatteryHealth = (health: PowerBatteryHealth): PowerBatteryHealth => {
         health.cycleCount = 12;
         return health;
       };
-      return finishEntity(target);
+      return target;
     })();
     expect(getPowerBatteryHealth(provider, out)).toBe(out);
     expect(out.cycleCount).toBe(12);

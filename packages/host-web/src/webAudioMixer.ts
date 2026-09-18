@@ -1,10 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioBusNodeHandle,
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   AudioSourceHandle,
-  EntityConstruction,
   HostAudioDeviceCapability,
   HostAudioMixerCapability,
 } from '@flighthq/types/contract';
@@ -12,12 +10,12 @@ import type {
 import { webHostAudioDevice } from './webAudioDevice';
 
 export function createWebAudioMixerBackend(): HostAudioMixerCapability {
-  const out = allocateEntity<HostAudioMixerCapability>();
+  const out = {} as HostAudioMixerCapability;
   initializeWebAudioMixerBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebAudioMixerBackend(out: EntityConstruction<HostAudioMixerCapability>): void {
+export function initializeWebAudioMixerBackend(out: HostAudioMixerCapability): void {
   let nextHandle = 1;
   const graphs = new Map<number, WebAudioMixerGraph>();
   const buses = new Map<number, WebAudioBusNode>();
