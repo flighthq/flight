@@ -6,6 +6,7 @@ import type { EntityWithoutRuntime, HostInputPointerLockCapability, HostTarget }
 import { webHost } from './webHost';
 import {
   createWebHostTarget,
+  getCanvasForTarget,
   initializeWebHostTarget,
   resetWebHostTargetBackendForTest,
   webHostInputDropFile,
@@ -35,6 +36,27 @@ describe('createWebHostTarget', () => {
     expect(EntityRuntimeKey in target).toBe(true);
     webHostTarget.prepare(target);
     expect(element.style.touchAction).toBe('none');
+  });
+});
+
+describe('getCanvasForTarget', () => {
+  it('resolves a canvas-backed target to its HTMLCanvasElement', () => {
+    const canvas = document.createElement('canvas');
+    const target = createWebHostTarget(canvas);
+    expect(getCanvasForTarget(target)).toBe(canvas);
+  });
+
+  it('returns null for a non-canvas element', () => {
+    const div = document.createElement('div');
+    const target = createWebHostTarget(div);
+    expect(getCanvasForTarget(target)).toBeNull();
+  });
+
+  it('returns null for an unregistered target', () => {
+    const canvas = document.createElement('canvas');
+    const target = createWebHostTarget(canvas);
+    resetWebHostTargetBackendForTest();
+    expect(getCanvasForTarget(target)).toBeNull();
   });
 });
 
