@@ -29,7 +29,7 @@ const ENTITY_CONSTRUCTORS = [
   'tauriHostFileOpenDialog',
   'tauriHostFileSaveDialog',
   'tauriHostMenu',
-  'tauriHostMenuApplication',
+  'tauriHostAppMenu',
   'tauriHostMenuPopup',
   'tauriHostMenuSelect',
   'tauriHostMessageDialog',
@@ -63,7 +63,7 @@ const LEAF_MODULE_BY_EXPORT = {
   tauriHostDirectoryOpenDialog: 'tauriDialog.js',
   tauriHostFileOpenDialog: 'tauriDialog.js',
   tauriHostFileSaveDialog: 'tauriDialog.js',
-  tauriHostMenuApplication: 'tauriMenu.js',
+  tauriHostAppMenu: 'tauriMenu.js',
   tauriHostMenuPopup: 'tauriMenu.js',
   tauriHostMenuSelect: 'tauriMenu.js',
   tauriHostMessageDialog: 'tauriDialog.js',
@@ -182,7 +182,7 @@ describe('packed Tauri host surface', { timeout: 30_000 }, () => {
 describe('packed Tauri leaf isolation', { timeout: 30_000 }, () => {
   const isolatedLeaves = [
     {
-      exportName: 'tauriHostMenuApplication',
+      exportName: 'tauriHostAppMenu',
       module: 'tauriMenu.js',
       siblingTokens: ['LogicalPosition', '.popup(', '.subscribe('],
     },

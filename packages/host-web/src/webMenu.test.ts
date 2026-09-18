@@ -54,7 +54,7 @@ describe('webHostMenuPopup', () => {
   // indistinguishable from a host that really implements them. Deleting them is the point of this slice,
   // so this asserts their ABSENCE rather than any behaviour.
   it('exposes no application or select members to be mistaken for capability', () => {
-    expect('setApplicationMenu' in webHostMenuPopup).toBe(false);
+    expect('setAppMenu' in webHostMenuPopup).toBe(false);
     expect('subscribe' in webHostMenuPopup).toBe(false);
     expect('popup' in webHostMenuHighlight).toBe(false);
   });

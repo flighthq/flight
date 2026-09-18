@@ -110,7 +110,7 @@ import type {
 import type { HostLifecycleCapability } from './Lifecycle';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession';
 import type {
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -388,7 +388,7 @@ export interface HostMediaSessionCapabilities {
 }
 
 export interface HostMenuCapabilities {
-  readonly application?: HostMenuApplicationCapability;
+  readonly app?: HostAppMenuCapability;
   readonly highlight?: HostMenuHighlightCapability;
   readonly popup?: HostMenuPopupCapability;
   readonly select?: HostMenuSelectCapability;

@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   EntityWithoutRuntime,
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -17,7 +17,7 @@ import {
   createMenuHighlight,
   createMenuItemTemplate,
   createMenuSelect,
-  destroyMenuApplication,
+  destroyAppMenu,
   detachMenuHighlight,
   detachMenuSelect,
   disposeMenuHighlight,
@@ -26,7 +26,7 @@ import {
   getMenuSignals,
   initializeMenuHighlight,
   initializeMenuSelect,
-  setApplicationMenu,
+  setAppMenu,
   showContextMenu,
   validateMenuItemTemplate,
 } from './menu';
@@ -55,12 +55,12 @@ function popupHost(
 function applicationHost(
   accepted: boolean,
   seen: MenuItemTemplate[][] = [],
-): { readonly menu: { readonly application: HostMenuApplicationCapability } } {
+): { readonly menu: { readonly app: HostAppMenuCapability } } {
   return {
     menu: {
-      application: (() => {
+      app: (() => {
         const out = allocateEntity<any>();
-        out.setApplicationMenu = (items: readonly MenuItemTemplate[]): boolean => {
+        out.setAppMenu = (items: readonly MenuItemTemplate[]): boolean => {
           seen.push([...items]);
           return accepted;
         };
@@ -207,27 +207,27 @@ describe('createMenuSelect', () => {
   });
 });
 
-describe('destroyMenuApplication', () => {
-  function applicationHostWith(provider: EntityWithoutRuntime<HostMenuApplicationCapability>): {
-    readonly menu: { readonly application: HostMenuApplicationCapability };
+describe('destroyAppMenu', () => {
+  function applicationHostWith(provider: EntityWithoutRuntime<HostAppMenuCapability>): {
+    readonly menu: { readonly app: HostAppMenuCapability };
   } {
     (provider as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
-    return { menu: { application: provider as HostMenuApplicationCapability } };
+    return { menu: { app: provider as HostAppMenuCapability } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {
     let destroyed = 0;
-    const shared = { destroy: () => destroyed++, setApplicationMenu: () => true };
+    const shared = { destroy: () => destroyed++, setAppMenu: () => true };
     // ★ ALIAS SAFETY: two hosts, ONE provider object. Destroying it twice would clear a successor's menu.
-    destroyMenuApplication(applicationHostWith(shared).menu.application, applicationHostWith(shared).menu.application);
+    destroyAppMenu(applicationHostWith(shared).menu.app, applicationHostWith(shared).menu.app);
     expect(destroyed).toBe(1);
   });
 
   it('never destroys an already-released provider a second time', () => {
     let destroyed = 0;
-    const provider = { destroy: () => destroyed++, setApplicationMenu: () => true };
-    destroyMenuApplication(applicationHostWith(provider).menu.application);
-    destroyMenuApplication(applicationHostWith(provider).menu.application);
+    const provider = { destroy: () => destroyed++, setAppMenu: () => true };
+    destroyAppMenu(applicationHostWith(provider).menu.app);
+    destroyAppMenu(applicationHostWith(provider).menu.app);
     expect(destroyed).toBe(1);
   });
 
@@ -238,15 +238,12 @@ describe('destroyMenuApplication', () => {
       destroy: () => {
         throw new Error('first failed');
       },
-      setApplicationMenu: () => true,
+      setAppMenu: () => true,
     };
-    const healthy = { destroy: () => (secondDestroyed = true), setApplicationMenu: () => true };
-    expect(() =>
-      destroyMenuApplication(
-        applicationHostWith(failing).menu.application,
-        applicationHostWith(healthy).menu.application,
-      ),
-    ).toThrow('first failed');
+    const healthy = { destroy: () => (secondDestroyed = true), setAppMenu: () => true };
+    expect(() => destroyAppMenu(applicationHostWith(failing).menu.app, applicationHostWith(healthy).menu.app)).toThrow(
+      'first failed',
+    );
     expect(secondDestroyed).toBe(true);
   });
 
@@ -259,29 +256,19 @@ describe('destroyMenuApplication', () => {
         attempts++;
         if (attempts === 1) throw new Error('transient');
       },
-      setApplicationMenu: () => true,
+      setAppMenu: () => true,
     };
-    const healthy = { destroy: () => healthyDestroyed++, setApplicationMenu: () => true };
+    const healthy = { destroy: () => healthyDestroyed++, setAppMenu: () => true };
+    expect(() => destroyAppMenu(applicationHostWith(flaky).menu.app, applicationHostWith(healthy).menu.app)).toThrow();
     expect(() =>
-      destroyMenuApplication(
-        applicationHostWith(flaky).menu.application,
-        applicationHostWith(healthy).menu.application,
-      ),
-    ).toThrow();
-    expect(() =>
-      destroyMenuApplication(
-        applicationHostWith(flaky).menu.application,
-        applicationHostWith(healthy).menu.application,
-      ),
+      destroyAppMenu(applicationHostWith(flaky).menu.app, applicationHostWith(healthy).menu.app),
     ).not.toThrow();
     expect(attempts).toBe(2);
     expect(healthyDestroyed).toBe(1);
   });
 
   it('tolerates a provider that declares no destroy', () => {
-    expect(() =>
-      destroyMenuApplication(applicationHostWith({ setApplicationMenu: () => true }).menu.application),
-    ).not.toThrow();
+    expect(() => destroyAppMenu(applicationHostWith({ setAppMenu: () => true }).menu.app)).not.toThrow();
   });
 });
 
@@ -377,19 +364,19 @@ describe('initializeMenuSelect', () => {
   });
 });
 
-describe('setApplicationMenu', () => {
+describe('setAppMenu', () => {
   // ★ FALSIFIER 2 — assert the RETURN VALUE and the DELIVERED ITEMS, never mere operation presence.
   // A structural "does it have setApplicationMenu" probe passed on the old web stub, which answered
   // false unconditionally; only the delivered items distinguish a real install.
   it('reports the provider result and delivers the items', () => {
     const seen: MenuItemTemplate[][] = [];
     const items = [{ id: 'quit', label: 'Quit' }];
-    expect(setApplicationMenu(applicationHost(true, seen).menu.application, items)).toBe(true);
+    expect(setAppMenu(applicationHost(true, seen).menu.app, items)).toBe(true);
     expect(seen).toEqual([items]);
   });
 
   it('reports a refused install as false', () => {
-    expect(setApplicationMenu(applicationHost(false).menu.application, [{ id: 'quit', label: 'Quit' }])).toBe(false);
+    expect(setAppMenu(applicationHost(false).menu.app, [{ id: 'quit', label: 'Quit' }])).toBe(false);
   });
 });
 describe('showContextMenu', () => {

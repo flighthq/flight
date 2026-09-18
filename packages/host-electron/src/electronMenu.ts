@@ -3,7 +3,7 @@ import type {
   ElectronApi,
   ElectronMenuCapabilities,
   EntityConstruction,
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
@@ -19,9 +19,9 @@ function menuState(): ElectronMenuState {
   return { destroyed: false, selectListener: null };
 }
 
-function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostMenuApplicationCapability {
-  const out = allocateEntity<HostMenuApplicationCapability>();
-  populateElectronHostMenuApplication(out, electron, state);
+function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostAppMenuCapability {
+  const out = allocateEntity<HostAppMenuCapability>();
+  populateElectronHostAppMenu(out, electron, state);
   return finishEntity(out);
 }
 
@@ -29,6 +29,10 @@ function menuSelect(state: ElectronMenuState): HostMenuSelectCapability {
   const out = allocateEntity<HostMenuSelectCapability>();
   populateElectronHostMenuSelect(out, state);
   return finishEntity(out);
+}
+
+export function electronHostAppMenu(electron: ElectronApi): HostAppMenuCapability {
+  return menuApplication(electron, menuState());
 }
 
 // Maps Flight's menu slots onto Electron's Menu module. Flight menu items are plain templates with a
@@ -51,10 +55,6 @@ export function electronHostMenu(electron: ElectronApi): ElectronMenuCapabilitie
   return finishEntity(out);
 }
 
-export function electronHostMenuApplication(electron: ElectronApi): HostMenuApplicationCapability {
-  return menuApplication(electron, menuState());
-}
-
 export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupCapability {
   const out = allocateEntity<HostMenuPopupCapability>();
   populateElectronHostMenuPopup(out, electron);
@@ -65,19 +65,8 @@ export function electronHostMenuSelect(): HostMenuSelectCapability {
   return menuSelect(menuState());
 }
 
-export function populateElectronHostMenu(
-  out: EntityConstruction<ElectronMenuCapabilities>,
-  application: HostMenuApplicationCapability,
-  popup: HostMenuPopupCapability,
-  select: HostMenuSelectCapability,
-): void {
-  out.application = application;
-  out.popup = popup;
-  out.select = select;
-}
-
-export function populateElectronHostMenuApplication(
-  out: EntityConstruction<HostMenuApplicationCapability>,
+export function populateElectronHostAppMenu(
+  out: EntityConstruction<HostAppMenuCapability>,
   electron: ElectronApi,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
@@ -88,12 +77,23 @@ export function populateElectronHostMenuApplication(
     menuState.destroyed = true;
     electron.Menu.setApplicationMenu(null);
   };
-  out.setApplicationMenu = (items): boolean => {
+  out.setAppMenu = (items): boolean => {
     electron.Menu.setApplicationMenu(
       electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => menuState.selectListener?.(id))),
     );
     return true;
   };
+}
+
+export function populateElectronHostMenu(
+  out: EntityConstruction<ElectronMenuCapabilities>,
+  app: HostAppMenuCapability,
+  popup: HostMenuPopupCapability,
+  select: HostMenuSelectCapability,
+): void {
+  out.app = app;
+  out.popup = popup;
+  out.select = select;
 }
 
 export function populateElectronHostMenuPopup(

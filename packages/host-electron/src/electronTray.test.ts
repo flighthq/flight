@@ -87,7 +87,7 @@ function fakeElectron() {
         templates.push(template);
         return { popup() {} };
       },
-      setApplicationMenu() {},
+      setAppMenu() {},
     },
     Tray: function (this: FakeTray, image: ElectronNativeImage) {
       this.destroyed = false;

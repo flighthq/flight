@@ -1,12 +1,12 @@
 import type {
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { tauriHostMenu, tauriHostMenuApplication, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu';
+import { tauriHostMenu, tauriHostAppMenu, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu';
 
 function fakeTauri() {
   const state = {
@@ -67,6 +67,11 @@ const template: MenuItemTemplate[] = [
   { label: 'More', submenu: [{ id: 'nested', label: 'Nested' }] },
 ];
 
+describe('tauriHostAppMenu', () => {
+  it('constructs the application provider independently', () =>
+    expect(EntityRuntimeKey in tauriHostAppMenu(fakeTauri().tauri)).toBe(true));
+});
+
 describe('tauriHostMenu', () => {
   it('returns an Entity-composed capability bundle and providers', () => {
     const capabilities = tauriHostMenu(fakeTauri().tauri);
@@ -79,7 +84,7 @@ describe('tauriHostMenu', () => {
     const backend = _slots(tauri);
     const selected: string[] = [];
     backend.subscribeSelect((id: string) => selected.push(id));
-    expect(backend.setApplicationMenu(template)).toBe(true);
+    expect(backend.setAppMenu(template)).toBe(true);
     // Let the async build + setAsAppMenu settle.
     await flush();
     expect(state.appMenuSet).toBe(1);
@@ -101,7 +106,7 @@ describe('tauriHostMenu', () => {
   it('does not touch native menu on destroy (async API cannot clear synchronously)', async () => {
     const { tauri, state } = fakeTauri();
     const backend = _slots(tauri);
-    backend.setApplicationMenu(template);
+    backend.setAppMenu(template);
     await flush();
     expect(state.appMenuSet).toBe(1);
     backend.destroy?.();
@@ -114,7 +119,7 @@ describe('tauriHostMenu', () => {
     const backend = _slots(tauri);
     const selected: string[] = [];
     backend.subscribeSelect((id: string) => selected.push(id));
-    backend.setApplicationMenu(template);
+    backend.setAppMenu(template);
     await flush();
     backend.destroy?.();
     backend.destroy?.();
@@ -129,12 +134,12 @@ describe('tauriHostMenu', () => {
   it('outgoing destroy cannot overwrite successor menu in a controlled replacement race', async () => {
     const { tauri, state } = fakeTauri();
     const outgoing = _slots(tauri);
-    outgoing.setApplicationMenu(template);
+    outgoing.setAppMenu(template);
     await flush();
     expect(state.appMenuSet).toBe(1);
     outgoing.destroy?.();
     const incoming = _slots(tauri);
-    incoming.setApplicationMenu([{ id: 'save', label: 'Save' }]);
+    incoming.setAppMenu([{ id: 'save', label: 'Save' }]);
     await flush();
     expect(state.appMenuSet).toBe(2);
   });
@@ -145,7 +150,7 @@ describe('tauriHostMenu', () => {
     const backend = _slots(tauri);
     const selected: string[] = [];
     const unsubscribe = backend.subscribeSelect((id: string) => selected.push(id));
-    backend.setApplicationMenu(template);
+    backend.setAppMenu(template);
     await flush();
     backend.destroy?.();
     expect(() => unsubscribe()).not.toThrow();
@@ -189,11 +194,6 @@ describe('tauriHostMenu', () => {
   });
 });
 
-describe('tauriHostMenuApplication', () => {
-  it('constructs the application provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostMenuApplication(fakeTauri().tauri)).toBe(true));
-});
-
 describe('tauriHostMenuPopup', () => {
   it('constructs the popup provider independently', () =>
     expect(EntityRuntimeKey in tauriHostMenuPopup(fakeTauri().tauri)).toBe(true));
@@ -213,14 +213,14 @@ async function flush(): Promise<void> {
 function _slots(api: TauriApi): {
   destroy?: () => void;
   popupContextMenu: HostMenuPopupCapability['popup'];
-  setApplicationMenu: HostMenuApplicationCapability['setApplicationMenu'];
+  setAppMenu: HostAppMenuCapability['setAppMenu'];
   subscribeSelect: HostMenuSelectCapability['subscribe'];
 } {
-  const { application, popup, select } = tauriHostMenu(api);
+  const { app, popup, select } = tauriHostMenu(api);
   return {
-    destroy: application.destroy?.bind(application),
+    destroy: app.destroy?.bind(app),
     popupContextMenu: popup.popup,
-    setApplicationMenu: application.setApplicationMenu,
+    setAppMenu: app.setAppMenu,
     subscribeSelect: select.subscribe,
   };
 }

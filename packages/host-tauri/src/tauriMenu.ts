@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  HostMenuApplicationCapability,
+  HostAppMenuCapability,
   MenuItemTemplate,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -8,6 +8,10 @@ import type {
   TauriMenuCapabilities,
   TauriMenuItemHandle,
 } from '@flighthq/types/contract';
+
+export function tauriHostAppMenu(tauri: TauriApi): HostAppMenuCapability {
+  return createAppMenu(tauri, createMenuState());
+}
 
 // Maps Flight's menu slots onto Tauri's `@tauri-apps/api/menu`. Tauri builds menus through async static
 // factories (`Menu.new`, `MenuItem.new`, `Submenu.new`, `PredefinedMenuItem.new`), so the sync
@@ -20,14 +24,10 @@ import type {
 export function tauriHostMenu(tauri: TauriApi): TauriMenuCapabilities {
   const state = createMenuState();
   const out = allocateEntity<TauriMenuCapabilities>();
-  out.application = createMenuApplication(tauri, state);
+  out.app = createAppMenu(tauri, state);
   out.popup = createMenuPopup(tauri);
   out.select = createMenuSelect(state);
   return finishEntity(out);
-}
-
-export function tauriHostMenuApplication(tauri: TauriApi): HostMenuApplicationCapability {
-  return createMenuApplication(tauri, createMenuState());
 }
 
 export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupCapability {
@@ -48,19 +48,19 @@ function createMenuState(): MenuState {
   return { destroyed: false, selectListener: null };
 }
 
-function createMenuApplication(tauri: TauriApi, state: MenuState): HostMenuApplicationCapability {
+function createAppMenu(tauri: TauriApi, state: MenuState): HostAppMenuCapability {
   const menuModule = tauri.menu;
   // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
   // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
   // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
   // until a replacement installs its own.
-  const applicationProvider = allocateEntity<HostMenuApplicationCapability>();
+  const applicationProvider = allocateEntity<HostAppMenuCapability>();
   applicationProvider.destroy = (): void => {
     if (state.destroyed) return;
     state.destroyed = true;
   };
-  applicationProvider.setApplicationMenu = (items): boolean => {
+  applicationProvider.setAppMenu = (items): boolean => {
     void (async () => {
       const built = await buildItems(menuModule, items, (id) => state.selectListener?.(id));
       const menu = await menuModule.Menu.new({ items: built });
