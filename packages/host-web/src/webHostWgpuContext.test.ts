@@ -1,5 +1,5 @@
-import { createWebSurfaceFromElement } from './webSurfaceTestSupport';
 import { createWebHostWgpuContext, initializeWebHostWgpuContext } from './webHostWgpuContext';
+import { createWebSurfaceFromElement } from './webSurfaceHandle';
 
 function installMinimalWgpuMock(): void {
   if (globalThis.navigator == null) {
@@ -62,10 +62,9 @@ describe('createWebHostWgpuContext', () => {
     expect(createWebHostWgpuContext().isSupported()).toBe(true);
   });
 
-  it('returns null from attachSurface when the target is not registered', () => {
+  it('returns null from attachSurface when the surface is not backed by a canvas', () => {
     const context = createWebHostWgpuContext();
-    const canvas = document.createElement('canvas');
-    const unregisteredSurface = createWebSurfaceFromElement(canvas);
+    const unregisteredSurface = createWebSurfaceFromElement(document.createElement('div'));
 
     expect(
       context.attachSurface(unregisteredSurface, {

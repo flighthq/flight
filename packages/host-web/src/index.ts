@@ -71,7 +71,7 @@ export { webHostCanvasGroup } from './webCanvasHost';
 export { createWebHostCanvas, webHostCanvas } from './webHostCanvas';
 export { createWebHostGl, webHostGl } from './webHostGl';
 export { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface';
-export { createWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
+export { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
 export { getWebWindowHandle } from './webWindow';
 export { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
 export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';

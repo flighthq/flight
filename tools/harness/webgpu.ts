@@ -4,7 +4,9 @@ import {
   webHostImage,
   webImageSurfaceCreator,
   appendWebSurface,
-  webHostTargetDisplay,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -58,6 +60,8 @@ import {
   TilemapKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -67,13 +71,15 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const wgpuSurface = await createWgpuSurface(webHostWgpuContext, width * pixelRatio, height * pixelRatio);
+  const appWindow = createApplicationWindow();
+  openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+
+  const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, width * pixelRatio, height * pixelRatio);
   if (wgpuSurface === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
-  setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, width, height);
+  setSurfaceDisplaySize(webHostSurfaceDisplay, wgpuSurface, width, height);
   appendWebSurface(wgpuSurface, document.body);
-  const target = wgpuSurface.target;
   const acquisition = wgpuSurface.acquisition;
-  const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
+  const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
     format: acquisition.format,
   });
   const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

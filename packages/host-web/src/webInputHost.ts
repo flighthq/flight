@@ -1,7 +1,7 @@
 import type { HostInputCapabilities } from '@flighthq/types/contract';
 
-import { webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostInputTarget } from './webInputTarget';
 import { webHostInputIngress } from './webInputIngress';
+import { webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostInputTarget } from './webInputTarget';
 
 export const webHostInput = {
   dropFile: webHostInputDropFile,

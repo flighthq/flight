@@ -1,4 +1,11 @@
-import { webHostGl, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
+import {
+  webHostGl,
+  appendWebSurface,
+  getWebSurfaceCanvas,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -27,6 +34,8 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -56,11 +65,13 @@ declareExpectedImageDescription(
 //   - backdrop-only region → passes through as the layer is transparent there, reading ~backdrop colour.
 // A passthrough (blend not applied) would leave the white foreground white in the overlap — the failing case.
 const pixelRatio = window.devicePixelRatio || 1;
-const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setSurfaceDisplaySize(webHostTargetDisplay, glSurface, 800, 600);
+setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 

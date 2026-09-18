@@ -83,10 +83,10 @@ import type {
   HostInputPointerLockCapability,
 } from './HostInput';
 import type { HostInputIngressCapability } from './HostInputIngress';
+import type { HostInputTargetCapability } from './HostInputTarget';
 import type { HostMessageDialogCapability } from './HostMessageDialog';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
 import type { HostPromptDialogCapability } from './HostPromptDialog';
-import type { HostInputTargetCapability } from './HostInputTarget';
 import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability } from './HostSurface';
 import type { HostVideoCapability } from './HostVideo';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';

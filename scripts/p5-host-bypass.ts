@@ -604,6 +604,8 @@ const WGPU_SURFACE_ARGUMENT: Readonly<Record<string, { readonly file: string; re
   createWgpuScreenRenderTarget: { file: 'packages/render-wgpu/src/wgpuScreenRenderTarget.ts', index: 2 },
 };
 
+const PRESENTATION_PARAMETER_NAMES = new Set(['drawable', 'surface', 'target']);
+
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
   'beforeinput',
@@ -810,7 +812,9 @@ export function p5WgpuSurfaceArgumentFailures(root: string): string[] {
       );
       continue;
     }
-    if (parameters[argument.index] !== 'surface' && parameters[argument.index] !== 'target') {
+    // The names that mean "the thing being presented through". `drawable` is used where `surface` is
+    // already taken in the same file by the live-size WgpuPresentationSurface view.
+    if (!PRESENTATION_PARAMETER_NAMES.has(parameters[argument.index] ?? '')) {
       failures.push(
         `${functionName}: argument ${argument.index} is recorded as the presentation surface but names ` +
           `'${parameters[argument.index] ?? '<none>'}' in ${argument.file}`,

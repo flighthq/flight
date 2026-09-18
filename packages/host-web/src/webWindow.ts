@@ -226,6 +226,13 @@ export function createWebWindowResizeTargetHandle(element: Element): WindowResiz
   return target;
 }
 
+// The page Window an ApplicationWindow is attached to, or null when it was never opened or attached. The
+// drawable capabilities resolve their document through here, which is what makes the window argument to
+// surface creation a real lookup rather than a decorative parameter.
+export function getWebWindowHandle(win: Readonly<ApplicationWindow>): Window | null {
+  return _records.get(win)?.handle ?? null;
+}
+
 export function initializeWebFullscreenTargetHandle(
   target: EntityConstruction<FullscreenTargetHandle>,
   element: Element,
@@ -240,19 +247,6 @@ export function initializeWebWindowResizeTargetHandle(
 ): void {
   target.__brand = 'WindowResizeTargetHandle' as const;
   _windowResizeTargets.set(target, element);
-}
-
-export function resetWebWindowBackendForTest(): void {
-  for (const handler of _fullscreenListeners.values()) {
-    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
-  }
-  _fullscreenListeners.clear();
-  for (const cleanup of [..._windowSubscriptionCleanups]) cleanup();
-  _windowSubscriptionCleanups.clear();
-  _fullscreenTargets = new WeakMap();
-  _windowResizeTargets = new WeakMap();
-  _handles = new WeakMap();
-  _records = new WeakMap();
 }
 
 let _handles = new WeakMap<Window, ApplicationWindow>();
@@ -311,11 +305,17 @@ function detachWebWindow(win: ApplicationWindow, closeOwned: boolean): void {
   }
 }
 
-// The page Window an ApplicationWindow is attached to, or null when it was never opened or attached. The
-// drawable capabilities resolve their document through here, which is what makes the window argument to
-// surface creation a real lookup rather than a decorative parameter.
-export function getWebWindowHandle(win: Readonly<ApplicationWindow>): Window | null {
-  return _records.get(win)?.handle ?? null;
+export function resetWebWindowBackendForTest(): void {
+  for (const handler of _fullscreenListeners.values()) {
+    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
+  }
+  _fullscreenListeners.clear();
+  for (const cleanup of [..._windowSubscriptionCleanups]) cleanup();
+  _windowSubscriptionCleanups.clear();
+  _fullscreenTargets = new WeakMap();
+  _windowResizeTargets = new WeakMap();
+  _handles = new WeakMap();
+  _records = new WeakMap();
 }
 
 function isWebWindow(handle: NativeWindowHandle): handle is Window {

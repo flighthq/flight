@@ -10,6 +10,17 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+export function createTestWgpuHostBackend(): HostWgpuCapability {
+  const out = allocateEntity<HostWgpuCapability>();
+  initializeTestWgpuHostBackend(out);
+  return finishEntity(out);
+}
+
+function testCanvas(surface: Readonly<Surface>): HTMLCanvasElement | null {
+  const handle = (surface[EntityRuntimeKey] as SurfaceRuntime).handle;
+  return handle instanceof HTMLCanvasElement ? handle : null;
+}
+
 // Builds a Surface around an existing canvas, the way a host's create lane would. Reads the runtime slot
 // directly rather than through @flighthq/surface so this test double adds no package dependency.
 export function createTestWgpuSurface(canvas: HTMLCanvasElement): Surface {
@@ -18,17 +29,6 @@ export function createTestWgpuSurface(canvas: HTMLCanvasElement): Surface {
   runtime.handle = canvas;
   surface[EntityRuntimeKey] = runtime;
   return finishEntity(surface);
-}
-
-function testCanvas(surface: Readonly<Surface>): HTMLCanvasElement | null {
-  const handle = (surface[EntityRuntimeKey] as SurfaceRuntime).handle;
-  return handle instanceof HTMLCanvasElement ? handle : null;
-}
-
-export function createTestWgpuHostBackend(): HostWgpuCapability {
-  const out = allocateEntity<HostWgpuCapability>();
-  initializeTestWgpuHostBackend(out);
-  return finishEntity(out);
 }
 
 function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
@@ -97,7 +97,6 @@ function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapabilit
     acquisition.device.destroy();
   };
 }
-
 
 function getWebWgpu(): GPU | null {
   if (typeof navigator === 'undefined') return null;

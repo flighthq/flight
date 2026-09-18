@@ -1,4 +1,11 @@
-import { webHostWgpuContext, appendWebSurface, getWebSurfaceElement, webHostTargetDisplay } from '@flighthq/host-web';
+import {
+  webHostWgpuContext,
+  appendWebSurface,
+  getWebSurfaceElement,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   beginWgpuRenderPass,
@@ -14,17 +21,20 @@ import {
   SpriteKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 500 * pixelRatio);
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 800 * pixelRatio, 500 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 500);
+setSurfaceDisplaySize(webHostSurfaceDisplay, wgpuSurface, 800, 500);
 appendWebSurface(wgpuSurface, document.body);
 export const canvas = getWebSurfaceElement(wgpuSurface)!;
-const target = wgpuSurface.target;
 const acquisition = wgpuSurface.acquisition;
-export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

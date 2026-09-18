@@ -7,7 +7,7 @@ import type {
   InputPointerLockRequestOutcome,
   HostInputTargetCapability,
   InputTargetHandle,
-        EntityConstruction,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 interface WebHostTargetStyle extends CSSStyleDeclaration {
@@ -112,7 +112,10 @@ export function createWebInputTargetHandle(element: HTMLElement): InputTargetHan
   return finishEntity(target);
 }
 
-export function initializeWebInputTargetHandle(target: EntityConstruction<InputTargetHandle>, element: HTMLElement): void {
+export function initializeWebInputTargetHandle(
+  target: EntityConstruction<InputTargetHandle>,
+  element: HTMLElement,
+): void {
   target.__brand = 'InputTargetHandle' as const;
   _inputTargets.set(target, element);
 }

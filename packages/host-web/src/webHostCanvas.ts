@@ -1,12 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ApplicationWindow,
-  EntityConstruction,
-  HostCanvasCapability,
-  Surface,
-} from '@flighthq/types/contract';
+import type { ApplicationWindow, EntityConstruction, HostCanvasCapability, Surface } from '@flighthq/types/contract';
 
-import { createWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export function createWebHostCanvas(): HostCanvasCapability {
   const out = allocateEntity<HostCanvasCapability>();
@@ -21,7 +16,7 @@ export function initializeWebHostCanvas(out: EntityConstruction<HostCanvasCapabi
     return canvas.getContext('2d', options);
   };
   out.create = (win: Readonly<ApplicationWindow>, width: number, height: number) =>
-    createWebSurfaceCanvas(win, width, height);
+    allocateWebSurfaceCanvas(win, width, height);
   out.release = (_surface: Readonly<Surface>) => {
     // The DOM owns context lifetime: a canvas's 2D context is released with the canvas, so the web host
     // holds no resource to free. A native host frees its cairo/Direct2D surface here.

@@ -1,4 +1,10 @@
-import { webHostGl, appendWebSurface, webHostTargetDisplay } from '@flighthq/host-web';
+import {
+  webHostGl,
+  appendWebSurface,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -31,6 +37,8 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -44,11 +52,13 @@ declareExpectedImageDescription(
 // the grain shows as fine speckle that would be invisible over busy content. Fixed seed keeps the
 // static capture deterministic.
 const pixelRatio = window.devicePixelRatio || 1;
-const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setSurfaceDisplaySize(webHostTargetDisplay, glSurface, 800, 600);
+setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {

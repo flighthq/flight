@@ -48,7 +48,10 @@ export interface HostWgpuCapability extends Entity {
   // the resolved presentation surface, or null when the target cannot present. Separate from `acquire`
   // because a device outlives any one surface: a second window attaches its own surface to the device
   // already in hand, and only the host knows how a target yields a drawable.
-  attachSurface(surface: Readonly<Surface>, attachment: Readonly<WgpuSurfaceAttachment>): WgpuSurfaceAttachResult | null;
+  attachSurface(
+    surface: Readonly<Surface>,
+    attachment: Readonly<WgpuSurfaceAttachment>,
+  ): WgpuSurfaceAttachResult | null;
   isSupported(): boolean;
   release(acquisition: Readonly<WgpuHostAcquisition>): void;
 }
@@ -64,6 +67,6 @@ export interface WgpuSurfaceAttachment {
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
 }
-import type { Entity } from './Entity';
 import type { ApplicationWindow } from './ApplicationWindow';
+import type { Entity } from './Entity';
 import type { NativeSurfaceHandle, Surface } from './Surface';

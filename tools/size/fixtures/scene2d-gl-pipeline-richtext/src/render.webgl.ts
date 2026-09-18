@@ -1,4 +1,11 @@
-import { webHostGl, webImageSurfaceCreator, appendWebSurface } from '@flighthq/host-web';
+import { createApplicationWindow, openWindow } from '@flighthq/application';
+import {
+  webHostGl,
+  webImageSurfaceCreator,
+  appendWebSurface,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -17,7 +24,9 @@ import { createGlSurface } from '@flighthq/surface';
 import { createRichText } from '@flighthq/text';
 import { RegistryEntryState, RichTextKind } from '@flighthq/types';
 
-const glSurface = createGlSurface(webHostGl, 400, 300, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');

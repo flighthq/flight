@@ -1,4 +1,11 @@
-import { appendWebSurface, getWebSurfaceElement, webHostWgpuContext } from '@flighthq/host-web';
+import { createApplicationWindow, openWindow } from '@flighthq/application';
+import {
+  appendWebSurface,
+  getWebSurfaceElement,
+  webHostWgpuContext,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -16,12 +23,13 @@ import { defaultWgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScen
 import { createWgpuSurface } from '@flighthq/surface';
 import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
-const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 400, 300);
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 400, 300);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 const canvas = getWebSurfaceElement(wgpuSurface)!;
-const target = wgpuSurface.target;
 
 const emptyRegistries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -30,7 +38,7 @@ const pipeline = createWgpuPipeline({
 });
 
 const acquisition = wgpuSurface.acquisition;
-export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });

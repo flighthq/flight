@@ -1,4 +1,10 @@
-import { createWebImageResourceFromCanvas, webHostGl, getWebSurfaceCanvas } from '@flighthq/host-web';
+import {
+  createWebImageResourceFromCanvas,
+  webHostGl,
+  getWebSurfaceCanvas,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import {
   scene3DGlPipeline,
   addNodeChild,
@@ -27,6 +33,8 @@ import {
   registerRenderer,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 
 import { render } from './render';
@@ -38,7 +46,9 @@ const INSTANCE_COUNT = 24;
 
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
-const producerGlSurface = createGlSurface(webHostGl, PRODUCER_WIDTH, PRODUCER_HEIGHT, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const producerGlSurface = createGlSurface(webHostGl, appWindow, PRODUCER_WIDTH, PRODUCER_HEIGHT, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (producerGlSurface === null) throw new Error('Failed to acquire WebGL2 context');

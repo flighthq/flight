@@ -1,6 +1,12 @@
+import { createApplicationWindow, openWindow } from '@flighthq/application';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { webHostWgpuContext, appendWebSurface } from '@flighthq/host-web';
+import {
+  webHostWgpuContext,
+  appendWebSurface,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -20,11 +26,12 @@ import { drawWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3
 import { createWgpuSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
-const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 320, 240);
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 320, 240);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
-const target = wgpuSurface.target;
 
 const registries = createEmptyWgpuRegistries();
 const pipeline = createWgpuPipeline({
@@ -37,7 +44,7 @@ const pipeline = createWgpuPipeline({
 });
 
 const acquisition = wgpuSurface.acquisition;
-export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
