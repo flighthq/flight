@@ -1,11 +1,10 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { webSurfaceCreateCapability } from '@flighthq/host-web';
+import { createWebHostTarget, webHostWgpuContext, webSurfaceCreateCapability } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuPipeline,
   createWgpuRenderState,
@@ -21,10 +20,11 @@ const canvas = createSurface(webSurfaceCreateCapability, 320, 240);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const target = createWebHostTarget(canvas);
+
+const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, createWgpuPipeline(createEmptyWgpuRegistries()), {
