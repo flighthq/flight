@@ -1,4 +1,9 @@
-import { createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostWgpuContext,
+  createWebImageResourceFromCanvas,
+  webSurfaceCreateCapability,
+} from '@flighthq/host-web';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
@@ -14,7 +19,6 @@ import {
   createTexture,
   createTextureAtlas,
   createVector3,
-  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -45,10 +49,12 @@ const canvas = createSurface(webSurfaceCreateCapability, 800 * pixelRatio, 600 *
 canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
-const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+
+const target = createWebHostTarget(canvas);
+
+const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

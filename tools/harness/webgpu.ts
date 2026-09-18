@@ -1,4 +1,6 @@
 import {
+  createWebHostTarget,
+  webHostWgpuContext,
   webSurfaceCreateCapability,
   webCanvasRenderSurfaceCreator,
   webHostImage,
@@ -14,7 +16,6 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createMatrix,
-  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -71,10 +72,10 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   canvas.style.height = `${height}px`;
   document.body.appendChild(canvas);
 
-  const webWgpuHost = createWebWgpuHostBackend();
-  const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+  const target = createWebHostTarget(canvas);
+  const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
   if (acquisition === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
-  const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+  const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
     format: acquisition.format,
   });
   const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

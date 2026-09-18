@@ -1,4 +1,9 @@
-import { createWebImageResourceFromCanvas, webSurfaceCreateCapability } from '@flighthq/host-web';
+import {
+  createWebHostTarget,
+  webHostWgpuContext,
+  createWebImageResourceFromCanvas,
+  webSurfaceCreateCapability,
+} from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
 // committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
@@ -20,7 +25,6 @@ import {
   createTexture,
   createTextureAtlas,
   createVelocityField,
-  createWebWgpuHostBackend,
   createWgpuAcquisition,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -67,10 +71,11 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.appendChild(canvas);
 
-const webWgpuHost = createWebWgpuHostBackend();
-const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);
+const target = createWebHostTarget(canvas);
+
+const acquisition = await createWgpuAcquisition(webHostWgpuContext, target);
 if (acquisition === null) throw new Error('WebGPU is unavailable in this environment');
-export const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
