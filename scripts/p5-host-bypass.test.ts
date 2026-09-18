@@ -192,31 +192,33 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   // ★ THE OWNERSHIP FACT IS NOW ENFORCED BY THE EXPLICIT CAPABILITY SEAM. The mutation that proves the
-  // gate still bites is a page that reaches for document.createElement('canvas') instead of
-  // createSurface(webSurfaceCreateCapability, ...).
+  // gate still bites is a page that reaches for document.createElement('canvas') instead of allocating
+  // its drawable through createWgpuSurface(webHostWgpuContext, ...).
   it('mutation-proves a functional WGPU consumer cannot create its own canvas', () => {
     const file = 'functional/scenes/camera-orthographic.webgpu.ts';
     const source = readFileSync(join(ROOT, file), 'utf8').replace(
-      /createSurface\([^)]*\)/,
+      /await createWgpuSurface\([^)]*\)/,
       "document.createElement('canvas')",
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
-      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
+      expect.stringContaining(
+        "presentation surface 'target' does not come from createWgpuSurface or createWebHostTargetFromElement",
+      ),
     ]);
   });
 
   it('mutation-proves the shared functional WebGPU harness cannot create its own canvas', () => {
     const file = 'tools/harness/webgpu.ts';
     const source = readFileSync(join(ROOT, file), 'utf8').replace(
-      /createSurface\([^)]*\)/,
+      /await createWgpuSurface\([^)]*\)/,
       "document.createElement('canvas')",
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
-      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
+      expect.stringContaining(
+        "presentation surface 'target' does not come from createWgpuSurface or createWebHostTargetFromElement",
+      ),
     ]);
   });
 
@@ -224,10 +226,11 @@ describe('P5 host-bypass derived gate', () => {
   // bypass with its own kind and budget, and this gate flagging it would make the two indistinguishable.
   it('does not flag a scratch canvas a WGPU scene paints texture content into', () => {
     const source = [
-      "import { webSurfaceCreateCapability } from '@flighthq/host-web';",
-      'const canvas = createSurface(webSurfaceCreateCapability, 800, 600);',
-      'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
-      'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas);',
+      "import { webHostWgpuContext } from '@flighthq/host-web';",
+      'const surface = await createWgpuSurface(webHostWgpuContext, 800, 600);',
+      'const target = surface.target;',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, target);',
+      'const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, target);',
       "const face = document.createElement('canvas');",
     ].join('\n');
 
@@ -236,12 +239,13 @@ describe('P5 host-bypass derived gate', () => {
 
   it('mutation-proves the host-web import is required, not just the call', () => {
     const source = [
-      'const canvas = createSurface(webSurfaceCreateCapability, 800, 600);',
-      'const acquisition = await createWgpuAcquisition(webWgpuHost, canvas);',
+      'const surface = await createWgpuSurface(webHostWgpuContext, 800, 600);',
+      'const target = surface.target;',
+      'const acquisition = await createWgpuAcquisition(webWgpuHost, target);',
     ].join('\n');
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures('functional/scenes/probe.webgpu.ts', source)).toEqual([
-      expect.stringContaining('does not import webSurfaceCreateCapability from @flighthq/host-web'),
+      expect.stringContaining('does not import webHostWgpuContext from @flighthq/host-web'),
     ]);
   });
 
