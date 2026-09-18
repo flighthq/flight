@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createWebWgpuHostBackend, initializeWebWgpuHostBackend } from './wgpuHost';
+import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
@@ -16,11 +16,12 @@ beforeAll(installWgpuMock);
 
 const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
-describe('createWebWgpuHostBackend', () => {
+describe('createTestWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
-    const backend = createWebWgpuHostBackend();
+    const backend = createTestWgpuHostBackend();
     const canvas = document.createElement('canvas');
-    const acquisition = await backend.acquire(canvas, {});
+    const target = createTestHostTarget(canvas);
+    const acquisition = await backend.acquire(target, {});
     const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
     const destroy = vi.spyOn(acquisition.device, 'destroy');
 
@@ -31,8 +32,10 @@ describe('createWebWgpuHostBackend', () => {
   });
 
   it('tears down whatever it is handed, leaving the ownership decision to the caller', async () => {
-    const backend = createWebWgpuHostBackend();
-    const acquired = await backend.acquire(document.createElement('canvas'), {});
+    const backend = createTestWgpuHostBackend();
+    const canvas = document.createElement('canvas');
+    const target = createTestHostTarget(canvas);
+    const acquired = await backend.acquire(target, {});
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
@@ -52,15 +55,17 @@ describe('createWebWgpuHostBackend', () => {
       },
     });
     try {
-      expect(createWebWgpuHostBackend().isSupported()).toBe(false);
+      expect(createTestWgpuHostBackend().isSupported()).toBe(false);
     } finally {
       installWgpuMock();
     }
   });
 
   it('routes acquisition and release through a caller-provided backend', async () => {
-    const web = createWebWgpuHostBackend();
-    const acquired = await web.acquire(document.createElement('canvas'), {});
+    const web = createTestWgpuHostBackend();
+    const canvas = document.createElement('canvas');
+    const target = createTestHostTarget(canvas);
+    const acquired = await web.acquire(target, {});
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
@@ -72,10 +77,10 @@ describe('createWebWgpuHostBackend', () => {
       out.release = vi.fn();
       return finishEntity(out);
     })();
-    const canvas = document.createElement('canvas');
+    const routeTarget = createTestHostTarget(document.createElement('canvas'));
 
-    const routed = await createWgpuAcquisition(backend, canvas);
-    expect(backend.acquire).toHaveBeenCalledWith(canvas, {});
+    const routed = await createWgpuAcquisition(backend, routeTarget);
+    expect(backend.acquire).toHaveBeenCalledWith(routeTarget, {});
     expect(routed?.device).toBe(acquisition.device);
     expect(routed?.format).toBe(acquisition.format);
 
@@ -87,8 +92,10 @@ describe('createWebWgpuHostBackend', () => {
   });
 
   it('never releases host handles when a state built on the device is destroyed', async () => {
-    const web = createWebWgpuHostBackend();
-    const acquired = await web.acquire(document.createElement('canvas'), {});
+    const web = createTestWgpuHostBackend();
+    const canvas = document.createElement('canvas');
+    const target = createTestHostTarget(canvas);
+    const acquired = await web.acquire(target, {});
     const destroy = vi.spyOn(acquired.device, 'destroy');
     const unconfigure = vi.spyOn(acquired.context, 'unconfigure');
 
@@ -101,11 +108,5 @@ describe('createWebWgpuHostBackend', () => {
     destroy.mockRestore();
     unconfigure.mockRestore();
     web.release(acquired);
-  });
-});
-
-describe('initializeWebWgpuHostBackend', () => {
-  it('is the construction initializer of createWebWgpuHostBackend', () => {
-    expect(typeof initializeWebWgpuHostBackend).toBe('function');
   });
 });

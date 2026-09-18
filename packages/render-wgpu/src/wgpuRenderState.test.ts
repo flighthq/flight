@@ -31,7 +31,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createWebWgpuHostBackend } from './wgpuHost';
+import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
@@ -72,7 +72,7 @@ beforeAll(() => {
 });
 
 const _testPipeline = createWgpuPipeline(createEmptyWgpuRegistries());
-const _webBackend = createWebWgpuHostBackend();
+const _webBackend = createTestWgpuHostBackend();
 
 function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
   return createWgpuRenderStateWithPipeline(device, _testPipeline, options);
@@ -127,7 +127,10 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Ren
 
 describe('createWgpuAcquisition', () => {
   it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
-    const acquisition = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(
+      _webBackend,
+      createTestHostTarget(document.createElement('canvas')),
+    );
 
     expect(acquisition).not.toBeNull();
     expect(acquisition!.ownership).toBe('caller');
@@ -147,7 +150,9 @@ describe('createWgpuAcquisition', () => {
       release: vi.fn(),
     });
 
-    await expect(createWgpuAcquisition(failingBackend, document.createElement('canvas'))).resolves.toBeNull();
+    await expect(
+      createWgpuAcquisition(failingBackend, createTestHostTarget(document.createElement('canvas'))),
+    ).resolves.toBeNull();
   });
 });
 
@@ -454,7 +459,10 @@ describe('createWgpuRenderState', () => {
     // The state is "how to talk to the GPU" and the screen target is "which surface a frame lands on".
     // Keeping them apart is what lets one state render to several windows, and lets an offscreen state
     // exist without inventing a canvas for it.
-    const acquisition = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
+    const acquisition = await createWgpuAcquisition(
+      _webBackend,
+      createTestHostTarget(document.createElement('canvas')),
+    );
     const state = createWgpuRenderState(acquisition!.device, { format: acquisition!.format });
 
     expect(state.device).toBe(acquisition!.device);
@@ -847,7 +855,7 @@ describe('isWgpuSupported', () => {
       },
     });
     try {
-      const unsupportedBackend = createWebWgpuHostBackend();
+      const unsupportedBackend = createTestWgpuHostBackend();
       expect(isWgpuSupported(unsupportedBackend)).toBe(false);
     } finally {
       installWgpuMock();
@@ -884,7 +892,7 @@ describe('releaseWgpuAcquisition', () => {
   // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
   // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
   it('releases caller-owned handles, which Flight itself never does', async () => {
-    const acquired = await createWgpuAcquisition(_webBackend, document.createElement('canvas'));
+    const acquired = await createWgpuAcquisition(_webBackend, createTestHostTarget(document.createElement('canvas')));
     const acquisition = acquired!;
     const released: Readonly<WgpuHostAcquisition>[] = [];
     const recordingBackend = entityHostBackend({

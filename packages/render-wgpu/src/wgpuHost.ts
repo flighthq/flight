@@ -1,14 +1,30 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, WgpuHostAcquisition, HostWgpuCapability } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  HostTarget,
+  HostWgpuCapability,
+  WgpuHostAcquisition,
+  WgpuSurfaceAttachResult,
+} from '@flighthq/types/contract';
 
-export function createWebWgpuHostBackend(): HostWgpuCapability {
+export function createTestHostTarget(canvas: HTMLCanvasElement): HostTarget {
+  const target = allocateEntity<HostTarget>();
+  (target as EntityConstruction<HostTarget>).__brand = 'HostTarget' as const;
+  _testTargets.set(target, canvas);
+  return target;
+}
+
+export function createTestWgpuHostBackend(): HostWgpuCapability {
   const out = allocateEntity<HostWgpuCapability>();
-  initializeWebWgpuHostBackend(out);
+  initializeTestWgpuHostBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
-  out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
+function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
+  out.acquire = async (target, options): Promise<WgpuHostAcquisition> => {
+    const canvas = _testTargets.get(target);
+    if (canvas === undefined) throw new Error('Test target not registered.');
+
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
 
@@ -17,12 +33,8 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuCap
     );
     if (adapter === null) throw new Error('Failed to get WebGPU adapter.');
 
-    // The forward-lit 3D pipeline binds 5 groups (Frame, Draw, Material, Shadow, Ibl); request 5
-    // only when the adapter advertises it so baseline-4 adapters retain the portable paths.
     const requiredLimits: Record<string, number> = {};
     if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
-    // Compression features have to be enabled when the device is created. Unsupported families
-    // retain their CPU decode fallback.
     const requiredFeatures = (
       ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
     ).filter((feature) => adapter.features.has(feature));
@@ -33,32 +45,32 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuCap
 
     try {
       const format = options.format ?? gpu.getPreferredCanvasFormat();
-      const context = surface.getContext('webgpu');
+      const context = canvas.getContext('webgpu');
       if (context === null) throw new Error('Failed to get WebGPU canvas context.');
       const acquisition = allocateEntity<WgpuHostAcquisition>();
       acquisition.context = context;
       acquisition.device = device;
       acquisition.format = format;
       acquisition.ownership = 'flight';
-      acquisition.surface = surface;
+      acquisition.surface = canvas;
       return finishEntity(acquisition);
     } catch (error) {
       device.destroy();
       throw error;
     }
   };
-  out.attachSurface = (surface, attachment): GPUCanvasContext | null => {
-    const context = surface.getContext('webgpu');
+  out.attachSurface = (target, attachment): WgpuSurfaceAttachResult | null => {
+    const canvas = _testTargets.get(target);
+    if (canvas === undefined) return null;
+    const context = canvas.getContext('webgpu');
     if (context === null) return null;
-    // COPY_SRC lets the swap-chain texture be read back with copyTextureToBuffer. It is the only reliable
-    // way to read a Wgpu frame in headless/software contexts, and it also backs user-facing screenshots.
     context.configure({
       device: attachment.device,
       format: attachment.format,
       alphaMode: attachment.alphaMode,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
-    return context;
+    return { context, surface: canvas };
   };
   out.isSupported = (): boolean => {
     return getWebWgpu() !== null;
@@ -68,6 +80,8 @@ export function initializeWebWgpuHostBackend(out: EntityConstruction<HostWgpuCap
     acquisition.device.destroy();
   };
 }
+
+const _testTargets = new WeakMap<HostTarget, HTMLCanvasElement>();
 
 function getWebWgpu(): GPU | null {
   if (typeof navigator === 'undefined') return null;

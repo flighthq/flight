@@ -68,6 +68,7 @@ export { webHostBitmap } from './webBitmapHost';
 export { webHostGlGroup } from './webGlHost';
 export { webHostImageGroup } from './webImageHost';
 export { webHostSurfaceGroup } from './webSurfaceHost';
+export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
 export { webHostHaptics } from './webHaptics';
 export { webHostHapticsGroup } from './webHapticsHost';

@@ -157,27 +157,25 @@ export function createWebHostTarget(element: HTMLElement): HostTarget {
   return target;
 }
 
+export function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null {
+  const element = _hostTargets.get(target);
+  if (element === undefined) return null;
+  if (typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) return null;
+  return element;
+}
+
 export function initializeWebHostTarget(target: EntityConstruction<HostTarget>, element: HTMLElement): void {
   target.__brand = 'HostTarget' as const;
   _hostTargets.set(target, element);
 }
 
+let _hostTargets = new WeakMap<HostTarget, HTMLElement>();
+const _hostTargetSubscriptionCleanups = new Set<() => void>();
+
 export function resetWebHostTargetBackendForTest(): void {
   for (const cleanup of [..._hostTargetSubscriptionCleanups]) cleanup();
   _hostTargetSubscriptionCleanups.clear();
   _hostTargets = new WeakMap();
-}
-
-let _hostTargets = new WeakMap<HostTarget, HTMLElement>();
-const _hostTargetSubscriptionCleanups = new Set<() => void>();
-
-// The canvas a GL or surface hook addresses, or null when the target is unregistered or is not a
-// canvas. Both of those are the same sentinel to the capability: there is no drawable to operate on.
-function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null {
-  const element = _hostTargets.get(target);
-  if (element === undefined) return null;
-  if (typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) return null;
-  return element;
 }
 
 function noop(): void {}

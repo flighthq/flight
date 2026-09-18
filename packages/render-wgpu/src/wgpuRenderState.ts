@@ -7,6 +7,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
+  HostTarget,
   HostWgpuCapability,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
@@ -21,7 +22,6 @@ import type {
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
-  WgpuScreenSurface,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
@@ -39,11 +39,11 @@ const RING_SLOT_COUNT = 4096;
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
   hostWgpu: Readonly<HostWgpuCapability>,
-  surface: WgpuScreenSurface,
+  target: HostTarget,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
   try {
-    const acquired = await hostWgpu.acquire(surface, options);
+    const acquired = await hostWgpu.acquire(target, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);

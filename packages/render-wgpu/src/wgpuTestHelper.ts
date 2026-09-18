@@ -7,7 +7,7 @@ import type {
   WgpuScreenRenderTargetOptions,
 } from '@flighthq/types/contract';
 
-import { createWebWgpuHostBackend } from './wgpuHost';
+import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
@@ -310,7 +310,8 @@ export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = 
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
-  const acquisition = await createWgpuAcquisition(_testWgpuBackend, canvas);
+  const target = createTestHostTarget(canvas);
+  const acquisition = await createWgpuAcquisition(_testWgpuBackend, target);
   if (acquisition === null) throw new Error('createWgpuRenderStateForTest: the mock adapter refused a device');
   return createWgpuRenderState(acquisition.device, _testWgpuPipeline, { format: acquisition.format, ...options });
 }
@@ -326,7 +327,8 @@ export function createWgpuScreenRenderTargetForTest(
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const screen = createWgpuScreenRenderTarget(_testWgpuBackend, state.device, canvas, {
+  const target = createTestHostTarget(canvas);
+  const screen = createWgpuScreenRenderTarget(_testWgpuBackend, state.device, target, {
     format: state.format,
     ...options,
   });
@@ -334,7 +336,7 @@ export function createWgpuScreenRenderTargetForTest(
   return screen;
 }
 
-const _testWgpuBackend = createWebWgpuHostBackend();
+const _testWgpuBackend = createTestWgpuHostBackend();
 const _testWgpuPipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
 export function installWgpuMock(): void {

@@ -26,15 +26,14 @@ describe('createWgpuSurface', () => {
       isSupported: () => true,
       release() {},
     });
-    const screenSurface = { width: 800, height: 600, getContext: () => null };
 
-    const surface = await createWgpuSurface(capability, target, screenSurface);
+    const surface = await createWgpuSurface(capability, target);
 
     expect(surface).not.toBeNull();
     expect(surface!.__brand).toBe('WgpuSurface');
     expect(surface!.target).toBe(target);
     expect(surface!.acquisition).toBe(acquisition);
-    expect(acquire).toHaveBeenCalledExactlyOnceWith(screenSurface, {});
+    expect(acquire).toHaveBeenCalledExactlyOnceWith(target, {});
   });
 
   it('passes options to acquire', async () => {
@@ -47,12 +46,11 @@ describe('createWgpuSurface', () => {
       isSupported: () => true,
       release() {},
     });
-    const screenSurface = { width: 800, height: 600, getContext: () => null };
     const options = { powerPreference: 'high-performance' as const };
 
-    await createWgpuSurface(capability, target, screenSurface, options);
+    await createWgpuSurface(capability, target, options);
 
-    expect(acquire).toHaveBeenCalledExactlyOnceWith(screenSurface, options);
+    expect(acquire).toHaveBeenCalledExactlyOnceWith(target, options);
   });
 });
 
@@ -67,9 +65,8 @@ describe('destroyWgpuSurface', () => {
       isSupported: () => true,
       release,
     });
-    const screenSurface = { width: 800, height: 600, getContext: () => null };
 
-    const surface = (await createWgpuSurface(capability, target, screenSurface))!;
+    const surface = (await createWgpuSurface(capability, target))!;
     destroyWgpuSurface(capability, surface);
 
     expect(release).toHaveBeenCalledExactlyOnceWith(acquisition);

@@ -39,21 +39,19 @@ export interface WgpuHostAcquisitionOptions {
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuCapability extends Entity {
-  acquire(surface: WgpuScreenSurface, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
-  // Binds a device to a presentation surface and returns its configured swap-chain context, or null when
-  // the surface cannot present. Separate from `acquire` because a device outlives any one surface: a
-  // second window attaches its own surface to the device already in hand, and only the host knows how a
-  // surface yields a context.
-  attachSurface(surface: WgpuScreenSurface, attachment: Readonly<WgpuSurfaceAttachment>): GPUCanvasContext | null;
+  acquire(target: HostTarget, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  // Binds a device to a presentation surface and returns its configured swap-chain context together with
+  // the resolved presentation surface, or null when the target cannot present. Separate from `acquire`
+  // because a device outlives any one surface: a second window attaches its own surface to the device
+  // already in hand, and only the host knows how a target yields a drawable.
+  attachSurface(target: HostTarget, attachment: Readonly<WgpuSurfaceAttachment>): WgpuSurfaceAttachResult | null;
   isSupported(): boolean;
   release(acquisition: Readonly<WgpuHostAcquisition>): void;
 }
 
-// Anything that can hand out a WebGPU presentation context and report its own live size: an
-// HTMLCanvasElement, an OffscreenCanvas, or a native host's surface object. Typed structurally so the
-// render packages name no DOM type and a native host needs no web shim.
-export interface WgpuScreenSurface extends WgpuPresentationSurface {
-  getContext(contextId: 'webgpu'): GPUCanvasContext | null;
+export interface WgpuSurfaceAttachResult {
+  readonly context: GPUCanvasContext;
+  readonly surface: WgpuPresentationSurface;
 }
 
 export interface WgpuSurfaceAttachment {
@@ -63,3 +61,4 @@ export interface WgpuSurfaceAttachment {
   readonly format: GPUTextureFormat;
 }
 import type { Entity } from './Entity';
+import type { HostTarget } from './HostTarget';
