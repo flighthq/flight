@@ -4,7 +4,9 @@ import {
   webHostImage,
   webImageSurfaceCreator,
   appendWebSurface,
-  webHostTargetDisplay,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -57,6 +59,8 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -66,11 +70,14 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const glSurface = createGlSurface(webHostGl, width * pixelRatio, height * pixelRatio, {
+  const appWindow = createApplicationWindow();
+  openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+
+  const glSurface = createGlSurface(webHostGl, appWindow, width * pixelRatio, height * pixelRatio, {
     contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true, ...options.contextAttributes },
   });
   if (glSurface === null) throw new Error('createGlTarget: failed to acquire WebGL2 context');
-  setSurfaceDisplaySize(webHostTargetDisplay, glSurface, width, height);
+  setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
   appendWebSurface(glSurface, document.body);
 
   const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {

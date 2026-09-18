@@ -532,7 +532,10 @@ export function openWindow(
 
 // Prepares a provider-bound target for direct input. The provider owns platform details such as
 // browser CSS and canvas compositing; the application contract only carries opaque identity.
-export function prepareElementForInput(hostInputTarget: Readonly<HostInputTargetCapability>, target: InputTargetHandle): void {
+export function prepareElementForInput(
+  hostInputTarget: Readonly<HostInputTargetCapability>,
+  target: InputTargetHandle,
+): void {
   hostInputTarget.prepare(target);
 }
 

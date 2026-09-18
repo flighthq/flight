@@ -101,7 +101,7 @@ const HOST_GROUPS = [
   'socket',
   'softKeyboard',
   'statusBar',
-  'target',
+  'surface',
   'textSegment',
   'textShaper',
   'tray',

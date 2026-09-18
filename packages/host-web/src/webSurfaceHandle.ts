@@ -1,4 +1,5 @@
-import { getSurfaceHandle } from '@flighthq/surface/contract';
+import { finishEntity } from '@flighthq/entity/contract';
+import { allocateSurface, getSurfaceHandle } from '@flighthq/surface/contract';
 import type { ApplicationWindow, NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
 
 import { getWebWindowHandle } from './webWindow';
@@ -7,7 +8,7 @@ import { getWebWindowHandle } from './webWindow';
 // creates through here: on the web the element factory and the drawable are the same call, which is why no
 // separate drawable-allocation capability exists. Presentation — anchoring in the document, display size —
 // is deliberately not done here.
-export function createWebSurfaceCanvas(
+export function allocateWebSurfaceCanvas(
   win: Readonly<ApplicationWindow>,
   width: number,
   height: number,
@@ -18,6 +19,12 @@ export function createWebSurfaceCanvas(
   canvas.width = width;
   canvas.height = height;
   return canvas;
+}
+
+// Builds a Surface around an element the caller already owns — an existing canvas in a page Flight did
+// not build. The caller keeps ownership of the element; nothing here appends or sizes it.
+export function createWebSurfaceFromElement(element: HTMLElement): Surface {
+  return finishEntity(allocateSurface<Surface>(element));
 }
 
 // The canvas a surface was built around, or null when its drawable is not one — a DOM-rendered container,

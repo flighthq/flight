@@ -2,7 +2,9 @@ import {
   webHostGl,
   createWebImageResourceFromCanvas,
   appendWebSurface,
-  webHostTargetDisplay,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
@@ -31,6 +33,8 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -70,11 +74,13 @@ declareExpectedImageDescription(
 // (depth off) before the scene draws over it.
 
 const pixelRatio = window.devicePixelRatio || 1;
-const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setSurfaceDisplaySize(webHostTargetDisplay, glSurface, 800, 600);
+setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
 export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {

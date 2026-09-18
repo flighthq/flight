@@ -16,20 +16,6 @@ beforeAll(installWgpuMock);
 
 const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
-describe('createTestWgpuSurface', () => {
-  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
-
-  it('builds a surface the test host backend can resolve back to its canvas', () => {
-    const canvas = document.createElement('canvas');
-    const surface = createTestWgpuSurface(canvas);
-
-    // The drawable lives on the runtime, not on the entity: nothing about the canvas is visible on the
-    // public surface, and the host is the only code that narrows it back.
-    expect(Object.keys(surface)).toEqual([]);
-    expect(() => createTestWgpuHostBackend().attachSurface(surface, ATTACHMENT)).not.toThrow();
-  });
-});
-
 describe('createTestWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
     const backend = createTestWgpuHostBackend();
@@ -122,5 +108,19 @@ describe('createTestWgpuHostBackend', () => {
     destroy.mockRestore();
     unconfigure.mockRestore();
     web.release(acquired);
+  });
+});
+
+describe('createTestWgpuSurface', () => {
+  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
+
+  it('builds a surface the test host backend can resolve back to its canvas', () => {
+    const canvas = document.createElement('canvas');
+    const surface = createTestWgpuSurface(canvas);
+
+    // The drawable lives on the runtime, not on the entity: nothing about the canvas is visible on the
+    // public surface, and the host is the only code that narrows it back.
+    expect(Object.keys(surface)).toEqual([]);
+    expect(() => createTestWgpuHostBackend().attachSurface(surface, ATTACHMENT)).not.toThrow();
   });
 });

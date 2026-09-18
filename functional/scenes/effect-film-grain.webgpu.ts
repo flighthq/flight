@@ -1,4 +1,10 @@
-import { webHostWgpuContext, appendWebSurface, webHostTargetDisplay } from '@flighthq/host-web';
+import {
+  webHostWgpuContext,
+  appendWebSurface,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -34,6 +40,8 @@ import {
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
+  createApplicationWindow,
+  openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -48,14 +56,15 @@ declareExpectedImageDescription(
 // mid-gray fill, fixed seed for a deterministic capture. Wgpu render-state init is async; the effect
 // pipeline runs between beginWgpuRenderPass and submitWgpuFrame.
 const pixelRatio = window.devicePixelRatio || 1;
-const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 600);
+setSurfaceDisplaySize(webHostSurfaceDisplay, wgpuSurface, 800, 600);
 appendWebSurface(wgpuSurface, document.body);
-const target = wgpuSurface.target;
 const acquisition = wgpuSurface.acquisition;
 
-export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, target, {
+export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
 export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {

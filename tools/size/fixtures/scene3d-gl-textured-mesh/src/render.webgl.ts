@@ -1,7 +1,8 @@
+import { createApplicationWindow, openWindow } from '@flighthq/application';
 import { createBitmap } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { webHostGl, appendWebSurface } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -23,7 +24,9 @@ import { createGlSurface } from '@flighthq/surface';
 import { createTexture2D } from '@flighthq/texture';
 import { UnlitMaterialKind } from '@flighthq/types';
 
-const glSurface = createGlSurface(webHostGl, 320, 240, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, 320, 240, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');

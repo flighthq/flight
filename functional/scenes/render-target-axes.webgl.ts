@@ -1,5 +1,13 @@
+import { createApplicationWindow, openWindow } from '@flighthq/application';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { webHostGl, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
+import {
+  webHostGl,
+  appendWebSurface,
+  getWebSurfaceCanvas,
+  webHostSurfaceDisplay,
+  webHostWindowGeometry,
+  webHostWindowLifecycle,
+} from '@flighthq/host-web';
 import {
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
@@ -31,12 +39,14 @@ export const scale = window.devicePixelRatio || 1;
 // heuristic has no split to measure, so assertRender below checks the actual attachment color.
 export const minCoverage = 0;
 
-const glSurface = createGlSurface(webHostGl, width * scale, height * scale, {
+const appWindow = createApplicationWindow();
+openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
+const glSurface = createGlSurface(webHostGl, appWindow, width * scale, height * scale, {
   antialias: false,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setSurfaceDisplaySize(webHostTargetDisplay, glSurface, width, height);
+setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 

@@ -1,8 +1,9 @@
-import { createApplicationWindow } from '@flighthq/application/contract';
+import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 
 import {
   createWebFullscreenTargetHandle,
+  getWebWindowHandle,
   createWebWindowResizeTargetHandle,
   initializeWebFullscreenTargetHandle,
   initializeWebWindowResizeTargetHandle,
@@ -50,6 +51,19 @@ describe('createWebWindowResizeTargetHandle', () => {
     webHostWindowGeometry.subscribeResize(createWebWindowResizeTargetHandle(element), vi.fn());
 
     expect(observe).toHaveBeenCalledWith(element);
+  });
+});
+
+describe('getWebWindowHandle', () => {
+  it('returns the page window an opened ApplicationWindow is attached to', () => {
+    const win = createApplicationWindow();
+    openWindow(webHostWindowLifecycle, webHostWindowGeometry, win, {});
+
+    expect(getWebWindowHandle(win)).toBe(window);
+  });
+
+  it('returns null for a window that was never opened or attached', () => {
+    expect(getWebWindowHandle(createApplicationWindow())).toBeNull();
   });
 });
 

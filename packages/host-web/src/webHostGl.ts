@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getWebGlContext } from './webGlContext';
-import { createWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export function createWebHostGl(): HostGlCapability {
   const out = allocateEntity<HostGlCapability>();
@@ -26,7 +26,7 @@ export function initializeWebHostGl(out: EntityConstruction<HostGlCapability>): 
   // Allocation only. Whether the browser will grant WebGL2 on the new canvas is reported by acquire, so
   // the two sentinels stay distinct: null here means no drawable, null there means no context.
   out.create = (win: Readonly<ApplicationWindow>, width: number, height: number) =>
-    createWebSurfaceCanvas(win, width, height);
+    allocateWebSurfaceCanvas(win, width, height);
   out.release = (_surface: Readonly<Surface>) => {
     // The DOM owns context lifetime: a canvas's WebGL2 context is released with the canvas, so the web
     // host holds no GPU resource to free. A native host frees one here.

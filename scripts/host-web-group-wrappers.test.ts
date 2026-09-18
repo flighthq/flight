@@ -43,7 +43,7 @@ const GROUP_MODULES = [
   { file: 'webSocketHost.ts', group: 'socket', name: 'webHostSocketGroup' },
   { file: 'webSoftKeyboardHost.ts', group: 'softKeyboard', name: 'webHostSoftKeyboard' },
   { file: 'webStatusBarHost.ts', group: 'statusBar', name: 'webHostStatusBar' },
-  { file: 'webTargetHost.ts', group: 'target', name: 'webHostTargetGroup' },
+  { file: 'webSurfaceHost.ts', group: 'surface', name: 'webHostSurfaceGroup' },
   { file: 'webVideoHost.ts', group: 'video', name: 'webHostVideoGroup' },
   { file: 'webWindowHost.ts', group: 'window', name: 'webHostWindow' },
 ] as const;
