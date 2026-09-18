@@ -22,10 +22,10 @@ import type {
   CanvasRenderSurfaceCreator,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
+  EntityConstruction,
   RenderEffect,
   RenderEffectPipelineOptions,
   RenderTargetClear,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass';

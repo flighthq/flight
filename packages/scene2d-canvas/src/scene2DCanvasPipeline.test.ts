@@ -2,7 +2,6 @@ import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
-  EntityRuntimeKey,
   MorphShapeKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -27,10 +26,6 @@ describe('scene2DCanvasPipeline', () => {
 
   beforeAll(() => {
     registries = getCanvasPipelineRegistries(scene2DCanvasPipeline);
-  });
-
-  it('is an Entity with EntityRuntimeKey', () => {
-    expect(EntityRuntimeKey in scene2DCanvasPipeline).toBe(true);
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {

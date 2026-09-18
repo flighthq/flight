@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { GlPipeline, GlRenderRegistries, EntityConstruction } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityConstruction, GlPipeline, GlRenderRegistries } from '@flighthq/types/contract';
 
 export function createEmptyGlRegistries(): GlRenderRegistries {
   const out = allocateEntity<GlRenderRegistries>();
@@ -10,10 +9,7 @@ export function createEmptyGlRegistries(): GlRenderRegistries {
 }
 
 export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
-  const pipeline = allocateEntity<GlPipeline>();
-  pipeline.registries = registries;
-  pipeline[EntityRuntimeKey] = { binding: null };
-  return pipeline;
+  return { registries } as GlPipeline;
 }
 
 export function getGlPipelineRegistries(pipeline: Readonly<GlPipeline>): Readonly<GlRenderRegistries> {

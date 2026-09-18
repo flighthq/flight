@@ -1,6 +1,5 @@
-import type { Entity } from './Entity';
 import type { WgpuRenderRegistries } from './WgpuRenderState';
 
-export interface WgpuPipeline extends Entity {
+export interface WgpuPipeline {
   readonly registries: Readonly<WgpuRenderRegistries>;
 }

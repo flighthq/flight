@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { WgpuPipeline, WgpuRenderRegistries, EntityConstruction } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityConstruction, WgpuPipeline, WgpuRenderRegistries } from '@flighthq/types/contract';
 
 export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
   const out = allocateEntity<WgpuRenderRegistries>();
@@ -10,10 +9,7 @@ export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
 }
 
 export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {
-  const pipeline = allocateEntity<WgpuPipeline>();
-  pipeline.registries = registries;
-  pipeline[EntityRuntimeKey] = { binding: null };
-  return pipeline;
+  return { registries } as WgpuPipeline;
 }
 
 export function getWgpuPipelineRegistries(pipeline: Readonly<WgpuPipeline>): Readonly<WgpuRenderRegistries> {

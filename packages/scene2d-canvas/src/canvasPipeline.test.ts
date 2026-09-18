@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { EntityRuntimeKey, RegistryEntryState, SpriteKind } from '@flighthq/types/contract';
+import { RegistryEntryState, SpriteKind } from '@flighthq/types/contract';
 
 import {
   createCanvasPipeline,
@@ -10,11 +10,6 @@ import {
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
 
 describe('createCanvasPipeline', () => {
-  it('returns an Entity with EntityRuntimeKey', () => {
-    const pipeline = createCanvasPipeline(createEmptyCanvasRegistries());
-    expect(EntityRuntimeKey in pipeline).toBe(true);
-  });
-
   it('carries the provided registries', () => {
     const registries = createEmptyCanvasRegistries();
     const pipeline = createCanvasPipeline(registries);
