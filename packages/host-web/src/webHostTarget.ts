@@ -154,7 +154,7 @@ export const webHostSurface = (() => {
 export function createWebHostTarget(element: HTMLElement): HostTarget {
   const target = allocateEntity<HostTarget>();
   initializeWebHostTarget(target, element);
-  return target;
+  return finishEntity(target);
 }
 
 export function getCanvasForTarget(target: HostTarget): HTMLCanvasElement | null {

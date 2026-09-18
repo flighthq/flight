@@ -11,7 +11,7 @@ export function createTestHostTarget(canvas: HTMLCanvasElement): HostTarget {
   const target = allocateEntity<HostTarget>();
   (target as EntityConstruction<HostTarget>).__brand = 'HostTarget' as const;
   _testTargets.set(target, canvas);
-  return target;
+  return finishEntity(target);
 }
 
 export function createTestWgpuHostBackend(): HostWgpuCapability {

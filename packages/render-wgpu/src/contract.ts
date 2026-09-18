@@ -7,7 +7,7 @@ export * from './wgpuExternalTexture';
 export * from './enableWgpuTextureResolverGuards';
 export * from './explainWgpuTextureResolution';
 export * from './wgpuFullscreenPass';
-export * from './wgpuHost';
+export * from './wgpuTestHelper';
 export * from './wgpuMaterialRegistry';
 export * from './wgpuMipmap';
 export * from './wgpuPipeline';

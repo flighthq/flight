@@ -202,8 +202,8 @@ describe('P5 host-bypass derived gate', () => {
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'canvas' does not come from createSurface"),
-      expect.stringContaining("presentation surface 'canvas' does not come from createSurface"),
+      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
+      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
     ]);
   });
 
@@ -215,8 +215,8 @@ describe('P5 host-bypass derived gate', () => {
     );
 
     expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
-      expect.stringContaining("presentation surface 'canvas' does not come from createSurface"),
-      expect.stringContaining("presentation surface 'canvas' does not come from createSurface"),
+      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
+      expect.stringContaining("presentation surface 'target' does not come from createSurface or createWebHostTarget"),
     ]);
   });
 

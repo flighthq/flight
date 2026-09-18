@@ -8,6 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 
 import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
+
+export { createTestHostTarget, createTestWgpuHostBackend };
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
