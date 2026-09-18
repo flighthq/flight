@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 const SELF = 'scripts/host-electron-canonical-surface.test.ts';
 const LEGACY =
-  /\b(?:ElectronBackendOptions|createElectron[A-Za-z0-9]*(?:Backend|Backends|Capabilities)|initializeElectron[A-Za-z0-9]*(?:Backend|Backends|Capabilities)|initialize(?:App|Menu|Power|Protocol|Screen|Shell|Tray)[A-Za-z0-9]*Backend|makeElectronShellCapabilities|registerElectronBackends)\b/gu;
+  /\b(?:ElectronBackendOptions|createElectron[A-Za-z0-9]*(?:Backend|Backends|Capabilities)|initializeElectron[A-Za-z0-9]*(?:Backend|Backends|Capabilities)|initialize(?:AppEvents|Menu|Power|Protocol|Screen|Shell|Tray)[A-Za-z0-9]*Backend|makeElectronShellCapabilities|registerElectronBackends)\b/gu;
 
 describe('Electron canonical Host surface', () => {
   it('keeps removed constructor and registrar names out of source, tests, examples, and prose', () => {

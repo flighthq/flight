@@ -8,12 +8,15 @@ import {
   getWebSurfaceCanvasHandle,
   getWebSurfaceElementHandle,
 } from './webSurfaceHandle';
-import { webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
+import { resetWebWindowBackendForTest, webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
 
 let pageWindow: AppWindow | undefined;
 
 function openPageWindow(): AppWindow {
   if (pageWindow === undefined) {
+    // One page Window binds to exactly one AppWindow, and the binding outlives the file that made it, so
+    // this releases whatever an earlier file attached before claiming it here.
+    resetWebWindowBackendForTest();
     pageWindow = createAppWindow();
     openWindow(webHostWindowLifecycle, webHostWindowGeometry, pageWindow, {});
   }

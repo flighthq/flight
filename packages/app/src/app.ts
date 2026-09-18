@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  App,
+  AppEvents,
   AppActivationPolicy,
   AppLoginItem,
   AppLoginItemLike,
@@ -50,25 +50,7 @@ export function addAppRecentDocument(
   hostAppRecentDocuments.addRecentDocument(path);
 }
 
-export function attachApp(
-  hostAppActivate: Readonly<HostAppActivateCapability>,
-  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedCapability>,
-  hostAppOpenFile: Readonly<HostAppOpenFileCapability>,
-  hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>,
-  hostAppReady: Readonly<HostAppReadyCapability>,
-  hostAppSecondInstance: Readonly<HostAppSecondInstanceCapability>,
-  app: App,
-): void {
-  detachApp(app);
-  attachAppActivate(hostAppActivate, app);
-  attachAppAllWindowsClosed(hostAppAllWindowsClosed, app);
-  attachAppOpenFile(hostAppOpenFile, app);
-  attachAppQuitRequest(hostAppQuitRequest, app);
-  attachAppReady(hostAppReady, app);
-  attachAppSecondInstance(hostAppSecondInstance, app);
-}
-
-export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateCapability>, app: App): void {
+export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateCapability>, app: AppEvents): void {
   replaceAppSubscription(
     app,
     'activate',
@@ -78,7 +60,7 @@ export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateCapab
 
 export function attachAppAllWindowsClosed(
   hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedCapability>,
-  app: App,
+  app: AppEvents,
 ): void {
   replaceAppSubscription(
     app,
@@ -87,7 +69,25 @@ export function attachAppAllWindowsClosed(
   );
 }
 
-export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileCapability>, app: App): void {
+export function attachAppEvents(
+  hostAppActivate: Readonly<HostAppActivateCapability>,
+  hostAppAllWindowsClosed: Readonly<HostAppAllWindowsClosedCapability>,
+  hostAppOpenFile: Readonly<HostAppOpenFileCapability>,
+  hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>,
+  hostAppReady: Readonly<HostAppReadyCapability>,
+  hostAppSecondInstance: Readonly<HostAppSecondInstanceCapability>,
+  app: AppEvents,
+): void {
+  detachAppEvents(app);
+  attachAppActivate(hostAppActivate, app);
+  attachAppAllWindowsClosed(hostAppAllWindowsClosed, app);
+  attachAppOpenFile(hostAppOpenFile, app);
+  attachAppQuitRequest(hostAppQuitRequest, app);
+  attachAppReady(hostAppReady, app);
+  attachAppSecondInstance(hostAppSecondInstance, app);
+}
+
+export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileCapability>, app: AppEvents): void {
   replaceAppSubscription(
     app,
     'openFile',
@@ -95,7 +95,7 @@ export function attachAppOpenFile(hostAppOpenFile: Readonly<HostAppOpenFileCapab
   );
 }
 
-export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>, app: App): void {
+export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitRequestCapability>, app: AppEvents): void {
   replaceAppSubscription(
     app,
     'quitRequest',
@@ -106,7 +106,7 @@ export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitReq
   );
 }
 
-export function attachAppReady(hostAppReady: Readonly<HostAppReadyCapability>, app: App): void {
+export function attachAppReady(hostAppReady: Readonly<HostAppReadyCapability>, app: AppEvents): void {
   replaceAppSubscription(
     app,
     'ready',
@@ -116,7 +116,7 @@ export function attachAppReady(hostAppReady: Readonly<HostAppReadyCapability>, a
 
 export function attachAppSecondInstance(
   hostAppSecondInstance: Readonly<HostAppSecondInstanceCapability>,
-  app: App,
+  app: AppEvents,
 ): void {
   replaceAppSubscription(
     app,
@@ -141,21 +141,21 @@ export function clearAppRecentDocuments(hostAppRecentDocuments: Readonly<HostApp
   hostAppRecentDocuments.clearRecentDocuments();
 }
 
-export function createApp(): App {
-  const out = allocateEntity<App>();
-  initializeApp(out);
+export function createAppEvents(): AppEvents {
+  const out = allocateEntity<AppEvents>();
+  initializeAppEvents(out);
   return finishEntity(out);
 }
 
-export function detachApp(app: App): void {
+export function detachAppEvents(app: AppEvents): void {
   const subscriptions = _subscriptions.get(app);
   if (subscriptions === undefined) return;
   _subscriptions.delete(app);
   for (const unsubscribe of Object.values(subscriptions)) unsubscribe?.();
 }
 
-export function disposeApp(app: App): void {
-  detachApp(app);
+export function disposeAppEvents(app: AppEvents): void {
+  detachAppEvents(app);
   clearSignal(app.onActivate);
   clearSignal(app.onAllWindowsClosed);
   clearSignal(app.onOpenFile);
@@ -212,7 +212,7 @@ export function hideApp(hostAppHide: Readonly<HostAppHideCapability>): void {
   hostAppHide.hideApp();
 }
 
-export function initializeApp(out: EntityConstruction<App>): void {
+export function initializeAppEvents(out: EntityConstruction<AppEvents>): void {
   out.onActivate = createSignal();
   out.onAllWindowsClosed = createSignal();
   out.onOpenFile = createSignal();
@@ -285,9 +285,9 @@ export function showApp(hostAppShow: Readonly<HostAppShowCapability>): void {
   hostAppShow.showApp();
 }
 
-const _subscriptions = new WeakMap<App, AppSubscriptions>();
+const _subscriptions = new WeakMap<AppEvents, AppSubscriptions>();
 
-function replaceAppSubscription(app: App, key: keyof AppSubscriptions, unsubscribe: () => void): void {
+function replaceAppSubscription(app: AppEvents, key: keyof AppSubscriptions, unsubscribe: () => void): void {
   const subscriptions = _subscriptions.get(app) ?? {};
   subscriptions[key]?.();
   subscriptions[key] = unsubscribe;
