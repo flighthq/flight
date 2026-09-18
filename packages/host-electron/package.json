@@ -40,7 +40,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/app": "*",
-    "@flighthq/application": "*",
+    "@flighthq/app": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/dialog": "*",
     "@flighthq/host": "*",

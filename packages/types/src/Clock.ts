@@ -2,7 +2,7 @@ import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // The shared time primitive: a node in a clock tree that turns a real per-frame delta into scaled,
-// pausable time. Driven by whoever owns the frame loop (@flighthq/application) via advanceClock on the
+// pausable time. Driven by whoever owns the frame loop (@flighthq/app) via advanceClock on the
 // root; time-driven consumers (tween, timeline, spritesheet) read deltaTime/elapsed instead of a raw
 // delta. Scale and pause compose down the tree — a child's effective rate is the product of its own and
 // every ancestor's scale, and any paused ancestor freezes the whole subtree. Times are in seconds.

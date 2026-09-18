@@ -33,7 +33,7 @@ function menuSelect(state: ElectronMenuState): HostMenuSelectCapability {
 
 // Maps Flight's menu slots onto Electron's Menu module. Flight menu items are plain templates with a
 // stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels those
-// clicks back through an explicit onSelect. Application-menu clicks go to the listener registered on the
+// clicks back through an explicit onSelect. AppLoop-menu clicks go to the listener registered on the
 // select slot; context-menu clicks resolve the popup Promise with the clicked id.
 //
 // The three slots are built together because `application` and `select` genuinely SHARE state: the

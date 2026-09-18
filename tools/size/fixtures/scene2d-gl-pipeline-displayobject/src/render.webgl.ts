@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -18,7 +18,7 @@ import { DisplayObjectKind, RegistryEntryState } from '@flighthq/types';
 
 // DisplayObject is a genuine non-visible container. This size-only control deliberately has no
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

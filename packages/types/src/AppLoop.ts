@@ -1,8 +1,8 @@
-import type { ApplicationWindow } from './ApplicationWindow';
+import type { AppWindow } from './AppWindow';
 import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
-export interface Application extends Entity {
+export interface AppLoop extends Entity {
   // Milliseconds elapsed since the previous frame, clamped to the loop's maxDeltaTime.
   deltaTime: number;
   // Total elapsed time in seconds since the loop started.
@@ -13,7 +13,7 @@ export interface Application extends Entity {
   interpolationAlpha: number;
   // Whether the loop is currently running (not stopped or paused).
   isRunning: boolean;
-  // Opt-in lifecycle signals, allocated by enableApplicationLifecycleSignals; null until enabled.
+  // Opt-in lifecycle signals, allocated by enableAppLoopLifecycleSignals; null until enabled.
   onActivate: Signal<() => void> | null;
   onDeactivate: Signal<() => void> | null;
   onError: Signal<(error: unknown) => void> | null;
@@ -21,6 +21,6 @@ export interface Application extends Entity {
   onFixedUpdate: Signal<(fixedDeltaTime: number) => void> | null;
   onRender: Signal<() => void>;
   onUpdate: Signal<(deltaTime: number) => void>;
-  // Managed windows registered with registerApplicationWindow.
-  windows: ApplicationWindow[];
+  // Managed windows registered with registerAppLoopWindow.
+  windows: AppWindow[];
 }

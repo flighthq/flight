@@ -30,7 +30,7 @@ import {
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -64,7 +64,7 @@ declareExpectedImageDescription(
 // falls to the dim ambient fill. The assertion confirms the in-cone side is clearly brighter than the
 // out-of-cone side — the signature of the cone-limited punctual shading wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

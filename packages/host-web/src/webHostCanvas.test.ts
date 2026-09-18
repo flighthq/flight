@@ -1,16 +1,16 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { ApplicationWindow } from '@flighthq/types/contract';
+import type { AppWindow } from '@flighthq/types/contract';
 
 import { createWebHostCanvas, initializeWebHostCanvas, webHostCanvas } from './webHostCanvas';
 import { createWebSurfaceFromElement } from './webSurfaceHandle';
 import { webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
 
-let pageWindow: ApplicationWindow | undefined;
+let pageWindow: AppWindow | undefined;
 
-function openPageWindow(): ApplicationWindow {
+function openPageWindow(): AppWindow {
   if (pageWindow === undefined) {
-    pageWindow = createApplicationWindow();
+    pageWindow = createAppWindow();
     openWindow(webHostWindowLifecycle, webHostWindowGeometry, pageWindow, {});
   }
   return pageWindow;
@@ -37,7 +37,7 @@ describe('createWebHostCanvas', () => {
   });
 
   it('reports a window with no document as no drawable', () => {
-    expect(createWebHostCanvas().create(createApplicationWindow(), 8, 8)).toBeNull();
+    expect(createWebHostCanvas().create(createAppWindow(), 8, 8)).toBeNull();
   });
 });
 

@@ -165,7 +165,7 @@ export {
   electronHostWindowState,
   electronHostWindowVisibility,
   electronHostWindowZOrder,
-  getApplicationWindowForElectronId,
+  getAppWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
 } from './electronWindow';

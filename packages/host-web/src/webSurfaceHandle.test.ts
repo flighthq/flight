@@ -1,6 +1,6 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type { ApplicationWindow } from '@flighthq/types/contract';
+import type { AppWindow } from '@flighthq/types/contract';
 
 import {
   allocateWebSurfaceCanvas,
@@ -10,11 +10,11 @@ import {
 } from './webSurfaceHandle';
 import { webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
 
-let pageWindow: ApplicationWindow | undefined;
+let pageWindow: AppWindow | undefined;
 
-function openPageWindow(): ApplicationWindow {
+function openPageWindow(): AppWindow {
   if (pageWindow === undefined) {
-    pageWindow = createApplicationWindow();
+    pageWindow = createAppWindow();
     openWindow(webHostWindowLifecycle, webHostWindowGeometry, pageWindow, {});
   }
   return pageWindow;
@@ -39,7 +39,7 @@ describe('allocateWebSurfaceCanvas', () => {
   // The window argument is a real lookup, not decoration: a window that was never opened has no document
   // to create through, and that is the same sentinel as a host that cannot allocate at all.
   it('returns null for a window that was never opened', () => {
-    expect(allocateWebSurfaceCanvas(createApplicationWindow(), 8, 8)).toBeNull();
+    expect(allocateWebSurfaceCanvas(createAppWindow(), 8, 8)).toBeNull();
   });
 });
 

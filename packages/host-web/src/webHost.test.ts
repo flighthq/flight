@@ -62,7 +62,7 @@ const GROUPS = [
 const LEAVES = [
   ['accessibility', 'tree', 'webHostAccessibility'],
   ['app', 'badge', 'webHostAppBadge'],
-  ['app', 'exit', 'webHostApplicationExit'],
+  ['app', 'exit', 'webHostAppLoopExit'],
   ['app', 'focus', 'webHostAppFocus'],
   ['app', 'locale', 'webHostAppLocale'],
   ['app', 'loop', 'webHostLoop'],

@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import {
   webHostGl,
   createWebImageResourceFromCanvas,
@@ -25,7 +25,7 @@ import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

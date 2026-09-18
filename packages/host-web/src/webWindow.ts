@@ -1,7 +1,7 @@
-import { notifyWindowClosed } from '@flighthq/application/contract';
+import { notifyWindowClosed } from '@flighthq/app/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   EntityConstruction,
   FullscreenTargetHandle,
   HostElementFullscreenCapability,
@@ -226,10 +226,10 @@ export function createWebWindowResizeTargetHandle(element: Element): WindowResiz
   return target;
 }
 
-// The page Window an ApplicationWindow is attached to, or null when it was never opened or attached. The
+// The page Window an AppWindow is attached to, or null when it was never opened or attached. The
 // drawable capabilities resolve their document through here, which is what makes the window argument to
 // surface creation a real lookup rather than a decorative parameter.
-export function getWebWindowHandle(win: Readonly<ApplicationWindow>): Window | null {
+export function getWebWindowHandle(win: Readonly<AppWindow>): Window | null {
   return _records.get(win)?.handle ?? null;
 }
 
@@ -249,8 +249,8 @@ export function initializeWebWindowResizeTargetHandle(
   _windowResizeTargets.set(target, element);
 }
 
-let _handles = new WeakMap<Window, ApplicationWindow>();
-let _records = new WeakMap<ApplicationWindow, WebWindowRecord>();
+let _handles = new WeakMap<Window, AppWindow>();
+let _records = new WeakMap<AppWindow, WebWindowRecord>();
 const _fullscreenListeners = new Map<(fullscreen: boolean) => void, () => void>();
 let _fullscreenTargets = new WeakMap<FullscreenTargetHandle, Element>();
 const _windowSubscriptionCleanups = new Set<() => void>();
@@ -272,7 +272,7 @@ interface WebWindowRecord {
   readonly ownership: WindowAttachmentOwnership;
 }
 
-function attachWebWindow(win: ApplicationWindow, handle: Window, ownership: WindowAttachmentOwnership): boolean {
+function attachWebWindow(win: AppWindow, handle: Window, ownership: WindowAttachmentOwnership): boolean {
   const existing = _records.get(win);
   if (existing !== undefined) return existing.handle === handle && existing.ownership === ownership;
   const mapped = _handles.get(handle);
@@ -291,7 +291,7 @@ function attachWebWindow(win: ApplicationWindow, handle: Window, ownership: Wind
   return true;
 }
 
-function detachWebWindow(win: ApplicationWindow, closeOwned: boolean): void {
+function detachWebWindow(win: AppWindow, closeOwned: boolean): void {
   const record = _records.get(win);
   if (record === undefined) return;
   _records.delete(win);

@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
@@ -157,7 +157,7 @@ describe('tauriHostWindow', () => {
   it('opens the current window and applies options', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(
       backend.lifecycle!.open(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true }),
     ).toBe(true);
@@ -170,7 +170,7 @@ describe('tauriHostWindow', () => {
   it('mirrors native move/resize/focus events onto the entity and its signals', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let moves = 0;
     connectSignal(win.onMove, () => moves++);
     backend.lifecycle!.open(win, {});
@@ -188,7 +188,7 @@ describe('tauriHostWindow', () => {
   it('routes control methods to the current window and no-ops before open', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     // Not opened yet: nothing routes through.
     backend.appearance!.setTitle(win, 'ignored');
     expect(state.calls).toHaveLength(0);
@@ -204,7 +204,7 @@ describe('tauriHostWindow', () => {
   it('reports mirrored bounds from the entity', () => {
     const { tauri } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.x = 5;
     win.y = 6;
     win.width = 100;
@@ -218,18 +218,18 @@ describe('tauriHostWindow', () => {
   it('attaches the same existing window idempotently without duplicating event ingress', () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
 
     expect(backend.attach!.attach(win, window, 'host')).toBe(true);
     expect(backend.attach!.attach(win, window, 'host')).toBe(true);
-    expect(backend.attach!.attach(createApplicationWindow(), window, 'host')).toBe(false);
+    expect(backend.attach!.attach(createAppWindow(), window, 'host')).toBe(false);
     expect(state.subscriptions).toEqual(['moved', 'resized', 'focusChanged', 'closeRequested']);
   });
 
   it('detaches host-owned windows without closing them and releases all event ingress', async () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(backend.attach!.attach(win, window, 'host')).toBe(true);
 
     backend.lifecycle!.close(win);
@@ -243,7 +243,7 @@ describe('tauriHostWindow', () => {
   it('closes a Flight-owned attached window once', () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(backend.attach!.attach(win, window, 'flight')).toBe(true);
 
     backend.lifecycle!.close(win);
@@ -255,7 +255,7 @@ describe('tauriHostWindow', () => {
   it('routes native close requests through the terminal-close choke point exactly once', async () => {
     const { tauri, state, window } = fakeTauri();
     const backend = tauriHostWindow(tauri);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
     expect(backend.attach!.attach(win, window, 'host')).toBe(true);
@@ -272,7 +272,7 @@ describe('tauriHostWindow', () => {
     const { tauri, state } = fakeTauri();
     const backend = tauriHostWindow(tauri);
 
-    expect(openWindow(backend.lifecycle, backend.geometry!, createApplicationWindow(), { center: true })).toBe(true);
+    expect(openWindow(backend.lifecycle, backend.geometry!, createAppWindow(), { center: true })).toBe(true);
 
     expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });
@@ -291,7 +291,7 @@ describe('tauriHostWindow close when the platform close rejects', () => {
     process.on('unhandledRejection', onUnhandled);
     try {
       const backend = tauriHostWindow(tauri);
-      const win = createApplicationWindow();
+      const win = createAppWindow();
       // ATTACHED AS 'flight', deliberately: `open` adopts the pre-existing window as 'host', and the
       // close path only calls the platform close for a window Flight itself owns. Driving this through
       // `open` exercises a branch that never calls `close()` at all, so the test would pass with the

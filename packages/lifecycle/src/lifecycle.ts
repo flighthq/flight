@@ -143,7 +143,7 @@ export function isAppInactive(hostLifecycle: Readonly<HostLifecycleCapability>):
 // listener vetoed by calling cancelSignal(app.onBackButton), meaning the listener handled
 // navigation itself. Returns true when no listener consumed the event and the host should perform
 // the default back action (navigate up or exit). Mirrors the onCloseRequest/requestCloseWindow
-// veto contract from @flighthq/application.
+// veto contract from @flighthq/app.
 export function requestAppBack(app: AppLifecycle): boolean {
   emitSignal(app.onBackButton);
   return app.onBackButton.data?.cancelled !== true;

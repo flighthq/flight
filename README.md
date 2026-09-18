@@ -111,12 +111,12 @@ npm install @flighthq/host-web
 import { webHost } from '@flighthq/host-web';
 import {
   connectSignal,
-  createApplication,
+  createAppLoop,
   createTween,
   createTweenManager,
   easeOutElastic,
   invalidateNodeRender,
-  startApplicationLoop,
+  startAppLoop,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -125,7 +125,7 @@ const manager = createTweenManager();
 const tween = createTween(manager, sprite, 1000, { x: 400, alpha: 0 }, { ease: easeOutElastic });
 connectSignal(tween.onUpdate, () => invalidateNodeRender(sprite));
 
-const app = createApplication();
+const app = createAppLoop();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
   if (prepareScene2DRender(state, root)) {
@@ -135,7 +135,7 @@ connectSignal(app.onRender, () => {
   }
 });
 
-startApplicationLoop(webHost, app);
+startAppLoop(webHost, app);
 ```
 
 ### Interaction
@@ -221,7 +221,7 @@ Major areas:
 | Animation and simulation | `easing`, `tween`, `spring`, `animation`, `timeline`, `movieclip`, `spritesheet`, `motionpath`, `clock`, `particles` |
 | Games and interaction | `input`, `interaction`, `collision`, `physics2d`, `spatial`, `flow`, `statechart`, `snapshot` |
 | Resources and formats | Loaders and structured importers for images, fonts, atlases, tilemaps, particles, SVG, SWF, glTF, OBJ/MTL, 3DS, MD2/MD5, AWD2, and more |
-| Application and media | `application`, `audio`, `video`, `media`, `mediasession`, `intl`, `log`, `debug` |
+| Application and media | `app`, `audio`, `video`, `media`, `mediasession`, `intl`, `log`, `debug` |
 | Platform integration | Web-first APIs for storage, networking, filesystem, clipboard, dialogs, notifications, sensors, windows, lifecycle, and other OS/device capabilities |
 | Native hosts | Explicit `Host` values for Electron, Tauri, and Capacitor |
 | Tooling | Capture and baseline tooling, cross-renderer smoke/parity checks, conformance fixtures, API/export/package/order/portability gates, and bundle-size budgets |

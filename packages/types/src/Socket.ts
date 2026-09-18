@@ -94,7 +94,7 @@ export interface HostSocketCapability {
 }
 
 // Opaque per-socket runtime: the live connection, the opt-in signal group, the current readyState,
-// and a delivery flag. Application code treats this as internal; it is read and written only by the
+// and a delivery flag. AppLoop code treats this as internal; it is read and written only by the
 // @flighthq/socket lifecycle functions.
 export interface SocketRuntime {
   connection: SocketConnection | null;

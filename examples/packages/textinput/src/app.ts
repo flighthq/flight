@@ -6,7 +6,7 @@ import {
   appendShapeRectangle,
   clearShapeCommands,
   connectSignal,
-  createApplication,
+  createAppLoop,
   createDisplayObject,
   createRichText,
   createShape,
@@ -14,7 +14,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   setTextLabelString,
-  startApplicationLoop,
+  startAppLoop,
 } from '@flighthq/sdk';
 import {
   enableTextInput,
@@ -296,9 +296,9 @@ function updateHud(): void {
 focusField(normalField);
 
 // Render loop.
-const app = createApplication();
+const app = createAppLoop();
 connectSignal(app.onRender, () => {
   updateHud();
   render(root);
 });
-startApplicationLoop(webHost.app.loop, webHost.lifecycle.state, app);
+startAppLoop(webHost.app.loop, webHost.lifecycle.state, app);

@@ -73,7 +73,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
     const backend = spec.renderer === 'webgl' ? 'gl' : 'wgpu';
     const expected = [
       // Surface creation takes a window, so every drawing fixture now carries the application layer.
-      '@flighthq/application',
+      '@flighthq/app',
       '@flighthq/camera',
       '@flighthq/geometry',
       '@flighthq/host-web',

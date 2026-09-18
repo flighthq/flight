@@ -1,5 +1,5 @@
 import { finishEntity } from '@flighthq/entity/contract';
-import type { ApplicationWindow, Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
+import type { AppWindow, Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
 
 import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface';
 import { allocateSurface, getSurfaceHandle } from './surface';
@@ -8,7 +8,7 @@ function glCapability(fields: Omit<HostGlCapability, keyof Entity>): HostGlCapab
   return finishEntity(Object.assign(allocateSurface(null), fields) as never) as HostGlCapability;
 }
 
-const appWindow = {} as ApplicationWindow;
+const appWindow = {} as AppWindow;
 const context = {} as GlContext;
 const defaults = { release() {}, subscribe: () => () => {} };
 

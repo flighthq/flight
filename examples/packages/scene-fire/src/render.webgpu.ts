@@ -23,7 +23,7 @@ import {
   scene3DWgpuPipeline,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
@@ -31,7 +31,7 @@ import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, width * pixelRatio, height * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');

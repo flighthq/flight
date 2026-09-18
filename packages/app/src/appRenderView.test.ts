@@ -3,19 +3,19 @@ import type { Matrix, RenderState, RenderTargetDimensions, Viewport } from '@fli
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  attachApplicationRenderView,
-  createApplicationRenderView,
-  detachApplicationRenderView,
-  initializeApplicationRenderView,
-  synchronizeApplicationRenderView,
-} from './applicationRenderView';
-import { createApplicationWindow } from './window';
+  attachAppRenderView,
+  createAppRenderView,
+  detachAppRenderView,
+  initializeAppRenderView,
+  synchronizeAppRenderView,
+} from './appRenderView';
+import { createAppWindow } from './appWindow';
 
-describe('attachApplicationRenderView', () => {
+describe('attachAppRenderView', () => {
   it('tracks window resize through one idempotent signal connection', () => {
     const { resize, target, view, window } = makeView();
-    attachApplicationRenderView(view);
-    attachApplicationRenderView(view);
+    attachAppRenderView(view);
+    attachAppRenderView(view);
     resize.mockClear();
 
     window.width = 40;
@@ -26,7 +26,7 @@ describe('attachApplicationRenderView', () => {
   });
 });
 
-describe('createApplicationRenderView', () => {
+describe('createAppRenderView', () => {
   it('links the four independently accessible components on an Entity', () => {
     const { state, target, view, viewport, window } = makeView();
 
@@ -38,11 +38,11 @@ describe('createApplicationRenderView', () => {
   });
 });
 
-describe('detachApplicationRenderView', () => {
+describe('detachAppRenderView', () => {
   it('stops window-driven synchronization without releasing the linked components', () => {
     const { resize, view, window } = makeView();
-    attachApplicationRenderView(view);
-    detachApplicationRenderView(view);
+    attachAppRenderView(view);
+    detachAppRenderView(view);
     resize.mockClear();
 
     window.width = 40;
@@ -53,14 +53,14 @@ describe('detachApplicationRenderView', () => {
   });
 });
 
-describe('initializeApplicationRenderView', () => {
-  it('is the construction initializer of createApplicationRenderView', () => {
-    expect(typeof initializeApplicationRenderView).toBe('function');
+describe('initializeAppRenderView', () => {
+  it('is the construction initializer of createAppRenderView', () => {
+    expect(typeof initializeAppRenderView).toBe('function');
   });
 });
 
 function makeView() {
-  const window = createApplicationWindow();
+  const window = createAppWindow();
   window.width = 20;
   window.height = 10;
   window.devicePixelRatio = 2;
@@ -80,14 +80,14 @@ function makeView() {
     resizedTarget.width = width;
     resizedTarget.height = height;
   });
-  const view = createApplicationRenderView(window, state, target, viewport, resize);
+  const view = createAppRenderView(window, state, target, viewport, resize);
   return { resize, state, target, view, viewport, window };
 }
 
 function makeMatrix(): Matrix {
   return { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as Matrix;
 }
-describe('synchronizeApplicationRenderView', () => {
+describe('synchronizeAppRenderView', () => {
   it('writes device-pixel target, viewport, and render-state values from the window authority', () => {
     const { resize, state, target, view, viewport, window } = makeView();
     window.width = 100;
@@ -97,7 +97,7 @@ describe('synchronizeApplicationRenderView', () => {
     viewport.y = 9;
     resize.mockClear();
 
-    synchronizeApplicationRenderView(view);
+    synchronizeAppRenderView(view);
 
     expect(resize).toHaveBeenCalledWith(state, target, 150, 90);
     expect(viewport).toMatchObject({ devicePixelRatio: 1.5, height: 90, width: 150, x: 0, y: 0 });
@@ -109,7 +109,7 @@ describe('synchronizeApplicationRenderView', () => {
     const { resize, view } = makeView();
     resize.mockClear();
 
-    synchronizeApplicationRenderView(view);
+    synchronizeAppRenderView(view);
 
     expect(resize).toHaveBeenCalledOnce();
   });

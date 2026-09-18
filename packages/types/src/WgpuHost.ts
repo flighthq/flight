@@ -35,7 +35,7 @@ export interface WgpuHostAcquisitionOptions {
 }
 
 // Process-wide host seam for acquiring a WebGPU device and presentation context. A native host may
-// return its own structurally compatible handles without coupling render-wgpu to Application or a
+// return its own structurally compatible handles without coupling render-wgpu to AppLoop or a
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuCapability extends Entity {
@@ -43,7 +43,7 @@ export interface HostWgpuCapability extends Entity {
   // The allocating lane, matching HostGlCapability.create: the host makes a drawable of its own and
   // returns its identity. Separate from `acquire` because a device is adapter-scoped and outlives any
   // one drawable, so allocation cannot imply device acquisition.
-  create(window: Readonly<ApplicationWindow>, width: number, height: number): NativeSurfaceHandle | null;
+  create(window: Readonly<AppWindow>, width: number, height: number): NativeSurfaceHandle | null;
   // Binds a device to a presentation surface and returns its configured swap-chain context together with
   // the resolved presentation surface, or null when the target cannot present. Separate from `acquire`
   // because a device outlives any one surface: a second window attaches its own surface to the device
@@ -67,6 +67,6 @@ export interface WgpuSurfaceAttachment {
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
 }
-import type { ApplicationWindow } from './ApplicationWindow';
+import type { AppWindow } from './AppWindow';
 import type { Entity } from './Entity';
 import type { NativeSurfaceHandle, Surface } from './Surface';

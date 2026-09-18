@@ -47,7 +47,7 @@ import {
   setGlRenderEffectVelocityTexture,
   getBitmapPixelRgb,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -66,7 +66,7 @@ declareExpectedImageDescription(
 // The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
 // the particle writer); the motion-blur effect then smears each particle along its own ring-radial vector.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

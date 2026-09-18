@@ -1,9 +1,9 @@
-import { createApplicationWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/application';
+import { createAppWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/app';
 import { webHost } from '@flighthq/host-web';
 
 import { renderHostWebFullCard } from './render.canvas';
 
-const applicationWindow = createApplicationWindow();
+const applicationWindow = createAppWindow();
 // The aggregate window group is a struct of capability leaves; the ones this card uses are typed
 // required, so a host that omitted one would be a compile error here rather than a runtime guard.
 const { appearance, geometry, lifecycle } = webHost.window;

@@ -9,12 +9,12 @@ import {
   webHostAppReady,
   webHostAppRelaunch,
 } from './webApp';
-import { webHostApplicationExit } from './webApplicationExit';
+import { webHostAppLoopExit } from './webAppLoopExit';
 import { webHostLoop } from './webLoop';
 
 export const webHostApp = {
   badge: webHostAppBadge,
-  exit: webHostApplicationExit,
+  exit: webHostAppLoopExit,
   focus: webHostAppFocus,
   locale: webHostAppLocale,
   loop: webHostLoop,

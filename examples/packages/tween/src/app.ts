@@ -5,7 +5,7 @@ import {
   appendShapeCircle,
   appendShapeEndFill,
   connectSignal,
-  createApplication,
+  createAppLoop,
   createDisplayObject,
   createShape,
   createTextLabel,
@@ -28,7 +28,7 @@ import {
   easeOutQuadratic,
   easeOutSine,
   invalidateNodeLocalTransform,
-  stepApplicationLoop,
+  stepAppLoop,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -119,7 +119,7 @@ for (let i = 0; i < easings.length; i++) {
   startTween(circle, trackStartX, trackEndX, easings[i].ease, i * TRACK_STAGGER);
 }
 
-const app = createApplication();
+const app = createAppLoop();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
   render(root);
@@ -129,12 +129,12 @@ let frame = 0;
 
 function enterFrame(): void {
   if (frame === 0 && captureMode) {
-    stepApplicationLoop(app, CAPTURE_PREVIEW_TIME, {
+    stepAppLoop(app, CAPTURE_PREVIEW_TIME, {
       fixedTimeStep: 0,
       maxDeltaTime: CAPTURE_PREVIEW_TIME,
     });
   } else {
-    stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
+    stepAppLoop(app, frame === 0 ? 0 : FRAME_DELTA);
   }
   frame++;
   if (!captureMode) requestAnimationFrame(enterFrame);

@@ -9,12 +9,12 @@ describe('package exports', () => {
   });
 
   describe('application domain', () => {
-    it('exports createApplication', () => {
-      expect(sdk.createApplication).toBeTypeOf('function');
+    it('exports createAppLoop', () => {
+      expect(sdk.createAppLoop).toBeTypeOf('function');
     });
 
-    it('exports createApplicationWindow', () => {
-      expect(sdk.createApplicationWindow).toBeTypeOf('function');
+    it('exports createAppWindow', () => {
+      expect(sdk.createAppWindow).toBeTypeOf('function');
     });
   });
 

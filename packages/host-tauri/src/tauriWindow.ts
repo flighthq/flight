@@ -1,8 +1,8 @@
-import { notifyWindowClosed } from '@flighthq/application/contract';
+import { notifyWindowClosed } from '@flighthq/app/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   NativeWindowHandle,
   TauriApi,
   TauriUnlisten,
@@ -273,23 +273,23 @@ interface TauriWindowRecord {
 // process cannot see each other's window↔handle mappings.
 interface TauriWindowContext {
   readonly windowModule: TauriApi['window'];
-  attach(win: ApplicationWindow, handle: TauriWindow, ownership: WindowAttachmentOwnership): boolean;
-  detach(win: ApplicationWindow): TauriWindowRecord | null;
-  run(win: ApplicationWindow, fn: (w: TauriWindow) => Promise<unknown>): void;
+  attach(win: AppWindow, handle: TauriWindow, ownership: WindowAttachmentOwnership): boolean;
+  detach(win: AppWindow): TauriWindowRecord | null;
+  run(win: AppWindow, fn: (w: TauriWindow) => Promise<unknown>): void;
 }
 
 function buildTauriWindowContext(tauri: TauriApi): TauriWindowContext {
   const windowModule = tauri.window;
-  const handles = new WeakMap<TauriWindow, ApplicationWindow>();
-  const windows = new WeakMap<ApplicationWindow, TauriWindowRecord>();
-  const run = (win: ApplicationWindow, fn: (w: TauriWindow) => Promise<unknown>): void => {
+  const handles = new WeakMap<TauriWindow, AppWindow>();
+  const windows = new WeakMap<AppWindow, TauriWindowRecord>();
+  const run = (win: AppWindow, fn: (w: TauriWindow) => Promise<unknown>): void => {
     const record = windows.get(win);
     if (record === undefined) return;
     fn(record.handle).catch(() => {
       /* window closed or the call is unsupported on this platform */
     });
   };
-  const detach = (win: ApplicationWindow): TauriWindowRecord | null => {
+  const detach = (win: AppWindow): TauriWindowRecord | null => {
     const record = windows.get(win);
     if (record === undefined) return null;
     windows.delete(win);
@@ -307,7 +307,7 @@ function buildTauriWindowContext(tauri: TauriApi): TauriWindowContext {
       })
       .catch(() => {});
   };
-  const attach = (win: ApplicationWindow, handle: TauriWindow, ownership: WindowAttachmentOwnership): boolean => {
+  const attach = (win: AppWindow, handle: TauriWindow, ownership: WindowAttachmentOwnership): boolean => {
     const existing = windows.get(win);
     if (existing !== undefined) return existing.handle === handle && existing.ownership === ownership;
     const mapped = handles.get(handle);

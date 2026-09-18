@@ -1,7 +1,7 @@
-import type { ApplicationWindow, WindowBounds } from '@flighthq/types';
+import type { AppWindow, WindowBounds } from '@flighthq/types';
 
 export function renderHostWebFullCard(
-  applicationWindow: Readonly<ApplicationWindow>,
+  applicationWindow: Readonly<AppWindow>,
   bounds: Readonly<WindowBounds>,
   opened: boolean,
 ): HTMLElement {

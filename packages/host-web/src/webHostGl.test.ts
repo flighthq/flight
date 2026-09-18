@@ -1,16 +1,16 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { ApplicationWindow } from '@flighthq/types/contract';
+import type { AppWindow } from '@flighthq/types/contract';
 
 import { createWebHostGl, initializeWebHostGl, webHostGl } from './webHostGl';
 import { createWebSurfaceFromElement } from './webSurfaceHandle';
 import { webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
 
-let pageWindow: ApplicationWindow | undefined;
+let pageWindow: AppWindow | undefined;
 
-function openPageWindow(): ApplicationWindow {
+function openPageWindow(): AppWindow {
   if (pageWindow === undefined) {
-    pageWindow = createApplicationWindow();
+    pageWindow = createAppWindow();
     openWindow(webHostWindowLifecycle, webHostWindowGeometry, pageWindow, {});
   }
   return pageWindow;
@@ -31,7 +31,7 @@ describe('createWebHostGl', () => {
   // The two sentinels stay distinct: null from create means no drawable, null from acquire means no
   // context on a drawable that exists.
   it('reports a window with no document as no drawable', () => {
-    expect(createWebHostGl().create(createApplicationWindow(), 8, 8)).toBeNull();
+    expect(createWebHostGl().create(createAppWindow(), 8, 8)).toBeNull();
   });
 
   it('returns null from acquire when the surface is not backed by a canvas', () => {

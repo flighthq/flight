@@ -57,7 +57,7 @@ This package answers _what host am I running on_. Live, event-bearing, or richer
 | Device model, manufacturer, memory, safe-area insets | `@flighthq/device` | Hardware/device identity is a distinct, larger snapshot. |
 | Battery, charging, low-power, keep-awake | `@flighthq/power` | Live, event-bearing state — not a static snapshot. |
 | Display enumeration, work area, scale factor | `@flighthq/screen` | Multi-display geometry is its own live surface. |
-| App name/version, quit/relaunch, single-instance lock | `@flighthq/app` | Application/process identity, not host identity. |
+| App name/version, quit/relaunch, single-instance lock | `@flighthq/app` | AppLoop/process identity, not host identity. |
 
 The UA-string parsing primitives (`parseUserAgent*`, `probeEndianness`) live in `@flighthq/useragent`, the shared value-leaf both Web providers build on.
 

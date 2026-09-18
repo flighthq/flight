@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "registrars": [
     {
-      "packageName": "application",
-      "registrar": "registerApplicationWindow"
+      "packageName": "app",
+      "registrar": "registerAppLoopWindow"
     },
     {
       "packageName": "assets",

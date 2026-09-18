@@ -17,7 +17,7 @@ import {
   endGlRenderEffectPipeline,
   prepareScene3DRender,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
@@ -25,7 +25,7 @@ import { drawGlScene3D } from '@flighthq/sdk/rendering';
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
 export const height = 600;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, width * pixelRatio, height * pixelRatio, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

@@ -1,4 +1,4 @@
-import type { ApplicationWindow } from './ApplicationWindow';
+import type { AppWindow } from './AppWindow';
 import type { Entity, EntityRuntime } from './Entity';
 
 // One picker filter. Each MIME key owns exactly the extensions it describes; native providers flatten
@@ -121,7 +121,7 @@ export interface PromptDialogOptions {
   defaultValue?: string;
   placeholder?: string;
   // Native parent window to attach the modal dialog to; web backends ignore it.
-  parentWindow?: ApplicationWindow;
+  parentWindow?: AppWindow;
   signal?: AbortSignal;
 }
 
@@ -142,7 +142,7 @@ export interface MessageDialogOptions {
   // Index of the button activated by Escape/cancel; native hosts honor it.
   cancelId?: number;
   // Native parent window to attach the modal dialog to; web backends ignore it.
-  parentWindow?: ApplicationWindow;
+  parentWindow?: AppWindow;
   signal?: AbortSignal;
 }
 

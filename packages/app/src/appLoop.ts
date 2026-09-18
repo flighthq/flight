@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  Application,
-  ApplicationLoopOptions,
-  ApplicationStepOptions,
-  ApplicationWindow,
+  AppLoop,
+  AppLoopOptions,
+  AppStepOptions,
+  AppWindow,
   EntityConstruction,
   HostAppExitCapability,
   HostLifecycleCapability,
@@ -20,10 +20,10 @@ const kExit = Symbol();
 const kLoop = Symbol();
 const kPaused = Symbol();
 
-// -- Application entity --
+// -- AppLoop entity --
 
-export function attachApplicationExit(hostAppExit: Readonly<HostAppExitCapability>, app: Application): void {
-  const observers = getApplicationObservers(app);
+export function attachAppLoopExit(hostAppExit: Readonly<HostAppExitCapability>, app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
   const exit = hostAppExit;
@@ -31,25 +31,25 @@ export function attachApplicationExit(hostAppExit: Readonly<HostAppExitCapabilit
   observers.set(kExit, () => exit.unsubscribe(handler));
 }
 
-// Wires window onDeactivate → pauseApplicationLoop and onActivate → resumeApplicationLoop so the
+// Wires window onDeactivate → pauseAppLoop and onActivate → resumeAppLoop so the
 // loop automatically throttles/pauses when the user backgrounds the tab or hides the window.
-// Opt-in — not wired by default. Pair with detachApplicationLifecycle to undo.
-export function attachApplicationLifecycle(app: Application, win: ApplicationWindow): void {
+// Opt-in — not wired by default. Pair with detachAppLoopLifecycle to undo.
+export function attachAppLoopLifecycle(app: AppLoop, win: AppWindow): void {
   // Use a per-win symbol keyed in a side WeakMap to allow multiple windows.
   let kLifecycle = _lifecycleKeys.get(win);
   if (kLifecycle === undefined) {
     kLifecycle = Symbol();
     _lifecycleKeys.set(win, kLifecycle);
   }
-  const observers = getApplicationObservers(app);
+  const observers = getAppLoopObservers(app);
   observers.get(kLifecycle)?.();
 
   const onDeactivate = () => {
-    pauseApplicationLoop(app);
+    pauseAppLoop(app);
     if (app.onDeactivate !== null) emitSignal(app.onDeactivate);
   };
   const onActivate = () => {
-    resumeApplicationLoop(app);
+    resumeAppLoop(app);
     if (app.onActivate !== null) emitSignal(app.onActivate);
   };
 
@@ -61,20 +61,20 @@ export function attachApplicationLifecycle(app: Application, win: ApplicationWin
   });
 }
 
-export function createApplication(): Application {
-  const out = allocateEntity<Application>();
-  initializeApplication(out);
+export function createAppLoop(): AppLoop {
+  const out = allocateEntity<AppLoop>();
+  initializeAppLoop(out);
   return finishEntity(out);
 }
 
-export function detachApplicationExit(app: Application): void {
-  const observers = getApplicationObservers(app);
+export function detachAppLoopExit(app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   observers.get(kExit)?.();
   observers.delete(kExit);
 }
 
-export function disposeApplication(app: Application): void {
-  const observers = getApplicationObservers(app);
+export function disposeAppLoop(app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   for (const cleanup of observers.values()) cleanup();
   observers.clear();
   app.isRunning = false;
@@ -83,7 +83,7 @@ export function disposeApplication(app: Application): void {
 // Allocates and attaches the opt-in lifecycle signals (onActivate, onDeactivate, onError,
 // onFixedUpdate) to an application that was created before these were needed. Idempotent —
 // calling twice does not create duplicate signals.
-export function enableApplicationLifecycleSignals(app: Application): void {
+export function enableAppLoopLifecycleSignals(app: AppLoop): void {
   if (app.onActivate === null) app.onActivate = createSignal();
   if (app.onDeactivate === null) app.onDeactivate = createSignal();
   if (app.onError === null) app.onError = createSignal();
@@ -91,14 +91,14 @@ export function enableApplicationLifecycleSignals(app: Application): void {
 }
 
 // Iterates over all registered application windows, calling fn for each. Does not allocate.
-export function forEachApplicationWindow(app: Readonly<Application>, fn: (win: ApplicationWindow) => void): void {
+export function forEachAppLoopWindow(app: Readonly<AppLoop>, fn: (win: AppWindow) => void): void {
   for (const win of app.windows) fn(win);
 }
 
 // Returns the measured rolling-average frames per second for the last ROLLING_FPS_WINDOW frames.
 // Returns 0 before enough samples have been collected.
-export function getApplicationFrameRate(app: Readonly<Application>): number {
-  const state = _applicationLoopState.get(app as Application);
+export function getAppLoopFrameRate(app: Readonly<AppLoop>): number {
+  const state = _applicationLoopState.get(app as AppLoop);
   if (state === undefined || state.fpsBuffer.length < 2) return 0;
   const buf = state.fpsBuffer;
   const len = buf.length;
@@ -116,19 +116,19 @@ export function getApplicationFrameRate(app: Readonly<Application>): number {
   return avgDelta > 0 ? 1000 / avgDelta : 0;
 }
 
-// Returns the main window (first registered window, or the one set via setApplicationMainWindow).
+// Returns the main window (first registered window, or the one set via setAppLoopMainWindow).
 // Returns null if no windows have been registered.
-export function getApplicationMainWindow(app: Readonly<Application>): ApplicationWindow | null {
-  return _mainWindows.get(app as Application) ?? app.windows[0] ?? null;
+export function getAppLoopMainWindow(app: Readonly<AppLoop>): AppWindow | null {
+  return _mainWindows.get(app as AppLoop) ?? app.windows[0] ?? null;
 }
 
-// Returns a snapshot array of all registered windows. Creates a new array; prefer forEachApplicationWindow
+// Returns a snapshot array of all registered windows. Creates a new array; prefer forEachAppLoopWindow
 // in hot paths.
-export function getApplicationWindows(app: Readonly<Application>): readonly ApplicationWindow[] {
+export function getAppLoopWindows(app: Readonly<AppLoop>): readonly AppWindow[] {
   return app.windows.slice();
 }
 
-export function initializeApplication(out: EntityConstruction<Application>): void {
+export function initializeAppLoop(out: EntityConstruction<AppLoop>): void {
   out.deltaTime = 0;
   out.elapsedTime = 0;
   out.frameCount = 0;
@@ -144,26 +144,26 @@ export function initializeApplication(out: EntityConstruction<Application>): voi
   out.windows = [];
 }
 
-export function isApplicationRunning(app: Readonly<Application>): boolean {
+export function isAppLoopRunning(app: Readonly<AppLoop>): boolean {
   return app.isRunning;
 }
 
-export function pauseApplicationLoop(app: Application): void {
-  const observers = getApplicationObservers(app);
+export function pauseAppLoop(app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   if (!app.isRunning || observers.has(kPaused)) return;
   app.isRunning = false;
-  // Mark as paused so resumeApplicationLoop knows to re-seed lastTime.
+  // Mark as paused so resumeAppLoop knows to re-seed lastTime.
   observers.set(kPaused, () => {});
 }
 
 // Registers win as a managed window on app. Adds it to app.windows; no-op if already present.
-export function registerApplicationWindow(app: Application, win: ApplicationWindow): void {
+export function registerAppLoopWindow(app: AppLoop, win: AppWindow): void {
   if (app.windows.includes(win)) return;
   app.windows.push(win);
 }
 
-export function resumeApplicationLoop(app: Application): void {
-  const observers = getApplicationObservers(app);
+export function resumeAppLoop(app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   if (!observers.has(kPaused)) return;
   observers.delete(kPaused);
   // Re-seed lastTime to -1 so the first resumed tick computes delta from now, not from the pause
@@ -178,18 +178,18 @@ export function resumeApplicationLoop(app: Application): void {
 }
 
 // Sets the explicit main window. win need not be registered first (the call registers it if not).
-export function setApplicationMainWindow(app: Application, win: ApplicationWindow): void {
-  registerApplicationWindow(app, win);
+export function setAppLoopMainWindow(app: AppLoop, win: AppWindow): void {
+  registerAppLoopWindow(app, win);
   _mainWindows.set(app, win);
 }
 
-export function startApplicationLoop(
+export function startAppLoop(
   hostAppLoop: Readonly<HostAppLoopCapability>,
   hostLifecycle: Readonly<HostLifecycleCapability>,
-  app: Application,
-  options: Readonly<ApplicationLoopOptions> = {},
+  app: AppLoop,
+  options: Readonly<AppLoopOptions> = {},
 ): void {
-  const observers = getApplicationObservers(app);
+  const observers = getAppLoopObservers(app);
   // Stop any existing loop first (idempotent restart).
   observers.get(kLoop)?.();
   observers.delete(kPaused);
@@ -204,9 +204,9 @@ export function startApplicationLoop(
   const frameInterval = targetFrameRate > 0 ? 1000 / targetFrameRate : 0;
   const bgInterval = backgroundFrameRate > 0 ? 1000 / backgroundFrameRate : 0;
 
-  // Persist loop state so pauseApplicationLoop/resumeApplicationLoop can mutate lastTime.
+  // Persist loop state so pauseAppLoop/resumeAppLoop can mutate lastTime.
   const loopState = createLoopState(fixedTimeStep, maxDeltaTime, maxUpdatesPerFrame);
-  const stepPolicy: Readonly<ApplicationStepPolicy> = { fixedStepState: loopState, maxDeltaTime };
+  const stepPolicy: Readonly<AppStepPolicy> = { fixedStepState: loopState, maxDeltaTime };
   _applicationLoopState.set(app, loopState);
 
   app.isRunning = true;
@@ -241,7 +241,7 @@ export function startApplicationLoop(
     const delta = activeInterval > 0 && !isFirstTick ? loopState.frameRateAccumulated : raw;
     loopState.frameRateAccumulated = 0;
 
-    applyApplicationStep(app, delta, loopState, stepPolicy);
+    applyAppLoopStep(app, delta, loopState, stepPolicy);
 
     loopState.frameHandle = backend.requestFrame(tick);
     observers.set(kLoop, () => backend.cancelFrame(loopState.frameHandle));
@@ -253,11 +253,7 @@ export function startApplicationLoop(
 
 // Drives one update+render tick with an explicit delta (ms). Fixed-step options are self-contained,
 // so deterministic headless callers do not need to start a backend loop first.
-export function stepApplicationLoop(
-  app: Application,
-  deltaTime: number,
-  options: Readonly<ApplicationStepOptions> = {},
-): void {
+export function stepAppLoop(app: AppLoop, deltaTime: number, options: Readonly<AppStepOptions> = {}): void {
   const existingLoopState = _applicationLoopState.get(app);
   const fixedTimeStep = options.fixedTimeStep ?? DEFAULT_FIXED_TIMESTEP;
   const maxDeltaTime = options.maxDeltaTime ?? existingLoopState?.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
@@ -268,15 +264,15 @@ export function stepApplicationLoop(
     configureFixedStep(loopState, fixedTimeStep, maxUpdatesPerFrame);
     if (options.maxDeltaTime !== undefined) loopState.maxDeltaTime = maxDeltaTime;
   }
-  const stepPolicy: Readonly<ApplicationStepPolicy> = {
+  const stepPolicy: Readonly<AppStepPolicy> = {
     fixedStepState: fixedTimeStep > 0 ? loopState : undefined,
     maxDeltaTime,
   };
-  applyApplicationStep(app, deltaTime, loopState, stepPolicy);
+  applyAppLoopStep(app, deltaTime, loopState, stepPolicy);
 }
 
-export function stopApplicationLoop(app: Application): void {
-  const observers = getApplicationObservers(app);
+export function stopAppLoop(app: AppLoop): void {
+  const observers = getAppLoopObservers(app);
   observers.get(kLoop)?.();
   observers.delete(kLoop);
   observers.delete(kPaused);
@@ -285,24 +281,24 @@ export function stopApplicationLoop(app: Application): void {
 }
 
 // Removes win from app.windows. Also clears any main-window override that pointed at win.
-export function unregisterApplicationWindow(app: Application, win: ApplicationWindow): void {
+export function unregisterAppLoopWindow(app: AppLoop, win: AppWindow): void {
   const idx = app.windows.indexOf(win);
   if (idx !== -1) app.windows.splice(idx, 1);
   if (_mainWindows.get(app) === win) _mainWindows.delete(app);
 }
 
-// Internal teardown registry, kept off the public Application entity (a side table like input's
+// Internal teardown registry, kept off the public AppLoop entity (a side table like input's
 // binding map). attach/detach/dispose track cleanup closures internally so callers hold nothing.
-const _applicationObservers = new WeakMap<Application, Map<symbol, () => void>>();
+const _applicationObservers = new WeakMap<AppLoop, Map<symbol, () => void>>();
 
 // Per-app loop state for pause/resume continuity.
-const _applicationLoopState = new WeakMap<Application, LoopState>();
+const _applicationLoopState = new WeakMap<AppLoop, LoopState>();
 
 // Per-win lifecycle observer key so each window gets its own observer slot.
-const _lifecycleKeys = new WeakMap<ApplicationWindow, symbol>();
+const _lifecycleKeys = new WeakMap<AppWindow, symbol>();
 
-// Explicit main-window overrides (set via setApplicationMainWindow).
-const _mainWindows = new WeakMap<Application, ApplicationWindow>();
+// Explicit main-window overrides (set via setAppLoopMainWindow).
+const _mainWindows = new WeakMap<AppLoop, AppWindow>();
 
 const ROLLING_FPS_WINDOW = 60;
 
@@ -318,16 +314,16 @@ interface LoopState {
   maxUpdatesPerFrame: number;
 }
 
-interface ApplicationStepPolicy {
+interface AppStepPolicy {
   fixedStepState: LoopState | undefined;
   maxDeltaTime: number;
 }
 
-function applyApplicationStep(
-  app: Application,
+function applyAppLoopStep(
+  app: AppLoop,
   deltaTime: number,
   loopState: LoopState | undefined,
-  policy: Readonly<ApplicationStepPolicy>,
+  policy: Readonly<AppStepPolicy>,
 ): void {
   const clamped = Math.min(deltaTime, policy.maxDeltaTime);
   app.deltaTime = clamped;
@@ -347,7 +343,7 @@ function applyApplicationStep(
     ) {
       fixedStepState.fixedAccumulator -= fixedStepState.fixedTimeStep;
       iterations++;
-      invokeWithApplicationErrorHandling(app, () => emitSignal(fixedUpdate, fixedStepState.fixedTimeStep));
+      invokeWithAppLoopErrorHandling(app, () => emitSignal(fixedUpdate, fixedStepState.fixedTimeStep));
     }
     // If we hit the maxUpdatesPerFrame cap, drain the leftover to avoid spiral-of-death.
     if (iterations >= fixedStepState.maxUpdatesPerFrame) fixedStepState.fixedAccumulator = 0;
@@ -357,8 +353,8 @@ function applyApplicationStep(
     app.interpolationAlpha = 1;
   }
 
-  invokeWithApplicationErrorHandling(app, () => emitSignal(app.onUpdate, clamped));
-  invokeWithApplicationErrorHandling(app, () => emitSignal(app.onRender));
+  invokeWithAppLoopErrorHandling(app, () => emitSignal(app.onUpdate, clamped));
+  invokeWithAppLoopErrorHandling(app, () => emitSignal(app.onRender));
 }
 
 function configureFixedStep(loopState: LoopState, fixedTimeStep: number, maxUpdatesPerFrame: number): void {
@@ -381,7 +377,7 @@ function createLoopState(fixedTimeStep: number, maxDeltaTime: number, maxUpdates
 }
 
 function getOrCreateLoopState(
-  app: Application,
+  app: AppLoop,
   fixedTimeStep: number,
   maxDeltaTime: number,
   maxUpdatesPerFrame: number,
@@ -394,7 +390,7 @@ function getOrCreateLoopState(
   return loopState;
 }
 
-function invokeWithApplicationErrorHandling(app: Readonly<Application>, callback: () => void): void {
+function invokeWithAppLoopErrorHandling(app: Readonly<AppLoop>, callback: () => void): void {
   const onError = app.onError;
   if (onError === null) {
     callback();
@@ -407,7 +403,7 @@ function invokeWithApplicationErrorHandling(app: Readonly<Application>, callback
   }
 }
 
-function getApplicationObservers(app: Application): Map<symbol, () => void> {
+function getAppLoopObservers(app: AppLoop): Map<symbol, () => void> {
   let observers = _applicationObservers.get(app);
   if (observers === undefined) {
     observers = new Map();

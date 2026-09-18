@@ -2,9 +2,9 @@ import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 import { getElectronBrowserWindow, electronHost } from '@flighthq/host-electron';
-import type { ApplicationWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
+import type { AppWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
-  createApplicationWindow,
+  createAppWindow,
   attachGlobalShortcut,
   createGlobalShortcut,
   createMenuItemTemplate,
@@ -33,9 +33,9 @@ const { app, ipcMain } = electron;
 // The single Flight window this harness drives. Created via Flight's window provider (which constructs
 // the real BrowserWindow under the hood); we reach the BrowserWindow back out with
 // getElectronBrowserWindow only to load page content — everything else goes through the Flight API.
-let mainWindow: ApplicationWindow | null = null;
+let mainWindow: AppWindow | null = null;
 
-function loadRenderer(win: ApplicationWindow): void {
+function loadRenderer(win: AppWindow): void {
   const bw = getElectronBrowserWindow(win);
   if (bw === null) {
     console.error('[harness] no BrowserWindow for the Flight window'); // eslint-disable-line
@@ -148,7 +148,7 @@ void app.whenReady().then(() => {
   });
   installIpcBridge(host);
 
-  mainWindow = createApplicationWindow();
+  mainWindow = createAppWindow();
   openWindow(host.window, mainWindow, {
     title: process.env['FLIGHT_ELECTRON_TITLE'] ?? 'Flight Electron Harness',
     width: 1024,

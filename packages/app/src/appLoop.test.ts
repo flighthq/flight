@@ -8,28 +8,28 @@ import type {
 } from '@flighthq/types/contract';
 
 import {
-  attachApplicationExit,
-  attachApplicationLifecycle,
-  createApplication,
-  detachApplicationExit,
-  disposeApplication,
-  enableApplicationLifecycleSignals,
-  forEachApplicationWindow,
-  getApplicationFrameRate,
-  getApplicationMainWindow,
-  getApplicationWindows,
-  initializeApplication,
-  isApplicationRunning,
-  pauseApplicationLoop,
-  registerApplicationWindow,
-  resumeApplicationLoop,
-  setApplicationMainWindow,
-  startApplicationLoop,
-  stepApplicationLoop,
-  stopApplicationLoop,
-  unregisterApplicationWindow,
-} from './application';
-import { createApplicationWindow } from './window';
+  attachAppLoopExit,
+  attachAppLoopLifecycle,
+  createAppLoop,
+  detachAppLoopExit,
+  disposeAppLoop,
+  enableAppLoopLifecycleSignals,
+  forEachAppLoopWindow,
+  getAppLoopFrameRate,
+  getAppLoopMainWindow,
+  getAppLoopWindows,
+  initializeAppLoop,
+  isAppLoopRunning,
+  pauseAppLoop,
+  registerAppLoopWindow,
+  resumeAppLoop,
+  setAppLoopMainWindow,
+  startAppLoop,
+  stepAppLoop,
+  stopAppLoop,
+  unregisterAppLoopWindow,
+} from './appLoop';
+import { createAppWindow } from './appWindow';
 
 function makeManualLoopBackend(): HostAppLoopCapability & { tick: (time: number) => void; cancelCount: number } {
   let callback: ((time: number) => void) | null = null;
@@ -76,12 +76,12 @@ function createLoopTestHost(loop: HostAppLoopCapability, visible = true): LoopTe
   return { app: { loop, lifecycle: impl as unknown as RecordingLifecycleBackend } };
 }
 
-type RecordingApplicationExitBackend = HostAppExitCapability & {
+type RecordingAppLoopExitBackend = HostAppExitCapability & {
   readonly calls: string[];
   emit(): void;
 };
 
-type ExitTestHost = { readonly app: { readonly exit: RecordingApplicationExitBackend } };
+type ExitTestHost = { readonly app: { readonly exit: RecordingAppLoopExitBackend } };
 
 function createExitTestHost(): ExitTestHost {
   const calls: string[] = [];
@@ -106,16 +106,16 @@ function createExitTestHost(): ExitTestHost {
   };
 }
 
-describe('attachApplicationExit', () => {
+describe('attachAppLoopExit', () => {
   it('emits onExit through the host subscription', () => {
     const host = createExitTestHost();
-    const app = createApplication();
+    const app = createAppLoop();
     let called = false;
     connectSignal(app.onExit, () => {
       called = true;
     });
 
-    attachApplicationExit(host.app.exit, app);
+    attachAppLoopExit(host.app.exit, app);
     host.app.exit.emit();
 
     expect(called).toBe(true);
@@ -125,12 +125,12 @@ describe('attachApplicationExit', () => {
   it('unsubscribes the prior host before replacing the exit listener', () => {
     const first = createExitTestHost();
     const second = createExitTestHost();
-    const app = createApplication();
+    const app = createAppLoop();
     let count = 0;
     connectSignal(app.onExit, () => count++);
 
-    attachApplicationExit(first.app.exit, app);
-    attachApplicationExit(second.app.exit, app);
+    attachAppLoopExit(first.app.exit, app);
+    attachAppLoopExit(second.app.exit, app);
     first.app.exit.emit();
     second.app.exit.emit();
 
@@ -140,46 +140,46 @@ describe('attachApplicationExit', () => {
   });
 });
 
-describe('attachApplicationLifecycle', () => {
+describe('attachAppLoopLifecycle', () => {
   it('pauses the loop when the window deactivates', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    const win = createApplicationWindow();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    attachApplicationLifecycle(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    attachAppLoopLifecycle(app, win);
 
     // Simulate window deactivation by emitting its signal directly.
     emitSignal(win.onDeactivate);
     expect(app.isRunning).toBe(false);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('resumes the loop when the window activates', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    const win = createApplicationWindow();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    attachApplicationLifecycle(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    attachAppLoopLifecycle(app, win);
 
     emitSignal(win.onDeactivate);
     expect(app.isRunning).toBe(false);
     emitSignal(win.onActivate);
     expect(app.isRunning).toBe(true);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('createApplication', () => {
+describe('createAppLoop', () => {
   it('creates an Entity-backed application identity', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     expect(EntityRuntimeKey in app).toBe(true);
   });
 
   it('returns signals with no side effects', () => {
     const host = createExitTestHost();
-    const app = createApplication();
+    const app = createAppLoop();
     expect(app.onUpdate).toBeDefined();
     expect(app.onRender).toBeDefined();
     expect(app.onExit).toBeDefined();
@@ -193,7 +193,7 @@ describe('createApplication', () => {
   });
 
   it('initializes frame metrics to zero', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     expect(app.elapsedTime).toBe(0);
     expect(app.frameCount).toBe(0);
     expect(app.deltaTime).toBe(0);
@@ -203,7 +203,7 @@ describe('createApplication', () => {
   });
 
   it('initializes lifecycle signals to null', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     expect(app.onActivate).toBeNull();
     expect(app.onDeactivate).toBeNull();
     expect(app.onError).toBeNull();
@@ -211,17 +211,17 @@ describe('createApplication', () => {
   });
 });
 
-describe('detachApplicationExit', () => {
+describe('detachAppLoopExit', () => {
   it('removes the listener', () => {
     const host = createExitTestHost();
-    const app = createApplication();
+    const app = createAppLoop();
     let called = false;
     connectSignal(app.onExit, () => {
       called = true;
     });
 
-    attachApplicationExit(host.app.exit, app);
-    detachApplicationExit(app);
+    attachAppLoopExit(host.app.exit, app);
+    detachAppLoopExit(app);
     host.app.exit.emit();
 
     expect(called).toBe(false);
@@ -229,22 +229,22 @@ describe('detachApplicationExit', () => {
   });
 });
 
-describe('disposeApplication', () => {
+describe('disposeAppLoop', () => {
   it('stops loop, removes exit listener, and sets isRunning false', () => {
     const backend = makeManualLoopBackend();
     const loopHost = createLoopTestHost(backend);
     const exitHost = createExitTestHost();
 
-    const app = createApplication();
+    const app = createAppLoop();
     let exitCalled = false;
     connectSignal(app.onExit, () => {
       exitCalled = true;
     });
 
-    startApplicationLoop(loopHost.app.loop, loopHost.app.lifecycle, app);
-    attachApplicationExit(exitHost.app.exit, app);
+    startAppLoop(loopHost.app.loop, loopHost.app.lifecycle, app);
+    attachAppLoopExit(exitHost.app.exit, app);
     expect(app.isRunning).toBe(true);
-    disposeApplication(app);
+    disposeAppLoop(app);
 
     expect(app.isRunning).toBe(false);
     exitHost.app.exit.emit();
@@ -253,11 +253,11 @@ describe('disposeApplication', () => {
   });
 });
 
-describe('enableApplicationLifecycleSignals', () => {
+describe('enableAppLoopLifecycleSignals', () => {
   it('allocates the opt-in signals on the application', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     expect(app.onActivate).toBeNull();
-    enableApplicationLifecycleSignals(app);
+    enableAppLoopLifecycleSignals(app);
     expect(app.onActivate).not.toBeNull();
     expect(app.onDeactivate).not.toBeNull();
     expect(app.onError).not.toBeNull();
@@ -265,85 +265,85 @@ describe('enableApplicationLifecycleSignals', () => {
   });
 
   it('is idempotent', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const signal = app.onActivate;
-    enableApplicationLifecycleSignals(app);
+    enableAppLoopLifecycleSignals(app);
     expect(app.onActivate).toBe(signal); // same object reference
   });
 });
 
-describe('forEachApplicationWindow', () => {
+describe('forEachAppLoopWindow', () => {
   it('iterates all registered windows', () => {
-    const app = createApplication();
-    const win1 = createApplicationWindow();
-    const win2 = createApplicationWindow();
-    registerApplicationWindow(app, win1);
-    registerApplicationWindow(app, win2);
+    const app = createAppLoop();
+    const win1 = createAppWindow();
+    const win2 = createAppWindow();
+    registerAppLoopWindow(app, win1);
+    registerAppLoopWindow(app, win2);
     const seen: unknown[] = [];
-    forEachApplicationWindow(app, (w) => seen.push(w));
+    forEachAppLoopWindow(app, (w) => seen.push(w));
     expect(seen).toEqual([win1, win2]);
   });
 });
 
-describe('getApplicationFrameRate', () => {
+describe('getAppLoopFrameRate', () => {
   it('returns 0 before any ticks', () => {
-    const app = createApplication();
-    expect(getApplicationFrameRate(app)).toBe(0);
+    const app = createAppLoop();
+    expect(getAppLoopFrameRate(app)).toBe(0);
   });
 
   it('returns approximate FPS after several ticks', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     // Simulate 60fps ticks (~16.67ms each).
     for (let i = 0; i <= 60; i++) {
       backend.tick(i * 16.67);
     }
-    const fps = getApplicationFrameRate(app);
+    const fps = getAppLoopFrameRate(app);
     expect(fps).toBeGreaterThan(55);
     expect(fps).toBeLessThan(65);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('getApplicationMainWindow', () => {
+describe('getAppLoopMainWindow', () => {
   it('returns null with no windows', () => {
-    const app = createApplication();
-    expect(getApplicationMainWindow(app)).toBeNull();
+    const app = createAppLoop();
+    expect(getAppLoopMainWindow(app)).toBeNull();
   });
 
   it('returns the first registered window by default', () => {
-    const app = createApplication();
-    const win1 = createApplicationWindow();
-    const win2 = createApplicationWindow();
-    registerApplicationWindow(app, win1);
-    registerApplicationWindow(app, win2);
-    expect(getApplicationMainWindow(app)).toBe(win1);
+    const app = createAppLoop();
+    const win1 = createAppWindow();
+    const win2 = createAppWindow();
+    registerAppLoopWindow(app, win1);
+    registerAppLoopWindow(app, win2);
+    expect(getAppLoopMainWindow(app)).toBe(win1);
   });
 
   it('returns the explicitly set main window', () => {
-    const app = createApplication();
-    const win1 = createApplicationWindow();
-    const win2 = createApplicationWindow();
-    registerApplicationWindow(app, win1);
-    setApplicationMainWindow(app, win2);
-    expect(getApplicationMainWindow(app)).toBe(win2);
+    const app = createAppLoop();
+    const win1 = createAppWindow();
+    const win2 = createAppWindow();
+    registerAppLoopWindow(app, win1);
+    setAppLoopMainWindow(app, win2);
+    expect(getAppLoopMainWindow(app)).toBe(win2);
   });
 });
 
-describe('getApplicationWindows', () => {
+describe('getAppLoopWindows', () => {
   it('returns an empty array initially', () => {
-    const app = createApplication();
-    expect(getApplicationWindows(app)).toEqual([]);
+    const app = createAppLoop();
+    expect(getAppLoopWindows(app)).toEqual([]);
   });
 
   it('returns a snapshot of registered windows', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    registerApplicationWindow(app, win);
-    const snapshot = getApplicationWindows(app);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    registerAppLoopWindow(app, win);
+    const snapshot = getAppLoopWindows(app);
     expect(snapshot).toEqual([win]);
     // Snapshot is a copy — mutating it does not affect the registry.
     (snapshot as unknown[]).push(null);
@@ -351,201 +351,201 @@ describe('getApplicationWindows', () => {
   });
 });
 
-describe('initializeApplication', () => {
-  it('is the construction initializer of createApplication', () => {
-    expect(typeof initializeApplication).toBe('function');
+describe('initializeAppLoop', () => {
+  it('is the construction initializer of createAppLoop', () => {
+    expect(typeof initializeAppLoop).toBe('function');
   });
 });
 
-describe('isApplicationRunning', () => {
+describe('isAppLoopRunning', () => {
   it('returns false before loop is started', () => {
-    const app = createApplication();
-    expect(isApplicationRunning(app)).toBe(false);
+    const app = createAppLoop();
+    expect(isAppLoopRunning(app)).toBe(false);
   });
 
   it('returns true after loop is started', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    expect(isApplicationRunning(app)).toBe(true);
-    stopApplicationLoop(app);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    expect(isAppLoopRunning(app)).toBe(true);
+    stopAppLoop(app);
   });
 
   it('returns false after loop is stopped', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    stopApplicationLoop(app);
-    expect(isApplicationRunning(app)).toBe(false);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    stopAppLoop(app);
+    expect(isAppLoopRunning(app)).toBe(false);
   });
 });
 
-describe('pauseApplicationLoop', () => {
+describe('pauseAppLoop', () => {
   it('pauses emission without cancelling the rAF chain', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
-    pauseApplicationLoop(app);
+    pauseAppLoop(app);
     backend.tick(32); // should not emit since paused
     expect(updates.length).toBe(2);
     expect(app.isRunning).toBe(false);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('is idempotent', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    pauseApplicationLoop(app);
-    pauseApplicationLoop(app); // second call should not throw
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    pauseAppLoop(app);
+    pauseAppLoop(app); // second call should not throw
     expect(app.isRunning).toBe(false);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('registerApplicationWindow', () => {
+describe('registerAppLoopWindow', () => {
   it('adds a window to the registry', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    registerApplicationWindow(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    registerAppLoopWindow(app, win);
     expect(app.windows).toContain(win);
   });
 
   it('is idempotent', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    registerApplicationWindow(app, win);
-    registerApplicationWindow(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    registerAppLoopWindow(app, win);
+    registerAppLoopWindow(app, win);
     expect(app.windows.length).toBe(1);
   });
 });
 
-describe('resumeApplicationLoop', () => {
+describe('resumeAppLoop', () => {
   it('resumes emission after pause without dumping the gap delta', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
-    pauseApplicationLoop(app);
+    pauseAppLoop(app);
     // Resume and tick — lastTime was reset so first tick after resume has delta 0.
-    resumeApplicationLoop(app);
+    resumeAppLoop(app);
     backend.tick(5000); // large gap should not flood through; lastTime was reset to -1
     // The tick at 5000 should emit delta=0 (first tick after reset).
     expect(updates[updates.length - 1]).toBe(0);
     expect(app.isRunning).toBe(true);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('is a no-op when not paused', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    resumeApplicationLoop(app); // not paused, should not throw
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    resumeAppLoop(app); // not paused, should not throw
     expect(app.isRunning).toBe(true);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('setApplicationMainWindow', () => {
+describe('setAppLoopMainWindow', () => {
   it('registers the window if not already registered', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    setApplicationMainWindow(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    setAppLoopMainWindow(app, win);
     expect(app.windows).toContain(win);
-    expect(getApplicationMainWindow(app)).toBe(win);
+    expect(getAppLoopMainWindow(app)).toBe(win);
   });
 });
 
-describe('startApplicationLoop', () => {
+describe('startAppLoop', () => {
   it('sets isRunning to true', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     expect(app.isRunning).toBe(true);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('replaces a previous loop when called again', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     const initialCancelCount = backend.cancelCount;
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     expect(backend.cancelCount).toBeGreaterThan(initialCancelCount);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('emits onUpdate with clamped delta and onRender on each tick', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     let renders = 0;
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(100);
 
     expect(updates).toEqual([0, 100]);
     expect(renders).toBe(2);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('clamps large delta gaps to maxDeltaTime', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
     backend.tick(0);
     backend.tick(5000); // 5 second gap clamped to 100ms
 
     expect(updates[1]).toBe(100);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('defaults to 250ms max delta clamp', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(10000); // 10 second gap clamped to 250ms
 
     expect(updates[1]).toBe(250);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('accumulates frame count and elapsed time', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
     backend.tick(16);
     backend.tick(32);
@@ -553,17 +553,17 @@ describe('startApplicationLoop', () => {
     expect(app.frameCount).toBe(3);
     // elapsedTime is in seconds; 0+16+16 = 32ms = 0.032s (clamped)
     expect(app.elapsedTime).toBeCloseTo(0.032, 3);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('throttles to targetFrameRate when set', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { targetFrameRate: 30 }); // 33.33ms interval
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { targetFrameRate: 30 }); // 33.33ms interval
     backend.tick(0); // first tick: lastTime=-1 so delta=0, accumulated=0 → emits
     backend.tick(16); // 16ms < 33.33ms → should skip
     backend.tick(34); // 34ms accumulated ≥ 33.33ms → should emit
@@ -571,17 +571,17 @@ describe('startApplicationLoop', () => {
     // The first tick always emits (delta=0); accumulated starts at 0.
     // Second tick adds 16ms (below threshold), third tick accumulated to ~34ms triggers.
     expect(renders).toBeGreaterThanOrEqual(2);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('pulls lifecycle state from the host when choosing the frame interval', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend, false);
-    const app = createApplication();
+    const app = createAppLoop();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { backgroundFrameRate: 1 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { backgroundFrameRate: 1 });
     backend.tick(0);
     backend.tick(500);
     expect(renders).toBe(1);
@@ -589,64 +589,64 @@ describe('startApplicationLoop', () => {
     host.app.lifecycle.state = 'active';
     backend.tick(516);
     expect(renders).toBe(2);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('startApplicationLoop (fixed timestep)', () => {
+describe('startAppLoop (fixed timestep)', () => {
   it('emits onFixedUpdate when fixedTimeStep is set', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (dt) => fixedDeltas.push(dt));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(48); // 48ms → 3 fixed steps of 16ms
 
     expect(fixedDeltas.length).toBeGreaterThanOrEqual(3);
     expect(fixedDeltas[0]).toBe(16);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('clamps to maxUpdatesPerFrame to prevent spiral-of-death', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     let fixedCount = 0;
     connectSignal(app.onFixedUpdate!, () => fixedCount++);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
     backend.tick(0);
     backend.tick(10000); // huge gap
 
     expect(fixedCount).toBeLessThanOrEqual(3);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('sets interpolationAlpha between 0 and 1 during fixed step', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(24); // 24ms = 1 full step (16ms) + 8ms remainder → alpha = 8/16 = 0.5
 
     expect(app.interpolationAlpha).toBeGreaterThanOrEqual(0);
     expect(app.interpolationAlpha).toBeLessThanOrEqual(1);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('routes fixed-update errors through onError and continues the frame', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const errors: unknown[] = [];
     const fixedUpdateError = new Error('fixed update failed');
     let updates = 0;
@@ -658,23 +658,23 @@ describe('startApplicationLoop (fixed timestep)', () => {
     connectSignal(app.onUpdate, () => updates++);
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(32);
 
     expect(errors).toEqual([fixedUpdateError, fixedUpdateError]);
     expect(updates).toBe(2);
     expect(renders).toBe(2);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('startApplicationLoop (tick-error routing)', () => {
+describe('startAppLoop (tick-error routing)', () => {
   it('routes onUpdate errors to onError when lifecycle signals enabled', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const errors: unknown[] = [];
     connectSignal(app.onError!, (e) => errors.push(e));
 
@@ -683,48 +683,48 @@ describe('startApplicationLoop (tick-error routing)', () => {
       throw boom;
     });
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
 
     expect(errors).toContain(boom);
     // Loop must still be running (rAF chain not killed).
     expect(app.isRunning).toBe(true);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 });
 
-describe('stepApplicationLoop', () => {
+describe('stepAppLoop', () => {
   it('drives one tick with the supplied delta', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     let renders = 0;
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
     connectSignal(app.onRender, () => renders++);
 
-    stepApplicationLoop(app, 16);
+    stepAppLoop(app, 16);
 
     expect(updates).toEqual([16]);
     expect(renders).toBe(1);
   });
 
   it('clamps the delta to the default maxDeltaTime (250ms)', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    stepApplicationLoop(app, 9999);
+    stepAppLoop(app, 9999);
 
     expect(updates[0]).toBe(250);
   });
 
   it('updates frame metrics', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
     app.interpolationAlpha = 0.25;
 
-    stepApplicationLoop(app, 16);
+    stepAppLoop(app, 16);
 
     expect(app.frameCount).toBe(1);
     expect(app.deltaTime).toBe(16);
@@ -734,16 +734,16 @@ describe('stepApplicationLoop', () => {
   });
 
   it('runs fixed updates standalone and retains the residual accumulator across calls', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    stepAppLoop(app, 10, { fixedTimeStep: 16 });
     expect(fixedDeltas).toEqual([]);
     expect(app.interpolationAlpha).toBeCloseTo(0.625, 5);
 
-    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    stepAppLoop(app, 10, { fixedTimeStep: 16 });
     expect(fixedDeltas).toEqual([16]);
     expect(app.interpolationAlpha).toBeCloseTo(0.25, 5);
   });
@@ -751,44 +751,44 @@ describe('stepApplicationLoop', () => {
   it('uses explicit fixed-step options instead of policy from an active backend loop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 8 });
-    stepApplicationLoop(app, 12, { fixedTimeStep: 12 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { fixedTimeStep: 8 });
+    stepAppLoop(app, 12, { fixedTimeStep: 12 });
 
     expect(fixedDeltas).toEqual([12]);
     expect(app.interpolationAlpha).toBe(0);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('carries residual wall time across different explicit fixed-step sizes', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
-    stepApplicationLoop(app, 4, { fixedTimeStep: 8 });
+    stepAppLoop(app, 10, { fixedTimeStep: 16 });
+    stepAppLoop(app, 4, { fixedTimeStep: 8 });
 
     expect(fixedDeltas).toEqual([8]);
     expect(app.interpolationAlpha).toBe(0.75);
   });
 
   it('carries fixed residual across an intervening variable step', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
-    stepApplicationLoop(app, 100);
+    stepAppLoop(app, 10, { fixedTimeStep: 16 });
+    stepAppLoop(app, 100);
     expect(fixedDeltas).toEqual([]);
     expect(app.interpolationAlpha).toBe(1);
 
-    stepApplicationLoop(app, 6, { fixedTimeStep: 16 });
+    stepAppLoop(app, 6, { fixedTimeStep: 16 });
     expect(fixedDeltas).toEqual([16]);
     expect(app.interpolationAlpha).toBe(0);
   });
@@ -796,18 +796,18 @@ describe('stepApplicationLoop', () => {
   it('uses an explicit max delta instead of the active backend loop clamp', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
 
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
-    stepApplicationLoop(app, 9999, { maxDeltaTime: 40 });
+    startAppLoop(host.app.loop, host.app.lifecycle, app, { maxDeltaTime: 100 });
+    stepAppLoop(app, 9999, { maxDeltaTime: 40 });
 
     expect(app.deltaTime).toBe(40);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
   });
 
   it('routes update and render errors independently through onError', () => {
-    const app = createApplication();
-    enableApplicationLifecycleSignals(app);
+    const app = createAppLoop();
+    enableAppLoopLifecycleSignals(app);
     const errors: unknown[] = [];
     const updateError = new Error('update failed');
     const renderError = new Error('render failed');
@@ -819,17 +819,17 @@ describe('stepApplicationLoop', () => {
       throw renderError;
     });
 
-    stepApplicationLoop(app, 16);
+    stepAppLoop(app, 16);
 
     expect(errors).toEqual([updateError, renderError]);
   });
 
   it('uses the default 250ms max clamp when called without a prior loop', () => {
-    const app = createApplication();
+    const app = createAppLoop();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    stepApplicationLoop(app, 9999);
+    stepAppLoop(app, 9999);
 
     expect(updates[0]).toBe(250);
   });
@@ -843,10 +843,10 @@ describe('stepApplicationLoop', () => {
       frameCount: number;
       updates: readonly number[];
     }> => {
-      const app = createApplication();
+      const app = createAppLoop();
       const updates: number[] = [];
       connectSignal(app.onUpdate, (dt) => updates.push(dt));
-      for (let i = 0; i < 10; i++) stepApplicationLoop(app, 16);
+      for (let i = 0; i < 10; i++) stepAppLoop(app, 16);
       return { deltaTime: app.deltaTime, elapsedTime: app.elapsedTime, frameCount: app.frameCount, updates };
     };
 
@@ -861,50 +861,50 @@ describe('stepApplicationLoop', () => {
   });
 });
 
-describe('stopApplicationLoop', () => {
+describe('stopAppLoop', () => {
   it('sets isRunning to false', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
-    stopApplicationLoop(app);
+    const app = createAppLoop();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    stopAppLoop(app);
     expect(app.isRunning).toBe(false);
   });
 
   it('stops emitting after stop', () => {
     const backend = makeManualLoopBackend();
     const host = createLoopTestHost(backend);
-    const app = createApplication();
+    const app = createAppLoop();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
-    startApplicationLoop(host.app.loop, host.app.lifecycle, app);
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
     backend.tick(0);
-    stopApplicationLoop(app);
+    stopAppLoop(app);
     // After stop, calling tick should not emit even if the backend fires.
     // (The backend callback reference is cleared, so tick() is a no-op.)
     expect(renders).toBe(1);
   });
 });
-describe('unregisterApplicationWindow', () => {
+describe('unregisterAppLoopWindow', () => {
   it('removes a registered window', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    registerApplicationWindow(app, win);
-    unregisterApplicationWindow(app, win);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    registerAppLoopWindow(app, win);
+    unregisterAppLoopWindow(app, win);
     expect(app.windows).not.toContain(win);
   });
 
   it('clears the main-window override if removed', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    setApplicationMainWindow(app, win);
-    unregisterApplicationWindow(app, win);
-    expect(getApplicationMainWindow(app)).toBeNull();
+    const app = createAppLoop();
+    const win = createAppWindow();
+    setAppLoopMainWindow(app, win);
+    unregisterAppLoopWindow(app, win);
+    expect(getAppLoopMainWindow(app)).toBeNull();
   });
 
   it('is a no-op for unregistered windows', () => {
-    const app = createApplication();
-    const win = createApplicationWindow();
-    expect(() => unregisterApplicationWindow(app, win)).not.toThrow();
+    const app = createAppLoop();
+    const win = createAppWindow();
+    expect(() => unregisterAppLoopWindow(app, win)).not.toThrow();
   });
 });

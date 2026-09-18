@@ -1,8 +1,4 @@
-import {
-  attachApplicationRenderView,
-  createApplicationRenderView,
-  createApplicationWindow,
-} from '@flighthq/application';
+import { attachAppRenderView, createAppRenderView, createAppWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
@@ -42,7 +38,7 @@ export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
-const applicationWindow = createApplicationWindow();
+const applicationWindow = createAppWindow();
 applicationWindow.width = width / 2;
 applicationWindow.height = height / 2;
 applicationWindow.devicePixelRatio = scale;
@@ -54,7 +50,7 @@ document.body.appendChild(canvas);
 
 // The render-layer half (context, state, storage, viewport) and the application half (the window and
 // the resize wiring between them) are composed here rather than by an assembly package: a render
-// backend may not import @flighthq/application, so the join belongs to the caller.
+// backend may not import @flighthq/app, so the join belongs to the caller.
 const context = getWebGlContext(canvas, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
@@ -76,7 +72,7 @@ const resources = createGlRenderViewResources(
     sampleCount: 1,
   },
 );
-const view = createApplicationRenderView(
+const view = createAppRenderView(
   applicationWindow,
   resources.renderState,
   resources.renderTarget,
@@ -87,7 +83,7 @@ const view = createApplicationRenderView(
     resizeGlRenderViewResources(resources, nextWidth, nextHeight);
   },
 );
-attachApplicationRenderView(view);
+attachAppRenderView(view);
 
 applicationWindow.width = width;
 applicationWindow.height = height;

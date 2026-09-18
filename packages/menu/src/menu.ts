@@ -90,7 +90,7 @@ export function destroyMenuApplication(
 ): void {
   const pending = new Set<HostMenuApplicationCapability>();
   for (const provider of hostMenuApplication) {
-    if (!_destroyedApplication.has(provider)) pending.add(provider);
+    if (!_destroyedAppLoop.has(provider)) pending.add(provider);
   }
   let failure: unknown = null;
   for (const provider of pending) {
@@ -100,7 +100,7 @@ export function destroyMenuApplication(
       failure ??= error;
       continue;
     }
-    _destroyedApplication.add(provider);
+    _destroyedAppLoop.add(provider);
   }
   if (failure !== null) throw failure;
 }
@@ -256,7 +256,7 @@ const _selectUnsubscribe = new WeakMap<MenuSelect, () => void>();
 
 // Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
 // retries exactly the failed obligations and never re-destroys a successful one.
-const _destroyedApplication = new WeakSet<HostMenuApplicationCapability>();
+const _destroyedAppLoop = new WeakSet<HostMenuApplicationCapability>();
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

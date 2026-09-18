@@ -34,7 +34,7 @@ export interface NotificationSchedule {
   repeat?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 }
 
-// Application-notification identity is an Entity. `id` is caller-facing diagnostic identity only;
+// AppLoop-notification identity is an Entity. `id` is caller-facing diagnostic identity only;
 // each provider keeps its native key in private state keyed by this object.
 export interface Notification extends Entity {
   readonly id: string;

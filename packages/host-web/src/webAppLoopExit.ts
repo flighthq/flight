@@ -1,8 +1,8 @@
 import type { HostAppExitCapability } from '@flighthq/types/contract';
 
-export const webHostApplicationExit: HostAppExitCapability = {
+export const webHostAppLoopExit: HostAppExitCapability = {
   subscribe(listener) {
-    webHostApplicationExit.unsubscribe(listener);
+    webHostAppLoopExit.unsubscribe(listener);
     if (typeof window === 'undefined') return;
     const pageWindow = window;
     _applicationExitOrigins.set(listener, pageWindow);

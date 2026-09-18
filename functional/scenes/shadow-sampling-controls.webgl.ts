@@ -35,7 +35,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -55,7 +55,7 @@ declareExpectedImageDescription(
 // capture resolution. Keeping this synthetic witness separate lets shadow-classic exercise the normal
 // fitted-camera path while mutations of either sampling control still change a persistent raster.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

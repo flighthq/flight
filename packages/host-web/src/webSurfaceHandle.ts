@@ -1,6 +1,6 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import { allocateSurface, getSurfaceHandle } from '@flighthq/surface/contract';
-import type { ApplicationWindow, NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
+import type { AppWindow, NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
 
 import { getWebWindowHandle } from './webWindow';
 
@@ -9,7 +9,7 @@ import { getWebWindowHandle } from './webWindow';
 // separate drawable-allocation capability exists. Presentation — anchoring in the document, display size —
 // is deliberately not done here.
 export function allocateWebSurfaceCanvas(
-  win: Readonly<ApplicationWindow>,
+  win: Readonly<AppWindow>,
   width: number,
   height: number,
 ): NativeSurfaceHandle | null {

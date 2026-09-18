@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import {
   webHostGl,
   createWebImageResourceFromCanvas,
@@ -27,7 +27,7 @@ import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/texturea
 import { createTilemap } from '@flighthq/tilemap';
 import { RegistryEntryState, TilemapKind } from '@flighthq/types';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
