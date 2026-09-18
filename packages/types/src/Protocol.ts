@@ -15,29 +15,29 @@ export interface ProtocolHandler extends Entity {
   onOpenUrl: Signal<(url: string) => void>;
 }
 
-export interface HostProtocolDefaultCapability extends Entity {
+export interface HostProtocolDefaultCapability {
   isDefault(scheme: string): boolean;
   removeAsDefault(scheme: string): boolean;
   setAsDefault(scheme: string): boolean;
 }
 
-export interface HostProtocolLaunchCapability extends Entity {
+export interface HostProtocolLaunchCapability {
   getLaunchUrl(): string | null;
 }
 
-export interface HostProtocolOpenCapability extends Entity {
+export interface HostProtocolOpenCapability {
   subscribe(listener: (url: string) => void): () => void;
 }
 
-export interface HostProtocolRegistrationCapability extends Entity {
+export interface HostProtocolRegistrationCapability {
   getRegisteredSchemes(): readonly string[];
   register(scheme: string): boolean;
 }
 
-export interface HostProtocolRegistrationQueryCapability extends Entity {
+export interface HostProtocolRegistrationQueryCapability {
   isRegistered(scheme: string): boolean;
 }
 
-export interface HostProtocolUnregistrationCapability extends Entity {
+export interface HostProtocolUnregistrationCapability {
   unregister(scheme: string): boolean;
 }

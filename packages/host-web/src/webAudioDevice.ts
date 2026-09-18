@@ -1,10 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioBufferHandle,
   HostAudioDeviceCapability,
   AudioDeviceHandle,
   AudioSourceHandle,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 /**
@@ -26,9 +24,9 @@ export function createWebAudioDeviceBackend(): HostAudioDeviceCapability {
     return nextHandle++;
   }
 
-  const out = allocateEntity<HostAudioDeviceCapability & AudioDeviceBackendWebExtension>();
+  const out = {} as HostAudioDeviceCapability & AudioDeviceBackendWebExtension;
   initializeWebAudioDeviceBackend(out, devices, buffers, sources, handle);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -71,7 +69,7 @@ export function hasAudioDeviceWebNodeAccess(backend: Readonly<HostAudioDeviceCap
 }
 
 export function initializeWebAudioDeviceBackend(
-  out: EntityConstruction<HostAudioDeviceCapability & AudioDeviceBackendWebExtension>,
+  out: HostAudioDeviceCapability & AudioDeviceBackendWebExtension,
   devices: Map<number, AudioContext>,
   buffers: Map<number, AudioBuffer>,
   sources: Map<number, AudioSourceEntry>,

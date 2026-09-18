@@ -21,7 +21,7 @@ export function createWebAppCapabilities(): WebAppCapabilities {
   return finishEntity(out);
 }
 
-export function initializeWebAppBadgeBackend(out: EntityConstruction<HostAppBadgeCapability>): void {
+export function initializeWebAppBadgeBackend(out: HostAppBadgeCapability): void {
   out.setBadgeCount = async (count: number) => {
     if (typeof navigator === 'undefined') return false;
     if (typeof navigator.setAppBadge !== 'function') return false;
@@ -36,43 +36,43 @@ export function initializeWebAppBadgeBackend(out: EntityConstruction<HostAppBadg
 
 export function initializeWebAppCapabilities(out: EntityConstruction<WebAppCapabilities>): void {
   out.badge = (() => {
-    const out = allocateEntity<HostAppBadgeCapability>();
+    const out = {} as HostAppBadgeCapability;
     initializeWebAppBadgeBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.focus = (() => {
-    const out = allocateEntity<HostAppFocusCapability>();
+    const out = {} as HostAppFocusCapability;
     initializeWebAppFocusBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.locale = (() => {
-    const out = allocateEntity<HostAppLocaleCapability>();
+    const out = {} as HostAppLocaleCapability;
     initializeWebAppLocaleBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.name = (() => {
-    const out = allocateEntity<HostAppNameCapability>();
+    const out = {} as HostAppNameCapability;
     initializeWebAppNameBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.quit = (() => {
-    const out = allocateEntity<HostAppQuitCapability>();
+    const out = {} as HostAppQuitCapability;
     initializeWebAppQuitBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.ready = (() => {
-    const out = allocateEntity<HostAppReadyCapability>();
+    const out = {} as HostAppReadyCapability;
     initializeWebAppReadyBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.relaunch = (() => {
-    const out = allocateEntity<HostAppRelaunchCapability>();
+    const out = {} as HostAppRelaunchCapability;
     initializeWebAppRelaunchBackend(out);
-    return finishEntity(out);
+    return out;
   })();
 }
 
-export function initializeWebAppFocusBackend(out: EntityConstruction<HostAppFocusCapability>): void {
+export function initializeWebAppFocusBackend(out: HostAppFocusCapability): void {
   out.focus = () => {
     try {
       window.focus();
@@ -80,7 +80,7 @@ export function initializeWebAppFocusBackend(out: EntityConstruction<HostAppFocu
   };
 }
 
-export function initializeWebAppLocaleBackend(out: EntityConstruction<HostAppLocaleCapability>): void {
+export function initializeWebAppLocaleBackend(out: HostAppLocaleCapability): void {
   out.getLocale = () => {
     return typeof navigator === 'undefined' ? '' : (navigator.language ?? '');
   };
@@ -96,13 +96,13 @@ export function initializeWebAppLocaleBackend(out: EntityConstruction<HostAppLoc
   };
 }
 
-export function initializeWebAppNameBackend(out: EntityConstruction<HostAppNameCapability>): void {
+export function initializeWebAppNameBackend(out: HostAppNameCapability): void {
   out.getName = () => {
     return typeof document === 'undefined' ? '' : document.title;
   };
 }
 
-export function initializeWebAppQuitBackend(out: EntityConstruction<HostAppQuitCapability>): void {
+export function initializeWebAppQuitBackend(out: HostAppQuitCapability): void {
   out.quit = () => {
     try {
       window.close();
@@ -110,7 +110,7 @@ export function initializeWebAppQuitBackend(out: EntityConstruction<HostAppQuitC
   };
 }
 
-export function initializeWebAppReadyBackend(out: EntityConstruction<HostAppReadyCapability>): void {
+export function initializeWebAppReadyBackend(out: HostAppReadyCapability): void {
   out.subscribe = (listener: () => void) => {
     if (typeof document !== 'undefined' && document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', listener, { once: true });
@@ -126,7 +126,7 @@ export function initializeWebAppReadyBackend(out: EntityConstruction<HostAppRead
   };
 }
 
-export function initializeWebAppRelaunchBackend(out: EntityConstruction<HostAppRelaunchCapability>): void {
+export function initializeWebAppRelaunchBackend(out: HostAppRelaunchCapability): void {
   out.relaunch = () => {
     try {
       location.reload();
@@ -142,10 +142,8 @@ export const webHostAppQuit = createWebAppCapability<HostAppQuitCapability>(init
 export const webHostAppReady = createWebAppCapability<HostAppReadyCapability>(initializeWebAppReadyBackend);
 export const webHostAppRelaunch = createWebAppCapability<HostAppRelaunchCapability>(initializeWebAppRelaunchBackend);
 
-function createWebAppCapability<Capability extends Entity>(
-  initialize: (out: EntityConstruction<Capability>) => void,
-): Capability {
-  const out = allocateEntity<Capability>();
+function createWebAppCapability<Capability>(initialize: (out: Capability) => void): Capability {
+  const out = {} as Capability;
   initialize(out);
-  return finishEntity(out);
+  return out;
 }

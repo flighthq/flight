@@ -1,24 +1,19 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostAccessibilityCapability,
   AccessibilityLiveness,
   AccessibilityNode,
   AccessibilityState,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createWebAccessibilityBackend(container?: HTMLElement): HostAccessibilityCapability {
-  const out = allocateEntity<HostAccessibilityCapability>();
+  const out = {} as HostAccessibilityCapability;
   initializeWebAccessibilityBackend(out, container);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a visually-hidden ARIA DOM provider. Construction is passive: the default root is created on
 // the first operation, so this factory and webHost are safe to import where no document exists.
-export function initializeWebAccessibilityBackend(
-  out: EntityConstruction<HostAccessibilityCapability>,
-  container?: HTMLElement,
-): void {
+export function initializeWebAccessibilityBackend(out: HostAccessibilityCapability, container?: HTMLElement): void {
   const elements = new Map<string, HTMLElement>();
   const liveRegions = new Map<AccessibilityLiveness, HTMLElement>();
   let destroyed = false;

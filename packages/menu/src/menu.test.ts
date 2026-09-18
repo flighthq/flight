@@ -1,14 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
-  EntityWithoutRuntime,
   HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   attachMenuHighlight,
@@ -208,11 +206,10 @@ describe('createMenuSelect', () => {
 });
 
 describe('destroyAppMenu', () => {
-  function applicationHostWith(provider: EntityWithoutRuntime<HostAppMenuCapability>): {
+  function applicationHostWith(provider: HostAppMenuCapability): {
     readonly menu: { readonly app: HostAppMenuCapability };
   } {
-    (provider as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
-    return { menu: { app: provider as HostAppMenuCapability } };
+    return { menu: { app: provider } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {

@@ -1,8 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
-  HostPreferencesChangeCapability,
   HostPreferencesCapability,
+  HostPreferencesChangeCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
@@ -11,7 +9,7 @@ import type {
 
 type WebStorageBackend = HostPreferencesCapability & HostPreferencesChangeCapability;
 
-export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBackend>): void {
+export function initializeWebStorageBackend(out: WebStorageBackend): void {
   initializeWebStorageChangeProvider(out);
   initializeWebStorageProvider(out);
 }
@@ -20,18 +18,18 @@ export const webHostStorage = createWebStorageProvider();
 export const webHostStorageChange = createWebStorageChangeProvider();
 
 function createWebStorageChangeProvider(): HostPreferencesChangeCapability {
-  const out = allocateEntity<HostPreferencesChangeCapability>();
+  const out = {} as HostPreferencesChangeCapability;
   initializeWebStorageChangeProvider(out);
-  return finishEntity(out);
+  return out;
 }
 
 function createWebStorageProvider(): HostPreferencesCapability {
-  const out = allocateEntity<HostPreferencesCapability>();
+  const out = {} as HostPreferencesCapability;
   initializeWebStorageProvider(out);
-  return finishEntity(out);
+  return out;
 }
 
-function initializeWebStorageChangeProvider(out: EntityConstruction<HostPreferencesChangeCapability>): void {
+function initializeWebStorageChangeProvider(out: HostPreferencesChangeCapability): void {
   const releases = new Set<() => void>();
   let destroyed = false;
   out.destroy = () => {
@@ -78,7 +76,7 @@ function initializeWebStorageChangeProvider(out: EntityConstruction<HostPreferen
   };
 }
 
-function initializeWebStorageProvider(out: EntityConstruction<HostPreferencesCapability>): void {
+function initializeWebStorageProvider(out: HostPreferencesCapability): void {
   out.clear = () => {
     try {
       const storage = getWebLocalStorage();

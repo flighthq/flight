@@ -7,7 +7,6 @@ import type {
   HostShortcutQueryCapability,
   HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function electronHostShortcut(
@@ -20,9 +19,9 @@ export function electronHostShortcut(
 }
 
 export function electronHostShortcutQuery(electron: ElectronApi): HostShortcutQueryCapability {
-  const provider = allocateEntity<HostShortcutQueryCapability>();
+  const provider = {} as HostShortcutQueryCapability;
   populateElectronHostShortcutQuery(provider, electron);
-  return finishEntity(provider);
+  return provider;
 }
 
 // Electron registration is synchronous, but the provider lifts it into the same awaited subscription
@@ -39,7 +38,7 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
   }
 
   const provider = (() => {
-    const out = allocateEntity<HostShortcutTriggerCapability>();
+    const out = {} as HostShortcutTriggerCapability;
     out.destroy = async () => {
       let firstError: unknown;
       const accelerators = new Set(registrations.values());
@@ -65,15 +64,12 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
       await releaseAccelerator(accelerator);
       return { reason: 'unsubscribed' as const };
     };
-    return finishEntity(out);
+    return out;
   })();
   return provider;
 }
 
-export function populateElectronHostShortcutQuery(
-  provider: EntityConstruction<HostShortcutQueryCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostShortcutQuery(provider: HostShortcutQueryCapability, electron: ElectronApi): void {
   provider.isRegistered = async (accelerator: Accelerator) => {
     return electron.globalShortcut.isRegistered(accelerator);
   };

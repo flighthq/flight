@@ -21,18 +21,18 @@ export function initializeWebProtocolCapabilities(
   registeredSchemes: string[],
 ): void {
   out.launch = (() => {
-    const out = allocateEntity<HostProtocolLaunchCapability>();
+    const out = {} as HostProtocolLaunchCapability;
     initializeWebProtocolLaunchBackend(out);
-    return finishEntity(out);
+    return out;
   })();
   out.registration = (() => {
-    const out = allocateEntity<HostProtocolRegistrationCapability>();
+    const out = {} as HostProtocolRegistrationCapability;
     initializeWebProtocolRegistrationBackend(out, registeredSchemes);
-    return finishEntity(out);
+    return out;
   })();
 }
 
-export function initializeWebProtocolLaunchBackend(out: EntityConstruction<HostProtocolLaunchCapability>): void {
+export function initializeWebProtocolLaunchBackend(out: HostProtocolLaunchCapability): void {
   out.getLaunchUrl = () => {
     if (typeof location === 'undefined') return null;
     try {
@@ -45,7 +45,7 @@ export function initializeWebProtocolLaunchBackend(out: EntityConstruction<HostP
 }
 
 export function initializeWebProtocolRegistrationBackend(
-  out: EntityConstruction<HostProtocolRegistrationCapability>,
+  out: HostProtocolRegistrationCapability,
   registeredSchemes: string[],
 ): void {
   out.getRegisteredSchemes = () => {

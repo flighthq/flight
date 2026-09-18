@@ -8,12 +8,11 @@ import type {
   DeviceInfo,
   Entity,
   SafeAreaInsets,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
 export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability & Entity {
-  const out = allocateEntity<HostDeviceCapability>();
+  const out = allocateEntity<HostDeviceCapability & Entity>();
   populateCapacitorDevice(out, capacitor);
   return finishEntity(out);
 }
@@ -25,7 +24,7 @@ export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapabili
 // webview), which map onto DeviceInfo; the fields it does not report (arch, memory, GPU, ABIs, board,
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
-function populateCapacitorDevice(out: EntityConstruction<HostDeviceCapability>, capacitor: CapacitorApi): void {
+function populateCapacitorDevice(out: HostDeviceCapability, capacitor: CapacitorApi): void {
   const device = capacitor.device;
   // Sync getters over async Capacitor: prefetch identity once and serve the cached values.
   let cachedInfo: CapacitorDeviceInfo | null = null;

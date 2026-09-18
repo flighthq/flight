@@ -57,22 +57,22 @@ export interface ScreenInfo extends Entity {
 // entirely, which is the absence-of-an-export ruling, so there is nothing for a fourth state to mean.
 export type ScreenPermissionState = 'denied' | 'granted' | 'prompt';
 
-export interface HostScreenQueryCapability extends Entity {
+export interface HostScreenQueryCapability {
   destroy?(): void;
   getScreens(out: ScreenInfo[]): ScreenInfo[];
   getPrimaryScreen(out: ScreenInfo): ScreenInfo;
   getCursorPosition(out: { x: number; y: number }): { x: number; y: number };
 }
 
-export interface HostScreenChangeCapability extends Entity {
+export interface HostScreenChangeCapability {
   subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void): () => void;
 }
 
-export interface HostScreenDetailsCapability extends Entity {
+export interface HostScreenDetailsCapability {
   queryPermission(): Promise<ScreenPermissionState>;
   request(): Promise<boolean>;
 }
 
-export interface HostScreenPermissionChangeCapability extends Entity {
+export interface HostScreenPermissionChangeCapability {
   subscribe(listener: (state: ScreenPermissionState) => void): () => void;
 }

@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostImageCapability, ImageResource, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
 
 export function createWebImageBackend(): HostImageCapability & Entity {
-  const out = allocateEntity<HostImageCapability>();
+  const out = allocateEntity<HostImageCapability & Entity>();
   initializeWebImageBackend(out);
   return finishEntity(out);
 }
 
-export function initializeWebImageBackend(out: EntityConstruction<HostImageCapability>): void {
+export function initializeWebImageBackend(out: HostImageCapability): void {
   out.createImageFromBitmap = (bitmap): ImageResource => {
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;

@@ -1,6 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostTextSegmenterCapability,
   TextSegment,
   TextSegmentGranularity,
@@ -24,9 +22,9 @@ export const webTextSegmenterBackend: HostTextSegmenterCapability = createWebTex
 // engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
 // the host for those environments.
 export function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
-  const out = allocateEntity<HostTextSegmenterCapability>();
+  const out = {} as HostTextSegmenterCapability;
   initializeWebTextSegmenterBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
 /** Describes which provider an operation would use and whether Intl.Segmenter is present. */
@@ -42,7 +40,7 @@ export function explainTextSegmenterBackend(
   };
 }
 
-export function initializeWebTextSegmenterBackend(out: EntityConstruction<HostTextSegmenterCapability>): void {
+export function initializeWebTextSegmenterBackend(out: HostTextSegmenterCapability): void {
   out.segment = segmentWithIntlSegmenter;
 }
 

@@ -4,8 +4,8 @@ import type { AppWindow, Entity, GlContext, GlSurface, HostGlCapability } from '
 import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface';
 import { allocateSurface, getSurfaceHandle } from './surface';
 
-function glCapability(fields: Omit<HostGlCapability, keyof Entity>): HostGlCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as HostGlCapability;
+function glCapability(fields: HostGlCapability): HostGlCapability {
+  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostGlCapability;
 }
 
 const appWindow = {} as AppWindow;

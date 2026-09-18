@@ -1,4 +1,3 @@
-import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // HTTP(S) transport seam — the Flight home for what OpenFL/Lime expose as URLLoader/URLRequest.
@@ -102,6 +101,6 @@ export interface NetRequestOptions {
 
 // The HTTP transport seam realized by the web default (createWebNetBackend) and by native hosts. A
 // backend implements one async method; @flighthq/net dispatches every request through it.
-export interface HostNetCapability extends Entity {
+export interface HostNetCapability {
   sendNetRequest(request: Readonly<NetRequest>, options?: Readonly<NetRequestOptions>): Promise<NetResponse>;
 }

@@ -1,5 +1,4 @@
 import { createAudioResource } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioBusNodeHandle,
   AudioDeviceHandle,
@@ -49,7 +48,7 @@ function createMockAudioBuffer(): AudioBuffer {
 }
 
 function createMockBackend(): HostAudioDeviceCapability {
-  const out = allocateEntity<any>();
+  const out = {} as HostAudioDeviceCapability;
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle);
@@ -64,11 +63,11 @@ function createMockBackend(): HostAudioDeviceCapability {
   out.setSourcePlaybackRate = vi.fn();
   out.startSource = vi.fn();
   out.stopSource = vi.fn();
-  return finishEntity(out);
+  return out;
 }
 
 function createMockMixer(): HostAudioMixerCapability {
-  const out = allocateEntity<HostAudioMixerCapability>();
+  const out = {} as HostAudioMixerCapability;
   out.createMixerGraph = vi.fn(() => graph);
   out.destroyMixerGraph = vi.fn();
   out.createBusNode = vi.fn(() => busNode);
@@ -80,7 +79,7 @@ function createMockMixer(): HostAudioMixerCapability {
   out.routeSourceToBus = vi.fn();
   out.unrouteSource = vi.fn();
   out.routeSourceToDefault = vi.fn();
-  return finishEntity(out);
+  return out;
 }
 
 beforeEach(() => {

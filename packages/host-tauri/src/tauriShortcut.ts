@@ -19,17 +19,17 @@ export function tauriHostShortcut(
 }
 
 export function tauriHostShortcutQuery(tauri: TauriApi): HostShortcutQueryCapability {
-  const provider = allocateEntity<HostShortcutQueryCapability>();
+  const provider = {} as HostShortcutQueryCapability;
   provider.isRegistered = async (accelerator: Accelerator) => {
     return await tauri.globalShortcut.isRegistered(accelerator);
   };
-  return finishEntity(provider);
+  return provider;
 }
 
 // Tauri's plugin is async at every boundary. Registrations enter the owned ledger only after native
 // acquisition settles; failed unregisters remain there so destroy or an exact-token retry can release them.
 export function tauriHostShortcutTrigger(tauri: TauriApi): HostShortcutTriggerCapability {
-  const provider = allocateEntity<HostShortcutTriggerCapability>();
+  const provider = {} as HostShortcutTriggerCapability;
   const globalShortcut = tauri.globalShortcut;
   const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
   const pending = new Set<Promise<void>>();
@@ -74,5 +74,5 @@ export function tauriHostShortcutTrigger(tauri: TauriApi): HostShortcutTriggerCa
     await releaseAccelerator(accelerator);
     return { reason: 'unsubscribed' as const };
   };
-  return finishEntity(provider);
+  return provider;
 }

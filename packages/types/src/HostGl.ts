@@ -1,5 +1,4 @@
 import type { AppWindow } from './AppWindow';
-import type { Entity } from './Entity';
 import type { GlContext, GlContextOptions } from './GlContext';
 import type { NativeSurfaceHandle, Surface } from './Surface';
 
@@ -10,7 +9,7 @@ import type { NativeSurfaceHandle, Surface } from './Surface';
 // before the window surface exists. Every other operation addresses the Surface itself: null from
 // `acquire` means the drawable cannot yield a context, and `release` drops the host's record without
 // forcing context loss, which the driver owns and `subscribe` reports.
-export interface HostGlCapability extends Entity {
+export interface HostGlCapability {
   acquire(surface: Readonly<Surface>, options?: Readonly<GlContextOptions>): GlContext | null;
   create(
     window: Readonly<AppWindow>,

@@ -8,7 +8,6 @@ import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -37,7 +36,6 @@ function makeRasterizerState(): RenderState {
 
 function createTestImageBackend(): HostImageCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     createImageFromBitmap(bitmap) {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -96,7 +94,7 @@ describe('createCanvasShapeRasterizer', () => {
   it('paints nothing when the registered Bitmap resolver cannot materialize on this host', () => {
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    const backend: HostImageCapability = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const backend: HostImageCapability = { loadImageFromUrl: vi.fn() };
     const noMaterializeHost = imageHost(backend);
     registerCanvasBitmapTextureResolver(noMaterializeHost.graphics.image, resolvers);
 

@@ -15,7 +15,7 @@ const device = 1 as AudioDeviceHandle;
 const graph = 1 as AudioMixerGraphHandle;
 const busNode = 1 as AudioBusNodeHandle;
 const mixerProvider = (() => {
-  const out = allocateEntity<HostAudioMixerCapability>();
+  const out = {} as HostAudioMixerCapability;
   out.createMixerGraph = () => graph;
   out.destroyMixerGraph = () => {};
   out.createBusNode = () => busNode;
@@ -27,7 +27,7 @@ const mixerProvider = (() => {
   out.routeSourceToBus = () => {};
   out.unrouteSource = () => {};
   out.routeSourceToDefault = () => {};
-  return finishEntity(out);
+  return out;
 })();
 
 function captureLog(run: () => void): readonly LogEntry[] {

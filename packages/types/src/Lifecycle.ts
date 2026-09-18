@@ -14,7 +14,7 @@ export type AppMemoryPressure = 'normal' | 'moderate' | 'critical';
 // Event seam for application lifecycle: a state reader plus a change subscription. The Web provider
 // wraps document visibility and window pagehide/pageshow events; a native host reports its own
 // foreground/background transitions through the same subscribe callback.
-export interface HostLifecycleCapability extends Entity {
+export interface HostLifecycleCapability {
   getState(): AppLifecycleState;
   // Registers a listener invoked on any lifecycle change; returns an unsubscribe function.
   subscribe(listener: () => void): () => void;

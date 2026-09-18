@@ -1,15 +1,12 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
-  HostClipboardCapabilities,
+  ElectronApi,
+  ElectronClipboardData,
   HostClipboardBookmarkCapability,
+  HostClipboardCapabilities,
   HostClipboardFormatsCapability,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-  ElectronApi,
-  ElectronClipboardData,
-  Entity,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function electronHostClipboard(
@@ -51,7 +48,7 @@ export function electronHostClipboardText(electron: ElectronApi): HostClipboardT
 // the async Promise contracts. Images cross the seam as data URLs (Flight's convention), converted
 // via nativeImage. Reads resolve to sentinels ('' / null / false) on failure rather than throwing.
 function populateElectronHostClipboardBookmark(
-  out: EntityConstruction<HostClipboardBookmarkCapability>,
+  out: HostClipboardBookmarkCapability,
   cb: ElectronApi['clipboard'],
 ): void {
   out.readBookmark = async () => {
@@ -74,10 +71,7 @@ function populateElectronHostClipboardBookmark(
   };
 }
 
-function populateElectronHostClipboardFormats(
-  out: EntityConstruction<HostClipboardFormatsCapability>,
-  cb: ElectronApi['clipboard'],
-): void {
+function populateElectronHostClipboardFormats(out: HostClipboardFormatsCapability, cb: ElectronApi['clipboard']): void {
   out.getFormats = async () => {
     try {
       return cb.availableFormats();
@@ -162,10 +156,7 @@ function populateElectronHostClipboardFormats(
   };
 }
 
-function populateElectronHostClipboardImage(
-  out: EntityConstruction<HostClipboardImageCapability>,
-  electron: ElectronApi,
-): void {
+function populateElectronHostClipboardImage(out: HostClipboardImageCapability, electron: ElectronApi): void {
   const cb = electron.clipboard;
   out.hasImage = async () => {
     try {
@@ -192,10 +183,7 @@ function populateElectronHostClipboardImage(
   };
 }
 
-function populateElectronHostClipboardText(
-  out: EntityConstruction<HostClipboardTextCapability>,
-  cb: ElectronApi['clipboard'],
-): void {
+function populateElectronHostClipboardText(out: HostClipboardTextCapability, cb: ElectronApi['clipboard']): void {
   out.clear = async () => {
     try {
       cb.clear();
@@ -228,12 +216,10 @@ function populateElectronHostClipboardText(
   };
 }
 
-function finishClipboardProvider<Provider extends Entity>(
-  populate: (out: EntityConstruction<Provider>) => void,
-): Provider {
-  const out = allocateEntity<Provider>();
+function finishClipboardProvider<Provider>(populate: (out: Provider) => void): Provider {
+  const out = {} as Provider;
   populate(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Maps a MIME/flavor string to the keyed field Electron's clipboard.write accepts. Unknown flavors

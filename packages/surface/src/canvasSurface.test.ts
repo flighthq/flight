@@ -4,8 +4,8 @@ import type { AppWindow, CanvasSurface, Entity, HostCanvasCapability } from '@fl
 import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface';
 import { allocateSurface, getSurfaceHandle } from './surface';
 
-function canvasCapability(fields: Omit<HostCanvasCapability, keyof Entity>): HostCanvasCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as HostCanvasCapability;
+function canvasCapability(fields: HostCanvasCapability): HostCanvasCapability {
+  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostCanvasCapability;
 }
 
 const appWindow = {} as AppWindow;

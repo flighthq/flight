@@ -170,68 +170,68 @@ export type TrayAnimationStopResult = { readonly outcome: 'stopped' } | { readon
 
 // Provider contracts. Each shape is independently claimable by Host construction; an unsupported
 // operation has no slot and therefore no callable method or runtime `unsupported` outcome.
-export interface HostTrayLifecycleCapability extends Entity {
+export interface HostTrayLifecycleCapability {
   create(tray: TrayIcon, options: Readonly<TrayIconOptions>): Promise<TrayCreateCapabilityResult>;
   destroy(tray: TrayIcon): Promise<TrayDestroyCapabilityResult>;
   isDestroyed(tray: TrayIcon): boolean;
   list(): readonly TrayIcon[];
 }
 
-export interface HostTrayImageCapability extends Entity {
+export interface HostTrayImageCapability {
   set(tray: TrayIcon, icon: TrayIconSource): Promise<TrayImageUpdateResult>;
 }
 
-export interface HostTrayTitleCapability extends Entity {
+export interface HostTrayTitleCapability {
   get(tray: TrayIcon): Promise<TrayTitleReadResult>;
   set(tray: TrayIcon, title: string): Promise<TrayTitleUpdateResult>;
 }
 
-export interface HostTrayTooltipCapability extends Entity {
+export interface HostTrayTooltipCapability {
   get(tray: TrayIcon): Promise<TrayTooltipReadResult>;
   set(tray: TrayIcon, tooltip: string): Promise<TrayTooltipUpdateResult>;
 }
 
-export interface HostTrayMenuCapability extends Entity {
+export interface HostTrayMenuCapability {
   set(tray: TrayIcon, items: readonly MenuItemTemplate[]): Promise<TrayMenuUpdateResult>;
 }
 
-export interface HostTrayTemplateImageCapability extends Entity {
+export interface HostTrayTemplateImageCapability {
   set(tray: TrayIcon, isTemplate: boolean): Promise<TrayTemplateImageUpdateResult>;
 }
 
-export interface HostTrayBoundsCapability extends Entity {
+export interface HostTrayBoundsCapability {
   get(tray: TrayIcon): Promise<TrayBoundsResult>;
 }
 
-export interface HostTrayPopupMenuCapability extends Entity {
+export interface HostTrayPopupMenuCapability {
   popup(tray: TrayIcon, position?: Readonly<Vector2Like>): Promise<TrayPopupMenuResult>;
 }
 
-export interface HostTrayDoubleClickPolicyCapability extends Entity {
+export interface HostTrayDoubleClickPolicyCapability {
   setIgnore(tray: TrayIcon, ignore: boolean): Promise<TrayDoubleClickPolicyUpdateResult>;
 }
 
-export interface HostTrayPressedImageCapability extends Entity {
+export interface HostTrayPressedImageCapability {
   set(tray: TrayIcon, icon: TrayIconSource): Promise<TrayPressedImageUpdateResult>;
 }
 
-export interface HostTrayBalloonCapability extends Entity {
+export interface HostTrayBalloonCapability {
   display(tray: TrayIcon, options: Readonly<TrayBalloonOptions>): Promise<TrayBalloonDisplayResult>;
   remove(tray: TrayIcon): Promise<TrayBalloonRemoveResult>;
 }
 
-export interface HostTrayInteractionEventsCapability extends Entity {
+export interface HostTrayInteractionEventsCapability {
   getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayInteractionEvent>) => void> | null;
 }
 
-export interface HostTrayMenuSelectionEventsCapability extends Entity {
+export interface HostTrayMenuSelectionEventsCapability {
   getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayMenuSelectionEvent>) => void> | null;
 }
 
-export interface HostTrayBalloonEventsCapability extends Entity {
+export interface HostTrayBalloonEventsCapability {
   getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayBalloonEvent>) => void> | null;
 }
 
-export interface HostTrayDropEventsCapability extends Entity {
+export interface HostTrayDropEventsCapability {
   getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayDropEvent>) => void> | null;
 }

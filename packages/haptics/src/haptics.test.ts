@@ -4,7 +4,6 @@ import type {
   HostHapticsCapability,
   HapticsCapabilities,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   cancelDeviceVibration,
@@ -50,7 +49,6 @@ function makeHost(overrides: Partial<HostHapticsCapability> = {}): {
       return result;
     };
   const haptics: HostHapticsCapability = {
-    [EntityRuntimeKey]: undefined,
     cancel: record('cancel', true),
     capabilities(out: HapticsCapabilities): HapticsCapabilities {
       calls.push({ args: [], name: 'capabilities' });

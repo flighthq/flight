@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronMenuCapabilities,
@@ -20,15 +20,15 @@ function menuState(): ElectronMenuState {
 }
 
 function menuApplication(electron: ElectronApi, state: ElectronMenuState): HostAppMenuCapability {
-  const out = allocateEntity<HostAppMenuCapability>();
+  const out = {} as HostAppMenuCapability;
   populateElectronHostAppMenu(out, electron, state);
-  return finishEntity(out);
+  return out;
 }
 
 function menuSelect(state: ElectronMenuState): HostMenuSelectCapability {
-  const out = allocateEntity<HostMenuSelectCapability>();
+  const out = {} as HostMenuSelectCapability;
   populateElectronHostMenuSelect(out, state);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostAppMenu(electron: ElectronApi): HostAppMenuCapability {
@@ -52,13 +52,13 @@ export function electronHostMenu(electron: ElectronApi): ElectronMenuCapabilitie
   const select = menuSelect(state);
   const out = allocateEntity<ElectronMenuCapabilities>();
   populateElectronHostMenu(out, application, popup, select);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupCapability {
-  const out = allocateEntity<HostMenuPopupCapability>();
+  const out = {} as HostMenuPopupCapability;
   populateElectronHostMenuPopup(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostMenuSelect(): HostMenuSelectCapability {
@@ -66,7 +66,7 @@ export function electronHostMenuSelect(): HostMenuSelectCapability {
 }
 
 export function populateElectronHostAppMenu(
-  out: EntityConstruction<HostAppMenuCapability>,
+  out: HostAppMenuCapability,
   electron: ElectronApi,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
@@ -96,10 +96,7 @@ export function populateElectronHostMenu(
   out.select = select;
 }
 
-export function populateElectronHostMenuPopup(
-  out: EntityConstruction<HostMenuPopupCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostMenuPopup(out: HostMenuPopupCapability, electron: ElectronApi): void {
   // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
   // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
   // open". We resolve null only if popup throws.
@@ -116,7 +113,7 @@ export function populateElectronHostMenuPopup(
 }
 
 export function populateElectronHostMenuSelect(
-  out: EntityConstruction<HostMenuSelectCapability>,
+  out: HostMenuSelectCapability,
   menuState: { selectListener: ((id: string) => void) | null; destroyed: boolean },
 ): void {
   out.subscribe = (listener): (() => void) => {

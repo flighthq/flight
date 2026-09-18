@@ -1,16 +1,15 @@
-import type { Entity } from './Entity';
 import type { InputTargetHandle } from './HostInputTarget';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider
 // resource that created it, so application teardown cannot be redirected by a later Host selection.
-export interface HostInputDropFileCapability extends Entity {
+export interface HostInputDropFileCapability {
   subscribe(target: InputTargetHandle, listener: (path: string) => void): () => void;
 }
 
 // Host-emitted target focus is its own event capability. Core owns the AppWindow signals; the
 // backend owns only event ingress and its exact release obligation.
-export interface HostInputFocusCapability extends Entity {
+export interface HostInputFocusCapability {
   subscribe(target: InputTargetHandle, onFocus: () => void, onBlur: () => void): () => void;
 }
 
@@ -27,7 +26,7 @@ export type InputPointerLockRequestOutcome =
   | { readonly reason: 'ok' }
   | { readonly reason: 'api-unavailable' | 'denied' | 'operation-failed' | 'target-not-found' };
 
-export interface HostInputPointerLockCapability extends Entity {
+export interface HostInputPointerLockCapability {
   exit(): Promise<InputPointerLockExitOutcome>;
   request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
 }

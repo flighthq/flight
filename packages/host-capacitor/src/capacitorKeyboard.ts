@@ -3,7 +3,6 @@ import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
   Entity,
-  EntityConstruction,
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
   SoftKeyboardChangeSubscription,
@@ -27,19 +26,19 @@ import {
 export function capacitorHostSoftKeyboardAccessoryBar(
   capacitor: CapacitorApi,
 ): HostSoftKeyboardAccessoryBarCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardAccessoryBarCapability>();
+  const out = allocateEntity<HostSoftKeyboardAccessoryBarCapability & Entity>();
   populateCapacitorSoftKeyboardAccessoryBar(out, capacitor.keyboard);
   return finishEntity(out);
 }
 
 export function capacitorHostSoftKeyboardChange(capacitor: CapacitorApi): HostSoftKeyboardChangeCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardChangeCapability>();
+  const out = allocateEntity<HostSoftKeyboardChangeCapability & Entity>();
   populateCapacitorSoftKeyboardChange(out, capacitor.keyboard);
   return finishEntity(out);
 }
 
 export function capacitorHostSoftKeyboardInfo(capacitor: CapacitorApi): HostSoftKeyboardInfoCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardInfoCapability>();
+  const out = allocateEntity<HostSoftKeyboardInfoCapability & Entity>();
   populateCapacitorSoftKeyboardInfo(out, capacitor.keyboard);
   return finishEntity(out);
 }
@@ -47,7 +46,7 @@ export function capacitorHostSoftKeyboardInfo(capacitor: CapacitorApi): HostSoft
 export function capacitorHostSoftKeyboardResizeModeWrite(
   capacitor: CapacitorApi,
 ): HostSoftKeyboardResizeModeWriteCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardResizeModeWriteCapability>();
+  const out = allocateEntity<HostSoftKeyboardResizeModeWriteCapability & Entity>();
   populateCapacitorSoftKeyboardResizeModeWrite(out, capacitor.keyboard);
   return finishEntity(out);
 }
@@ -55,13 +54,13 @@ export function capacitorHostSoftKeyboardResizeModeWrite(
 export function capacitorHostSoftKeyboardScrollAssist(
   capacitor: CapacitorApi,
 ): HostSoftKeyboardScrollAssistCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardScrollAssistCapability>();
+  const out = allocateEntity<HostSoftKeyboardScrollAssistCapability & Entity>();
   populateCapacitorSoftKeyboardScrollAssist(out, capacitor.keyboard);
   return finishEntity(out);
 }
 
 export function capacitorHostSoftKeyboardStyle(capacitor: CapacitorApi): HostSoftKeyboardStyleCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardStyleCapability>();
+  const out = allocateEntity<HostSoftKeyboardStyleCapability & Entity>();
   populateCapacitorSoftKeyboardStyle(out, capacitor.keyboard);
   return finishEntity(out);
 }
@@ -69,13 +68,13 @@ export function capacitorHostSoftKeyboardStyle(capacitor: CapacitorApi): HostSof
 export function capacitorHostSoftKeyboardVisibility(
   capacitor: CapacitorApi,
 ): HostSoftKeyboardVisibilityCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardVisibilityCapability>();
+  const out = allocateEntity<HostSoftKeyboardVisibilityCapability & Entity>();
   populateCapacitorSoftKeyboardVisibility(out, capacitor.keyboard);
   return finishEntity(out);
 }
 
 function populateCapacitorSoftKeyboardAccessoryBar(
-  out: EntityConstruction<HostSoftKeyboardAccessoryBarCapability>,
+  out: HostSoftKeyboardAccessoryBarCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.setAccessoryBarVisible = async (visible: boolean): Promise<SoftKeyboardSetterResult> => {
@@ -89,7 +88,7 @@ function populateCapacitorSoftKeyboardAccessoryBar(
 }
 
 function populateCapacitorSoftKeyboardChange(
-  out: EntityConstruction<HostSoftKeyboardChangeCapability>,
+  out: HostSoftKeyboardChangeCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.subscribe = async (listener: () => void): Promise<SoftKeyboardChangeSubscription> => {
@@ -112,7 +111,7 @@ function populateCapacitorSoftKeyboardChange(
 }
 
 function populateCapacitorSoftKeyboardInfo(
-  out: EntityConstruction<HostSoftKeyboardInfoCapability>,
+  out: HostSoftKeyboardInfoCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   let mirrorVisible = false;
@@ -140,7 +139,7 @@ function populateCapacitorSoftKeyboardInfo(
 }
 
 function populateCapacitorSoftKeyboardResizeModeWrite(
-  out: EntityConstruction<HostSoftKeyboardResizeModeWriteCapability>,
+  out: HostSoftKeyboardResizeModeWriteCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.setResizeMode = async (mode: SoftKeyboardResizeMode): Promise<SoftKeyboardSetterResult> => {
@@ -154,7 +153,7 @@ function populateCapacitorSoftKeyboardResizeModeWrite(
 }
 
 function populateCapacitorSoftKeyboardScrollAssist(
-  out: EntityConstruction<HostSoftKeyboardScrollAssistCapability>,
+  out: HostSoftKeyboardScrollAssistCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.setScrollAssistEnabled = async (enabled: boolean): Promise<SoftKeyboardSetterResult> => {
@@ -168,7 +167,7 @@ function populateCapacitorSoftKeyboardScrollAssist(
 }
 
 function populateCapacitorSoftKeyboardStyle(
-  out: EntityConstruction<HostSoftKeyboardStyleCapability>,
+  out: HostSoftKeyboardStyleCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.setStyle = async (style: SoftKeyboardStyleKind): Promise<SoftKeyboardSetterResult> => {
@@ -182,7 +181,7 @@ function populateCapacitorSoftKeyboardStyle(
 }
 
 function populateCapacitorSoftKeyboardVisibility(
-  out: EntityConstruction<HostSoftKeyboardVisibilityCapability>,
+  out: HostSoftKeyboardVisibilityCapability,
   keyboard: CapacitorApi['keyboard'],
 ): void {
   out.hide = async (): Promise<SoftKeyboardVisibilityResult> => {

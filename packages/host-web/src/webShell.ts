@@ -1,7 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, HostShellExternalCapability } from '@flighthq/types/contract';
+import type { HostShellExternalCapability } from '@flighthq/types/contract';
 
-export function initializeWebShellExternalBackend(out: EntityConstruction<HostShellExternalCapability>): void {
+export function initializeWebShellExternalBackend(out: HostShellExternalCapability): void {
   out.open = async (url) => {
     if (typeof window === 'undefined' || typeof window.open !== 'function') {
       return { reason: 'operation-failed' };
@@ -17,7 +16,7 @@ export function initializeWebShellExternalBackend(out: EntityConstruction<HostSh
 // Web has exactly one genuine Shell capability. A stable Entity lets every web Host share provider
 // identity without an enabler, reset, ambient selector, or native-operation stubs.
 export const webHostShellExternal = (() => {
-  const out = allocateEntity<HostShellExternalCapability>();
+  const out = {} as HostShellExternalCapability;
   initializeWebShellExternalBackend(out);
-  return finishEntity(out);
+  return out;
 })();

@@ -1,5 +1,4 @@
 import type { HostNetCapability, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as netContract from './net';
 import { explainNetResponse, sendNetRequest, setNetGuard } from './net';
@@ -10,7 +9,6 @@ function fakeHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
   return {
     net: {
       http: {
-        [EntityRuntimeKey]: undefined,
         ...(backend ?? {
           sendNetRequest: async () => stubResponse(),
         }),

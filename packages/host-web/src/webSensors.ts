@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   computeEulerFromQuaternion,
   createAmbientLightReading,
@@ -30,7 +29,7 @@ export function createWebSensorsBackend(): HostSensorsCapability {
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
   // the runtime slot: `allocateEntity<HostSensorsCapability>` cannot work, because allocateEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
-  const out = allocateEntity<HostSensorsCapability>();
+  const out = {} as HostSensorsCapability;
   out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {
     return getWebSensorsPermissionState(sensor);
   };
@@ -286,7 +285,7 @@ export function createWebSensorsBackend(): HostSensorsCapability {
       return () => {};
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 // Published on the Host rather than installed into the sensors package, so a caller selects this

@@ -1,5 +1,4 @@
 import { notifyWindowClosed } from '@flighthq/app/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   AppWindow,
@@ -61,7 +60,7 @@ export function electronHostWindow(electron: ElectronApi): Required<HostWindowCa
 }
 
 export function electronHostWindowAppearance(): HostWindowAppearanceCapability {
-  const out = allocateEntity<HostWindowAppearanceCapability>();
+  const out = {} as HostWindowAppearanceCapability;
   out.setTitle = (win, title) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -89,20 +88,20 @@ export function electronHostWindowAppearance(): HostWindowAppearanceCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowAttach(): HostWindowAttachCapability {
-  const out = allocateEntity<HostWindowAttachCapability>();
+  const out = {} as HostWindowAttachCapability;
   out.attach = (win, handle, ownership) => {
     if (!isElectronBrowserWindow(handle)) return false;
     return attachElectronWindow(win, handle, ownership);
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowAttention(): HostWindowAttentionCapability {
-  const out = allocateEntity<HostWindowAttentionCapability>();
+  const out = {} as HostWindowAttentionCapability;
   out.requestAttention = (win, attention) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -121,11 +120,11 @@ export function electronHostWindowAttention(): HostWindowAttentionCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowContentProtection(): HostWindowContentProtectionCapability {
-  const out = allocateEntity<HostWindowContentProtectionCapability>();
+  const out = {} as HostWindowContentProtectionCapability;
   out.setContentProtection = (win, enabled) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -135,11 +134,11 @@ export function electronHostWindowContentProtection(): HostWindowContentProtecti
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowFocus(): HostWindowFocusCapability {
-  const out = allocateEntity<HostWindowFocusCapability>();
+  const out = {} as HostWindowFocusCapability;
   out.focus = (win) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -149,11 +148,11 @@ export function electronHostWindowFocus(): HostWindowFocusCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowFullscreen(): HostWindowFullscreenCapability {
-  const out = allocateEntity<HostWindowFullscreenCapability>();
+  const out = {} as HostWindowFullscreenCapability;
   out.setFullscreen = (win, fullscreen) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -163,11 +162,11 @@ export function electronHostWindowFullscreen(): HostWindowFullscreenCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowGeometry(): HostWindowGeometryCapability {
-  const out = allocateEntity<HostWindowGeometryCapability>();
+  const out = {} as HostWindowGeometryCapability;
   out.setPosition = (win, x, y) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -218,11 +217,11 @@ export function electronHostWindowGeometry(): HostWindowGeometryCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowHierarchy(): HostWindowHierarchyCapability {
-  const out = allocateEntity<HostWindowHierarchyCapability>();
+  const out = {} as HostWindowHierarchyCapability;
   out.setParent = (win, parent) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -233,11 +232,11 @@ export function electronHostWindowHierarchy(): HostWindowHierarchyCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowLifecycle(electron: ElectronApi): HostWindowLifecycleCapability {
-  const out = allocateEntity<HostWindowLifecycleCapability>();
+  const out = {} as HostWindowLifecycleCapability;
   out.open = (win, options) => {
     if (_windowRecords.has(win)) return true;
     const bw = new electron.BrowserWindow({
@@ -268,11 +267,11 @@ export function electronHostWindowLifecycle(electron: ElectronApi): HostWindowLi
   out.close = (win) => {
     detachElectronWindow(win, true);
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowProgress(): HostWindowProgressCapability {
-  const out = allocateEntity<HostWindowProgressCapability>();
+  const out = {} as HostWindowProgressCapability;
   out.setProgress = (win, progress) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -282,11 +281,11 @@ export function electronHostWindowProgress(): HostWindowProgressCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowShadow(): HostWindowShadowCapability {
-  const out = allocateEntity<HostWindowShadowCapability>();
+  const out = {} as HostWindowShadowCapability;
   out.setHasShadow = (win, hasShadow) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -296,11 +295,11 @@ export function electronHostWindowShadow(): HostWindowShadowCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowShell(): HostWindowShellCapability {
-  const out = allocateEntity<HostWindowShellCapability>();
+  const out = {} as HostWindowShellCapability;
   out.setSkipTaskbar = (win, skip) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -319,11 +318,11 @@ export function electronHostWindowShell(): HostWindowShellCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowSizeConstraints(): HostWindowSizeConstraintsCapability {
-  const out = allocateEntity<HostWindowSizeConstraintsCapability>();
+  const out = {} as HostWindowSizeConstraintsCapability;
   out.setMinimumSize = (win, width, height) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -351,11 +350,11 @@ export function electronHostWindowSizeConstraints(): HostWindowSizeConstraintsCa
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowState(): HostWindowStateCapability {
-  const out = allocateEntity<HostWindowStateCapability>();
+  const out = {} as HostWindowStateCapability;
   out.minimize = (win) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -384,11 +383,11 @@ export function electronHostWindowState(): HostWindowStateCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowVisibility(): HostWindowVisibilityCapability {
-  const out = allocateEntity<HostWindowVisibilityCapability>();
+  const out = {} as HostWindowVisibilityCapability;
   out.show = (win) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -407,11 +406,11 @@ export function electronHostWindowVisibility(): HostWindowVisibilityCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostWindowZOrder(): HostWindowZOrderCapability {
-  const out = allocateEntity<HostWindowZOrderCapability>();
+  const out = {} as HostWindowZOrderCapability;
   out.setAlwaysOnTop = (win, alwaysOnTop) => {
     const bw = _windows.get(win);
     if (bw === undefined) return;
@@ -421,7 +420,7 @@ export function electronHostWindowZOrder(): HostWindowZOrderCapability {
       /* window already destroyed */
     }
   };
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the AppWindow mapped to the given Electron BrowserWindow id, or null when unknown.

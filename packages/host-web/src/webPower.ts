@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
   HostPowerChangeCapability,
@@ -26,16 +26,16 @@ import type {
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
 export const webHostPowerKeepAwake = (() => {
-  const out = allocateEntity<HostPowerKeepAwakeCapability>();
+  const out = {} as HostPowerKeepAwakeCapability;
   initializeWebPowerKeepAwakeBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
 export const webHostPowerSuspension = (() => {
-  const out = allocateEntity<HostPowerSuspensionCapability>();
+  const out = {} as HostPowerSuspensionCapability;
   initializeWebPowerSuspensionBackend(out);
-  return finishEntity(out);
+  return out;
 })();
 
 // change and status SHARE one closure-owned battery cache. The readings used to be module-scoped with a
@@ -49,7 +49,7 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   let cachedLevel = -1;
 
   const out = allocateEntity<WebPowerReadingCapabilities>();
-  const changeEntity = allocateEntity<HostPowerChangeCapability>();
+  const changeEntity = {} as HostPowerChangeCapability;
   changeEntity.subscribe = (listener: () => void) => {
     const battery = _getWebBatteryManagerPromise();
     if (battery === null) return () => {};
@@ -103,7 +103,7 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
       manager = null;
     };
   };
-  const statusEntity = allocateEntity<HostPowerStatusCapability>();
+  const statusEntity = {} as HostPowerStatusCapability;
   statusEntity.getStatus = (statusOut: PowerStatus): PowerStatus => {
     statusOut.batteryLevel = cachedLevel;
     statusOut.chargingTime = cachedChargingTime;
@@ -117,11 +117,11 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
     statusOut.thermalState = 'Unknown';
     return statusOut;
   };
-  initializeWebPowerReadings(out, finishEntity(changeEntity), finishEntity(statusEntity));
-  return finishEntity(out);
+  initializeWebPowerReadings(out, changeEntity, statusEntity);
+  return out;
 }
 
-export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<HostPowerKeepAwakeCapability>): void {
+export function initializeWebPowerKeepAwakeBackend(out: HostPowerKeepAwakeCapability): void {
   out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
     if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
@@ -186,7 +186,7 @@ export function initializeWebPowerReadings(
   out.status = status;
 }
 
-export function initializeWebPowerSuspensionBackend(out: EntityConstruction<HostPowerSuspensionCapability>): void {
+export function initializeWebPowerSuspensionBackend(out: HostPowerSuspensionCapability): void {
   out.subscribeResume = (listener: () => void): (() => void) => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('resume', listener);

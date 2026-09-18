@@ -5,7 +5,6 @@ import {
 } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { HostImageCapability, ImageResource } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createTextureAtlasFromImageResource,
@@ -25,7 +24,6 @@ afterEach(() => {
 
 function createTestImageBackend(): HostImageCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
       signal?.throwIfAborted();
       const img = new Image();

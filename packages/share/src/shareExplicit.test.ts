@@ -7,7 +7,7 @@ function createRecordingHost(
   label: string,
   calls: string[],
 ): { readonly share: { readonly content: HostShareContentCapability } } {
-  const content = allocateEntity<HostShareContentCapability>();
+  const content = {} as HostShareContentCapability;
   content.canShareContent = () => true;
   content.shareContent = async (payload: Readonly<ShareContent>) => {
     calls.push(`${label}:${payload.text ?? ''}`);
@@ -16,7 +16,7 @@ function createRecordingHost(
   content.shareContentWithResult = async () => {
     return { activityType: null, completed: true, dismissed: false };
   };
-  return { share: { content: finishEntity(content) } };
+  return { share: { content: content } };
 }
 
 describe('explicit Share host isolation', () => {

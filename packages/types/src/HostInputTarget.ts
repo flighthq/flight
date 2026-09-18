@@ -11,6 +11,6 @@ export interface InputTargetHandle extends Entity {
 // One-time host preparation of a target for direct application input: suppressing platform gestures,
 // selection, and tap highlighting. Separate from the event capabilities because a host may need the
 // preparation without emitting any of those events itself.
-export interface HostInputTargetCapability extends Entity {
+export interface HostInputTargetCapability {
   prepare(target: InputTargetHandle): void;
 }

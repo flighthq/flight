@@ -65,20 +65,20 @@ export interface PowerKeepAwakeReleaseResult {
 // a teardown obligation with nothing behind it.
 
 // Reads the current power status into `out`. Query only; the matching notification is `change`.
-export interface HostPowerStatusCapability extends Entity {
+export interface HostPowerStatusCapability {
   getStatus(out: PowerStatus): PowerStatus;
 }
 
 // Raw "something about power changed" notification. Carries no payload by design — the caller re-reads
 // through the status slot, because no host emits a complete status with its change event.
-export interface HostPowerChangeCapability extends Entity {
+export interface HostPowerChangeCapability {
   subscribe(listener: () => void): () => void;
 }
 
 // Stateful keep-awake. Both operations are async because the only real web mechanism (Wake Lock) is
 // async, and a synchronous answer could only be a guess about a request that had not resolved.
 // A synchronous native blocker lifts into the same shape by resolving immediately.
-export interface HostPowerKeepAwakeCapability extends Entity {
+export interface HostPowerKeepAwakeCapability {
   acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult>;
   destroy?(): void;
   isActive(): boolean;
@@ -87,7 +87,7 @@ export interface HostPowerKeepAwakeCapability extends Entity {
 
 // System idle queries. Offered only by a host that can really observe idleness; a host that would
 // answer a constant 'Unknown'/-1 omits the slot instead, so nothing polls a value that cannot change.
-export interface HostPowerIdleCapability extends Entity {
+export interface HostPowerIdleCapability {
   getIdleState(thresholdSeconds: number): PowerIdleState;
   getIdleTimeSeconds(): number;
 }
@@ -95,27 +95,27 @@ export interface HostPowerIdleCapability extends Entity {
 // Session lock as ONE bracket: lock and unlock are the two edges of a single OS session-state boolean,
 // from one mechanism, and every host offers both or neither. A provider that emitted only one edge would
 // leave a consumer permanently wrong about the state the signal exists to track.
-export interface HostPowerSessionLockCapability extends Entity {
+export interface HostPowerSessionLockCapability {
   subscribeLock(listener: () => void): () => void;
   subscribeUnlock(listener: () => void): () => void;
 }
 
 // Suspend/resume as ONE bracket, for the same reason: they are the two edges of one transition. Web
 // realizes them with the Page Lifecycle 'freeze'/'resume' events; a native host with its OS equivalents.
-export interface HostPowerSuspensionCapability extends Entity {
+export interface HostPowerSuspensionCapability {
   subscribeResume(listener: () => void): () => void;
   subscribeSuspend(listener: () => void): () => void;
 }
 
 // Battery health detail, offered only where the host really reports it.
-export interface HostPowerBatteryHealthCapability extends Entity {
+export interface HostPowerBatteryHealthCapability {
   getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth;
 }
 
 // Thermal pressure. The subscription DELIVERS THE STATE rather than announcing that something opaque
 // changed: an event whose state the caller cannot then read is not an actionable capability. A host that
 // can signal a change but not report the level omits this slot.
-export interface HostPowerThermalCapability extends Entity {
+export interface HostPowerThermalCapability {
   getThermalState(): PowerThermalState;
   subscribeThermalStateChange(listener: (state: PowerThermalState) => void): () => void;
 }

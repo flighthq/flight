@@ -1,7 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { initializeGeolocationPosition } from '@flighthq/geolocation/contract';
 import type {
-  EntityConstruction,
   GeolocationAccessOutcome,
   GeolocationErrorReason,
   GeolocationPosition as FlightGeolocationPosition,
@@ -10,12 +9,12 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebGeolocationBackend(): HostGeolocationCapability {
-  const out = allocateEntity<HostGeolocationCapability>();
+  const out = {} as HostGeolocationCapability;
   initializeWebGeolocationBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebGeolocationBackend(out: EntityConstruction<HostGeolocationCapability>): void {
+export function initializeWebGeolocationBackend(out: HostGeolocationCapability): void {
   out.clearWatch = (id) => {
     const geo = getWebGeolocation();
     if (geo === null || typeof geo.clearWatch !== 'function') return;
@@ -117,7 +116,7 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): FlightGe
   out.longitude = coords.longitude;
   out.speed = coords.speed ?? 0;
   out.timestamp = position.timestamp;
-  return finishEntity(out);
+  return out;
 }
 
 function mapWebAccessError(error: GeolocationPositionError): GeolocationAccessOutcome['reason'] {

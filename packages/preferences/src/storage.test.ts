@@ -53,12 +53,12 @@ import {
 } from './storage';
 
 interface MemoryStorageBackend extends HostPreferencesCapability {
-  readonly data: Record<string, string>;
+  data: Record<string, string>;
   getCalls: number;
-  readonly getFailures: Map<string, StorageGetItemFailureReason>;
+  getFailures: Map<string, StorageGetItemFailureReason>;
   keysFailure: StorageGetItemFailureReason | null;
-  readonly removeFailures: Map<string, StorageRemoveItemFailureReason>;
-  readonly setFailures: Map<string, StorageSetItemFailureReason>;
+  removeFailures: Map<string, StorageRemoveItemFailureReason>;
+  setFailures: Map<string, StorageSetItemFailureReason>;
   clearFailure: StorageClearFailureReason | null;
 }
 
@@ -67,7 +67,7 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   const getFailures = new Map<string, StorageGetItemFailureReason>();
   const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
   const setFailures = new Map<string, StorageSetItemFailureReason>();
-  const out = allocateEntity<MemoryStorageBackend>();
+  const out = {} as MemoryStorageBackend;
   out.clearFailure = null;
   out.data = data;
   out.getCalls = 0;
@@ -103,7 +103,7 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
     data[key] = value;
     return { reason: 'ok' };
   };
-  return finishEntity(out);
+  return out;
 }
 
 function localHost(backend: HostPreferencesCapability): {
@@ -123,21 +123,21 @@ describe('attachStorage', () => {
     const released: string[] = [];
     const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
     const a = (() => {
-      const out = allocateEntity<HostPreferencesChangeCapability>();
+      const out = {} as HostPreferencesChangeCapability;
       out.destroy = () => {};
       out.subscribe = (listener: (change: Readonly<StorageChange>) => void) => {
         captured.listener = listener;
         return () => released.push('a');
       };
-      return finishEntity(out);
+      return out;
     })();
     const b = (() => {
-      const out = allocateEntity<HostPreferencesChangeCapability>();
+      const out = {} as HostPreferencesChangeCapability;
       out.destroy = () => {};
       out.subscribe = () => {
         return () => released.push('b');
       };
-      return finishEntity(out);
+      return out;
     })();
     const signals = createStorageSignals();
     const changes: StorageChange[] = [];
@@ -153,11 +153,11 @@ describe('attachStorage', () => {
   });
 
   it('returns false and retains no cleanup when acquisition fails', () => {
-    const provider = allocateEntity<HostPreferencesChangeCapability>();
+    const provider = {} as HostPreferencesChangeCapability;
     provider.destroy = () => {};
     provider.subscribe = () => null;
     const signals = createStorageSignals();
-    expect(attachStorage(changeHost(finishEntity(provider)).storage.change, signals)).toBe(false);
+    expect(attachStorage(changeHost(provider).storage.change, signals)).toBe(false);
     expect(() => detachStorage(signals)).not.toThrow();
   });
 });
@@ -212,10 +212,10 @@ describe('createStorageSignals', () => {
 describe('destroyStorage', () => {
   it('runs the explicit change-provider teardown', () => {
     let destroyed = 0;
-    const provider = allocateEntity<HostPreferencesChangeCapability>();
+    const provider = {} as HostPreferencesChangeCapability;
     provider.destroy = () => destroyed++;
     provider.subscribe = () => null;
-    destroyStorage(changeHost(finishEntity(provider)).storage.change);
+    destroyStorage(changeHost(provider).storage.change);
     expect(destroyed).toBe(1);
   });
 });
@@ -223,11 +223,11 @@ describe('destroyStorage', () => {
 describe('detachStorage', () => {
   it('is idempotent', () => {
     let released = 0;
-    const provider = allocateEntity<HostPreferencesChangeCapability>();
+    const provider = {} as HostPreferencesChangeCapability;
     provider.destroy = () => {};
     provider.subscribe = () => () => released++;
     const signals = createStorageSignals();
-    attachStorage(changeHost(finishEntity(provider)).storage.change, signals);
+    attachStorage(changeHost(provider).storage.change, signals);
     detachStorage(signals);
     detachStorage(signals);
     expect(released).toBe(1);

@@ -29,20 +29,20 @@ describe('segmentGraphemes', () => {
 
   it('threads the locale argument to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const fake = allocateEntity<HostTextSegmenterCapability>();
+    const fake = {} as HostTextSegmenterCapability;
     fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text }];
     };
-    segmentGraphemes(finishEntity(fake), 'hi', 'de-DE');
+    segmentGraphemes(fake, 'hi', 'de-DE');
     expect(seenLocale).toBe('de-DE');
   });
 });
 
 function taggingBackend(tag: string): HostTextSegmenterCapability {
-  const out = allocateEntity<HostTextSegmenterCapability>();
+  const out = {} as HostTextSegmenterCapability;
   out.segment = () => [{ start: 0, end: tag.length, text: tag }];
-  return finishEntity(out);
+  return out;
 }
 
 describe('segmentSentences', () => {

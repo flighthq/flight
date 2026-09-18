@@ -1,16 +1,14 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AppLaunchKind,
   AppLifecycleState,
   AppMemoryPressure,
-  EntityConstruction,
   HostLifecycleCapability,
 } from '@flighthq/types/contract';
 
 export function createWebLifecycleBackend(): HostLifecycleCapability {
-  const out = allocateEntity<HostLifecycleCapability>();
+  const out = {} as HostLifecycleCapability;
   initializeWebLifecycleBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds the default Web provider over document visibility, window focus/blur, and pagehide/pageshow
@@ -30,7 +28,7 @@ export function createWebLifecycleBackend(): HostLifecycleCapability {
 // trial / behind flags). The event detail carries a 'critical' pressure string; this provider maps
 // it to 'critical' and fires 'normal' on the subsequent resolution event when present. Falls back to
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
-export function initializeWebLifecycleBackend(out: EntityConstruction<HostLifecycleCapability>): void {
+export function initializeWebLifecycleBackend(out: HostLifecycleCapability): void {
   let _windowFocused = typeof document !== 'undefined';
   out.getState = (): AppLifecycleState => {
     if (typeof document === 'undefined') return 'active';

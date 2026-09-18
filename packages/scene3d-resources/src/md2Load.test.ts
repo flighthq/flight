@@ -1,7 +1,6 @@
 import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromMd2Url } from './md2Load';
@@ -25,7 +24,6 @@ function fakeHost(): { readonly net: { readonly http: HostNetCapability } } {
   const host: { readonly net: { readonly http: HostNetCapability } } = {
     net: {
       http: {
-        [EntityRuntimeKey]: undefined,
         sendNetRequest: (request, options) => netContract.sendNetRequest(host.net.http, request, options),
       },
     },

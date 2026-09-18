@@ -88,7 +88,7 @@ function fakeBackend(): HostSensorsCapability & {
     fireProximity: (reading: ProximityReading) => void;
     fireQuaternion: (reading: QuaternionReading) => void;
   };
-  const out = allocateEntity<FakeBackend>();
+  const out = {} as FakeBackend;
   out.getPermissionState = async (): Promise<SensorsPermissionState> => 'granted';
   out.isAmbientLightSupported = () => true;
   out.isBarometerSupported = () => false;
@@ -192,7 +192,7 @@ function fakeBackend(): HostSensorsCapability & {
   out.fireQuaternion = (reading: QuaternionReading) => {
     quaternionListener?.(reading);
   };
-  return finishEntity(out);
+  return out;
 }
 
 function hostOf(backend: HostSensorsCapability): { readonly system: { readonly sensors: HostSensorsCapability } } {

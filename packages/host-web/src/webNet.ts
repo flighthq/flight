@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   HostNetCapability,
@@ -8,16 +7,15 @@ import type {
   NetResponseBody,
   NetResponseType,
   Signal,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createWebNetBackend(): HostNetCapability {
-  const out = allocateEntity<HostNetCapability>();
+  const out = {} as HostNetCapability;
   initializeWebNetBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebNetBackend(out: EntityConstruction<HostNetCapability>): void {
+export function initializeWebNetBackend(out: HostNetCapability): void {
   out.sendNetRequest = async (request, options): Promise<NetResponse> => {
     const controller = new AbortController();
     const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);

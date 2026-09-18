@@ -9,7 +9,7 @@ import type {
   TauriMenuCapabilities,
 } from './Menu';
 
-type MenuProvidersAreEntities = [
+type MenuCapabilitiesAreStructural = [
   HostAppMenuCapability extends Entity ? true : false,
   HostMenuHighlightCapability extends Entity ? true : false,
   HostMenuPopupCapability extends Entity ? true : false,
@@ -30,8 +30,11 @@ type GenericMenuContractsAreStructural = [
 ];
 
 describe('menu Entity boundaries', () => {
-  it('makes individual providers and concrete platform bundles entities', () => {
-    expectTypeOf<MenuProvidersAreEntities>().toEqualTypeOf<[true, true, true, true]>();
+  it('keeps individual capabilities structural', () => {
+    expectTypeOf<MenuCapabilitiesAreStructural>().toEqualTypeOf<[false, false, false, false]>();
+  });
+
+  it('makes concrete platform bundles entities', () => {
     expectTypeOf<ConcreteMenuBundlesAreEntities>().toEqualTypeOf<[true, true]>();
   });
 

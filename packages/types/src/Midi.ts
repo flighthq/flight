@@ -137,11 +137,11 @@ export interface MidiPortStateSubscription extends Entity {
   readonly onMidiPortStateChange: Signal<(port: Readonly<MidiPort>) => void>;
 }
 
-export interface HostMidiAccessCapability extends Entity {
+export interface HostMidiAccessCapability {
   requestAccess(): Promise<MidiAccessRequestOutcome>;
 }
 
-export interface HostMidiPermissionCapability extends Entity {
+export interface HostMidiPermissionCapability {
   getPermission(): Promise<PermissionQueryOutcome>;
 }
 

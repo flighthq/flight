@@ -44,23 +44,23 @@ export interface AppEvents extends Entity {
 
 export type MobileOsProfile = 'android' | 'ios';
 
-export interface HostAppActivateCapability extends Entity {
+export interface HostAppActivateCapability {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppActivationPolicyCapability extends Entity {
+export interface HostAppActivationPolicyCapability {
   setActivationPolicy(policy: AppActivationPolicy): void;
 }
 
-export interface HostAppAllWindowsClosedCapability extends Entity {
+export interface HostAppAllWindowsClosedCapability {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppBadgeCapability extends Entity {
+export interface HostAppBadgeCapability {
   setBadgeCount(count: number): Promise<boolean>;
 }
 
-export interface HostAppDockCapability extends Entity {
+export interface HostAppDockCapability {
   bounceDock(): number;
   cancelAttention(id: number): void;
   cancelDockBounce(id: number): void;
@@ -69,82 +69,82 @@ export interface HostAppDockCapability extends Entity {
   setDockMenu(items: readonly MenuItemTemplate[]): void;
 }
 
-export interface HostAppFocusCapability extends Entity {
+export interface HostAppFocusCapability {
   focus(): void;
 }
 
-export interface HostAppLocaleCapability extends Entity {
+export interface HostAppLocaleCapability {
   getLocale(): string;
   getPreferredSystemLanguages(): readonly string[];
   getSystemLocale(): string;
 }
 
-export interface HostAppLoginItemCapability extends Entity {
+export interface HostAppLoginItemCapability {
   getLoginItem(): AppLoginItem;
   setLoginItem(settings: Readonly<AppLoginItemLike>): void;
 }
 
-export interface HostAppNameCapability extends Entity {
+export interface HostAppNameCapability {
   getName(): string;
 }
 
-export interface HostAppNameWriteCapability extends Entity {
+export interface HostAppNameWriteCapability {
   setName(name: string): void;
 }
 
-export interface HostAppOpenFileCapability extends Entity {
+export interface HostAppOpenFileCapability {
   subscribe(listener: (path: string) => void): () => void;
 }
 
-export interface HostAppPathCapability extends Entity {
+export interface HostAppPathCapability {
   getAppDirectoryPath(kind: AppPathKind): string;
   getAppPath(): string;
   getExecutablePath(): string;
 }
 
-export interface HostAppQuitCapability extends Entity {
+export interface HostAppQuitCapability {
   quit(): void;
 }
 
-export interface HostAppQuitRequestCapability extends Entity {
+export interface HostAppQuitRequestCapability {
   subscribe(listener: (cancelHost: () => void) => void): () => void;
 }
 
-export interface HostAppReadyCapability extends Entity {
+export interface HostAppReadyCapability {
   subscribe(listener: () => void): () => void;
 }
 
-export interface HostAppRecentDocumentsCapability extends Entity {
+export interface HostAppRecentDocumentsCapability {
   addRecentDocument(path: string): void;
   clearRecentDocuments(): void;
 }
 
-export interface HostAppRelaunchCapability extends Entity {
+export interface HostAppRelaunchCapability {
   relaunch(): void;
 }
 
-export interface HostAppSecondInstanceCapability extends Entity {
+export interface HostAppSecondInstanceCapability {
   subscribe(listener: (argv: readonly string[]) => void): () => void;
 }
 
-export interface HostAppSingleInstanceCapability extends Entity {
+export interface HostAppSingleInstanceCapability {
   hasSingleInstanceLock(): boolean;
   releaseSingleInstanceLock(): void;
   requestSingleInstanceLock(): boolean;
 }
 
-export interface HostAppUserModelIdCapability extends Entity {
+export interface HostAppUserModelIdCapability {
   setUserModelId(id: string): void;
 }
 
-export interface HostAppVersionCapability extends Entity {
+export interface HostAppVersionCapability {
   getVersion(): string;
 }
 
-export interface HostAppHideCapability extends Entity {
+export interface HostAppHideCapability {
   hideApp(): void;
 }
 
-export interface HostAppShowCapability extends Entity {
+export interface HostAppShowCapability {
   showApp(): void;
 }

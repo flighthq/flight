@@ -1,6 +1,5 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostWgpuCapability,
   NativeSurfaceHandle,
   Surface,
@@ -11,9 +10,9 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createTestWgpuHostBackend(): HostWgpuCapability {
-  const out = allocateEntity<HostWgpuCapability>();
+  const out = {} as HostWgpuCapability;
   initializeTestWgpuHostBackend(out);
-  return finishEntity(out);
+  return out;
 }
 
 function testCanvas(surface: Readonly<Surface>): HTMLCanvasElement | null {
@@ -31,7 +30,7 @@ export function createTestWgpuSurface(canvas: HTMLCanvasElement): Surface {
   return finishEntity(surface);
 }
 
-function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
+function initializeTestWgpuHostBackend(out: HostWgpuCapability): void {
   out.create = (_window, width, height): NativeSurfaceHandle => {
     const canvas = document.createElement('canvas');
     canvas.width = width;

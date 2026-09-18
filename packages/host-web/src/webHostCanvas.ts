@@ -1,15 +1,14 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AppWindow, EntityConstruction, HostCanvasCapability, Surface } from '@flighthq/types/contract';
+import type { AppWindow, HostCanvasCapability, Surface } from '@flighthq/types/contract';
 
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export function createWebHostCanvas(): HostCanvasCapability {
-  const out = allocateEntity<HostCanvasCapability>();
+  const out = {} as HostCanvasCapability;
   initializeWebHostCanvas(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebHostCanvas(out: EntityConstruction<HostCanvasCapability>): void {
+export function initializeWebHostCanvas(out: HostCanvasCapability): void {
   out.acquire = (surface: Readonly<Surface>, options?: Readonly<CanvasRenderingContext2DSettings>) => {
     const canvas = getWebSurfaceCanvasHandle(surface);
     if (canvas === null) return null;

@@ -1,19 +1,29 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  AppLoginItem,
+  AppPathKind,
+  DesktopOsProfile,
+  ElectronApi,
+  ElectronAppCapabilitiesFor,
+  ElectronCommonAppCapabilities,
+  ElectronLinuxAppCapabilities,
+  ElectronMacosAppCapabilities,
+  ElectronWindowsAppCapabilities,
+  EntityConstruction,
   HostAppActivateCapability,
   HostAppActivationPolicyCapability,
   HostAppAllWindowsClosedCapability,
   HostAppBadgeCapability,
+  HostAppCapabilities,
   HostAppDockCapability,
   HostAppFocusCapability,
+  HostAppHideCapability,
   HostAppLocaleCapability,
-  AppLoginItem,
   HostAppLoginItemCapability,
   HostAppNameCapability,
   HostAppNameWriteCapability,
   HostAppOpenFileCapability,
   HostAppPathCapability,
-  AppPathKind,
   HostAppQuitCapability,
   HostAppQuitRequestCapability,
   HostAppReadyCapability,
@@ -24,17 +34,6 @@ import type {
   HostAppSingleInstanceCapability,
   HostAppUserModelIdCapability,
   HostAppVersionCapability,
-  DesktopOsProfile,
-  ElectronApi,
-  ElectronAppCapabilitiesFor,
-  ElectronCommonAppCapabilities,
-  ElectronLinuxAppCapabilities,
-  ElectronMacosAppCapabilities,
-  ElectronWindowsAppCapabilities,
-  Entity,
-  EntityConstruction,
-  HostAppHideCapability,
-  HostAppCapabilities,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 
@@ -42,10 +41,10 @@ import { toElectronTemplate } from './electronMenuTemplate';
 
 type AppSubscribe = (event: string, listener: (...args: unknown[]) => void) => () => void;
 
-function finishProvider<Provider extends Entity>(populate: (out: EntityConstruction<Provider>) => void): Provider {
-  const out = allocateEntity<Provider>();
+function finishProvider<Provider>(populate: (out: Provider) => void): Provider {
+  const out = {} as Provider;
   populate(out);
-  return finishEntity(out);
+  return out;
 }
 
 function appSubscribe(electron: ElectronApi): AppSubscribe {
@@ -210,30 +209,27 @@ export function electronHostAppVersion(electron: ElectronApi): HostAppVersionCap
 }
 
 export function populateElectronHostAppActivate(
-  out: EntityConstruction<HostAppActivateCapability>,
+  out: HostAppActivateCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('activate', listener);
 }
 
 export function populateElectronHostAppActivationPolicy(
-  out: EntityConstruction<HostAppActivationPolicyCapability>,
+  out: HostAppActivationPolicyCapability,
   app: ElectronApi['app'],
 ): void {
   out.setActivationPolicy = (policy: 'accessory' | 'prohibited' | 'regular') => app.setActivationPolicy(policy);
 }
 
 export function populateElectronHostAppAllWindowsClosed(
-  out: EntityConstruction<HostAppAllWindowsClosedCapability>,
+  out: HostAppAllWindowsClosedCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('window-all-closed', listener);
 }
 
-export function populateElectronHostAppBadge(
-  out: EntityConstruction<HostAppBadgeCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppBadge(out: HostAppBadgeCapability, app: ElectronApi['app']): void {
   out.setBadgeCount = async (count: number) => app.setBadgeCount(count);
 }
 
@@ -269,7 +265,7 @@ export function populateElectronHostAppCommon(
 }
 
 export function populateElectronHostAppDock(
-  out: EntityConstruction<HostAppDockCapability>,
+  out: HostAppDockCapability,
   dock: NonNullable<ElectronApi['app']['dock']>,
   electron: ElectronApi,
 ): void {
@@ -282,17 +278,11 @@ export function populateElectronHostAppDock(
     dock.setMenu(electron.Menu.buildFromTemplate(toElectronTemplate(items)));
 }
 
-export function populateElectronHostAppFocus(
-  out: EntityConstruction<HostAppFocusCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppFocus(out: HostAppFocusCapability, app: ElectronApi['app']): void {
   out.focus = () => app.focus();
 }
 
-export function populateElectronHostAppHide(
-  out: EntityConstruction<HostAppHideCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppHide(out: HostAppHideCapability, app: ElectronApi['app']): void {
   out.hideApp = () => app.hide();
 }
 
@@ -317,19 +307,13 @@ export function populateElectronHostAppLinux(
   out.version = common.version;
 }
 
-export function populateElectronHostAppLocale(
-  out: EntityConstruction<HostAppLocaleCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppLocale(out: HostAppLocaleCapability, app: ElectronApi['app']): void {
   out.getLocale = () => app.getLocale();
   out.getPreferredSystemLanguages = () => app.getPreferredSystemLanguages();
   out.getSystemLocale = () => app.getSystemLocale();
 }
 
-export function populateElectronHostAppLoginItem(
-  out: EntityConstruction<HostAppLoginItemCapability>,
-  electron: ElectronApi,
-): void {
+export function populateElectronHostAppLoginItem(out: HostAppLoginItemCapability, electron: ElectronApi): void {
   out.getLoginItem = () => {
     const settings = electron.app.getLoginItemSettings();
     return {
@@ -386,22 +370,16 @@ export function populateElectronHostAppMacos(
   out.version = common.version;
 }
 
-export function populateElectronHostAppName(
-  out: EntityConstruction<HostAppNameCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppName(out: HostAppNameCapability, app: ElectronApi['app']): void {
   out.getName = () => app.getName();
 }
 
-export function populateElectronHostAppNameWrite(
-  out: EntityConstruction<HostAppNameWriteCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppNameWrite(out: HostAppNameWriteCapability, app: ElectronApi['app']): void {
   out.setName = (name: string) => app.setName(name);
 }
 
 export function populateElectronHostAppOpenFile(
-  out: EntityConstruction<HostAppOpenFileCapability>,
+  out: HostAppOpenFileCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (path: string) => void) => {
@@ -409,24 +387,18 @@ export function populateElectronHostAppOpenFile(
   };
 }
 
-export function populateElectronHostAppPath(
-  out: EntityConstruction<HostAppPathCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppPath(out: HostAppPathCapability, app: ElectronApi['app']): void {
   out.getAppDirectoryPath = (kind: AppPathKind) => app.getPath(toElectronPathName(kind));
   out.getAppPath = () => app.getAppPath();
   out.getExecutablePath = () => app.getPath('exe');
 }
 
-export function populateElectronHostAppQuit(
-  out: EntityConstruction<HostAppQuitCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppQuit(out: HostAppQuitCapability, app: ElectronApi['app']): void {
   out.quit = () => app.quit();
 }
 
 export function populateElectronHostAppQuitRequest(
-  out: EntityConstruction<HostAppQuitRequestCapability>,
+  out: HostAppQuitRequestCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (cancelHost: () => void) => void) => {
@@ -438,29 +410,26 @@ export function populateElectronHostAppQuitRequest(
 }
 
 export function populateElectronHostAppReady(
-  out: EntityConstruction<HostAppReadyCapability>,
+  out: HostAppReadyCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: () => void) => subscribe('ready', listener);
 }
 
 export function populateElectronHostAppRecentDocuments(
-  out: EntityConstruction<HostAppRecentDocumentsCapability>,
+  out: HostAppRecentDocumentsCapability,
   electron: ElectronApi,
 ): void {
   out.addRecentDocument = (path: string) => electron.app.addRecentDocument(path);
   out.clearRecentDocuments = () => electron.app.clearRecentDocuments();
 }
 
-export function populateElectronHostAppRelaunch(
-  out: EntityConstruction<HostAppRelaunchCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppRelaunch(out: HostAppRelaunchCapability, app: ElectronApi['app']): void {
   out.relaunch = () => app.relaunch();
 }
 
 export function populateElectronHostAppSecondInstance(
-  out: EntityConstruction<HostAppSecondInstanceCapability>,
+  out: HostAppSecondInstanceCapability,
   subscribe: (event: string, listener: (...args: unknown[]) => void) => () => void,
 ): void {
   out.subscribe = (listener: (argv: readonly string[]) => void) => {
@@ -468,15 +437,12 @@ export function populateElectronHostAppSecondInstance(
   };
 }
 
-export function populateElectronHostAppShow(
-  out: EntityConstruction<HostAppShowCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppShow(out: HostAppShowCapability, app: ElectronApi['app']): void {
   out.showApp = () => app.show();
 }
 
 export function populateElectronHostAppSingleInstance(
-  out: EntityConstruction<HostAppSingleInstanceCapability>,
+  out: HostAppSingleInstanceCapability,
   app: ElectronApi['app'],
 ): void {
   out.hasSingleInstanceLock = () => app.hasSingleInstanceLock();
@@ -484,17 +450,11 @@ export function populateElectronHostAppSingleInstance(
   out.requestSingleInstanceLock = () => app.requestSingleInstanceLock();
 }
 
-export function populateElectronHostAppUserModelId(
-  out: EntityConstruction<HostAppUserModelIdCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppUserModelId(out: HostAppUserModelIdCapability, app: ElectronApi['app']): void {
   out.setUserModelId = (id: string) => app.setAppUserModelId(id);
 }
 
-export function populateElectronHostAppVersion(
-  out: EntityConstruction<HostAppVersionCapability>,
-  app: ElectronApi['app'],
-): void {
+export function populateElectronHostAppVersion(out: HostAppVersionCapability, app: ElectronApi['app']): void {
   out.getVersion = () => app.getVersion();
 }
 

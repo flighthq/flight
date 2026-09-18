@@ -1,16 +1,16 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronDisplay,
   EntityConstruction,
   HostScreenCapabilities,
   HostScreenChangeCapability,
+  HostScreenQueryCapability,
   ScreenChangeEvent,
   ScreenChangeKind,
   ScreenColorSpace,
   ScreenInfo,
   ScreenOrientation,
-  HostScreenQueryCapability,
 } from '@flighthq/types/contract';
 
 export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
@@ -18,15 +18,15 @@ export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScr
 }
 
 export function electronHostScreenChange(electron: ElectronApi): HostScreenChangeCapability {
-  const out = allocateEntity<HostScreenChangeCapability>();
+  const out = {} as HostScreenChangeCapability;
   populateElectronHostScreenChange(out, electron.screen);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostScreenQuery(electron: ElectronApi): HostScreenQueryCapability {
-  const out = allocateEntity<HostScreenQueryCapability>();
+  const out = {} as HostScreenQueryCapability;
   populateElectronHostScreenQuery(out, electron.screen);
-  return finishEntity(out);
+  return out;
 }
 
 function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
@@ -57,10 +57,7 @@ function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
   out.y = 0;
 }
 
-export function populateElectronHostScreenChange(
-  out: EntityConstruction<HostScreenChangeCapability>,
-  screen: ElectronApi['screen'],
-): void {
+export function populateElectronHostScreenChange(out: HostScreenChangeCapability, screen: ElectronApi['screen']): void {
   out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
     const makeHandler =
       (kind: ScreenChangeKind) =>
@@ -92,10 +89,7 @@ export function populateElectronHostScreenChange(
   };
 }
 
-export function populateElectronHostScreenQuery(
-  out: EntityConstruction<HostScreenQueryCapability>,
-  screen: ElectronApi['screen'],
-): void {
+export function populateElectronHostScreenQuery(out: HostScreenQueryCapability, screen: ElectronApi['screen']): void {
   out.getCursorPosition = (target: { x: number; y: number }) => {
     Object.assign(target, screen.getCursorScreenPoint());
     return target;
@@ -118,7 +112,7 @@ export function populateElectronHostScreenQuery(
 function emptyScreenInfo(): ScreenInfo {
   const out = allocateEntity<ScreenInfo>();
   initializeEmptyScreenInfo(out);
-  return finishEntity(out);
+  return out;
 }
 
 function fillScreenInfo(out: ScreenInfo, display: Readonly<ElectronDisplay>, isPrimary: boolean): ScreenInfo {

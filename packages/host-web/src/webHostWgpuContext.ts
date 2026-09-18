@@ -1,20 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  HostWgpuCapability,
-  WgpuHostAcquisition,
-  WgpuSurfaceAttachResult,
-} from '@flighthq/types/contract';
+import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from '@flighthq/types/contract';
 
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export function createWebHostWgpuContext(): HostWgpuCapability {
-  const out = allocateEntity<HostWgpuCapability>();
+  const out = {} as HostWgpuCapability;
   initializeWebHostWgpuContext(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCapability>): void {
+export function initializeWebHostWgpuContext(out: HostWgpuCapability): void {
   out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
     const canvas = getWebSurfaceCanvasHandle(surface);
     if (canvas === null) throw new Error('Surface is not backed by a canvas element.');

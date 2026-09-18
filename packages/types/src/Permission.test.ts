@@ -1,7 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
-  Entity,
   HostNotificationPermissionCapability,
   HostPermissionsCapability,
   PermissionName,
@@ -10,8 +9,7 @@ import type {
 } from './index';
 
 describe('HostPermissionsCapability', () => {
-  it('is an Entity with only the native permission operations and Notification provider', () => {
-    expectTypeOf<HostPermissionsCapability>().toExtend<Entity>();
+  it('has the native permission operations and Notification provider', () => {
     expectTypeOf<HostPermissionsCapability['notification']>().toEqualTypeOf<HostNotificationPermissionCapability>();
     expectTypeOf<HostPermissionsCapability['queryPermission']>().parameters.toEqualTypeOf<[PermissionName]>();
     expectTypeOf<HostPermissionsCapability['queryPermission']>().returns.toEqualTypeOf<

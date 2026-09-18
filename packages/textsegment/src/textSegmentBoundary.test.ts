@@ -102,9 +102,9 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit = allocateEntity<HostTextSegmenterCapability>();
+    const explicit = {} as HostTextSegmenterCapability;
     explicit.segment = (text: string) => [{ start: 0, end: text.length, text, isWordLike: true }];
-    expect(getWordRangeAt(finishEntity(explicit), 'word', 1)).toEqual({ start: 0, end: 4 });
+    expect(getWordRangeAt(explicit, 'word', 1)).toEqual({ start: 0, end: 4 });
   });
 
   it('returns the word range under an index', () => {
@@ -125,12 +125,12 @@ describe('getWordRangeAt', () => {
 
   it('threads the locale to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const localeBackend = allocateEntity<HostTextSegmenterCapability>();
+    const localeBackend = {} as HostTextSegmenterCapability;
     localeBackend.segment = (text: string, _granularity: string, locale: string) => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text, isWordLike: true }];
     };
-    getWordRangeAt(finishEntity(localeBackend), 'word', 1, 'ja-JP');
+    getWordRangeAt(localeBackend, 'word', 1, 'ja-JP');
     expect(seenLocale).toBe('ja-JP');
   });
 });

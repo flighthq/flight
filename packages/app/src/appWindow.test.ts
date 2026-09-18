@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  EntityWithoutRuntime,
   FullscreenTargetHandle,
   HostElementFullscreenCapability,
   HostGlCapability,
@@ -123,7 +122,7 @@ type RecordingWindowBackend = Required<
     HostWindowVisibilityCapability &
     HostWindowZOrderCapability
 > & {
-  readonly calls: string[];
+  calls: string[];
   emitCloseRequest(): boolean;
   emitClosed(): void;
   emitMove(x: number, y: number): void;
@@ -134,35 +133,35 @@ type RecordingWindowBackend = Required<
 // Orientation is reported per display, so its recorder is the screen change capability rather
 // than a window one (host-composition-model.md §6).
 type RecordingScreenChangeBackend = HostScreenChangeCapability & {
-  readonly calls: string[];
+  calls: string[];
   emitOrientation(): void;
 };
 
 type RecordingFullscreenBackend = Required<HostElementFullscreenCapability> & {
-  readonly calls: string[];
+  calls: string[];
   emit(fullscreen: boolean): void;
 };
 
 type RecordingInputDropFileBackend = HostInputDropFileCapability & {
-  readonly calls: string[];
+  calls: string[];
   emit(path: string): void;
 };
 
 type RecordingInputFocusBackend = HostInputFocusCapability & {
-  readonly calls: string[];
+  calls: string[];
   emitBlur(): void;
   emitFocus(): void;
 };
 
-type RecordingInputPointerLockBackend = HostInputPointerLockCapability & { readonly calls: string[] };
+type RecordingInputPointerLockBackend = HostInputPointerLockCapability & { calls: string[] };
 
 type RecordingRenderContextBackend = HostGlCapability & {
-  readonly calls: string[];
+  calls: string[];
   emitLost(): void;
   emitRestored(): void;
 };
 
-type RecordingRenderSurfaceBackend = HostSurfaceResizeCapability & { readonly calls: string[] };
+type RecordingRenderSurfaceBackend = HostSurfaceResizeCapability & { calls: string[] };
 
 type TestHost = {
   readonly graphics: {
@@ -198,7 +197,7 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-  const out = allocateEntity<RecordingWindowBackend>();
+  const out = {} as RecordingWindowBackend;
   out.calls = calls;
   out.emitCloseRequest = () => {
     let cancelled = false;
@@ -330,17 +329,17 @@ function recordingWindowBackend(): RecordingWindowBackend {
     visibilityListeners.add(listener);
     return () => visibilityListeners.delete(listener);
   };
-  return finishEntity(out);
+  return out;
 }
 
 function createHostTarget(): InputTargetHandle {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<InputTargetHandle>();
   out.__brand = 'InputTargetHandle' as const;
   return finishEntity(out);
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<WindowResizeTargetHandle>();
   out.__brand = 'WindowResizeTargetHandle' as const;
   return finishEntity(out);
 }
@@ -348,7 +347,7 @@ function createWindowResizeTarget(): WindowResizeTargetHandle {
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
   const callbacks = new Set<(fullscreen: boolean) => void>();
   const calls: string[] = [];
-  const out = allocateEntity<RecordingFullscreenBackend>();
+  const out = {} as RecordingFullscreenBackend;
   out.calls = calls;
   out.emit = (fullscreen) => {
     for (const callback of callbacks) callback(fullscreen);
@@ -369,13 +368,13 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
     calls.push('unsubscribe');
     callbacks.delete(callback);
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   let listener: ((path: string) => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = {} as RecordingInputDropFileBackend;
   out.calls = calls;
   out.emit = (path: string) => {
     listener?.(path);
@@ -388,14 +387,14 @@ function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
       if (listener === next) listener = null;
     };
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingInputFocusBackend(): RecordingInputFocusBackend {
   let onBlur: (() => void) | null = null;
   let onFocus: (() => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = {} as RecordingInputFocusBackend;
   out.calls = calls;
   out.emitBlur = () => {
     onBlur?.();
@@ -413,12 +412,12 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
       if (onBlur === nextBlur) onBlur = null;
     };
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = {} as RecordingInputPointerLockBackend;
   out.calls = calls;
   out.exit = async () => {
     calls.push('exit');
@@ -428,14 +427,14 @@ function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
     calls.push('request');
     return { reason: 'ok' };
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingRenderContextBackend(): RecordingRenderContextBackend {
   let onLost: (() => void) | null = null;
   let onRestored: (() => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = {} as RecordingRenderContextBackend;
   out.calls = calls;
   out.emitLost = () => {
     onLost?.();
@@ -453,23 +452,23 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
       if (onRestored === nextRestored) onRestored = null;
     };
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = {} as RecordingRenderSurfaceBackend;
   out.calls = calls;
   out.resize = (_target: InputTargetHandle, width: number, height: number) => {
     calls.push(`resize:${width},${height}`);
   };
-  return finishEntity(out);
+  return out;
 }
 
 function recordingScreenChangeBackend(): RecordingScreenChangeBackend {
   const listeners = new Set<(event: ScreenChangeEvent) => void>();
   const calls: string[] = [];
-  const out = allocateEntity<RecordingScreenChangeBackend>();
+  const out = {} as RecordingScreenChangeBackend;
   out.calls = calls;
   out.emitOrientation = () => {
     for (const listener of listeners) listener(orientationChangeEvent());
@@ -479,7 +478,7 @@ function recordingScreenChangeBackend(): RecordingScreenChangeBackend {
     listeners.add(listener);
     return () => listeners.delete(listener);
   };
-  return finishEntity(out);
+  return out;
 }
 
 // The command under test reads only changedMetrics.orientation, so the event carries that one
@@ -1530,10 +1529,10 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<HostInputTargetCapability>();
+    const backend = {} as HostInputTargetCapability;
     backend.prepare = prepare;
     const target = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<InputTargetHandle>();
       out.__brand = 'InputTargetHandle' as const;
       return finishEntity(out);
     })();

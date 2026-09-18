@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
-  GlyphMetrics,
-  GlyphRasterizedBitmap,
-  GlyphRasterizeOptions,
-  HostGlyphRasterizerCapability,
   EntityConstruction,
+  GlyphMetrics,
+  GlyphRasterizeOptions,
+  GlyphRasterizedBitmap,
+  HostGlyphRasterizerCapability,
 } from '@flighthq/types/contract';
 
 export function createWebGlyphRasterizerBackend(): HostGlyphRasterizerCapability & Entity {

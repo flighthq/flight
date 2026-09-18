@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostPlatformCapabilities,
   HostPlatformCapability,
@@ -7,7 +6,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function tauriHostPlatform(tauri: TauriApi): HostPlatformCapability {
-  const out = allocateEntity<HostPlatformCapability>();
+  const out = {} as HostPlatformCapability;
   const os = tauri.os;
   let cachedLocale = '';
   os.locale()
@@ -27,7 +26,7 @@ export function tauriHostPlatform(tauri: TauriApi): HostPlatformCapability {
     out.runtime = 'tauri';
     return out;
   };
-  return finishEntity(out);
+  return out;
 }
 
 export function tauriHostPlatformGroup(tauri: TauriApi): Required<Pick<HostPlatformCapabilities, 'info'>> {

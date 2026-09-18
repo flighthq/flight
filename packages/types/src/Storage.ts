@@ -65,11 +65,11 @@ export interface StoragePersistenceResult {
   readonly permissionState: PermissionState | null;
 }
 
-export interface HostPreferencesPersistenceQueryCapability extends Entity {
+export interface HostPreferencesPersistenceQueryCapability {
   getPersistence(): Promise<StoragePersistenceResult>;
 }
 
-export interface HostPreferencesPersistenceRequestCapability extends Entity {
+export interface HostPreferencesPersistenceRequestCapability {
   requestPersistence(): Promise<StoragePersistenceResult>;
 }
 
@@ -122,7 +122,7 @@ export type StorageSetItemsResult = StorageBatchMutationResult<StorageSetItemFai
 
 // Key/value persistence commands. Absence is a successful getItem result whose value is null; callers
 // inspect reason rather than guessing whether a sentinel came from missing data or provider failure.
-export interface HostPreferencesCapability extends Entity {
+export interface HostPreferencesCapability {
   clear(): StorageClearResult;
   getItem(key: string): StorageGetItemResult;
   keys(): StorageKeysResult;
@@ -132,7 +132,7 @@ export interface HostPreferencesCapability extends Entity {
 
 // Raw provider change delivery is separate from local commands because only Web supplies it. Provider
 // destroy is terminal; the unsubscribe returned by subscribe releases one caller-owned subscription.
-export interface HostPreferencesChangeCapability extends Entity {
+export interface HostPreferencesChangeCapability {
   destroy(): void;
   subscribe(listener: (change: Readonly<StorageChange>) => void): (() => void) | null;
 }

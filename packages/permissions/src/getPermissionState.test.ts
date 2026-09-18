@@ -182,7 +182,6 @@ function permissionsProvider(
   queryPermission: HostPermissionsCapability['queryPermission'] = async () => ({ reason: 'unsupported' }),
 ): HostPermissionsCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     notification,
     queryPermission,
     requestMediaAccess: async () => ({ reason: 'runtime-unavailable' }),

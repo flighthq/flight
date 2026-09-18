@@ -1,7 +1,7 @@
 import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle';
 import type { Entity } from './Entity';
 
-export interface HostAudioDeviceCapability extends Entity {
+export interface HostAudioDeviceCapability {
   createBuffer(
     device: AudioDeviceHandle,
     channels: number,

@@ -1,4 +1,3 @@
-import type { Entity } from './Entity';
 import type { ShareFile } from './ShareFile';
 
 // Content and file sharing are separate capability slots. A content payload requires at least one
@@ -25,13 +24,13 @@ export interface ShareResult {
   dismissed: boolean;
 }
 
-export interface HostShareContentCapability extends Entity {
+export interface HostShareContentCapability {
   canShareContent(content: Readonly<ShareContent>): boolean;
   shareContent(content: Readonly<ShareContent>): Promise<boolean>;
   shareContentWithResult(content: Readonly<ShareContent>): Promise<ShareResult>;
 }
 
-export interface HostShareFilesCapability extends Entity {
+export interface HostShareFilesCapability {
   canShareContent(content: Readonly<ShareFilesContent>): boolean;
   shareContent(content: Readonly<ShareFilesContent>): Promise<boolean>;
   shareContentWithResult(content: Readonly<ShareFilesContent>): Promise<ShareResult>;

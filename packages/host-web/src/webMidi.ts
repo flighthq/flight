@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   createMidiAccessResource,
   createMidiInputPortResource,
@@ -6,13 +6,13 @@ import {
 } from '@flighthq/midi/contract';
 import type {
   EntityConstruction,
-  MidiAccess,
   HostMidiAccessCapability,
+  HostMidiPermissionCapability,
+  MidiAccess,
   MidiEventAttachment,
   MidiEventBackendAttachOutcome,
   MidiInputPort,
   MidiOutputPort,
-  HostMidiPermissionCapability,
   MidiPort,
   PermissionQueryOutcome,
   PermissionState,
@@ -33,7 +33,7 @@ export function createWebMidiPermissionAccessCapabilities(
 }
 
 export function initializeWebMidiAccessBackend(
-  out: EntityConstruction<HostMidiAccessCapability>,
+  out: HostMidiAccessCapability,
   api: Readonly<WebMidiProfileApi>,
   toAccess: (native: MIDIAccess) => MidiAccess,
 ): void {
@@ -83,7 +83,7 @@ export function initializeWebMidiPermissionAccessCapabilities(
 }
 
 export function initializeWebMidiPermissionBackend(
-  out: EntityConstruction<HostMidiPermissionCapability>,
+  out: HostMidiPermissionCapability,
   permissions: Permissions | undefined,
 ): void {
   out.getPermission = () => queryWebMidiPermission(permissions);
@@ -169,24 +169,24 @@ function createWebMidiProfile(
   }
 
   const access = (() => {
-    const out = allocateEntity<HostMidiAccessCapability>();
+    const out = {} as HostMidiAccessCapability;
     initializeWebMidiAccessBackend(out, api, toAccess);
-    return finishEntity(out);
+    return out;
   })();
   if (!includePermission)
     return (() => {
       const out = allocateEntity<WebMidiAccessCapabilities>();
       initializeWebMidiAccessCapabilities(out, access);
-      return finishEntity(out);
+      return out;
     })();
   const permission = (() => {
-    const out = allocateEntity<HostMidiPermissionCapability>();
+    const out = {} as HostMidiPermissionCapability;
     initializeWebMidiPermissionBackend(out, api.permissions);
-    return finishEntity(out);
+    return out;
   })();
   const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
   initializeWebMidiPermissionAccessCapabilities(out, access, permission);
-  return finishEntity(out);
+  return out;
 }
 
 function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>(
@@ -203,7 +203,7 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
   const attachmentEntity = (() => {
     const out = allocateEntity<MidiEventAttachment>();
     initializeWebMidiEventAttachment(out, target, type, eventListener);
-    return finishEntity(out);
+    return out;
   })();
   const attachment: MidiEventAttachment = attachmentEntity;
   return Promise.resolve({

@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostBitmapEncodeCapability, Entity, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, EntityConstruction, HostBitmapEncodeCapability } from '@flighthq/types/contract';
 
 export function createWebBitmapEncodeBackend(): HostBitmapEncodeCapability & Entity {
   const out = allocateEntity<HostBitmapEncodeCapability & Entity>();

@@ -1,5 +1,4 @@
 import type { HostPlatformCapability, PlatformInfo } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as platformContract from './platform';
 import {
@@ -21,7 +20,6 @@ import {
 
 function fakeBackend(info: Partial<PlatformInfo>): HostPlatformCapability {
   return {
-    [EntityRuntimeKey]: undefined,
     getInfo(out) {
       Object.assign(out, createPlatformInfo(), info);
       return out;
