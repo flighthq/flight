@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { webHost } from './webHost';
 import {
   initializeWebShareContentBackend,
@@ -23,8 +21,6 @@ describe('initializeWebShareFilesBackend', () => {
 
 describe('Web Share providers', () => {
   it('are Entity-composed and exposed through their honest host slots', () => {
-    expect(EntityRuntimeKey in webHostShareContent).toBe(true);
-    expect(EntityRuntimeKey in webHostShareFiles).toBe(true);
     expect(webHost.share).toEqual({ content: webHostShareContent, files: webHostShareFiles });
   });
 

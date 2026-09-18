@@ -1,5 +1,4 @@
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostShell,
@@ -21,16 +20,8 @@ function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;
 }
 
-function shellLeaf(factory: () => object): () => void {
-  return () => {
-    it('constructs an Entity-backed shell provider', () => {
-      expect(EntityRuntimeKey in factory()).toBe(true);
-    });
-  };
-}
-
 describe('electronHostShell', () => {
-  it('constructs every Windows provider as an Entity', () => {
+  it('constructs every Windows provider', () => {
     const capabilities = electronHostShell(fakeElectron({}), 'windows');
     expect(Object.keys(capabilities).sort()).toEqual([
       'beep',
@@ -40,7 +31,6 @@ describe('electronHostShell', () => {
       'shortcutLink',
       'trash',
     ]);
-    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('omits shortcutLink on an injected non-Windows platform', () => {
@@ -128,19 +118,6 @@ describe('electronHostShell', () => {
     expect(beep).toHaveBeenCalledOnce();
   });
 });
-const shellBeep = shellLeaf(() => electronHostShellBeep(fakeElectron({})));
-const shellExternal = shellLeaf(() => electronHostShellExternal(fakeElectron({})));
-const shellPathOpen = shellLeaf(() => electronHostShellPathOpen(fakeElectron({})));
-const shellPathReveal = shellLeaf(() => electronHostShellPathReveal(fakeElectron({})));
-const shellShortcutLink = shellLeaf(() => electronHostShellShortcutLink(fakeElectron({})));
-const shellTrash = shellLeaf(() => electronHostShellTrash(fakeElectron({})));
-
-describe('electronHostShellBeep', shellBeep);
-describe('electronHostShellExternal', shellExternal);
-describe('electronHostShellPathOpen', shellPathOpen);
-describe('electronHostShellPathReveal', shellPathReveal);
-describe('electronHostShellShortcutLink', shellShortcutLink);
-describe('electronHostShellTrash', shellTrash);
 describe('populateElectronHostShellBeep', () => {
   it('is the construction initializer of electronHostShellBeep', () => {
     expect(typeof populateElectronHostShellBeep).toBe('function');

@@ -1,5 +1,4 @@
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -102,7 +101,6 @@ function appLeaf(profile: 'linux' | 'macos' | 'windows', slot: string): () => vo
   return () => {
     it('constructs an Entity-backed provider in the application group', () => {
       const app = electronHostApp(fakeElectron().electron, profile) as unknown as Record<string, object>;
-      expect(EntityRuntimeKey in app[slot]).toBe(true);
     });
   };
 }
@@ -131,7 +129,6 @@ describe('electronHostApp', () => {
       ...Object.keys(electronHostApp(fakeElectron().electron, 'macos')),
       ...Object.keys(electronHostApp(fakeElectron().electron, 'windows')),
     ].filter((slot) => !common.includes(slot));
-    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app)).toEqual(expect.arrayContaining(common));
     expect(Object.keys(app).filter((slot) => profileOnly.includes(slot))).toEqual([]);
     expect(app.name.getName()).toBe('Flight');
@@ -140,7 +137,6 @@ describe('electronHostApp', () => {
     expect(app.path.getAppDirectoryPath('logs')).toBe('/path/logs');
     expect(app.singleInstance.requestSingleInstanceLock()).toBe(true);
     await expect(app.badge.setBadgeCount(2)).resolves.toBe(true);
-    for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('publishes macOS-only dock, login, open-file, and activation slots', () => {

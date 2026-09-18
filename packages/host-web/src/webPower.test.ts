@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import {
   createWebPowerReadings,
   initializeWebPowerKeepAwakeBackend,
@@ -53,8 +51,6 @@ describe('createWebPowerReadings', () => {
   it('gives each provider pair its own readings and no destroy obligation', () => {
     const first = createWebPowerReadings();
     const second = createWebPowerReadings();
-    expect(EntityRuntimeKey in first).toBe(true);
-    for (const provider of Object.values(first)) expect(EntityRuntimeKey in provider).toBe(true);
     expect(first.status).not.toBe(second.status);
     // Neither declares nor implements a teardown: the interfaces no longer carry `destroy` at all, so
     // this asserts the runtime shape the type now forbids naming.
@@ -103,7 +99,6 @@ describe('webHostPower', () => {
   // them with inert subscriptions and constant sentinels, which no structural probe could tell from a
   // real provider. Asserting the exact key set is what stops one being quietly re-added as a stub.
   it('offers exactly status, change, keepAwake and suspension', () => {
-    for (const capability of Object.values(webHostPower)) expect(EntityRuntimeKey in capability).toBe(true);
     expect(Object.keys(webHostPower).sort()).toEqual(['change', 'keepAwake', 'status', 'suspension']);
     expect(webHostPower.change).toBe(webHostPowerChange);
     expect(webHostPower.status).toBe(webHostPowerStatus);

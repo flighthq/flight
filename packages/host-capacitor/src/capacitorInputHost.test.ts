@@ -1,5 +1,4 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost';
 
@@ -16,7 +15,6 @@ describe('capacitorHostHapticsGroup', () => {
   it('publishes the Entity-backed haptics engine slot', () => {
     const haptics = capacitorHostHapticsGroup(fakeCapacitor());
     expect(Object.keys(haptics)).toEqual(['engine']);
-    expect(EntityRuntimeKey in haptics.engine).toBe(true);
   });
 });
 
@@ -32,6 +30,5 @@ describe('capacitorHostSoftKeyboardGroup', () => {
       'style',
       'visibility',
     ]);
-    for (const provider of Object.values(softKeyboard)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });

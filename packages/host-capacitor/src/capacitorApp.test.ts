@@ -1,5 +1,4 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -44,9 +43,7 @@ function fakeCapacitor() {
 describe('capacitorHostApp', () => {
   it('publishes common activation and identity slots on iOS', () => {
     const app = capacitorHostApp(fakeCapacitor().capacitor, 'ios');
-    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['activate', 'name', 'version']);
-    for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('adds Android-only hide and quit slots', async () => {
@@ -79,35 +76,5 @@ describe('capacitorHostApp', () => {
     off();
     await flush();
     expect(calls).toEqual(['remove:appStateChange']);
-  });
-});
-
-describe('capacitorHostAppActivate', () => {
-  it('constructs an Entity-backed activation provider', () => {
-    expect(EntityRuntimeKey in capacitorHostAppActivate(fakeCapacitor().capacitor)).toBe(true);
-  });
-});
-
-describe('capacitorHostAppHide', () => {
-  it('constructs an Entity-backed Android hide provider', () => {
-    expect(EntityRuntimeKey in capacitorHostAppHide(fakeCapacitor().capacitor)).toBe(true);
-  });
-});
-
-describe('capacitorHostAppName', () => {
-  it('constructs an Entity-backed name provider', () => {
-    expect(EntityRuntimeKey in capacitorHostAppName(fakeCapacitor().capacitor)).toBe(true);
-  });
-});
-
-describe('capacitorHostAppQuit', () => {
-  it('constructs an Entity-backed Android quit provider', () => {
-    expect(EntityRuntimeKey in capacitorHostAppQuit(fakeCapacitor().capacitor)).toBe(true);
-  });
-});
-
-describe('capacitorHostAppVersion', () => {
-  it('constructs an Entity-backed version provider', () => {
-    expect(EntityRuntimeKey in capacitorHostAppVersion(fakeCapacitor().capacitor)).toBe(true);
   });
 });

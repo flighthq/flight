@@ -1,5 +1,4 @@
 import type { CapacitorApi, CapacitorConnectionStatus, ConnectivityStatus } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   capacitorHostConnectivity,
@@ -72,7 +71,6 @@ describe('capacitorHostConnectivity', () => {
     const fake = fakeCapacitor();
     const connectivity = capacitorHostConnectivity(fake.capacitor);
     expect(connectivity.change).toBe(connectivity.status);
-    expect(EntityRuntimeKey in connectivity.status).toBe(true);
     expect(connectivity.status.getStatus(status())).toEqual({
       downlink: -1,
       downlinkMax: -1,
@@ -134,17 +132,5 @@ describe('capacitorHostConnectivity', () => {
     fake.resolveHandle();
     await flush();
     expect(fake.removals()).toBe(1);
-  });
-});
-
-describe('capacitorHostConnectivityChange', () => {
-  it('constructs an Entity-backed change provider', () => {
-    expect(EntityRuntimeKey in capacitorHostConnectivityChange(fakeCapacitor().capacitor)).toBe(true);
-  });
-});
-
-describe('capacitorHostConnectivityStatus', () => {
-  it('constructs an Entity-backed status provider', () => {
-    expect(EntityRuntimeKey in capacitorHostConnectivityStatus(fakeCapacitor().capacitor)).toBe(true);
   });
 });

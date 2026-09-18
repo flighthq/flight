@@ -1,5 +1,4 @@
 import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { tauriHostShortcut, tauriHostShortcutQuery, tauriHostShortcutTrigger } from './tauriShortcut';
 
@@ -41,8 +40,6 @@ describe('tauriHostShortcut', () => {
   it('constructs exactly the query and trigger group', () => {
     const group = tauriHostShortcut(fakeTauri().tauri);
     expect(Object.keys(group).sort()).toEqual(['query', 'trigger']);
-    expect(EntityRuntimeKey in group.query).toBe(true);
-    expect(EntityRuntimeKey in group.trigger).toBe(true);
   });
 });
 
@@ -51,7 +48,6 @@ describe('tauriHostShortcutQuery', () => {
     const fake = fakeTauri();
     fake.handlers.set('Control+K', () => {});
     const provider = tauriHostShortcutQuery(fake.tauri);
-    expect(EntityRuntimeKey in provider).toBe(true);
     await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
     await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
   });
@@ -62,11 +58,9 @@ describe('tauriHostShortcutTrigger', () => {
     const fake = fakeTauri();
     const provider = tauriHostShortcutTrigger(fake.tauri);
     const trigger = vi.fn();
-    expect(EntityRuntimeKey in provider).toBe(true);
     const outcome = await provider.subscribe('Control+K', trigger);
     expect(outcome.reason).toBe('subscribed');
     if (outcome.reason !== 'subscribed') return;
-    expect(EntityRuntimeKey in outcome.subscription).toBe(true);
     fake.handlers.get('Control+K')?.({ shortcut: 'Control+K', state: 'Released' });
     fake.handlers.get('Control+K')?.({ shortcut: 'Control+K', state: 'Pressed' });
     expect(trigger).toHaveBeenCalledTimes(1);

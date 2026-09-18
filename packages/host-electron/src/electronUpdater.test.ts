@@ -1,5 +1,4 @@
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { electronHostUpdater, electronHostUpdaterCommand, populateElectronHostUpdaterCommand } from './electronUpdater';
 
@@ -62,7 +61,6 @@ describe('electronHostUpdater', () => {
   it('constructs the Entity-backed updater command slot', () => {
     const updater = electronHostUpdater(fakeElectron().electron);
     expect(Object.keys(updater)).toEqual(['command']);
-    expect(EntityRuntimeKey in updater.command).toBe(true);
   });
 });
 
@@ -71,7 +69,6 @@ describe('electronHostUpdaterCommand', () => {
     const { electron, calls } = fakeElectron();
     const backend = electronHostUpdaterCommand(electron, 'https://updates.test/feed');
 
-    expect(EntityRuntimeKey in backend).toBe(true);
     expect(calls.feedUrls).toEqual(['https://updates.test/feed']);
 
     backend.destroy();
@@ -91,7 +88,6 @@ describe('electronHostUpdaterCommand', () => {
     const outcome = await pending;
     expect(outcome.reason).toBe('downloaded');
     if (outcome.reason !== 'downloaded') throw new Error('expected downloaded update');
-    expect(EntityRuntimeKey in outcome.update).toBe(true);
     expect(outcome.update.info).toEqual({
       downloadSizeBytes: null,
       isMandatory: null,

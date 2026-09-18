@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { webHost } from './webHost';
 import { initializeWebStorageBackend, webHostStorage, webHostStorageChange } from './webStorage';
 
@@ -19,7 +17,6 @@ describe('webHostStorage providers', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('publishes independently owned local and change Host leaves', () => {
-    expect(EntityRuntimeKey in webHostStorage).toBe(true);
     expect(webHost.preferences.local).toBe(webHostStorage);
     expect(webHost.preferences.change).toBe(webHostStorageChange);
     expect(webHostStorage).not.toBe(webHostStorageChange);

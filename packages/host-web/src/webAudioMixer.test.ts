@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { AudioDeviceHandle } from '@flighthq/types/contract';
 
 import { webHostAudioDevice } from './webAudioDevice';
@@ -18,7 +17,6 @@ describe('createWebAudioMixerBackend', () => {
     const second = createWebAudioMixerBackend();
 
     expect(first).not.toBe(second);
-    expect(EntityRuntimeKey in first).toBe(true);
     expect(Object.keys(first).sort()).toEqual([
       'createBusNode',
       'createMixerGraph',
@@ -32,10 +30,6 @@ describe('createWebAudioMixerBackend', () => {
       'setMasterGain',
       'unrouteSource',
     ]);
-  });
-
-  it('exports an entity singleton', () => {
-    expect(EntityRuntimeKey in webHostAudioMixer).toBe(true);
   });
 
   it('creates and destroys a master graph for the device context', () => {

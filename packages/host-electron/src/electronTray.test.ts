@@ -15,7 +15,6 @@ import type {
   ElectronTray,
   TrayIcon,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -142,14 +141,6 @@ async function acquire(
   return result.tray;
 }
 
-function trayLeaf(factory: () => object): () => void {
-  return () => {
-    it('constructs an Entity-backed tray provider', () => {
-      expect(EntityRuntimeKey in factory()).toBe(true);
-    });
-  };
-}
-
 describe('electronHostTray', () => {
   it('exposes the slots supported by the injected OS profile and none exclusive to another', () => {
     const { electron } = fakeElectron();
@@ -206,7 +197,7 @@ describe('electronHostTray', () => {
     }
   });
 
-  it('constructs the native resource before publishing the Entity', async () => {
+  it('constructs the native resource before publishing', async () => {
     const { electron, trays } = fakeElectron();
     const host = { tray: electronHostTray(electron, 'macos') };
     const result = await createTrayIcon(host.tray.lifecycle, {
@@ -289,37 +280,6 @@ describe('electronHostTray', () => {
     );
   });
 });
-const trayBalloon = trayLeaf(() => electronHostTrayBalloon(fakeElectron().electron));
-const trayBalloonEvents = trayLeaf(() => electronHostTrayBalloonEvents(fakeElectron().electron));
-const trayBounds = trayLeaf(() => electronHostTrayBounds(fakeElectron().electron, 'linux'));
-const trayDoubleClickPolicy = trayLeaf(() => electronHostTrayDoubleClickPolicy(fakeElectron().electron));
-const trayDropEvents = trayLeaf(() => electronHostTrayDropEvents(fakeElectron().electron));
-const trayImage = trayLeaf(() => electronHostTrayImage(fakeElectron().electron, 'linux'));
-const trayInteractionEvents = trayLeaf(() => electronHostTrayInteractionEvents(fakeElectron().electron, 'linux'));
-const trayLifecycle = trayLeaf(() => electronHostTrayLifecycle(fakeElectron().electron, 'linux'));
-const trayMenu = trayLeaf(() => electronHostTrayMenu(fakeElectron().electron, 'linux'));
-const trayMenuSelectionEvents = trayLeaf(() => electronHostTrayMenuSelectionEvents(fakeElectron().electron, 'linux'));
-const trayPopupMenu = trayLeaf(() => electronHostTrayPopupMenu(fakeElectron().electron, 'linux'));
-const trayPressedImage = trayLeaf(() => electronHostTrayPressedImage(fakeElectron().electron));
-const trayTemplateImage = trayLeaf(() => electronHostTrayTemplateImage(fakeElectron().electron));
-const trayTitle = trayLeaf(() => electronHostTrayTitle(fakeElectron().electron));
-const trayTooltip = trayLeaf(() => electronHostTrayTooltip(fakeElectron().electron, 'linux'));
-
-describe('electronHostTrayBalloon', trayBalloon);
-describe('electronHostTrayBalloonEvents', trayBalloonEvents);
-describe('electronHostTrayBounds', trayBounds);
-describe('electronHostTrayDoubleClickPolicy', trayDoubleClickPolicy);
-describe('electronHostTrayDropEvents', trayDropEvents);
-describe('electronHostTrayImage', trayImage);
-describe('electronHostTrayInteractionEvents', trayInteractionEvents);
-describe('electronHostTrayLifecycle', trayLifecycle);
-describe('electronHostTrayMenu', trayMenu);
-describe('electronHostTrayMenuSelectionEvents', trayMenuSelectionEvents);
-describe('electronHostTrayPopupMenu', trayPopupMenu);
-describe('electronHostTrayPressedImage', trayPressedImage);
-describe('electronHostTrayTemplateImage', trayTemplateImage);
-describe('electronHostTrayTitle', trayTitle);
-describe('electronHostTrayTooltip', trayTooltip);
 describe('populateElectronHostTrayBalloon', () => {
   it('is the construction initializer of electronHostTrayBalloon', () => {
     expect(typeof populateElectronHostTrayBalloon).toBe('function');

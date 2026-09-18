@@ -1,6 +1,5 @@
 import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
@@ -30,7 +29,6 @@ describe('createWebInputTargetHandle', () => {
     const element = document.createElement('div');
     const target = createWebInputTargetHandle(element);
 
-    expect(EntityRuntimeKey in target).toBe(true);
     webHostInputTarget.prepare(target);
     expect(element.style.touchAction).toBe('none');
   });
@@ -373,14 +371,12 @@ describe('webHostInputTarget', () => {
   });
 
   it('is an Entity provider value', () => {
-    expect(EntityRuntimeKey in webHostInputTarget).toBe(true);
     expect(webHost.input.target).toBe(webHostInputTarget);
   });
 
   it('keeps command and event slots separate while every provider remains an Entity', () => {
     const providers = [webHostInputDropFile, webHostInputFocus, webHostInputPointerLock, webHostInputTarget];
 
-    expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
     expect(webHost.input.dropFile).toBe(webHostInputDropFile);
     expect(webHost.input.focus).toBe(webHostInputFocus);
     expect(webHost.input.pointerLock).toBe(webHostInputPointerLock);

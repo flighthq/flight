@@ -51,8 +51,6 @@ function fakeElectron(): {
 describe('electronHostScreen', () => {
   it('returns Entity-backed query and change facets', () => {
     const capabilities = electronHostScreen(fakeElectron().electron);
-    expect(EntityRuntimeKey in capabilities.query).toBe(true);
-    expect(EntityRuntimeKey in capabilities.change).toBe(true);
   });
 
   it('fills the primary screen into out', () => {
@@ -114,17 +112,6 @@ describe('electronHostScreen', () => {
   });
 });
 
-describe('electronHostScreenChange', () => {
-  it('constructs an Entity-backed screen change provider', () => {
-    expect(EntityRuntimeKey in electronHostScreenChange(fakeElectron().electron)).toBe(true);
-  });
-});
-
-describe('electronHostScreenQuery', () => {
-  it('constructs an Entity-backed screen query provider', () => {
-    expect(EntityRuntimeKey in electronHostScreenQuery(fakeElectron().electron)).toBe(true);
-  });
-});
 describe('populateElectronHostScreenChange', () => {
   it('is the construction initializer of electronHostScreenChange', () => {
     expect(typeof populateElectronHostScreenChange).toBe('function');

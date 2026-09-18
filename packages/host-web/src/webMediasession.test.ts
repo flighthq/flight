@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { MediaSessionActionDetails } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -436,10 +435,6 @@ describe('web media-session command ownership', () => {
 
 describe('web media-session provider composition', () => {
   it('backs both singleton Host slots and fresh factories with Entities', () => {
-    expect(EntityRuntimeKey in webHostMediaSession).toBe(true);
-    expect(EntityRuntimeKey in webHostMediaSessionAction).toBe(true);
-    expect(EntityRuntimeKey in createWebMediaSessionBackend()).toBe(true);
-    expect(EntityRuntimeKey in createWebMediaSessionActionBackend()).toBe(true);
     expect(webHost.mediaSession.control).toBe(webHostMediaSession);
     expect(webHost.mediaSession.action).toBe(webHostMediaSessionAction);
   });

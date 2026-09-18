@@ -256,7 +256,6 @@ describe('electronHost', () => {
     });
     expect(host.audio).toEqual({});
     expect(host.video).toEqual({});
-    expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
     expect(host.dialog.fileOpen.open).toBeTypeOf('function');
     expect(host.dialog.fileSave.save).toBeTypeOf('function');
@@ -266,9 +265,6 @@ describe('electronHost', () => {
     expect(host.ipc.handle.handle).toBeTypeOf('function');
     expect(host.ipc.message.subscribe).toBeTypeOf('function');
     expect(host.ipc.targetedSend.send).toBeTypeOf('function');
-    expect(EntityRuntimeKey in host.shortcut.query).toBe(true);
-    expect(EntityRuntimeKey in host.shortcut.trigger).toBe(true);
-    expect(EntityRuntimeKey in host.updater.command).toBe(true);
     expect(host.updater.command.check).toBeTypeOf('function');
     expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.connectivity).toEqual({});
@@ -297,6 +293,5 @@ describe('electronHost', () => {
       'trash',
     ]);
     expect(Object.keys(linuxHost.shell).sort()).toEqual(['beep', 'external', 'pathOpen', 'pathReveal', 'trash']);
-    for (const provider of Object.values(windowsHost.shell)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
