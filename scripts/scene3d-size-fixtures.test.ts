@@ -37,7 +37,6 @@ describe('Scene3D size fixture isolation', () => {
     const source = readFileSync(resolve(fixturesRoot, spec.name, 'src', `render.${spec.renderer}.ts`), 'utf8');
     const banned = [
       '@flighthq/sdk',
-      'webHost',
       'scene2DGlPipeline',
       'scene2DWgpuPipeline',
       'scene3dGlPipeline',
@@ -49,6 +48,9 @@ describe('Scene3D size fixture isolation', () => {
     ];
 
     for (const name of banned) expect(source).not.toContain(name);
+    // The aggregate host, not the narrow leaves: webHostGl and webHostWgpuContext are exactly what a
+    // fixture should import, and a substring ban on 'webHost' would forbid them along with it.
+    expect(source).not.toMatch(/\bwebHost\b/);
     expect(source).toContain(`unlit${spec.backend}MeshMaterialRenderer`);
     expect(source).toContain('meshMaterialRenderers: withRegistryTableEntry(');
 
