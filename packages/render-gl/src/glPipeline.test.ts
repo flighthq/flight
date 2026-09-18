@@ -1,6 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { GlPipeline, Renderer } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { Renderer } from '@flighthq/types/contract';
 
 import {
   createEmptyGlRegistries,
@@ -38,25 +37,17 @@ describe('createEmptyGlRegistries', () => {
 });
 
 describe('createGlPipeline', () => {
-  it('returns an Entity-backed pipeline with EntityRuntimeKey', () => {
+  it('returns a pipeline with the supplied registries', () => {
     const registries = createEmptyGlRegistries();
     const pipeline = createGlPipeline(registries);
-    expect(EntityRuntimeKey in pipeline).toBe(true);
-    expect(pipeline[EntityRuntimeKey]).toBeDefined();
+    expect(pipeline.registries).toBe(registries);
   });
 
-  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without allocateEntity', () => {
-    const registries = createEmptyGlRegistries();
-    const literal = { registries } as unknown as GlPipeline;
-    expect(EntityRuntimeKey in literal).toBe(false);
-  });
-
-  it('yields distinct entities from two calls over the same registries', () => {
+  it('yields distinct pipelines from two calls over the same registries', () => {
     const registries = createEmptyGlRegistries();
     const pipelineA = createGlPipeline(registries);
     const pipelineB = createGlPipeline(registries);
     expect(pipelineA).not.toBe(pipelineB);
-    expect(pipelineA[EntityRuntimeKey]).not.toBe(pipelineB[EntityRuntimeKey]);
   });
 
   it('carries the provided registries unchanged', () => {

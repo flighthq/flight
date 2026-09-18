@@ -11,7 +11,6 @@ import {
   BitmapTextureSourceKind,
   BlendMode,
   DisplayObjectKind,
-  EntityRuntimeKey,
   ImageTextureSourceKind,
   MorphShapeKind,
   ParticleEmitter2DKind,
@@ -47,10 +46,6 @@ describe('manual single-capability pipeline', () => {
 });
 
 describe('scene2DGlPipeline', () => {
-  it('is an Entity with EntityRuntimeKey', () => {
-    expect(EntityRuntimeKey in scene2DGlPipeline).toBe(true);
-  });
-
   it('carries every standard 2D GL renderer bound', () => {
     const registries = getGlPipelineRegistries(scene2DGlPipeline);
     const expectedKinds = [

@@ -23,6 +23,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
+  EntityConstruction,
   RenderEffect,
   RenderEffectPipelineOptions,
   RenderTargetClear,
@@ -33,7 +34,6 @@ import type {
   WgpuRenderPass,
   WgpuRenderState,
   WgpuTextureRenderTarget,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass';

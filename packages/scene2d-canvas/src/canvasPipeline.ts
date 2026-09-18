@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { CanvasPipeline, CanvasRenderRegistries, EntityConstruction } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createCanvasPipeline(registries: Readonly<CanvasRenderRegistries>): CanvasPipeline {
-  const pipeline = allocateEntity<CanvasPipeline>();
-  pipeline.registries = registries;
-  pipeline[EntityRuntimeKey] = { binding: null };
-  return pipeline;
+  return { registries } as CanvasPipeline;
 }
 
 export function createEmptyCanvasRegistries(): CanvasRenderRegistries {

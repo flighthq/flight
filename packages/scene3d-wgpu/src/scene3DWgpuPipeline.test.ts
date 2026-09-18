@@ -13,7 +13,6 @@ import {
   DissolveModifierKind,
   EmissiveMaterialKind,
   EmissiveModifierKind,
-  EntityRuntimeKey,
   EnvReflectModifierKind,
   ExtendedPbrMaterialKind,
   FogModifierKind,
@@ -64,8 +63,7 @@ describe('scene3DWgpuPipeline', () => {
   const registries = getWgpuPipelineRegistries(scene3DWgpuPipeline);
   const scene2dRegistries = getWgpuPipelineRegistries(scene2DWgpuPipeline);
 
-  it('is an entity and retains the complete standard Scene2D registry surface', () => {
-    expect(scene3DWgpuPipeline[EntityRuntimeKey]).toEqual({ binding: null });
+  it('retains the complete standard Scene2D registry surface', () => {
     expect(registries.renderers).toBe(scene2dRegistries.renderers);
     expect(registryKeys(registries.renderers)).toEqual([
       BitmapTextKind,

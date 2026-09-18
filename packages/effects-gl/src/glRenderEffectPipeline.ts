@@ -22,6 +22,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   Adjustment,
+  EntityConstruction,
   GlRenderEffectPipeline,
   GlRenderEffectPipelineSkipGuard,
   GlRenderPass,
@@ -31,7 +32,6 @@ import type {
   RenderEffectPipelineOptions,
   RenderTargetClear,
   RenderTargetColorSpace,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass';

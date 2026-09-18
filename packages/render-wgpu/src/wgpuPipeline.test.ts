@@ -1,6 +1,3 @@
-import type { WgpuPipeline } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import {
   createEmptyWgpuRegistries,
   createWgpuPipeline,
@@ -28,19 +25,13 @@ describe('createEmptyWgpuRegistries', () => {
 });
 
 describe('createWgpuPipeline', () => {
-  it('returns an Entity-backed pipeline with its own runtime identity', () => {
+  it('returns a pipeline with its own identity', () => {
     const registries = createEmptyWgpuRegistries();
     const first = createWgpuPipeline(registries);
     const second = createWgpuPipeline(registries);
 
-    expect(EntityRuntimeKey in first).toBe(true);
+    expect(first.registries).toBe(registries);
     expect(first).not.toBe(second);
-    expect(first[EntityRuntimeKey]).not.toBe(second[EntityRuntimeKey]);
-  });
-
-  it('rejects a plain literal at the Entity boundary', () => {
-    const literal = { registries: createEmptyWgpuRegistries() } as unknown as WgpuPipeline;
-    expect(EntityRuntimeKey in literal).toBe(false);
   });
 
   it('carries the supplied immutable registration snapshot', () => {

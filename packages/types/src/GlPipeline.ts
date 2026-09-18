@@ -1,6 +1,5 @@
-import type { Entity } from './Entity';
 import type { GlRenderRegistries } from './GlRenderState';
 
-export interface GlPipeline extends Entity {
+export interface GlPipeline {
   readonly registries: Readonly<GlRenderRegistries>;
 }
