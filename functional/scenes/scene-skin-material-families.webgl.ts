@@ -41,7 +41,7 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -61,7 +61,7 @@ declareExpectedImageDescription(
 // different built-in material whose vertex path used to stay rigid: Depth, Normal, Matcap, and
 // Wireframe. Their upper arms must all reach a region left of the corresponding bind-pose column.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

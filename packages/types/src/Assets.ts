@@ -57,7 +57,7 @@ export interface AssetEntry {
 }
 
 // Opaque per-library runtime: the open adapter registry, descriptor map, live cache entries,
-// group→member-ids index, freed-id history used by diagnostics, and optional acquire guard. Application
+// group→member-ids index, freed-id history used by diagnostics, and optional acquire guard. AppLoop
 // code treats this as internal; it is read and written only by the @flighthq/assets functions.
 export interface AssetLibraryRuntime {
   acquireGuard: AssetAcquireGuard | null;

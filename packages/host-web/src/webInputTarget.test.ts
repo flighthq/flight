@@ -1,4 +1,4 @@
-import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
+import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
@@ -118,10 +118,10 @@ describe('webHostInputPointerLock', () => {
     };
     resetWebInputTargetBackendForTest();
 
-    await expect(lockApplicationPointer(webHost.input.pointerLock, target)).resolves.toEqual({
+    await expect(lockAppInputPointer(webHost.input.pointerLock, target)).resolves.toEqual({
       reason: 'target-not-found',
     });
-    await exitApplicationPointerLock(fallbackHost.input.pointerLock);
+    await exitAppInputPointerLock(fallbackHost.input.pointerLock);
 
     expect(fallbackExit).toHaveBeenCalledOnce();
   });

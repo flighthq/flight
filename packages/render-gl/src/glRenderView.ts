@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
 import type {
-  ApplicationRenderViewTargetOptions,
+  AppRenderViewTargetOptions,
   GlContext,
   GlPipeline,
   GlRenderOptions,
@@ -17,7 +17,7 @@ import {
 
 // The render-layer half of a GL application view. A caller acquires a context (host.gl for a
 // provider-bound target) and passes it here; the window half and the resize reconciliation belong to
-// @flighthq/application, which this package may not import — so the two are joined at the call site
+// @flighthq/app, which this package may not import — so the two are joined at the call site
 // rather than by an assembly package.
 //
 // The canvas backing store is NOT sized here. A caller that owns the surface sizes it first, through
@@ -29,7 +29,7 @@ export function createGlRenderViewResources(
   height: number,
   devicePixelRatio: number,
   render: Readonly<GlRenderOptions> = {},
-  target: Readonly<ApplicationRenderViewTargetOptions> = {},
+  target: Readonly<AppRenderViewTargetOptions> = {},
 ): GlRenderViewResources {
   const out = allocateEntity<GlRenderViewResources>();
   out.renderState = createGlRenderState(context, pipeline, { ...render, pixelRatio: devicePixelRatio });

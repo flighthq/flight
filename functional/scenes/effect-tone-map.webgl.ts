@@ -28,7 +28,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -47,7 +47,7 @@ declareExpectedImageDescription(
 // Tone map: bright HDR content (rendered into an rgba16f target) is compressed back to displayable
 // range by the ACES operator with raised exposure. Highlights roll off instead of clipping to flat white.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

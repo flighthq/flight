@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
@@ -59,7 +59,7 @@ export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, width * scale, height * scale, {
   antialias: false,

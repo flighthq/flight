@@ -48,7 +48,7 @@ import {
   submitWgpuFrame,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -68,7 +68,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of shadow-skinning.webgl. Its shadow pass must select the optional skin depth pipeline,
 // upload the prepared palette, and deform the bind-pose vertices before recording depth.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');

@@ -139,7 +139,7 @@ export interface GlyphAtlasShelf {
 // Opaque per-atlas runtime holding all package-private state: the atlas bitmap the glyphs blit
 // into, the incremental shelf-packer state, the codepoint→entry cache with its LRU order, the
 // retained source bitmaps used to re-blit on repack, the union dirty rectangle for incremental GPU
-// upload, and the metrics + rasterize options. Application and renderer code treat this as internal.
+// upload, and the metrics + rasterize options. AppLoop and renderer code treat this as internal.
 export interface GlyphAtlasRuntime {
   bitmaps: Map<number, GlyphRasterizedBitmap>;
   dirty: boolean;

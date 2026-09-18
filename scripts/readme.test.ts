@@ -24,7 +24,7 @@ describe('root README contracts', () => {
 
   it('keeps the application-loop example wired to the explicit web host', () => {
     const animationSection = readme.slice(readme.indexOf('### Animation'), readme.indexOf('### Interaction'));
-    const startIndex = animationSection.indexOf('startApplicationLoop(webHost, app);');
+    const startIndex = animationSection.indexOf('startAppLoop(webHost, app);');
 
     expect(animationSection).toContain('npm install @flighthq/host-web');
     expect(animationSection).toContain("import { webHost } from '@flighthq/host-web';");

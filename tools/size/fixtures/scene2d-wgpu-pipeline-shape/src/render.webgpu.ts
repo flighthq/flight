@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import {
   webHostWgpuContext,
   appendWebSurface,
@@ -22,7 +22,7 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import { createWgpuSurface } from '@flighthq/surface';
 import { ShapeKind } from '@flighthq/types';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 320, 240);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');

@@ -8,7 +8,7 @@ export interface HostInputDropFileCapability extends Entity {
   subscribe(target: InputTargetHandle, listener: (path: string) => void): () => void;
 }
 
-// Host-emitted target focus is its own event capability. Core owns the ApplicationWindow signals; the
+// Host-emitted target focus is its own event capability. Core owns the AppWindow signals; the
 // backend owns only event ingress and its exact release obligation.
 export interface HostInputFocusCapability extends Entity {
   subscribe(target: InputTargetHandle, onFocus: () => void, onBlur: () => void): () => void;

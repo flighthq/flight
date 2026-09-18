@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 
 import {
@@ -55,15 +55,15 @@ describe('createWebWindowResizeTargetHandle', () => {
 });
 
 describe('getWebWindowHandle', () => {
-  it('returns the page window an opened ApplicationWindow is attached to', () => {
-    const win = createApplicationWindow();
+  it('returns the page window an opened AppWindow is attached to', () => {
+    const win = createAppWindow();
     openWindow(webHostWindowLifecycle, webHostWindowGeometry, win, {});
 
     expect(getWebWindowHandle(win)).toBe(window);
   });
 
   it('returns null for a window that was never opened or attached', () => {
-    expect(getWebWindowHandle(createApplicationWindow())).toBeNull();
+    expect(getWebWindowHandle(createAppWindow())).toBeNull();
   });
 });
 
@@ -142,7 +142,7 @@ describe('webHostWindowAppearance', () => {
   });
 
   it('writes the page-window title for an attached window', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
 
     webHostWindowAppearance.setTitle(win, 'Retitled');
@@ -151,7 +151,7 @@ describe('webHostWindowAppearance', () => {
   });
 
   it('points the existing icon link at the new icon', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const link = document.createElement('link');
     link.rel = 'icon';
     document.head.appendChild(link);
@@ -165,7 +165,7 @@ describe('webHostWindowAppearance', () => {
 
   it('creates an icon link when the document has none', () => {
     for (const existing of document.querySelectorAll('link[rel="icon"]')) existing.remove();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
 
     webHostWindowAppearance.setIcon(win, '/fresh.png');
@@ -181,9 +181,9 @@ describe('webHostWindowAttach', () => {
 
   it('detaches a host-owned page window without closing it', () => {
     const close = vi.spyOn(window, 'close').mockImplementation(() => {});
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
-    expect(webHostWindowAttach.attach(createApplicationWindow(), window, 'host')).toBe(false);
+    expect(webHostWindowAttach.attach(createAppWindow(), window, 'host')).toBe(false);
 
     webHostWindowLifecycle.close(win);
     webHostWindowLifecycle.close(win);
@@ -193,7 +193,7 @@ describe('webHostWindowAttach', () => {
 
   it('closes a Flight-owned page window once', () => {
     const close = vi.spyOn(window, 'close').mockImplementation(() => {});
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'flight')).toBe(true);
 
     webHostWindowLifecycle.close(win);
@@ -203,7 +203,7 @@ describe('webHostWindowAttach', () => {
   });
 
   it('routes pagehide through the terminal close choke point once', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closes = 0;
     connectSignal(win.onClose, () => closes++);
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
@@ -215,13 +215,13 @@ describe('webHostWindowAttach', () => {
   });
 
   it('rejects a handle that is not a page window', () => {
-    expect(webHostWindowAttach.attach(createApplicationWindow(), {}, 'host')).toBe(false);
+    expect(webHostWindowAttach.attach(createAppWindow(), {}, 'host')).toBe(false);
   });
 });
 
 describe('webHostWindowFocus', () => {
   it('focuses the attached page-window handle', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
     const focus = vi.spyOn(window, 'focus').mockImplementation(() => {});
 
@@ -233,7 +233,7 @@ describe('webHostWindowFocus', () => {
 
 describe('webHostWindowFullscreen', () => {
   it('requests document fullscreen for an attached window', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(document.documentElement, 'requestFullscreen', {
@@ -247,7 +247,7 @@ describe('webHostWindowFullscreen', () => {
   });
 
   it('exits document fullscreen for an attached window', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);
     const exitFullscreen = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exitFullscreen });
@@ -313,7 +313,7 @@ describe('webHostWindowLifecycle', () => {
   });
 
   it('opens the page window as a host-owned handle', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
 
     expect(webHostWindowLifecycle.open(win, {})).toBe(true);
     expect(webHostWindowAttach.attach(win, window, 'host')).toBe(true);

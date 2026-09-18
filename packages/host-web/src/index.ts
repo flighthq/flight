@@ -1,4 +1,4 @@
-export { webHostApplicationExit } from './webApplicationExit';
+export { webHostAppLoopExit } from './webAppLoopExit';
 export { createWebAccessibilityBackend, webHostAccessibility } from './webAccessibility';
 export { webHostAccessibilityGroup } from './webAccessibilityHost';
 export {

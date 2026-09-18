@@ -33,7 +33,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 
@@ -46,7 +46,7 @@ const INSTANCE_COUNT = 24;
 
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const producerGlSurface = createGlSurface(webHostGl, appWindow, PRODUCER_WIDTH, PRODUCER_HEIGHT, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

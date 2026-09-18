@@ -60,7 +60,7 @@ import {
   TilemapKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
@@ -71,7 +71,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const appWindow = createApplicationWindow();
+  const appWindow = createAppWindow();
   openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 
   const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, width * pixelRatio, height * pixelRatio);

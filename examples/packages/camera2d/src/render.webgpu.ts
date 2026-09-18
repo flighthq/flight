@@ -35,7 +35,7 @@ import {
   TextLabelKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 
@@ -44,7 +44,7 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(
   webHostWgpuContext,

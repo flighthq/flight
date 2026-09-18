@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@flighthq/app": "*",
-    "@flighthq/application": "*",
+    "@flighthq/app": "*",
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/device": "*",

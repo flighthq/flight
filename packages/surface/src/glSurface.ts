@@ -1,6 +1,6 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   EntityConstruction,
   GlContextOptions,
   GlSurface,
@@ -16,7 +16,7 @@ import { allocateSurface } from './surface';
 // is. Returns null when the host cannot allocate a drawable or the driver refuses a context.
 export function createGlSurface(
   capability: Readonly<HostGlCapability>,
-  window: Readonly<ApplicationWindow>,
+  window: Readonly<AppWindow>,
   width: number,
   height: number,
   options?: Readonly<GlContextOptions>,

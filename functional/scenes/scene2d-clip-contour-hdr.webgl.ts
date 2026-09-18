@@ -34,7 +34,7 @@ import {
   renderGlScene2D,
   setNode2DClip,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
 // contour clip is realized by a stencil pass, so the effect pipeline's scene target is created with a
 // depth-stencil buffer (depth: 'depth-stencil').
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

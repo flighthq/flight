@@ -36,7 +36,7 @@ import {
   setCubeTextureFace,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -76,7 +76,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of env-skybox.webgl: distinct procedural cube faces must vary across reconstructed
 // view rays rather than collapsing to a flat backdrop.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');

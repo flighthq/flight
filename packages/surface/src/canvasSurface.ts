@@ -1,6 +1,6 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   CanvasSurface,
   EntityConstruction,
   HostCanvasCapability,
@@ -13,7 +13,7 @@ import { allocateSurface } from './surface';
 // Returns null when the host cannot rasterize 2D on it.
 export function createCanvasSurface(
   capability: Readonly<HostCanvasCapability>,
-  window: Readonly<ApplicationWindow>,
+  window: Readonly<AppWindow>,
   width: number,
   height: number,
   options?: Readonly<CanvasRenderingContext2DSettings>,

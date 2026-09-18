@@ -33,7 +33,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -67,7 +67,7 @@ declareExpectedImageDescription(
 // prepareGlScene3DForwardLights pass selects the nearby contributors for each mesh.
 
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

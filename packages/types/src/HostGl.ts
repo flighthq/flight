@@ -1,4 +1,4 @@
-import type { ApplicationWindow } from './ApplicationWindow';
+import type { AppWindow } from './AppWindow';
 import type { Entity } from './Entity';
 import type { GlContext, GlContextOptions } from './GlContext';
 import type { NativeSurfaceHandle, Surface } from './Surface';
@@ -13,7 +13,7 @@ import type { NativeSurfaceHandle, Surface } from './Surface';
 export interface HostGlCapability extends Entity {
   acquire(surface: Readonly<Surface>, options?: Readonly<GlContextOptions>): GlContext | null;
   create(
-    window: Readonly<ApplicationWindow>,
+    window: Readonly<AppWindow>,
     width: number,
     height: number,
     options?: Readonly<GlContextOptions>,

@@ -26,7 +26,7 @@ export interface HostLifecycleCapability extends Entity {
   subscribeMemoryWarning?(listener: (level: AppMemoryPressure) => void): () => void;
 }
 
-// Application lifecycle event entity. Enable delivery with attachAppLifecycle; the signals stay
+// AppLoop lifecycle event entity. Enable delivery with attachAppLifecycle; the signals stay
 // inert until then.
 export interface AppLifecycle extends Entity {
   onStateChange: Signal<(state: AppLifecycleState) => void>;

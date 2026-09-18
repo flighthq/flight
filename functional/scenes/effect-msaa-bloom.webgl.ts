@@ -28,7 +28,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -43,7 +43,7 @@ declareExpectedImageDescription(
 // also runs a bloom scene2d. This proves the MSAA-resolve and the effect-compose paths cooperate — the
 // rotated shapes' edges resolve smooth while their bright interiors still bloom a soft halo.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

@@ -40,7 +40,7 @@ import {
   renderGlVelocity,
   setGlRenderEffectVelocityTexture,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -56,7 +56,7 @@ declareExpectedImageDescription(
 // contribute a screen-space velocity to each shape before rendering the velocity pass. That makes the
 // blur visible in a single deterministic capture instead of requiring real motion across frames.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

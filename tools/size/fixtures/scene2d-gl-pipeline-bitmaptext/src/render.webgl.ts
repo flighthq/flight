@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import {
@@ -28,7 +28,7 @@ import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

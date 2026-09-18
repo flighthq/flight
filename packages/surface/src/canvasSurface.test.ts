@@ -1,5 +1,5 @@
 import { finishEntity } from '@flighthq/entity/contract';
-import type { ApplicationWindow, CanvasSurface, Entity, HostCanvasCapability } from '@flighthq/types/contract';
+import type { AppWindow, CanvasSurface, Entity, HostCanvasCapability } from '@flighthq/types/contract';
 
 import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface';
 import { allocateSurface, getSurfaceHandle } from './surface';
@@ -8,7 +8,7 @@ function canvasCapability(fields: Omit<HostCanvasCapability, keyof Entity>): Hos
   return finishEntity(Object.assign(allocateSurface(null), fields) as never) as HostCanvasCapability;
 }
 
-const appWindow = {} as ApplicationWindow;
+const appWindow = {} as AppWindow;
 const context = {} as CanvasRenderingContext2D;
 
 describe('createCanvasSurface', () => {

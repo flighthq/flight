@@ -43,7 +43,7 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -63,7 +63,7 @@ declareExpectedImageDescription(
 // to a joint rotated 70 degrees around Z, so the cast silhouette extends laterally; a bind-pose depth
 // pass instead leaves only a compact shadow near the root. The WebGPU twin is the regression target.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

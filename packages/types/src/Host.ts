@@ -41,7 +41,7 @@ import type {
   HostWindowStateCapability,
   HostWindowVisibilityCapability,
   HostWindowZOrderCapability,
-} from './ApplicationWindow';
+} from './AppWindow';
 import type {
   HostClipboardBookmarkCapability,
   HostClipboardChangeCapability,

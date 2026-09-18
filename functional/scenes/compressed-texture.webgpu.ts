@@ -33,7 +33,7 @@ import {
   SpriteKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -68,7 +68,7 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, appWindow, WIDTH * pixelRatio, HEIGHT * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');

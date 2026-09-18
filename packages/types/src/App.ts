@@ -7,7 +7,7 @@ import type { Signal } from './Signal';
 // background. No-op on non-macOS and web.
 export type AppActivationPolicy = 'regular' | 'accessory' | 'prohibited';
 
-// Application login-item (launch-at-startup) settings.
+// AppLoop login-item (launch-at-startup) settings.
 export interface AppLoginItem {
   // Whether the app launches automatically when the user logs in.
   openAtLogin: boolean;
@@ -31,7 +31,7 @@ export interface AppLoginItemLike {
 // (home, documents, downloads, appData, etc.) live in @flighthq/filesystem, not here.
 export type AppPathKind = 'userData' | 'logs' | 'crashDumps';
 
-// Application event entity. Enable delivery with attachApp; the signals stay inert until then.
+// AppLoop event entity. Enable delivery with attachApp; the signals stay inert until then.
 export interface App extends Entity {
   onActivate: Signal<() => void>;
   onAllWindowsClosed: Signal<() => void>;

@@ -28,7 +28,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -47,7 +47,7 @@ declareExpectedImageDescription(
 // SMAA antialiases the whole frame. This is a single-pass approximation of SMAA (not the full
 // edge/blend-weight/neighborhood three-pass), smoothing the jagged diagonal edges.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

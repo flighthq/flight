@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   EntityConstruction,
   GlContextOptions,
   HostGlCapability,
@@ -25,7 +25,7 @@ export function initializeWebHostGl(out: EntityConstruction<HostGlCapability>): 
   };
   // Allocation only. Whether the browser will grant WebGL2 on the new canvas is reported by acquire, so
   // the two sentinels stay distinct: null here means no drawable, null there means no context.
-  out.create = (win: Readonly<ApplicationWindow>, width: number, height: number) =>
+  out.create = (win: Readonly<AppWindow>, width: number, height: number) =>
     allocateWebSurfaceCanvas(win, width, height);
   out.release = (_surface: Readonly<Surface>) => {
     // The DOM owns context lifetime: a canvas's WebGL2 context is released with the canvas, so the web

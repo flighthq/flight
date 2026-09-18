@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import {
   webHostGl,
@@ -39,7 +39,7 @@ export const scale = window.devicePixelRatio || 1;
 // heuristic has no split to measure, so assertRender below checks the actual attachment color.
 export const minCoverage = 0;
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, width * scale, height * scale, {
   antialias: false,

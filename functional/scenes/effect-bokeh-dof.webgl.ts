@@ -28,7 +28,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -49,7 +49,7 @@ declareExpectedImageDescription(
 // Bokeh depth-of-field [DEPTH]: shapes near the focus distance stay sharp while out-of-focus
 // shapes spread into soft bokeh discs. Gl drives the circle-of-confusion from the depth target.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

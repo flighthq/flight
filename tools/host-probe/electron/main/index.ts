@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
-import { closeWindow, createApplicationWindow, openWindow } from '@flighthq/application/contract';
+import { closeWindow, createAppWindow, openWindow } from '@flighthq/app/contract';
 import { electronHost, getElectronBrowserWindow } from '@flighthq/host-electron';
 import { getScreens } from '@flighthq/screen/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
@@ -80,7 +80,7 @@ function installElectronProbe(): HostProbeInstallResult {
     status: screens.length > 0 ? 'pass' : 'fail',
   });
 
-  const probeWindow = createApplicationWindow();
+  const probeWindow = createAppWindow();
   const opened = openWindow(host.window.lifecycle, host.window.geometry, probeWindow, {
     height: 120,
     title: 'Flight Host Probe Child',

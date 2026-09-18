@@ -1,6 +1,6 @@
 export * from './webAccessibility';
 export * from './webAccessibilityHost';
-export * from './webApplicationExit';
+export * from './webAppLoopExit';
 export * from './webApp';
 export * from './webAppHost';
 export * from './webAudio';

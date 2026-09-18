@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -18,7 +18,7 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import { createGlSurface } from '@flighthq/surface';
 import { RegistryEntryState, ShapeKind } from '@flighthq/types';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 400, 300, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

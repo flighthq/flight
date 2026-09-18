@@ -1,8 +1,8 @@
-import { notifyWindowClosed } from '@flighthq/application/contract';
+import { notifyWindowClosed } from '@flighthq/app/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   ElectronApi,
   ElectronBrowserWindow,
   HostWindowAppearanceCapability,
@@ -28,8 +28,8 @@ import type {
 } from '@flighthq/types/contract';
 
 // Maps Flight's window capability slots onto Electron's BrowserWindow, one BrowserWindow per
-// ApplicationWindow. open() constructs the real OS window from WindowOptions and wires BrowserWindow OS
-// events back to the entity: each native event mutates the matching ApplicationWindow field and emits
+// AppWindow. open() constructs the real OS window from WindowOptions and wires BrowserWindow OS
+// events back to the entity: each native event mutates the matching AppWindow field and emits
 // its signal, so user-driven state changes (minimize, move, focus, …) flow through the same signals the
 // command functions emit. Other methods look up the BrowserWindow and no-op when it is absent (already
 // closed or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the
@@ -424,24 +424,24 @@ export function electronHostWindowZOrder(): HostWindowZOrderCapability {
   return finishEntity(out);
 }
 
-// Returns the ApplicationWindow mapped to the given Electron BrowserWindow id, or null when unknown.
+// Returns the AppWindow mapped to the given Electron BrowserWindow id, or null when unknown.
 // Allows tray/menu/protocol handlers to resolve a native window id back into a Flight window entity.
-export function getApplicationWindowForElectronId(id: number): ApplicationWindow | null {
+export function getAppWindowForElectronId(id: number): AppWindow | null {
   return _windowsById.get(id) ?? null;
 }
 
 // The Electron BrowserWindow backing a Flight window opened via openWindow, or null if not (yet)
 // opened. The escape hatch a host app needs to do Electron-specific things the seam doesn't cover —
 // most importantly loadFile/loadURL to put content in the window. Host-adapter-only by design.
-export function getElectronBrowserWindow(win: Readonly<ApplicationWindow>): ElectronBrowserWindow | null {
-  return _windows.get(win as ApplicationWindow) ?? null;
+export function getElectronBrowserWindow(win: Readonly<AppWindow>): ElectronBrowserWindow | null {
+  return _windows.get(win as AppWindow) ?? null;
 }
 
 // Returns the Electron BrowserWindow id for a Flight window, or -1 when the window is not mapped.
 // Useful for tray/menu click handlers that receive a native window id and need to resolve back to an
-// ApplicationWindow; pair with getApplicationWindowForElectronId.
-export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
-  return _windows.get(win as ApplicationWindow)?.id ?? -1;
+// AppWindow; pair with getAppWindowForElectronId.
+export function getElectronWindowId(win: Readonly<AppWindow>): number {
+  return _windows.get(win as AppWindow)?.id ?? -1;
 }
 
 export function resetElectronHostWindowForTest(): void {
@@ -450,9 +450,9 @@ export function resetElectronHostWindowForTest(): void {
   _windowsById.clear();
 }
 
-// Side table mapping each Flight ApplicationWindow to its Electron BrowserWindow, kept off the public
+// Side table mapping each Flight AppWindow to its Electron BrowserWindow, kept off the public
 // entity. Entries are removed on close so a stale BrowserWindow is never reused.
-let _windows = new WeakMap<ApplicationWindow, ElectronBrowserWindow>();
+let _windows = new WeakMap<AppWindow, ElectronBrowserWindow>();
 
 interface ElectronWindowRecord {
   readonly cleanup: (() => void)[];
@@ -460,14 +460,14 @@ interface ElectronWindowRecord {
   readonly ownership: WindowAttachmentOwnership;
 }
 
-let _windowRecords = new WeakMap<ApplicationWindow, ElectronWindowRecord>();
+let _windowRecords = new WeakMap<AppWindow, ElectronWindowRecord>();
 
-// Reverse lookup by Electron BrowserWindow id for getApplicationWindowForElectronId. Maintained in
+// Reverse lookup by Electron BrowserWindow id for getAppWindowForElectronId. Maintained in
 // lockstep with _windows; entries are removed on close as well.
-const _windowsById = new Map<number, ApplicationWindow>();
+const _windowsById = new Map<number, AppWindow>();
 
 function attachElectronWindow(
-  win: ApplicationWindow,
+  win: AppWindow,
   handle: ElectronBrowserWindow,
   ownership: WindowAttachmentOwnership,
 ): boolean {
@@ -540,7 +540,7 @@ function addElectronWindowListener(
   record.cleanup.push(() => record.handle.off(event, listener));
 }
 
-function detachElectronWindow(win: ApplicationWindow, closeOwned: boolean): void {
+function detachElectronWindow(win: AppWindow, closeOwned: boolean): void {
   const record = _windowRecords.get(win);
   if (record === undefined) return;
   _windowRecords.delete(win);

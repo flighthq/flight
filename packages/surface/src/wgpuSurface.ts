@@ -1,6 +1,6 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type {
-  ApplicationWindow,
+  AppWindow,
   EntityConstruction,
   HostWgpuCapability,
   NativeSurfaceHandle,
@@ -17,7 +17,7 @@ import { allocateSurface } from './surface';
 // misuse, so it reports through the return value like every other expected failure here.
 export async function createWgpuSurface(
   capability: Readonly<HostWgpuCapability>,
-  window: Readonly<ApplicationWindow>,
+  window: Readonly<AppWindow>,
   width: number,
   height: number,
   options?: Readonly<WgpuHostAcquisitionOptions>,

@@ -200,7 +200,7 @@ describe('findMapStatusClaims', () => {
     expect(
       findMapStatusClaims(
         mapWith(
-          '- [render view model](agents/render-view-model.md) — **unratified.** Before touching `ApplicationRenderView`.',
+          '- [render view model](agents/render-view-model.md) — **unratified.** Before touching `AppRenderView`.',
         ),
       ),
     ).toEqual([]);

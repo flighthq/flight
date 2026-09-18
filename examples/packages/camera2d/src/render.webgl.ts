@@ -35,7 +35,7 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 
@@ -44,7 +44,7 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, CANVAS_WIDTH * pixelRatio, CANVAS_HEIGHT * pixelRatio, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

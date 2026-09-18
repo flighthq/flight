@@ -54,7 +54,7 @@ import {
   centerWindow,
   closeWindow,
   computeWindowDeviceTransform,
-  createApplicationWindow,
+  createAppWindow,
   detachWindowClose,
   detachWindowDropFile,
   detachWindowFocus,
@@ -65,21 +65,21 @@ import {
   detachWindowRenderState,
   detachWindowResize,
   detachWindowVisibility,
-  disposeApplicationWindow,
-  exitApplicationFullscreen,
-  exitApplicationPointerLock,
+  disposeAppWindow,
+  exitAppWindowFullscreen,
+  exitAppInputPointerLock,
   flashWindowFrame,
   focusWindow,
   getWindowBounds,
   hideWindow,
-  initializeApplicationWindow,
-  lockApplicationPointer,
+  initializeAppWindow,
+  lockAppInputPointer,
   maximizeWindow,
   minimizeWindow,
   notifyWindowClosed,
   openWindow,
   prepareElementForInput,
-  requestApplicationFullscreen,
+  requestAppWindowFullscreen,
   requestWindowAttention,
   requestWindowClose,
   restoreWindow,
@@ -100,7 +100,7 @@ import {
   setWindowSkipTaskbar,
   setWindowTitle,
   showWindow,
-} from './window';
+} from './appWindow';
 
 // The double implements every window capability, so one object stands in for the whole window
 // group at each call site: the command functions each select the single capability they need, and
@@ -513,7 +513,7 @@ beforeEach(() => {
 });
 
 describe('attachWindow', () => {
-  it('attaches an existing handle without creating an Application and preserves identity', () => {
+  it('attaches an existing handle without creating an AppLoop and preserves identity', () => {
     const backend = recordingWindowBackend();
     const seen: { handle: unknown; win: unknown }[] = [];
     backend.attach = (win, handle) => {
@@ -521,7 +521,7 @@ describe('attachWindow', () => {
       return true;
     };
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const handle = { id: 41 };
 
     expect(attachWindow(host.window, host.window, win, handle, 'host')).toBe(true);
@@ -538,8 +538,8 @@ describe('attachWindow', () => {
     };
     backend.close = (win) => closed.push(win);
     host = createTestHost(backend);
-    const first = createApplicationWindow();
-    const second = createApplicationWindow();
+    const first = createAppWindow();
+    const second = createAppWindow();
 
     expect(attachWindow(host.window, host.window, first, { id: 1 }, 'host')).toBe(true);
     expect(attachWindow(host.window, host.window, second, { id: 2 }, 'flight')).toBe(true);
@@ -553,7 +553,7 @@ describe('attachWindow', () => {
     const backend = recordingWindowBackend();
     backend.close = (win) => notifyWindowClosed(win);
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = 0;
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
@@ -571,7 +571,7 @@ describe('attachWindow', () => {
   it('clears terminal state after the same window successfully reattaches', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
@@ -585,7 +585,7 @@ describe('attachWindow', () => {
   it('pins close to the host that attached the window', () => {
     const origin = createTestHost();
     const active = createTestHost();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
 
     expect(attachWindow(origin.window, origin.window, win, { id: 1 }, 'host')).toBe(true);
     expect(closeWindow(active.window, win)).toBe(true);
@@ -597,7 +597,7 @@ describe('attachWindow', () => {
 
 describe('attachWindowClose', () => {
   it('emits onClose when the host reports a terminal close', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = false;
     connectSignal(win.onClose, () => {
       closed = true;
@@ -608,7 +608,7 @@ describe('attachWindowClose', () => {
   });
 
   it('emits onCloseRequest and reports whether it was cancelled to the host', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let requested = false;
     connectSignal(win.onCloseRequest, () => {
       requested = true;
@@ -623,7 +623,7 @@ describe('attachWindowClose', () => {
 
 describe('attachWindowDropFile', () => {
   it('forwards host-emitted paths to onDropFile', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let received: string | null = null;
     connectSignal(win.onDropFile, (path) => {
       received = path;
@@ -637,7 +637,7 @@ describe('attachWindowDropFile', () => {
   it('releases the origin provider before attaching a replacement provider', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const target = createHostTarget();
 
     attachWindowDropFile(origin.input.dropFile, win, target);
@@ -651,7 +651,7 @@ describe('attachWindowDropFile', () => {
 
 describe('attachWindowFocus', () => {
   it('emits onFocusIn from host focus ingress', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onFocusIn, () => {
       called = true;
@@ -662,7 +662,7 @@ describe('attachWindowFocus', () => {
   });
 
   it('emits onFocusOut from host blur ingress', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onFocusOut, () => {
       called = true;
@@ -675,7 +675,7 @@ describe('attachWindowFocus', () => {
   it('releases the origin provider before attaching a replacement provider', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const target = createHostTarget();
 
     attachWindowFocus(origin.input.focus, win, target);
@@ -689,7 +689,7 @@ describe('attachWindowFocus', () => {
 
 describe('attachWindowFullscreen', () => {
   it('mirrors subscribed fullscreen state and emits onFullscreenChanged', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
@@ -704,7 +704,7 @@ describe('attachWindowFullscreen', () => {
 
 describe('attachWindowMove', () => {
   it('emits onMove and updates position when the host position changes', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.x = 0;
     win.y = 0;
     let moved = false;
@@ -721,7 +721,7 @@ describe('attachWindowMove', () => {
   });
 
   it('does not emit onMove when position has not changed', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.x = 50;
     win.y = 50;
     let moved = false;
@@ -738,7 +738,7 @@ describe('attachWindowMove', () => {
 
 describe('attachWindowOrientation', () => {
   it('emits onOrientationChanged on change', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onOrientationChanged, () => {
       called = true;
@@ -752,7 +752,7 @@ describe('attachWindowOrientation', () => {
 
 describe('attachWindowRenderContext', () => {
   it('emits onRenderContextLost from host render-context ingress', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onRenderContextLost, () => {
       called = true;
@@ -763,7 +763,7 @@ describe('attachWindowRenderContext', () => {
   });
 
   it('emits onRenderContextRestored from host render-context ingress', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onRenderContextRestored, () => {
       called = true;
@@ -776,7 +776,7 @@ describe('attachWindowRenderContext', () => {
   it('releases the origin provider before attaching a replacement provider', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const target = createHostTarget();
 
     attachWindowRenderContext(origin.graphics.renderContext, win, target);
@@ -790,7 +790,7 @@ describe('attachWindowRenderContext', () => {
 
 describe('attachWindowRenderState', () => {
   it('sizes the opaque render surface and writes the device transform from the window', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 2;
@@ -802,7 +802,7 @@ describe('attachWindowRenderState', () => {
   });
 
   it('keeps onResize core-owned while reapplying the backing size and transform', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 1;
@@ -818,7 +818,7 @@ describe('attachWindowRenderState', () => {
   it('pins resize commands to the provider captured by the core signal attachment', () => {
     const origin = createTestHost();
     const active = createTestHost();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.width = 320;
     win.height = 200;
     const state = makeRenderState();
@@ -836,26 +836,26 @@ describe('attachWindowRenderState', () => {
     const targetHost = createTestHost();
     const composedHost: WindowTargetHost = targetHost;
     const target = createHostTarget();
-    const win = createApplicationWindow();
+    const win = createAppWindow();
 
     attachWindowDropFile(composedHost.input.dropFile, win, target);
     attachWindowFocus(composedHost.input.focus, win, target);
     attachWindowRenderContext(composedHost.graphics.renderContext, win, target);
     attachWindowRenderState(composedHost.graphics.renderSurface, win, makeRenderState(), target);
-    await lockApplicationPointer(composedHost.input.pointerLock, target);
+    await lockAppInputPointer(composedHost.input.pointerLock, target);
 
     expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
     expect(targetHost.input.focus.calls).toEqual(['subscribe']);
     expect(targetHost.graphics.renderContext.calls).toEqual(['subscribe']);
     expect(targetHost.graphics.renderSurface.calls).toEqual(['resize:0,0']);
     expect(targetHost.input.pointerLock.calls).toEqual(['request']);
-    await exitApplicationPointerLock(targetHost.input.pointerLock);
+    await exitAppInputPointerLock(targetHost.input.pointerLock);
   });
 });
 
 describe('attachWindowResize', () => {
   it('emits onResize and updates dimensions', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onResize, () => {
       called = true;
@@ -871,7 +871,7 @@ describe('attachWindowResize', () => {
   });
 
   it('replaces a previous observer when called again', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let resized = 0;
     connectSignal(win.onResize, () => resized++);
     attachWindowResize(host.window, win, createWindowResizeTarget());
@@ -886,7 +886,7 @@ describe('attachWindowResize', () => {
 
 describe('attachWindowVisibility', () => {
   it('emits onDeactivate when page is hidden', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onDeactivate, () => {
       called = true;
@@ -899,7 +899,7 @@ describe('attachWindowVisibility', () => {
   });
 
   it('emits onActivate when page becomes visible', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onActivate, () => {
       called = true;
@@ -916,7 +916,7 @@ describe('centerWindow', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    centerWindow(host.window, createApplicationWindow());
+    centerWindow(host.window, createAppWindow());
     expect(backend.calls).toContain('center');
   });
 });
@@ -925,7 +925,7 @@ describe('closeWindow', () => {
   it('closes and emits onClose when not vetoed', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = false;
     connectSignal(win.onClose, () => {
       closed = true;
@@ -938,14 +938,14 @@ describe('closeWindow', () => {
   it('aborts and returns false when a listener vetoes', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     connectSignal(win.onCloseRequest, () => cancelSignal(win.onCloseRequest));
     expect(closeWindow(host.window, win)).toBe(false);
     expect(backend.calls).not.toContain('close');
   });
 
   it('closes terminal state once when called repeatedly', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
@@ -959,7 +959,7 @@ describe('closeWindow', () => {
 
 describe('computeWindowDeviceTransform', () => {
   it('writes a uniform devicePixelRatio scale into out and returns it', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.devicePixelRatio = 3;
     const out = { a: 0, b: 0, c: 0, d: 0, tx: 9, ty: 9 } as unknown as Matrix;
     const result = computeWindowDeviceTransform(win, out);
@@ -973,7 +973,7 @@ describe('computeWindowDeviceTransform', () => {
   });
 
   it('overwrites every field when out already carries stale values (read-before-write)', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.devicePixelRatio = 2;
     // out's only input is win (a different object), so out cannot alias an input here; this asserts
     // the read-before-write guarantee by handing the function a fully-populated out it must clobber.
@@ -989,9 +989,9 @@ describe('computeWindowDeviceTransform', () => {
   });
 });
 
-describe('createApplicationWindow', () => {
+describe('createAppWindow', () => {
   it('returns all signals with no side effects', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(EntityRuntimeKey in win).toBe(true);
     expect(win.onActivate).toBeDefined();
     expect(win.onClose).toBeDefined();
@@ -1018,7 +1018,7 @@ describe('createApplicationWindow', () => {
   });
 
   it('initializes dimensions and devicePixelRatio to defaults', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(win.width).toBe(0);
     expect(win.height).toBe(0);
     expect(win.devicePixelRatio).toBe(1);
@@ -1027,7 +1027,7 @@ describe('createApplicationWindow', () => {
 
 describe('detachWindowClose', () => {
   it('stops emitting onClose after detach', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = false;
     connectSignal(win.onClose, () => {
       closed = true;
@@ -1041,7 +1041,7 @@ describe('detachWindowClose', () => {
 
 describe('detachWindowDropFile', () => {
   it('releases the host subscription', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onDropFile, () => {
       called = true;
@@ -1057,7 +1057,7 @@ describe('detachWindowDropFile', () => {
 
 describe('detachWindowFocus', () => {
   it('releases both host event paths', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onFocusIn, () => {
       called = true;
@@ -1072,7 +1072,7 @@ describe('detachWindowFocus', () => {
 
 describe('detachWindowFullscreen', () => {
   it('removes the listener', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
@@ -1087,7 +1087,7 @@ describe('detachWindowFullscreen', () => {
 
 describe('detachWindowMove', () => {
   it('removes the listener so onMove no longer fires', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.x = 0;
     let moved = false;
     connectSignal(win.onMove, () => {
@@ -1104,7 +1104,7 @@ describe('detachWindowMove', () => {
 
 describe('detachWindowOrientation', () => {
   it('removes the listener', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onOrientationChanged, () => {
       called = true;
@@ -1119,7 +1119,7 @@ describe('detachWindowOrientation', () => {
 
 describe('detachWindowRenderContext', () => {
   it('releases render-context ingress', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onRenderContextLost, () => {
       called = true;
@@ -1134,7 +1134,7 @@ describe('detachWindowRenderContext', () => {
 
 describe('detachWindowRenderState', () => {
   it('stops reacting to window resize', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 1;
@@ -1149,7 +1149,7 @@ describe('detachWindowRenderState', () => {
 
 describe('detachWindowResize', () => {
   it('disconnects the observer', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     attachWindowResize(host.window, win, createWindowResizeTarget());
     detachWindowResize(win);
     host.window.emitResize(640, 480, 2);
@@ -1161,7 +1161,7 @@ describe('detachWindowResize', () => {
 
 describe('detachWindowVisibility', () => {
   it('removes the listener', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onDeactivate, () => {
       called = true;
@@ -1175,13 +1175,13 @@ describe('detachWindowVisibility', () => {
   });
 });
 
-describe('disposeApplicationWindow', () => {
+describe('disposeAppWindow', () => {
   it('runs all teardown so attached observers stop firing', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     attachWindowResize(host.window, win, createWindowResizeTarget());
     attachWindowFullscreen(host.ui.fullscreen, win);
 
-    disposeApplicationWindow(win);
+    disposeAppWindow(win);
 
     host.window.emitResize(640, 480, 2);
     expect(win.width).toBe(0);
@@ -1195,16 +1195,9 @@ describe('disposeApplicationWindow', () => {
   });
 });
 
-describe('exitApplicationFullscreen', () => {
-  it('delegates to the fullscreen capability', async () => {
-    await expect(exitApplicationFullscreen(host.ui.fullscreen)).resolves.toBe(true);
-    expect(host.ui.fullscreen.calls).toEqual(['exit']);
-  });
-});
-
-describe('exitApplicationPointerLock', () => {
+describe('exitAppInputPointerLock', () => {
   it('delegates to the input pointer-lock command capability', async () => {
-    await expect(exitApplicationPointerLock(host.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
+    await expect(exitAppInputPointerLock(host.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['exit']);
   });
 
@@ -1220,9 +1213,9 @@ describe('exitApplicationPointerLock', () => {
         return attempts === 1 ? { reason } : { reason: 'ok' };
       };
 
-      await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-      await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason });
-      await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
+      await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+      await expect(exitAppInputPointerLock(active.input.pointerLock)).resolves.toEqual({ reason });
+      await expect(exitAppInputPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
       expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
       expect(active.input.pointerLock.calls).toEqual([]);
@@ -1240,12 +1233,19 @@ describe('exitApplicationPointerLock', () => {
       return { reason: 'ok' };
     };
 
-    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-    await expect(exitApplicationPointerLock(active.input.pointerLock)).rejects.toThrow('busy');
-    await expect(exitApplicationPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
+    await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+    await expect(exitAppInputPointerLock(active.input.pointerLock)).rejects.toThrow('busy');
+    await expect(exitAppInputPointerLock(active.input.pointerLock)).resolves.toEqual({ reason: 'ok' });
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
     expect(active.input.pointerLock.calls).toEqual([]);
+  });
+});
+
+describe('exitAppWindowFullscreen', () => {
+  it('delegates to the fullscreen capability', async () => {
+    await expect(exitAppWindowFullscreen(host.ui.fullscreen)).resolves.toBe(true);
+    expect(host.ui.fullscreen.calls).toEqual(['exit']);
   });
 });
 
@@ -1253,7 +1253,7 @@ describe('flashWindowFrame', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     flashWindowFrame(host.window, win);
     expect(backend.calls).toContain('flashWindowFrame');
   });
@@ -1263,7 +1263,7 @@ describe('focusWindow', () => {
   it('marks focused and delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     focusWindow(host.window, win);
     expect(win.focused).toBe(true);
     expect(backend.calls).toContain('focus');
@@ -1274,7 +1274,7 @@ describe('getWindowBounds', () => {
   it('fills the out bounds from the backend', () => {
     host = createTestHost();
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(getWindowBounds(host.window, createApplicationWindow(), out)).toBe(out);
+    expect(getWindowBounds(host.window, createAppWindow(), out)).toBe(out);
     expect(out.width).toBe(3);
     expect(host.window.calls).toEqual(['getBounds']);
   });
@@ -1284,33 +1284,33 @@ describe('hideWindow', () => {
   it('marks not visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     hideWindow(host.window, win);
     expect(win.visible).toBe(false);
     expect(backend.calls).toContain('hide');
   });
 });
 
-describe('initializeApplicationWindow', () => {
-  it('is the construction initializer of createApplicationWindow', () => {
-    expect(typeof initializeApplicationWindow).toBe('function');
+describe('initializeAppWindow', () => {
+  it('is the construction initializer of createAppWindow', () => {
+    expect(typeof initializeAppWindow).toBe('function');
   });
 });
 
-describe('lockApplicationPointer', () => {
+describe('lockAppInputPointer', () => {
   it('passes the opaque target to the pointer-lock command capability', async () => {
     const target = createHostTarget();
-    await expect(lockApplicationPointer(host.input.pointerLock, target)).resolves.toEqual({ reason: 'ok' });
+    await expect(lockAppInputPointer(host.input.pointerLock, target)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['request']);
-    await exitApplicationPointerLock(host.input.pointerLock);
+    await exitAppInputPointerLock(host.input.pointerLock);
   });
 
   it('exits through the successful request origin after a different host becomes active', async () => {
     const origin = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-    await exitApplicationPointerLock(active.input.pointerLock);
+    await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+    await exitAppInputPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
     expect(active.input.pointerLock.calls).toEqual([]);
@@ -1332,11 +1332,11 @@ describe('lockApplicationPointer', () => {
         return { reason };
       };
 
-      await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-      await expect(lockApplicationPointer(declined.input.pointerLock, createHostTarget())).resolves.toEqual({
+      await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+      await expect(lockAppInputPointer(declined.input.pointerLock, createHostTarget())).resolves.toEqual({
         reason,
       });
-      await exitApplicationPointerLock(active.input.pointerLock);
+      await exitAppInputPointerLock(active.input.pointerLock);
 
       expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
       expect(declined.input.pointerLock.calls).toEqual([`request:${reason}`]);
@@ -1353,9 +1353,9 @@ describe('lockApplicationPointer', () => {
       throw new Error('defect');
     };
 
-    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-    await expect(lockApplicationPointer(rejected.input.pointerLock, createHostTarget())).rejects.toThrow('defect');
-    await exitApplicationPointerLock(active.input.pointerLock);
+    await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+    await expect(lockAppInputPointer(rejected.input.pointerLock, createHostTarget())).rejects.toThrow('defect');
+    await exitAppInputPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
     expect(rejected.input.pointerLock.calls).toEqual(['request:rejected']);
@@ -1367,9 +1367,9 @@ describe('lockApplicationPointer', () => {
     const replacement = createTestHost();
     const active = createTestHost();
 
-    await lockApplicationPointer(origin.input.pointerLock, createHostTarget());
-    await lockApplicationPointer(replacement.input.pointerLock, createHostTarget());
-    await exitApplicationPointerLock(active.input.pointerLock);
+    await lockAppInputPointer(origin.input.pointerLock, createHostTarget());
+    await lockAppInputPointer(replacement.input.pointerLock, createHostTarget());
+    await exitAppInputPointerLock(active.input.pointerLock);
 
     expect(origin.input.pointerLock.calls).toEqual(['request']);
     expect(replacement.input.pointerLock.calls).toEqual(['request', 'exit']);
@@ -1381,7 +1381,7 @@ describe('maximizeWindow', () => {
   it('sets maximized and emits onMaximize once', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let count = 0;
     connectSignal(win.onMaximize, () => count++);
     maximizeWindow(host.window, win);
@@ -1396,7 +1396,7 @@ describe('minimizeWindow', () => {
   it('sets minimized and emits onMinimize', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let called = false;
     connectSignal(win.onMinimize, () => {
       called = true;
@@ -1409,7 +1409,7 @@ describe('minimizeWindow', () => {
 
 describe('notifyWindowClosed', () => {
   it('emits once before draining application observers, then remains idempotent', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     const order: string[] = [];
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
@@ -1429,7 +1429,7 @@ describe('notifyWindowClosed', () => {
   });
 
   it('still drains application observers when a terminal listener throws', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
     attachWindowFullscreen(host.ui.fullscreen, win);
@@ -1449,7 +1449,7 @@ describe('openWindow', () => {
   it('applies options to the entity and delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     expect(
       openWindow(host.window, host.window, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true }),
     ).toBe(true);
@@ -1462,7 +1462,7 @@ describe('openWindow', () => {
   it('centers the window after open when center option is true', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     openWindow(host.window, host.window, win, { title: 'Centered', center: true });
     expect(backend.calls.filter((call) => call === 'center')).toHaveLength(1);
   });
@@ -1470,7 +1470,7 @@ describe('openWindow', () => {
   it('does not center when center option is not set', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     openWindow(host.window, host.window, win, { title: 'Normal' });
     expect(backend.calls).not.toContain('center');
   });
@@ -1478,7 +1478,7 @@ describe('openWindow', () => {
   it('re-arms terminal close and observer disposal after a successful reopen', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = 0;
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
@@ -1515,7 +1515,7 @@ describe('openWindow', () => {
     active.window.close = () => {
       calls.push('active:close');
     };
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
@@ -1545,11 +1545,11 @@ describe('prepareElementForInput', () => {
   });
 });
 
-describe('requestApplicationFullscreen', () => {
+describe('requestAppWindowFullscreen', () => {
   it('passes the opaque target to the fullscreen capability', async () => {
     const target = allocateEntity<FullscreenTargetHandle>();
     target.__brand = 'FullscreenTargetHandle' as const;
-    await expect(requestApplicationFullscreen(host.ui.fullscreen, target)).resolves.toBe(true);
+    await expect(requestAppWindowFullscreen(host.ui.fullscreen, target)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['request']);
   });
 });
@@ -1558,7 +1558,7 @@ describe('requestWindowAttention', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    requestWindowAttention(host.window, createApplicationWindow(), true);
+    requestWindowAttention(host.window, createAppWindow(), true);
     expect(backend.calls).toContain('requestAttention:true');
   });
 });
@@ -1566,11 +1566,11 @@ describe('requestWindowAttention', () => {
 describe('requestWindowClose', () => {
   it('returns true when not vetoed', () => {
     host = createTestHost();
-    expect(requestWindowClose(createApplicationWindow())).toBe(true);
+    expect(requestWindowClose(createAppWindow())).toBe(true);
   });
 
   it('returns false when a listener vetoes', () => {
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     connectSignal(win.onCloseRequest, () => cancelSignal(win.onCloseRequest));
     expect(requestWindowClose(win)).toBe(false);
   });
@@ -1580,7 +1580,7 @@ describe('restoreWindow', () => {
   it('clears minimized/maximized and emits onRestore', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     maximizeWindow(host.window, win);
     let restored = false;
     connectSignal(win.onRestore, () => {
@@ -1597,7 +1597,7 @@ describe('setWindowAlwaysOnTop', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowAlwaysOnTop(host.window, win, true);
     expect(win.alwaysOnTop).toBe(true);
     expect(backend.calls).toContain('setAlwaysOnTop:true');
@@ -1608,7 +1608,7 @@ describe('setWindowContentProtection', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowContentProtection(host.window, win, true);
     expect(backend.calls).toContain('setContentProtection:true');
   });
@@ -1618,7 +1618,7 @@ describe('setWindowFullscreen', () => {
   it('sets state and emits onFullscreenChanged once', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let count = 0;
     connectSignal(win.onFullscreenChanged, () => count++);
     setWindowFullscreen(host.window, win, true);
@@ -1632,7 +1632,7 @@ describe('setWindowHasShadow', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowHasShadow(host.window, win, false);
     expect(backend.calls).toContain('setHasShadow:false');
   });
@@ -1642,7 +1642,7 @@ describe('setWindowIcon', () => {
   it('sets the icon and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowIcon(host.window, win, 'icon.png');
     expect(win.icon).toBe('icon.png');
     expect(backend.calls).toContain('setIcon:icon.png');
@@ -1653,7 +1653,7 @@ describe('setWindowMaximumSize', () => {
   it('sets constraints and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowMaximumSize(host.window, win, 1920, 1080);
     expect(win.maxWidth).toBe(1920);
     expect(win.maxHeight).toBe(1080);
@@ -1665,7 +1665,7 @@ describe('setWindowMenuBarVisible', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowMenuBarVisible(host.window, createApplicationWindow(), false);
+    setWindowMenuBarVisible(host.window, createAppWindow(), false);
     expect(backend.calls).toContain('setMenuBarVisible:false');
   });
 });
@@ -1674,7 +1674,7 @@ describe('setWindowMinimumSize', () => {
   it('sets constraints and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowMinimumSize(host.window, win, 320, 240);
     expect(win.minWidth).toBe(320);
     expect(win.minHeight).toBe(240);
@@ -1685,7 +1685,7 @@ describe('setWindowOpacity', () => {
   it('sets opacity and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowOpacity(host.window, win, 0.5);
     expect(win.opacity).toBe(0.5);
     expect(backend.calls).toContain('setOpacity:0.5');
@@ -1696,7 +1696,7 @@ describe('setWindowParent', () => {
   it('delegates to the backend with null', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowParent(host.window, createApplicationWindow(), null);
+    setWindowParent(host.window, createAppWindow(), null);
     expect(backend.calls).toContain('setParent:null');
   });
 });
@@ -1705,7 +1705,7 @@ describe('setWindowPosition', () => {
   it('sets position and emits onMove', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let moved = false;
     connectSignal(win.onMove, () => {
       moved = true;
@@ -1721,7 +1721,7 @@ describe('setWindowProgress', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    setWindowProgress(host.window, createApplicationWindow(), 0.25);
+    setWindowProgress(host.window, createAppWindow(), 0.25);
     expect(backend.calls).toContain('setProgress:0.25');
   });
 });
@@ -1730,7 +1730,7 @@ describe('setWindowResizable', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowResizable(host.window, win, false);
     expect(win.resizable).toBe(false);
     expect(backend.calls).toContain('setResizable:false');
@@ -1741,7 +1741,7 @@ describe('setWindowSize', () => {
   it('sets size and emits onResize', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     let resized = false;
     connectSignal(win.onResize, () => {
       resized = true;
@@ -1757,7 +1757,7 @@ describe('setWindowSkipTaskbar', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowSkipTaskbar(host.window, win, true);
     expect(win.skipTaskbar).toBe(true);
     expect(backend.calls).toContain('setSkipTaskbar:true');
@@ -1768,7 +1768,7 @@ describe('setWindowTitle', () => {
   it('sets the title and delegates', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     setWindowTitle(host.window, win, 'My App');
     expect(win.title).toBe('My App');
     expect(backend.calls).toContain('setTitle:My App');
@@ -1778,7 +1778,7 @@ describe('showWindow', () => {
   it('marks visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();
     host = createTestHost(backend);
-    const win = createApplicationWindow();
+    const win = createAppWindow();
     hideWindow(host.window, win);
     showWindow(host.window, win);
     expect(win.visible).toBe(true);

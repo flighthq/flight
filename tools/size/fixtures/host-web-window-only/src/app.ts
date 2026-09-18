@@ -1,9 +1,9 @@
-import { createApplicationWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/application';
+import { createAppWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/app';
 import { webHostWindowAppearance, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 
 import { renderHostWebWindowCard } from './render.canvas';
 
-const applicationWindow = createApplicationWindow();
+const applicationWindow = createAppWindow();
 const opened = openWindow(webHostWindowLifecycle, webHostWindowGeometry, applicationWindow, {
   height: window.innerHeight,
   title: 'Direct Web Window',

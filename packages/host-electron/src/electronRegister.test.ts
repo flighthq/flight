@@ -164,11 +164,7 @@ const LEAVES = [
   'electronHostWindowZOrder',
 ] as const;
 
-const AUXILIARY_EXPORTS = [
-  'getApplicationWindowForElectronId',
-  'getElectronBrowserWindow',
-  'getElectronWindowId',
-] as const;
+const AUXILIARY_EXPORTS = ['getAppWindowForElectronId', 'getElectronBrowserWindow', 'getElectronWindowId'] as const;
 
 type ElectronLeafResult = ReturnType<(typeof publicApi)[(typeof LEAVES)[number]]>;
 type ElectronLeafProvidersAreEntities = Exclude<ElectronLeafResult, undefined> extends Entity ? true : false;

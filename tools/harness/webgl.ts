@@ -59,7 +59,7 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
@@ -70,7 +70,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const appWindow = createApplicationWindow();
+  const appWindow = createAppWindow();
   openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 
   const glSurface = createGlSurface(webHostGl, appWindow, width * pixelRatio, height * pixelRatio, {

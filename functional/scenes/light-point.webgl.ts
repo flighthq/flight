@@ -29,7 +29,7 @@ import {
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
 // screen-left (shadowed) point and asserts the lit side is clearly brighter — the signature of real
 // per-pixel punctual shading, absent before point lights were wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

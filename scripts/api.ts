@@ -453,7 +453,7 @@ function printUsage(): void {
   console.log('Usage: npm run api [--] [filters...] [--json] [--check] [--no-color]');
   console.log('');
   console.log('Filter examples:');
-  console.log('  npm run api application               # show @flighthq/application package');
+  console.log('  npm run api application               # show @flighthq/app package');
   console.log('  npm run api app                       # search packages and functions for "app"');
   console.log('  npm run api package=application       # explicit package filter without npm --');
   console.log('  npm run api package:application       # same as package=application');

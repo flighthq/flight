@@ -39,7 +39,7 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -71,7 +71,7 @@ declareExpectedImageDescription(
 // BEFORE prepareScene3DRender, which no longer touches skinning — that separation keeps @flighthq/render free
 // of a @flighthq/skeleton3d dependency.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

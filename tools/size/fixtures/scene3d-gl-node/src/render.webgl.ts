@@ -1,4 +1,4 @@
-import { createApplicationWindow, openWindow } from '@flighthq/application';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
@@ -16,7 +16,7 @@ import { createNode3D, Node3DKind } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 320, 240, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },

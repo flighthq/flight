@@ -33,7 +33,7 @@ import {
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
   setSurfaceDisplaySize,
-  createApplicationWindow,
+  createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -59,7 +59,7 @@ declareExpectedImageDescription(
 // Gl column. The BlinnPhong renderer writes linear HDR into the effect pipeline's rgba16f + depth
 // scene target, then end with an empty effect list to tone-present the HDR scene to the canvas.
 const pixelRatio = window.devicePixelRatio || 1;
-const appWindow = createApplicationWindow();
+const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
 const glSurface = createGlSurface(webHostGl, appWindow, 800 * pixelRatio, 600 * pixelRatio, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },

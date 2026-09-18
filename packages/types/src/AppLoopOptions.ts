@@ -1,5 +1,5 @@
-// Options for startApplicationLoop. Omitted fields fall back to the loop's built-in defaults.
-export interface ApplicationLoopOptions {
+// Options for startAppLoop. Omitted fields fall back to the loop's built-in defaults.
+export interface AppLoopOptions {
   // Maximum per-frame delta in milliseconds; clamps huge gaps after a tab restore or pause.
   maxDeltaTime?: number;
   // Target frames per second; 0 disables the cap (run as fast as the backend schedules frames).
@@ -12,8 +12,5 @@ export interface ApplicationLoopOptions {
   maxUpdatesPerFrame?: number;
 }
 
-// The scheduling fields on ApplicationLoopOptions do not apply when the caller drives each step.
-export type ApplicationStepOptions = Pick<
-  ApplicationLoopOptions,
-  'fixedTimeStep' | 'maxDeltaTime' | 'maxUpdatesPerFrame'
->;
+// The scheduling fields on AppLoopOptions do not apply when the caller drives each step.
+export type AppStepOptions = Pick<AppLoopOptions, 'fixedTimeStep' | 'maxDeltaTime' | 'maxUpdatesPerFrame'>;

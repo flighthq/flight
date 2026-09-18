@@ -1,4 +1,4 @@
-import type { ApplicationWindow } from './ApplicationWindow';
+import type { AppWindow } from './AppWindow';
 import type { Entity } from './Entity';
 import type { NativeSurfaceHandle, Surface } from './Surface';
 
@@ -12,7 +12,7 @@ export interface HostCanvasCapability extends Entity {
     options?: Readonly<CanvasRenderingContext2DSettings>,
   ): CanvasRenderingContext2D | null;
   create(
-    window: Readonly<ApplicationWindow>,
+    window: Readonly<AppWindow>,
     width: number,
     height: number,
     options?: Readonly<CanvasRenderingContext2DSettings>,
