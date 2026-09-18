@@ -86,7 +86,8 @@ import type { HostInputIngressCapability } from './HostInputIngress';
 import type { HostMessageDialogCapability } from './HostMessageDialog';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
 import type { HostPromptDialogCapability } from './HostPromptDialog';
-import type { HostTargetCapability, HostTargetDisplayCapability, HostTargetResizeCapability } from './HostTarget';
+import type { HostInputTargetCapability } from './HostInputTarget';
+import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability } from './HostSurface';
 import type { HostVideoCapability } from './HostVideo';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
 import type { HostImageCapability } from './ImageResource';
@@ -243,7 +244,7 @@ export interface Host extends Entity {
   readonly socket: HostSocketCapabilities;
   readonly softKeyboard: HostSoftKeyboardCapabilities;
   readonly statusBar: HostStatusBarCapabilities;
-  readonly target: HostTargetCapabilities;
+  readonly surface: HostSurfaceCapabilities;
   readonly textSegment: HostTextSegmentCapabilities;
   readonly textShaper: HostTextShaperCapabilities;
   readonly tray: HostTrayCapabilities;
@@ -366,6 +367,7 @@ export interface HostInputCapabilities {
   readonly focus?: HostInputFocusCapability;
   readonly ingress?: HostInputIngressCapability;
   readonly pointerLock?: HostInputPointerLockCapability;
+  readonly target?: HostInputTargetCapability;
 }
 
 export interface HostIpcCapabilities {
@@ -506,10 +508,9 @@ export interface HostStatusBarCapabilities {
   readonly visibility?: HostStatusBarVisibilityCapability;
 }
 
-export interface HostTargetCapabilities {
-  readonly display?: HostTargetDisplayCapability;
-  readonly prepare?: HostTargetCapability;
-  readonly resize?: HostTargetResizeCapability;
+export interface HostSurfaceCapabilities {
+  readonly display?: HostSurfaceDisplayCapability;
+  readonly resize?: HostSurfaceResizeCapability;
 }
 
 export interface HostTextSegmentCapabilities {

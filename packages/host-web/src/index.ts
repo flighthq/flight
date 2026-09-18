@@ -66,9 +66,13 @@ export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGl
 export { webHostBitmap } from './webBitmapHost';
 export { webHostGlGroup } from './webGlHost';
 export { webHostImageGroup } from './webImageHost';
-export { webHostTargetGroup } from './webTargetHost';
+export { webHostSurfaceGroup } from './webSurfaceHost';
 export { webHostCanvasGroup } from './webCanvasHost';
 export { createWebHostCanvas, webHostCanvas } from './webHostCanvas';
+export { createWebHostGl, webHostGl } from './webHostGl';
+export { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface';
+export { createWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
+export { getWebWindowHandle } from './webWindow';
 export { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
 export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
@@ -100,15 +104,13 @@ export {
   createWebTextureAtlasFromImageElement,
 } from './webTextureAtlas';
 export {
-  createWebHostTargetFromElement,
+  createWebInputTargetHandle,
+  resetWebInputTargetBackendForTest,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
-  webHostTarget,
-  webHostGl,
-  webHostTargetDisplay,
-  webHostTargetResize,
-} from './webHostTarget';
+  webHostInputTarget,
+} from './webInputTarget';
 export {
   createWebInputIngressBackend,
   getWebCoalescedPointerEvents,

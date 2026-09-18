@@ -311,7 +311,10 @@ function detachWebWindow(win: ApplicationWindow, closeOwned: boolean): void {
   }
 }
 
-function getWebWindowHandle(win: ApplicationWindow): Window | null {
+// The page Window an ApplicationWindow is attached to, or null when it was never opened or attached. The
+// drawable capabilities resolve their document through here, which is what makes the window argument to
+// surface creation a real lookup rather than a decorative parameter.
+export function getWebWindowHandle(win: Readonly<ApplicationWindow>): Window | null {
   return _records.get(win)?.handle ?? null;
 }
 

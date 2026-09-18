@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
+import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
@@ -16,11 +16,17 @@ beforeAll(installWgpuMock);
 
 const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
-describe('createTestHostTarget', () => {
-  it('brands an entity backed by a canvas the test host backend can resolve', () => {
+describe('createTestWgpuSurface', () => {
+  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
+
+  it('builds a surface the test host backend can resolve back to its canvas', () => {
     const canvas = document.createElement('canvas');
-    const target = createTestHostTarget(canvas);
-    expect(target.__brand).toBe('HostTarget');
+    const surface = createTestWgpuSurface(canvas);
+
+    // The drawable lives on the runtime, not on the entity: nothing about the canvas is visible on the
+    // public surface, and the host is the only code that narrows it back.
+    expect(Object.keys(surface)).toEqual([]);
+    expect(() => createTestWgpuHostBackend().attachSurface(surface, ATTACHMENT)).not.toThrow();
   });
 });
 
@@ -28,7 +34,7 @@ describe('createTestWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
     const backend = createTestWgpuHostBackend();
     const canvas = document.createElement('canvas');
-    const target = createTestHostTarget(canvas);
+    const target = createTestWgpuSurface(canvas);
     const acquisition = await backend.acquire(target, {});
     const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
     const destroy = vi.spyOn(acquisition.device, 'destroy');
@@ -42,7 +48,7 @@ describe('createTestWgpuHostBackend', () => {
   it('tears down whatever it is handed, leaving the ownership decision to the caller', async () => {
     const backend = createTestWgpuHostBackend();
     const canvas = document.createElement('canvas');
-    const target = createTestHostTarget(canvas);
+    const target = createTestWgpuSurface(canvas);
     const acquired = await backend.acquire(target, {});
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
@@ -72,7 +78,7 @@ describe('createTestWgpuHostBackend', () => {
   it('routes acquisition and release through a caller-provided backend', async () => {
     const web = createTestWgpuHostBackend();
     const canvas = document.createElement('canvas');
-    const target = createTestHostTarget(canvas);
+    const target = createTestWgpuSurface(canvas);
     const acquired = await web.acquire(target, {});
     const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
@@ -85,7 +91,7 @@ describe('createTestWgpuHostBackend', () => {
       out.release = vi.fn();
       return finishEntity(out);
     })();
-    const routeTarget = createTestHostTarget(document.createElement('canvas'));
+    const routeTarget = createTestWgpuSurface(document.createElement('canvas'));
 
     const routed = await createWgpuAcquisition(backend, routeTarget);
     expect(backend.acquire).toHaveBeenCalledWith(routeTarget, {});
@@ -102,7 +108,7 @@ describe('createTestWgpuHostBackend', () => {
   it('never releases host handles when a state built on the device is destroyed', async () => {
     const web = createTestWgpuHostBackend();
     const canvas = document.createElement('canvas');
-    const target = createTestHostTarget(canvas);
+    const target = createTestWgpuSurface(canvas);
     const acquired = await web.acquire(target, {});
     const destroy = vi.spyOn(acquired.device, 'destroy');
     const unconfigure = vi.spyOn(acquired.context, 'unconfigure');

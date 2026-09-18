@@ -9,9 +9,9 @@ import type {
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-  HostTargetCapability,
+  HostInputTargetCapability,
   HostScreenChangeCapability,
-  HostTargetResizeCapability,
+  HostSurfaceResizeCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -30,9 +30,10 @@ import type {
   HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostTarget,
+  InputTargetHandle,
   Matrix,
   RenderState,
+  Surface,
   ScreenChangeEvent,
   ScreenInfo,
   WindowResizeTargetHandle,
@@ -161,7 +162,7 @@ type RecordingRenderContextBackend = HostGlCapability & {
   emitRestored(): void;
 };
 
-type RecordingRenderSurfaceBackend = HostTargetResizeCapability & { readonly calls: string[] };
+type RecordingRenderSurfaceBackend = HostSurfaceResizeCapability & { readonly calls: string[] };
 
 type TestHost = {
   readonly graphics: {
@@ -179,7 +180,7 @@ type TestHost = {
 };
 
 type WindowTargetHost = { readonly graphics: { readonly renderContext: HostGlCapability } } & {
-  readonly graphics: { readonly renderSurface: HostTargetResizeCapability };
+  readonly graphics: { readonly renderSurface: HostSurfaceResizeCapability };
 } & { readonly input: { readonly dropFile: HostInputDropFileCapability } } & {
   readonly input: { readonly focus: HostInputFocusCapability };
 } & { readonly input: { readonly pointerLock: HostInputPointerLockCapability } };
@@ -332,9 +333,9 @@ function recordingWindowBackend(): RecordingWindowBackend {
   return finishEntity(out);
 }
 
-function createHostTarget(): HostTarget {
+function createHostTarget(): InputTargetHandle {
   const out = allocateEntity<any>();
-  out.__brand = 'HostTarget' as const;
+  out.__brand = 'InputTargetHandle' as const;
   return finishEntity(out);
 }
 
@@ -379,7 +380,7 @@ function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   out.emit = (path: string) => {
     listener?.(path);
   };
-  out.subscribe = (_target: HostTarget, next: (path: string) => void) => {
+  out.subscribe = (_target: InputTargetHandle, next: (path: string) => void) => {
     calls.push('subscribe');
     listener = next;
     return () => {
@@ -402,7 +403,7 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
   out.emitFocus = () => {
     onFocus?.();
   };
-  out.subscribe = (_target: HostTarget, nextFocus: () => void, nextBlur: () => void) => {
+  out.subscribe = (_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) => {
     calls.push('subscribe');
     onFocus = nextFocus;
     onBlur = nextBlur;
@@ -423,7 +424,7 @@ function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
     calls.push('exit');
     return { reason: 'ok' };
   };
-  out.request = async (_target: HostTarget) => {
+  out.request = async (_target: InputTargetHandle) => {
     calls.push('request');
     return { reason: 'ok' };
   };
@@ -442,7 +443,7 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
   out.emitRestored = () => {
     onRestored?.();
   };
-  out.subscribe = (_target: HostTarget, nextLost: () => void, nextRestored: () => void) => {
+  out.subscribe = (_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) => {
     calls.push('subscribe');
     onLost = nextLost;
     onRestored = nextRestored;
@@ -459,7 +460,7 @@ function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
   const out = allocateEntity<any>();
   out.calls = calls;
-  out.resize = (_target: HostTarget, width: number, height: number) => {
+  out.resize = (_target: InputTargetHandle, width: number, height: number) => {
     calls.push(`resize:${width},${height}`);
   };
   return finishEntity(out);
@@ -1529,11 +1530,11 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<HostTargetCapability>();
+    const backend = allocateEntity<HostInputTargetCapability>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();
-      out.__brand = 'HostTarget' as const;
+      out.__brand = 'InputTargetHandle' as const;
       return finishEntity(out);
     })();
 

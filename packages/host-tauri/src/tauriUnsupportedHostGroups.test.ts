@@ -29,7 +29,7 @@ import {
   tauriHostSoftKeyboard,
   tauriHostStatusBar,
   tauriHostCanvas,
-  tauriHostTarget,
+  tauriHostSurface,
   tauriHostTextSegment,
   tauriHostTextShaper,
   tauriHostUpdater,
@@ -76,7 +76,7 @@ describe('tauriHostSocket', returnsEmptyGroup(tauriHostSocket));
 describe('tauriHostSoftKeyboard', returnsEmptyGroup(tauriHostSoftKeyboard));
 describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
 
-describe('tauriHostTarget', returnsEmptyGroup(tauriHostTarget));
+describe('tauriHostSurface', returnsEmptyGroup(tauriHostSurface));
 describe('tauriHostTextSegment', returnsEmptyGroup(tauriHostTextSegment));
 describe('tauriHostTextShaper', returnsEmptyGroup(tauriHostTextShaper));
 describe('tauriHostUpdater', returnsEmptyGroup(tauriHostUpdater));

@@ -24,7 +24,7 @@ import {
   capacitorHostShortcut,
   capacitorHostSocket,
   capacitorHostCanvas,
-  capacitorHostTarget,
+  capacitorHostSurface,
   capacitorHostTextSegment,
   capacitorHostTextShaper,
   capacitorHostTray,
@@ -134,8 +134,8 @@ describe('capacitorHostSocket', () => {
   it('claims no socket slots', () => expect(capacitorHostSocket()).toEqual({}));
 });
 
-describe('capacitorHostTarget', () => {
-  it('claims no surface slots', () => expect(capacitorHostTarget()).toEqual({}));
+describe('capacitorHostSurface', () => {
+  it('claims no surface slots', () => expect(capacitorHostSurface()).toEqual({}));
 });
 
 describe('capacitorHostTextSegment', () => {

@@ -1,17 +1,28 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostTarget,
   HostWgpuCapability,
+  NativeSurfaceHandle,
+  Surface,
+  SurfaceRuntime,
   WgpuHostAcquisition,
   WgpuSurfaceAttachResult,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-export function createTestHostTarget(canvas: HTMLCanvasElement): HostTarget {
-  const target = allocateEntity<HostTarget>();
-  (target as EntityConstruction<HostTarget>).__brand = 'HostTarget' as const;
-  _testTargets.set(target, canvas);
-  return finishEntity(target);
+// Builds a Surface around an existing canvas, the way a host's create lane would. Reads the runtime slot
+// directly rather than through @flighthq/surface so this test double adds no package dependency.
+export function createTestWgpuSurface(canvas: HTMLCanvasElement): Surface {
+  const surface = allocateEntity<Surface>();
+  const runtime = createEntityRuntime() as SurfaceRuntime;
+  runtime.handle = canvas;
+  surface[EntityRuntimeKey] = runtime;
+  return finishEntity(surface);
+}
+
+function testCanvas(surface: Readonly<Surface>): HTMLCanvasElement | null {
+  const handle = (surface[EntityRuntimeKey] as SurfaceRuntime).handle;
+  return handle instanceof HTMLCanvasElement ? handle : null;
 }
 
 export function createTestWgpuHostBackend(): HostWgpuCapability {
@@ -21,15 +32,15 @@ export function createTestWgpuHostBackend(): HostWgpuCapability {
 }
 
 function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
-  out.create = (width, height): HostTarget => {
+  out.create = (_window, width, height): NativeSurfaceHandle => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    return createTestHostTarget(canvas);
+    return canvas;
   };
-  out.acquire = async (target, options): Promise<WgpuHostAcquisition> => {
-    const canvas = _testTargets.get(target);
-    if (canvas === undefined) throw new Error('Test target not registered.');
+  out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
+    const canvas = testCanvas(surface);
+    if (canvas === null) throw new Error('Test surface is not backed by a canvas.');
 
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
@@ -65,9 +76,9 @@ function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapabilit
       throw error;
     }
   };
-  out.attachSurface = (target, attachment): WgpuSurfaceAttachResult | null => {
-    const canvas = _testTargets.get(target);
-    if (canvas === undefined) return null;
+  out.attachSurface = (surface, attachment): WgpuSurfaceAttachResult | null => {
+    const canvas = testCanvas(surface);
+    if (canvas === null) return null;
     const context = canvas.getContext('webgpu');
     if (context === null) return null;
     context.configure({
@@ -87,7 +98,6 @@ function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapabilit
   };
 }
 
-const _testTargets = new WeakMap<HostTarget, HTMLCanvasElement>();
 
 function getWebWgpu(): GPU | null {
   if (typeof navigator === 'undefined') return null;

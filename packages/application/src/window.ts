@@ -9,9 +9,9 @@ import type {
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-  HostTargetCapability,
+  HostInputTargetCapability,
   HostScreenChangeCapability,
-  HostTargetResizeCapability,
+  HostSurfaceResizeCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -30,10 +30,11 @@ import type {
   HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  HostTarget,
+  InputTargetHandle,
   Matrix,
   NativeWindowHandle,
   RenderState,
+  Surface,
   WindowAttachmentOwnership,
   WindowBounds,
   WindowOptions,
@@ -94,7 +95,7 @@ export function attachWindowClose(
 export function attachWindowDropFile(
   hostInputDropFile: Readonly<HostInputDropFileCapability>,
   win: ApplicationWindow,
-  target: HostTarget,
+  target: InputTargetHandle,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kDropFile)?.();
@@ -107,7 +108,7 @@ export function attachWindowDropFile(
 export function attachWindowFocus(
   hostInputFocus: Readonly<HostInputFocusCapability>,
   win: ApplicationWindow,
-  target: HostTarget,
+  target: InputTargetHandle,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kFocus)?.();
@@ -176,7 +177,7 @@ export function attachWindowOrientation(
 export function attachWindowRenderContext(
   hostGl: Readonly<HostGlCapability>,
   win: ApplicationWindow,
-  target: HostTarget,
+  target: InputTargetHandle,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderContext)?.();
@@ -197,16 +198,16 @@ export function attachWindowRenderContext(
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
 // device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(
-  hostTargetResize: Readonly<HostTargetResizeCapability>,
+  hostSurfaceResize: Readonly<HostSurfaceResizeCapability>,
   win: ApplicationWindow,
   state: RenderState,
-  target: HostTarget,
+  surface: Readonly<Surface>,
 ): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();
   const apply = (): void => {
-    hostTargetResize.resize(
-      target,
+    hostSurfaceResize.resize(
+      surface,
       Math.round(win.width * win.devicePixelRatio),
       Math.round(win.height * win.devicePixelRatio),
     );
@@ -456,7 +457,7 @@ export function initializeApplicationWindow(out: EntityConstruction<ApplicationW
 // provider even if the caller later supplies a different provider.
 export async function lockApplicationPointer(
   hostInputPointerLock: Readonly<HostInputPointerLockCapability>,
-  target: HostTarget,
+  target: InputTargetHandle,
 ): Promise<InputPointerLockRequestOutcome> {
   const backend = hostInputPointerLock;
   const outcome = await backend.request(target);
@@ -531,7 +532,7 @@ export function openWindow(
 
 // Prepares a provider-bound target for direct input. The provider owns platform details such as
 // browser CSS and canvas compositing; the application contract only carries opaque identity.
-export function prepareElementForInput(hostInputTarget: Readonly<HostTargetCapability>, target: HostTarget): void {
+export function prepareElementForInput(hostInputTarget: Readonly<HostInputTargetCapability>, target: InputTargetHandle): void {
   hostInputTarget.prepare(target);
 }
 

@@ -1,6 +1,6 @@
 import type { HostGlCapabilities } from '@flighthq/types/contract';
 
-import { webHostGl } from './webHostTarget';
+import { webHostGl } from './webHostGl';
 
 export const webHostGlGroup = {
   context: webHostGl,

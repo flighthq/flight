@@ -47,7 +47,7 @@ const GROUPS = [
   ['socket', 'electronHostSocketGroup'],
   ['softKeyboard', 'electronHostSoftKeyboardGroup'],
   ['statusBar', 'electronHostStatusBarGroup'],
-  ['target', 'electronHostTargetGroup'],
+  ['surface', 'electronHostSurfaceGroup'],
   ['textSegment', 'electronHostTextSegmentGroup'],
   ['textShaper', 'electronHostTextShaperGroup'],
   ['tray', 'electronHostTray'],

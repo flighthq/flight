@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, HostTarget } from '@flighthq/types/contract';
+import type { EntityConstruction, Surface } from '@flighthq/types/contract';
 
-import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
+import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
@@ -42,7 +42,7 @@ describe('bindWgpuScreenRenderTarget', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;
-    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, createTestHostTarget(canvas), {
+    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, createTestWgpuSurface(canvas), {
       format: state.format,
     });
 
@@ -74,7 +74,7 @@ describe('createWgpuScreenRenderTarget', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
-    const target = createTestHostTarget(canvas);
+    const target = createTestWgpuSurface(canvas);
     const context = canvas.getContext('webgpu')!;
     const configure = vi.spyOn(context, 'configure');
 
@@ -91,9 +91,9 @@ describe('createWgpuScreenRenderTarget', () => {
 
   it('reports a surface the host cannot present rather than returning a target that cannot bind', async () => {
     const state = await createWgpuRenderStateForTest();
-    const unregisteredTarget = allocateEntity<HostTarget>();
-    (unregisteredTarget as EntityConstruction<HostTarget>).__brand = 'HostTarget' as const;
-    finishEntity(unregisteredTarget as EntityConstruction<HostTarget>);
+    // A surface whose drawable is not a canvas: the host cannot present through it, which is the same
+    // sentinel as a surface it never allocated.
+    const unregisteredTarget = createTestWgpuSurface(document.createElement('div') as unknown as HTMLCanvasElement);
 
     expect(() => createWgpuScreenRenderTarget(_webBackend, state.device, unregisteredTarget)).toThrow(
       /cannot present WebGPU/,
@@ -153,7 +153,7 @@ describe('syncWgpuScreenRenderTargetExtent', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;
-    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, createTestHostTarget(canvas), {
+    const screen = createWgpuScreenRenderTarget(_webBackend, state.device, createTestWgpuSurface(canvas), {
       format: state.format,
     });
 

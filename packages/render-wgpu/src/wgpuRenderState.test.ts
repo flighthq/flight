@@ -31,7 +31,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createTestHostTarget, createTestWgpuHostBackend } from './wgpuHost';
+import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
@@ -129,7 +129,7 @@ describe('createWgpuAcquisition', () => {
   it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
     const acquisition = await createWgpuAcquisition(
       _webBackend,
-      createTestHostTarget(document.createElement('canvas')),
+      createTestWgpuSurface(document.createElement('canvas')),
     );
 
     expect(acquisition).not.toBeNull();
@@ -152,7 +152,7 @@ describe('createWgpuAcquisition', () => {
     });
 
     await expect(
-      createWgpuAcquisition(failingBackend, createTestHostTarget(document.createElement('canvas'))),
+      createWgpuAcquisition(failingBackend, createTestWgpuSurface(document.createElement('canvas'))),
     ).resolves.toBeNull();
   });
 });
@@ -462,7 +462,7 @@ describe('createWgpuRenderState', () => {
     // exist without inventing a canvas for it.
     const acquisition = await createWgpuAcquisition(
       _webBackend,
-      createTestHostTarget(document.createElement('canvas')),
+      createTestWgpuSurface(document.createElement('canvas')),
     );
     const state = createWgpuRenderState(acquisition!.device, { format: acquisition!.format });
 
@@ -893,7 +893,7 @@ describe('releaseWgpuAcquisition', () => {
   // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
   // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
   it('releases caller-owned handles, which Flight itself never does', async () => {
-    const acquired = await createWgpuAcquisition(_webBackend, createTestHostTarget(document.createElement('canvas')));
+    const acquired = await createWgpuAcquisition(_webBackend, createTestWgpuSurface(document.createElement('canvas')));
     const acquisition = acquired!;
     const released: Readonly<WgpuHostAcquisition>[] = [];
     const recordingBackend = entityHostBackend({
