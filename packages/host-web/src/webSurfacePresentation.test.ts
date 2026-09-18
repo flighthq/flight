@@ -2,12 +2,7 @@ import type { Surface } from '@flighthq/types/contract';
 
 import { webHostCanvas } from './webHostCanvas';
 import { createWebHostTargetFromElement, resetWebHostTargetBackendForTest } from './webHostTarget';
-import {
-  appendWebSurface,
-  getWebSurfaceCanvas,
-  getWebSurfaceElement,
-  setWebSurfaceDisplaySize,
-} from './webSurfacePresentation';
+import { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -62,23 +57,5 @@ describe('getWebSurfaceElement', () => {
 
   it('returns null for a target this host does not own', () => {
     expect(getWebSurfaceElement({ target: {} } as Surface)).toBeNull();
-  });
-});
-
-describe('setWebSurfaceDisplaySize', () => {
-  it('sets the presented size without touching the backing store', () => {
-    const target = webHostCanvas.create(1600, 1000)!;
-    const surface = { target } as Surface;
-
-    expect(setWebSurfaceDisplaySize(surface, 800, 500)).toBe(true);
-    const canvas = getWebSurfaceCanvas(surface)!;
-    expect(canvas.style.width).toBe('800px');
-    expect(canvas.style.height).toBe('500px');
-    expect(canvas.width).toBe(1600);
-    expect(canvas.height).toBe(1000);
-  });
-
-  it('returns false for a target this host does not own', () => {
-    expect(setWebSurfaceDisplaySize({ target: {} } as Surface, 10, 10)).toBe(false);
   });
 });

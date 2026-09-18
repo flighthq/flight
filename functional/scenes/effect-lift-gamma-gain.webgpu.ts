@@ -1,4 +1,4 @@
-import { webHostWgpuContext, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, webHostTargetDisplay } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a GLOBAL TONAL SHIFT over a flat field. That is the one class `npm run contrast` states it
 // does not bound, and `npm run displacement` cannot see it either — moving a flat field changes nothing;
@@ -32,6 +32,7 @@ import {
   scene3DWgpuPipeline,
   ShapeKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -49,7 +50,7 @@ declareExpectedImageDescription(
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 600);
 appendWebSurface(wgpuSurface, document.body);
 const target = wgpuSurface.target;
 const acquisition = wgpuSurface.acquisition;

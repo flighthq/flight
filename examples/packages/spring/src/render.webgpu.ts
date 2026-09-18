@@ -4,7 +4,7 @@ import {
   webHostImage,
   appendWebSurface,
   getWebSurfaceElement,
-  setWebSurfaceDisplaySize,
+  webHostTargetDisplay,
 } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
@@ -29,12 +29,13 @@ import {
   scene3DWgpuPipeline,
   ShapeKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 600 * pixelRatio, 400 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, 600, 400);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 600, 400);
 appendWebSurface(wgpuSurface, document.body);
 export const canvas = getWebSurfaceElement(wgpuSurface)!;
 const target = wgpuSurface.target;

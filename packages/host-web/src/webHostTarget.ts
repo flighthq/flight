@@ -8,6 +8,7 @@ import type {
   HostTargetCapability,
   HostTarget,
   HostGlCapability,
+  HostTargetDisplayCapability,
   HostTargetResizeCapability,
   EntityConstruction,
   GlContextOptions,
@@ -139,6 +140,17 @@ export const webHostGl = (() => {
       element.removeEventListener('webglcontextlost', onContextLost);
       element.removeEventListener('webglcontextrestored', onRestored);
     });
+  };
+  return finishEntity(out);
+})();
+
+export const webHostTargetDisplay = (() => {
+  const out = allocateEntity<HostTargetDisplayCapability>();
+  out.setDisplaySize = (target: HostTarget, width: number, height: number) => {
+    const element = getElementForTarget(target);
+    if (element === null) return;
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
   };
   return finishEntity(out);
 })();

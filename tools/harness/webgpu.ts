@@ -4,7 +4,7 @@ import {
   webHostImage,
   webImageSurfaceCreator,
   appendWebSurface,
-  setWebSurfaceDisplaySize,
+  webHostTargetDisplay,
 } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
@@ -57,6 +57,7 @@ import {
   TextLabelKind,
   TilemapKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -68,7 +69,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   const wgpuSurface = await createWgpuSurface(webHostWgpuContext, width * pixelRatio, height * pixelRatio);
   if (wgpuSurface === null) throw new Error('createWgpuTarget: this environment has no WebGPU adapter');
-  setWebSurfaceDisplaySize(wgpuSurface, width, height);
+  setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, width, height);
   appendWebSurface(wgpuSurface, document.body);
   const target = wgpuSurface.target;
   const acquisition = wgpuSurface.acquisition;

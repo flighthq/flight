@@ -1,5 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
-import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -11,7 +11,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import { scene3DGlPipeline } from '@flighthq/scene3d-gl';
-import { createGlSurface } from '@flighthq/surface';
+import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -36,7 +36,7 @@ const glSurface = createGlSurface(webHostGl, width * scale, height * scale, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setWebSurfaceDisplaySize(glSurface, width, height);
+setSurfaceDisplaySize(webHostTargetDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
