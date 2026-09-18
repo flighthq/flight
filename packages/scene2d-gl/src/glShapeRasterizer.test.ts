@@ -1,6 +1,10 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createRenderState, enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import {
+  createRenderState,
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
+} from '@flighthq/render/contract';
+import { RenderRegistries } from '@flighthq/types/contract';
 
 import { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer';
 import { createGlState } from './glTestHelper';

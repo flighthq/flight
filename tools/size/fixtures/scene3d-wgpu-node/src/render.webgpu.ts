@@ -15,7 +15,7 @@ import {
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRenderRegistry } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
@@ -31,7 +31,7 @@ document.body.style.margin = '0';
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, createEmptyWgpuRenderRegistry(), {
+export const state = createWgpuRenderState(acquisition.device, createEmptyWgpuRenderRegistries(), {
   format: acquisition.format,
   pixelRatio: 1,
 });

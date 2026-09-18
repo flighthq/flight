@@ -11,7 +11,7 @@ import {
   registerCanvasSurfaceCreator,
 } from './canvasRenderSurface';
 import { canvasTestSurfaceCreator, createCanvasTextureResolvers } from './canvasTestSupport';
-import { defaultScene2DCanvasRenderRegistry } from './scene2DCanvasPipeline';
+import { defaultScene2DCanvasRenderRegistries } from './scene2DCanvasPipeline';
 
 function makeCreator(createRenderSurface = () => document.createElement('canvas')) {
   const destroyRenderSurface = vi.fn((canvas: HTMLCanvasElement) => {
@@ -91,7 +91,7 @@ describe('getCanvasSurfaceCreator', () => {
   it('throws until a creator is registered, then returns exactly that one', () => {
     // The bare factory, not the test rig: the rig registers a creator for convenience, which is exactly
     // what this test must not start from.
-    const state = createCanvasRenderState(defaultScene2DCanvasRenderRegistry, createCanvasTextureResolvers());
+    const state = createCanvasRenderState(defaultScene2DCanvasRenderRegistries, createCanvasTextureResolvers());
     expect(() => getCanvasSurfaceCreator(state)).toThrow(/registerCanvasSurfaceCreator/);
 
     registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
@@ -108,7 +108,7 @@ describe('initializeCanvasRenderSurface', () => {
 
 describe('registerCanvasSurfaceCreator', () => {
   it('replaces the creator a state allocates through', () => {
-    const state = createCanvasRenderState(defaultScene2DCanvasRenderRegistry, createCanvasTextureResolvers());
+    const state = createCanvasRenderState(defaultScene2DCanvasRenderRegistries, createCanvasTextureResolvers());
     const { creator } = makeCreator();
 
     registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);

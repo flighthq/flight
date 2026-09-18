@@ -23,7 +23,7 @@ import type {
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
   HostWgpuCapability,
-  WgpuRenderRegistry,
+  WgpuRenderRegistries,
   WgpuRenderOptions,
   WgpuRenderState,
 } from '@flighthq/types/contract';
@@ -33,7 +33,7 @@ import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUplo
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
   createWgpuDeviceState,
@@ -71,7 +71,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-const _testPipeline = createEmptyWgpuRenderRegistry();
+const _testPipeline = createEmptyWgpuRenderRegistries();
 const _webBackend = createTestWgpuHostBackend();
 
 function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
@@ -91,7 +91,7 @@ function entityHostBackend(fields: Omit<HostWgpuCapability, keyof Entity>): Host
 }
 
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
-  const pipeline: WgpuRenderRegistry = { ...getWgpuRenderStateRuntime(source).registries };
+  const pipeline: WgpuRenderRegistries = { ...getWgpuRenderStateRuntime(source).registries };
   const state = createDeviceOnlyWgpuRenderState(source.deviceState, pipeline, {
     format: source.format,
     imageSmoothingEnabled: source.allowSmoothing,
@@ -919,7 +919,7 @@ describe('resolveWgpuApplyBlendMode', () => {
   });
 });
 
-describe('WgpuRenderRegistry snapshots', () => {
+describe('WgpuRenderRegistries snapshots', () => {
   it('captures late Wgpu registrations only when an explicit pipeline is created', async () => {
     const screen = await createWgpuRenderStateForTest();
     const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;

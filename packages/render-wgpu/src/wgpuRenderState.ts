@@ -19,7 +19,7 @@ import type {
   WgpuHostAcquisitionOptions,
   WgpuOffscreenRenderStateResult,
   WgpuRenderOptions,
-  WgpuRenderRegistry,
+  WgpuRenderRegistries,
   WgpuRenderState,
   WgpuRenderStateRuntime,
 } from '@flighthq/types/contract';
@@ -27,7 +27,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
@@ -70,15 +70,15 @@ export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
 export function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuOffscreenRenderStateResult;
 export function createWgpuOffscreenRenderState(
   deviceState: Readonly<WgpuDeviceState>,
-  registry: Readonly<WgpuRenderRegistry>,
+  registries: Readonly<WgpuRenderRegistries>,
   options?: Readonly<WgpuRenderOptions>,
 ): WgpuRenderState;
 export function createWgpuOffscreenRenderState(
   sourceOrDeviceState: WgpuRenderState | Readonly<WgpuDeviceState>,
-  registry?: Readonly<WgpuRenderRegistry>,
+  registries?: Readonly<WgpuRenderRegistries>,
   options: Readonly<WgpuRenderOptions> = {},
 ): WgpuRenderState | WgpuOffscreenRenderStateResult {
-  if (registry !== undefined) return initializeWgpuDeviceRenderState(sourceOrDeviceState, registry, options);
+  if (registries !== undefined) return initializeWgpuDeviceRenderState(sourceOrDeviceState, registries, options);
 
   const source = sourceOrDeviceState as WgpuRenderState;
   const sourceRuntime = getWgpuRenderStateRuntime(source);
@@ -90,7 +90,7 @@ export function createWgpuOffscreenRenderState(
       return finishEntity(out);
     })();
 
-  const derivedRegistry: WgpuRenderRegistry = { ...sourceRuntime.registries };
+  const derivedRegistry: WgpuRenderRegistries = { ...sourceRuntime.registries };
   const state = initializeWgpuDeviceRenderState(source.deviceState, derivedRegistry, {
     format: source.format,
     imageSmoothingEnabled: source.allowSmoothing,
@@ -120,31 +120,31 @@ export function createWgpuOffscreenRenderState(
 //   const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format });
 export function createWgpuRenderState(
   device: GPUDevice,
-  registry: Readonly<WgpuRenderRegistry>,
+  registries: Readonly<WgpuRenderRegistries>,
   options: Readonly<WgpuRenderOptions> = {},
 ): WgpuRenderState {
-  return initializeWgpuDeviceRenderState(createWgpuDeviceState(device), registry, options);
+  return initializeWgpuDeviceRenderState(createWgpuDeviceState(device), registries, options);
 }
 
 export function createWgpuRenderStateRuntime(
   deviceStateOrRuntime: Readonly<WgpuDeviceState> | WgpuRenderStateRuntime,
-  registry?: Readonly<WgpuRenderRegistry>,
+  registries?: Readonly<WgpuRenderRegistries>,
 ): WgpuRenderStateRuntime {
   const deviceRuntime =
     EntityRuntimeKey in deviceStateOrRuntime
       ? getWgpuDeviceRuntime(deviceStateOrRuntime as Readonly<WgpuDeviceState>)
       : (deviceStateOrRuntime as WgpuRenderStateRuntime).context;
-  const resolvedRegistry =
-    registry ??
+  const resolvedRegistries =
+    registries ??
     (EntityRuntimeKey in deviceStateOrRuntime
-      ? createEmptyWgpuRenderRegistry()
+      ? createEmptyWgpuRenderRegistries()
       : { ...(deviceStateOrRuntime as WgpuRenderStateRuntime).registries });
-  return createWgpuRenderStateRuntimeInternal(deviceRuntime, resolvedRegistry);
+  return createWgpuRenderStateRuntimeInternal(deviceRuntime, resolvedRegistries);
 }
 
 function initializeWgpuDeviceRenderState(
   deviceState: Readonly<WgpuDeviceState>,
-  registry: Readonly<WgpuRenderRegistry>,
+  registries: Readonly<WgpuRenderRegistries>,
   options: Readonly<WgpuRenderOptions>,
 ): WgpuRenderState {
   const device = deviceState.device;
@@ -174,9 +174,9 @@ function initializeWgpuDeviceRenderState(
   }) as WgpuRenderState;
 
   state.applyBlendMode = null;
-  Object.assign(state, { deviceState, device, format, registry });
+  Object.assign(state, { deviceState, device, format, registries });
 
-  const runtime = createWgpuRenderStateRuntime(deviceState, registry);
+  const runtime = createWgpuRenderStateRuntime(deviceState, registries);
   state[EntityRuntimeKey] = runtime;
 
   runtime.currentBlendMode = null;
@@ -266,7 +266,7 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
 
 function createWgpuRenderStateRuntimeInternal(
   deviceRuntime: WgpuDeviceRuntime,
-  registry: Readonly<WgpuRenderRegistry>,
+  registries: Readonly<WgpuRenderRegistries>,
 ): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
@@ -276,7 +276,7 @@ function createWgpuRenderStateRuntimeInternal(
   runtime.meshInstanceBufferCursor = 0;
   runtime.surfaceAntialiasResolveBindGroupLayout = null;
   runtime.surfaceAntialiasResolvePipeline = null;
-  runtime.registries = { ...registry };
+  runtime.registries = { ...registries };
   runtime.teardowns = [];
   runtime.borrowedSurfaceExtent = null;
   deviceRuntime.references++;

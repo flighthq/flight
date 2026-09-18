@@ -8,7 +8,7 @@ import {
   setLogChannelLevel,
   setLogLevel,
 } from '@flighthq/log/contract';
-import { enableColorAdjustmentGuards, enableRenderRegistryGuards } from '@flighthq/render/contract';
+import { enableColorAdjustmentGuards, enableRenderRegistriesGuards } from '@flighthq/render/contract';
 import type {
   DebugOptions,
   DebugSubsystemHooks,
@@ -89,7 +89,7 @@ export function enableDebug(options: Readonly<DebugOptions> = {}): void {
 export function enableFlightDiagnostics(state: RenderState): void {
   enableDebug();
   enableColorAdjustmentGuards(state);
-  enableRenderRegistryGuards(state);
+  enableRenderRegistriesGuards(state);
 }
 
 // Whether enableDebug is currently in effect (a sink is installed and levels/guards are raised).

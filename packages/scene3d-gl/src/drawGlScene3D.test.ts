@@ -12,7 +12,7 @@ import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contr
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import {
   createGlRenderState,
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
 import {

@@ -1,25 +1,30 @@
 import { logOnce } from '@flighthq/log/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Kind, RenderRegistryMiss, RenderRegistryMissExplanation, RenderState } from '@flighthq/types/contract';
+import type {
+  Kind,
+  RenderRegistriesMiss,
+  RenderRegistriesMissExplanation,
+  RenderState,
+} from '@flighthq/types/contract';
 import { LogLevel, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { enableRenderRegistrySignals } from './renderRegistrySignals';
 
-export function areRenderRegistryGuardsEnabled(state: RenderState): boolean {
+export function areRenderRegistriesGuardsEnabled(state: RenderState): boolean {
   return _stateIds.has(state);
 }
 
-export function enableRenderRegistryGuards(state: RenderState): void {
+export function enableRenderRegistriesGuards(state: RenderState): void {
   if (_stateIds.has(state)) return;
   const stateId = ++_nextStateId;
   _stateIds.set(state, stateId);
   _stateMisses.set(state, []);
   connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
-    recordRenderRegistryMiss(state, stateId, registry, kind);
+    recordRenderRegistriesMiss(state, stateId, registry, kind);
   });
 }
 
-export function explainRenderRegistryMisses(state: RenderState): RenderRegistryMissExplanation {
+export function explainRenderRegistriesMisses(state: RenderState): RenderRegistriesMissExplanation {
   const misses = _stateMisses.get(state) ?? [];
   return {
     misses: misses.map((miss) => ({ kind: miss.kind, registry: miss.registry })),
@@ -27,7 +32,7 @@ export function explainRenderRegistryMisses(state: RenderState): RenderRegistryM
   };
 }
 
-function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegistryTable): string {
+function getRenderRegistriesMissMessage(state: RenderState, registry: RenderRegistryTable): string {
   switch (registry) {
     // GL composites through an explicit per-mode realization; Canvas and DOM express blend modes
     // natively and never report this.
@@ -69,7 +74,7 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
       return 'drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))';
     case RenderRegistryTable.TextureResolver:
       if ('gl' in state)
-        return 'resolveGlTexture: texture source kind has no registered resolver — rebuild the GlRenderRegistry with the required resolver and create the render state from that registry';
+        return 'resolveGlTexture: texture source kind has no registered resolver — rebuild the GlRenderRegistries with the required resolver and create the render state from that registry';
       if ('device' in state)
         return 'resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)';
       if ('element' in state)
@@ -78,7 +83,7 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
   }
 }
 
-function recordRenderRegistryMiss(
+function recordRenderRegistriesMiss(
   state: RenderState,
   stateId: number,
   registry: RenderRegistryTable,
@@ -92,7 +97,7 @@ function recordRenderRegistryMiss(
     LogLevel.Warn,
     {
       kind,
-      message: getRenderRegistryMissMessage(state, registry),
+      message: getRenderRegistriesMissMessage(state, registry),
       registry,
     },
     'render',
@@ -100,5 +105,5 @@ function recordRenderRegistryMiss(
 }
 
 const _stateIds = new WeakMap<RenderState, number>();
-const _stateMisses = new WeakMap<RenderState, RenderRegistryMiss[]>();
+const _stateMisses = new WeakMap<RenderState, RenderRegistriesMiss[]>();
 let _nextStateId = 0;

@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
@@ -8,12 +8,12 @@ import {
   registerWgpuMaterialRenderer,
   resolveWgpuMaterialRenderer,
 } from './wgpuMaterialRegistry';
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
-const _pipeline = createEmptyWgpuRenderRegistry();
+const _pipeline = createEmptyWgpuRenderRegistries();
 
 function makeState(): WgpuRenderState {
   // `device` is what the guard's message table dispatches on to name the wgpu registrar.
@@ -77,14 +77,14 @@ describe('resolveWgpuMaterialRenderer', () => {
 
   it('reports the missing kind against the wgpu registrar, not the gl one', () => {
     const state = makeState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     const sink = createMemoryLogSink(4);
     addLogSink(sink.sink);
 
     try {
       resolveWgpuMaterialRenderer(state, makeMaterial(TestKind));
 
-      expect(explainRenderRegistryMisses(state).misses).toEqual([
+      expect(explainRenderRegistriesMisses(state).misses).toEqual([
         { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
       ]);
       expect(getMemoryLogSinkEntries(sink)[0]?.data).toMatchObject({

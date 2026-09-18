@@ -3,7 +3,7 @@ import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contra
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuOffscreenRenderState,
-  createEmptyWgpuRenderRegistry,
+  createEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';

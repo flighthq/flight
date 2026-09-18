@@ -11,7 +11,7 @@ import {
 } from '@flighthq/log/contract';
 import {
   areColorAdjustmentGuardsEnabled,
-  areRenderRegistryGuardsEnabled,
+  areRenderRegistriesGuardsEnabled,
   createRenderState,
 } from '@flighthq/render/contract';
 import type { MemoryLogSink } from '@flighthq/types/contract';
@@ -235,7 +235,7 @@ describe('enableFlightDiagnostics', () => {
     enableFlightDiagnostics(state);
     expect(isDebugEnabled()).toBe(true);
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(true);
-    expect(areRenderRegistryGuardsEnabled(state)).toBe(true);
+    expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
   });
 });
 

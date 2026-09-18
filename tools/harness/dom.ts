@@ -33,7 +33,7 @@ import {
   renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -109,7 +109,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    defaultScene2DCanvasRenderRegistry,
+    defaultScene2DCanvasRenderRegistries,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

@@ -6,7 +6,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   CanvasRenderOptions,
-  CanvasRenderRegistry,
+  CanvasRenderRegistries,
   CanvasRenderState,
   CanvasRenderStateRuntime,
   CanvasTextureResolvers,
@@ -19,7 +19,7 @@ import { destroyCanvasTextureResolvers } from './canvasTextureResolver';
 // — while "where" is a render target that flows in at beginCanvasRenderPass. On this backend that
 // separation is what lets one state draw to several canvases, since each canvas carries its own context.
 export function createCanvasRenderState(
-  registry: Readonly<CanvasRenderRegistry>,
+  registries: Readonly<CanvasRenderRegistries>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
@@ -30,11 +30,11 @@ export function createCanvasRenderState(
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as CanvasRenderState;
 
-  state.applyBlendMode = registry.blendModeApplication ?? null;
+  state.applyBlendMode = registries.blendModeApplication ?? null;
   state.canvasCssFilterResolver = null;
-  (state as { registry: Readonly<CanvasRenderRegistry> }).registry = registry;
+  (state as { registries: Readonly<CanvasRenderRegistries> }).registries = registries;
 
-  const runtime = createCanvasRenderStateRuntime(registry, canvasTextureResolvers);
+  const runtime = createCanvasRenderStateRuntime(registries, canvasTextureResolvers);
   state[EntityRuntimeKey] = runtime;
   // The state owns a resolution set and points its miss seam at its own emitter. The closure reads the
   // emitter at call time, so enabling the guards later still reports through it.
@@ -51,11 +51,11 @@ export function createCanvasRenderState(
 // getCanvasRenderStateRuntime reads it back. The render path writes the returned object every frame,
 // so the return is intentionally mutable (not Readonly).
 export function createCanvasRenderStateRuntime(
-  registry: Readonly<CanvasRenderRegistry>,
+  registries: Readonly<CanvasRenderRegistries>,
   canvasTextureResolvers: CanvasTextureResolvers,
 ): CanvasRenderStateRuntime {
   const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
-  runtime.registries = { ...registry };
+  runtime.registries = { ...registries };
   runtime.canvasTextureResolvers = canvasTextureResolvers;
   runtime.currentRenderTarget = null;
   runtime.passStack = [];

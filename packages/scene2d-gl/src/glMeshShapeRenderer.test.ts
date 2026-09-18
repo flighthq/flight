@@ -1,5 +1,5 @@
 import * as flightNode from '@flighthq/node/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -79,9 +79,9 @@ describe('defaultGlMeshShapeRenderer', () => {
 
   it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', () => {
     const { state } = createGlState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     defaultGlMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
-    expect(explainRenderRegistryMisses(state).misses).toContainEqual({
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',
       registry: RenderRegistryTable.ShapeRasterizer,
     });

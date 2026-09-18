@@ -22,7 +22,7 @@ import {
   registerRenderer,
   renderCanvasScene2D,
   RichTextKind,
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -39,7 +39,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation', pixelRatio },
 );

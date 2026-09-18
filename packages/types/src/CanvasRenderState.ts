@@ -7,7 +7,7 @@ import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRend
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderRegistry, RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
@@ -21,12 +21,12 @@ export interface CanvasRenderState extends RenderState {
   // outside one is API misuse, exactly as it is on GL and WGPU.
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
-  readonly registry: Readonly<CanvasRenderRegistry>;
+  readonly registries: Readonly<CanvasRenderRegistries>;
 }
 
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface CanvasRenderRegistry extends RenderRegistry {
+export interface CanvasRenderRegistries extends RenderRegistries {
   // Immutable blend-mode application policy. Canvas natively supports all blend modes via
   // globalCompositeOperation — no realization table needed. The pipeline carries this function so a
   // state constructed from a pipeline receives blend support without a separate enableCanvasBlendMode
@@ -44,7 +44,7 @@ export interface CanvasRenderRegistry extends RenderRegistry {
 // resolves this each frame via getCanvasRenderStateRuntime. Defined in @flighthq/types — the header
 // layer — so out-of-package custom renderers can reach the same state.
 export interface CanvasRenderStateRuntime extends RenderStateRuntime {
-  registries: CanvasRenderRegistry;
+  registries: CanvasRenderRegistries;
   // Open passes, innermost last. A pass is pushed by beginCanvasRenderPass and popped by
   // endCanvasRenderPass, which restores the canvas and context the enclosing one was drawing through.
   passStack: CanvasRenderPass[];

@@ -5,7 +5,7 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -116,14 +116,14 @@ describe('defaultWgpuMeshShapeRenderer', () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
 
     defaultWgpuMeshShapeRenderer.submit!(
       state,
       makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }),
     );
 
-    expect(explainRenderRegistryMisses(state).misses).toContainEqual({
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',
       registry: RenderRegistryTable.ShapeRasterizer,
     });

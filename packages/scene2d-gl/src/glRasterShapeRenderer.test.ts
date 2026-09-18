@@ -5,7 +5,7 @@ import {
 } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { ImageSurface, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
@@ -141,9 +141,9 @@ describe('drawGlRasterShape', () => {
 
   it('reports a ShapeRasterizer miss when no rasterizer is registered', () => {
     const { state } = createGlState();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     drawGlRasterShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }));
-    expect(explainRenderRegistryMisses(state).misses).toContainEqual({
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',
       registry: RenderRegistryTable.ShapeRasterizer,
     });

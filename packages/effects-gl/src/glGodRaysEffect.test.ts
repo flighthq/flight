@@ -1,6 +1,6 @@
 import { createGodRaysEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { createEmptyGlRenderRegistry, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
@@ -123,7 +123,7 @@ describe('registerGlGodRaysEffect', () => {
   it('makes the runner resolvable for the GodRaysEffect kind', () => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createEmptyGlRenderRegistry(),
+      createEmptyGlRenderRegistries(),
     );
 
     expect(getGlRenderEffectRunner(state, 'GodRaysEffect')).toBeNull();

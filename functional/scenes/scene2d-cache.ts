@@ -94,7 +94,7 @@ if (target.kind === 'canvas') {
   const cache = createRenderCache();
   const cacheState = createCanvasCacheState(
     target.state,
-    target.state.registry,
+    target.state.registries,
     getCanvasRenderStateTextureResolvers(target.state),
     {
       imageSmoothingEnabled: target.state.allowSmoothing,
@@ -107,7 +107,7 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgl') {
   const cache = createRenderCache();
-  const cacheState = createGlCacheState(target.state, target.state.registry, {
+  const cacheState = createGlCacheState(target.state, target.state.registries, {
     allowSmoothing: target.state.allowSmoothing,
     pixelRatio: target.state.pixelRatio,
     roundPixels: target.state.roundPixels,
@@ -117,7 +117,7 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgpu') {
   const cache = createRenderCache();
-  const cacheState = createWgpuCacheState(target.state, target.state.deviceState, target.state.registry, {
+  const cacheState = createWgpuCacheState(target.state, target.state.deviceState, target.state.registries, {
     format: target.state.format,
     imageSmoothingEnabled: target.state.allowSmoothing,
     pixelRatio: target.state.pixelRatio,

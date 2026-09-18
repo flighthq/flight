@@ -6,8 +6,8 @@ import {
 } from '@flighthq/image/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import {
-  enableRenderRegistryGuards,
-  explainRenderRegistryMisses,
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
   getOrCreateRenderProxy2D,
   prepareScene2DRender,
   registerRenderer,
@@ -285,9 +285,9 @@ describe('renderCanvasShapeCommands', () => {
 
   it('records an unknown command key through the shared registry-miss seam', () => {
     const { context, state } = makeShapeTarget();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     renderCanvasShapeCommands(context, state, ['acme.unknownCommand', 0], resolvers);
-    expect(explainRenderRegistryMisses(state)).toEqual({
+    expect(explainRenderRegistriesMisses(state)).toEqual({
       misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistryTable.ShapeCommandHandler }],
       status: 'misses-recorded',
     });
@@ -295,10 +295,10 @@ describe('renderCanvasShapeCommands', () => {
 
   it('does not record a registered command handler as a registry miss', () => {
     const { context, state } = makeShapeTarget();
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     const shape = createShape();
     appendShapeRectangle(shape, 0, 0, 10, 10);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
-    expect(explainRenderRegistryMisses(state)).toEqual({ misses: [], status: 'complete' });
+    expect(explainRenderRegistriesMisses(state)).toEqual({ misses: [], status: 'complete' });
   });
 });

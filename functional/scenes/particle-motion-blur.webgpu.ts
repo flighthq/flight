@@ -47,7 +47,7 @@ import {
   renderWgpuScene2D,
   renderWgpuVelocity,
   reserveParticleEmitter2D,
-  defaultScene3DWgpuRenderRegistry,
+  defaultScene3DWgpuRenderRegistries,
   setWgpuRenderEffectVelocityTexture,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -83,7 +83,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });

@@ -1,11 +1,11 @@
 import { concatRegistryTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
-import { defaultScene2DWgpuRenderRegistry } from '@flighthq/scene2d-wgpu/contract';
+import { defaultScene2DWgpuRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
 import type {
   KeyedTable,
   WgpuMeshMaterialRenderer,
   WgpuModifierSnippet,
-  WgpuRenderRegistry,
+  WgpuRenderRegistries,
   WgpuTextureResolver,
 } from '@flighthq/types/contract';
 import {
@@ -100,20 +100,22 @@ function buildScene3DWgpuTextureResolvers(
 ): KeyedTable<WgpuTextureResolver> {
   const table = concatRegistryTable(base, standardWgpuTextureResolvers);
   if (table.shape !== 'keyed')
-    throw new Error('defaultScene3DWgpuRenderRegistry: expected keyed texture resolver tables');
+    throw new Error('defaultScene3DWgpuRenderRegistries: expected keyed texture resolver tables');
   return table;
 }
 
 // Node3D and ParticleEmitter3D are explicit drawWgpuScene3D passes rather than NodeRenderer entries.
 // WGPU also has no ExtendedPbrMaterial renderer or PBR-extension registry: the seven scene3d-gl
 // extensions stay GL-only until WGPU owns real registration and bind seams for them.
-export const defaultScene3DWgpuRenderRegistry: Readonly<WgpuRenderRegistry> = {
-  ...defaultScene2DWgpuRenderRegistry,
+export const defaultScene3DWgpuRenderRegistries: Readonly<WgpuRenderRegistries> = {
+  ...defaultScene2DWgpuRenderRegistries,
   gpuSkinning: {
-    ...defaultScene2DWgpuRenderRegistry.gpuSkinning,
+    ...defaultScene2DWgpuRenderRegistries.gpuSkinning,
     entry: { state: RegistryEntryState.Bound, value: defaultWgpuSkinningAdapter },
   },
-  meshMaterialRenderers: buildScene3DWgpuMeshMaterialRenderers(defaultScene2DWgpuRenderRegistry.meshMaterialRenderers),
-  modifierSnippets: buildScene3DWgpuModifierSnippets(defaultScene2DWgpuRenderRegistry.modifierSnippets),
-  textureResolvers: buildScene3DWgpuTextureResolvers(defaultScene2DWgpuRenderRegistry.textureResolvers),
+  meshMaterialRenderers: buildScene3DWgpuMeshMaterialRenderers(
+    defaultScene2DWgpuRenderRegistries.meshMaterialRenderers,
+  ),
+  modifierSnippets: buildScene3DWgpuModifierSnippets(defaultScene2DWgpuRenderRegistries.modifierSnippets),
+  textureResolvers: buildScene3DWgpuTextureResolvers(defaultScene2DWgpuRenderRegistries.textureResolvers),
 };

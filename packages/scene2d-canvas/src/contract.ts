@@ -47,5 +47,5 @@ export * from './canvasShapeRasterizer';
 export * from './scene2DCanvasPipeline';
 export { initializeCanvasTextureRenderTarget } from './canvasTextureRenderTarget';
 export { initializeCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
-export { initializeEmptyCanvasRenderRegistry } from './canvasPipeline';
+export { initializeEmptyCanvasRenderRegistries } from './canvasPipeline';
 export { initializeCanvasTextureResolvers } from './canvasTextureResolver';

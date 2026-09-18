@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
-  createEmptyWgpuRenderRegistry,
+  createEmptyWgpuRenderRegistries,
   createWgpuDeviceState,
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type {
   WgpuRenderPass,
-  WgpuRenderRegistry,
+  WgpuRenderRegistries,
   WgpuRenderState,
   WgpuRenderStateRuntime,
   WgpuTextureRenderTarget,
@@ -61,7 +61,7 @@ function installWgpuConstants(): void {
 // runtime (so bind/draw find runtime.renderPass), the uniform ring buffer wired up (so the draw path
 // can ring-allocate), and currentColorFormat set to the canvas format. scene-wgpu's own per-state
 // runtime is created lazily on first getWgpuScene3DRuntime, exactly as in production.
-export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistry> = createEmptyWgpuRenderRegistry()): {
+export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistries> = createEmptyWgpuRenderRegistries()): {
   fake: FakeWgpu;
   pass: WgpuRenderPass;
   state: WgpuRenderState;

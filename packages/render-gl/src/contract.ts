@@ -27,7 +27,7 @@ export * from './glSkinPaletteTexture';
 export * from './glTextureUpload';
 export * from './glTextureResolver';
 export * from './glTextureVideoUpload';
-export { initializeEmptyGlRenderRegistry } from './glPipeline';
+export { initializeEmptyGlRenderRegistries } from './glPipeline';
 export { initializeDefaultGlBitmapShader, initializeGlBitmapShader } from './glShader';
 export { initializeGlTextureRenderTargetPool } from './glRenderTargetPool';
 export { initializeGlRenderTexturePool } from './glRenderTexturePool';

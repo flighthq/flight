@@ -20,7 +20,7 @@ import {
   registerWgpuBloomEffect,
   registerWgpuToneMapEffect,
   registerWgpuVignetteEffect,
-  defaultScene3DWgpuRenderRegistry,
+  defaultScene3DWgpuRenderRegistries,
   createWgpuSurface,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -42,7 +42,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });

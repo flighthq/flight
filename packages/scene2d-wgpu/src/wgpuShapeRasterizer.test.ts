@@ -3,8 +3,12 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import { createRenderState, enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import {
+  createRenderState,
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
+} from '@flighthq/render/contract';
+import { RenderRegistries } from '@flighthq/types/contract';
 
 import { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 

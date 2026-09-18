@@ -4,7 +4,7 @@ import type {
   AppRenderViewTargetOptions,
   GlContext,
   GlRenderOptions,
-  GlRenderRegistry,
+  GlRenderRegistries,
   GlRenderViewResources,
 } from '@flighthq/types/contract';
 
@@ -24,7 +24,7 @@ import {
 // host.surface.resize, then calls resizeGlRenderViewResources with the same extent.
 export function createGlRenderViewResources(
   context: GlContext,
-  registry: Readonly<GlRenderRegistry>,
+  registry: Readonly<GlRenderRegistries>,
   width: number,
   height: number,
   devicePixelRatio: number,

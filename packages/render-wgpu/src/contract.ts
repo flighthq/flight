@@ -36,7 +36,7 @@ export {
 } from './wgpuTestHelper';
 export { initializeWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
 export { initializeWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
-export { initializeEmptyWgpuRenderRegistry } from './wgpuPipeline';
+export { initializeEmptyWgpuRenderRegistries } from './wgpuPipeline';
 export { initializeWgpuBindGroupLayouts } from './wgpuShader';
 export { initializeWgpuFullscreenPipeline } from './wgpuFullscreenPass';
 export { initializeWgpuRenderTargetPool } from './wgpuRenderTargetPool';

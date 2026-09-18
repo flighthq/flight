@@ -1,13 +1,13 @@
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { WgpuRenderRegistry } from '@flighthq/types/contract';
+import type { WgpuRenderRegistries } from '@flighthq/types/contract';
 
-export function createEmptyWgpuRenderRegistry(): WgpuRenderRegistry {
-  const out = {} as WgpuRenderRegistry;
-  initializeEmptyWgpuRenderRegistry(out);
+export function createEmptyWgpuRenderRegistries(): WgpuRenderRegistries {
+  const out = {} as WgpuRenderRegistries;
+  initializeEmptyWgpuRenderRegistries(out);
   return out;
 }
 
-export function initializeEmptyWgpuRenderRegistry(out: WgpuRenderRegistry): void {
+export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): void {
   out.compressedTextureDecoder = createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('WgpuCompressedTextureUpload', 'Unregistered');
   out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');

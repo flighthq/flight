@@ -11,7 +11,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   CanvasRenderOptions,
-  CanvasRenderRegistry,
+  CanvasRenderRegistries,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasTextureResolvers,
@@ -48,7 +48,7 @@ import { setCanvasTransform } from './canvasTransform';
  */
 export function createCanvasCacheState(
   ownerState: CanvasRenderState,
-  registry: Readonly<CanvasRenderRegistry>,
+  registry: Readonly<CanvasRenderRegistries>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
@@ -63,7 +63,7 @@ export function createCanvasCacheState(
  * canvases remain independent.
  */
 export function createCanvasOffscreenRenderState(
-  registry: Readonly<CanvasRenderRegistry>,
+  registry: Readonly<CanvasRenderRegistries>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {

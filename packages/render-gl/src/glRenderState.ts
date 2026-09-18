@@ -12,7 +12,7 @@ import type {
   GlContextRuntime,
   GlContextState,
   GlRenderOptions,
-  GlRenderRegistry,
+  GlRenderRegistries,
   GlRenderState,
   GlRenderStateRuntime,
   EntityConstruction,
@@ -29,7 +29,7 @@ export function createGlContextState(gl: GlContext): GlContextState {
 
 export function createGlRenderState(
   gl: GlContext,
-  registry: Readonly<GlRenderRegistry>,
+  registries: Readonly<GlRenderRegistries>,
   options: GlRenderOptions = {},
 ): GlRenderState {
   let contextState = _contextStateByGl.get(gl);
@@ -37,19 +37,19 @@ export function createGlRenderState(
     contextState = createGlContextState(gl);
     _contextStateByGl.set(gl, contextState);
   }
-  return _createGlRenderStateFromContext(contextState, registry, options);
+  return _createGlRenderStateFromContext(contextState, registries, options);
 }
 
 export function createGlRenderStateRuntime(
   contextState: Readonly<GlContextState>,
-  registry: Readonly<GlRenderRegistry>,
+  registries: Readonly<GlRenderRegistries>,
 ): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
   runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
   runtime.context.references++;
   runtime.currentPass = null;
   runtime.currentRenderTarget = null;
-  runtime.registries = { ...registry };
+  runtime.registries = { ...registries };
   runtime.bindingCacheGuard = null;
   runtime.teardowns = [];
   return runtime;
@@ -205,7 +205,7 @@ export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (s
 
 function _createGlRenderStateFromContext(
   contextState: Readonly<GlContextState>,
-  registry: Readonly<GlRenderRegistry>,
+  registries: Readonly<GlRenderRegistries>,
   options: GlRenderOptions,
 ): GlRenderState {
   const gl = contextState.gl;
@@ -220,9 +220,9 @@ function _createGlRenderStateFromContext(
   }) as GlRenderState;
 
   state.applyBlendMode = null;
-  Object.assign(state, { contextState, gl, registry });
+  Object.assign(state, { contextState, gl, registries });
 
-  const runtime = createGlRenderStateRuntime(contextState, registry);
+  const runtime = createGlRenderStateRuntime(contextState, registries);
   state[EntityRuntimeKey] = runtime;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;

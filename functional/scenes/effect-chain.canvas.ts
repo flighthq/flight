@@ -30,7 +30,7 @@ import {
   registerCanvasVignetteEffect,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
   ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -69,7 +69,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistry,
+  defaultScene2DCanvasRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio },
 );

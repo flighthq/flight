@@ -9,7 +9,7 @@ import {
 import type { Bitmap, GlEffectState, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistry,
+  defaultScene3DGlRenderRegistries,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -66,7 +66,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
   pixelRatio,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

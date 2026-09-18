@@ -1,10 +1,10 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { defaultScene2DGlRenderRegistry } from '@flighthq/scene2d-gl/contract';
+import { defaultScene2DGlRenderRegistries } from '@flighthq/scene2d-gl/contract';
 import type {
   GlMeshMaterialRenderer,
   GlModifierSnippet,
   GlPbrExtensionRegistration,
-  GlRenderRegistry,
+  GlRenderRegistries,
   KeyedTable,
 } from '@flighthq/types/contract';
 import {
@@ -122,9 +122,9 @@ function buildScene3DGlPbrExtensions(
   return withRegistryTableEntry(table, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
 }
 
-export const defaultScene3DGlRenderRegistry: Readonly<GlRenderRegistry> = {
-  ...defaultScene2DGlRenderRegistry,
-  meshMaterialRenderers: buildScene3DGlMeshMaterialRenderers(defaultScene2DGlRenderRegistry.meshMaterialRenderers),
-  modifierSnippets: buildScene3DGlModifierSnippets(defaultScene2DGlRenderRegistry.modifierSnippets),
-  pbrExtensions: buildScene3DGlPbrExtensions(defaultScene2DGlRenderRegistry.pbrExtensions),
+export const defaultScene3DGlRenderRegistries: Readonly<GlRenderRegistries> = {
+  ...defaultScene2DGlRenderRegistries,
+  meshMaterialRenderers: buildScene3DGlMeshMaterialRenderers(defaultScene2DGlRenderRegistries.meshMaterialRenderers),
+  modifierSnippets: buildScene3DGlModifierSnippets(defaultScene2DGlRenderRegistries.modifierSnippets),
+  pbrExtensions: buildScene3DGlPbrExtensions(defaultScene2DGlRenderRegistries.pbrExtensions),
 };

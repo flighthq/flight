@@ -3,7 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, RenderRegistryTable } from '@flighthq/types/contract';
@@ -53,13 +53,13 @@ describe('connectCanvasTextureResolverMisses', () => {
     // The blind spot this closes: a set built for a DOM or GPU shape rasterizer belongs to no canvas of
     // its own, so nothing wires it and an unresolvable fill goes silently unpainted.
     const state = createCanvasRenderState(document.createElement('canvas'));
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
 
     const resolvers = createCanvasTextureResolvers();
     connectCanvasTextureResolverMisses(resolvers, state);
     resolveCanvasTexture(resolvers, createUnresolvableTexture());
 
-    expect(explainRenderRegistryMisses(state).misses).toEqual([
+    expect(explainRenderRegistriesMisses(state).misses).toEqual([
       { kind: BitmapTextureSourceKind, registry: RenderRegistryTable.TextureResolver },
     ]);
   });
@@ -71,10 +71,10 @@ describe('connectCanvasTextureResolverMisses', () => {
     const resolvers = createCanvasTextureResolvers();
     connectCanvasTextureResolverMisses(resolvers, state);
 
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
     resolveCanvasTexture(resolvers, createUnresolvableTexture());
 
-    expect(explainRenderRegistryMisses(state).misses).toHaveLength(1);
+    expect(explainRenderRegistriesMisses(state).misses).toHaveLength(1);
   });
 
   it('stays silent when the connected state has no diagnostics enabled', () => {
@@ -83,18 +83,18 @@ describe('connectCanvasTextureResolverMisses', () => {
     connectCanvasTextureResolverMisses(resolvers, state);
 
     expect(() => resolveCanvasTexture(resolvers, createUnresolvableTexture())).not.toThrow();
-    expect(explainRenderRegistryMisses(state).status).toBe('complete');
+    expect(explainRenderRegistriesMisses(state).status).toBe('complete');
   });
 
   it('leaves an unconnected set unreported, which is the defect it exists to fix', () => {
     // Guards the value of this function: without the connection the same miss reaches nobody, on a
     // state whose diagnostics are enabled and reporting everything else.
     const state = createCanvasRenderState(document.createElement('canvas'));
-    enableRenderRegistryGuards(state);
+    enableRenderRegistriesGuards(state);
 
     resolveCanvasTexture(createCanvasTextureResolvers(), createUnresolvableTexture());
 
-    expect(explainRenderRegistryMisses(state).misses).toEqual([]);
+    expect(explainRenderRegistriesMisses(state).misses).toEqual([]);
   });
 });
 

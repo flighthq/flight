@@ -1,5 +1,5 @@
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
-import { defaultScene2DGlRenderRegistry } from '@flighthq/scene2d-gl/contract';
+import { defaultScene2DGlRenderRegistries } from '@flighthq/scene2d-gl/contract';
 import type { KeyedTable, Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
@@ -38,7 +38,7 @@ import {
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';
 
-import { defaultScene3DGlRenderRegistry } from './scene3DGlPipeline';
+import { defaultScene3DGlRenderRegistries } from './scene3DGlPipeline';
 
 function expectExactKeys(table: Readonly<KeyedTable<unknown>>, expected: readonly Kind[]): void {
   const actual: Kind[] = [];
@@ -47,10 +47,10 @@ function expectExactKeys(table: Readonly<KeyedTable<unknown>>, expected: readonl
   expect(table.entries.size).toBe(expected.length);
 }
 
-describe('defaultScene3DGlRenderRegistry', () => {
+describe('defaultScene3DGlRenderRegistries', () => {
   it('inherits every unchanged Scene2D GL registry table', () => {
-    const scene2D = { ...defaultScene2DGlRenderRegistry };
-    const scene3D = { ...defaultScene3DGlRenderRegistry };
+    const scene2D = { ...defaultScene2DGlRenderRegistries };
+    const scene3D = { ...defaultScene3DGlRenderRegistries };
     expect(scene3D.blendRealizations).toBe(scene2D.blendRealizations);
     expect(scene3D.compressedTextureDecoder).toBe(scene2D.compressedTextureDecoder);
     expect(scene3D.compressedTextureUpload).toBe(scene2D.compressedTextureUpload);
@@ -66,7 +66,7 @@ describe('defaultScene3DGlRenderRegistry', () => {
   });
 
   it('carries exactly the sixteen standard GL mesh material renderers', () => {
-    expectExactKeys(defaultScene3DGlRenderRegistry.meshMaterialRenderers, [
+    expectExactKeys(defaultScene3DGlRenderRegistries.meshMaterialRenderers, [
       BlinnPhongMaterialKind,
       CustomShaderMaterialKind,
       DepthMaterialKind,
@@ -87,7 +87,7 @@ describe('defaultScene3DGlRenderRegistry', () => {
   });
 
   it('carries exactly the seven standard GL PBR extensions', () => {
-    expectExactKeys(defaultScene3DGlRenderRegistry.pbrExtensions, [
+    expectExactKeys(defaultScene3DGlRenderRegistries.pbrExtensions, [
       AnisotropyPbrExtensionKind,
       ClearcoatPbrExtensionKind,
       IridescencePbrExtensionKind,
@@ -99,7 +99,7 @@ describe('defaultScene3DGlRenderRegistry', () => {
   });
 
   it('carries exactly the eight built-in GL modifier snippets', () => {
-    expectExactKeys(defaultScene3DGlRenderRegistry.modifierSnippets, [
+    expectExactKeys(defaultScene3DGlRenderRegistries.modifierSnippets, [
       AnimatedNormalModifierKind,
       DissolveModifierKind,
       EmissiveModifierKind,
@@ -112,7 +112,7 @@ describe('defaultScene3DGlRenderRegistry', () => {
   });
 
   it('inherits exactly the three standard GL texture resolvers', () => {
-    expectExactKeys(defaultScene3DGlRenderRegistry.textureResolvers, [
+    expectExactKeys(defaultScene3DGlRenderRegistries.textureResolvers, [
       BitmapTextureSourceKind,
       ImageTextureSourceKind,
       RenderTargetTextureSourceKind,

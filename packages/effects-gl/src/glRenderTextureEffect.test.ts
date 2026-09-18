@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
-  createEmptyGlRenderRegistry,
+  createEmptyGlRenderRegistries,
   acquireGlRenderTexture,
   clearGlRenderTexture,
   createGlRenderState,
@@ -257,7 +257,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createWebGlContext(canvas), createEmptyGlRenderRegistry());
+  return createGlRenderState(createWebGlContext(canvas), createEmptyGlRenderRegistries());
 }
 
 describe('offscreen effect registration snapshots', () => {

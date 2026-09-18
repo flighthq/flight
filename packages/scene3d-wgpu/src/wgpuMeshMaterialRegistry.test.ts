@@ -1,6 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyWgpuRenderRegistry, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuMeshMaterialRenderer } from '@flighthq/types/contract';
 import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 

@@ -32,7 +32,7 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  defaultScene3DWgpuRenderRegistry,
+  defaultScene3DWgpuRenderRegistries,
   setCamera3DViewMatrix4FromLookAt,
   setTextureUvScale,
   createWgpuSurface,
@@ -82,7 +82,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });

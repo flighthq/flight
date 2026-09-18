@@ -10,7 +10,7 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRenderRegistry,
+  createEmptyCanvasRenderRegistries,
   defaultCanvasQuadBatchRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -40,7 +40,7 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRenderRegistry();
+const emptyRegistries = createEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, QuadBatchKind, defaultCanvasQuadBatchRenderer),

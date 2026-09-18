@@ -1,8 +1,8 @@
-import { createEmptyGlRenderRegistry, initializeEmptyGlRenderRegistry } from './glPipeline';
+import { createEmptyGlRenderRegistries, initializeEmptyGlRenderRegistries } from './glPipeline';
 
-describe('createEmptyGlRenderRegistry', () => {
-  it('creates a complete GlRenderRegistry with all required tables', () => {
-    const registries = createEmptyGlRenderRegistry();
+describe('createEmptyGlRenderRegistries', () => {
+  it('creates a complete GlRenderRegistries with all required tables', () => {
+    const registries = createEmptyGlRenderRegistries();
     expect(registries.renderers.shape).toBe('keyed');
     expect(registries.blendRealizations.shape).toBe('keyed');
     expect(registries.compressedTextureDecoder.shape).toBe('slot');
@@ -21,15 +21,15 @@ describe('createEmptyGlRenderRegistry', () => {
   });
 
   it('starts with zero entries in every keyed table', () => {
-    const registries = createEmptyGlRenderRegistry();
+    const registries = createEmptyGlRenderRegistries();
     expect(registries.renderers.entries.size).toBe(0);
     expect(registries.blendRealizations.entries.size).toBe(0);
     expect(registries.textureResolvers.entries.size).toBe(0);
   });
 });
 
-describe('initializeEmptyGlRenderRegistry', () => {
-  it('is the construction initializer of createEmptyGlRenderRegistry', () => {
-    expect(typeof initializeEmptyGlRenderRegistry).toBe('function');
+describe('initializeEmptyGlRenderRegistries', () => {
+  it('is the construction initializer of createEmptyGlRenderRegistries', () => {
+    expect(typeof initializeEmptyGlRenderRegistries).toBe('function');
   });
 });

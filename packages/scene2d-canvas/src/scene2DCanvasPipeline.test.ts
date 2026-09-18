@@ -1,4 +1,4 @@
-import type { CanvasRenderRegistry } from '@flighthq/types/contract';
+import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -19,17 +19,17 @@ import {
 import { applyCanvasBlendMode } from './canvasMaterials';
 import {} from './canvasPipeline';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { defaultScene2DCanvasRenderRegistry } from './scene2DCanvasPipeline';
+import { defaultScene2DCanvasRenderRegistries } from './scene2DCanvasPipeline';
 
-describe('defaultScene2DCanvasRenderRegistry', () => {
-  let registries: Readonly<CanvasRenderRegistry>;
+describe('defaultScene2DCanvasRenderRegistries', () => {
+  let registries: Readonly<CanvasRenderRegistries>;
 
   beforeAll(() => {
-    registries = defaultScene2DCanvasRenderRegistry;
+    registries = defaultScene2DCanvasRenderRegistries;
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {
-    expect(defaultScene2DCanvasRenderRegistry).toBe(defaultScene2DCanvasRenderRegistry);
+    expect(defaultScene2DCanvasRenderRegistries).toBe(defaultScene2DCanvasRenderRegistries);
   });
 
   it('carries every standard 2D Canvas renderer bound', () => {

@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyGlRenderRegistry, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 

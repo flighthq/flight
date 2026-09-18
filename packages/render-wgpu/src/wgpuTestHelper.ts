@@ -10,7 +10,7 @@ import type {
 import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
 
 export { createTestWgpuSurface, createTestWgpuHostBackend };
-import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
@@ -339,7 +339,7 @@ export function createWgpuScreenRenderTargetForTest(
 }
 
 const _testWgpuBackend = createTestWgpuHostBackend();
-const _testWgpuPipeline = createEmptyWgpuRenderRegistry();
+const _testWgpuPipeline = createEmptyWgpuRenderRegistries();
 
 export function installWgpuMock(): void {
   installWgpuConstants();
