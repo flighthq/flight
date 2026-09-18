@@ -1,13 +1,8 @@
-import {
-  createEmptyWgpuRegistries,
-  createWgpuPipeline,
-  getWgpuPipelineRegistries,
-  initializeEmptyWgpuRegistries,
-} from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistry, initializeEmptyWgpuRenderRegistry } from './wgpuPipeline';
 
-describe('createEmptyWgpuRegistries', () => {
+describe('createEmptyWgpuRenderRegistry', () => {
   it('creates empty tables for every required WGPU policy seam', () => {
-    const registries = createEmptyWgpuRegistries();
+    const registries = createEmptyWgpuRenderRegistry();
     expect(registries.renderers.shape).toBe('keyed');
     expect(registries.compressedTextureDecoder.shape).toBe('slot');
     expect(registries.compressedTextureUpload.shape).toBe('slot');
@@ -24,31 +19,8 @@ describe('createEmptyWgpuRegistries', () => {
   });
 });
 
-describe('createWgpuPipeline', () => {
-  it('returns a pipeline with its own identity', () => {
-    const registries = createEmptyWgpuRegistries();
-    const first = createWgpuPipeline(registries);
-    const second = createWgpuPipeline(registries);
-
-    expect(first.registries).toBe(registries);
-    expect(first).not.toBe(second);
-  });
-
-  it('carries the supplied immutable registration snapshot', () => {
-    const registries = createEmptyWgpuRegistries();
-    const pipeline = createWgpuPipeline(registries);
-    expect(getWgpuPipelineRegistries(pipeline)).toBe(registries);
-  });
-});
-
-describe('getWgpuPipelineRegistries', () => {
-  it('returns the registries captured by the explicit pipeline', () => {
-    const registries = createEmptyWgpuRegistries();
-    expect(getWgpuPipelineRegistries(createWgpuPipeline(registries))).toBe(registries);
-  });
-});
-describe('initializeEmptyWgpuRegistries', () => {
-  it('is the construction initializer of createEmptyWgpuRegistries', () => {
-    expect(typeof initializeEmptyWgpuRegistries).toBe('function');
+describe('initializeEmptyWgpuRenderRegistry', () => {
+  it('is the construction initializer of createEmptyWgpuRenderRegistry', () => {
+    expect(typeof initializeEmptyWgpuRenderRegistry).toBe('function');
   });
 });

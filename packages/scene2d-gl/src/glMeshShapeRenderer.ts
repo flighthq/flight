@@ -12,7 +12,7 @@ import type {
   ShapeFillRegion,
   ShapeStrokeRegion,
 } from '@flighthq/types/contract';
-import { BatchFormat, RegistryEntryState, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RegistryEntryState, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import { createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData';
 import { drawGlShapeMeshes } from './glShapeMesh';
@@ -79,7 +79,7 @@ export const defaultGlMeshShapeRenderer: Scene2DRenderer = {
   destroyData: destroyGlShapeData,
   submit(state: GlRenderState, renderProxy: RenderProxy2D): void {
     if (drawGlMeshShape(state, renderProxy)) return;
-    getGlRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    getGlRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, ShapeKind);
   },
 };
 

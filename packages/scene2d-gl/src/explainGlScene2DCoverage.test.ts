@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import {
   BlendMode,
-  RenderRegistry,
+  RenderRegistryTable,
   RequirementFacet,
   SceneCoverage,
   StandardMaterialKind,
@@ -25,12 +25,12 @@ const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: BlendMode.Multiply,
     registrations: [{ module: '@flighthq/scene2d-gl', registrar: 'registerGlMultiplyBlendMode' }],
-    registry: RenderRegistry.BlendRealization,
+    registry: RenderRegistryTable.BlendRealization,
   },
   {
     kind: 'acme.Custom',
     registrations: [{ module: '@acme/gl', registrar: 'registerAcmeGlMaterial' }],
-    registry: RenderRegistry.MaterialRenderer,
+    registry: RenderRegistryTable.MaterialRenderer,
   },
 ];
 
@@ -53,7 +53,7 @@ describe('explainGlScene2DCoverage', () => {
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneNodeKind,
       kind: 'Shape',
-      registry: RenderRegistry.NodeRenderer,
+      registry: RenderRegistryTable.NodeRenderer,
     });
   });
 
@@ -66,7 +66,7 @@ describe('explainGlScene2DCoverage', () => {
         kind: BlendMode.Multiply,
         module: '@flighthq/scene2d-gl',
         registrar: 'registerGlMultiplyBlendMode',
-        registry: RenderRegistry.BlendRealization,
+        registry: RenderRegistryTable.BlendRealization,
       },
     ]);
   });
@@ -79,7 +79,7 @@ describe('explainGlScene2DCoverage', () => {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneBlendMode,
         kind: BlendMode.Multiply,
-        registry: RenderRegistry.BlendRealization,
+        registry: RenderRegistryTable.BlendRealization,
       },
     ]);
   });
@@ -92,7 +92,7 @@ describe('explainGlScene2DCoverage', () => {
       kind: 'acme.Custom',
       module: '@acme/gl',
       registrar: 'registerAcmeGlMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
   });
 
@@ -105,7 +105,7 @@ describe('explainGlScene2DCoverage', () => {
       kind: 'acme.Custom',
       module: '@acme/gl',
       registrar: 'registerAcmeGlMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
   });
 });

@@ -12,7 +12,7 @@ import type {
   WgpuRenderState,
   WgpuShapeMesh,
 } from '@flighthq/types/contract';
-import { BatchFormat, RegistryEntryState, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RegistryEntryState, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import { createWgpuShapeData, destroyWgpuShapeData, getWgpuShapeData } from './wgpuShapeData';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
@@ -82,7 +82,7 @@ export const defaultWgpuMeshShapeRenderer: Scene2DRenderer = {
   destroyData: destroyWgpuShapeData,
   submit(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
     if (drawWgpuMeshShape(state, renderProxy)) return;
-    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, ShapeKind);
   },
 };
 

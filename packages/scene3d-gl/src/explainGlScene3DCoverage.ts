@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import {
   RegistryEntryState,
-  RenderRegistry,
+  RenderRegistryTable,
   RequirementFacet,
   SceneCoverage,
   StandardMaterialKind,
@@ -71,7 +71,7 @@ function collectGlScene3DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind,
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       });
       continue;
     }
@@ -83,7 +83,7 @@ function collectGlScene3DCoverageGaps(
         hasStandard,
         RequirementFacet.SceneMaterialKind,
         kind,
-        RenderRegistry.MaterialRenderer,
+        RenderRegistryTable.MaterialRenderer,
       ),
     );
   }
@@ -98,7 +98,7 @@ function collectGlScene3DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneTextureSourceKind,
         kind,
-        registry: RenderRegistry.TextureResolver,
+        registry: RenderRegistryTable.TextureResolver,
       });
       continue;
     }
@@ -110,7 +110,7 @@ function collectGlScene3DCoverageGaps(
         false,
         RequirementFacet.SceneTextureSourceKind,
         kind,
-        RenderRegistry.TextureResolver,
+        RenderRegistryTable.TextureResolver,
       ),
     );
   }
@@ -126,14 +126,20 @@ function collectGlScene3DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneModifierKind,
         kind,
-        registry: RenderRegistry.ModifierSnippet,
+        registry: RenderRegistryTable.ModifierSnippet,
       });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
     out?.push(
-      createShortfallEntry(catalog, false, RequirementFacet.SceneModifierKind, kind, RenderRegistry.ModifierSnippet),
+      createShortfallEntry(
+        catalog,
+        false,
+        RequirementFacet.SceneModifierKind,
+        kind,
+        RenderRegistryTable.ModifierSnippet,
+      ),
     );
   }
 

@@ -8,7 +8,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { defaultGlMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
@@ -83,7 +83,7 @@ describe('defaultGlMeshShapeRenderer', () => {
     defaultGlMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
     expect(explainRenderRegistryMisses(state).misses).toContainEqual({
       kind: 'Shape',
-      registry: RenderRegistry.ShapeRasterizer,
+      registry: RenderRegistryTable.ShapeRasterizer,
     });
   });
 });

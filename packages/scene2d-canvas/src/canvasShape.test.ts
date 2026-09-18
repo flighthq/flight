@@ -28,7 +28,7 @@ import {
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CanvasRenderState, HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey, MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, MorphShapeKind, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -288,7 +288,7 @@ describe('renderCanvasShapeCommands', () => {
     enableRenderRegistryGuards(state);
     renderCanvasShapeCommands(context, state, ['acme.unknownCommand', 0], resolvers);
     expect(explainRenderRegistryMisses(state)).toEqual({
-      misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistry.ShapeCommandHandler }],
+      misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistryTable.ShapeCommandHandler }],
       status: 'misses-recorded',
     });
   });

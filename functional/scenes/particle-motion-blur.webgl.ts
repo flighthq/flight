@@ -18,7 +18,7 @@ import {
 import type { Bitmap, Node2D, GlEffectState, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
   createGlSurface,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
@@ -76,7 +76,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
   pixelRatio,
 });
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);

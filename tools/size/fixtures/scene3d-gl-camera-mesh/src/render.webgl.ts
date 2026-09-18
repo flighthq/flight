@@ -9,8 +9,7 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
-  createEmptyGlRegistries,
-  createGlPipeline,
+  createEmptyGlRenderRegistry,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -30,16 +29,16 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const registries = createEmptyGlRegistries();
-const pipeline = createGlPipeline({
+const registries = createEmptyGlRenderRegistry();
+const registry = {
   ...registries,
   meshMaterialRenderers: withRegistryTableEntry(
     registries.meshMaterialRenderers,
     UnlitMaterialKind,
     unlitGlMeshMaterialRenderer,
   ),
-});
-const state = createGlRenderState(glSurface.context, pipeline, { pixelRatio: 1 });
+};
+const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 
 const scene = createScene3D().root;
 addNodeChild(scene, createMesh(createBoxMeshGeometry(1, 1, 1), [createUnlitMaterial({ baseColor: 0x3ddc97ff })]));

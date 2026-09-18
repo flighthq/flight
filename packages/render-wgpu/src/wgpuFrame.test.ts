@@ -1,5 +1,5 @@
 import { beginWgpuFrame, retireWgpuBuffer, retireWgpuTexture, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createWgpuPipeline } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -77,7 +77,7 @@ describe('withWgpuFrameBorrow', () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(
       screen.deviceState,
-      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { ...getWgpuRenderStateRuntime(screen).registries },
       { format: screen.format },
     );
 
@@ -91,7 +91,7 @@ describe('withWgpuFrameBorrow', () => {
     const other = await createWgpuRenderStateForTest();
     const borrower = createWgpuOffscreenRenderState(
       other.deviceState,
-      createWgpuPipeline(getWgpuRenderStateRuntime(other).registries),
+      { ...getWgpuRenderStateRuntime(other).registries },
       { format: other.format },
     );
 

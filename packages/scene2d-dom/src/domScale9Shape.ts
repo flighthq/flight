@@ -13,7 +13,7 @@ import type {
   Scene2DRenderer,
   ShapeCommandToken,
 } from '@flighthq/types/contract';
-import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 import { buildDomScale9Mapper } from './domScale9Mapper';
@@ -46,7 +46,7 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   // rather than quietly dropping the fill.
   const rasterizer = getDomShapeRasterizer(state);
   if (rasterizer === null) {
-    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, Scale9ShapeKind);
+    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, Scale9ShapeKind);
     return;
   }
 

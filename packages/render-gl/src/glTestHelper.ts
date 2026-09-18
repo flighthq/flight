@@ -4,7 +4,7 @@ import type { EntityConstruction, GlBitmapShader, GlRenderState, GlRenderStateRu
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
-import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
+import { createEmptyGlRenderRegistry } from './glPipeline';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
 
 export function createGlState(options?: { allowSmoothing?: boolean }): {
@@ -18,21 +18,20 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
   canvas.height = 100;
   const gl = makeGL();
   const contextState = createGlContextState(gl);
-  const pipeline = createGlPipeline(createEmptyGlRegistries());
+  const registry = createEmptyGlRenderRegistry();
   const shaderLoc = makeShaderLoc();
   const state = createRenderState({
     allowSmoothing: options?.allowSmoothing ?? true,
   }) as GlRenderState;
 
-  // Entity fields live directly on the state.
   Object.assign(state, {
     applyBlendMode: null,
     contextState,
     gl,
-    pipeline,
+    registry,
   });
 
-  const runtime = createGlRenderStateRuntime(contextState, pipeline);
+  const runtime = createGlRenderStateRuntime(contextState, registry);
   Object.assign(runtime.context, {
     currentBlendSignature: null,
     currentShader: { locations: shaderLoc, program: shaderLoc.program },

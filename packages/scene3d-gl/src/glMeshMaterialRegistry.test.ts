@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
@@ -37,10 +37,7 @@ describe('registerGlMeshMaterialRenderer', () => {
     const replacement: GlMeshMaterialRenderer = { bind() {}, draw() {} };
     registerGlMeshMaterialRenderer(screen, TestKind, renderer);
     const snapshot = getGlRenderStateRuntime(screen).registries.meshMaterialRenderers;
-    const { state: derived } = makeGlScene3DState(
-      undefined,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const { state: derived } = makeGlScene3DState(undefined, { ...getGlRenderStateRuntime(screen).registries });
 
     getGlScene3DRuntime(derived);
     registerGlMeshMaterialRenderer(screen, TestKind, replacement);

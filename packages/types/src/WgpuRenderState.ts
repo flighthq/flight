@@ -6,7 +6,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderRegistry, RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
@@ -22,7 +22,6 @@ import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuParticleResources } from './WgpuParticleResources';
-import type { WgpuPipeline } from './WgpuPipeline';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget';
@@ -37,7 +36,7 @@ export interface WgpuRenderState extends RenderState {
   readonly deviceState: WgpuDeviceState;
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
-  readonly pipeline: Readonly<WgpuPipeline>;
+  readonly registry: Readonly<WgpuRenderRegistry>;
 }
 
 /**
@@ -56,7 +55,7 @@ export type WgpuOffscreenRenderStateResult = Entity &
 
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface WgpuRenderRegistries extends RenderRegistries, Entity {
+export interface WgpuRenderRegistry extends RenderRegistry {
   colorAdjustmentFeature?: SlotTable<WgpuColorAdjustmentMaterialFeature>;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback
   // reports an unwired feature but never enables color-adjustment rendering behavior.
@@ -133,7 +132,7 @@ export interface WgpuBindGroupLayouts extends Entity {
 
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   context: WgpuDeviceRuntime;
-  registries: WgpuRenderRegistries;
+  registries: WgpuRenderRegistry;
   // Derived pipelines resolve optional blend-mode wiring through this parent at the draw seam. The
   // entity's applyBlendMode member stays a plain field, so the delegation is explicit and portable.
   applyBlendModeParent: WgpuRenderState | null;

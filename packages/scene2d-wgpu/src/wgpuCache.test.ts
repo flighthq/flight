@@ -141,7 +141,7 @@ function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
   const device = {} as GPUDevice;
   const deviceState = renderWgpu.createWgpuDeviceState(device);
-  const pipeline = renderWgpu.createWgpuPipeline(renderWgpu.createEmptyWgpuRegistries());
+  const pipeline = renderWgpu.createEmptyWgpuRenderRegistry();
   Object.assign(state, {
     context: {} as GPUCanvasContext,
     device,
@@ -161,7 +161,7 @@ function createCacheState(screen: WgpuRenderState): WgpuRenderState {
   return createWgpuCacheState(
     screen,
     screen.deviceState,
-    renderWgpu.createWgpuPipeline(renderWgpu.getWgpuRenderStateRuntime(screen).registries),
+    { ...renderWgpu.getWgpuRenderStateRuntime(screen).registries },
     {
       format: screen.format,
       imageSmoothingEnabled: screen.allowSmoothing,

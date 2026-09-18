@@ -4,14 +4,12 @@ import { prepareScene2DRender } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
-  createCanvasPipeline,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRegistries,
+  createEmptyCanvasRenderRegistry,
   endCanvasRenderPass,
-  getCanvasPipelineRegistries,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
@@ -49,13 +47,13 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRegistries();
-const pipeline = createCanvasPipeline({ ...emptyRegistries });
+const emptyRegistries = createEmptyCanvasRenderRegistry();
+const registry = { ...emptyRegistries };
 
 const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
 );
-const state = createCanvasRenderState(pipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
   pixelRatio: 1,
 });
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
@@ -81,7 +79,7 @@ const pass = beginCanvasRenderPass(state, screen, screenClear);
 renderCanvasScene2D(pass, root);
 
 Reflect.set(globalThis, '__flightScene2dCanvasTransform', {
-  registries: getCanvasPipelineRegistries(pipeline),
+  registries: registry,
   root,
 });
 endCanvasRenderPass(pass);

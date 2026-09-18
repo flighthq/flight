@@ -1,4 +1,4 @@
-import { createEmptyGlRegistries, createGlPipeline, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
@@ -14,7 +14,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?:
     drawingBufferHeight: { configurable: true, value: canvas.height },
     drawingBufferWidth: { configurable: true, value: canvas.width },
   });
-  const state = createGlRenderState(gl, createGlPipeline(createEmptyGlRegistries()), {
+  const state = createGlRenderState(gl, createEmptyGlRenderRegistry(), {
     imageSmoothingEnabled: options?.allowSmoothing ?? true,
     pixelRatio: options?.pixelRatio,
   });

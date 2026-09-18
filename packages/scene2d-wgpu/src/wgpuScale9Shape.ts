@@ -16,7 +16,7 @@ import type {
   ShapeCommandToken,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
@@ -90,7 +90,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   // rather than quietly dropping the fill.
   const rasterizer = getWgpuShapeRasterizer(state);
   if (rasterizer === null) {
-    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, Scale9ShapeKind);
+    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, Scale9ShapeKind);
     return;
   }
 

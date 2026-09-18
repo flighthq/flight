@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 
@@ -39,10 +39,7 @@ describe('registerGlModifierSnippet', () => {
     const override = makeSnippet({ contribution: () => '// override' });
     registerGlModifierSnippet(screen, initial);
     const snapshot = getGlRenderStateRuntime(screen).registries.modifierSnippets;
-    const { state: derived } = makeGlScene3DState(
-      undefined,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const { state: derived } = makeGlScene3DState(undefined, { ...getGlRenderStateRuntime(screen).registries });
 
     getGlScene3DRuntime(derived);
     registerGlModifierSnippet(screen, override);

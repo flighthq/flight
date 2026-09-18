@@ -1,6 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import { createRenderProxy } from './renderProxy';
@@ -47,7 +47,7 @@ describe('enableRenderRegistryGuards', () => {
         kind: 'acme.Missing',
         message:
           'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)',
-        registry: RenderRegistry.NodeRenderer,
+        registry: RenderRegistryTable.NodeRenderer,
       });
     } finally {
       removeLogSink(sink.sink);
@@ -74,14 +74,14 @@ describe('explainRenderRegistryMisses', () => {
     const state = createRenderState();
     enableRenderRegistryGuards(state);
     const signals = enableRenderRegistrySignals(state);
-    emitSignal(signals.onRegistryMiss, RenderRegistry.TextureResolver, 'acme.Texture');
-    emitSignal(signals.onRegistryMiss, RenderRegistry.TextureResolver, 'acme.Texture');
-    emitSignal(signals.onRegistryMiss, RenderRegistry.ShapeCommandHandler, 'acme.ShapeCommand');
+    emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
+    emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
+    emitSignal(signals.onRegistryMiss, RenderRegistryTable.ShapeCommandHandler, 'acme.ShapeCommand');
 
     expect(explainRenderRegistryMisses(state)).toEqual({
       misses: [
-        { kind: 'acme.Texture', registry: RenderRegistry.TextureResolver },
-        { kind: 'acme.ShapeCommand', registry: RenderRegistry.ShapeCommandHandler },
+        { kind: 'acme.Texture', registry: RenderRegistryTable.TextureResolver },
+        { kind: 'acme.ShapeCommand', registry: RenderRegistryTable.ShapeCommandHandler },
       ],
       status: 'misses-recorded',
     });

@@ -1,6 +1,6 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { DomRenderState, DomTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
-import { RenderRegistry, RegistryEntryState } from '@flighthq/types/contract';
+import { RenderRegistryTable, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 
@@ -24,7 +24,7 @@ export function resolveDomTexture(state: DomRenderState, texture: Readonly<Textu
   const runtime = getDomRenderStateRuntime(state);
   const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
   if (entry?.state !== RegistryEntryState.Bound) {
-    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
+    runtime.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
   return entry.value(state, texture);

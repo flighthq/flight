@@ -8,7 +8,7 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
 
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
@@ -26,7 +26,7 @@ export function computeRenderEffectPadding(
   const explanation = explainRenderEffectPadding(state, list);
   const emitMiss = getRenderStateRuntime(state).registryMiss;
   if (emitMiss !== null)
-    for (const kind of explanation.missingKinds) emitMiss(RenderRegistry.EffectPaddingResolver, kind);
+    for (const kind of explanation.missingKinds) emitMiss(RenderRegistryTable.EffectPaddingResolver, kind);
   return explanation.padding;
 }
 
@@ -92,7 +92,7 @@ function writeRenderEffectPadding(
   state: RenderState,
   effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
   missingKinds: Kind[] | null,
-  emitMiss: ((registry: RenderRegistry, kind: Kind) => void) | null,
+  emitMiss: ((registry: RenderRegistryTable, kind: Kind) => void) | null,
 ): void {
   const list = Array.isArray(effects) ? effects : null;
   const length = list === null ? 1 : list.length;
@@ -107,7 +107,7 @@ function writeRenderEffectPadding(
     if (entry?.state !== RegistryEntryState.Bound) {
       if (!hasEarlierKind(list, index, effect.kind)) {
         missingKinds?.push(effect.kind);
-        emitMiss?.(RenderRegistry.EffectPaddingResolver, effect.kind);
+        emitMiss?.(RenderRegistryTable.EffectPaddingResolver, effect.kind);
       }
       continue;
     }

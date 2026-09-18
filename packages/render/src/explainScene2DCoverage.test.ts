@@ -1,5 +1,5 @@
 import type { Renderer, Scene2DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage';
@@ -15,17 +15,17 @@ const coverageCatalog: SceneCoverageCatalog = [
       { module: '@flighthq/scene2d', registrar: 'registerShapeRenderer' },
       { module: '@flighthq/scene2d-canvas', registrar: 'registerCanvasShapeCommands' },
     ],
-    registry: RenderRegistry.NodeRenderer,
+    registry: RenderRegistryTable.NodeRenderer,
   },
   {
     kind: 'Sprite',
     registrations: [{ module: '@flighthq/scene2d', registrar: 'registerSpriteRenderer' }],
-    registry: RenderRegistry.NodeRenderer,
+    registry: RenderRegistryTable.NodeRenderer,
   },
   {
     kind: 'beginFill',
     registrations: [{ module: '@flighthq/scene2d-canvas', registrar: 'registerCanvasShapeCommands' }],
-    registry: RenderRegistry.ShapeCommandHandler,
+    registry: RenderRegistryTable.ShapeCommandHandler,
   },
 ];
 
@@ -64,7 +64,7 @@ describe('explainScene2DCoverage', () => {
         kind: 'Shape',
         module: '@flighthq/scene2d',
         registrar: 'registerShapeRenderer',
-        registry: RenderRegistry.NodeRenderer,
+        registry: RenderRegistryTable.NodeRenderer,
       },
     ]);
   });
@@ -75,7 +75,7 @@ describe('explainScene2DCoverage', () => {
         coverage: SceneCoverage.Unavailable,
         facet: RequirementFacet.SceneNodeKind,
         kind: 'Shape',
-        registry: RenderRegistry.NodeRenderer,
+        registry: RenderRegistryTable.NodeRenderer,
       },
     ]);
   });
@@ -88,7 +88,7 @@ describe('explainScene2DCoverage', () => {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneNodeKind,
         kind: 'Shape',
-        registry: RenderRegistry.NodeRenderer,
+        registry: RenderRegistryTable.NodeRenderer,
       },
     ]);
   });
@@ -100,7 +100,7 @@ describe('explainScene2DCoverage', () => {
       kind: 'beginFill',
       module: '@flighthq/scene2d-canvas',
       registrar: 'registerCanvasShapeCommands',
-      registry: RenderRegistry.ShapeCommandHandler,
+      registry: RenderRegistryTable.ShapeCommandHandler,
     });
   });
 
@@ -111,7 +111,7 @@ describe('explainScene2DCoverage', () => {
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneShapeCommand,
       kind: 'beginFill',
-      registry: RenderRegistry.ShapeCommandHandler,
+      registry: RenderRegistryTable.ShapeCommandHandler,
     });
   });
 

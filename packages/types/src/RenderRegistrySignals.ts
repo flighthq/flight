@@ -6,7 +6,7 @@ import type { Signal } from './Signal';
 // assigned by declaration order and nothing persists them, so members stay alphabetized and emitters
 // name the member rather than its number — a literal at a callsite would silently mean a different
 // registry the moment one is inserted above it.
-export enum RenderRegistry {
+export enum RenderRegistryTable {
   BlendRealization,
   EffectPaddingResolver,
   MaterialRenderer,
@@ -20,7 +20,7 @@ export enum RenderRegistry {
 
 export interface RenderRegistryMiss {
   readonly kind: Kind;
-  readonly registry: RenderRegistry;
+  readonly registry: RenderRegistryTable;
 }
 
 export interface RenderRegistryMissExplanation {
@@ -29,5 +29,5 @@ export interface RenderRegistryMissExplanation {
 }
 
 export interface RenderRegistrySignals {
-  onRegistryMiss: Signal<(registry: RenderRegistry, kind: Kind) => void>;
+  onRegistryMiss: Signal<(registry: RenderRegistryTable, kind: Kind) => void>;
 }

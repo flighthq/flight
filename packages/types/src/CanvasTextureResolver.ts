@@ -3,7 +3,7 @@ import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderSurface } from './CanvasRenderSurface';
 import type { Kind } from './Entity';
 import type { Entity } from './Entity';
-import type { RenderRegistry } from './RenderRegistrySignals';
+import type { RenderRegistryTable } from './RenderRegistrySignals';
 import type { Texture } from './Texture';
 import type { TextureSourceKind } from './TextureSourceKind';
 
@@ -52,5 +52,5 @@ export interface CanvasTextureResolvers extends Entity {
   // The opt-in miss seam, wired by whoever owns this set — a render state points it at its own emitter,
   // so a source kind with no resolver is reported through the same lane every other registry uses
   // instead of resolving to a silent null.
-  registryMiss?: ((registry: RenderRegistry, kind: Kind) => void) | null;
+  registryMiss?: ((registry: RenderRegistryTable, kind: Kind) => void) | null;
 }

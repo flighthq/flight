@@ -12,8 +12,8 @@ import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
-// Material renderers live on backend-specific registries (GlRenderRegistries, WgpuRenderRegistries),
-// not on the base RenderRegistries, so the caller passes them explicitly.
+// Material renderers live on backend-specific registries (GlRenderRegistry, WgpuRenderRegistry),
+// not on the base RenderRegistry, so the caller passes them explicitly.
 export function explainScene3DPipelineCoverage(
   state: RenderState,
   scene: Readonly<NodeAny>,

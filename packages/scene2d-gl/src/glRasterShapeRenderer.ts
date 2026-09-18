@@ -3,7 +3,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Shape } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,
@@ -31,7 +31,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
 
   const rasterizer = getGlShapeRasterizer(state);
   if (rasterizer === null) {
-    runtime.registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    runtime.registryMiss?.(RenderRegistryTable.ShapeRasterizer, ShapeKind);
     return;
   }
 

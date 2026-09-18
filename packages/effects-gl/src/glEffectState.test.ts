@@ -1,11 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import {
-  createEmptyGlRegistries,
-  createGlPipeline,
-  createGlRenderState,
-  endGlRenderPass,
-} from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
 
 import {
@@ -26,7 +21,7 @@ describe('beginGlEffectState', () => {
   it('redeclares the explicit color space on a reused scene target', () => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createGlPipeline(createEmptyGlRegistries()),
+      createEmptyGlRenderRegistry(),
     );
     const pipeline = createGlEffectState(state);
 
@@ -68,7 +63,7 @@ describe('setGlEffectStateSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createGlPipeline(createEmptyGlRegistries()),
+      createEmptyGlRenderRegistry(),
     );
     const pipeline = createGlEffectState(state);
     const dropped: string[] = [];

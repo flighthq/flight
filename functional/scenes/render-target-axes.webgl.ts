@@ -19,7 +19,7 @@ import {
   releaseGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
-import { scene3DGlPipeline } from '@flighthq/scene3d-gl/contract';
+import { defaultScene3DGlRenderRegistry } from '@flighthq/scene3d-gl/contract';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -50,7 +50,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
   pixelRatio: scale,
 });
 const pool = createGlTextureRenderTargetPool();

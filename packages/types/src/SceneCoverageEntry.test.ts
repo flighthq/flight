@@ -1,4 +1,4 @@
-import { RenderRegistry } from './RenderRegistrySignals';
+import { RenderRegistryTable } from './RenderRegistrySignals';
 import { RequirementFacet } from './RequirementFacet';
 import type { SceneCoverageEntry } from './SceneCoverageEntry';
 import { SceneCoverage } from './SceneCoverageEntry';
@@ -31,7 +31,7 @@ describe('SceneCoverageEntry', () => {
       kind: 'acme.Custom',
       module: '@acme/materials',
       registrar: 'registerAcmeCustomMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     };
     expect(describeRemedy(entry)).toBe('@acme/materials:registerAcmeCustomMaterial');
   });
@@ -41,7 +41,7 @@ describe('SceneCoverageEntry', () => {
       coverage: SceneCoverage.FallbackUnavailable,
       facet: RequirementFacet.SceneBlendMode,
       kind: 'acme.Composite',
-      registry: RenderRegistry.BlendRealization,
+      registry: RenderRegistryTable.BlendRealization,
     };
     expect(describeRemedy(entry)).toBeNull();
   });
@@ -53,7 +53,7 @@ describe('SceneCoverageEntry', () => {
       facet: RequirementFacet.SceneNodeKind,
       kind: 'acme.Node',
       registrar: 'registerAcmeNodeRenderer',
-      registry: RenderRegistry.NodeRenderer,
+      registry: RenderRegistryTable.NodeRenderer,
     };
     expect(entry.coverage).toBe(SceneCoverage.Unregistered);
   });

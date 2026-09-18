@@ -1,5 +1,5 @@
 import type { Kind } from './Entity';
-import type { RenderRegistry } from './RenderRegistrySignals';
+import type { RenderRegistryTable } from './RenderRegistrySignals';
 import type { RequirementFacet } from './RequirementFacet';
 
 // How well a kind the scene uses is served by the registry that would have to serve it. States are
@@ -25,13 +25,13 @@ export type SceneCoverage = (typeof SceneCoverage)[keyof typeof SceneCoverage];
 // indistinguishable from "never asked about", which is the question an agent wiring up a document most
 // needs answered. The boolean tier stays gap-only — see the has* functions.
 //
-// `registry` reuses RenderRegistry so an entry is comparable with the misses
+// `registry` reuses RenderRegistryTable so an entry is comparable with the misses
 // `explainRenderRegistryMisses` records after the fact — the same vocabulary, asked before the frame
 // instead of after it.
 interface SceneCoverageEntryBase {
   readonly facet: RequirementFacet;
   readonly kind: Kind;
-  readonly registry: RenderRegistry;
+  readonly registry: RenderRegistryTable;
 }
 
 interface SceneCoverageRemedy {

@@ -17,7 +17,7 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-  RenderRegistry,
+  RenderRegistryTable,
   RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
@@ -90,7 +90,7 @@ export function resolveGlTexture(
   const runtime = getGlRenderStateRuntime(state);
   const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
   if (entry?.state !== RegistryEntryState.Bound) {
-    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
+    runtime.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
   const realization = entry.value(

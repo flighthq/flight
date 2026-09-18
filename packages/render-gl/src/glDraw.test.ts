@@ -31,12 +31,12 @@ import {
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
-import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
+import { createEmptyGlRenderRegistry } from './glPipeline';
 import { createGlRenderState, getGlRenderStateRuntime, invalidateGlRenderStateCache } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState, makeGL } from './glTestHelper';
 
-const testPipeline = createGlPipeline(createEmptyGlRegistries());
+const testPipeline = createEmptyGlRenderRegistry();
 
 function createTestGlRenderState(gl: WebGL2RenderingContext) {
   return createGlRenderState(gl, testPipeline);
@@ -98,7 +98,7 @@ describe('applyGlBlendMode', () => {
     const gl = makeGL();
     const screen = createTestGlRenderState(gl);
     registerGlBlendMode(screen, 'acme.Split', { dst: 'ONE', equation: 'MIN', src: 'ONE' });
-    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     registerGlBlendMode(screen, 'acme.Split', { dst: 'ONE', src: 'ZERO' });
 
     applyGlBlendMode(offscreen, 'acme.Split');
@@ -913,7 +913,7 @@ describe('registerGlBlendMode', () => {
     const replacement = { src: 'ZERO', dst: 'ONE' } as const;
     registerGlBlendMode(screen, 'acme.Foo', initial);
     const snapshot = getGlRenderStateRuntime(screen).registries.blendRealizations;
-    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
 
     registerGlBlendMode(screen, 'acme.Foo', replacement);
 

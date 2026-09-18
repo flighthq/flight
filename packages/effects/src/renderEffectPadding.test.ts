@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { RenderEffect, RenderState } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect';
 import {
@@ -64,7 +64,7 @@ describe('computeRenderEffectPadding', () => {
   });
 
   it('emits a shared registry miss only when the signal seam is enabled', () => {
-    const misses: Array<readonly [RenderRegistry, string]> = [];
+    const misses: Array<readonly [RenderRegistryTable, string]> = [];
     connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
       misses.push([registry, kind]);
     });
@@ -83,7 +83,7 @@ describe('computeRenderEffectPadding', () => {
       right: 0,
       top: 0,
     });
-    expect(misses).toEqual([[RenderRegistry.EffectPaddingResolver, 'acme.Missing']]);
+    expect(misses).toEqual([[RenderRegistryTable.EffectPaddingResolver, 'acme.Missing']]);
   });
 });
 

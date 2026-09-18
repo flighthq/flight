@@ -6,7 +6,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry';
 
@@ -61,7 +61,7 @@ function collectScene3DResourceCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind,
-        registry: RenderRegistry.MaterialTextureLister,
+        registry: RenderRegistryTable.MaterialTextureLister,
       });
       continue;
     }
@@ -73,7 +73,7 @@ function collectScene3DResourceCoverageGaps(
         false,
         RequirementFacet.SceneMaterialKind,
         kind,
-        RenderRegistry.MaterialTextureLister,
+        RenderRegistryTable.MaterialTextureLister,
       ),
     );
   }

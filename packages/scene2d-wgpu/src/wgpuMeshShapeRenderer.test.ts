@@ -14,7 +14,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { defaultWgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
@@ -125,7 +125,7 @@ describe('defaultWgpuMeshShapeRenderer', () => {
 
     expect(explainRenderRegistryMisses(state).misses).toContainEqual({
       kind: 'Shape',
-      registry: RenderRegistry.ShapeRasterizer,
+      registry: RenderRegistryTable.ShapeRasterizer,
     });
   });
 });

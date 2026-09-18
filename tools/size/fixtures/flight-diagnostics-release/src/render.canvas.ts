@@ -3,9 +3,12 @@ import {
   createCanvasRenderState,
   createCanvasTextureResolvers,
   enableFlightDiagnostics,
-  scene2DCanvasPipeline,
+  defaultScene2DCanvasRenderRegistry,
 } from '@flighthq/sdk';
 
 enableFlightDiagnostics(
-  createCanvasRenderState(scene2DCanvasPipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator)),
+  createCanvasRenderState(
+    defaultScene2DCanvasRenderRegistry,
+    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  ),
 );

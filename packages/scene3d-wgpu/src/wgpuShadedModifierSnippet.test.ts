@@ -21,7 +21,7 @@ describe('registerWgpuModifierSnippet', () => {
     const override = makeSnippet({ contribution: () => ({ source: '// override' }) });
     registerWgpuModifierSnippet(screen, initial);
     const snapshot = getWgpuRenderStateRuntime(screen).registries.modifierSnippets;
-    const { state: derived } = makeWgpuScene3DState(createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries));
+    const { state: derived } = makeWgpuScene3DState({ ...getWgpuRenderStateRuntime(screen).registries });
 
     getWgpuScene3DRuntime(derived);
     registerWgpuModifierSnippet(screen, override);
@@ -43,4 +43,4 @@ describe('resolveWgpuModifierSnippet', () => {
   });
 });
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createWgpuPipeline, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistry, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

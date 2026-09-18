@@ -7,8 +7,7 @@ import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@flighthq/particleemitter';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
-  createEmptyGlRegistries,
-  createGlPipeline,
+  createEmptyGlRenderRegistry,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -27,7 +26,9 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const state = createGlRenderState(glSurface.context, createGlPipeline(createEmptyGlRegistries()), { pixelRatio: 1 });
+const state = createGlRenderState(glSurface.context, createEmptyGlRenderRegistry(), {
+  pixelRatio: 1,
+});
 const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();
 appendParticleEmitter3DParticle(emitter, 0, -0.65, -0.2, 0, 0, 0.5);

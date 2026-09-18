@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { CanvasPipeline, KeyedTable, Renderer } from '@flighthq/types/contract';
+import type { CanvasRenderRegistry, KeyedTable, Renderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -21,7 +21,7 @@ import { defaultCanvasRenderCacheRenderer } from './canvasCache';
 import { applyCanvasBlendMode } from './canvasMaterials';
 import { defaultCanvasScene2DRenderer } from './canvasNode2D';
 import { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-import { createCanvasPipeline, createEmptyCanvasRegistries } from './canvasPipeline';
+import { createEmptyCanvasRenderRegistry } from './canvasPipeline';
 import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 import { defaultCanvasRichTextRenderer } from './canvasRichText';
 import { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
@@ -33,7 +33,7 @@ import { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
 import { defaultCanvasTilemapRenderer } from './canvasTilemap';
 
 function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
-  const registries = createEmptyCanvasRegistries();
+  const registries = createEmptyCanvasRenderRegistry();
   let table = registries.renderers;
   table = withRegistryTableEntry(table, BitmapTextKind, defaultCanvasBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, defaultCanvasScene2DRenderer);
@@ -51,9 +51,9 @@ function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
   return table;
 }
 
-export const scene2DCanvasPipeline: CanvasPipeline = createCanvasPipeline({
-  ...createEmptyCanvasRegistries(),
+export const defaultScene2DCanvasRenderRegistry: Readonly<CanvasRenderRegistry> = {
+  ...createEmptyCanvasRenderRegistry(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),
   renderers: buildScene2dCanvasRenderers(),
-});
+};

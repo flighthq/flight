@@ -7,7 +7,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
 import { getCanvasMaterialRenderer } from './canvasMaterialRegistry';
 
@@ -58,14 +58,20 @@ function collectCanvasScene2DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind,
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
     out?.push(
-      createShortfallEntry(catalog, true, RequirementFacet.SceneMaterialKind, kind, RenderRegistry.MaterialRenderer),
+      createShortfallEntry(
+        catalog,
+        true,
+        RequirementFacet.SceneMaterialKind,
+        kind,
+        RenderRegistryTable.MaterialRenderer,
+      ),
     );
   }
 

@@ -13,7 +13,7 @@ import {
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
@@ -188,7 +188,7 @@ describe('drawWgpuRasterShape', () => {
 
     expect(explainRenderRegistryMisses(state).misses).toContainEqual({
       kind: 'Shape',
-      registry: RenderRegistry.ShapeRasterizer,
+      registry: RenderRegistryTable.ShapeRasterizer,
     });
   });
 

@@ -29,7 +29,7 @@ import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enab
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
-import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
+import { createEmptyGlRenderRegistry } from './glPipeline';
 import {
   createGlContextState,
   createGlRenderState,
@@ -59,7 +59,7 @@ function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown
   expect(entityRuntime).toBeUndefined();
 }
 
-const testPipeline = createGlPipeline(createEmptyGlRegistries());
+const testPipeline = createEmptyGlRenderRegistry();
 
 function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOptions = {}) {
   return createGlRenderState(gl, testPipeline, options);
@@ -264,13 +264,13 @@ describe('createGlRenderState (context sharing)', () => {
     getGlRenderStateRuntime(screen).context.glRenderTextureCache = new WeakMap();
 
     const screenRuntime = getGlRenderStateRuntime(screen);
-    const offscreenPipeline = createGlPipeline(screenRuntime.registries);
-    const offscreen = createGlRenderState(screen.gl, offscreenPipeline);
+    const offscreenRegistry = { ...screenRuntime.registries };
+    const offscreen = createGlRenderState(screen.gl, offscreenRegistry);
     const offscreenRuntime = getGlRenderStateRuntime(offscreen);
 
     expect(offscreen.gl).toBe(screen.gl);
     expect(offscreen.contextState).toBe(screen.contextState);
-    expect(offscreen.pipeline).toBe(offscreenPipeline);
+    expect(offscreen.registry).toBe(offscreenRegistry);
     expect(offscreenRuntime.context.textureCache).toBe(screenRuntime.context.textureCache);
     expect(offscreenRuntime.context.textureSourcePremultipliedTextureCache).toBe(
       screenRuntime.context.textureSourcePremultipliedTextureCache,
@@ -346,7 +346,7 @@ describe('createGlRenderState (context sharing)', () => {
   it('does not observe registrations added after pipeline construction', () => {
     const { gl } = makeContext();
     const screen = createTestGlRenderState(gl);
-    let offscreen = createGlRenderState(screen.gl, screen.pipeline);
+    let offscreen = createGlRenderState(screen.gl, screen.registry);
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
     const resolver = vi.fn(() => null);
@@ -361,7 +361,7 @@ describe('createGlRenderState (context sharing)', () => {
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     destroyGlRenderState(offscreen);
-    offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(
       renderer,
     );
@@ -381,7 +381,7 @@ describe('createGlRenderState (context sharing)', () => {
       destroyData,
       submit: vi.fn(),
     });
-    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     prepareScene2DRender(offscreen, root);
 
     expect(getRenderStateRuntime(offscreen).renderProxyMap).not.toBe(getRenderStateRuntime(screen).renderProxyMap);
@@ -710,7 +710,7 @@ describe('pipeline-backed GL registrations', () => {
   it('requires a rebuilt pipeline to carry late registrations into a new state', () => {
     const { gl } = makeContext();
     const screen = createTestGlRenderState(gl);
-    let offscreen = createGlRenderState(screen.gl, screen.pipeline);
+    let offscreen = createGlRenderState(screen.gl, screen.registry);
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const decoder = vi.fn(() => new Uint8ClampedArray(4));
@@ -731,7 +731,7 @@ describe('pipeline-backed GL registrations', () => {
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
     destroyGlRenderState(offscreen);
-    offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),

@@ -67,7 +67,7 @@ describe('acquireCanvasRenderTexture', () => {
 
   it('requires the pool owner explicitly instead of resolving a hidden screen state', () => {
     const screen = createCanvasRenderState(document.createElement('canvas'));
-    const offscreen = createCanvasOffscreenRenderState(screen.pipeline, createCanvasTextureResolvers());
+    const offscreen = createCanvasOffscreenRenderState(screen.registry, createCanvasTextureResolvers());
     const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
     const texture = acquireCanvasRenderTexture(screen, pool, { width: 8, height: 8 });
 

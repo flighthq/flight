@@ -8,7 +8,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { ImageSurface, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 beforeEach(() => {
   vi.spyOn(flightNode, 'getNodeLocalBoundsRectangle').mockImplementation((() => ({
@@ -145,7 +145,7 @@ describe('drawGlRasterShape', () => {
     drawGlRasterShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }));
     expect(explainRenderRegistryMisses(state).misses).toContainEqual({
       kind: 'Shape',
-      registry: RenderRegistry.ShapeRasterizer,
+      registry: RenderRegistryTable.ShapeRasterizer,
     });
   });
 

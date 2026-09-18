@@ -22,7 +22,7 @@ import type {
   RenderState,
   Renderable,
 } from '@flighthq/types/contract';
-import { BlendMode, RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
+import { BlendMode, RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';
@@ -227,7 +227,7 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
   const runtime = getRenderStateRuntime(state);
   const entry = runtime.registries.renderers.entries.get(kind);
   if (entry?.state !== RegistryEntryState.Bound) {
-    runtime.registryMiss?.(RenderRegistry.NodeRenderer, kind);
+    runtime.registryMiss?.(RenderRegistryTable.NodeRenderer, kind);
     return null;
   }
   return entry.value;

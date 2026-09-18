@@ -1,6 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createWgpuPipeline, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistry, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuMeshMaterialRenderer } from '@flighthq/types/contract';
 import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
@@ -40,7 +40,7 @@ describe('registerWgpuMeshMaterialRenderer', () => {
     const replacement = makeRenderer();
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, renderer);
     const snapshot = getWgpuRenderStateRuntime(screen).registries.meshMaterialRenderers;
-    const { state: derived } = makeWgpuScene3DState(createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries));
+    const { state: derived } = makeWgpuScene3DState({ ...getWgpuRenderStateRuntime(screen).registries });
 
     getWgpuScene3DRuntime(derived);
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, replacement);

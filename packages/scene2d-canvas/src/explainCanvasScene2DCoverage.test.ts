@@ -6,7 +6,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { BlendMode, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { BlendMode, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
@@ -19,7 +19,7 @@ const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'acme.Custom',
     registrations: [{ module: '@acme/canvas', registrar: 'registerAcmeCanvasMaterial' }],
-    registry: RenderRegistry.MaterialRenderer,
+    registry: RenderRegistryTable.MaterialRenderer,
   },
 ];
 
@@ -49,7 +49,7 @@ describe('explainCanvasScene2DCoverage', () => {
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneNodeKind,
       kind: 'Shape',
-      registry: RenderRegistry.NodeRenderer,
+      registry: RenderRegistryTable.NodeRenderer,
     });
   });
 
@@ -63,7 +63,7 @@ describe('explainCanvasScene2DCoverage', () => {
         kind: 'acme.Custom',
         module: '@acme/canvas',
         registrar: 'registerAcmeCanvasMaterial',
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       },
     ]);
   });
@@ -74,7 +74,7 @@ describe('explainCanvasScene2DCoverage', () => {
         coverage: SceneCoverage.FallbackUnavailable,
         facet: RequirementFacet.SceneMaterialKind,
         kind: 'acme.Custom',
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       },
     ]);
   });
@@ -87,7 +87,7 @@ describe('explainCanvasScene2DCoverage', () => {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind: 'acme.Custom',
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       },
     ]);
   });

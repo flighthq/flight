@@ -1,7 +1,11 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createGlPipeline, getGlRenderStateRuntime, registerGlTextureResolver } from '@flighthq/render-gl/contract';
+import {
+  createEmptyGlRenderRegistry,
+  getGlRenderStateRuntime,
+  registerGlTextureResolver,
+} from '@flighthq/render-gl/contract';
 import { createTexture, getTextureUvMatrix } from '@flighthq/texture/contract';
 import type { GlPbrExtensionRegistration, GlTextureRenderTarget, TextureSource } from '@flighthq/types/contract';
 
@@ -154,10 +158,7 @@ describe('registerGlPbrExtension', () => {
     const replacement: GlPbrExtensionRegistration = { ...registration, bind(): void {} };
     registerGlPbrExtension(screen, 'VendorExtension', registration);
     const snapshot = getGlRenderStateRuntime(screen).registries.pbrExtensions;
-    const { state: derived } = makeGlScene3DState(
-      undefined,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const { state: derived } = makeGlScene3DState(undefined, { ...getGlRenderStateRuntime(screen).registries });
 
     getGlScene3DRuntime(derived);
     registerGlPbrExtension(screen, 'VendorExtension', replacement);

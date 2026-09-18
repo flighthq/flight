@@ -1,6 +1,5 @@
 import {
   getWgpuRenderStateRuntime,
-  createWgpuPipeline,
   isWgpuRenderTextureReady,
   setWgpuRenderTransform2D,
 } from '@flighthq/render-wgpu/contract';
@@ -76,7 +75,7 @@ const { render, state, width } = target;
 
 const offscreenState = createWgpuOffscreenRenderState(
   state.deviceState,
-  createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+  { ...getWgpuRenderStateRuntime(state).registries },
   { format: state.format },
 );
 const pool = createWgpuRenderTexturePool();

@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
-import type { Entity, Kind } from './Entity';
+import type { Kind } from './Entity';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlContext } from './GlContext';
@@ -13,7 +13,6 @@ import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
-import type { GlPipeline } from './GlPipeline';
 import type { GlRenderPass } from './GlRenderPass';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureGuard } from './GlRenderTexture';
@@ -24,7 +23,7 @@ import type { GlVelocityWriter } from './GlVelocityWriter';
 import type { Material } from './Material';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderRegistry, RenderState, RenderStateRuntime } from './RenderState';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
 import type { TintMaterialData } from './TintMaterialData';
@@ -33,12 +32,12 @@ export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
   readonly contextState: GlContextState;
   readonly gl: GlContext;
-  readonly pipeline: GlPipeline;
+  readonly registry: Readonly<GlRenderRegistry>;
 }
 
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface GlRenderRegistries extends RenderRegistries, Entity {
+export interface GlRenderRegistry extends RenderRegistry {
   blendRealizations: KeyedTable<GlBlendRealization>;
   colorAdjustmentFeature?: SlotTable<GlColorAdjustmentMaterialFeature>;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback
@@ -134,7 +133,7 @@ export type GlColorAdjustmentMaterialFeatureGuard = (
 // out-of-package custom renderers can reach the same state.
 export interface GlRenderStateRuntime extends RenderStateRuntime {
   context: GlContextRuntime;
-  registries: GlRenderRegistries;
+  registries: GlRenderRegistry;
   teardowns: ((state: GlRenderState) => void)[];
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.

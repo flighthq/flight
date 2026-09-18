@@ -1,13 +1,12 @@
 import { createCustomShaderEffect } from '@flighthq/effects/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  createEmptyGlRegistries,
+  createEmptyGlRenderRegistry,
   createGlContextState,
-  createGlPipeline,
   createGlRenderStateRuntime,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
-import type { GlPipeline, GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderRegistry, GlRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -20,9 +19,9 @@ import {
   setGlCustomShaderSourceGuard,
 } from './glCustomShaderEffect';
 
-const testPipeline = createGlPipeline(createEmptyGlRegistries());
+const testPipeline = createEmptyGlRenderRegistry();
 
-function makeState(pipeline: Readonly<GlPipeline> = testPipeline): GlRenderState {
+function makeState(pipeline: Readonly<GlRenderRegistry> = testPipeline): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;
   const contextState = createGlContextState(gl);
   return {
@@ -123,7 +122,7 @@ describe('registerGlCustomShaderSource', () => {
     const replacement = FRAGMENT_SRC.replace('texture(u_texture0, v_texCoord)', 'vec4(1.0)');
     registerGlCustomShaderSource(screen, 'ripple', FRAGMENT_SRC);
     const snapshot = getGlRenderStateRuntime(screen).registries.customEffectShaders;
-    const derived = makeState(createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const derived = makeState({ ...getGlRenderStateRuntime(screen).registries });
 
     registerGlCustomShaderSource(screen, 'ripple', replacement);
 

@@ -10,7 +10,7 @@ import type {
   Scene2DRenderer,
   Shape,
 } from '@flighthq/types/contract';
-import { RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 import { getDomShapeRasterizer } from './domShapeRasterizer';
@@ -40,7 +40,7 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
   // rather than quietly dropping the fill.
   const rasterizer = getDomShapeRasterizer(state);
   if (rasterizer === null) {
-    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, ShapeKind);
     return;
   }
 

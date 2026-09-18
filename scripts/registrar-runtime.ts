@@ -13,14 +13,13 @@ import {
 } from '@flighthq/render/contract';
 import {
   beginCanvasRenderPass,
-  createCanvasPipeline,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
   registerCanvasSurfaceCreator,
-  scene2DCanvasPipeline,
+  defaultScene2DCanvasRenderRegistry,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
@@ -31,7 +30,6 @@ import { JSDOM } from 'jsdom';
 
 import { createGlRenderState } from '../packages/render-gl/src/glRenderState';
 import { createGlState } from '../packages/render-gl/src/glTestHelper';
-import { createWgpuPipeline } from '../packages/render-wgpu/src/wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '../packages/render-wgpu/src/wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from '../packages/render-wgpu/src/wgpuTestHelper';
 import { createRegistrarProgressFrame } from './check-progress';
@@ -831,7 +829,7 @@ async function prepareArgument(
     return rootArgument(
       parameter,
       state,
-      () => createGlRenderState(state.gl, state.pipeline),
+      () => createGlRenderState(state.gl, state.registry),
       () => createGlState().state,
     );
   }
@@ -843,7 +841,7 @@ async function prepareArgument(
       () =>
         createWgpuOffscreenRenderState(
           state.deviceState,
-          createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+          { ...getWgpuRenderStateRuntime(state).registries },
           { format: state.format },
         ),
       createWgpuRenderStateForTest,
@@ -854,7 +852,7 @@ async function prepareArgument(
     return rootArgument(
       parameter,
       state,
-      () => createCanvasProbeState(createCanvasPipeline({ ...getCanvasRenderStateRuntime(state).registries })),
+      () => createCanvasProbeState({ ...getCanvasRenderStateRuntime(state).registries }),
       createCanvasProbeState,
     );
   }
@@ -1167,10 +1165,10 @@ function packageSourceFiles(packageName: string): string[] {
     .map((entry) => join(sourceDir, entry.name));
 }
 
-function createCanvasProbeState(pipeline = scene2DCanvasPipeline) {
+function createCanvasProbeState(registry = defaultScene2DCanvasRenderRegistry) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
-  const state = createCanvasRenderState(pipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));
+  const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));
   registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
   beginCanvasRenderPass(
     state,

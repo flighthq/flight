@@ -11,12 +11,11 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistry } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuTextLabelRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
@@ -31,8 +30,8 @@ if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environ
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 
-const registries = createEmptyWgpuRegistries();
-const pipeline = createWgpuPipeline({
+const registries = createEmptyWgpuRenderRegistry();
+const registry = {
   ...registries,
   materialRenderers: withRegistryTableEntry(
     registries.materialRenderers,
@@ -40,13 +39,13 @@ const pipeline = createWgpuPipeline({
     standardWgpuMaterialRenderer,
   ),
   renderers: withRegistryTableEntry(registries.renderers, TextLabelKind, defaultWgpuTextLabelRenderer),
-});
+};
 
 const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, pipeline, {
+export const state = createWgpuRenderState(acquisition.device, registry, {
   format: acquisition.format,
   pixelRatio: 1,
   imageSurfaceProvider: webImageSurfaceCreator,

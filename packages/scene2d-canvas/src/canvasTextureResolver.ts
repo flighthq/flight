@@ -12,7 +12,7 @@ import type {
   TextureSourceKind,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
 
@@ -92,7 +92,7 @@ export function resolveCanvasTexture(
   if (sourceKind === null) return null;
   const resolver = resolvers.registry?.get(sourceKind);
   if (resolver === undefined) {
-    resolvers.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
+    resolvers.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
   return resolver(resolvers, texture);

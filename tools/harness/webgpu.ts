@@ -52,8 +52,8 @@ import {
   renderWgpuScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  scene2DCanvasPipeline,
-  scene3DWgpuPipeline,
+  defaultScene2DCanvasRenderRegistry,
+  defaultScene3DWgpuRenderRegistry,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -82,7 +82,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
     format: acquisition.format,
   });
-  const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+  const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
     format: acquisition.format,
     pixelRatio,
     imageSurfaceProvider: webImageSurfaceCreator,
@@ -166,7 +166,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    scene2DCanvasPipeline,
+    defaultScene2DCanvasRenderRegistry,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
