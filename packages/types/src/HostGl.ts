@@ -1,17 +1,23 @@
+import type { ApplicationWindow } from './ApplicationWindow';
 import type { Entity } from './Entity';
 import type { GlContext, GlContextOptions } from './GlContext';
-import type { HostTarget } from './HostTarget';
+import type { NativeSurfaceHandle, Surface } from './Surface';
 
-// GL drawable lifecycle. `create` is the allocating lane: the host makes a drawable of its own and
-// returns its identity, which is the only ordering a native host can honor — EGL chooses its config
-// before the window surface exists, so the context options belong to creation and not to a later
-// attach. `acquire` is the adopting lane, for a target the host already knows about; it returns null
-// when that target holds no drawable, the sentinel every target-scoped hook uses for a lookup that
-// cannot succeed. `release` drops the host's record for a target; it does not force context loss,
-// which the driver owns and `subscribe` reports.
+// GL drawable lifecycle. `create` is the allocating lane: it takes the window because a window is what
+// every host needs in order to make a drawable at all — the document on web, the SDL_Window on SDL, the
+// EGLNativeWindowType on EGL — and returns the platform drawable, which the surface keeps on its runtime.
+// The context options belong to creation rather than to a later attach because EGL chooses its config
+// before the window surface exists. Every other operation addresses the Surface itself: null from
+// `acquire` means the drawable cannot yield a context, and `release` drops the host's record without
+// forcing context loss, which the driver owns and `subscribe` reports.
 export interface HostGlCapability extends Entity {
-  acquire(target: HostTarget, options?: Readonly<GlContextOptions>): GlContext | null;
-  create(width: number, height: number, options?: Readonly<GlContextOptions>): HostTarget | null;
-  release(target: HostTarget): void;
-  subscribe(target: HostTarget, onLost: () => void, onRestored: () => void): () => void;
+  acquire(surface: Readonly<Surface>, options?: Readonly<GlContextOptions>): GlContext | null;
+  create(
+    window: Readonly<ApplicationWindow>,
+    width: number,
+    height: number,
+    options?: Readonly<GlContextOptions>,
+  ): NativeSurfaceHandle | null;
+  release(surface: Readonly<Surface>): void;
+  subscribe(surface: Readonly<Surface>, onLost: () => void, onRestored: () => void): () => void;
 }

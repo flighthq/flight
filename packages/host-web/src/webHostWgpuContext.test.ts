@@ -1,4 +1,4 @@
-import { createWebHostTargetFromElement, resetWebHostTargetBackendForTest } from './webHostTarget';
+import { createWebSurfaceFromElement } from './webSurfaceTestSupport';
 import { createWebHostWgpuContext, initializeWebHostWgpuContext } from './webHostWgpuContext';
 
 function installMinimalWgpuMock(): void {
@@ -43,13 +43,11 @@ function installMinimalWgpuMock(): void {
 }
 
 beforeAll(installMinimalWgpuMock);
-afterEach(() => resetWebHostTargetBackendForTest());
-
 describe('createWebHostWgpuContext', () => {
-  it('returns an entity that can acquire a WebGPU device through a registered HostTarget', async () => {
+  it('returns an entity that can acquire a WebGPU device through a surface', async () => {
     const context = createWebHostWgpuContext();
     const canvas = document.createElement('canvas');
-    const target = createWebHostTargetFromElement(canvas);
+    const target = createWebSurfaceFromElement(canvas);
     const acquisition = await context.acquire(target, {});
 
     expect(acquisition.device).toBeDefined();
@@ -67,11 +65,10 @@ describe('createWebHostWgpuContext', () => {
   it('returns null from attachSurface when the target is not registered', () => {
     const context = createWebHostWgpuContext();
     const canvas = document.createElement('canvas');
-    const unregisteredTarget = createWebHostTargetFromElement(canvas);
-    resetWebHostTargetBackendForTest();
+    const unregisteredSurface = createWebSurfaceFromElement(canvas);
 
     expect(
-      context.attachSurface(unregisteredTarget, {
+      context.attachSurface(unregisteredSurface, {
         alphaMode: 'premultiplied',
         device: {} as GPUDevice,
         format: 'bgra8unorm',

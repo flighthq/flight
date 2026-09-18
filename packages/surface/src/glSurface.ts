@@ -1,47 +1,48 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { finishEntity } from '@flighthq/entity/contract';
 import type {
+  ApplicationWindow,
   EntityConstruction,
-  GlContext,
   GlContextOptions,
   GlSurface,
   HostGlCapability,
-  HostTarget,
+  NativeSurfaceHandle,
 } from '@flighthq/types/contract';
 
-// Allocates a drawable of the given backing-store size in device pixels and acquires a GL context on it.
-// The host owns the drawable; `surface.target` is its identity, and is what input, resize, and
-// presentation are addressed to. Returns null when the host cannot provide GL.
+import { allocateSurface } from './surface';
+
+// Allocates a drawable in the given window, sized in device pixels, and acquires a GL context on it. The
+// window is what the host needs to make a drawable at all — the document on web, the SDL_Window on SDL —
+// and is not retained: a surface is not one-to-one with a window, and welding one on would assert that it
+// is. Returns null when the host cannot allocate a drawable or the driver refuses a context.
 export function createGlSurface(
   capability: Readonly<HostGlCapability>,
+  window: Readonly<ApplicationWindow>,
   width: number,
   height: number,
   options?: Readonly<GlContextOptions>,
 ): GlSurface | null {
-  const target = capability.create(width, height, options);
-  if (target === null) return null;
-  return createGlSurfaceFromTarget(capability, target, options);
+  const handle = capability.create(window, width, height, options);
+  if (handle === null) return null;
+  return createGlSurfaceFromNativeHandle(capability, handle, options);
 }
 
-// Acquires a GL context on a target the host already holds — an adopted native window or element. The
+// Acquires a GL context on a drawable the caller already owns — an adopted canvas or native window. The
 // caller keeps ownership of the drawable; destroyGlSurface releases the context, never the drawable.
-export function createGlSurfaceFromTarget(
+export function createGlSurfaceFromNativeHandle(
   capability: Readonly<HostGlCapability>,
-  target: HostTarget,
+  handle: NativeSurfaceHandle,
   options?: Readonly<GlContextOptions>,
 ): GlSurface | null {
-  const context = capability.acquire(target, options);
+  const surface = allocateSurface<GlSurface>(handle);
+  surface.__brand = 'GlSurface' as const;
+  // The runtime is already attached, which is all `acquire` reads; the context it returns is the last
+  // field the entity needs before it is finished.
+  const context = capability.acquire(surface as GlSurface, options);
   if (context === null) return null;
-  const surface = allocateEntity<GlSurface>();
-  initializeGlSurface(surface, target, context);
+  (surface as EntityConstruction<GlSurface>).context = context;
   return finishEntity(surface);
 }
 
 export function destroyGlSurface(capability: Readonly<HostGlCapability>, surface: Readonly<GlSurface>): void {
-  capability.release(surface.target);
-}
-
-function initializeGlSurface(surface: EntityConstruction<GlSurface>, target: HostTarget, context: GlContext): void {
-  surface.__brand = 'GlSurface' as const;
-  surface.context = context;
-  surface.target = target;
+  capability.release(surface);
 }

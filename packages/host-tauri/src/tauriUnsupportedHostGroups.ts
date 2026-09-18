@@ -29,7 +29,7 @@ import type {
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostCanvasCapabilities,
-  HostTargetCapabilities,
+  HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostUpdaterCapabilities,
@@ -159,7 +159,7 @@ export function tauriHostStatusBar(): HostStatusBarCapabilities {
   return {};
 }
 
-export function tauriHostTarget(): HostTargetCapabilities {
+export function tauriHostSurface(): HostSurfaceCapabilities {
   return {};
 }
 

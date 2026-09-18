@@ -26,7 +26,7 @@ import {
   electronHostSoftKeyboardGroup,
   electronHostStatusBarGroup,
   electronHostCanvasGroup,
-  electronHostTargetGroup,
+  electronHostSurfaceGroup,
   electronHostTextSegmentGroup,
   electronHostTextShaperGroup,
   electronHostVideoGroup,
@@ -68,7 +68,7 @@ const socketGroup = emptyGroup(() => electronHostSocketGroup(electron));
 const softKeyboardGroup = emptyGroup(() => electronHostSoftKeyboardGroup(electron));
 const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
 const canvasGroup = emptyGroup(() => electronHostCanvasGroup(electron));
-const surfaceGroup = emptyGroup(() => electronHostTargetGroup(electron));
+const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
 const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
 const textShaperGroup = emptyGroup(() => electronHostTextShaperGroup(electron));
 const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
@@ -99,7 +99,7 @@ describe('electronHostShareGroup', shareGroup);
 describe('electronHostSocketGroup', socketGroup);
 describe('electronHostSoftKeyboardGroup', softKeyboardGroup);
 describe('electronHostStatusBarGroup', statusBarGroup);
-describe('electronHostTargetGroup', surfaceGroup);
+describe('electronHostSurfaceGroup', surfaceGroup);
 describe('electronHostTextSegmentGroup', textSegmentGroup);
 describe('electronHostTextShaperGroup', textShaperGroup);
 describe('electronHostVideoGroup', videoGroup);

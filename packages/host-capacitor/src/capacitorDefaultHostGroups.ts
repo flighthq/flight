@@ -24,7 +24,7 @@ import type {
   HostShortcutCapabilities,
   HostSocketCapabilities,
   HostCanvasCapabilities,
-  HostTargetCapabilities,
+  HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostTrayCapabilities,
@@ -137,7 +137,7 @@ export function capacitorHostSocket(): HostSocketCapabilities {
   return {};
 }
 
-export function capacitorHostTarget(): HostTargetCapabilities {
+export function capacitorHostSurface(): HostSurfaceCapabilities {
   return {};
 }
 

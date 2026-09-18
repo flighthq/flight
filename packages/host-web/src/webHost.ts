@@ -39,7 +39,7 @@ import { webHostShortcut } from './webShortcutHost';
 import { webHostSocketGroup } from './webSocketHost';
 import { webHostSoftKeyboard } from './webSoftKeyboardHost';
 import { webHostStatusBar } from './webStatusBarHost';
-import { webHostTargetGroup } from './webTargetHost';
+import { webHostSurfaceGroup } from './webSurfaceHost';
 import { webHostTextSegment } from './webTextSegmentHost';
 import { webHostTextShaper } from './webTextShaperHost';
 import { webHostTray } from './webTrayHost';
@@ -94,7 +94,7 @@ const groups = {
   socket: webHostSocketGroup,
   softKeyboard: webHostSoftKeyboard,
   statusBar: webHostStatusBar,
-  target: webHostTargetGroup,
+  surface: webHostSurfaceGroup,
   textSegment: webHostTextSegment,
   textShaper: webHostTextShaper,
   tray: webHostTray,

@@ -57,7 +57,7 @@ export {
   electronHostSoftKeyboardGroup,
   electronHostStatusBarGroup,
   electronHostCanvasGroup,
-  electronHostTargetGroup,
+  electronHostSurfaceGroup,
   electronHostTextSegmentGroup,
   electronHostTextShaperGroup,
   electronHostVideoGroup,

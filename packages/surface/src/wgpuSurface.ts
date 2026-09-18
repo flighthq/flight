@@ -1,56 +1,50 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { finishEntity } from '@flighthq/entity/contract';
 import type {
+  ApplicationWindow,
   EntityConstruction,
-  HostTarget,
   HostWgpuCapability,
+  NativeSurfaceHandle,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuSurface,
 } from '@flighthq/types/contract';
 
-// Allocates a drawable of the given backing-store size in device pixels and acquires a WebGPU device and
+import { allocateSurface } from './surface';
+
+// Allocates a drawable in the given window, sized in device pixels, and acquires a WebGPU device and
 // presentation context for it. Returns null when the environment cannot provide WebGPU at all — no
-// drawable, no adapter, no device. That is an expected outcome on a machine without WebGPU rather than
-// API misuse, so it reports through the return value like every other expected failure here.
+// drawable, no adapter, no device — which is an expected outcome on a machine without it rather than API
+// misuse, so it reports through the return value like every other expected failure here.
 export async function createWgpuSurface(
   capability: Readonly<HostWgpuCapability>,
+  window: Readonly<ApplicationWindow>,
   width: number,
   height: number,
   options?: Readonly<WgpuHostAcquisitionOptions>,
 ): Promise<WgpuSurface | null> {
-  const target = capability.create(width, height);
-  if (target === null) return null;
-  return createWgpuSurfaceFromTarget(capability, target, options);
+  const handle = capability.create(window, width, height);
+  if (handle === null) return null;
+  return createWgpuSurfaceFromNativeHandle(capability, handle, options);
 }
 
-// Acquires a device and presentation context for a target the host already holds. The caller keeps
-// ownership of the drawable.
-export async function createWgpuSurfaceFromTarget(
+// Acquires a device and presentation context for a drawable the caller already owns.
+export async function createWgpuSurfaceFromNativeHandle(
   capability: Readonly<HostWgpuCapability>,
-  target: HostTarget,
+  handle: NativeSurfaceHandle,
   options?: Readonly<WgpuHostAcquisitionOptions>,
 ): Promise<WgpuSurface | null> {
+  const surface = allocateSurface<WgpuSurface>(handle);
+  surface.__brand = 'WgpuSurface' as const;
   let acquisition: WgpuHostAcquisition;
   try {
-    acquisition = await capability.acquire(target, options ?? {});
+    acquisition = await capability.acquire(surface as WgpuSurface, options ?? {});
   } catch {
     return null;
   }
-  const surface = allocateEntity<WgpuSurface>();
-  initializeWgpuSurface(surface, target, acquisition);
+  (surface as EntityConstruction<WgpuSurface>).acquisition = acquisition;
   return finishEntity(surface);
 }
 
 export function destroyWgpuSurface(capability: Readonly<HostWgpuCapability>, surface: Readonly<WgpuSurface>): void {
   capability.release(surface.acquisition);
-}
-
-function initializeWgpuSurface(
-  surface: EntityConstruction<WgpuSurface>,
-  target: HostTarget,
-  acquisition: WgpuHostAcquisition,
-): void {
-  surface.__brand = 'WgpuSurface' as const;
-  surface.acquisition = acquisition;
-  surface.target = target;
 }

@@ -1,4 +1,4 @@
-export { createCanvasSurface, createCanvasSurfaceFromTarget, destroyCanvasSurface } from './contract';
-export { createGlSurface, createGlSurfaceFromTarget, destroyGlSurface } from './contract';
-export { setSurfaceDisplaySize } from './contract';
-export { createWgpuSurface, createWgpuSurfaceFromTarget, destroyWgpuSurface } from './contract';
+export { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './contract';
+export { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './contract';
+export { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './contract';
+export { resizeSurface, setSurfaceDisplaySize } from './contract';

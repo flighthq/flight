@@ -7,7 +7,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
-  HostTarget,
+  Surface,
   HostWgpuCapability,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
@@ -39,11 +39,11 @@ const RING_SLOT_COUNT = 4096;
 // outcome and not a programmer error.
 export async function createWgpuAcquisition(
   hostWgpu: Readonly<HostWgpuCapability>,
-  target: HostTarget,
+  surface: Surface,
   options: Readonly<WgpuHostAcquisitionOptions> = {},
 ): Promise<WgpuHostAcquisition | null> {
   try {
-    const acquired = await hostWgpu.acquire(target, options);
+    const acquired = await hostWgpu.acquire(surface, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);
@@ -240,7 +240,7 @@ function initializeWgpuDeviceRenderState(
 // GC-managed Wgpu objects with no destroy() (pipelines, bind groups, layouts, samplers, shader
 // modules, texture views) are not touched. textureCache is a WeakMap and cannot be enumerated; its
 // entries' textures are freed per-node by the dispose* paths. Surface storage belongs to the screen
-// render target, not to a state, so destroyWgpuScreenRenderTarget frees that side.
+// render surface, not to a state, so destroyWgpuScreenRenderTarget frees that side.
 export function destroyWgpuRenderState(state: WgpuRenderState): void {
   if (_destroyedStates.has(state)) return;
   _destroyedStates.add(state);

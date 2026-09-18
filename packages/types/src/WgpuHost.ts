@@ -39,16 +39,16 @@ export interface WgpuHostAcquisitionOptions {
 // host runtime. Its canonical lifecycle and ownership contract is recorded in
 // agents/backend-lifecycle-ownership.md.
 export interface HostWgpuCapability extends Entity {
-  acquire(target: HostTarget, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  acquire(surface: Readonly<Surface>, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
   // The allocating lane, matching HostGlCapability.create: the host makes a drawable of its own and
   // returns its identity. Separate from `acquire` because a device is adapter-scoped and outlives any
   // one drawable, so allocation cannot imply device acquisition.
-  create(width: number, height: number): HostTarget | null;
+  create(window: Readonly<ApplicationWindow>, width: number, height: number): NativeSurfaceHandle | null;
   // Binds a device to a presentation surface and returns its configured swap-chain context together with
   // the resolved presentation surface, or null when the target cannot present. Separate from `acquire`
   // because a device outlives any one surface: a second window attaches its own surface to the device
   // already in hand, and only the host knows how a target yields a drawable.
-  attachSurface(target: HostTarget, attachment: Readonly<WgpuSurfaceAttachment>): WgpuSurfaceAttachResult | null;
+  attachSurface(surface: Readonly<Surface>, attachment: Readonly<WgpuSurfaceAttachment>): WgpuSurfaceAttachResult | null;
   isSupported(): boolean;
   release(acquisition: Readonly<WgpuHostAcquisition>): void;
 }
@@ -65,4 +65,5 @@ export interface WgpuSurfaceAttachment {
   readonly format: GPUTextureFormat;
 }
 import type { Entity } from './Entity';
-import type { HostTarget } from './HostTarget';
+import type { ApplicationWindow } from './ApplicationWindow';
+import type { NativeSurfaceHandle, Surface } from './Surface';

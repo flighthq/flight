@@ -1,11 +1,11 @@
 import type { GlContext } from './GlContext';
-import type { Surface } from './HostTarget';
+import type { Surface } from './Surface';
 
-// A GL rendering surface: the binding of a target to an acquired GL context. Created by createGlSurface,
-// which allocates the drawable through HostGlCapability, or by createGlSurfaceFromTarget for a target the
-// host already holds. The backing store dimensions are deliberately absent — they are a host concern, and
-// the context reads them live through drawingBufferWidth/drawingBufferHeight, so no field here can go
-// stale against a resize.
+// A GL rendering surface: a host-allocated drawable with an acquired GL context. Created by
+// createGlSurface from a window, or by createGlSurfaceFromNativeHandle for a drawable the caller already
+// owns. The context is a public field because GlContext is Flight's own structural type; the drawable
+// behind it is a platform object and lives on the runtime. Backing store dimensions are deliberately
+// absent — the context reads them live through drawingBufferWidth/drawingBufferHeight.
 export interface GlSurface extends Surface {
   readonly __brand: 'GlSurface';
   readonly context: GlContext;

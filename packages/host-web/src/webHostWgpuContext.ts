@@ -6,7 +6,7 @@ import type {
   WgpuSurfaceAttachResult,
 } from '@flighthq/types/contract';
 
-import { allocateWebHostTargetCanvas, getCanvasForTarget } from './webHostTarget';
+import { createWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export function createWebHostWgpuContext(): HostWgpuCapability {
   const out = allocateEntity<HostWgpuCapability>();
@@ -15,9 +15,9 @@ export function createWebHostWgpuContext(): HostWgpuCapability {
 }
 
 export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCapability>): void {
-  out.acquire = async (target, options): Promise<WgpuHostAcquisition> => {
-    const canvas = getCanvasForTarget(target);
-    if (canvas === null) throw new Error('HostTarget does not resolve to a canvas element.');
+  out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
+    const canvas = getWebSurfaceCanvasHandle(surface);
+    if (canvas === null) throw new Error('Surface is not backed by a canvas element.');
 
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
@@ -53,8 +53,8 @@ export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCap
       throw error;
     }
   };
-  out.attachSurface = (target, attachment): WgpuSurfaceAttachResult | null => {
-    const canvas = getCanvasForTarget(target);
+  out.attachSurface = (surface, attachment): WgpuSurfaceAttachResult | null => {
+    const canvas = getWebSurfaceCanvasHandle(surface);
     if (canvas === null) return null;
     const context = canvas.getContext('webgpu');
     if (context === null) return null;
@@ -68,7 +68,7 @@ export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCap
   };
   // Allocation only: a device is adapter-scoped and is acquired separately, so making a drawable
   // cannot imply requesting one.
-  out.create = (width: number, height: number) => allocateWebHostTargetCanvas(width, height);
+  out.create = (win, width: number, height: number) => createWebSurfaceCanvas(win, width, height);
   out.isSupported = (): boolean => {
     return getWebWgpu() !== null;
   };

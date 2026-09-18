@@ -35,7 +35,7 @@ import type {
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostCanvasCapabilities,
-  HostTargetCapabilities,
+  HostSurfaceCapabilities,
   HostVideoCapabilities,
   HostWindowCapabilities,
 } from './Host';
@@ -77,7 +77,7 @@ export type WebHost = Omit<
   | 'socket'
   | 'softKeyboard'
   | 'statusBar'
-  | 'target'
+  | 'surface'
   | 'video'
   | 'window'
 > & {
@@ -105,7 +105,7 @@ export type WebHost = Omit<
   readonly glyph: Required<Pick<HostGlyphCapabilities, 'rasterizer'>>;
   readonly haptics: Required<Pick<HostHapticsCapabilities, 'engine'>>;
   readonly image: Required<Pick<HostImageCapabilities, 'loader'>>;
-  readonly input: Required<Pick<HostInputCapabilities, 'dropFile' | 'focus' | 'ingress' | 'pointerLock'>>;
+  readonly input: Required<Pick<HostInputCapabilities, 'dropFile' | 'focus' | 'ingress' | 'pointerLock' | 'target'>>;
   readonly lifecycle: Required<Pick<HostLifecycleCapabilities, 'state'>>;
   readonly mediaSession: Required<Pick<HostMediaSessionCapabilities, 'action' | 'control'>>;
   readonly menu: Required<Pick<HostMenuCapabilities, 'highlight' | 'popup'>>;
@@ -125,7 +125,7 @@ export type WebHost = Omit<
   readonly socket: Required<Pick<HostSocketCapabilities, 'connection'>>;
   readonly softKeyboard: Required<Pick<HostSoftKeyboardCapabilities, 'change' | 'info' | 'visibility'>>;
   readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
-  readonly target: Required<Pick<HostTargetCapabilities, 'display' | 'prepare' | 'resize'>>;
+  readonly surface: Required<Pick<HostSurfaceCapabilities, 'display' | 'resize'>>;
   readonly video: Required<Pick<HostVideoCapabilities, 'playback'>>;
   readonly window: Required<
     Pick<HostWindowCapabilities, 'appearance' | 'attach' | 'focus' | 'fullscreen' | 'geometry' | 'lifecycle'>

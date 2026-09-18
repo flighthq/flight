@@ -25,7 +25,7 @@ import type {
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostCanvasCapabilities,
-  HostTargetCapabilities,
+  HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
   HostTextShaperCapabilities,
   HostVideoCapabilities,
@@ -134,7 +134,7 @@ export function electronHostStatusBarGroup(_electron: ElectronApi): HostStatusBa
   return {};
 }
 
-export function electronHostTargetGroup(_electron: ElectronApi): HostTargetCapabilities {
+export function electronHostSurfaceGroup(_electron: ElectronApi): HostSurfaceCapabilities {
   return {};
 }
 

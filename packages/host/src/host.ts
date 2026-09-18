@@ -51,7 +51,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.socket = (capabilities.socket ?? {}) as Host['socket'];
   out.softKeyboard = (capabilities.softKeyboard ?? {}) as Host['softKeyboard'];
   out.statusBar = (capabilities.statusBar ?? {}) as Host['statusBar'];
-  out.target = (capabilities.target ?? {}) as Host['target'];
+  out.surface = (capabilities.surface ?? {}) as Host['surface'];
   out.textSegment = (capabilities.textSegment ?? {}) as Host['textSegment'];
   out.textShaper = (capabilities.textShaper ?? {}) as Host['textShaper'];
   out.tray = (capabilities.tray ?? {}) as Host['tray'];

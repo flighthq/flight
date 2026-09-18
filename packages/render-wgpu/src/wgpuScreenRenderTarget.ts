@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostTarget,
+  Surface,
   HostWgpuCapability,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -32,11 +32,11 @@ export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuS
 export function createWgpuScreenRenderTarget(
   wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
-  target: HostTarget,
+  drawable: Readonly<Surface>,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): WgpuScreenRenderTarget {
   const out = allocateEntity<WgpuScreenRenderTarget>();
-  initializeWgpuScreenRenderTarget(out, wgpuHost, device, target, options);
+  initializeWgpuScreenRenderTarget(out, wgpuHost, device, drawable, options);
   return finishEntity(out);
 }
 
@@ -67,11 +67,11 @@ export function initializeWgpuScreenRenderTarget(
   out: EntityConstruction<WgpuScreenRenderTarget>,
   wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
-  target: HostTarget,
+  drawable: Readonly<Surface>,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): void {
   const format = options.format ?? 'bgra8unorm';
-  const result = wgpuHost.attachSurface(target, {
+  const result = wgpuHost.attachSurface(drawable, {
     alphaMode: options.alphaMode ?? 'premultiplied',
     device,
     format,

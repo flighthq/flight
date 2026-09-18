@@ -45,6 +45,7 @@
     { "path": "../statusbar" },
     { "path": "../texture" },
     { "path": "../textureatlas" },
+    { "path": "../surface" },
     { "path": "../types" },
     { "path": "../useragent" },
     { "path": "../video" }
