@@ -169,7 +169,7 @@ describe('electronHostMenuPopup', () => {
 
 describe('electronHostMenuSelect', () => {
   it('constructs a menu select provider', () => {
-    expect(electronHostMenuSelect(fakeElectron().electron)).toBeDefined();
+    expect(electronHostMenuSelect()).toBeDefined();
   });
 });
 
