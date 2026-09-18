@@ -70,3 +70,21 @@ describe('tauriHostShell', () => {
     expect(capabilities.trash).toBeUndefined();
   });
 });
+
+describe('tauriHostShellExternal', () => {
+  it('constructs the external provider', () => {
+    expect(tauriHostShellExternal(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostShellPathOpen', () => {
+  it('constructs the path open provider', () => {
+    expect(tauriHostShellPathOpen(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostShellPathReveal', () => {
+  it('constructs the path reveal provider', () => {
+    expect(tauriHostShellPathReveal(fakeTauri().tauri)).toBeDefined();
+  });
+});

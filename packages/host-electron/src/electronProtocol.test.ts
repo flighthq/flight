@@ -74,6 +74,36 @@ describe('electronHostProtocol', () => {
   });
 });
 
+describe('electronHostProtocolDefault', () => {
+  it('constructs a protocol default provider', () => {
+    expect(electronHostProtocolDefault(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostProtocolOpen', () => {
+  it('constructs a protocol open provider', () => {
+    expect(electronHostProtocolOpen(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostProtocolRegistration', () => {
+  it('constructs a protocol registration provider', () => {
+    expect(electronHostProtocolRegistration(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostProtocolRegistrationQuery', () => {
+  it('constructs a protocol registration query provider', () => {
+    expect(electronHostProtocolRegistrationQuery(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostProtocolUnregistration', () => {
+  it('constructs a protocol unregistration provider', () => {
+    expect(electronHostProtocolUnregistration(fakeElectron().electron)).toBeDefined();
+  });
+});
+
 describe('populateElectronHostProtocol', () => {
   it('is the construction initializer of electronHostProtocol', () => {
     expect(typeof populateElectronHostProtocol).toBe('function');

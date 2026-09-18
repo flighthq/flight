@@ -21,3 +21,51 @@ describe('capacitorHostShare', () => {
     expect(Object.keys(share)).toEqual(['content']);
   });
 });
+
+describe('capacitorHostShareContent', () => {
+  it('validates meaningful payloads synchronously without an availability cache', () => {
+    const backend = capacitorHostShareContent(fakeCapacitor().capacitor);
+    expect(backend.canShareContent({ text: 'ready now' })).toBe(true);
+    expect(backend.canShareContent({ text: '' })).toBe(false);
+  });
+
+  it('shares title, text, and URL content', async () => {
+    const { capacitor, shared } = fakeCapacitor();
+    const backend = capacitorHostShareContent(capacitor);
+    expect(await backend.shareContent({ title: 'T', url: 'https://flight.dev' })).toBe(true);
+    expect(shared[0]).toMatchObject({ title: 'T', url: 'https://flight.dev' });
+  });
+
+  it('keeps chooserTitle on only the concrete Capacitor provider type', async () => {
+    const { capacitor, shared } = fakeCapacitor();
+    const backend = capacitorHostShareContent(capacitor);
+    expect(await backend.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
+    expect(shared[0]?.dialogTitle).toBe('Choose an app');
+    const portable: HostShareContentCapability = backend;
+    // @ts-expect-error the portable content slot has no Capacitor chooser parameter
+    expect(await portable.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
+  });
+
+  it('maps a completed share to a detailed result with the activity type', async () => {
+    const backend = capacitorHostShareContent(fakeCapacitor().capacitor);
+    expect(await backend.shareContentWithResult({ text: 'x' })).toEqual({
+      activityType: 'com.apple.UIKit.activity.Mail',
+      completed: true,
+      dismissed: false,
+    });
+  });
+
+  it('reports rejected commands as platform outcomes', async () => {
+    const backend = capacitorHostShareContent(
+      fakeCapacitor(async () => {
+        throw new Error('cancelled');
+      }).capacitor,
+    );
+    expect(await backend.shareContent({ text: 'x' })).toBe(false);
+    expect(await backend.shareContentWithResult({ text: 'x' })).toEqual({
+      activityType: null,
+      completed: false,
+      dismissed: true,
+    });
+  });
+});

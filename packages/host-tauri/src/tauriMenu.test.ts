@@ -66,6 +66,12 @@ const template: MenuItemTemplate[] = [
   { label: 'More', submenu: [{ id: 'nested', label: 'Nested' }] },
 ];
 
+describe('tauriHostAppMenu', () => {
+  it('constructs the app menu provider', () => {
+    expect(tauriHostAppMenu(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
 describe('tauriHostMenu', () => {
   it('returns an Entity-composed capability bundle and providers', () => {
     const capabilities = tauriHostMenu(fakeTauri().tauri);
@@ -183,6 +189,18 @@ describe('tauriHostMenu', () => {
       },
     } as unknown as TauriApi;
     expect(await _slots(tauri).popupContextMenu([{ id: 'a', label: 'A' }], 0, 0)).toBeNull();
+  });
+});
+
+describe('tauriHostMenuPopup', () => {
+  it('constructs the popup provider', () => {
+    expect(tauriHostMenuPopup(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostMenuSelect', () => {
+  it('constructs the select provider', () => {
+    expect(tauriHostMenuSelect(fakeTauri().tauri)).toBeDefined();
   });
 });
 

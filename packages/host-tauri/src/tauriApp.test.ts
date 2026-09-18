@@ -70,3 +70,45 @@ describe('tauriHostApp', () => {
     expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
   });
 });
+
+describe('tauriHostAppHide', () => {
+  it('constructs the hide provider', () => {
+    expect(tauriHostAppHide(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppLocale', () => {
+  it('constructs the locale provider', () => {
+    expect(tauriHostAppLocale(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppName', () => {
+  it('constructs the name provider', () => {
+    expect(tauriHostAppName(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppQuit', () => {
+  it('constructs the quit provider', () => {
+    expect(tauriHostAppQuit(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppRelaunch', () => {
+  it('constructs the relaunch provider', () => {
+    expect(tauriHostAppRelaunch(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppShow', () => {
+  it('constructs the show provider', () => {
+    expect(tauriHostAppShow(fakeTauri().tauri)).toBeDefined();
+  });
+});
+
+describe('tauriHostAppVersion', () => {
+  it('constructs the version provider', () => {
+    expect(tauriHostAppVersion(fakeTauri().tauri)).toBeDefined();
+  });
+});

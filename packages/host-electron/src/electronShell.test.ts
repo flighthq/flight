@@ -118,6 +118,43 @@ describe('electronHostShell', () => {
     expect(beep).toHaveBeenCalledOnce();
   });
 });
+
+describe('electronHostShellBeep', () => {
+  it('constructs a shell beep provider', () => {
+    expect(electronHostShellBeep(fakeElectron({}))).toBeDefined();
+  });
+});
+
+describe('electronHostShellExternal', () => {
+  it('constructs a shell external provider', () => {
+    expect(electronHostShellExternal(fakeElectron({}))).toBeDefined();
+  });
+});
+
+describe('electronHostShellPathOpen', () => {
+  it('constructs a shell path open provider', () => {
+    expect(electronHostShellPathOpen(fakeElectron({}))).toBeDefined();
+  });
+});
+
+describe('electronHostShellPathReveal', () => {
+  it('constructs a shell path reveal provider', () => {
+    expect(electronHostShellPathReveal(fakeElectron({}))).toBeDefined();
+  });
+});
+
+describe('electronHostShellShortcutLink', () => {
+  it('constructs a shell shortcut link provider', () => {
+    expect(electronHostShellShortcutLink(fakeElectron({}))).toBeDefined();
+  });
+});
+
+describe('electronHostShellTrash', () => {
+  it('constructs a shell trash provider', () => {
+    expect(electronHostShellTrash(fakeElectron({}))).toBeDefined();
+  });
+});
+
 describe('populateElectronHostShellBeep', () => {
   it('is the construction initializer of electronHostShellBeep', () => {
     expect(typeof populateElectronHostShellBeep).toBe('function');

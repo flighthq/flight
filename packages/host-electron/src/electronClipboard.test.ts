@@ -1,6 +1,12 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
 
-import { electronHostClipboard } from './electronClipboard';
+import {
+  electronHostClipboard,
+  electronHostClipboardBookmark,
+  electronHostClipboardFormats,
+  electronHostClipboardImage,
+  electronHostClipboardText,
+} from './electronClipboard';
 
 function clipboardProvider(electron: ElectronApi) {
   const clipboard = electronHostClipboard(electron);
@@ -89,5 +95,29 @@ describe('electronHostClipboard', () => {
     await backend.writeText('x');
     expect(await backend.clear()).toBe(true);
     expect(await backend.readText()).toBe('');
+  });
+});
+
+describe('electronHostClipboardBookmark', () => {
+  it('constructs a clipboard bookmark provider', () => {
+    expect(electronHostClipboardBookmark(fakeElectron())).toBeDefined();
+  });
+});
+
+describe('electronHostClipboardFormats', () => {
+  it('constructs a clipboard formats provider', () => {
+    expect(electronHostClipboardFormats(fakeElectron())).toBeDefined();
+  });
+});
+
+describe('electronHostClipboardImage', () => {
+  it('constructs a clipboard image provider', () => {
+    expect(electronHostClipboardImage(fakeElectron())).toBeDefined();
+  });
+});
+
+describe('electronHostClipboardText', () => {
+  it('constructs a clipboard text provider', () => {
+    expect(electronHostClipboardText(fakeElectron())).toBeDefined();
   });
 });

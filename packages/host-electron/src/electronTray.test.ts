@@ -280,6 +280,97 @@ describe('electronHostTray', () => {
     );
   });
 });
+
+describe('electronHostTrayBalloon', () => {
+  it('constructs a tray balloon provider', () => {
+    expect(electronHostTrayBalloon(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayBalloonEvents', () => {
+  it('constructs a tray balloon events provider', () => {
+    expect(electronHostTrayBalloonEvents(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayBounds', () => {
+  it('constructs a tray bounds provider', () => {
+    expect(electronHostTrayBounds(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayDoubleClickPolicy', () => {
+  it('constructs a tray double click policy provider', () => {
+    expect(electronHostTrayDoubleClickPolicy(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayDropEvents', () => {
+  it('constructs a tray drop events provider', () => {
+    expect(electronHostTrayDropEvents(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayImage', () => {
+  it('constructs a tray image provider', () => {
+    expect(electronHostTrayImage(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayInteractionEvents', () => {
+  it('constructs a tray interaction events provider', () => {
+    expect(electronHostTrayInteractionEvents(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayLifecycle', () => {
+  it('constructs a tray lifecycle provider', () => {
+    expect(electronHostTrayLifecycle(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayMenu', () => {
+  it('constructs a tray menu provider', () => {
+    expect(electronHostTrayMenu(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayMenuSelectionEvents', () => {
+  it('constructs a tray menu selection events provider', () => {
+    expect(electronHostTrayMenuSelectionEvents(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayPopupMenu', () => {
+  it('constructs a tray popup menu provider', () => {
+    expect(electronHostTrayPopupMenu(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
+describe('electronHostTrayPressedImage', () => {
+  it('constructs a tray pressed image provider', () => {
+    expect(electronHostTrayPressedImage(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayTemplateImage', () => {
+  it('constructs a tray template image provider', () => {
+    expect(electronHostTrayTemplateImage(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayTitle', () => {
+  it('constructs a tray title provider', () => {
+    expect(electronHostTrayTitle(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostTrayTooltip', () => {
+  it('constructs a tray tooltip provider', () => {
+    expect(electronHostTrayTooltip(fakeElectron().electron, 'linux')).toBeDefined();
+  });
+});
+
 describe('populateElectronHostTrayBalloon', () => {
   it('is the construction initializer of electronHostTrayBalloon', () => {
     expect(typeof populateElectronHostTrayBalloon).toBe('function');
