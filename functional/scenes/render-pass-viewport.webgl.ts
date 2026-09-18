@@ -2,7 +2,7 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
 import { createVector3 } from '@flighthq/geometry';
-import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
@@ -23,7 +23,7 @@ import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { createGlSurface } from '@flighthq/surface';
+import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -56,7 +56,7 @@ const glSurface = createGlSurface(webHostGl, width * scale, height * scale, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setWebSurfaceDisplaySize(glSurface, width, height);
+setSurfaceDisplaySize(webHostTargetDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 

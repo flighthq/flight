@@ -1,4 +1,4 @@
-import { webHostGl, appendWebSurface, getWebSurfaceCanvas, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostGl, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -32,6 +32,7 @@ import {
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
   setGlPbrTransmissionSceneColor,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -46,7 +47,7 @@ const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio,
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setWebSurfaceDisplaySize(glSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 

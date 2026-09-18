@@ -125,7 +125,7 @@ export type WebHost = Omit<
   readonly socket: Required<Pick<HostSocketCapabilities, 'connection'>>;
   readonly softKeyboard: Required<Pick<HostSoftKeyboardCapabilities, 'change' | 'info' | 'visibility'>>;
   readonly statusBar: Required<Pick<HostStatusBarCapabilities, 'color'>>;
-  readonly target: Required<Pick<HostTargetCapabilities, 'prepare' | 'resize'>>;
+  readonly target: Required<Pick<HostTargetCapabilities, 'display' | 'prepare' | 'resize'>>;
   readonly video: Required<Pick<HostVideoCapabilities, 'playback'>>;
   readonly window: Required<
     Pick<HostWindowCapabilities, 'appearance' | 'attach' | 'focus' | 'fullscreen' | 'geometry' | 'lifecycle'>

@@ -1,4 +1,4 @@
-import { webHostWgpuContext, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, webHostTargetDisplay } from '@flighthq/host-web';
 import { createCompressedImageResource } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
@@ -26,6 +26,7 @@ import {
   scene3DWgpuPipeline,
   SpriteKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -61,7 +62,7 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, WIDTH * pixelRatio, HEIGHT * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, WIDTH, HEIGHT);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, WIDTH, HEIGHT);
 appendWebSurface(wgpuSurface, document.body);
 const target = wgpuSurface.target;
 const acquisition = wgpuSurface.acquisition;

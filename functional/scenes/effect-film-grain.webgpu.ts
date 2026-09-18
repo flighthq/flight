@@ -1,4 +1,4 @@
-import { webHostWgpuContext, appendWebSurface, setWebSurfaceDisplaySize } from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, webHostTargetDisplay } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -33,6 +33,7 @@ import {
   scene3DWgpuPipeline,
   ShapeKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -49,7 +50,7 @@ declareExpectedImageDescription(
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 600);
 appendWebSurface(wgpuSurface, document.body);
 const target = wgpuSurface.target;
 const acquisition = wgpuSurface.acquisition;

@@ -69,12 +69,7 @@ export { webHostImageGroup } from './webImageHost';
 export { webHostTargetGroup } from './webTargetHost';
 export { webHostCanvasGroup } from './webCanvasHost';
 export { createWebHostCanvas, webHostCanvas } from './webHostCanvas';
-export {
-  appendWebSurface,
-  getWebSurfaceCanvas,
-  getWebSurfaceElement,
-  setWebSurfaceDisplaySize,
-} from './webSurfacePresentation';
+export { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
 export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
 export { webHostHaptics } from './webHaptics';
@@ -111,6 +106,7 @@ export {
   webHostInputPointerLock,
   webHostTarget,
   webHostGl,
+  webHostTargetDisplay,
   webHostTargetResize,
 } from './webHostTarget';
 export {

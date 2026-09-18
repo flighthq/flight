@@ -3,7 +3,7 @@ import {
   createWebImageResourceFromCanvas,
   appendWebSurface,
   getWebSurfaceCanvas,
-  setWebSurfaceDisplaySize,
+  webHostTargetDisplay,
 } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
@@ -48,6 +48,7 @@ import {
   scene3DWgpuPipeline,
   setWgpuRenderEffectVelocityTexture,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -68,7 +69,7 @@ declareExpectedImageDescription(
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 600);
 appendWebSurface(wgpuSurface, document.body);
 const canvas = getWebSurfaceCanvas(wgpuSurface)!;
 const target = wgpuSurface.target;

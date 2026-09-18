@@ -26,14 +26,3 @@ export function getWebSurfaceCanvas(surface: Readonly<Surface>): HTMLCanvasEleme
 export function getWebSurfaceElement(surface: Readonly<Surface>): HTMLElement | null {
   return getElementForTarget(surface.target);
 }
-
-// Sets the presented (logical/CSS) size, in logical pixels. Independent of the backing store size passed
-// to surface creation: their ratio is the app's render scale, which equals devicePixelRatio only when the
-// app chooses that. Supersampling and dynamic resolution scaling both depend on the two staying separate.
-export function setWebSurfaceDisplaySize(surface: Readonly<Surface>, width: number, height: number): boolean {
-  const element = getElementForTarget(surface.target);
-  if (element === null) return false;
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  return true;
-}

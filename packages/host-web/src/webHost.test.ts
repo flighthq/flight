@@ -136,6 +136,7 @@ const LEAVES = [
   ['softKeyboard', 'info', 'webHostSoftKeyboardInfo'],
   ['softKeyboard', 'visibility', 'webHostSoftKeyboardVisibility'],
   ['statusBar', 'color', 'webHostStatusBarColor'],
+  ['target', 'display', 'webHostTargetDisplay'],
   ['target', 'prepare', 'webHostTarget'],
   ['target', 'resize', 'webHostTargetResize'],
   ['video', 'playback', 'webHostVideo'],

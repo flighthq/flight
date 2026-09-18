@@ -1,9 +1,4 @@
-import {
-  webHostWgpuContext,
-  appendWebSurface,
-  getWebSurfaceCanvas,
-  setWebSurfaceDisplaySize,
-} from '@flighthq/host-web';
+import { webHostWgpuContext, appendWebSurface, getWebSurfaceCanvas, webHostTargetDisplay } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -40,6 +35,7 @@ import {
   setWgpuRenderEffectVelocityTexture,
   ShapeKind,
   createWgpuSurface,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -58,7 +54,7 @@ declareExpectedImageDescription(
 const pixelRatio = window.devicePixelRatio || 1;
 const wgpuSurface = await createWgpuSurface(webHostWgpuContext, 800 * pixelRatio, 600 * pixelRatio);
 if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environment');
-setWebSurfaceDisplaySize(wgpuSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, wgpuSurface, 800, 600);
 appendWebSurface(wgpuSurface, document.body);
 const canvas = getWebSurfaceCanvas(wgpuSurface)!;
 const target = wgpuSurface.target;

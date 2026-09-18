@@ -3,7 +3,7 @@ import {
   createWebImageResourceFromCanvas,
   appendWebSurface,
   getWebSurfaceCanvas,
-  setWebSurfaceDisplaySize,
+  webHostTargetDisplay,
 } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
@@ -44,6 +44,7 @@ import {
   reserveParticleEmitter2D,
   setGlRenderEffectVelocityTexture,
   getBitmapPixelRgb,
+  setSurfaceDisplaySize,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -65,7 +66,7 @@ const glSurface = createGlSurface(webHostGl, 800 * pixelRatio, 600 * pixelRatio,
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
-setWebSurfaceDisplaySize(glSurface, 800, 600);
+setSurfaceDisplaySize(webHostTargetDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 

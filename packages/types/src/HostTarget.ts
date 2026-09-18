@@ -23,8 +23,17 @@ export interface HostTargetCapability extends Entity {
   prepare(target: HostTarget): void;
 }
 
-// Resizes a target's backing store, in device pixels. Distinct from any display/logical size, which is a
-// property of how the target is presented and is owned by the presenting host.
+// Sets the size a target is presented at, in logical pixels. Its own slot rather than a member of
+// HostTargetResizeCapability because the two are independently absent: an offscreen or headless host
+// resizes its backing store and has no presented size at all, and an omitted slot is the honest report
+// there. The ratio between this and the backing store is the app's render scale, which equals the
+// device pixel ratio only when the app chooses that — supersampling and dynamic resolution scaling both
+// depend on the two staying separate. A target this host does not own is a no-op, not an error.
+export interface HostTargetDisplayCapability extends Entity {
+  setDisplaySize(target: HostTarget, width: number, height: number): void;
+}
+
+// Resizes a target's backing store, in device pixels. Distinct from the display/logical size above.
 export interface HostTargetResizeCapability extends Entity {
   resize(target: HostTarget, width: number, height: number): void;
 }
