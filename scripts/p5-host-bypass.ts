@@ -684,8 +684,9 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
 }
 
 // A WebGPU page must not conjure its own PRESENTATION canvas. The canvas a screen target or an
-// acquisition is given comes from createSurface(webSurfaceCreateCapability, …), the explicit
-// host capability seam that replaces the former createWebWgpuCanvasElement singleton.
+// acquisition is given comes through the host capability seam: either directly from
+// createSurface(webSurfaceCreateCapability, …) or wrapped in a HostTarget via
+// createWebHostTarget(canvas).
 //
 // Scratch canvases a scene paints texture content into are deliberately NOT flagged here: they are a
 // different bypass with its own kind ('scratch-surface') and its own budget. Only the surface that
@@ -702,11 +703,20 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.initializer !== undefined &&
-      ts.isCallExpression(node.initializer) &&
-      expressionName(node.initializer.expression) === 'createSurface'
+      ts.isCallExpression(node.initializer)
     ) {
-      hostCanvasBindings.add(node.name.text);
-      usesHostCanvas = true;
+      const calledName = expressionName(node.initializer.expression);
+      if (calledName === 'createSurface') {
+        hostCanvasBindings.add(node.name.text);
+        usesHostCanvas = true;
+      } else if (
+        calledName === 'createWebHostTarget' &&
+        node.initializer.arguments.length >= 1 &&
+        ts.isIdentifier(node.initializer.arguments[0]) &&
+        hostCanvasBindings.has(node.initializer.arguments[0].text)
+      ) {
+        hostCanvasBindings.add(node.name.text);
+      }
     }
     if (ts.isCallExpression(node)) {
       const called = expressionName(node.expression);
@@ -731,7 +741,7 @@ export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: 
   for (const surface of presentationSurfaces) {
     if (!hostCanvasBindings.has(surface.name)) {
       failures.push(
-        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createSurface`,
+        `${file}:${surface.line}: WGPU presentation surface '${surface.name}' does not come from createSurface or createWebHostTarget`,
       );
     }
   }
@@ -789,7 +799,7 @@ export function p5WgpuSurfaceArgumentFailures(root: string): string[] {
       );
       continue;
     }
-    if (parameters[argument.index] !== 'surface') {
+    if (parameters[argument.index] !== 'surface' && parameters[argument.index] !== 'target') {
       failures.push(
         `${functionName}: argument ${argument.index} is recorded as the presentation surface but names ` +
           `'${parameters[argument.index] ?? '<none>'}' in ${argument.file}`,
@@ -1626,6 +1636,9 @@ function classifyStructuralExclusion(
   const packageName = parts[0] === 'packages' ? (parts[1] ?? '') : '';
   const fileName = basename(file);
   if (/\.(?:test|spec)\.ts$/.test(fileName) || fileName.endsWith('TestHelper.ts')) return 'test-support';
+  if (functionNames.length > 0 && functionNames.every((name) => /^(?:createTest|initializeTest)/.test(name))) {
+    return 'test-support';
+  }
   if (packageName.startsWith('host-')) return 'host-implementation';
   if (packageName.startsWith('tool-')) return 'tooling';
   if (packageName === 'application') return 'p4-window-attachment';
