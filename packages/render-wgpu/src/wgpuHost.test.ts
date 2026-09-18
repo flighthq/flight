@@ -16,6 +16,14 @@ beforeAll(installWgpuMock);
 
 const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
+describe('createTestHostTarget', () => {
+  it('brands an entity backed by a canvas the test host backend can resolve', () => {
+    const canvas = document.createElement('canvas');
+    const target = createTestHostTarget(canvas);
+    expect(target.__brand).toBe('HostTarget');
+  });
+});
+
 describe('createTestWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
     const backend = createTestWgpuHostBackend();
