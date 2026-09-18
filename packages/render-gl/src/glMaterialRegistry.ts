@@ -1,6 +1,6 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import type { GlMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistry, StandardMaterialKind } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -28,7 +28,7 @@ export function resolveGlMaterialRenderer(state: GlRenderState, material: Materi
   // The requested kind is absent. StandardMaterialKind still stands in where it is registered, but the
   // miss is reported either way — substituting a different shading family is as much worth knowing as
   // drawing nothing, and the seam records one miss per kind, so neither case repeats.
-  runtime.registryMiss?.(RenderRegistry.MaterialRenderer, kind);
+  runtime.registryMiss?.(RenderRegistryTable.MaterialRenderer, kind);
   if (kind === StandardMaterialKind) return null;
   const fallback = entries.get(StandardMaterialKind);
   return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;

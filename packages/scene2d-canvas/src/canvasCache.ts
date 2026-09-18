@@ -10,8 +10,8 @@ import {
   registerRenderCacheRenderer,
 } from '@flighthq/render/contract';
 import type {
-  CanvasPipeline,
   CanvasRenderOptions,
+  CanvasRenderRegistry,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasTextureResolvers,
@@ -48,11 +48,11 @@ import { setCanvasTransform } from './canvasTransform';
  */
 export function createCanvasCacheState(
   ownerState: CanvasRenderState,
-  pipeline: Readonly<CanvasPipeline>,
+  registry: Readonly<CanvasRenderRegistry>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const cacheState = createCanvasOffscreenRenderState(pipeline, canvasTextureResolvers, options);
+  const cacheState = createCanvasOffscreenRenderState(registry, canvasTextureResolvers, options);
   registerCanvasRenderStateTeardown(ownerState, () => destroyCanvasRenderState(cacheState));
   return cacheState;
 }
@@ -63,11 +63,11 @@ export function createCanvasCacheState(
  * canvases remain independent.
  */
 export function createCanvasOffscreenRenderState(
-  pipeline: Readonly<CanvasPipeline>,
+  registry: Readonly<CanvasRenderRegistry>,
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  return createCanvasRenderState(pipeline, canvasTextureResolvers, options);
+  return createCanvasRenderState(registry, canvasTextureResolvers, options);
 }
 
 export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): void {

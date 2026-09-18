@@ -13,7 +13,7 @@ import type {
 import {
   EntityRuntimeKey,
   ImageResourceReferenceKind,
-  RenderRegistry,
+  RenderRegistryTable,
   RequirementFacet,
   ResourceResolutionState,
   SceneCoverage,
@@ -29,17 +29,17 @@ const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'ShadedMaterial',
     registrations: [{ module: '@flighthq/scene3d-gl', registrar: 'registerGlShadedMaterial' }],
-    registry: RenderRegistry.MaterialRenderer,
+    registry: RenderRegistryTable.MaterialRenderer,
   },
   {
     kind: 'image',
     registrations: [{ module: '@flighthq/scene3d-gl', registrar: 'registerGlImageTextureResolver' }],
-    registry: RenderRegistry.TextureResolver,
+    registry: RenderRegistryTable.TextureResolver,
   },
   {
     kind: 'RimModifier',
     registrations: [{ module: '@flighthq/scene3d-gl', registrar: 'registerGlRimModifier' }],
-    registry: RenderRegistry.ModifierSnippet,
+    registry: RenderRegistryTable.ModifierSnippet,
   },
 ];
 
@@ -80,7 +80,7 @@ describe('explainGlScene3DCoverage', () => {
       kind: 'ShadedMaterial',
       module: '@flighthq/scene3d-gl',
       registrar: 'registerGlShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
     expect(found).toContainEqual({
       coverage: SceneCoverage.Unregistered,
@@ -88,7 +88,7 @@ describe('explainGlScene3DCoverage', () => {
       kind: 'image',
       module: '@flighthq/scene3d-gl',
       registrar: 'registerGlImageTextureResolver',
-      registry: RenderRegistry.TextureResolver,
+      registry: RenderRegistryTable.TextureResolver,
     });
   });
 
@@ -103,7 +103,7 @@ describe('explainGlScene3DCoverage', () => {
       kind: 'ShadedMaterial',
       module: '@flighthq/scene3d-gl',
       registrar: 'registerGlShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
   });
 
@@ -114,10 +114,12 @@ describe('explainGlScene3DCoverage', () => {
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
     expect(
-      gaps(state).some((g) => g.coverage !== SceneCoverage.Satisfied && g.registry === RenderRegistry.MaterialRenderer),
+      gaps(state).some(
+        (g) => g.coverage !== SceneCoverage.Satisfied && g.registry === RenderRegistryTable.MaterialRenderer,
+      ),
     ).toBe(false);
   });
 
@@ -131,12 +133,12 @@ describe('explainGlScene3DCoverage', () => {
       kind: 'RimModifier',
       module: '@flighthq/scene3d-gl',
       registrar: 'registerGlRimModifier',
-      registry: RenderRegistry.ModifierSnippet,
+      registry: RenderRegistryTable.ModifierSnippet,
     });
   });
 
   it('never reports a node-kind gap, since 3D collects meshes structurally', () => {
-    expect(gaps(makeGlScene3DState().state).some((g) => g.registry === RenderRegistry.NodeRenderer)).toBe(false);
+    expect(gaps(makeGlScene3DState().state).some((g) => g.registry === RenderRegistryTable.NodeRenderer)).toBe(false);
   });
 
   it('clears out, so a repeated call does not accumulate', () => {

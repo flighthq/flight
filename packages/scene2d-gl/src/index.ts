@@ -34,6 +34,6 @@ export {
   registerGlStandardMaterial,
   renderGlScene2D,
   renderGlVelocity,
-  scene2DGlPipeline,
+  defaultScene2DGlRenderRegistry,
 } from './contract';
 export { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer';

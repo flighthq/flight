@@ -17,7 +17,7 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-  RenderRegistry,
+  RenderRegistryTable,
   RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
@@ -77,7 +77,7 @@ export function resolveWgpuTexture(
   const runtime = getWgpuRenderStateRuntime(state);
   const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
   if (entry?.state !== RegistryEntryState.Bound) {
-    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
+    runtime.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
   return entry.value(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));

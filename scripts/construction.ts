@@ -97,11 +97,6 @@ const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
   },
   {
     rule: 'unpaired-allocate',
-    match: (rel) => rel === 'packages/render-gl/src/glPipeline.ts',
-    why: 'createGlPipeline not yet migrated to finishEntity',
-  },
-  {
-    rule: 'unpaired-allocate',
     match: (rel) => rel === 'packages/render-wgpu/src/wgpuDraw.ts',
     why: 'bindWgpuTexture not yet migrated to finishEntity',
   },
@@ -109,16 +104,6 @@ const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
     rule: 'unpaired-allocate',
     match: (rel) => rel === 'packages/render-wgpu/src/wgpuExternalTexture.ts',
     why: 'createExternalWgpuTexture not yet migrated to finishEntity',
-  },
-  {
-    rule: 'unpaired-allocate',
-    match: (rel) => rel === 'packages/render-wgpu/src/wgpuPipeline.ts',
-    why: 'createWgpuPipeline not yet migrated to finishEntity',
-  },
-  {
-    rule: 'unpaired-allocate',
-    match: (rel) => rel === 'packages/scene2d-canvas/src/canvasPipeline.ts',
-    why: 'createCanvasPipeline not yet migrated to finishEntity',
   },
   {
     rule: 'unpaired-allocate',

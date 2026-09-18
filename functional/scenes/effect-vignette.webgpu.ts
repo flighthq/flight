@@ -27,7 +27,7 @@ import {
   registerRenderer,
   registerWgpuVignetteEffect,
   renderWgpuScene2D,
-  scene3DWgpuPipeline,
+  defaultScene3DWgpuRenderRegistry,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -61,7 +61,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
   format: acquisition.format,
   pixelRatio,
 });

@@ -6,7 +6,7 @@ import {
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, RenderRegistry } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, RenderRegistryTable } from '@flighthq/types/contract';
 
 import {
   acquireCanvasTextureResolverSurface,
@@ -60,7 +60,7 @@ describe('connectCanvasTextureResolverMisses', () => {
     resolveCanvasTexture(resolvers, createUnresolvableTexture());
 
     expect(explainRenderRegistryMisses(state).misses).toEqual([
-      { kind: BitmapTextureSourceKind, registry: RenderRegistry.TextureResolver },
+      { kind: BitmapTextureSourceKind, registry: RenderRegistryTable.TextureResolver },
     ]);
   });
 

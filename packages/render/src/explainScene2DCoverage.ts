@@ -6,7 +6,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -59,13 +59,15 @@ function collectScene2DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneNodeKind,
         kind,
-        registry: RenderRegistry.NodeRenderer,
+        registry: RenderRegistryTable.NodeRenderer,
       });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push(createShortfallEntry(catalog, false, RequirementFacet.SceneNodeKind, kind, RenderRegistry.NodeRenderer));
+    out?.push(
+      createShortfallEntry(catalog, false, RequirementFacet.SceneNodeKind, kind, RenderRegistryTable.NodeRenderer),
+    );
   }
 
   // Only meaningful for a state that rasterizes shapes. A GL or WebGPU state drawing every shape
@@ -79,7 +81,7 @@ function collectScene2DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneShapeCommand,
         kind,
-        registry: RenderRegistry.ShapeCommandHandler,
+        registry: RenderRegistryTable.ShapeCommandHandler,
       });
       continue;
     }
@@ -91,7 +93,7 @@ function collectScene2DCoverageGaps(
         false,
         RequirementFacet.SceneShapeCommand,
         kind,
-        RenderRegistry.ShapeCommandHandler,
+        RenderRegistryTable.ShapeCommandHandler,
       ),
     );
   }

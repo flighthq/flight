@@ -1,6 +1,6 @@
 import { createScanlinesEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { createEmptyGlRegistries, createGlPipeline, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
@@ -107,7 +107,7 @@ describe('registerGlScanlinesEffect', () => {
   it('makes the runner resolvable for the ScanlinesEffect kind', () => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createGlPipeline(createEmptyGlRegistries()),
+      createEmptyGlRenderRegistry(),
     );
 
     expect(getGlRenderEffectRunner(state, 'ScanlinesEffect')).toBeNull();

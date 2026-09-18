@@ -1,8 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
-  createEmptyGlRegistries,
-  createGlPipeline,
+  createEmptyGlRenderRegistry,
   acquireGlRenderTexture,
   clearGlRenderTexture,
   createGlRenderState,
@@ -258,7 +257,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createWebGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
+  return createGlRenderState(createWebGlContext(canvas), createEmptyGlRenderRegistry());
 }
 
 describe('offscreen effect registration snapshots', () => {
@@ -267,13 +266,13 @@ describe('offscreen effect registration snapshots', () => {
     const first: GlRenderEffectRunner = vi.fn();
     const later: GlRenderEffectRunner = vi.fn();
     registerGlRenderEffect(screen, 'acme.First', first);
-    const offscreen = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     registerGlRenderEffect(screen, 'acme.Later', later);
 
     expect(getGlRenderEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getGlRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
-    const rebuilt = createGlRenderState(screen.gl, createGlPipeline(getGlRenderStateRuntime(screen).registries));
+    const rebuilt = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     expect(getGlRenderEffectRunner(rebuilt, 'acme.Later')).toBe(later);
   });
 });

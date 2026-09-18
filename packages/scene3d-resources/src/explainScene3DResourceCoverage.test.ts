@@ -10,7 +10,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage';
@@ -24,12 +24,12 @@ const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'UnlitMaterial',
     registrations: [{ module: '@flighthq/scene3d-resources', registrar: 'registerUnlitScene3DMaterialTextures' }],
-    registry: RenderRegistry.MaterialTextureLister,
+    registry: RenderRegistryTable.MaterialTextureLister,
   },
   {
     kind: 'ShadedMaterial',
     registrations: [{ module: '@flighthq/scene3d-resources', registrar: 'registerShadedScene3DMaterialTextures' }],
-    registry: RenderRegistry.MaterialTextureLister,
+    registry: RenderRegistryTable.MaterialTextureLister,
   },
 ];
 
@@ -63,7 +63,7 @@ describe('explainScene3DResourceCoverage', () => {
         kind: 'UnlitMaterial',
         module: '@flighthq/scene3d-resources',
         registrar: 'registerUnlitScene3DMaterialTextures',
-        registry: RenderRegistry.MaterialTextureLister,
+        registry: RenderRegistryTable.MaterialTextureLister,
       },
     ]);
   });
@@ -76,7 +76,7 @@ describe('explainScene3DResourceCoverage', () => {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind: 'UnlitMaterial',
-        registry: RenderRegistry.MaterialTextureLister,
+        registry: RenderRegistryTable.MaterialTextureLister,
       },
     ]);
   });
@@ -93,7 +93,7 @@ describe('explainScene3DResourceCoverage', () => {
       kind: 'ShadedMaterial',
       module: '@flighthq/scene3d-resources',
       registrar: 'registerShadedScene3DMaterialTextures',
-      registry: RenderRegistry.MaterialTextureLister,
+      registry: RenderRegistryTable.MaterialTextureLister,
     });
   });
 
@@ -105,7 +105,7 @@ describe('explainScene3DResourceCoverage', () => {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind: 'ShadedMaterial',
-        registry: RenderRegistry.MaterialTextureLister,
+        registry: RenderRegistryTable.MaterialTextureLister,
       },
     ]);
   });
@@ -118,7 +118,7 @@ describe('explainScene3DResourceCoverage', () => {
       coverage: SceneCoverage.Unavailable,
       facet: RequirementFacet.SceneMaterialKind,
       kind: 'BlinnPhongMaterial',
-      registry: RenderRegistry.MaterialTextureLister,
+      registry: RenderRegistryTable.MaterialTextureLister,
     });
   });
 

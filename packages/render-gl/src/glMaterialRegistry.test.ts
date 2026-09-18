@@ -1,6 +1,6 @@
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import type { GlMaterialRenderer, Material } from '@flighthq/types/contract';
-import { RenderRegistry, StandardMaterialKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMaterialRenderer, registerGlMaterialRenderer, resolveGlMaterialRenderer } from './glMaterialRegistry';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -72,8 +72,8 @@ describe('resolveGlMaterialRenderer', () => {
 
     expect(explainRenderRegistryMisses(state)).toEqual({
       misses: [
-        { kind: TestKind, registry: RenderRegistry.MaterialRenderer },
-        { kind: StandardMaterialKind, registry: RenderRegistry.MaterialRenderer },
+        { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
+        { kind: StandardMaterialKind, registry: RenderRegistryTable.MaterialRenderer },
       ],
       status: 'misses-recorded',
     });
@@ -89,7 +89,7 @@ describe('resolveGlMaterialRenderer', () => {
     expect(resolveGlMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
 
     expect(explainRenderRegistryMisses(state).misses).toEqual([
-      { kind: 'Other', registry: RenderRegistry.MaterialRenderer },
+      { kind: 'Other', registry: RenderRegistryTable.MaterialRenderer },
     ]);
   });
 

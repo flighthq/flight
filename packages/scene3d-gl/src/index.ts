@@ -45,7 +45,7 @@ export {
   registerGlVertexColorMaterial,
   registerGlWireframeMaterial,
   registerGlWrappedDiffusePbrExtension,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   setGlPbrTransmissionSceneColor,
   setGlScene3DTime,
   sheenPbrGlExtension,

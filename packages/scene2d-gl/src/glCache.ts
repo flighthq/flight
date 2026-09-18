@@ -26,8 +26,8 @@ import type {
   Node2D,
   Scene2DRenderer,
   GlRenderState,
-  GlPipeline,
   GlRenderOptions,
+  GlRenderRegistry,
   GlTextureRenderTarget,
   Matrix,
   RenderCache,
@@ -40,10 +40,10 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 export function createGlCacheState(
   ownerState: GlRenderState,
-  pipeline: Readonly<GlPipeline>,
+  registry: Readonly<GlRenderRegistry>,
   options: GlRenderOptions = {},
 ): GlRenderState {
-  const cacheState = createGlRenderState(ownerState.gl, pipeline, options);
+  const cacheState = createGlRenderState(ownerState.gl, registry, options);
   registerGlRenderStateTeardown(ownerState, () => destroyGlRenderState(cacheState));
   return cacheState;
 }

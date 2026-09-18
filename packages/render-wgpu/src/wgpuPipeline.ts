@@ -1,22 +1,13 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { EntityConstruction, WgpuPipeline, WgpuRenderRegistries } from '@flighthq/types/contract';
+import type { WgpuRenderRegistry } from '@flighthq/types/contract';
 
-export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
-  const out = allocateEntity<WgpuRenderRegistries>();
-  initializeEmptyWgpuRegistries(out);
-  return finishEntity(out);
+export function createEmptyWgpuRenderRegistry(): WgpuRenderRegistry {
+  const out = {} as WgpuRenderRegistry;
+  initializeEmptyWgpuRenderRegistry(out);
+  return out;
 }
 
-export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {
-  return { registries } as WgpuPipeline;
-}
-
-export function getWgpuPipelineRegistries(pipeline: Readonly<WgpuPipeline>): Readonly<WgpuRenderRegistries> {
-  return pipeline.registries;
-}
-
-export function initializeEmptyWgpuRegistries(out: EntityConstruction<WgpuRenderRegistries>): void {
+export function initializeEmptyWgpuRenderRegistry(out: WgpuRenderRegistry): void {
   out.compressedTextureDecoder = createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('WgpuCompressedTextureUpload', 'Unregistered');
   out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');

@@ -13,7 +13,7 @@ import type {
 import {
   EntityRuntimeKey,
   ImageResourceReferenceKind,
-  RenderRegistry,
+  RenderRegistryTable,
   RequirementFacet,
   ResourceResolutionState,
   SceneCoverage,
@@ -29,17 +29,17 @@ const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'ShadedMaterial',
     registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuShadedMaterial' }],
-    registry: RenderRegistry.MaterialRenderer,
+    registry: RenderRegistryTable.MaterialRenderer,
   },
   {
     kind: 'image',
     registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuImageTextureResolver' }],
-    registry: RenderRegistry.TextureResolver,
+    registry: RenderRegistryTable.TextureResolver,
   },
   {
     kind: 'RimModifier',
     registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuRimModifier' }],
-    registry: RenderRegistry.ModifierSnippet,
+    registry: RenderRegistryTable.ModifierSnippet,
   },
 ];
 
@@ -80,7 +80,7 @@ describe('explainWgpuScene3DCoverage', () => {
       kind: 'ShadedMaterial',
       module: '@flighthq/scene3d-wgpu',
       registrar: 'registerWgpuShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
     expect(found).toContainEqual({
       coverage: SceneCoverage.Unregistered,
@@ -88,7 +88,7 @@ describe('explainWgpuScene3DCoverage', () => {
       kind: 'image',
       module: '@flighthq/scene3d-wgpu',
       registrar: 'registerWgpuImageTextureResolver',
-      registry: RenderRegistry.TextureResolver,
+      registry: RenderRegistryTable.TextureResolver,
     });
   });
 
@@ -101,7 +101,7 @@ describe('explainWgpuScene3DCoverage', () => {
       kind: 'ShadedMaterial',
       module: '@flighthq/scene3d-wgpu',
       registrar: 'registerWgpuShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
   });
 
@@ -112,7 +112,7 @@ describe('explainWgpuScene3DCoverage', () => {
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
-      registry: RenderRegistry.MaterialRenderer,
+      registry: RenderRegistryTable.MaterialRenderer,
     });
   });
 
@@ -125,12 +125,14 @@ describe('explainWgpuScene3DCoverage', () => {
       kind: 'RimModifier',
       module: '@flighthq/scene3d-wgpu',
       registrar: 'registerWgpuRimModifier',
-      registry: RenderRegistry.ModifierSnippet,
+      registry: RenderRegistryTable.ModifierSnippet,
     });
   });
 
   it('never reports a node-kind entry, since 3D collects meshes structurally', () => {
-    expect(entries(makeWgpuScene3DState().state).some((e) => e.registry === RenderRegistry.NodeRenderer)).toBe(false);
+    expect(entries(makeWgpuScene3DState().state).some((e) => e.registry === RenderRegistryTable.NodeRenderer)).toBe(
+      false,
+    );
   });
 
   it('clears out, so a repeated call does not accumulate', () => {

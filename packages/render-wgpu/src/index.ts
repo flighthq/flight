@@ -6,7 +6,6 @@ export {
   createBitmapFromWgpuScreenRenderTarget,
   createExternalWgpuTexture,
   createWgpuOffscreenRenderState,
-  createWgpuPipeline,
   createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuRenderState,

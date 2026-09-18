@@ -1,8 +1,8 @@
 import type { AppWindow } from './AppWindow';
 import type { Entity } from './Entity';
 import type { GlContextOptions } from './GlContext';
-import type { GlPipeline } from './GlPipeline';
 import type { GlRenderOptions } from './GlRenderOptions';
+import type { GlRenderRegistry } from './GlRenderState';
 import type { GlRenderState } from './GlRenderState';
 import type { GlTextureRenderTarget } from './GlRenderTarget';
 import type { RenderState } from './RenderState';
@@ -33,7 +33,7 @@ export type AppRenderViewTargetOptions = Omit<RenderTargetDescriptor, 'height' |
 
 export interface GlAppRenderViewOptions {
   readonly context?: Readonly<GlContextOptions>;
-  readonly pipeline: Readonly<GlPipeline>;
+  readonly registry: Readonly<GlRenderRegistry>;
   readonly render?: Readonly<GlRenderOptions>;
   readonly target?: Readonly<AppRenderViewTargetOptions>;
 }

@@ -12,7 +12,7 @@ import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
-import type { RenderRegistry, RenderRegistrySignals } from './RenderRegistrySignals';
+import type { RenderRegistrySignals, RenderRegistryTable } from './RenderRegistrySignals';
 import type { Scene2DClipHooks } from './Scene2DRenderer';
 import type { StrokeStyle } from './StrokeStyle';
 
@@ -42,7 +42,7 @@ export interface RenderState extends Entity {
 
 // Pure registration policy shared by every render backend. Members remain optional when importing the
 // corresponding registrar is optional, so an unwired base state carries no table metadata.
-export interface RenderRegistries {
+export interface RenderRegistry {
   canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
   // Opt-in color-adjustment accumulation. The empty slot keeps adjustment/material math out of the
   // base walk; a bound pure function is safe to snapshot across derived pipelines.
@@ -104,12 +104,12 @@ export interface RenderStateRuntime extends EntityRuntime {
   // Opt-in, shakeable registry-miss seam. Core dispatch retains only this nullable callback; the
   // signal allocation/emission and warning policy live in the separately imported diagnostics lane.
   registryMiss:
-    | (((registry: RenderRegistry, kind: Kind) => void) & {
+    | (((registry: RenderRegistryTable, kind: Kind) => void) & {
         clear(): void;
         readonly signals: RenderRegistrySignals;
       })
     | null;
-  registries: RenderRegistries;
+  registries: RenderRegistry;
   // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
   // renderer before reuse. The table itself lives in registries.renderers with the rest of the policy.
   rendererMapId: number;

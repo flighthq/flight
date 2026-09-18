@@ -3,7 +3,7 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
@@ -156,10 +156,7 @@ describe('registerGlCustomMaterialShader', () => {
     const replacement = { fragment: 'replacement', vertex: 'replacement' };
     registerGlCustomMaterialShader(screen, 'ripple', source);
     const snapshot = getGlRenderStateRuntime(screen).registries.customMaterialShaders;
-    const { state: derived } = makeGlScene3DState(
-      undefined,
-      createGlPipeline(getGlRenderStateRuntime(screen).registries),
-    );
+    const { state: derived } = makeGlScene3DState(undefined, { ...getGlRenderStateRuntime(screen).registries });
 
     getGlScene3DRuntime(derived);
     registerGlCustomMaterialShader(screen, 'ripple', replacement);

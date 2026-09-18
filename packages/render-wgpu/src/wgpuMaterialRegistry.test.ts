@@ -1,19 +1,19 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { StandardMaterialKind, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
+import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 import {
   getWgpuMaterialRenderer,
   registerWgpuMaterialRenderer,
   resolveWgpuMaterialRenderer,
 } from './wgpuMaterialRegistry';
-import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
+import { createEmptyWgpuRenderRegistry } from './wgpuPipeline';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
-const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
+const _pipeline = createEmptyWgpuRenderRegistry();
 
 function makeState(): WgpuRenderState {
   // `device` is what the guard's message table dispatches on to name the wgpu registrar.
@@ -85,13 +85,13 @@ describe('resolveWgpuMaterialRenderer', () => {
       resolveWgpuMaterialRenderer(state, makeMaterial(TestKind));
 
       expect(explainRenderRegistryMisses(state).misses).toEqual([
-        { kind: TestKind, registry: RenderRegistry.MaterialRenderer },
+        { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
       ]);
       expect(getMemoryLogSinkEntries(sink)[0]?.data).toMatchObject({
         kind: TestKind,
         message:
           'resolveWgpuMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuMaterialRenderer(state, kind, renderer)',
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       });
     } finally {
       removeLogSink(sink.sink);

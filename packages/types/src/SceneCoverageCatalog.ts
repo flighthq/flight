@@ -1,5 +1,5 @@
 import type { Kind } from './Entity';
-import type { RenderRegistry } from './RenderRegistrySignals';
+import type { RenderRegistryTable } from './RenderRegistrySignals';
 
 // One public registration call that can satisfy a catalog entry. Registrations are ordered: the first
 // one is the primary remedy surfaced by SceneCoverageEntry, while diagnostics may show the full list.
@@ -13,7 +13,7 @@ export interface CatalogRegistration {
 export interface CatalogEntry {
   readonly kind: Kind;
   readonly registrations: readonly CatalogRegistration[];
-  readonly registry: RenderRegistry;
+  readonly registry: RenderRegistryTable;
 }
 
 // A caller supplies the complete catalog for the backend being explained. It stays data rather than a

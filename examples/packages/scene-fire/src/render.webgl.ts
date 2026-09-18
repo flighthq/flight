@@ -9,7 +9,7 @@ import {
 import type { Camera3D, GlEffectState, Node3D, RenderEffect, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   createGlSurface,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   beginGlEffectState,
   createGlEffectState,
   createGlRenderState,
@@ -37,7 +37,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
-export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
   pixelRatio,
 });
 enableFlightDiagnostics(state);

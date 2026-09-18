@@ -16,13 +16,12 @@ import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
   registerWgpuBitmapTextureResolver,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistry } from '@flighthq/render-wgpu/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
@@ -36,21 +35,21 @@ if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environ
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 
-const registries = createEmptyWgpuRegistries();
-const pipeline = createWgpuPipeline({
+const registries = createEmptyWgpuRenderRegistry();
+const registry = {
   ...registries,
   meshMaterialRenderers: withRegistryTableEntry(
     registries.meshMaterialRenderers,
     UnlitMaterialKind,
     unlitWgpuMeshMaterialRenderer,
   ),
-});
+};
 
 const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, pipeline, { format: acquisition.format, pixelRatio: 1 });
+export const state = createWgpuRenderState(acquisition.device, registry, { format: acquisition.format, pixelRatio: 1 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 registerWgpuBitmapTextureResolver(state);

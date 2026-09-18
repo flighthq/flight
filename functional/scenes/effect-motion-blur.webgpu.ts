@@ -38,7 +38,7 @@ import {
   registerWgpuVelocityWriter,
   renderWgpuScene2D,
   renderWgpuVelocity,
-  scene3DWgpuPipeline,
+  defaultScene3DWgpuRenderRegistry,
   setWgpuRenderEffectVelocityTexture,
   ShapeKind,
   createWgpuSurface,
@@ -73,7 +73,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, scene3DWgpuPipeline, {
+export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistry, {
   format: acquisition.format,
   pixelRatio,
 });

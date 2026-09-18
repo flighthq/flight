@@ -11,10 +11,8 @@ import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
-  createEmptyGlRegistries,
-  createGlPipeline,
+  createEmptyGlRenderRegistry,
   createGlRenderState,
-  getGlPipelineRegistries,
   registerGlImageTextureResolver,
   beginGlRenderPass,
   endGlRenderPass,
@@ -36,19 +34,19 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const emptyRegistries = createEmptyGlRegistries();
-const pipeline = createGlPipeline({
+const emptyRegistries = createEmptyGlRenderRegistry();
+const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(
     emptyRegistries.renderers,
     ParticleEmitter2DKind,
     defaultGlParticleEmitter2DRenderer,
   ),
-});
-const state = createGlRenderState(glSurface.context, pipeline, { pixelRatio: 1 });
+};
+const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
-const registries = getGlPipelineRegistries(pipeline);
+const registries = registry;
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }

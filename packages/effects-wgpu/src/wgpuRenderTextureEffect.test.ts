@@ -4,7 +4,7 @@ import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
   createWgpuOffscreenRenderState,
-  createWgpuPipeline,
+  createEmptyWgpuRenderRegistry,
   createWgpuRenderStateForTest,
   createWgpuRenderTexturePool,
   getWgpuRenderStateRuntime,
@@ -166,7 +166,7 @@ describe('offscreen effect pipeline snapshots', () => {
     registerWgpuRenderEffect(screen, 'acme.First', first);
     const offscreen = createWgpuOffscreenRenderState(
       screen.deviceState,
-      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { ...getWgpuRenderStateRuntime(screen).registries },
       { format: screen.format },
     );
     registerWgpuRenderEffect(screen, 'acme.Later', later);
@@ -176,7 +176,7 @@ describe('offscreen effect pipeline snapshots', () => {
 
     const refreshed = createWgpuOffscreenRenderState(
       screen.deviceState,
-      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { ...getWgpuRenderStateRuntime(screen).registries },
       { format: screen.format },
     );
     expect(getWgpuRenderEffectRunner(refreshed, 'acme.Later')).toBe(later);

@@ -1,8 +1,4 @@
-import {
-  createWgpuPipeline,
-  getWgpuRenderStateRuntime,
-  setWgpuRenderTransform2D,
-} from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
 import type { Bitmap, RenderEffect, RenderEffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   acquireWgpuRenderTexture,
@@ -74,7 +70,7 @@ const { render, state, width } = target;
 
 const offscreenState = createWgpuOffscreenRenderState(
   state.deviceState,
-  createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+  { ...getWgpuRenderStateRuntime(state).registries },
   { format: state.format },
 );
 const pool = createWgpuRenderTexturePool();

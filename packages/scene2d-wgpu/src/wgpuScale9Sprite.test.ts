@@ -1,7 +1,6 @@
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
-  getWgpuPipelineRegistries,
   getWgpuRenderStateRuntime,
   installWgpuMock,
   registerWgpuRenderTextureResolver,
@@ -18,7 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState, Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { scene2DWgpuPipeline } from './scene2DWgpuPipeline';
+import { defaultScene2DWgpuRenderRegistry } from './scene2DWgpuPipeline';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter';
 import { defaultWgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite';
@@ -31,7 +30,7 @@ describe('defaultWgpuScale9SpriteRenderer', () => {
     expect(typeof defaultWgpuScale9SpriteRenderer.createData).toBe('function');
     expect(typeof defaultWgpuScale9SpriteRenderer.isDirty).toBe('function');
     expect(defaultWgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
-    expect(getWgpuPipelineRegistries(scene2DWgpuPipeline).renderers.entries.get(Scale9SpriteKind)).toEqual({
+    expect(defaultScene2DWgpuRenderRegistry.renderers.entries.get(Scale9SpriteKind)).toEqual({
       state: RegistryEntryState.Bound,
       value: defaultWgpuScale9SpriteRenderer,
     });

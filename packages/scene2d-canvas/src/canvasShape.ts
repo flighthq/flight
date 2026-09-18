@@ -8,7 +8,7 @@ import type {
   Scene2DRenderer,
   Shape,
 } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState';
@@ -48,7 +48,7 @@ export function renderCanvasShapeCommands(
     const argCount = commands[i + 1] as number;
     const def = getCanvasShapeCommand(state, key);
     if (def !== null) def.draw(context, drawState, commands, i + 2);
-    else getRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeCommandHandler, key);
+    else getRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeCommandHandler, key);
     i += argCount + 2;
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {

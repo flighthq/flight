@@ -13,12 +13,11 @@ import { appendParticleEmitter3DParticle, createParticleEmitter3D } from '@fligh
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
-  createWgpuPipeline,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
+import { createEmptyWgpuRenderRegistry } from '@flighthq/render-wgpu/contract';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
@@ -34,7 +33,7 @@ document.body.style.margin = '0';
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, createWgpuPipeline(createEmptyWgpuRegistries()), {
+export const state = createWgpuRenderState(acquisition.device, createEmptyWgpuRenderRegistry(), {
   format: acquisition.format,
   pixelRatio: 1,
 });

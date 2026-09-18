@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import {
   RegistryEntryState,
-  RenderRegistry,
+  RenderRegistryTable,
   RequirementFacet,
   SceneCoverage,
   StandardMaterialKind,
@@ -63,14 +63,14 @@ function collectGlScene2DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneBlendMode,
         kind,
-        registry: RenderRegistry.BlendRealization,
+        registry: RenderRegistryTable.BlendRealization,
       });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
     out?.push(
-      createShortfallEntry(catalog, true, RequirementFacet.SceneBlendMode, kind, RenderRegistry.BlendRealization),
+      createShortfallEntry(catalog, true, RequirementFacet.SceneBlendMode, kind, RenderRegistryTable.BlendRealization),
     );
   }
 
@@ -86,7 +86,7 @@ function collectGlScene2DCoverageGaps(
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
         kind,
-        registry: RenderRegistry.MaterialRenderer,
+        registry: RenderRegistryTable.MaterialRenderer,
       });
       continue;
     }
@@ -98,7 +98,7 @@ function collectGlScene2DCoverageGaps(
         hasStandard,
         RequirementFacet.SceneMaterialKind,
         kind,
-        RenderRegistry.MaterialRenderer,
+        RenderRegistryTable.MaterialRenderer,
       ),
     );
   }

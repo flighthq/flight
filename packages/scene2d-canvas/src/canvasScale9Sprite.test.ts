@@ -11,11 +11,11 @@ import type { Kind, Renderer } from '@flighthq/types/contract';
 import { RegistryEntryState, Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasPipelineRegistries } from './canvasPipeline';
+import {} from './canvasPipeline';
 import { defaultCanvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './canvasScale9Sprite';
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
 import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { scene2DCanvasPipeline } from './scene2DCanvasPipeline';
+import { defaultScene2DCanvasRenderRegistry } from './scene2DCanvasPipeline';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -31,7 +31,7 @@ afterEach(() => {
 // here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the
 // coupling assertions want to distinguish from a bound renderer.
 function pipelineRenderer(kind: Kind): Renderer | null {
-  const entry = getCanvasPipelineRegistries(scene2DCanvasPipeline).renderers.entries.get(kind);
+  const entry = defaultScene2DCanvasRenderRegistry.renderers.entries.get(kind);
   return entry !== undefined && entry.state === RegistryEntryState.Bound ? entry.value : null;
 }
 

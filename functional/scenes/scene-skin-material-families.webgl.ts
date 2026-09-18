@@ -9,7 +9,7 @@ import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, GlEffectState, Material, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   createGlSurface,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginGlEffectState,
@@ -70,7 +70,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
-export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
   pixelRatio,
 });
 

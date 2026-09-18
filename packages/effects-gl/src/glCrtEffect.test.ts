@@ -1,6 +1,6 @@
 import { createCrtEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { createEmptyGlRegistries, createGlPipeline, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createEmptyGlRenderRegistry, createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
@@ -108,7 +108,7 @@ describe('defaultGlCrtEffectRunner', () => {
 describe('registerGlCrtEffect', () => {
   it('makes the runner resolvable for the CrtEffect kind', () => {
     const canvas = document.createElement('canvas');
-    const state = createGlRenderState(createWebGlContext(canvas), createGlPipeline(createEmptyGlRegistries()));
+    const state = createGlRenderState(createWebGlContext(canvas), createEmptyGlRenderRegistry());
 
     expect(getGlRenderEffectRunner(state, 'CrtEffect')).toBeNull();
     registerGlCrtEffect(state);

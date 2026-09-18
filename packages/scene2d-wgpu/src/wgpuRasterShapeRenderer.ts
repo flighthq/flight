@@ -3,7 +3,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D, Scene2DRenderer, Shape, WgpuRenderState } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,
@@ -35,7 +35,7 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
 
   const rasterizer = getWgpuShapeRasterizer(state);
   if (rasterizer === null) {
-    runtime.registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    runtime.registryMiss?.(RenderRegistryTable.ShapeRasterizer, ShapeKind);
     return;
   }
 

@@ -16,7 +16,7 @@ import {
 } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, scene3DGlPipeline } from '@flighthq/scene3d-gl';
+import { drawGlScene3D, defaultScene3DGlRenderRegistry } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -61,7 +61,7 @@ canvas.width = Math.round(applicationWindow.width * scale);
 canvas.height = Math.round(applicationWindow.height * scale);
 const resources = createGlRenderViewResources(
   context,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   canvas.width,
   canvas.height,
   scale,

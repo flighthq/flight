@@ -1,22 +1,13 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { EntityConstruction, GlPipeline, GlRenderRegistries } from '@flighthq/types/contract';
+import type { GlRenderRegistry } from '@flighthq/types/contract';
 
-export function createEmptyGlRegistries(): GlRenderRegistries {
-  const out = allocateEntity<GlRenderRegistries>();
-  initializeEmptyGlRegistries(out);
-  return finishEntity(out);
+export function createEmptyGlRenderRegistry(): GlRenderRegistry {
+  const out = {} as GlRenderRegistry;
+  initializeEmptyGlRenderRegistry(out);
+  return out;
 }
 
-export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
-  return { registries } as GlPipeline;
-}
-
-export function getGlPipelineRegistries(pipeline: Readonly<GlPipeline>): Readonly<GlRenderRegistries> {
-  return pipeline.registries;
-}
-
-export function initializeEmptyGlRegistries(out: EntityConstruction<GlRenderRegistries>): void {
+export function initializeEmptyGlRenderRegistry(out: GlRenderRegistry): void {
   out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
   out.compressedTextureDecoder = createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
   out.compressedTextureUpload = createSlotTable('GlCompressedTextureUpload', 'Unregistered');

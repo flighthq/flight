@@ -7,15 +7,13 @@ import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
-  createCanvasPipeline,
   createCanvasRenderState,
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRegistries,
+  createEmptyCanvasRenderRegistry,
   defaultCanvasBitmapTextRenderer,
   endCanvasRenderPass,
-  getCanvasPipelineRegistries,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
   registerCanvasSurfaceCreator,
@@ -48,23 +46,23 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRegistries();
-const pipeline = createCanvasPipeline({
+const emptyRegistries = createEmptyCanvasRenderRegistry();
+const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, BitmapTextKind, defaultCanvasBitmapTextRenderer),
-});
+};
 
 const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
 );
-const state = createCanvasRenderState(pipeline, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
   pixelRatio: 1,
 });
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
-const registries = getCanvasPipelineRegistries(pipeline);
+const registries = registry;
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }

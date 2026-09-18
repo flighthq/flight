@@ -20,7 +20,7 @@ import type {
   Scene2DRenderer,
   ShapeCommandToken,
 } from '@flighthq/types/contract';
-import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { buildGlScale9Mapper } from './glScale9Mapper';
@@ -83,7 +83,7 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   // rather than quietly dropping the fill.
   const rasterizer = getGlShapeRasterizer(state);
   if (rasterizer === null) {
-    getGlRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, Scale9ShapeKind);
+    getGlRenderStateRuntime(state).registryMiss?.(RenderRegistryTable.ShapeRasterizer, Scale9ShapeKind);
     return;
   }
 

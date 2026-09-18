@@ -12,7 +12,7 @@ import {
 import type { Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  scene3DGlPipeline,
+  defaultScene3DGlRenderRegistry,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
@@ -53,7 +53,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, CANVAS_WIDTH, CANVAS_HEIGHT);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
-export const state = createGlRenderState(glSurface.context, scene3DGlPipeline, {
+export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistry, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   imageSurfaceProvider: webImageSurfaceCreator,

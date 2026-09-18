@@ -1,4 +1,4 @@
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 // Finds the registry misses a captured page reported that mean something did not draw.
 //
@@ -17,7 +17,7 @@ import { RenderRegistry } from '@flighthq/types/contract';
 // gate rather than a second source of noise.
 export interface CaptureRegistryMiss {
   kind: string;
-  registry: RenderRegistry;
+  registry: RenderRegistryTable;
 }
 
 export function findUndrawnRegistryMisses(logs: readonly unknown[]): CaptureRegistryMiss[] {
@@ -37,7 +37,7 @@ export function findUndrawnRegistryMisses(logs: readonly unknown[]): CaptureRegi
     const key = `${registry}:${kind}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    misses.push({ kind, registry: registry as RenderRegistry });
+    misses.push({ kind, registry: registry as RenderRegistryTable });
   }
   return misses;
 }
@@ -48,13 +48,13 @@ export function formatUndrawnRegistryMisses(misses: readonly Readonly<CaptureReg
 }
 
 const UNDRAWN_REGISTRIES: ReadonlySet<number> = new Set([
-  RenderRegistry.MaterialRenderer,
-  RenderRegistry.ShapeRasterizer,
+  RenderRegistryTable.MaterialRenderer,
+  RenderRegistryTable.ShapeRasterizer,
 ]);
 
 // The enum is numeric, so a raw value in a failure line would send a reader to the enum declaration to
 // learn what failed.
 const REGISTRY_NAMES: Readonly<Record<number, string>> = {
-  [RenderRegistry.MaterialRenderer]: 'no material renderer',
-  [RenderRegistry.ShapeRasterizer]: 'no shape rasterizer',
+  [RenderRegistryTable.MaterialRenderer]: 'no material renderer',
+  [RenderRegistryTable.ShapeRasterizer]: 'no shape rasterizer',
 };
