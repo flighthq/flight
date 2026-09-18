@@ -14,7 +14,7 @@ describe('permission host ownership', () => {
 
   it('defines the exact narrow provider and publishes it through the system Host group', () => {
     const permissionTypes = readFileSync(resolve('packages/types/src/Permission.ts'), 'utf8');
-    expect(permissionTypes).toMatch(/export interface HostPermissionsCapability extends Entity/u);
+    expect(permissionTypes).toMatch(/export interface HostPermissionsCapability \{/u);
     expect(permissionTypes).toContain('readonly notification: HostNotificationPermissionCapability;');
     expect(permissionTypes).toContain('queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;');
     expect(permissionTypes).toContain(

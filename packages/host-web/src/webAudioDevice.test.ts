@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { AudioDeviceHandle, HostAudioDeviceCapability } from '@flighthq/types/contract';
 import type { AudioSourceHandle } from '@flighthq/types/contract';
 
@@ -251,10 +250,6 @@ describe('initializeWebAudioDeviceBackend', () => {
 });
 
 describe('webHostAudioDevice', () => {
-  it('is an Entity', () => {
-    expect(EntityRuntimeKey in webHostAudioDevice).toBe(true);
-  });
-
   it('is a stable singleton', () => {
     expect(webHostAudioDevice).toBe(webHostAudioDevice);
   });

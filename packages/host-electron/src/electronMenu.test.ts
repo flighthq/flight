@@ -4,7 +4,6 @@ import type {
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostMenu,
@@ -61,26 +60,7 @@ function clickItem(built: ElectronMenuItemOptions[][], id: string): void {
   item?.click?.();
 }
 
-function menuLeaf(factory: () => object): () => void {
-  return () => {
-    it('constructs an Entity-backed menu provider', () => {
-      expect(EntityRuntimeKey in factory()).toBe(true);
-    });
-  };
-}
-
-const menuApp = menuLeaf(() => electronHostAppMenu(fakeElectron().electron));
-const menuPopup = menuLeaf(() => electronHostMenuPopup(fakeElectron().electron));
-
-describe('electronHostAppMenu', menuApp);
-
 describe('electronHostMenu', () => {
-  it('returns an Entity-composed capability bundle and providers', () => {
-    const capabilities = electronHostMenu(fakeElectron().electron);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
-    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
-  });
-
   it('builds and applies the application menu and reports clicks via subscribeSelect', () => {
     const { electron, built, applied } = fakeElectron();
     const backend = _slots(electron);
@@ -158,10 +138,6 @@ describe('electronHostMenu', () => {
     expect(await pending).toBe('paste');
   });
 });
-describe('electronHostMenuPopup', menuPopup);
-
-describe('electronHostMenuSelect', menuLeaf(electronHostMenuSelect));
-
 // The merged MenuBackend is gone; these tests exercise the three slots that replaced it. This helper
 // recomposes the old surface so each assertion still names the operation it is really testing.
 function _slots(api: ElectronApi): {

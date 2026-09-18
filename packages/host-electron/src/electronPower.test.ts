@@ -1,5 +1,4 @@
 import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostPower,
@@ -78,7 +77,6 @@ function powerLeaf(factory: () => object | undefined): () => void {
     it('constructs an Entity-backed power provider', () => {
       const provider = factory();
       expect(provider).toBeDefined();
-      expect(EntityRuntimeKey in provider!).toBe(true);
     });
   };
 }
@@ -115,8 +113,6 @@ describe('electron power slot coverage', () => {
 describe('electronHostPower', () => {
   it('returns Entity-composed slots', () => {
     const slots = electronHostPower(fakeElectron({}).electron);
-    expect(EntityRuntimeKey in slots).toBe(true);
-    for (const provider of Object.values(slots)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('getStatus reports no battery level and infers charging from AC power', () => {

@@ -4,7 +4,6 @@ import type {
   ElectronOpenDialogOptions,
   ElectronSaveDialogOptions,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostDialog,
@@ -50,10 +49,9 @@ function fakeElectron(overrides: {
 }
 
 describe('electronHostDialog', () => {
-  it('constructs the exact Entity-backed dialog group', () => {
+  it('constructs the exact dialog group', () => {
     const dialog = electronHostDialog(fakeElectron({}).electron);
     expect(Object.keys(dialog).sort()).toEqual(['directoryOpen', 'fileOpen', 'fileSave', 'message']);
-    for (const provider of Object.values(dialog)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
 
@@ -67,14 +65,13 @@ describe('electronHostDirectoryOpenDialog', () => {
 });
 
 describe('electronHostFileOpenDialog', () => {
-  it('exposes independent Entity providers', () => {
+  it('exposes independent providers', () => {
     const electron = fakeElectron({}).electron;
     const providers = [
       electronHostDirectoryOpenDialog(electron),
       electronHostFileOpenDialog(electron),
       electronHostFileSaveDialog(electron),
     ];
-    expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
     expect(new Set(providers).size).toBe(3);
   });
 
@@ -87,7 +84,6 @@ describe('electronHostFileOpenDialog', () => {
     expect(result.outcome).toBe('selected');
     if (result.outcome === 'selected') {
       expect(result.handles.map((handle) => handle.name)).toEqual(['a', 'b']);
-      expect(result.handles.every((handle) => EntityRuntimeKey in handle)).toBe(true);
     }
     expect(calls.openOptions).toEqual({
       filters: [{ extensions: ['txt', 'md'], name: 'Text' }],

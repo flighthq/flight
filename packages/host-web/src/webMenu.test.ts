@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import {
   initializeWebMenuHighlightBackend,
   initializeWebMenuPopupBackend,
@@ -20,10 +18,6 @@ describe('initializeWebMenuPopupBackend', () => {
 });
 
 describe('webHostMenuHighlight', () => {
-  it('is an Entity provider', () => {
-    expect(EntityRuntimeKey in webHostMenuHighlight).toBe(true);
-  });
-
   it('delivers to a subscriber and stops on that subscription unsubscribe', () => {
     const seen: string[] = [];
     const unsubscribe = webHostMenuHighlight.subscribe((id) => seen.push(id));
@@ -45,10 +39,6 @@ describe('webHostMenuHighlight', () => {
   });
 });
 describe('webHostMenuPopup', () => {
-  it('is an Entity provider', () => {
-    expect(EntityRuntimeKey in webHostMenuPopup).toBe(true);
-  });
-
   // ★ The web provider must expose popup and highlight ONLY. Its old application/select members were
   // stubs — an unconditional `false` and a no-op unsubscribe — which made web structurally
   // indistinguishable from a host that really implements them. Deleting them is the point of this slice,

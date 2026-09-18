@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -15,7 +14,6 @@ describe('createWebPermissionsBackend', () => {
     const first = createWebPermissionsBackend();
     const second = createWebPermissionsBackend();
     expect(first).not.toBe(second);
-    expect(EntityRuntimeKey in first).toBe(true);
     expect(Object.keys(first).sort()).toEqual([
       'notification',
       'queryPermission',
@@ -145,7 +143,6 @@ describe('createWebPermissionsBackend', () => {
   });
 
   it('publishes one stable provider and its shared Notification permission identity', () => {
-    expect(EntityRuntimeKey in webHostPermissions).toBe(true);
     expect(webHostNotificationPermission).toBe(webHostPermissions.notification);
   });
 });

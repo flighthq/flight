@@ -1,5 +1,4 @@
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostShortcut,
@@ -35,7 +34,6 @@ describe('electronHostShortcut', () => {
   it('constructs the exact Entity-backed shortcut group', () => {
     const shortcut = electronHostShortcut(fakeElectron().electron);
     expect(Object.keys(shortcut).sort()).toEqual(['query', 'trigger']);
-    for (const provider of Object.values(shortcut)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
 
@@ -44,7 +42,6 @@ describe('electronHostShortcutQuery', () => {
     const fake = fakeElectron();
     fake.callbacks.set('Control+K', () => {});
     const provider = electronHostShortcutQuery(fake.electron);
-    expect(EntityRuntimeKey in provider).toBe(true);
     await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
     await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
   });
@@ -55,11 +52,9 @@ describe('electronHostShortcutTrigger', () => {
     const fake = fakeElectron();
     const provider = electronHostShortcutTrigger(fake.electron);
     const trigger = vi.fn();
-    expect(EntityRuntimeKey in provider).toBe(true);
     const outcome = await provider.subscribe('Control+K', trigger);
     expect(outcome.reason).toBe('subscribed');
     if (outcome.reason !== 'subscribed') return;
-    expect(EntityRuntimeKey in outcome.subscription).toBe(true);
     fake.callbacks.get('Control+K')?.();
     expect(trigger).toHaveBeenCalledTimes(1);
     await expect(provider.unsubscribe(outcome.subscription)).resolves.toEqual({ reason: 'unsubscribed' });

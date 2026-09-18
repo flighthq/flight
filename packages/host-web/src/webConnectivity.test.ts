@@ -1,5 +1,4 @@
 import type { ConnectivityStatus } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createWebConnectivityBackend,
@@ -31,7 +30,6 @@ function status(): ConnectivityStatus {
 describe('createWebConnectivityBackend', () => {
   it('returns one Entity implementing all three provider facets', () => {
     const backend = createWebConnectivityBackend();
-    expect(EntityRuntimeKey in backend).toBe(true);
     expect(backend.getStatus).toBeTypeOf('function');
     expect(backend.subscribe).toBeTypeOf('function');
     expect(backend.detectReachability).toBeTypeOf('function');
@@ -107,6 +105,5 @@ describe('webHost connectivity', () => {
       status: webHostConnectivityStatus,
     });
     expect(new Set(Object.values(webHost.connectivity)).size).toBe(3);
-    expect(EntityRuntimeKey in webHost.connectivity.status).toBe(true);
   });
 });

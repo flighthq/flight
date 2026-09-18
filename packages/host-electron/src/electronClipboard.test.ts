@@ -1,5 +1,4 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { electronHostClipboard } from './electronClipboard';
 
@@ -54,18 +53,9 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
-function clipboardLeaf(slot: keyof ReturnType<typeof electronHostClipboard>): () => void {
-  return () => {
-    it('constructs an Entity-backed provider in the clipboard group', () => {
-      expect(EntityRuntimeKey in electronHostClipboard(fakeElectron())[slot]).toBe(true);
-    });
-  };
-}
-
 describe('electronHostClipboard', () => {
   it('round-trips text through the Electron clipboard', async () => {
     const backend = clipboardProvider(fakeElectron());
-    expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
     expect(await backend.hasText()).toBe(true);
@@ -101,8 +91,3 @@ describe('electronHostClipboard', () => {
     expect(await backend.readText()).toBe('');
   });
 });
-describe('electronHostClipboardBookmark', clipboardLeaf('bookmark'));
-describe('electronHostClipboardFormats', clipboardLeaf('formats'));
-describe('electronHostClipboardImage', clipboardLeaf('image'));
-
-describe('electronHostClipboardText', clipboardLeaf('text'));

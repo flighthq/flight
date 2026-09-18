@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { initializeWebAudioBackend, webHostAudio } from './webAudio';
 
 describe('initializeWebAudioBackend', () => {
@@ -8,8 +6,7 @@ describe('initializeWebAudioBackend', () => {
   });
 });
 describe('webHostAudio', () => {
-  it('is an HostAudioCodecCapability entity', () => {
-    expect(Object.hasOwn(webHostAudio, EntityRuntimeKey)).toBe(true);
+  it('is a HostAudioCodecCapability', () => {
     expect(typeof webHostAudio.canPlayType).toBe('function');
   });
 });

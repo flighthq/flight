@@ -1,5 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { createWebGeolocationBackend, initializeWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
 
 describe('createWebGeolocationBackend', () => {
@@ -79,8 +77,7 @@ describe('initializeWebGeolocationBackend', () => {
 });
 
 describe('webHostGeolocation', () => {
-  it('is a HostGeolocationCapability entity', () => {
-    expect(Object.hasOwn(webHostGeolocation, EntityRuntimeKey)).toBe(true);
+  it('is a HostGeolocationCapability', () => {
     expect(typeof webHostGeolocation.isAvailable).toBe('function');
     expect(typeof webHostGeolocation.getCurrentPosition).toBe('function');
     expect(typeof webHostGeolocation.getCurrentPositionResult).toBe('function');

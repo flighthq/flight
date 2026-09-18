@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -16,9 +15,7 @@ import {
 describe('createWebAppCapabilities', () => {
   it('creates the exact genuine web app slots as Entities', () => {
     const capabilities = createWebAppCapabilities();
-    expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual(['badge', 'focus', 'locale', 'name', 'quit', 'ready', 'relaunch']);
-    for (const backend of Object.values(capabilities)) expect(EntityRuntimeKey in backend).toBe(true);
   });
 
   it('reports document and locale facts without inventing native process facts', () => {

@@ -1,5 +1,4 @@
 import type { TauriApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { tauriHostClipboard, tauriHostClipboardText } from './tauriClipboard';
 
@@ -29,7 +28,6 @@ describe('tauriHostClipboard', () => {
   it('constructs exactly the text group', () => {
     const group = tauriHostClipboard(fakeTauri().tauri);
     expect(Object.keys(group)).toEqual(['text']);
-    expect(EntityRuntimeKey in group.text).toBe(true);
   });
 });
 
@@ -37,7 +35,6 @@ describe('tauriHostClipboardText', () => {
   it('round-trips text through the Tauri clipboard', async () => {
     const { tauri, calls } = fakeTauri();
     const backend = tauriHostClipboardText(tauri);
-    expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
     expect(await backend.hasText()).toBe(true);

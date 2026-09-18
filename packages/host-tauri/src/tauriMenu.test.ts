@@ -4,7 +4,6 @@ import type {
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { tauriHostMenu, tauriHostAppMenu, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu';
 
@@ -67,16 +66,9 @@ const template: MenuItemTemplate[] = [
   { label: 'More', submenu: [{ id: 'nested', label: 'Nested' }] },
 ];
 
-describe('tauriHostAppMenu', () => {
-  it('constructs the application provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppMenu(fakeTauri().tauri)).toBe(true));
-});
-
 describe('tauriHostMenu', () => {
   it('returns an Entity-composed capability bundle and providers', () => {
     const capabilities = tauriHostMenu(fakeTauri().tauri);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
-    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('installs an application menu and routes item clicks to the select listener', async () => {
@@ -192,16 +184,6 @@ describe('tauriHostMenu', () => {
     } as unknown as TauriApi;
     expect(await _slots(tauri).popupContextMenu([{ id: 'a', label: 'A' }], 0, 0)).toBeNull();
   });
-});
-
-describe('tauriHostMenuPopup', () => {
-  it('constructs the popup provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostMenuPopup(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostMenuSelect', () => {
-  it('constructs the selection provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostMenuSelect(fakeTauri().tauri)).toBe(true));
 });
 
 async function flush(): Promise<void> {

@@ -1,5 +1,4 @@
 import type { TauriApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -47,9 +46,7 @@ function fakeTauri() {
 describe('tauriHostApp', () => {
   it('publishes exactly the seven genuine Entity-backed slots', () => {
     const app = tauriHostApp(fakeTauri().tauri);
-    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
-    for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('serves identity and locale from construction-time prefetches', async () => {
@@ -72,39 +69,4 @@ describe('tauriHostApp', () => {
     await flush();
     expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
   });
-});
-
-describe('tauriHostAppHide', () => {
-  it('constructs the hide provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppHide(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppLocale', () => {
-  it('constructs the locale provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppLocale(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppName', () => {
-  it('constructs the name provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppName(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppQuit', () => {
-  it('constructs the quit provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppQuit(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppRelaunch', () => {
-  it('constructs the relaunch provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppRelaunch(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppShow', () => {
-  it('constructs the show provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppShow(fakeTauri().tauri)).toBe(true));
-});
-
-describe('tauriHostAppVersion', () => {
-  it('constructs the version provider independently', () =>
-    expect(EntityRuntimeKey in tauriHostAppVersion(fakeTauri().tauri)).toBe(true));
 });

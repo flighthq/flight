@@ -140,7 +140,7 @@ describe('media host-seam closure', () => {
       .map(({ name }) => name);
     expect(notGraphFirst).toEqual([]);
     expect(methods.filter(({ text }) => referencesBrowserMediaType(text)).map(({ name }) => name)).toEqual([]);
-    expect(interfaceHeritage('HostAudioMixerCapability')).toEqual(['Entity']);
+    expect(interfaceHeritage('HostAudioMixerCapability')).toEqual([]);
     expect(interfacePropertySignatures('HostAudioCapabilities', new Set(['mixer']))).toEqual([
       'readonly mixer?: HostAudioMixerCapability',
     ]);

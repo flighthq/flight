@@ -1,5 +1,4 @@
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -41,18 +40,9 @@ function fakeElectron() {
   return { electron, listeners };
 }
 
-function protocolLeaf(factory: () => object): () => void {
-  return () => {
-    it('constructs an Entity-backed protocol provider', () => {
-      expect(EntityRuntimeKey in factory()).toBe(true);
-    });
-  };
-}
-
 describe('electronHostProtocol', () => {
-  it('publishes five exact Entity-backed protocol slots', () => {
+  it('publishes five exact protocol slots', () => {
     const protocol = electronHostProtocol(fakeElectron().electron);
-    expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol).sort()).toEqual([
       'default',
       'open',
@@ -60,7 +50,6 @@ describe('electronHostProtocol', () => {
       'registrationQuery',
       'unregistration',
     ]);
-    for (const provider of Object.values(protocol)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('registers, queries, enumerates, defaults, and unregisters a scheme', () => {
@@ -84,17 +73,7 @@ describe('electronHostProtocol', () => {
     expect(fake.listeners.get('open-url')).toHaveLength(0);
   });
 });
-const protocolDefault = protocolLeaf(() => electronHostProtocolDefault(fakeElectron().electron));
-const protocolOpen = protocolLeaf(() => electronHostProtocolOpen(fakeElectron().electron));
-const protocolRegistration = protocolLeaf(() => electronHostProtocolRegistration(fakeElectron().electron));
-const protocolRegistrationQuery = protocolLeaf(() => electronHostProtocolRegistrationQuery(fakeElectron().electron));
-const protocolUnregistration = protocolLeaf(() => electronHostProtocolUnregistration(fakeElectron().electron));
 
-describe('electronHostProtocolDefault', protocolDefault);
-describe('electronHostProtocolOpen', protocolOpen);
-describe('electronHostProtocolRegistration', protocolRegistration);
-describe('electronHostProtocolRegistrationQuery', protocolRegistrationQuery);
-describe('electronHostProtocolUnregistration', protocolUnregistration);
 describe('populateElectronHostProtocol', () => {
   it('is the construction initializer of electronHostProtocol', () => {
     expect(typeof populateElectronHostProtocol).toBe('function');

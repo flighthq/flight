@@ -1,5 +1,4 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHostClipboard, capacitorHostClipboardImage, capacitorHostClipboardText } from './capacitorClipboard';
 
@@ -31,7 +30,6 @@ describe('capacitorHostClipboard', () => {
   it('composes the state-coupled image and text slots from one Entity', () => {
     const clipboard = capacitorHostClipboard(fakeCapacitor().capacitor);
     expect(clipboard.image).toBe(clipboard.text);
-    expect(EntityRuntimeKey in clipboard.image).toBe(true);
   });
 });
 
@@ -48,7 +46,6 @@ describe('capacitorHostClipboardText', () => {
   it('round-trips text through the Capacitor clipboard', async () => {
     const { capacitor, calls } = fakeCapacitor();
     const hostClipboardText = capacitorHostClipboardText(capacitor);
-    expect(EntityRuntimeKey in hostClipboardText).toBe(true);
     expect(await hostClipboardText.writeText('hi')).toBe(true);
     expect(await hostClipboardText.readText()).toBe('hi');
     expect(await hostClipboardText.hasText()).toBe(true);

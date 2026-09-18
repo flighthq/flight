@@ -1,5 +1,4 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { capacitorHostProtocol, capacitorHostProtocolOpen } from './capacitorProtocol';
@@ -26,9 +25,7 @@ describe('capacitorHostProtocol', () => {
       },
     } as unknown as CapacitorApi;
     const protocol = capacitorHostProtocol(capacitor);
-    expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol)).toEqual(['open']);
-    expect(EntityRuntimeKey in protocol.open).toBe(true);
     let url = '';
     const off = protocol.open.subscribe((next) => (url = next));
     await flush();
@@ -37,12 +34,5 @@ describe('capacitorHostProtocol', () => {
     off();
     await flush();
     expect(removed).toBe(1);
-  });
-});
-
-describe('capacitorHostProtocolOpen', () => {
-  it('constructs the open provider as an Entity', () => {
-    const capacitor = { app: { addListener: async () => ({ async remove() {} }) } } as unknown as CapacitorApi;
-    expect(EntityRuntimeKey in capacitorHostProtocolOpen(capacitor)).toBe(true);
   });
 });

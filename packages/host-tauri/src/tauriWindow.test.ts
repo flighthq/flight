@@ -1,6 +1,5 @@
 import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
 import { tauriHostWindow } from './tauriWindow';
@@ -102,8 +101,6 @@ describe('tauriHostWindow', () => {
     const { tauri } = fakeTauri();
     const backend = tauriHostWindow(tauri);
 
-    // The group is a plain struct of capability slots; each slot is the Entity that carries the hooks.
-    for (const capability of Object.values(backend)) expect(EntityRuntimeKey in capability!).toBe(true);
     expect(Object.keys(backend).sort()).toEqual([
       'appearance',
       'attach',

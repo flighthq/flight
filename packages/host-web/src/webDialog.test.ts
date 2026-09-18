@@ -1,5 +1,4 @@
 import { getFileDialogHandleOperations } from '@flighthq/dialog/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   initializeWebDirectoryOpenDialogBackend,
@@ -128,7 +127,6 @@ function fileSystemHandle(
 }
 describe('webHostDirectoryOpenDialog', () => {
   it('is an Entity installed in the independent directory-open slot', () => {
-    expect(EntityRuntimeKey in webHostDirectoryOpenDialog).toBe(true);
     expect(webHostDirectoryOpenDialog).not.toBe(webHostFileOpenDialog);
     expect(webHost.dialog.directoryOpen).toBe(webHostDirectoryOpenDialog);
   });
@@ -148,14 +146,12 @@ describe('webHostDirectoryOpenDialog', () => {
     expect(result.outcome).toBe('selected');
     if (result.outcome === 'selected') {
       expect(result.handle.kind).toBe('Directory');
-      expect(EntityRuntimeKey in result.handle).toBe(true);
     }
   });
 });
 
 describe('webHostFileOpenDialog', () => {
   it('is an Entity installed in the independent file-open slot', () => {
-    expect(EntityRuntimeKey in webHostFileOpenDialog).toBe(true);
     expect(webHostFileOpenDialog).not.toBe(webHostDirectoryOpenDialog);
     expect(webHostFileOpenDialog).not.toBe(webHostFileSaveDialog);
     expect(webHost.dialog.fileOpen).toBe(webHostFileOpenDialog);
@@ -270,7 +266,6 @@ describe('webHostFileOpenDialog', () => {
 
 describe('webHostFileSaveDialog', () => {
   it('is an Entity installed in the independent file-save slot', () => {
-    expect(EntityRuntimeKey in webHostFileSaveDialog).toBe(true);
     expect(webHostFileSaveDialog).not.toBe(webHostFileOpenDialog);
     expect(webHost.dialog.fileSave).toBe(webHostFileSaveDialog);
   });
@@ -327,7 +322,6 @@ describe('webHostFileSaveDialog', () => {
 
 describe('webHostImageOpenDialog', () => {
   it('is a distinct Entity installed in the image-open slot', () => {
-    expect(EntityRuntimeKey in webHostImageOpenDialog).toBe(true);
     expect(webHostImageOpenDialog).not.toBe(webHostPhotoCaptureDialog);
     expect(webHost.dialog.imageOpen).toBe(webHostImageOpenDialog);
   });
@@ -347,7 +341,6 @@ describe('webHostImageOpenDialog', () => {
 
 describe('webHostMessageDialog', () => {
   it('is an Entity installed in the message slot', () => {
-    expect(EntityRuntimeKey in webHostMessageDialog).toBe(true);
     expect(webHost.dialog.message).toBe(webHostMessageDialog);
   });
 
@@ -368,7 +361,6 @@ describe('webHostMessageDialog', () => {
 
 describe('webHostPhotoCaptureDialog', () => {
   it('is a distinct Entity installed in the photo-capture slot', () => {
-    expect(EntityRuntimeKey in webHostPhotoCaptureDialog).toBe(true);
     expect(webHostPhotoCaptureDialog).not.toBe(webHostImageOpenDialog);
     expect(webHost.dialog.photoCapture).toBe(webHostPhotoCaptureDialog);
   });
@@ -403,7 +395,6 @@ describe('webHostPhotoCaptureDialog', () => {
 
 describe('webHostPromptDialog', () => {
   it('is an Entity installed in the prompt slot', () => {
-    expect(EntityRuntimeKey in webHostPromptDialog).toBe(true);
     expect(webHost.dialog.prompt).toBe(webHostPromptDialog);
   });
 
@@ -425,7 +416,6 @@ describe('webHostPromptDialog', () => {
 
 describe('webHostVideoCaptureDialog', () => {
   it('is a distinct Entity installed in the video-capture slot', () => {
-    expect(EntityRuntimeKey in webHostVideoCaptureDialog).toBe(true);
     expect(webHostVideoCaptureDialog).not.toBe(webHostPhotoCaptureDialog);
     expect(webHost.dialog.videoCapture).toBe(webHostVideoCaptureDialog);
   });

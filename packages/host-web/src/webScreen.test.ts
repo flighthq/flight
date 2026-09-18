@@ -1,5 +1,4 @@
 import { createScreenInfo } from '@flighthq/screen/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createWebScreenCapabilities, initializeWebScreenCapabilities } from './webScreen';
@@ -7,10 +6,9 @@ import { createWebScreenCapabilities, initializeWebScreenCapabilities } from './
 afterEach(() => vi.restoreAllMocks());
 
 describe('createWebScreenCapabilities', () => {
-  it('publishes four Entity-backed slots unconditionally', () => {
+  it('publishes four slots unconditionally', () => {
     const capabilities = createWebScreenCapabilities();
     expect(Object.keys(capabilities)).toEqual(['change', 'details', 'permissionChange', 'query']);
-    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('removes the exact pointer handler and clears cursor state on repeatable destroy', () => {
