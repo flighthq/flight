@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
+  HostTarget,
   HostWgpuCapability,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
-  WgpuScreenSurface,
 } from '@flighthq/types/contract';
 
 // Acquires the color view a screen pass attaches to, sizing the target's storage to the surface first.
@@ -32,11 +32,11 @@ export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuS
 export function createWgpuScreenRenderTarget(
   wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
-  surface: WgpuScreenSurface,
+  target: HostTarget,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): WgpuScreenRenderTarget {
   const out = allocateEntity<WgpuScreenRenderTarget>();
-  initializeWgpuScreenRenderTarget(out, wgpuHost, device, surface, options);
+  initializeWgpuScreenRenderTarget(out, wgpuHost, device, target, options);
   return finishEntity(out);
 }
 
@@ -67,19 +67,17 @@ export function initializeWgpuScreenRenderTarget(
   out: EntityConstruction<WgpuScreenRenderTarget>,
   wgpuHost: Readonly<HostWgpuCapability>,
   device: GPUDevice,
-  surface: WgpuScreenSurface,
+  target: HostTarget,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): void {
-  // The host owns how a surface yields a presentation context — the web adapter reaches for
-  // getContext('webgpu'), a native host for its own swap chain — so the binding goes through the backend
-  // rather than through a DOM call in the renderer.
   const format = options.format ?? 'bgra8unorm';
-  const context = wgpuHost.attachSurface(surface, {
+  const result = wgpuHost.attachSurface(target, {
     alphaMode: options.alphaMode ?? 'premultiplied',
     device,
     format,
   });
-  if (context === null) throw new Error('createWgpuScreenRenderTarget: the surface cannot present WebGPU.');
+  if (result === null) throw new Error('createWgpuScreenRenderTarget: the target cannot present WebGPU.');
+  const { context, surface } = result;
 
   const width = Math.max(1, surface.width);
   const height = Math.max(1, surface.height);

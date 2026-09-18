@@ -5,17 +5,15 @@ import type {
   HostWgpuCapability,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
-  WgpuScreenSurface,
   WgpuSurface,
 } from '@flighthq/types/contract';
 
 export async function createWgpuSurface(
   capability: Readonly<HostWgpuCapability>,
   target: HostTarget,
-  screenSurface: WgpuScreenSurface,
   options?: Readonly<WgpuHostAcquisitionOptions>,
 ): Promise<WgpuSurface | null> {
-  const acquisition = await capability.acquire(screenSurface, options ?? {});
+  const acquisition = await capability.acquire(target, options ?? {});
   const surface = allocateEntity<WgpuSurface>();
   initializeWgpuSurface(surface, target, acquisition);
   return finishEntity(surface);

@@ -1,29 +1,23 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
-  HostTarget,
   HostWgpuCapability,
   WgpuHostAcquisition,
   WgpuSurfaceAttachResult,
 } from '@flighthq/types/contract';
 
-export function createTestHostTarget(canvas: HTMLCanvasElement): HostTarget {
-  const target = allocateEntity<HostTarget>();
-  (target as EntityConstruction<HostTarget>).__brand = 'HostTarget' as const;
-  _testTargets.set(target, canvas);
-  return target;
-}
+import { getCanvasForTarget } from './webHostTarget';
 
-export function createTestWgpuHostBackend(): HostWgpuCapability {
+export function createWebHostWgpuContext(): HostWgpuCapability {
   const out = allocateEntity<HostWgpuCapability>();
-  initializeTestWgpuHostBackend(out);
+  initializeWebHostWgpuContext(out);
   return finishEntity(out);
 }
 
-function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapability>): void {
+export function initializeWebHostWgpuContext(out: EntityConstruction<HostWgpuCapability>): void {
   out.acquire = async (target, options): Promise<WgpuHostAcquisition> => {
-    const canvas = _testTargets.get(target);
-    if (canvas === undefined) throw new Error('Test target not registered.');
+    const canvas = getCanvasForTarget(target);
+    if (canvas === null) throw new Error('HostTarget does not resolve to a canvas element.');
 
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
@@ -60,8 +54,8 @@ function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapabilit
     }
   };
   out.attachSurface = (target, attachment): WgpuSurfaceAttachResult | null => {
-    const canvas = _testTargets.get(target);
-    if (canvas === undefined) return null;
+    const canvas = getCanvasForTarget(target);
+    if (canvas === null) return null;
     const context = canvas.getContext('webgpu');
     if (context === null) return null;
     context.configure({
@@ -81,7 +75,7 @@ function initializeTestWgpuHostBackend(out: EntityConstruction<HostWgpuCapabilit
   };
 }
 
-const _testTargets = new WeakMap<HostTarget, HTMLCanvasElement>();
+export const webHostWgpuContext = createWebHostWgpuContext();
 
 function getWebWgpu(): GPU | null {
   if (typeof navigator === 'undefined') return null;

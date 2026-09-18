@@ -35,6 +35,7 @@ export * from './webBitmapHost';
 export * from './webGlHost';
 export * from './webImageHost';
 export * from './webSurfaceHost';
+export * from './webHostWgpuContext';
 export * from './webWgpuHost';
 export * from './webHaptics';
 export * from './webHapticsHost';
