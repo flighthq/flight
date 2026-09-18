@@ -134,3 +134,15 @@ describe('capacitorHostConnectivity', () => {
     expect(fake.removals()).toBe(1);
   });
 });
+
+describe('capacitorHostConnectivityChange', () => {
+  it('constructs the change provider', () => {
+    expect(capacitorHostConnectivityChange(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});
+
+describe('capacitorHostConnectivityStatus', () => {
+  it('constructs the status provider', () => {
+    expect(capacitorHostConnectivityStatus(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});

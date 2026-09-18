@@ -9,7 +9,7 @@ const flush = async () => {
 };
 
 describe('capacitorHostProtocol', () => {
-  it('publishes only a live-open Entity and adapts appUrlOpen', async () => {
+  it('publishes only a live-open slot and adapts appUrlOpen', async () => {
     let listener: ((event: { url: string }) => void) | undefined;
     let removed = 0;
     const capacitor = {
@@ -34,5 +34,12 @@ describe('capacitorHostProtocol', () => {
     off();
     await flush();
     expect(removed).toBe(1);
+  });
+});
+
+describe('capacitorHostProtocolOpen', () => {
+  it('constructs the open provider', () => {
+    const capacitor = { app: { addListener: async () => ({ async remove() {} }) } } as unknown as CapacitorApi;
+    expect(capacitorHostProtocolOpen(capacitor)).toBeDefined();
   });
 });

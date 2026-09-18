@@ -78,3 +78,33 @@ describe('capacitorHostApp', () => {
     expect(calls).toEqual(['remove:appStateChange']);
   });
 });
+
+describe('capacitorHostAppActivate', () => {
+  it('constructs the activation provider', () => {
+    expect(capacitorHostAppActivate(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});
+
+describe('capacitorHostAppHide', () => {
+  it('constructs the hide provider', () => {
+    expect(capacitorHostAppHide(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});
+
+describe('capacitorHostAppName', () => {
+  it('constructs the name provider', () => {
+    expect(capacitorHostAppName(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});
+
+describe('capacitorHostAppQuit', () => {
+  it('constructs the quit provider', () => {
+    expect(capacitorHostAppQuit(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});
+
+describe('capacitorHostAppVersion', () => {
+  it('constructs the version provider', () => {
+    expect(capacitorHostAppVersion(fakeCapacitor().capacitor)).toBeDefined();
+  });
+});

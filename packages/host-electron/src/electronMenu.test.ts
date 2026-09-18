@@ -60,6 +60,28 @@ function clickItem(built: ElectronMenuItemOptions[][], id: string): void {
   item?.click?.();
 }
 
+describe('electronHostAppMenu', () => {
+  it('constructs an app menu provider', () => {
+    expect(electronHostAppMenu(fakeElectron().electron)).toBeDefined();
+  });
+});
+// The merged MenuBackend is gone; these tests exercise the three slots that replaced it. This helper
+// recomposes the old surface so each assertion still names the operation it is really testing.
+function _slots(api: ElectronApi): {
+  destroy?: () => void;
+  popupContextMenu: HostMenuPopupCapability['popup'];
+  setAppMenu: HostAppMenuCapability['setAppMenu'];
+  subscribeSelect: HostMenuSelectCapability['subscribe'];
+} {
+  const { app, popup, select } = electronHostMenu(api);
+  return {
+    destroy: app.destroy?.bind(app),
+    popupContextMenu: popup.popup,
+    setAppMenu: app.setAppMenu,
+    subscribeSelect: select.subscribe,
+  };
+}
+
 describe('electronHostMenu', () => {
   it('builds and applies the application menu and reports clicks via subscribeSelect', () => {
     const { electron, built, applied } = fakeElectron();
@@ -138,22 +160,19 @@ describe('electronHostMenu', () => {
     expect(await pending).toBe('paste');
   });
 });
-// The merged MenuBackend is gone; these tests exercise the three slots that replaced it. This helper
-// recomposes the old surface so each assertion still names the operation it is really testing.
-function _slots(api: ElectronApi): {
-  destroy?: () => void;
-  popupContextMenu: HostMenuPopupCapability['popup'];
-  setAppMenu: HostAppMenuCapability['setAppMenu'];
-  subscribeSelect: HostMenuSelectCapability['subscribe'];
-} {
-  const { app, popup, select } = electronHostMenu(api);
-  return {
-    destroy: app.destroy?.bind(app),
-    popupContextMenu: popup.popup,
-    setAppMenu: app.setAppMenu,
-    subscribeSelect: select.subscribe,
-  };
-}
+
+describe('electronHostMenuPopup', () => {
+  it('constructs a menu popup provider', () => {
+    expect(electronHostMenuPopup(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostMenuSelect', () => {
+  it('constructs a menu select provider', () => {
+    expect(electronHostMenuSelect(fakeElectron().electron)).toBeDefined();
+  });
+});
+
 describe('populateElectronHostAppMenu', () => {
   it('is the construction initializer of electronHostMenuApplication', () => {
     expect(typeof populateElectronHostAppMenu).toBe('function');

@@ -18,6 +18,50 @@ function openPageWindow(): AppWindow {
   return pageWindow;
 }
 
+describe('createWebHostGl', () => {
+  it('allocates a canvas drawable sized in device pixels', () => {
+    const handle = createWebHostGl().create(openPageWindow(), 800, 500);
+
+    expect((handle as HTMLCanvasElement).width).toBe(800);
+    expect((handle as HTMLCanvasElement).height).toBe(500);
+  });
+
+  // The two sentinels stay distinct: null from create means no drawable, null from acquire means no
+  // context on a drawable that exists.
+  it('reports a window with no document as no drawable', () => {
+    expect(createWebHostGl().create(createAppWindow(), 8, 8)).toBeNull();
+  });
+
+  it('returns null from acquire when the surface is not backed by a canvas', () => {
+    const surface = createWebSurfaceFromElement(document.createElement('div'));
+
+    expect(createWebHostGl().acquire(surface)).toBeNull();
+  });
+
+  it('subscribes to context loss on the surface drawable and unsubscribes cleanly', () => {
+    const canvas = document.createElement('canvas');
+    const onLost = vi.fn();
+    const release = createWebHostGl().subscribe(createWebSurfaceFromElement(canvas), onLost, () => {});
+
+    canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    expect(onLost).toHaveBeenCalledTimes(1);
+
+    release();
+    canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    expect(onLost).toHaveBeenCalledTimes(1);
+  });
+
+  it('subscribe is inert for a surface with no canvas', () => {
+    const release = createWebHostGl().subscribe(
+      createWebSurfaceFromElement(document.createElement('div')),
+      () => {},
+      () => {},
+    );
+
+    expect(() => release()).not.toThrow();
+  });
+});
+
 describe('initializeWebHostGl', () => {
   it('fills every capability operation onto a construction', () => {
     const out = {} as Parameters<typeof initializeWebHostGl>[0];

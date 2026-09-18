@@ -1,6 +1,5 @@
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   electronHostScreen,
@@ -49,8 +48,10 @@ function fakeElectron(): {
 }
 
 describe('electronHostScreen', () => {
-  it('returns Entity-backed query and change facets', () => {
+  it('returns query and change facets', () => {
     const capabilities = electronHostScreen(fakeElectron().electron);
+    expect(capabilities.query).toBeDefined();
+    expect(capabilities.change).toBeDefined();
   });
 
   it('fills the primary screen into out', () => {
@@ -70,15 +71,7 @@ describe('electronHostScreen', () => {
       scaleFactor: 2,
       isPrimary: true,
     });
-    expect(
-      Object.keys(out)
-        .filter((key) => key !== String(EntityRuntimeKey))
-        .sort(),
-    ).toEqual(
-      Object.keys(createScreenInfo())
-        .filter((key) => key !== String(EntityRuntimeKey))
-        .sort(),
-    );
+    expect(Object.keys(out).sort()).toEqual(Object.keys(createScreenInfo()).sort());
   });
 
   it('enumerates all screens marking the primary', () => {
@@ -109,6 +102,18 @@ describe('electronHostScreen', () => {
     expect(fake.listeners.get('display-added')).toHaveLength(0);
     expect(fake.listeners.get('display-removed')).toHaveLength(0);
     expect(fake.listeners.get('display-metrics-changed')).toHaveLength(0);
+  });
+});
+
+describe('electronHostScreenChange', () => {
+  it('constructs a screen change provider', () => {
+    expect(electronHostScreenChange(fakeElectron().electron)).toBeDefined();
+  });
+});
+
+describe('electronHostScreenQuery', () => {
+  it('constructs a screen query provider', () => {
+    expect(electronHostScreenQuery(fakeElectron().electron)).toBeDefined();
   });
 });
 
