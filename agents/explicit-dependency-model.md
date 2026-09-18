@@ -300,21 +300,15 @@ These are **discoverable shortcuts to the explicit path**, not a different API. 
 
 ## Entity boundary
 
-Entity is the base type for every object Flight defines and allocates — anything you `create*`, hold a reference to, or pass across a call boundary. The runtime slot is the enforcement mechanism: it forces code through the constructor, which gives consistent V8 hidden classes, portable concrete types (Haxe/Rust/C++ auto-porting), and the package-private runtime extension point. A plain object literal that happens to match the public fields has no runtime, and any function touching `getRuntime(entity)` catches the difference immediately.
+Entity is the base type for **domain objects** — things in the problem space that Flight defines and allocates. A domain object benefits from consistent construction, predictable field layout, OOP binding (C++ class of the same name), and optionally runtime attachment. `create*` always returns Entity.
 
-**Entity — everything Flight defines and allocates.** Host, Pipeline, GlContextState, WgpuDeviceState, backends, renderers, renderer registries, parser configs, codec registries, nodes, textures, meshes, materials, matrices, rectangles, vectors — and equally the node data payloads, material data, descriptors, and options/config bags that earlier revisions of this section placed outside.
+**Dispatch infrastructure** — function tables, kind-to-handler containers, and bundles of these — is not Entity. Renderers, registry tables, pipelines, and host capabilities are plain data: formed as literals, no `allocateEntity`/`finishEntity`, no `create*` verb.
 
-**Not Entity — only what structurally cannot be one.** Arrays and tuples, callables, native and external handles (DOM elements, GPU objects), and primitive results. These need no judgment: the shape decides, which is the point.
+**Not Entity — only what structurally cannot be one.** Arrays and tuples, callables, native and external handles (DOM elements, GPU objects), and primitive results.
 
-The rule for `create*`: **`create*` always returns Entity.** There is no `build*`, `make*`, or `assemble*` verb to avoid it, and no semantic category opts out. Do not ask whether a type is user-facing, hot, long-lived, or mutable — ask only whether Flight defines the shape and allocates it.
+The full rule, the test for which side a type falls on, the rationale against earlier semantic exceptions, and the enumeration of what changes are in [entity boundary](conventions/entity-boundary.md).
 
-**Why the semantic categories were retired.** *The classification was not stable.* Whether something is "just a descriptor" is a property of how callers use it, not of the type, and it changes without the type changing: the `adjustments/*` descriptors are read on change rather than per frame only because `enableColorAdjustments` fuses them into a cache, and moving that cache would put the identical types in the inner loop with nothing at the declaration to say so. A rule whose answer an unrelated change elsewhere can invalidate cannot be applied by someone reading one file.
-
-*And the marker carried two meanings at once.* In the Haxe/C++ port an Entity becomes a statically typed direct reference while everything else becomes dynamic field access, so `NonEntityCreateResult` was choosing a field-access representation while appearing to annotate semantics only. Those axes are independent, and fusing them let a documentation decision set performance. Splitting them is what this rule does: Entity is the representation, and a "this is a value, not an identity" distinction, if still worth recording, is recorded separately and governs nothing.
-
-This is the same force as the closed kind union that preceded it — an exception list grows until it is the rule — applied one step further. The exceptions are now structural rather than semantic, so there is no list to grow.
-
-**Tree-shaking with const Entity instances.** A const like `webHost` or `scene2dGlPipeline` is a module-scope `createHost(...)` / `createGlPipeline(...)` call. ES modules evaluate lazily: the constructor runs only when the module is first imported. If nobody imports it, it tree-shakes out entirely. But if both `webHost` and individual backends (`webNetBackend`) live in the same file, importing either evaluates the whole file. So the whole-store const and the individual backends live in **separate source files** within the package, re-exported through the package root. Import `webHost` → pay for everything. Import `webNetBackend` → pay for net only.
+**Tree-shaking with dispatch infrastructure.** Removing Entity from infrastructure eliminates module-level `allocateEntity` calls, making infrastructure modules genuinely side-effect-free. Pipeline modules become factory functions; host capability modules export plain objects. `"sideEffects": false` becomes honest.
 
 ## Module-scoped scratch state
 

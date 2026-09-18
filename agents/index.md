@@ -18,7 +18,9 @@ These are linked at the point of the rule they serve, which is the placement tha
 only so the library is complete.
 
 **Conventions** (`agents/conventions/`) — [commits](conventions/commits.md),
-[diagnostics](conventions/diagnostics.md), [export lanes](conventions/export-lanes.md),
+[diagnostics](conventions/diagnostics.md),
+[entity boundary](conventions/entity-boundary.md),
+[export lanes](conventions/export-lanes.md),
 [file naming & type home](conventions/file-naming.md), [invalidation](conventions/invalidation.md),
 [naming](conventions/naming.md), [npm scripts](conventions/npm-scripts.md),
 [testing](conventions/testing.md), [types layout & kind identity](conventions/types-layout.md),
