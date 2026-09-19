@@ -1,12 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlRenderViewResources } from '@flighthq/types/contract';
 
-import { createEmptyGlRenderRegistries } from './glPipeline';
+import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { createGlRenderViewResources, destroyGlRenderViewResources, resizeGlRenderViewResources } from './glRenderView';
 import { makeGL } from './glTestHelper';
 
 function makeResources(width = 640, height = 480, devicePixelRatio = 1): GlRenderViewResources {
-  return createGlRenderViewResources(makeGL(), createEmptyGlRenderRegistries(), width, height, devicePixelRatio);
+  return createGlRenderViewResources(makeGL(), allocateEmptyGlRenderRegistries(), width, height, devicePixelRatio);
 }
 
 describe('createGlRenderViewResources', () => {

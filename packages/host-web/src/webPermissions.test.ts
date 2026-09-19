@@ -1,20 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  createWebPermissionsBackend,
-  initializeWebPermissionsBackend,
-  webHostNotificationPermission,
-  webHostPermissions,
-} from './webPermissions';
+import { webHostNotificationPermission, webHostPermissions } from './webPermissions';
 
-describe('createWebPermissionsBackend', () => {
+describe('webHostNotificationPermission', () => {
+  it('is the shared Notification permission identity from the permissions provider', () => {
+    expect(webHostNotificationPermission).toBe(webHostPermissions.notification);
+  });
+});
+
+describe('webHostPermissions', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('creates a fresh Entity with the exact narrow permission surface', () => {
-    const first = createWebPermissionsBackend();
-    const second = createWebPermissionsBackend();
-    expect(first).not.toBe(second);
-    expect(Object.keys(first).sort()).toEqual([
+  it('exposes the exact narrow permission surface', () => {
+    expect(Object.keys(webHostPermissions).sort()).toEqual([
       'notification',
       'queryPermission',
       'requestMediaAccess',
@@ -26,7 +24,7 @@ describe('createWebPermissionsBackend', () => {
     const query = vi.fn(async () => ({ state }));
     vi.stubGlobal('navigator', { permissions: { query } });
 
-    await expect(createWebPermissionsBackend().queryPermission('camera')).resolves.toEqual({ reason: 'ok', state });
+    await expect(webHostPermissions.queryPermission('camera')).resolves.toEqual({ reason: 'ok', state });
     expect(query).toHaveBeenCalledWith({ name: 'camera' });
   });
 
@@ -37,15 +35,14 @@ describe('createWebPermissionsBackend', () => {
         query: vi.fn().mockRejectedValueOnce(unsupported).mockRejectedValueOnce(new Error('failed')),
       },
     });
-    const provider = createWebPermissionsBackend();
 
-    await expect(provider.queryPermission('vendor-first')).resolves.toEqual({ reason: 'unsupported' });
-    await expect(provider.queryPermission('vendor-second')).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(webHostPermissions.queryPermission('vendor-first')).resolves.toEqual({ reason: 'unsupported' });
+    await expect(webHostPermissions.queryPermission('vendor-second')).resolves.toEqual({ reason: 'operation-failed' });
   });
 
   it('reports a missing Web Permissions API without throwing', async () => {
     vi.stubGlobal('navigator', {});
-    await expect(createWebPermissionsBackend().queryPermission('camera')).resolves.toEqual({
+    await expect(webHostPermissions.queryPermission('camera')).resolves.toEqual({
       reason: 'runtime-unavailable',
     });
   });
@@ -56,10 +53,15 @@ describe('createWebPermissionsBackend', () => {
       getTracks: () => [{ stop: () => stopped.push('first') }, { stop: () => stopped.push('second') }],
     }));
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
-    const provider = createWebPermissionsBackend();
 
-    await expect(provider.requestMediaAccess('camera')).resolves.toEqual({ reason: 'granted', state: 'granted' });
-    await expect(provider.requestMediaAccess('microphone')).resolves.toEqual({ reason: 'granted', state: 'granted' });
+    await expect(webHostPermissions.requestMediaAccess('camera')).resolves.toEqual({
+      reason: 'granted',
+      state: 'granted',
+    });
+    await expect(webHostPermissions.requestMediaAccess('microphone')).resolves.toEqual({
+      reason: 'granted',
+      state: 'granted',
+    });
     expect(getUserMedia).toHaveBeenNthCalledWith(1, { video: true });
     expect(getUserMedia).toHaveBeenNthCalledWith(2, { audio: true });
     expect(stopped).toEqual(['first', 'second', 'first', 'second']);
@@ -84,7 +86,7 @@ describe('createWebPermissionsBackend', () => {
       },
     });
 
-    await expect(createWebPermissionsBackend().requestMediaAccess('camera')).resolves.toEqual({
+    await expect(webHostPermissions.requestMediaAccess('camera')).resolves.toEqual({
       reason: 'cleanup-failed',
       state: 'granted',
     });
@@ -98,10 +100,12 @@ describe('createWebPermissionsBackend', () => {
         getUserMedia: vi.fn().mockRejectedValueOnce(denied).mockRejectedValueOnce(new Error('failed')),
       },
     });
-    const provider = createWebPermissionsBackend();
 
-    await expect(provider.requestMediaAccess('camera')).resolves.toEqual({ reason: 'denied', state: 'denied' });
-    await expect(provider.requestMediaAccess('camera')).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(webHostPermissions.requestMediaAccess('camera')).resolves.toEqual({
+      reason: 'denied',
+      state: 'denied',
+    });
+    await expect(webHostPermissions.requestMediaAccess('camera')).resolves.toEqual({ reason: 'operation-failed' });
   });
 
   it('releases an acquired wake lock and reports release failure after acquisition', async () => {
@@ -111,16 +115,15 @@ describe('createWebPermissionsBackend', () => {
         request: vi.fn(async () => ({ release })),
       },
     });
-    const provider = createWebPermissionsBackend();
 
-    await expect(provider.requestWakeLock()).resolves.toEqual({ reason: 'granted', state: 'granted' });
-    await expect(provider.requestWakeLock()).resolves.toEqual({ reason: 'cleanup-failed', state: 'granted' });
+    await expect(webHostPermissions.requestWakeLock()).resolves.toEqual({ reason: 'granted', state: 'granted' });
+    await expect(webHostPermissions.requestWakeLock()).resolves.toEqual({ reason: 'cleanup-failed', state: 'granted' });
     expect(release).toHaveBeenCalledTimes(2);
   });
 
   it('reports a missing Wake Lock API without throwing', async () => {
     vi.stubGlobal('navigator', {});
-    await expect(createWebPermissionsBackend().requestWakeLock()).resolves.toEqual({
+    await expect(webHostPermissions.requestWakeLock()).resolves.toEqual({
       reason: 'runtime-unavailable',
     });
   });
@@ -128,27 +131,18 @@ describe('createWebPermissionsBackend', () => {
   it('owns Notification permission query and request behind the provider', async () => {
     const requestPermission = vi.fn(async () => 'default' as const);
     vi.stubGlobal('Notification', { permission: 'granted', requestPermission });
-    const provider = createWebPermissionsBackend();
 
-    await expect(provider.notification.getPermission()).resolves.toEqual({ permission: 'granted', reason: 'ok' });
-    await expect(provider.notification.requestPermission()).resolves.toEqual({ reason: 'dismissed' });
+    await expect(webHostPermissions.notification.getPermission()).resolves.toEqual({
+      permission: 'granted',
+      reason: 'ok',
+    });
+    await expect(webHostPermissions.notification.requestPermission()).resolves.toEqual({ reason: 'dismissed' });
     expect(requestPermission).toHaveBeenCalledOnce();
   });
 
   it('reports a missing Notification API through its method-tight failure outcome', async () => {
     vi.stubGlobal('Notification', undefined);
-    const provider = createWebPermissionsBackend();
-    await expect(provider.notification.getPermission()).resolves.toEqual({ reason: 'operation-failed' });
-    await expect(provider.notification.requestPermission()).resolves.toEqual({ reason: 'operation-failed' });
-  });
-
-  it('publishes one stable provider and its shared Notification permission identity', () => {
-    expect(webHostNotificationPermission).toBe(webHostPermissions.notification);
-  });
-});
-
-describe('initializeWebPermissionsBackend', () => {
-  it('is the construction initializer of createWebPermissionsBackend', () => {
-    expect(initializeWebPermissionsBackend).toBeTypeOf('function');
+    await expect(webHostPermissions.notification.getPermission()).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(webHostPermissions.notification.requestPermission()).resolves.toEqual({ reason: 'operation-failed' });
   });
 });

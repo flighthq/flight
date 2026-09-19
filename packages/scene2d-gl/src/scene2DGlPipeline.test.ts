@@ -1,6 +1,6 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
@@ -103,8 +103,12 @@ describe('defaultScene2DGlRenderRegistries', () => {
 describe('manual single-capability pipeline', () => {
   it('carries only the explicitly registered Sprite renderer', () => {
     const registry = {
-      ...createEmptyGlRenderRegistries(),
-      renderers: withRegistryTableEntry(createEmptyGlRenderRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
+      ...allocateEmptyGlRenderRegistries(),
+      renderers: withRegistryTableEntry(
+        allocateEmptyGlRenderRegistries().renderers,
+        SpriteKind,
+        defaultGlSpriteRenderer,
+      ),
     };
     const registries = registry;
     expect(registries.renderers.entries.size).toBe(1);

@@ -1,5 +1,5 @@
 export { webHostAppLoopExit } from './webAppLoopExit';
-export { createWebAccessibilityBackend, webHostAccessibility } from './webAccessibility';
+export { webHostAccessibility } from './webAccessibility';
 export { webHostAccessibilityGroup } from './webAccessibilityHost';
 export {
   createWebAppCapabilities,
@@ -13,13 +13,8 @@ export {
 } from './webApp';
 export { webHostApp } from './webAppHost';
 export { webHostAudio } from './webAudio';
-export {
-  createWebAudioDeviceBackend,
-  getAudioDeviceContext,
-  hasAudioDeviceWebNodeAccess,
-  webHostAudioDevice,
-} from './webAudioDevice';
-export { createWebAudioMixerBackend, webHostAudioMixer } from './webAudioMixer';
+export { getAudioDeviceContext, hasAudioDeviceWebNodeAccess, webHostAudioDevice } from './webAudioDevice';
+export { webHostAudioMixer } from './webAudioMixer';
 export { drawWebBitmap } from './webBitmapDraw';
 export { createWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapFromCanvas } from './webBitmapFrom';
@@ -33,7 +28,6 @@ export {
 } from './webClipboard';
 export { webHostClipboard } from './webClipboardHost';
 export {
-  createWebConnectivityBackend,
   webHostConnectivityChange,
   webHostConnectivityReachability,
   webHostConnectivityStatus,
@@ -46,7 +40,7 @@ export { webHostNotification } from './webNotificationHost';
 export { webHostShortcut } from './webShortcutHost';
 export { webHostTray } from './webTrayHost';
 export { webHostUpdater } from './webUpdaterHost';
-export { createWebDeviceBackend, enableWebSafeAreaInsets, webHostDevice } from './webDevice';
+export { enableWebSafeAreaInsets, webHostDevice } from './webDevice';
 export {
   webHostDirectoryOpenDialog,
   webHostFileOpenDialog,
@@ -60,7 +54,7 @@ export {
 export { webHostDialog } from './webDialogHost';
 export { webHostFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
-export { createWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
+export { webHostGeolocation } from './webGeolocation';
 export { createWebGlContext, getWebGlContext } from './webGlContext';
 export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostBitmap } from './webBitmapHost';
@@ -68,13 +62,13 @@ export { webHostGlGroup } from './webGlHost';
 export { webHostImageGroup } from './webImageHost';
 export { webHostSurfaceGroup } from './webSurfaceHost';
 export { webHostCanvasGroup } from './webCanvasHost';
-export { createWebHostCanvas, webHostCanvas } from './webHostCanvas';
-export { createWebHostGl, webHostGl } from './webHostGl';
+export { webHostCanvas } from './webHostCanvas';
+export { webHostGl } from './webHostGl';
 export { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface';
 export { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
 export { getWebWindowHandle } from './webWindow';
 export { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
-export { createWebHostWgpuContext, webHostWgpuContext } from './webHostWgpuContext';
+export { webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
 export { webHostHaptics } from './webHaptics';
 export { webHostHapticsGroup } from './webHapticsHost';
@@ -122,7 +116,7 @@ export {
   webHostInputIngress,
 } from './webInputIngress';
 export { webHostInput } from './webInputHost';
-export { createWebLifecycleBackend, webHostLifecycle } from './webLifecycle';
+export { webHostLifecycle } from './webLifecycle';
 export {
   createWebSoftKeyboardChangeBackend,
   createWebSoftKeyboardInfoBackend,
@@ -133,26 +127,21 @@ export {
 } from './webKeyboard';
 export { webHostSoftKeyboard } from './webSoftKeyboardHost';
 export { webHostLoop } from './webLoop';
-export {
-  createWebMediaSessionActionBackend,
-  createWebMediaSessionBackend,
-  webHostMediaSessionAction,
-  webHostMediaSession,
-} from './webMediasession';
+export { webHostMediaSessionAction, webHostMediaSession } from './webMediasession';
 export { webHostAudioGroup } from './webAudioHost';
 export { webHostMediaSessionGroup } from './webMediaSessionHost';
 export { webHostVideoGroup } from './webVideoHost';
 export { webHostMenuHighlight, webHostMenuPopup } from './webMenu';
 export { webHostMenu } from './webMenuHost';
 export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
-export { createWebNetBackend, webHostNet } from './webNet';
+export { webHostNet } from './webNet';
 export { createWebPageNotificationCapabilities } from './webNotification';
-export { createWebPermissionsBackend, webHostNotificationPermission, webHostPermissions } from './webPermissions';
+export { webHostNotificationPermission, webHostPermissions } from './webPermissions';
 export {
   createWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
 } from './webServiceWorkerNotification';
-export { createWebPlatformBackend, webHostPlatform } from './webPlatform';
+export { webHostPlatform } from './webPlatform';
 export { webHostPowerChange, webHostPowerKeepAwake, webHostPowerStatus, webHostPowerSuspension } from './webPower';
 export { webHostPower } from './webPowerHost';
 export { createWebProtocolCapabilities, webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
@@ -166,7 +155,7 @@ export {
   webHostScreenQuery,
 } from './webScreen';
 export { webHostScreen } from './webScreenHost';
-export { createWebSensorsBackend, webHostSensors } from './webSensors';
+export { webHostSensors } from './webSensors';
 export { webHostShareContent, webHostShareFiles } from './webShare';
 export { webHostShare } from './webShareHost';
 export { webHostShellExternal } from './webShell';

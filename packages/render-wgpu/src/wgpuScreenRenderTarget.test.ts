@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Surface } from '@flighthq/types/contract';
 
-import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
@@ -20,7 +20,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-const _webBackend = createTestWgpuHostBackend();
+const _webBackend = testWgpuHost;
 
 describe('bindWgpuScreenRenderTarget', () => {
   it('acquires one swap-chain view per frame and releases it at the end of the frame', async () => {

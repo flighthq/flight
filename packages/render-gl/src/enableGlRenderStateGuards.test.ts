@@ -5,14 +5,14 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { useGlProgram } from './glDraw';
-import { createEmptyGlRenderRegistries } from './glPipeline';
+import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { makeGL } from './glTestHelper';
 
 function createState() {
   const canvas = document.createElement('canvas');
   canvas.getContext = vi.fn().mockReturnValue(makeGL()) as typeof canvas.getContext;
-  return createGlRenderState(makeGL(), createEmptyGlRenderRegistries());
+  return createGlRenderState(makeGL(), allocateEmptyGlRenderRegistries());
 }
 
 beforeEach(() => clearLogOnceKeys());

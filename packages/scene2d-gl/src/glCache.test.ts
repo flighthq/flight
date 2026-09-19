@@ -80,7 +80,7 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-const testPipeline = renderGl.createEmptyGlRenderRegistries();
+const testPipeline = renderGl.allocateEmptyGlRenderRegistries();
 
 function fakeScreen(options = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;

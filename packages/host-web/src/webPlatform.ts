@@ -11,13 +11,13 @@ import {
   parseUserAgentVersion,
 } from '@flighthq/useragent/contract';
 
-export function createWebPlatformBackend(): HostPlatformCapability {
+function createWebPlatformBackend(): HostPlatformCapability {
   const out = {} as HostPlatformCapability;
   initializeWebPlatformBackend(out);
   return out;
 }
 
-export function initializeWebPlatformBackend(out: HostPlatformCapability): void {
+function initializeWebPlatformBackend(out: HostPlatformCapability): void {
   out.getInfo = getWebPlatformInfo;
 }
 

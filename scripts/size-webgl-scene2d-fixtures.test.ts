@@ -304,7 +304,7 @@ describe('WebGL Scene2D size fixtures', () => {
         const source = readFileSync(resolve(directory, 'src', 'render.webgl.ts'), 'utf8');
         for (const call of [
           'createGlSurface',
-          'createEmptyGlRenderRegistries',
+          'allocateEmptyGlRenderRegistries',
           'createGlRenderState',
           'prepareScene2DRender',
           'renderGlScene2D',

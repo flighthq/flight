@@ -9,7 +9,7 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRenderRegistries,
+  allocateEmptyCanvasRenderRegistries,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
@@ -40,7 +40,7 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRenderRegistries();
+const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 // Built from an empty table rather than from `emptyRegistries.canvasShapeCommands`, which is optional
 // on the registries type — starting from the explicit empty table states the three-command intent
 // without a non-null assertion.

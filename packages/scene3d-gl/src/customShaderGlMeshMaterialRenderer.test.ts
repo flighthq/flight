@@ -3,7 +3,7 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { allocateEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 

@@ -24,7 +24,7 @@ import type {
 // Rate control: the Generic Sensor API honors the `frequency` option; the devicemotion /
 // deviceorientation window event streams do not support rate control and always fire at the
 // browser's default interval.
-export function createWebSensorsBackend(): HostSensorsCapability {
+function createWebSensorsBackend(): HostSensorsCapability {
   // Explicit type argument so the literal keeps its contextual method parameter types — without one,
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
   // the runtime slot: `allocateEntity<HostSensorsCapability>` cannot work, because allocateEntity's type parameter

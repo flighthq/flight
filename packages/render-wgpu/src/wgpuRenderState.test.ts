@@ -31,9 +31,9 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
-import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
+import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
   createWgpuDeviceState,
@@ -71,8 +71,8 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-const _testPipeline = createEmptyWgpuRenderRegistries();
-const _webBackend = createTestWgpuHostBackend();
+const _testPipeline = allocateEmptyWgpuRenderRegistries();
+const _webBackend = testWgpuHost;
 
 function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
   return createWgpuRenderStateWithPipeline(device, _testPipeline, options);
@@ -856,7 +856,7 @@ describe('isWgpuSupported', () => {
       },
     });
     try {
-      const unsupportedBackend = createTestWgpuHostBackend();
+      const unsupportedBackend = testWgpuHost;
       expect(isWgpuSupported(unsupportedBackend)).toBe(false);
     } finally {
       installWgpuMock();

@@ -10,7 +10,7 @@ export {
   clearGlRenderTargetAttachments,
   clearGlRenderTexture,
   createExternalGlTexture,
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   createGlCubeRenderTarget,
   createGlRenderState,
   createGlRenderTexturePool,

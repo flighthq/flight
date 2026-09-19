@@ -8,7 +8,7 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   acquireGlRenderTexture,
   createGlRenderState,
   createGlRenderTexturePool,
@@ -242,7 +242,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createWebGlContext(canvas), createEmptyGlRenderRegistries());
+  return createGlRenderState(createWebGlContext(canvas), allocateEmptyGlRenderRegistries());
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {

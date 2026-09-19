@@ -1,7 +1,7 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { NetProgress, NetRequest } from '@flighthq/types/contract';
 
-import { createWebNetBackend, initializeWebNetBackend, webHostNet } from './webNet';
+import { webHostNet } from './webNet';
 
 interface FakeResponseInit {
   status?: number;
@@ -61,21 +61,20 @@ afterEach(() => {
   if (originalFetch !== undefined) globalThis.fetch = originalFetch;
 });
 
-describe('createWebNetBackend', () => {
+describe('webHostNet', () => {
   it('maps method, headers, and body onto the fetch init', async () => {
     let captured: { url?: string; init?: RequestInit } = {};
     globalThis.fetch = (async (url: string, init: RequestInit) => {
       captured = { url, init };
       return fakeResponse({ status: 200, text: 'ok' });
     }) as unknown as typeof fetch;
-    const backend = createWebNetBackend();
     const request: NetRequest = {
       method: 'POST',
       url: 'https://example.test/api',
       headers: { 'X-Token': 'abc' },
       body: 'payload',
     };
-    await backend.sendNetRequest(request);
+    await webHostNet.sendNetRequest(request);
     expect(captured.url).toBe('https://example.test/api');
     expect(captured.init?.method).toBe('POST');
     expect(captured.init?.headers).toEqual({ 'X-Token': 'abc' });
@@ -89,26 +88,26 @@ describe('createWebNetBackend', () => {
       init = i;
       return fakeResponse({ status: 200, text: '' });
     }) as unknown as typeof fetch;
-    await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'https://example.test' });
+    await webHostNet.sendNetRequest({ method: 'GET', url: 'https://example.test' });
     expect(init?.body).toBeUndefined();
   });
 
   it('decodes a text response', async () => {
     globalThis.fetch = (async () => fakeResponse({ text: 'hello' })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', responseType: 'text' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'text' });
     expect(res.body).toBe('hello');
     expect(res.ok).toBe(true);
   });
 
   it('decodes a json response', async () => {
     globalThis.fetch = (async () => fakeResponse({ json: { x: 1 } })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', responseType: 'json' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'json' });
     expect(res.body).toEqual({ x: 1 });
   });
 
   it('returns null for a malformed json body without throwing', async () => {
     globalThis.fetch = (async () => fakeResponse({ status: 200 })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', responseType: 'json' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'json' });
     expect(res.body).toBeNull();
     expect(res.ok).toBe(true);
   });
@@ -116,21 +115,21 @@ describe('createWebNetBackend', () => {
   it('decodes an arraybuffer response', async () => {
     const buffer = new Uint8Array([1, 2, 3]).buffer;
     globalThis.fetch = (async () => fakeResponse({ arraybuffer: buffer })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', responseType: 'arraybuffer' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'arraybuffer' });
     expect(res.body).toBe(buffer);
   });
 
   it('decodes a blob response', async () => {
     const blob = new Blob(['x']);
     globalThis.fetch = (async () => fakeResponse({ blob })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', responseType: 'blob' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'blob' });
     expect(res.body).toBe(blob);
   });
 
   it('surfaces a non-2xx response as ok:false with the real status, not a throw', async () => {
     globalThis.fetch = (async () =>
       fakeResponse({ status: 404, statusText: 'Not Found', text: 'nope' })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u' });
     expect(res.status).toBe(404);
     expect(res.ok).toBe(false);
     expect(res.statusText).toBe('Not Found');
@@ -141,7 +140,7 @@ describe('createWebNetBackend', () => {
     globalThis.fetch = (async () => {
       throw new TypeError('Failed to fetch');
     }) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u' });
     expect(res.status).toBe(0);
     expect(res.ok).toBe(false);
     expect(res.statusText).toBe('Failed to fetch');
@@ -158,7 +157,7 @@ describe('createWebNetBackend', () => {
         }
         signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
       })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u', timeoutMs: 5 });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', timeoutMs: 5 });
     expect(res.status).toBe(0);
     expect(res.ok).toBe(false);
     expect(res.statusText).toBe('timeout');
@@ -171,7 +170,7 @@ describe('createWebNetBackend', () => {
         signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
       })) as unknown as typeof fetch;
     const controller = new AbortController();
-    const promise = createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
+    const promise = webHostNet.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
     controller.abort();
     const res = await promise;
     expect(res.status).toBe(0);
@@ -179,9 +178,6 @@ describe('createWebNetBackend', () => {
   });
 
   it('never reaches the transport when the caller signal is already aborted', () => {
-    // The pre-aborted branch is the one a caller hits by passing a signal from a scope torn down
-    // before the request was issued. Asserted through the signal fetch actually receives, so the
-    // check cannot pass by the request merely failing for some other reason.
     let observedAborted: boolean | null = null;
     globalThis.fetch = ((_url: string, init: RequestInit) => {
       const signal = init.signal as AbortSignal;
@@ -190,26 +186,22 @@ describe('createWebNetBackend', () => {
     }) as unknown as typeof fetch;
     const controller = new AbortController();
     controller.abort();
-    return createWebNetBackend()
-      .sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal })
-      .then((res) => {
-        expect(observedAborted).toBe(true);
-        expect(res.status).toBe(0);
-        expect(res.ok).toBe(false);
-        expect(res.statusText).toBe('aborted');
-      });
+    return webHostNet.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal }).then((res) => {
+      expect(observedAborted).toBe(true);
+      expect(res.status).toBe(0);
+      expect(res.ok).toBe(false);
+      expect(res.statusText).toBe('aborted');
+    });
   });
 
   it('labels a caller abort apart from a timeout even when both are configured', async () => {
-    // A request carrying both timeoutMs and a caller signal must report which one fired. The timeout
-    // here is long enough that only the explicit abort can win, so the case needs no timer to elapse.
     globalThis.fetch = ((_url: string, init: RequestInit) =>
       new Promise<Response>((_resolve, reject) => {
         const signal = init.signal as AbortSignal;
         signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
       })) as unknown as typeof fetch;
     const controller = new AbortController();
-    const promise = createWebNetBackend().sendNetRequest(
+    const promise = webHostNet.sendNetRequest(
       { method: 'GET', timeoutMs: 60_000, url: 'u' },
       { signal: controller.signal },
     );
@@ -219,8 +211,6 @@ describe('createWebNetBackend', () => {
   });
 
   it('releases its abort listener from the caller signal once the request settles', async () => {
-    // A caller signal outlives the requests made with it — a per-request listener left attached is a
-    // leak that grows with every call and that no behavioural assertion would ever notice.
     globalThis.fetch = (async () => fakeResponse({ text: 'ok' })) as unknown as typeof fetch;
     const controller = new AbortController();
     let attached = 0;
@@ -239,9 +229,8 @@ describe('createWebNetBackend', () => {
       return remove(...args);
     }) as AbortSignal['removeEventListener'];
 
-    const backend = createWebNetBackend();
-    await backend.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
-    await backend.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
+    await webHostNet.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
+    await webHostNet.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
     expect(attached).toBe(0);
   });
 
@@ -254,10 +243,7 @@ describe('createWebNetBackend', () => {
     const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
     const ticks: NetProgress[] = [];
     progress.emit = (tick) => ticks.push({ ...tick });
-    const res = await createWebNetBackend().sendNetRequest(
-      { method: 'GET', url: 'u', responseType: 'text' },
-      { progress },
-    );
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'text' }, { progress });
     expect(ticks).toHaveLength(2);
     expect(ticks[0]).toEqual({ phase: 'download', loaded: 2, total: 5 });
     expect(ticks[1]).toEqual({ phase: 'download', loaded: 5, total: 5 });
@@ -270,14 +256,14 @@ describe('createWebNetBackend', () => {
     const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
     const ticks: NetProgress[] = [];
     progress.emit = (tick) => ticks.push({ ...tick });
-    await createWebNetBackend().sendNetRequest({ method: 'GET', responseType: 'arraybuffer', url: 'u' }, { progress });
+    await webHostNet.sendNetRequest({ method: 'GET', responseType: 'arraybuffer', url: 'u' }, { progress });
     expect(ticks).toEqual([{ loaded: 3, phase: 'download', total: 0 }]);
   });
 
   it('reads response headers into a plain record', async () => {
     globalThis.fetch = (async () =>
       fakeResponse({ headers: { 'content-type': 'text/plain' }, text: 'x' })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u' });
     expect(res.headers['content-type']).toBe('text/plain');
   });
 
@@ -290,17 +276,10 @@ describe('createWebNetBackend', () => {
         ],
         text: 'x',
       })) as unknown as typeof fetch;
-    const res = await createWebNetBackend().sendNetRequest({ method: 'GET', url: 'u' });
+    const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u' });
     expect(res.headers['x-flight-value']).toBe('first, second');
   });
-});
 
-describe('initializeWebNetBackend', () => {
-  it('is the construction initializer of createWebNetBackend', () => {
-    expect(typeof initializeWebNetBackend).toBe('function');
-  });
-});
-describe('webHostNet', () => {
   it('is a pre-instantiated HostNetCapability const', () => {
     expect(webHostNet).not.toBeNull();
     expect(typeof webHostNet.sendNetRequest).toBe('function');

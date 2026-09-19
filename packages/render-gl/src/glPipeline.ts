@@ -1,7 +1,7 @@
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { GlRenderRegistries } from '@flighthq/types/contract';
 
-export function createEmptyGlRenderRegistries(): GlRenderRegistries {
+export function allocateEmptyGlRenderRegistries(): GlRenderRegistries {
   const out = {} as GlRenderRegistries;
   initializeEmptyGlRenderRegistries(out);
   return out;

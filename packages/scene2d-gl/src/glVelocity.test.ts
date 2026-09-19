@@ -1,7 +1,7 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';

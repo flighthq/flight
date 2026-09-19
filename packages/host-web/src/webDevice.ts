@@ -13,7 +13,7 @@ import {
   parseUserAgentOsVersion,
 } from '@flighthq/useragent/contract';
 
-export function createWebDeviceBackend(): HostDeviceCapability {
+function createWebDeviceBackend(): HostDeviceCapability {
   const out = {} as HostDeviceCapability;
   initializeWebDeviceBackend(out);
   return out;
@@ -51,7 +51,7 @@ export function enableWebSafeAreaInsets(): () => void {
   };
 }
 
-export function initializeWebDeviceBackend(out: HostDeviceCapability): void {
+function initializeWebDeviceBackend(out: HostDeviceCapability): void {
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
     const nav = typeof navigator !== 'undefined' ? navigator : null;
     // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.

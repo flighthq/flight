@@ -1,26 +1,26 @@
-import { createEmptyCanvasRenderRegistries, initializeEmptyCanvasRenderRegistries } from './canvasPipeline';
+import { allocateEmptyCanvasRenderRegistries, initializeEmptyCanvasRenderRegistries } from './canvasPipeline';
 
-describe('createEmptyCanvasRenderRegistries', () => {
+describe('allocateEmptyCanvasRenderRegistries', () => {
   it('returns registries with empty tables', () => {
-    const registries = createEmptyCanvasRenderRegistries();
+    const registries = allocateEmptyCanvasRenderRegistries();
     expect(registries.renderers.entries.size).toBe(0);
     expect(registries.renderEffects.entries.size).toBe(0);
     expect(registries.strokeTessellator.entry).toBeNull();
   });
 
   it('does not carry blend mode application', () => {
-    const registries = createEmptyCanvasRenderRegistries();
+    const registries = allocateEmptyCanvasRenderRegistries();
     expect(registries.blendModeApplication).toBeUndefined();
   });
 
   it('does not carry canvas shape commands', () => {
-    const registries = createEmptyCanvasRenderRegistries();
+    const registries = allocateEmptyCanvasRenderRegistries();
     expect(registries.canvasShapeCommands).toBeUndefined();
   });
 });
 
 describe('initializeEmptyCanvasRenderRegistries', () => {
-  it('is the construction initializer of createEmptyCanvasRenderRegistries', () => {
+  it('is the construction initializer of allocateEmptyCanvasRenderRegistries', () => {
     expect(typeof initializeEmptyCanvasRenderRegistries).toBe('function');
   });
 });

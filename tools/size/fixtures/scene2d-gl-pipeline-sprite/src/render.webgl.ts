@@ -10,7 +10,7 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   registerGlImageTextureResolver,
   beginGlRenderPass,
@@ -33,8 +33,8 @@ appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
 const registry = {
-  ...createEmptyGlRenderRegistries(),
-  renderers: withRegistryTableEntry(createEmptyGlRenderRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
+  ...allocateEmptyGlRenderRegistries(),
+  renderers: withRegistryTableEntry(allocateEmptyGlRenderRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
 };
 
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });

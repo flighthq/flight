@@ -1,7 +1,7 @@
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { WgpuRenderRegistries } from '@flighthq/types/contract';
 
-export function createEmptyWgpuRenderRegistries(): WgpuRenderRegistries {
+export function allocateEmptyWgpuRenderRegistries(): WgpuRenderRegistries {
   const out = {} as WgpuRenderRegistries;
   initializeEmptyWgpuRenderRegistries(out);
   return out;

@@ -2,8 +2,8 @@ import { allocateEntity } from '@flighthq/entity/contract';
 import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
-import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
+import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
   createWgpuRenderState,
@@ -14,11 +14,25 @@ import { installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(installWgpuMock);
 
-const _pipeline = createEmptyWgpuRenderRegistries();
+const _pipeline = allocateEmptyWgpuRenderRegistries();
 
-describe('createTestWgpuHostBackend', () => {
+describe('createTestWgpuSurface', () => {
+  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
+
+  it('builds a surface the test host backend can resolve back to its canvas', () => {
+    const canvas = document.createElement('canvas');
+    const surface = createTestWgpuSurface(canvas);
+
+    // The drawable lives on the runtime, not on the entity: nothing about the canvas is visible on the
+    // public surface, and the host is the only code that narrows it back.
+    expect(Object.keys(surface)).toEqual([]);
+    expect(() => testWgpuHost.attachSurface(surface, ATTACHMENT)).not.toThrow();
+  });
+});
+
+describe('testWgpuHost', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
-    const backend = createTestWgpuHostBackend();
+    const backend = testWgpuHost;
     const canvas = document.createElement('canvas');
     const target = createTestWgpuSurface(canvas);
     const acquisition = await backend.acquire(target, {});
@@ -32,7 +46,7 @@ describe('createTestWgpuHostBackend', () => {
   });
 
   it('tears down whatever it is handed, leaving the ownership decision to the caller', async () => {
-    const backend = createTestWgpuHostBackend();
+    const backend = testWgpuHost;
     const canvas = document.createElement('canvas');
     const target = createTestWgpuSurface(canvas);
     const acquired = await backend.acquire(target, {});
@@ -55,14 +69,14 @@ describe('createTestWgpuHostBackend', () => {
       },
     });
     try {
-      expect(createTestWgpuHostBackend().isSupported()).toBe(false);
+      expect(testWgpuHost.isSupported()).toBe(false);
     } finally {
       installWgpuMock();
     }
   });
 
   it('routes acquisition and release through a caller-provided backend', async () => {
-    const web = createTestWgpuHostBackend();
+    const web = testWgpuHost;
     const canvas = document.createElement('canvas');
     const target = createTestWgpuSurface(canvas);
     const acquired = await web.acquire(target, {});
@@ -91,7 +105,7 @@ describe('createTestWgpuHostBackend', () => {
   });
 
   it('never releases host handles when a state built on the device is destroyed', async () => {
-    const web = createTestWgpuHostBackend();
+    const web = testWgpuHost;
     const canvas = document.createElement('canvas');
     const target = createTestWgpuSurface(canvas);
     const acquired = await web.acquire(target, {});
@@ -107,19 +121,5 @@ describe('createTestWgpuHostBackend', () => {
     destroy.mockRestore();
     unconfigure.mockRestore();
     web.release(acquired);
-  });
-});
-
-describe('createTestWgpuSurface', () => {
-  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
-
-  it('builds a surface the test host backend can resolve back to its canvas', () => {
-    const canvas = document.createElement('canvas');
-    const surface = createTestWgpuSurface(canvas);
-
-    // The drawable lives on the runtime, not on the entity: nothing about the canvas is visible on the
-    // public surface, and the host is the only code that narrows it back.
-    expect(Object.keys(surface)).toEqual([]);
-    expect(() => createTestWgpuHostBackend().attachSurface(surface, ATTACHMENT)).not.toThrow();
   });
 });

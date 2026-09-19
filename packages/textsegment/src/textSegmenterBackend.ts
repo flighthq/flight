@@ -7,10 +7,6 @@ import type {
 
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
 
-export function createDefaultTextSegmenterBackend(): HostTextSegmenterCapability {
-  return createWebTextSegmenterBackend();
-}
-
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object.
 export const webTextSegmenterBackend: HostTextSegmenterCapability = createWebTextSegmenterBackend();
@@ -21,7 +17,7 @@ export const webTextSegmenterBackend: HostTextSegmenterCapability = createWebTex
 // expensive relative to a single segment() call. Where Intl.Segmenter is absent (an old or headless
 // engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
 // the host for those environments.
-export function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
+function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
   const out = {} as HostTextSegmenterCapability;
   initializeWebTextSegmenterBackend(out);
   return out;
@@ -40,7 +36,7 @@ export function explainTextSegmenterBackend(
   };
 }
 
-export function initializeWebTextSegmenterBackend(out: HostTextSegmenterCapability): void {
+function initializeWebTextSegmenterBackend(out: HostTextSegmenterCapability): void {
   out.segment = segmentWithIntlSegmenter;
 }
 

@@ -6,17 +6,19 @@ import {
 } from '@flighthq/device/contract';
 import { DeviceFormFactorDesktop, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-import {
-  createWebDeviceBackend,
-  enableWebSafeAreaInsets,
-  initializeWebDeviceBackend,
-  webHostDevice,
-} from './webDevice';
+import { enableWebSafeAreaInsets, webHostDevice } from './webDevice';
 
-describe('createWebDeviceBackend', () => {
+describe('enableWebSafeAreaInsets', () => {
+  it('returns a dispose function and does not throw in jsdom', () => {
+    const dispose = enableWebSafeAreaInsets();
+    expect(typeof dispose).toBe('function');
+    dispose();
+  });
+});
+
+describe('webHostDevice', () => {
   it('fills the snapshot with sentinels without throwing (jsdom)', () => {
-    const backend = createWebDeviceBackend();
-    const info = backend.getInfo(createDeviceInfo());
+    const info = webHostDevice.getInfo(createDeviceInfo());
     expect(info.model).toBe('');
     expect(info.manufacturer).toBe('');
     expect(info.marketingName).toBe('');
@@ -40,28 +42,29 @@ describe('createWebDeviceBackend', () => {
   });
 
   it('returns zero safe-area insets on plain web (no CSS probe)', () => {
-    const backend = createWebDeviceBackend();
-    expect(backend.getSafeAreaInsets(createSafeAreaInsets())).toMatchObject({ bottom: 0, left: 0, right: 0, top: 0 });
+    expect(webHostDevice.getSafeAreaInsets(createSafeAreaInsets())).toMatchObject({
+      bottom: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+    });
   });
 
   it('getId returns a string (empty or a UUID) without throwing', () => {
-    const backend = createWebDeviceBackend();
-    const id = backend.getId();
+    const id = webHostDevice.getId();
     expect(typeof id).toBe('string');
   });
 
   it('getId returns the same value on repeated calls (stable install id)', () => {
-    const backend = createWebDeviceBackend();
-    const id1 = backend.getId();
-    const id2 = backend.getId();
+    const id1 = webHostDevice.getId();
+    const id2 = webHostDevice.getId();
     if (id1 !== '') {
       expect(id1).toBe(id2);
     }
   });
 
   it('returns display metrics with a valid pixel ratio from jsdom', () => {
-    const backend = createWebDeviceBackend();
-    const metrics = backend.getDisplayMetrics(createDeviceDisplayMetrics());
+    const metrics = webHostDevice.getDisplayMetrics(createDeviceDisplayMetrics());
     expect(typeof metrics.pixelRatio).toBe('number');
     expect(typeof metrics.logicalWidth).toBe('number');
   });
@@ -71,8 +74,7 @@ describe('createWebDeviceBackend', () => {
     const original = nav['deviceMemory'];
     try {
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 4 });
-      const backend = createWebDeviceBackend();
-      const info = backend.getInfo(createDeviceInfo());
+      const info = webHostDevice.getInfo(createDeviceInfo());
       expect(info.totalMemory).toBe(4 * 1024 * 1024 * 1024);
     } finally {
       if (original !== undefined) {
@@ -84,50 +86,19 @@ describe('createWebDeviceBackend', () => {
   });
 
   it('osVersion parses Android version from UA', () => {
-    const backend = createWebDeviceBackend();
-    const result = backend.getInfo(createDeviceInfo());
+    const result = webHostDevice.getInfo(createDeviceInfo());
     expect(typeof result.osVersion).toBe('string');
   });
 
   it('getCapabilities returns a capability snapshot without throwing', () => {
-    const backend = createWebDeviceBackend();
-    const caps = backend.getCapabilities(createDeviceCapabilities());
+    const caps = webHostDevice.getCapabilities(createDeviceCapabilities());
     expect(typeof caps.hasKeyboard).toBe('boolean');
     expect(typeof caps.hasMouse).toBe('boolean');
     expect(caps.hasStylus).toBe(false);
   });
 
   it('web backend returns Desktop formFactor for desktop UA', () => {
-    const backend = createWebDeviceBackend();
-    const info = backend.getInfo(createDeviceInfo());
+    const info = webHostDevice.getInfo(createDeviceInfo());
     expect([DeviceFormFactorDesktop, DeviceFormFactorUnknown]).toContain(info.formFactor);
-  });
-});
-
-describe('enableWebSafeAreaInsets', () => {
-  it('returns a dispose function and does not throw in jsdom', () => {
-    const dispose = enableWebSafeAreaInsets();
-    expect(typeof dispose).toBe('function');
-    dispose();
-  });
-});
-
-describe('initializeWebDeviceBackend', () => {
-  it('is the construction initializer of createWebDeviceBackend', () => {
-    expect(typeof initializeWebDeviceBackend).toBe('function');
-  });
-});
-describe('webHostDevice', () => {
-  it('is a pre-constructed singleton', () => {
-    expect(webHostDevice).toBeDefined();
-    expect(typeof webHostDevice.getInfo).toBe('function');
-  });
-
-  it('fills info identically to a fresh factory instance', () => {
-    const a = createDeviceInfo();
-    const b = createDeviceInfo();
-    webHostDevice.getInfo(a);
-    createWebDeviceBackend().getInfo(b);
-    expect(a).toMatchObject(b);
   });
 });

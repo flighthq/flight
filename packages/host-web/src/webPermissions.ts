@@ -6,13 +6,13 @@ import type {
   PermissionState,
 } from '@flighthq/types/contract';
 
-export function createWebPermissionsBackend(): HostPermissionsCapability {
+function createWebPermissionsBackend(): HostPermissionsCapability {
   const out = {} as HostPermissionsCapability;
   initializeWebPermissionsBackend(out);
   return out;
 }
 
-export function initializeWebPermissionsBackend(out: {
+function initializeWebPermissionsBackend(out: {
   -readonly [K in keyof HostPermissionsCapability]: HostPermissionsCapability[K];
 }): void {
   out.notification = {

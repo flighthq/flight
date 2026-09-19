@@ -14,7 +14,7 @@ import type {
  * seam only through the resolvers below, which exist for callers that are already web-bound and need
  * to wire these sources into a graph of their own.
  */
-export function createWebAudioDeviceBackend(): HostAudioDeviceCapability {
+function createWebAudioDeviceBackend(): HostAudioDeviceCapability {
   let nextHandle = 1;
   const devices = new Map<number, AudioContext>();
   const buffers = new Map<number, AudioBuffer>();
@@ -68,7 +68,7 @@ export function hasAudioDeviceWebNodeAccess(backend: Readonly<HostAudioDeviceCap
   return isSourceNodeExtendedBackend(backend);
 }
 
-export function initializeWebAudioDeviceBackend(
+function initializeWebAudioDeviceBackend(
   out: HostAudioDeviceCapability & AudioDeviceBackendWebExtension,
   devices: Map<number, AudioContext>,
   buffers: Map<number, AudioBuffer>,

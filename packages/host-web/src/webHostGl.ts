@@ -3,13 +3,13 @@ import type { AppWindow, GlContextOptions, HostGlCapability, Surface } from '@fl
 import { getWebGlContext } from './webGlContext';
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
-export function createWebHostGl(): HostGlCapability {
+function createWebHostGl(): HostGlCapability {
   const out = {} as HostGlCapability;
   initializeWebHostGl(out);
   return out;
 }
 
-export function initializeWebHostGl(out: HostGlCapability): void {
+function initializeWebHostGl(out: HostGlCapability): void {
   out.acquire = (surface: Readonly<Surface>, options?: Readonly<GlContextOptions>) => {
     const canvas = getWebSurfaceCanvasHandle(surface);
     // null covers both reasons the slot cannot hand out a context: a drawable that is not a canvas, and a

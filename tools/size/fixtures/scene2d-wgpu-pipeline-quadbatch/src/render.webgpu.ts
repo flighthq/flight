@@ -17,7 +17,7 @@ import {
   endWgpuRenderPass,
   registerWgpuBitmapTextureResolver,
 } from '@flighthq/render-wgpu';
-import { createEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { defaultWgpuQuadBatchRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
@@ -33,7 +33,7 @@ if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environ
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 
-const registries = createEmptyWgpuRenderRegistries();
+const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
   materialRenderers: withRegistryTableEntry(

@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
-import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
+import { webTextSegmenterBackend } from './textSegmenterBackend';
 
-const backend = createDefaultTextSegmenterBackend();
+const backend = webTextSegmenterBackend;
 
 describe('segmentGraphemes', () => {
   it('isolates callers that interleave different explicit hosts', () => {

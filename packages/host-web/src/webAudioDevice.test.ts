@@ -1,104 +1,24 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, HostAudioDeviceCapability } from '@flighthq/types/contract';
 import type { AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
-  createWebAudioDeviceBackend,
   getAudioDeviceContext,
   getAudioSourceBufferSourceNode,
   getAudioSourceGainNode,
   hasAudioDeviceWebNodeAccess,
-  initializeWebAudioDeviceBackend,
   webHostAudioDevice,
 } from './webAudioDevice';
-
-describe('createWebAudioDeviceBackend', () => {
-  it('creates the backend with web node access', () => {
-    const backend = createWebAudioDeviceBackend();
-
-    expect(Object.keys(backend)).toEqual(
-      expect.arrayContaining([
-        'createBuffer',
-        'createDevice',
-        'createSource',
-        'destroyBuffer',
-        'destroyDevice',
-        'destroySource',
-        'fadeSourceGain',
-        'getDeviceAudioContext',
-        'getDeviceTime',
-        'getSourceBufferSourceNode',
-        'getSourceGainNode',
-        'onSourceEnded',
-        'resumeDevice',
-        'setSourceGain',
-        'setSourcePan',
-        'setSourcePlaybackRate',
-        'startSource',
-        'stopSource',
-      ]),
-    );
-  });
-});
-
-describe('createWebAudioDeviceBackend source graph', () => {
-  it('routes the buffer source through a panner into the gain, and leaves gain as the output', () => {
-    const graph = installFakeAudioContext();
-    const backend = createWebAudioDeviceBackend();
-    const device = backend.createDevice(44100);
-    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
-    const source = backend.createSource(device, buffer);
-    backend.startSource(source, 0, 0);
-
-    expect(graph.panner.connect).toHaveBeenCalledWith(graph.gain);
-    expect(graph.bufferSource.connect).toHaveBeenCalledWith(graph.panner);
-    expect(graph.bufferSource.connect).not.toHaveBeenCalledWith(graph.gain);
-    expect(getAudioSourceGainNode(backend, source)).toBe(graph.gain as unknown as GainNode);
-  });
-
-  it('writes the pan value onto the panner param', () => {
-    const graph = installFakeAudioContext();
-    const backend = createWebAudioDeviceBackend();
-    const device = backend.createDevice(44100);
-    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
-    const source = backend.createSource(device, buffer);
-
-    backend.setSourcePan(source, -0.5);
-    expect(graph.panner.pan.value).toBe(-0.5);
-  });
-
-  it('ignores a pan set against an unknown source handle', () => {
-    installFakeAudioContext();
-    const backend = createWebAudioDeviceBackend();
-    expect(() => backend.setSourcePan(99 as unknown as AudioSourceHandle, 1)).not.toThrow();
-  });
-
-  it('disconnects the panner when the source is destroyed', () => {
-    const graph = installFakeAudioContext();
-    const backend = createWebAudioDeviceBackend();
-    const device = backend.createDevice(44100);
-    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
-    const source = backend.createSource(device, buffer);
-    backend.startSource(source, 0, 0);
-
-    backend.destroySource(source);
-    expect(graph.panner.disconnect).toHaveBeenCalled();
-    expect(graph.gain.disconnect).toHaveBeenCalled();
-  });
-});
 
 describe('getAudioDeviceContext', () => {
   it('resolves the context behind a device handle for a web-bound caller', () => {
     installFakeAudioContext();
-    const backend = createWebAudioDeviceBackend();
-    const device = backend.createDevice(48000);
+    const device = webHostAudioDevice.createDevice(48000);
 
-    expect(getAudioDeviceContext(backend, device)).not.toBeNull();
+    expect(getAudioDeviceContext(webHostAudioDevice, device)).not.toBeNull();
   });
 
   it('returns null for a handle this backend did not create', () => {
-    const backend = createWebAudioDeviceBackend();
-    expect(getAudioDeviceContext(backend, 999 as unknown as AudioDeviceHandle)).toBeNull();
+    expect(getAudioDeviceContext(webHostAudioDevice, 999 as unknown as AudioDeviceHandle)).toBeNull();
   });
 
   it('returns null for a backend with no web extension', () => {
@@ -106,10 +26,7 @@ describe('getAudioDeviceContext', () => {
     plain.createDevice = () => 1 as unknown as AudioDeviceHandle;
     expect(getAudioDeviceContext(plain, 1 as unknown as AudioDeviceHandle)).toBeNull();
   });
-  // The defect this file exists to prevent recurring: a provider carrying the SOURCE-NODE extension
-  // but no context resolver once passed the shared guard — which vouched for it on the strength of two
-  // other methods — and threw TypeError at the call. Each capability is now guarded on the member it
-  // actually calls.
+
   it('returns null for a source-node-only extension instead of throwing', () => {
     const out = {} as HostAudioDeviceCapability & Record<string, unknown>;
     out.getSourceGainNode = (): null => null;
@@ -120,7 +37,6 @@ describe('getAudioDeviceContext', () => {
     expect(getAudioDeviceContext(backend, 1 as unknown as AudioDeviceHandle)).toBeNull();
   });
 
-  // The mirror case, so the split is verified in both directions rather than only the one that broke.
   it('resolves a context-only extension even though it carries no source-node methods', () => {
     const out = {} as HostAudioDeviceCapability & Record<string, unknown>;
     const context = {} as AudioContext;
@@ -131,8 +47,6 @@ describe('getAudioDeviceContext', () => {
     expect(hasAudioDeviceWebNodeAccess(backend)).toBe(false);
   });
 
-  // An `in` check would pass here and then throw at the call, which is the same defect by another
-  // route, so the guard tests callability rather than presence.
   it('returns null when the property exists but is not callable', () => {
     const out = {} as HostAudioDeviceCapability & Record<string, unknown>;
     out.getDeviceAudioContext = 'not a function';
@@ -186,6 +100,79 @@ describe('hasAudioDeviceWebNodeAccess', () => {
       getSourceGainNode: () => null,
     };
     expect(hasAudioDeviceWebNodeAccess(backend)).toBe(true);
+  });
+});
+
+describe('webHostAudioDevice', () => {
+  it('is a stable singleton', () => {
+    expect(webHostAudioDevice).toBe(webHostAudioDevice);
+  });
+
+  it('exposes the expected audio device methods', () => {
+    expect(Object.keys(webHostAudioDevice)).toEqual(
+      expect.arrayContaining([
+        'createBuffer',
+        'createDevice',
+        'createSource',
+        'destroyBuffer',
+        'destroyDevice',
+        'destroySource',
+        'fadeSourceGain',
+        'getDeviceAudioContext',
+        'getDeviceTime',
+        'getSourceBufferSourceNode',
+        'getSourceGainNode',
+        'onSourceEnded',
+        'resumeDevice',
+        'setSourceGain',
+        'setSourcePan',
+        'setSourcePlaybackRate',
+        'startSource',
+        'stopSource',
+      ]),
+    );
+  });
+});
+
+describe('webHostAudioDevice source graph', () => {
+  it('routes the buffer source through a panner into the gain, and leaves gain as the output', () => {
+    const graph = installFakeAudioContext();
+    const device = webHostAudioDevice.createDevice(44100);
+    const buffer = webHostAudioDevice.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = webHostAudioDevice.createSource(device, buffer);
+    webHostAudioDevice.startSource(source, 0, 0);
+
+    expect(graph.panner.connect).toHaveBeenCalledWith(graph.gain);
+    expect(graph.bufferSource.connect).toHaveBeenCalledWith(graph.panner);
+    expect(graph.bufferSource.connect).not.toHaveBeenCalledWith(graph.gain);
+    expect(getAudioSourceGainNode(webHostAudioDevice, source)).toBe(graph.gain as unknown as GainNode);
+  });
+
+  it('writes the pan value onto the panner param', () => {
+    const graph = installFakeAudioContext();
+    const device = webHostAudioDevice.createDevice(44100);
+    const buffer = webHostAudioDevice.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = webHostAudioDevice.createSource(device, buffer);
+
+    webHostAudioDevice.setSourcePan(source, -0.5);
+    expect(graph.panner.pan.value).toBe(-0.5);
+  });
+
+  it('ignores a pan set against an unknown source handle', () => {
+    installFakeAudioContext();
+    expect(() => webHostAudioDevice.setSourcePan(99 as unknown as AudioSourceHandle, 1)).not.toThrow();
+  });
+
+  it('disconnects the panner when the source is destroyed', () => {
+    const graph = installFakeAudioContext();
+    const device = webHostAudioDevice.createDevice(44100);
+    const buffer = webHostAudioDevice.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = webHostAudioDevice.createSource(device, buffer);
+    webHostAudioDevice.startSource(source, 0, 0);
+
+    webHostAudioDevice.destroySource(source);
+    expect(graph.panner.disconnect).toHaveBeenCalled();
+    expect(graph.gain.disconnect).toHaveBeenCalled();
   });
 });
 
@@ -243,14 +230,3 @@ function installFakeAudioContext(): {
   } as unknown as typeof AudioBuffer;
   return { bufferSource, gain, panner };
 }
-describe('initializeWebAudioDeviceBackend', () => {
-  it('is the construction initializer of createWebAudioDeviceBackend', () => {
-    expect(typeof initializeWebAudioDeviceBackend).toBe('function');
-  });
-});
-
-describe('webHostAudioDevice', () => {
-  it('is a stable singleton', () => {
-    expect(webHostAudioDevice).toBe(webHostAudioDevice);
-  });
-});

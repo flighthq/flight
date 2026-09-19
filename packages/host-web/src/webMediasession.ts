@@ -15,13 +15,13 @@ const OPERATION_FAILED = { reason: 'operation-failed' } as const;
 const POSITION_STATE_UNAVAILABLE = { reason: 'position-state-unavailable' } as const;
 const _webMediaSessionOwnership = new WeakMap<MediaSession, WebMediaSessionOwnership>();
 
-export function createWebMediaSessionActionBackend(): HostMediaSessionActionCapability {
+function createWebMediaSessionActionBackend(): HostMediaSessionActionCapability {
   const out = {} as HostMediaSessionActionCapability;
   initializeWebMediaSessionActionBackend(out);
   return out;
 }
 
-export function createWebMediaSessionBackend(): HostMediaSessionCapability {
+function createWebMediaSessionBackend(): HostMediaSessionCapability {
   const out = {} as HostMediaSessionCapability;
   initializeWebMediaSessionBackend(out);
   return out;
@@ -30,7 +30,7 @@ export function createWebMediaSessionBackend(): HostMediaSessionCapability {
 // Web event provider. Subscribers to the same action share one native handler; different actions are
 // never registered speculatively. Each returned unsubscribe remains pinned to its exact session,
 // action, lane token and subscription record even if navigator.mediaSession later changes.
-export function initializeWebMediaSessionActionBackend(out: HostMediaSessionActionCapability): void {
+function initializeWebMediaSessionActionBackend(out: HostMediaSessionActionCapability): void {
   const lanes = new Map<MediaSession, Map<MediaSessionAction, WebMediaSessionActionLane>>();
   const finishLane = (lane: WebMediaSessionActionLane): void => {
     for (const subscription of lane.subscriptions) subscription.detached = true;
@@ -128,7 +128,7 @@ export function initializeWebMediaSessionActionBackend(out: HostMediaSessionActi
 // Web command provider. Every publication is pinned to the exact MediaSession identity and an opaque
 // owner token. Readable lanes additionally compare the exact value before release; the opaque position
 // lane uses the strongest boundary the browser exposes, its provenance token.
-export function initializeWebMediaSessionBackend(out: HostMediaSessionCapability): void {
+function initializeWebMediaSessionBackend(out: HostMediaSessionCapability): void {
   const owner = {};
   const publications = new Map<MediaSession, WebMediaSessionCommandPublication>();
   const backend: Pick<
