@@ -1,3 +1,4 @@
+import { createSlotTable } from '@flighthq/registry/contract';
 import type {
   GlContext,
   CompressedImageResource,
@@ -206,7 +207,8 @@ export function registerGlCompressedTextureDecoder(
   decode: GlCompressedTextureDecoder | null,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const table = runtime.registries.compressedTextureDecoder;
+  const table =
+    runtime.registries.compressedTextureDecoder ?? createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
   runtime.registries.compressedTextureDecoder = {
     ...table,
     entry: decode === null ? null : { state: RegistryEntryState.Bound, value: decode },
@@ -220,7 +222,8 @@ export function registerGlCompressedTextureDecoder(
 // table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
   const runtime = getGlRenderStateRuntime(state);
-  const table = runtime.registries.compressedTextureUpload;
+  const table =
+    runtime.registries.compressedTextureUpload ?? createSlotTable('GlCompressedTextureUpload', 'Unregistered');
   runtime.registries.compressedTextureUpload = {
     ...table,
     entry: uploader === null ? null : { state: RegistryEntryState.Bound, value: uploadGlCompressedImage },

@@ -448,25 +448,10 @@ describe('createGlRenderStateRuntime', () => {
       registry: 'GlRenderEffect',
       shape: 'keyed',
     });
-    expectEntitySlot(runtime.registries.compressedTextureDecoder, {
-      entry: null,
-      onMiss: 'Unregistered',
-      registry: 'GlCompressedTextureDecoder',
-      shape: 'slot',
-    });
+    expect(runtime.registries.compressedTextureDecoder).toBeUndefined();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expectEntitySlot(runtime.registries.compressedTextureUpload, {
-      entry: null,
-      onMiss: 'Unregistered',
-      registry: 'GlCompressedTextureUpload',
-      shape: 'slot',
-    });
-    expectEntitySlot(runtime.registries.shapeRasterizer, {
-      entry: null,
-      onMiss: 'Unregistered',
-      registry: 'GlShapeRasterizer',
-      shape: 'slot',
-    });
+    expect(runtime.registries.compressedTextureUpload).toBeUndefined();
+    expect(runtime.registries.shapeRasterizer).toBeUndefined();
     expect(runtime.registries.strokeTessellator).toBeUndefined();
     expect(runtime.registries.velocityWriters).toMatchObject({
       onMiss: 'Unregistered',
@@ -723,8 +708,8 @@ describe('pipeline-backed GL registrations', () => {
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBeUndefined();
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBeUndefined();
     destroyGlRenderState(offscreen);
     offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
@@ -737,7 +722,7 @@ describe('pipeline-backed GL registrations', () => {
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBe(
       getGlRenderStateRuntime(screen).registries.compressedTextureDecoder,
     );
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toEqual({
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: decoder,
     });
@@ -764,12 +749,14 @@ describe('pipeline-backed GL registrations', () => {
     expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture')).toBe(
       resolver,
     );
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
-    expect(getGlRenderStateRuntime(screen).registries.compressedTextureDecoder.entry?.state).toBe(
+    // Unregistering is an opinion, so the slot exists on `offscreen` holding an empty entry — distinct
+    // from a state that never touched the registry at all, where the slot is absent.
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder?.entry).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureDecoder?.entry?.state).toBe(
       RegistryEntryState.Bound,
     );
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
-    expect(getGlRenderStateRuntime(screen).registries.compressedTextureUpload.entry?.state).toBe(
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload?.entry).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureUpload?.entry?.state).toBe(
       RegistryEntryState.Bound,
     );
   });

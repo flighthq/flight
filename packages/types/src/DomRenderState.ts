@@ -19,7 +19,7 @@ export interface DomRenderState extends RenderState {
 // Pure registration policy owned by one DOM render pipeline. Tables are persistent so a future
 // derived pipeline can share one snapshot while either aggregate later replaces a member independently.
 export interface DomRenderRegistries extends RenderRegistries {
-  shapeRasterizer: SlotTable<ShapeRasterizer>;
+  shapeRasterizer?: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<DomTextureResolver>;
 }
 

@@ -126,7 +126,7 @@ describe('defaultScene3DWgpuRenderRegistries', () => {
   });
 
   it('carries GPU skinning through the pipeline and into state runtime', () => {
-    expect(registries.gpuSkinning.entry).toEqual({
+    expect(registries.gpuSkinning?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: defaultWgpuSkinningAdapter,
     });

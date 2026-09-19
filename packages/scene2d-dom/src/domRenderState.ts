@@ -41,12 +41,6 @@ export function createDomRenderStateRuntime(): DomRenderStateRuntime {
   const runtime = createRenderStateRuntime() as DomRenderStateRuntime;
   runtime.registries = {
     renderers: runtime.registries.renderers,
-    shapeRasterizer: {
-      entry: null,
-      onMiss: 'Unregistered',
-      registry: 'DomShapeRasterizer',
-      shape: 'slot',
-    },
     strokeTessellator: runtime.registries.strokeTessellator,
     textureResolvers: {
       entries: new Map(),

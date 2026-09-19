@@ -1,4 +1,4 @@
-import { concatRegistryTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { concatRegistryTable, createSlotTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
 import { defaultScene2DWgpuRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
 import type {
@@ -110,7 +110,7 @@ function buildScene3DWgpuTextureResolvers(
 export const defaultScene3DWgpuRenderRegistries: Readonly<WgpuRenderRegistries> = {
   ...defaultScene2DWgpuRenderRegistries,
   gpuSkinning: {
-    ...defaultScene2DWgpuRenderRegistries.gpuSkinning,
+    ...createSlotTable('WgpuGpuSkinning', 'Unregistered'),
     entry: { state: RegistryEntryState.Bound, value: defaultWgpuSkinningAdapter },
   },
   meshMaterialRenderers: buildScene3DWgpuMeshMaterialRenderers(

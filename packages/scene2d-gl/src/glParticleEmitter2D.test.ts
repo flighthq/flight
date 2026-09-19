@@ -3,6 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import { createSlotTable } from '@flighthq/registry/contract';
 import {
   getGlRenderStateRuntime,
   registerGlCompressedImageTextureResolver,
@@ -160,7 +161,7 @@ describe('drawGlParticleEmitter2D', () => {
     registerGlCompressedImageTextureResolver(state);
     const runtime = getGlRenderStateRuntime(state);
     runtime.registries.compressedTextureUpload = {
-      ...runtime.registries.compressedTextureUpload,
+      ...createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
       entry: { state: RegistryEntryState.Bound, value: () => true },
     };
     const image = {

@@ -126,12 +126,19 @@ describe('registerGlCompressedTextureDecoder', () => {
     const decode = vi.fn(() => new Uint8ClampedArray(4));
     registerGlCompressedTextureDecoder(state, decode);
     expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
-    expect(runtime.registries.compressedTextureDecoder.entry).toEqual({
+    // The opt-in must build a whole table, not just an entry: `{...undefined}` is legal JavaScript,
+    // so a missing fallback would yield a slot with no shape, registry, or miss policy.
+    expect(runtime.registries.compressedTextureDecoder).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'GlCompressedTextureDecoder',
+      shape: 'slot',
+    });
+    expect(runtime.registries.compressedTextureDecoder?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: decode,
     });
     registerGlCompressedTextureDecoder(state, null);
-    expect(runtime.registries.compressedTextureDecoder.entry).toBeNull();
+    expect(runtime.registries.compressedTextureDecoder?.entry).toBeNull();
   });
 });
 
@@ -142,12 +149,12 @@ describe('registerGlCompressedTextureUpload', () => {
     const before = runtime.registries.compressedTextureUpload;
     registerGlCompressedTextureUpload(state);
     expect(runtime.registries.compressedTextureUpload).not.toBe(before);
-    expect(runtime.registries.compressedTextureUpload.entry).toMatchObject({
+    expect(runtime.registries.compressedTextureUpload?.entry).toMatchObject({
       state: RegistryEntryState.Bound,
       value: expect.any(Function),
     });
     registerGlCompressedTextureUpload(state, null);
-    expect(runtime.registries.compressedTextureUpload.entry).toBeNull();
+    expect(runtime.registries.compressedTextureUpload?.entry).toBeNull();
   });
 
   it('uploads a CompressedImageResource once installed, threading the registered decoder', () => {
@@ -156,7 +163,7 @@ describe('registerGlCompressedTextureUpload', () => {
     const decode = vi.fn(() => rgba);
     registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(state, decode);
-    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload.entry;
+    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload?.entry;
     expect(entry?.state).toBe(RegistryEntryState.Bound);
     const uploader = entry?.state === RegistryEntryState.Bound ? entry.value : null;
     expect(uploader).not.toBeNull();
@@ -168,7 +175,7 @@ describe('registerGlCompressedTextureUpload', () => {
   it('rejects non-2D containers because the installed image bridge is bound to TEXTURE_2D', () => {
     const { state } = createGlState();
     registerGlCompressedTextureUpload(state);
-    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload.entry;
+    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload?.entry;
     const uploader = entry?.state === RegistryEntryState.Bound ? entry.value : null;
     expect(uploader).not.toBeNull();
     const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });

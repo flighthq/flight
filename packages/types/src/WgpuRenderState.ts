@@ -62,10 +62,10 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   colorAdjustmentFeatureGuard?: SlotTable<WgpuColorAdjustmentMaterialFeatureGuard>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
-  compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder>;
-  compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader>;
+  compressedTextureDecoder?: SlotTable<WgpuCompressedTextureDecoder>;
+  compressedTextureUpload?: SlotTable<WgpuCompressedTextureUploader>;
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
-  gpuSkinning: SlotTable<WgpuSkinningAdapter>;
+  gpuSkinning?: SlotTable<WgpuSkinningAdapter>;
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<WgpuModifierSnippet>;
@@ -73,7 +73,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
   renderEffects: KeyedTable<WgpuRenderEffectRegistration>;
-  shapeRasterizer: SlotTable<ShapeRasterizer>;
+  shapeRasterizer?: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
   velocityWriters: KeyedTable<WgpuVelocityWriter>;
 }

@@ -4,6 +4,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import { createSlotTable } from '@flighthq/registry/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
@@ -75,7 +76,7 @@ describe('drawWgpuParticleEmitter2D', () => {
       width: 4,
     } as unknown as CompressedImageResource;
     runtime.registries.compressedTextureUpload = {
-      ...runtime.registries.compressedTextureUpload,
+      ...createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
       entry: {
         state: RegistryEntryState.Bound,
         value: () => {
