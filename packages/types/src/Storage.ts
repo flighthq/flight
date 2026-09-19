@@ -47,30 +47,30 @@ export type StoragePresenceResult = StorageValueOutcome<boolean, StorageGetItemF
 
 // Fallback reads retain a decode failure in `reason` while returning the requested fallback. Provider
 // failure never substitutes a fallback and therefore keeps a null payload.
-export type StorageFallbackResult<Value> =
+export type StorageFallbackOutcome<Value> =
   | { readonly reason: 'ok' | 'parse-failed'; readonly value: Value }
   | { readonly reason: StorageGetItemFailureReason; readonly value: null };
 
-export type StorageBooleanOrResult = StorageFallbackResult<boolean>;
-export type StorageJsonOrResult<Value> = StorageFallbackResult<Value | null>;
-export type StorageNumberOrResult = StorageFallbackResult<number>;
+export type StorageBooleanOrResult = StorageFallbackOutcome<boolean>;
+export type StorageJsonOrResult<Value> = StorageFallbackOutcome<Value | null>;
+export type StorageNumberOrResult = StorageFallbackOutcome<number>;
 
 export type StorageJsonResult<Value> = StorageValueOutcome<Value | null, StorageReadFailureReason>;
 
 // One coherent observation of two independent platform facts. `outcome` reports bucket policy;
 // `permissionState` reports the separately observed Permissions API state. A missing observation is
 // null, never a fabricated prompt, and neither field may be inferred from the other.
-export interface StoragePersistenceResult {
+export interface StoragePersistenceOutcome {
   readonly outcome: 'persistent' | 'best-effort' | 'operation-failed';
   readonly permissionState: PermissionState | null;
 }
 
 export interface HostPreferencesPersistenceQueryCapability {
-  getPersistence(): Promise<StoragePersistenceResult>;
+  getPersistence(): Promise<StoragePersistenceOutcome>;
 }
 
 export interface HostPreferencesPersistenceRequestCapability {
-  requestPersistence(): Promise<StoragePersistenceResult>;
+  requestPersistence(): Promise<StoragePersistenceOutcome>;
 }
 
 // Injected Web surfaces keep platform access at the host composition boundary. Window adds persist();
@@ -96,7 +96,7 @@ export interface WebWindowStoragePersistenceCapabilities extends Entity {
 // Multi-key queries return no partial payload: the first failed provider read identifies its key, while
 // a keys-enumeration failure has failedKey null. This differs deliberately from mutations, whose already
 // completed writes are world state and therefore must be reported rather than hidden.
-export type StorageQueryResult<Value> =
+export type StorageQueryOutcome<Value> =
   | { readonly failedKey: null; readonly reason: 'ok'; readonly value: Value }
   | {
       readonly failedKey: string | null;
@@ -104,21 +104,21 @@ export type StorageQueryResult<Value> =
       readonly value: null;
     };
 
-export type StorageByteSizeResult = StorageQueryResult<number>;
-export type StorageEntriesResult = StorageQueryResult<readonly (readonly [string, string])[]>;
-export type StorageItemsResult = StorageQueryResult<readonly (string | null)[]>;
+export type StorageByteSizeResult = StorageQueryOutcome<number>;
+export type StorageEntriesResult = StorageQueryOutcome<readonly (readonly [string, string])[]>;
+export type StorageItemsResult = StorageQueryOutcome<readonly (string | null)[]>;
 
 // Mutations stop at the first failed key. `completed` exposes prior successful writes because they are
 // already externally visible and cannot truthfully be represented as an all-or-nothing failure.
-export type StorageBatchMutationResult<FailureReason extends string> =
+export type StorageBatchMutationOutcome<FailureReason extends string> =
   | { readonly completed: number; readonly failedKey: null; readonly reason: 'ok' }
   | { readonly completed: number; readonly failedKey: string | null; readonly reason: FailureReason };
 
-export type StorageClearNamespaceResult = StorageBatchMutationResult<
+export type StorageClearNamespaceResult = StorageBatchMutationOutcome<
   StorageKeysFailureReason | StorageRemoveItemFailureReason
 >;
-export type StorageRemoveItemsResult = StorageBatchMutationResult<StorageRemoveItemFailureReason>;
-export type StorageSetItemsResult = StorageBatchMutationResult<StorageSetItemFailureReason>;
+export type StorageRemoveItemsResult = StorageBatchMutationOutcome<StorageRemoveItemFailureReason>;
+export type StorageSetItemsResult = StorageBatchMutationOutcome<StorageSetItemFailureReason>;
 
 // Key/value persistence commands. Absence is a successful getItem result whose value is null; callers
 // inspect reason rather than guessing whether a sentinel came from missing data or provider failure.
@@ -152,7 +152,7 @@ export interface StorageMigration {
   version: number;
 }
 
-export type StorageMigrationResult =
+export type StorageMigrationOutcome =
   | { readonly failedVersion: null; readonly reason: 'ok'; readonly stage: null; readonly version: number }
   | {
       readonly failedVersion: null;

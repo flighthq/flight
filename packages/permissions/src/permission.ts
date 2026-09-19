@@ -8,7 +8,7 @@ import type {
   PermissionName,
   PermissionQueryOutcome,
   PermissionRequestOutcome,
-  StoragePersistenceResult,
+  StoragePersistenceOutcome,
 } from '@flighthq/types/contract';
 
 // Queries are read-only: this function never escalates to a request that may prompt. Notification,
@@ -190,7 +190,7 @@ async function requestStoragePersistencePermission(
   }
 }
 
-function projectStoragePersistenceQuery(result: Readonly<StoragePersistenceResult>): PermissionQueryOutcome {
+function projectStoragePersistenceQuery(result: Readonly<StoragePersistenceOutcome>): PermissionQueryOutcome {
   switch (result.outcome) {
     case 'persistent':
       return { reason: 'ok', state: 'granted' };
@@ -201,7 +201,7 @@ function projectStoragePersistenceQuery(result: Readonly<StoragePersistenceResul
   }
 }
 
-function projectStoragePersistenceRequest(result: Readonly<StoragePersistenceResult>): PermissionRequestOutcome {
+function projectStoragePersistenceRequest(result: Readonly<StoragePersistenceOutcome>): PermissionRequestOutcome {
   switch (result.outcome) {
     case 'persistent':
       return { reason: 'granted', state: 'granted' };

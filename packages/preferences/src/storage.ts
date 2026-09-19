@@ -19,7 +19,7 @@ import type {
   StorageJsonWriteResult,
   StorageKeysResult,
   StorageMigration,
-  StorageMigrationResult,
+  StorageMigrationOutcome,
   StorageNamespace,
   StorageNumberOrResult,
   StorageNumberResult,
@@ -295,7 +295,7 @@ export function migrateStorage(
   namespace: Readonly<StorageNamespace> | null,
   migrations: readonly Readonly<StorageMigration>[],
   signals: StorageSignals | null = null,
-): StorageMigrationResult {
+): StorageMigrationOutcome {
   const sorted = validateStorageMigrations(migrations);
   const versionKey =
     namespace === null ? '__flight_storage_version' : namespacedKey(namespace, '__flight_storage_version');
