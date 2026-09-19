@@ -23,7 +23,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
+import { renderWgpuScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
@@ -56,7 +56,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

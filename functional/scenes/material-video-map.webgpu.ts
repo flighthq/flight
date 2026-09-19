@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -104,7 +104,7 @@ const lights = {
 
 const pass = beginWgpuRenderPass(state, screen, screenClear);
 prepareScene3DRender(state, scene, camera, lights);
-drawWgpuScene3D(pass, scene, camera, lights);
+renderWgpuScene3D(pass, scene, camera, lights);
 endWgpuRenderPass(pass);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

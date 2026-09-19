@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, prepareGlScene3DForwardLights } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, prepareGlScene3DForwardLights } from '@flighthq/scene3d-gl';
 import type { GlEffectState, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -172,7 +172,7 @@ state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
-drawGlScene3D(pass, scene, camera, lights, forwardLights);
+renderGlScene3D(pass, scene, camera, lights, forwardLights);
 endGlEffectState(pass, pipeline, []);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all

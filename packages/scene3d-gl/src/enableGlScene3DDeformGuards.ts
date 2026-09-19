@@ -11,11 +11,11 @@ export function areGlScene3DDeformGuardsEnabled(state: GlRenderState): boolean {
   return getGlScene3DRuntime(state).deformGuard != null;
 }
 
-// Installs the shakeable scene deform guard on `state`: drawGlScene3D calls it once per visible mesh, and
+// Installs the shakeable scene deform guard on `state`: renderGlScene3D calls it once per visible mesh, and
 // it warns when a morphed or GPU-skinned mesh reaches the draw without its deform pass having run —
 // prepareScene3DMorph (@flighthq/scene3d) for a morph, prepareScene3DSkinning (@flighthq/skeleton3d) for a
 // skin. Both are silent-black footguns: an unblended morph draws the bind-pose mesh, and an unposed
-// skin draws with a zero joint palette that collapses the mesh to the origin. drawGlScene3D reaches this
+// skin draws with a zero joint palette that collapses the mesh to the origin. renderGlScene3D reaches this
 // guard only through its nullable scene-runtime slot; not calling this — the production default — costs
 // the draw nothing, since the messages and the @flighthq/log dependency live only in this
 // separately-imported module. Idempotent.
@@ -36,7 +36,7 @@ function warnGlScene3DMeshDrawnUndeformed(mesh: Mesh): void {
       LogLevel.Warn,
       {
         message:
-          'drawGlScene3D: a morphed mesh reached the draw un-blended (it will draw the bind pose) — call prepareScene3DMorph(scene) before prepareScene3DRender.',
+          'renderGlScene3D: a morphed mesh reached the draw un-blended (it will draw the bind pose) — call prepareScene3DMorph(scene) before prepareScene3DRender.',
       },
       'scene-gl',
     );
@@ -50,7 +50,7 @@ function warnGlScene3DMeshDrawnUndeformed(mesh: Mesh): void {
         LogLevel.Warn,
         {
           message:
-            'drawGlScene3D: a GPU-skinned mesh reached the draw un-posed (its joint palette is uncomputed, collapsing it to the origin) — call prepareScene3DSkinning(scene) before prepareScene3DRender.',
+            'renderGlScene3D: a GPU-skinned mesh reached the draw un-posed (its joint palette is uncomputed, collapsing it to the origin) — call prepareScene3DSkinning(scene) before prepareScene3DRender.',
         },
         'scene-gl',
       );

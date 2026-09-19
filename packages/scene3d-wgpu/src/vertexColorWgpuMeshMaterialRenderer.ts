@@ -59,7 +59,7 @@ export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in VertexColor renderer for VertexColorMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
+// top-level side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with
 // VertexColorMaterials draw.
 export function registerWgpuVertexColorMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, VertexColorMaterialKind, vertexColorWgpuMeshMaterialRenderer);

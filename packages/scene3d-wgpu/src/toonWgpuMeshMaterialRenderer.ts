@@ -76,7 +76,7 @@ export const toonWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with ToonMaterials draw.
+// effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with ToonMaterials draw.
 export function registerWgpuToonMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);

@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { GlEffectState, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -135,7 +135,7 @@ const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-drawGlScene3D(pass, scene, camera, lights);
+renderGlScene3D(pass, scene, camera, lights);
 endGlEffectState(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

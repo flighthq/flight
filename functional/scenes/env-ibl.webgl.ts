@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
+import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
 
 // Gl-backend IBL render: bake the environment's split-sum set once, draw the skybox backdrop, then
 // draw the scene whose PBR materials are lit purely by the baked environment (no punctual lights).
-// drawGlScene3D / the env functions collide with the wgpu backend in the @flighthq/sdk barrel, so they
+// renderGlScene3D / the env functions collide with the wgpu backend in the @flighthq/sdk barrel, so they
 // are imported from @flighthq/scene3d-gl directly.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -105,7 +105,7 @@ export function render(
   drawGlEnvironmentSkybox(state, environment, camera, width / height);
 
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

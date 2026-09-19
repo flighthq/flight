@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap, Camera3D, Material, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -94,7 +94,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

@@ -16,7 +16,7 @@ import {
 } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -120,7 +120,7 @@ const lights = {
 
 const pass = beginGlRenderPass(view.renderState, view.renderTarget, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
 prepareScene3DRender(view.renderState, scene, camera, lights);
-drawGlScene3D(pass, scene, camera, lights);
+renderGlScene3D(pass, scene, camera, lights);
 endGlRenderPass(pass);
 presentGlRenderTarget(view.renderState, view.renderTarget);
 

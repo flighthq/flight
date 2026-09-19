@@ -7,7 +7,7 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture. This covers the guard:
 // with no complete source cube the pass is a no-op (it must not touch GL), so an app that always calls
-// it before drawGlScene3D pays nothing until an environment is bound.
+// it before renderGlScene3D pays nothing until an environment is bound.
 
 // A complete six-face cube is what makes drawGlEnvironmentSkybox build its GPU resources rather than
 // return early, which is the state the teardown cases are about.

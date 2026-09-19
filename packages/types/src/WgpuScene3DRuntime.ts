@@ -50,7 +50,7 @@ export interface WgpuScene3DFrameBinding {
   buffer: GPUBuffer;
 }
 
-// A per-subset draw record held in drawWgpuScene3D's opaque/blended lists. Pooled on
+// A per-subset draw record held in renderWgpuScene3D's opaque/blended lists. Pooled on
 // WgpuScene3DRuntime so rebuilding the two passes does not allocate each frame.
 export interface WgpuScene3DDrawEntry {
   alpha: number;
@@ -82,7 +82,7 @@ export interface WgpuScene3DRuntime {
   // materials use BlendMode.Normal. WebGPU bakes this into the pipeline, so it is part of the shared
   // pipeline-cache identity alongside the transparent/opaque and skin variants.
   activeBlendMode: BlendMode | null;
-  // Whether the run currently being bound uses the blended pipeline variant. drawWgpuScene3D sets this
+  // Whether the run currently being bound uses the blended pipeline variant. renderWgpuScene3D sets this
   // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
   activeBlendedRun: boolean;
   activeColorAdjustmentRun: boolean;

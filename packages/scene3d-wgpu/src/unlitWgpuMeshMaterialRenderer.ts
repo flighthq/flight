@@ -61,7 +61,7 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with UnlitMaterials draw.
+// effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with UnlitMaterials draw.
 export function registerWgpuUnlitMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);

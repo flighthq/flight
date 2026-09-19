@@ -10,8 +10,8 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { drawGlScene3D } from './drawGlScene3D';
 import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
+import { renderGlScene3D } from './renderGlScene3D';
 
 // Returns the backend-native cubemap produced by renderGlEnvironmentCapture. The handle can be bound
 // directly for GL-only sampling; bakeGlEnvironmentCaptureIbl is the higher-level bridge into Flight's
@@ -49,7 +49,7 @@ export function renderGlEnvironmentCapture(
       const pass = beginGlCubeRenderFace(state, cubeTarget, face);
       try {
         if (environment) drawGlEnvironmentSkybox(state, environment, camera, 1);
-        drawGlScene3D(pass, scene, camera, lights);
+        renderGlScene3D(pass, scene, camera, lights);
       } finally {
         endGlCubeRenderFace(pass);
       }

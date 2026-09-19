@@ -18,7 +18,7 @@ function warnSelectionRequired(lights: Readonly<Scene3DLightsLike>): void {
     LogLevel.Warn,
     {
       message:
-        'drawWgpuScene3D: punctual lights exceed MAX_FORWARD_LIGHTS and will be input-order truncated — call prepareWgpuScene3DForwardLights after prepareScene3DRender and pass its result to drawWgpuScene3D.',
+        'renderWgpuScene3D: punctual lights exceed MAX_FORWARD_LIGHTS and will be input-order truncated — call prepareWgpuScene3DForwardLights after prepareScene3DRender and pass its result to renderWgpuScene3D.',
       pointLightCount: lights.point?.length ?? 0,
       spotLightCount: lights.spot?.length ?? 0,
     },

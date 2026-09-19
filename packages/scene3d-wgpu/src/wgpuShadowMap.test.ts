@@ -26,8 +26,8 @@ import {
 import type { Camera3D, Scene3DLightsLike, Node3D, Skeleton3D } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
 
-import { drawWgpuScene3D } from './drawWgpuScene3D';
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
+import { renderWgpuScene3D } from './renderWgpuScene3D';
 import { buildWgpuPbrStandardDefineKey } from './standardPbrWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
 import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
@@ -350,7 +350,7 @@ describe('drawWgpuScene3DShadowMap', () => {
       near: 0.1,
       projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
     });
-    drawWgpuScene3D(pass, scene, camera, LIGHTS);
+    renderWgpuScene3D(pass, scene, camera, LIGHTS);
 
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
   });

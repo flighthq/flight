@@ -230,7 +230,7 @@ describe('drawGlFullscreenPass', () => {
 
   // The depth defect's surviving twin. `applyGlBlendMode` sets the equation and factors but never the
   // BLEND enable bit, which the pass inherited from whatever ran before — in practice from the single
-  // `gl.enable(gl.BLEND)` in `createGlRenderState`. That is not a safe thing to inherit: `drawGlScene3D`
+  // `gl.enable(gl.BLEND)` in `createGlRenderState`. That is not a safe thing to inherit: `renderGlScene3D`
   // ends a blended subset pass with `gl.disable(gl.BLEND)` and never re-enables it, so a present or
   // effect pass following a 3D scene composited with blending silently off.
   it('draws with blending enabled even when the caller left it disabled', () => {

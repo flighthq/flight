@@ -16,7 +16,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
-import { drawGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
@@ -62,7 +62,7 @@ orientScene3DBillboardsToCamera(scene, camera);
 prepareScene3DRender(state, scene, camera, lights);
 const screenTarget = createGlScreenRenderTarget(state.gl);
 const pass = beginGlRenderPass(state, screenTarget);
-drawGlScene3D(pass, scene, camera, lights);
+renderGlScene3D(pass, scene, camera, lights);
 endGlRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dGlBillboard', { scene, state });

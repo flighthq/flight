@@ -12,7 +12,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
@@ -40,7 +40,7 @@ state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 prepareScene3DRender(state, scene, camera, lights);
 const screenTarget = createGlScreenRenderTarget(state.gl);
 const pass = beginGlRenderPass(state, screenTarget);
-drawGlScene3D(pass, scene, camera, lights);
+renderGlScene3D(pass, scene, camera, lights);
 endGlRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dGlNode', { scene, state });

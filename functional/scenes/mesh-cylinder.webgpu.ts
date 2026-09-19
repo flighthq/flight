@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -46,7 +46,7 @@ declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The tangent silhouette spans x 0.315*W–0.685*W ≈ 252–548, y 0.19*H–0.86*H ≈ 114–517 — a tall vertically-extended shape with straight sides and no taper, both top and bottom full-width. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
-// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// renderWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same unlit cube as render.webgl.ts. Wgpu state init is async.
@@ -87,7 +87,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

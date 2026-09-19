@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, setGlScene3DTime } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, setGlScene3DTime } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
     'second sphere, flat unshaded disk or city lights on the surrounding field.',
 );
 
-// drawGlScene3D / setGlScene3DTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene3D
+// renderGlScene3D / setGlScene3DTime / the ShadedMaterial registrations exist only on scene-gl; renderGlScene3D
 // also collides in the @flighthq/sdk barrel (re-exported from scene-wgpu too), so the whole shading-GL
 // group is imported directly from @flighthq/scene3d-gl.
 
@@ -110,7 +110,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   setGlScene3DTime(state, sceneTimeSeconds);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

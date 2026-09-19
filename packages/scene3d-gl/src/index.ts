@@ -8,7 +8,7 @@ export {
   explainGlScene3DCoverage,
   hasGlScene3DCoverage,
   drawGlEnvironmentSkybox,
-  drawGlScene3D,
+  renderGlScene3D,
   drawGlScene3DShadowMap,
   enableGlPbrExtensionGuards,
   ensureGlMeshUpload,

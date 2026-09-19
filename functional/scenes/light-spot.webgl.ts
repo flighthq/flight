@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -55,7 +55,7 @@ declareExpectedImageDescription(
     'invalidate fingerprints, baselines and the support matrix. The background stays near-black and shows no beam ' +
     'or cone in the air.',
 );
-// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// renderGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 
 // light-spot — proves a SPOT light shades the forward Gl mesh pass. A mid-gray sphere at the origin is
 // lit by one white spot placed up-front-right, aimed at the origin with a moderate cone. A spot is a
@@ -96,7 +96,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

@@ -59,7 +59,7 @@ export const depthWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with DepthMaterials draw.
+// effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with DepthMaterials draw.
 export function registerWgpuDepthMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, DepthMaterialKind, depthWgpuMeshMaterialRenderer);
 }

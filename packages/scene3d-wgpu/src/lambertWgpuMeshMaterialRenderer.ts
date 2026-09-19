@@ -75,7 +75,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with LambertMaterials draw.
+// side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with LambertMaterials draw.
 export function registerWgpuLambertMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);

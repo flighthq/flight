@@ -68,7 +68,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with EmissiveMaterials draw.
+// side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with EmissiveMaterials draw.
 export function registerWgpuEmissiveMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);

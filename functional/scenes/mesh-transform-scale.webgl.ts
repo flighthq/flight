@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -79,7 +79,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

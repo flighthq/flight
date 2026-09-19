@@ -29,7 +29,7 @@ import {
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
 import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
@@ -181,7 +181,7 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
 
 function renderCameraViewport(region: Viewport): void {
   const p = beginGlRenderPass(state, target, { color: NAVY, depth: 1.0, stencil: 0 }, region);
-  drawGlScene3D(p, scene3D, camera, lights);
+  renderGlScene3D(p, scene3D, camera, lights);
   // This mixed-subject proof presents as already encoded; keep the target-wide declaration stable.
   declareGlRenderTargetColorSpace(state, 'srgb');
   endGlRenderPass(p);

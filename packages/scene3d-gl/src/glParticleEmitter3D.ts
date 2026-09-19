@@ -132,7 +132,7 @@ function compileParticle3DShader(gl: GlContext): GlParticle3DShader {
   const program = createGlProgram(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, 'ParticleEmitter3D');
 
   // Bind the emitter's dedicated VAO before creating buffers. This compile runs lazily inside the first
-  // particle draw — mid drawGlScene3D, with the last mesh's VAO still bound — so the ELEMENT_ARRAY_BUFFER
+  // particle draw — mid renderGlScene3D, with the last mesh's VAO still bound — so the ELEMENT_ARRAY_BUFFER
   // binding below must land in this VAO, not in that mesh's cached VAO (which would leave it drawing
   // against this 6-index quad buffer and reporting "Insufficient buffer size" on later frames).
   const vao = gl.createVertexArray()!;
@@ -330,7 +330,7 @@ function drawParticleEmitter3DNode(
 
   // Bind a dedicated VAO before setting any buffer/attribute state. This instanced draw configures
   // ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, pointers, and divisors; without its own VAO those writes land
-  // in whatever VAO is currently bound — typically the last mesh VAO left bound by drawGlScene3D — whose
+  // in whatever VAO is currently bound — typically the last mesh VAO left bound by renderGlScene3D — whose
   // index buffer then becomes this 6-index quad buffer, so the mesh's next-frame drawElements reports
   // "Insufficient buffer size". The VAO isolates all of it.
   gl.bindVertexArray(shader.vao);

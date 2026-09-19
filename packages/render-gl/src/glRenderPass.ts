@@ -71,19 +71,19 @@ export function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, t
 // clears without allocating another target. Nested passes cannot escape an enclosing pass scissor.
 //
 // A render pass carries NO 2D transform — that is a display-object DRAW concern, not a pass concern, so
-// a 3D pass (drawGlScene3D, which uses the camera) is unaffected. A 2D pass that needs a specific root
+// a 3D pass (renderGlScene3D, which uses the camera) is unaffected. A 2D pass that needs a specific root
 // device transform sets it explicitly with setGlRenderTransform2D after begin; the value is saved and
 // restored by the begin/end bracket like the rest of the pass state.
 //
 // Single-attachment (the common no-effects scene / 2D-offscreen path):
 //   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0 })
-//   drawGlScene3D(pass, scene, camera, lights)
+//   renderGlScene3D(pass, scene, camera, lights)
 //   endGlRenderPass(pass)
 //   presentGlRenderTarget(state, target)
 //
 // Partial target (clear only the sub-region, then restore the exact enclosing viewport/scissor):
 //   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0] }, viewport)
-//   drawGlScene3D(pass, scene, camera, lights)
+//   renderGlScene3D(pass, scene, camera, lights)
 //   endGlRenderPass(pass)
 export function beginGlRenderPass(
   state: GlRenderState,

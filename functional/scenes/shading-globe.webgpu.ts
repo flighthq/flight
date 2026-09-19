@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D, setWgpuScene3DTime } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D, setWgpuScene3DTime } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -92,7 +92,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   setWgpuScene3DTime(state, 0.35);
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

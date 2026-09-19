@@ -63,7 +63,7 @@ export const matcapWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with MatcapMaterials draw.
+// side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with MatcapMaterials draw.
 export function registerWgpuMatcapMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);

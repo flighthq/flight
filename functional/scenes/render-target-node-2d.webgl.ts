@@ -1,5 +1,5 @@
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -117,7 +117,7 @@ renderIntoGlRenderTexture(
   renderTexture,
   (pass) => {
     prepareScene3DRender(pass.state, scene, camera, lights);
-    drawGlScene3D(pass, scene, camera, lights);
+    renderGlScene3D(pass, scene, camera, lights);
   },
   { color: [0x05 / 0xff, 0x07 / 0xff, 0x0d / 0xff, 1], depth: 1.0, stencil: 0 },
 );

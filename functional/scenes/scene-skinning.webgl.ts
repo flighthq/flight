@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -65,7 +65,7 @@ declareExpectedImageDescription(
 // bind silhouette clears at the top where the leaned bar no longer reaches. A skin that failed to upload
 // the palette or bind the texelFetch texture would draw the rigid bind pose and both probes would match.
 //
-// drawGlScene3D collides in the @flighthq/sdk barrel (re-exported from both scene-gl and scene-wgpu) — import
+// renderGlScene3D collides in the @flighthq/sdk barrel (re-exported from both scene-gl and scene-wgpu) — import
 // the Gl one directly. Pipeline wiring (rgba16f + depth scene target, depth clear to far) mirrors the mesh-*
 // scenes; prepareScene3DSkinning readies each skinned mesh's jointMatrices palette (and its posed cull bounds)
 // BEFORE prepareScene3DRender, which no longer touches skinning — that separation keeps @flighthq/render free
@@ -104,7 +104,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

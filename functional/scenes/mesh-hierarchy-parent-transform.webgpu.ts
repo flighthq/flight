@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D, createNode3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -49,7 +49,7 @@ declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit green (0x40e080) unit cube rendered off-center in the upper-right area, its front face at depth 3.5, scale s = H/(7*tan(PI/8)) ≈ 207 px/unit, spanning x W/2 + 0.8*s to W/2 + 1.8*s ≈ 566–772, y H/2 − 1.2*s to H/2 − 0.2*s ≈ 52–259, centered near (W/2 + 1.3*s, H/2 − 0.7*s) ≈ (669, 156). The mesh position comes entirely from its parent node translation — the child local transform is identity. The frame center and lower-left quadrant are background.',
 );
 
-// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// renderWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same unlit cube as render.webgl.ts. Wgpu state init is async.
@@ -90,7 +90,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

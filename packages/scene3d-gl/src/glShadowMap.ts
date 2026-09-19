@@ -29,7 +29,7 @@ import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
 // sampleable depth render target (the shadow map), and record it + the light view-projection on the
-// scene runtime. The subsequent drawGlScene3D's lit binds (bindGlMeshLightBlock) read that to PCF-sample
+// scene runtime. The subsequent renderGlScene3D's lit binds (bindGlMeshLightBlock) read that to PCF-sample
 // the shadow during shading. Shadows are opt-in: an app that never calls this leaves runtime.shadow
 // null, so existing scenes render unchanged.
 //

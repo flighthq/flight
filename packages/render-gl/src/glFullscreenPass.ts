@@ -140,7 +140,7 @@ export function drawGlFullscreenPass(
   // void the pass rather than error:
   //
   // BLEND — `applyGlBlendMode` sets the equation and factors but never the enable bit, so the pass took
-  // it from the single `gl.enable(gl.BLEND)` in `createGlRenderState`. `drawGlScene3D` ends its
+  // it from the single `gl.enable(gl.BLEND)` in `createGlRenderState`. `renderGlScene3D` ends its
   // blended-subset pass with `gl.disable(gl.BLEND)` and never re-enables it, so a present or effect pass
   // after a 3D scene composited unblended while its factors said otherwise.
   //

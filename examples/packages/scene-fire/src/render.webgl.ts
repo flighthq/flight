@@ -23,7 +23,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { drawGlScene3D } from '@flighthq/sdk/rendering';
+import { renderGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
@@ -64,6 +64,6 @@ export function render(
 ): void {
   const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, effects);
 }

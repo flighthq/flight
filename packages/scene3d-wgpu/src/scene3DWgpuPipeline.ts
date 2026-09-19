@@ -104,7 +104,7 @@ function buildScene3DWgpuTextureResolvers(
   return table;
 }
 
-// Node3D and ParticleEmitter3D are explicit drawWgpuScene3D passes rather than NodeRenderer entries.
+// Node3D and ParticleEmitter3D are explicit renderWgpuScene3D passes rather than NodeRenderer entries.
 // WGPU also has no ExtendedPbrMaterial renderer or PBR-extension registry: the seven scene3d-gl
 // extensions stay GL-only until WGPU owns real registration and bind seams for them.
 export const defaultScene3DWgpuRenderRegistries: Readonly<WgpuRenderRegistries> = {
