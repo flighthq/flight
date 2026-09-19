@@ -22,28 +22,28 @@ export type StorageWriteFailureReason = StorageSetItemFailureReason | 'serializa
 // Every mutation result carries `reason`; there is no parallel `ok` flag. `reason: 'ok'` means the
 // resulting value is atomically visible through the provider and any provider cache now reflects that
 // visible value. It does NOT promise that bytes were fsynced or would survive sudden power loss.
-export type StorageMutationResult<FailureReason extends string> =
+export type StorageMutationOutcome<FailureReason extends string> =
   | { readonly reason: 'ok' }
   | { readonly reason: FailureReason };
 
-export type StorageClearResult = StorageMutationResult<StorageClearFailureReason>;
-export type StorageRemoveItemResult = StorageMutationResult<StorageRemoveItemFailureReason>;
-export type StorageSetItemResult = StorageMutationResult<StorageSetItemFailureReason>;
-export type StorageJsonWriteResult = StorageMutationResult<StorageWriteFailureReason>;
+export type StorageClearResult = StorageMutationOutcome<StorageClearFailureReason>;
+export type StorageRemoveItemResult = StorageMutationOutcome<StorageRemoveItemFailureReason>;
+export type StorageSetItemResult = StorageMutationOutcome<StorageSetItemFailureReason>;
+export type StorageJsonWriteResult = StorageMutationOutcome<StorageWriteFailureReason>;
 
 // A successful value may itself be null: getItem uses null for an ordinary missing key. Provider
 // failure also carries a null payload, but its non-ok reason keeps the two states unambiguous.
-export type StorageValueResult<Value, FailureReason extends string> =
+export type StorageValueOutcome<Value, FailureReason extends string> =
   | { readonly reason: 'ok'; readonly value: Value }
   | { readonly reason: FailureReason; readonly value: null };
 
-export type StorageGetItemResult = StorageValueResult<string | null, StorageGetItemFailureReason>;
-export type StorageKeysResult = StorageValueResult<readonly string[], StorageKeysFailureReason>;
-export type StorageBooleanResult = StorageValueResult<boolean | null, StorageReadFailureReason>;
-export type StorageItemCountResult = StorageValueResult<number, StorageKeysFailureReason>;
-export type StorageItemOrResult = StorageValueResult<string, StorageGetItemFailureReason>;
-export type StorageNumberResult = StorageValueResult<number | null, StorageReadFailureReason>;
-export type StoragePresenceResult = StorageValueResult<boolean, StorageGetItemFailureReason>;
+export type StorageGetItemResult = StorageValueOutcome<string | null, StorageGetItemFailureReason>;
+export type StorageKeysResult = StorageValueOutcome<readonly string[], StorageKeysFailureReason>;
+export type StorageBooleanResult = StorageValueOutcome<boolean | null, StorageReadFailureReason>;
+export type StorageItemCountResult = StorageValueOutcome<number, StorageKeysFailureReason>;
+export type StorageItemOrResult = StorageValueOutcome<string, StorageGetItemFailureReason>;
+export type StorageNumberResult = StorageValueOutcome<number | null, StorageReadFailureReason>;
+export type StoragePresenceResult = StorageValueOutcome<boolean, StorageGetItemFailureReason>;
 
 // Fallback reads retain a decode failure in `reason` while returning the requested fallback. Provider
 // failure never substitutes a fallback and therefore keeps a null payload.
@@ -55,7 +55,7 @@ export type StorageBooleanOrResult = StorageFallbackResult<boolean>;
 export type StorageJsonOrResult<Value> = StorageFallbackResult<Value | null>;
 export type StorageNumberOrResult = StorageFallbackResult<number>;
 
-export type StorageJsonResult<Value> = StorageValueResult<Value | null, StorageReadFailureReason>;
+export type StorageJsonResult<Value> = StorageValueOutcome<Value | null, StorageReadFailureReason>;
 
 // One coherent observation of two independent platform facts. `outcome` reports bucket policy;
 // `permissionState` reports the separately observed Permissions API state. A missing observation is
