@@ -153,7 +153,7 @@ describe('web media-session command ownership', () => {
     Object.defineProperty(session, 'playbackState', {
       configurable: true,
       get: () => playback,
-      set: (value: unknown) => {
+      set: (value: string) => {
         if (value === 'none' && playbackAttempts++ === 0) throw new Error('playback clear');
         playback = value;
       },
