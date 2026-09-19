@@ -1,7 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Entity,
-  EntityConstruction,
   HostInputIngressCapability,
   InputGamepadAxisData,
   InputGamepadButtonData,
@@ -13,12 +10,6 @@ import type {
   MouseWheelMode,
 } from '@flighthq/types/contract';
 import { KeyCode, KeyModifier } from '@flighthq/types/contract';
-
-export function createWebInputIngressBackend(): HostInputIngressCapability & Entity {
-  const out = allocateEntity<HostInputIngressCapability & Entity>();
-  initializeWebInputIngressBackend(out);
-  return finishEntity(out);
-}
 
 /**
  * Returns coalesced pointer event data for a `pointermove` event, iterating
@@ -78,8 +69,8 @@ export function getWebMouseWheelModeFromWheelEvent(event: Readonly<WheelEvent>):
 }
 
 /** Explicit browser adapter for input ingress. */
-export function initializeWebInputIngressBackend(out: EntityConstruction<HostInputIngressCapability & Entity>): void {
-  out.attachGamepad = (source, sink): (() => void) => {
+export const webHostInputIngress: HostInputIngressCapability = {
+  attachGamepad: (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
 
@@ -160,8 +151,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
       target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
       cancelAnimationFrame(frameHandle);
     };
-  };
-  out.attachKeyboard = (source, sink, options): (() => void) => {
+  },
+  attachKeyboard: (source, sink, options): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
     const preventDefault = options?.preventDefault ?? true;
@@ -186,8 +177,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
       target.removeEventListener('keydown', onKeyDown);
       target.removeEventListener('keyup', onKeyUp);
     };
-  };
-  out.attachPointer = (source, sink, options): (() => void) => {
+  },
+  attachPointer: (source, sink, options): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
     const preventDefault = options?.preventDefault ?? true;
@@ -231,8 +222,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
       target.removeEventListener('pointermove', onPointerMove);
       target.removeEventListener('pointerup', onPointerUp);
     };
-  };
-  out.attachRelativePointer = (source, sink, options): (() => void) => {
+  },
+  attachRelativePointer: (source, sink, options): (() => void) => {
     const target = getWebInputOwnerDocumentTarget(source);
     if (target === null) return noopInputIngressRelease;
     const preventDefault = options?.preventDefault ?? true;
@@ -246,8 +237,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
 
     target.addEventListener('mousemove', onMouseMove);
     return () => target.removeEventListener('mousemove', onMouseMove);
-  };
-  out.attachText = (source, sink): (() => void) => {
+  },
+  attachText: (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
     const onBeforeInput = (event: Event) => {
@@ -270,8 +261,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
       target.removeEventListener('beforeinput', onBeforeInput);
       target.removeEventListener('compositionupdate', onCompositionUpdate);
     };
-  };
-  out.attachWheel = (source, sink, options): (() => void) => {
+  },
+  attachWheel: (source, sink, options): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
     const preventDefault = options?.preventDefault ?? true;
@@ -286,10 +277,8 @@ export function initializeWebInputIngressBackend(out: EntityConstruction<HostInp
 
     target.addEventListener('wheel', onWheel, { passive: !preventDefault });
     return () => target.removeEventListener('wheel', onWheel);
-  };
-}
-
-export const webHostInputIngress = createWebInputIngressBackend();
+  },
+};
 
 /** Releases Web pointer capture, tolerating an already-released pointer. */
 export function releaseWebInputPointerCapture(element: HTMLElement, pointerId: number): void {

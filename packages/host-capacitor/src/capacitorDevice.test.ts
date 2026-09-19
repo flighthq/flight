@@ -69,10 +69,6 @@ function blankInfo(): DeviceInfo {
 }
 
 describe('capacitorHostDevice', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostDevice(fakeCapacitor().capacitor)).toBe(true);
-  });
-
   it('fills DeviceInfo from the prefetched Capacitor info once it resolves', async () => {
     const backend = capacitorHostDevice(fakeCapacitor().capacitor);
     // Sentinels until the construction-time prefetch settles.

@@ -1,11 +1,9 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostDirectoryOpenDialogCapability,
   HostDialogCapabilities,
   DirectoryOpenDialogResult,
   ElectronApi,
-  Entity,
   FileDialogFilter,
   HostFileOpenDialogCapability,
   FileOpenDialogResult,
@@ -25,22 +23,22 @@ export function electronHostDialog(
   };
 }
 
-export function electronHostDirectoryOpenDialog(electron: ElectronApi): HostDirectoryOpenDialogCapability & Entity {
-  const out = allocateEntity<HostDirectoryOpenDialogCapability & Entity>();
+export function electronHostDirectoryOpenDialog(electron: ElectronApi): HostDirectoryOpenDialogCapability {
+  const out = {} as HostDirectoryOpenDialogCapability;
   populateElectronHostDirectoryOpenDialog(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
-export function electronHostFileOpenDialog(electron: ElectronApi): HostFileOpenDialogCapability & Entity {
-  const out = allocateEntity<HostFileOpenDialogCapability & Entity>();
+export function electronHostFileOpenDialog(electron: ElectronApi): HostFileOpenDialogCapability {
+  const out = {} as HostFileOpenDialogCapability;
   populateElectronHostFileOpenDialog(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
-export function electronHostFileSaveDialog(electron: ElectronApi): HostFileSaveDialogCapability & Entity {
-  const out = allocateEntity<HostFileSaveDialogCapability & Entity>();
+export function electronHostFileSaveDialog(electron: ElectronApi): HostFileSaveDialogCapability {
+  const out = {} as HostFileSaveDialogCapability;
   populateElectronHostFileSaveDialog(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostMessageDialog(electron: ElectronApi): HostMessageDialogCapability {

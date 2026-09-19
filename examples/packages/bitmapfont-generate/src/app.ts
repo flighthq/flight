@@ -1,4 +1,4 @@
-import { createWebGlyphRasterizerBackend, webHostImage } from '@flighthq/host-web/contract';
+import { webHostGlyphRasterizer, webHostImage } from '@flighthq/host-web/contract';
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -18,7 +18,7 @@ import {
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
-  createStubGlyphRasterizerBackend,
+  allocateStubGlyphRasterizerBackend,
   getGlyphAtlasBitmap,
 } from '@flighthq/sdk/text';
 
@@ -33,9 +33,7 @@ root.scaleY = scale;
 // Headless Chromium cannot share document fonts with the OffscreenCanvas rasterizer, so automation
 // uses glyphatlas's deterministic non-blank test backend. Interactive browsers render real glyphs.
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-const rasterizerBackend = captureWindow.__flightCapture
-  ? createStubGlyphRasterizerBackend()
-  : createWebGlyphRasterizerBackend();
+const rasterizerBackend = captureWindow.__flightCapture ? allocateStubGlyphRasterizerBackend() : webHostGlyphRasterizer;
 const atlas = createGlyphAtlas({
   fontFamily: 'sans-serif',
   fontSize: 52,

@@ -16,9 +16,9 @@ export { webHostAudio } from './webAudio';
 export { getAudioDeviceContext, hasAudioDeviceWebNodeAccess, webHostAudioDevice } from './webAudioDevice';
 export { webHostAudioMixer } from './webAudioMixer';
 export { drawWebBitmap } from './webBitmapDraw';
-export { createWebBitmapEncodeBackend, webHostBitmapEncode } from './webBitmapEncode';
+export { webHostBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapFromCanvas } from './webBitmapFrom';
-export { createWebBitmapReadbackBackend, webHostBitmapReadback } from './webBitmapReadback';
+export { webHostBitmapReadback } from './webBitmapReadback';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export {
   webHostClipboardChange,
@@ -33,7 +33,7 @@ export {
   webHostConnectivityStatus,
 } from './webConnectivity';
 export { webHostConnectivity } from './webConnectivityHost';
-export { createWebCursorBackend } from './webCursor';
+export { allocateWebCursorBackend } from './webCursor';
 export { webHostIpc } from './webIpcHost';
 export { webHostMidi } from './webMidiHost';
 export { webHostNotification } from './webNotificationHost';
@@ -53,10 +53,10 @@ export {
 } from './webDialog';
 export { webHostDialog } from './webDialogHost';
 export { webHostFileSystem } from './webFilesystem';
-export { createWebFontLoadingBackend, webHostFontLoading } from './webFontLoading';
+export { webHostFontLoading } from './webFontLoading';
 export { webHostGeolocation } from './webGeolocation';
 export { createWebGlContext, getWebGlContext } from './webGlContext';
-export { createWebGlyphRasterizerBackend, webHostGlyphRasterizer } from './webGlyphRasterizer';
+export { webHostGlyphRasterizer } from './webGlyphRasterizer';
 export { webHostBitmap } from './webBitmapHost';
 export { webHostGlGroup } from './webGlHost';
 export { webHostImageGroup } from './webImageHost';
@@ -72,7 +72,7 @@ export { webHostWgpuContext } from './webHostWgpuContext';
 export { webHostWgpu } from './webWgpuHost';
 export { webHostHaptics } from './webHaptics';
 export { webHostHapticsGroup } from './webHapticsHost';
-export { createWebImageBackend, webHostImage } from './webImage';
+export { webHostImage } from './webImage';
 export {
   clearWebImageBitmapComposers,
   disableWebImageBitmapComposition,
@@ -106,7 +106,6 @@ export {
   webHostInputTarget,
 } from './webInputTarget';
 export {
-  createWebInputIngressBackend,
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
   getWebKeyModifierFromKeyboardEvent,
@@ -117,14 +116,7 @@ export {
 } from './webInputIngress';
 export { webHostInput } from './webInputHost';
 export { webHostLifecycle } from './webLifecycle';
-export {
-  createWebSoftKeyboardChangeBackend,
-  createWebSoftKeyboardInfoBackend,
-  createWebSoftKeyboardVisibilityBackend,
-  webHostSoftKeyboardChange,
-  webHostSoftKeyboardInfo,
-  webHostSoftKeyboardVisibility,
-} from './webKeyboard';
+export { webHostSoftKeyboardChange, webHostSoftKeyboardInfo, webHostSoftKeyboardVisibility } from './webKeyboard';
 export { webHostSoftKeyboard } from './webSoftKeyboardHost';
 export { webHostLoop } from './webLoop';
 export { webHostMediaSessionAction, webHostMediaSession } from './webMediasession';
@@ -170,7 +162,7 @@ export {
   webHostStoragePersistenceQuery,
   webHostStoragePersistenceRequest,
 } from './webStoragePersistence';
-export { createWebVideoCapabilityBackend, webHostVideo } from './webVideoCapability';
+export { webHostVideo } from './webVideoCapability';
 export { createWebVideoResourceFromMediaStream } from './webVideoResource';
 export { webHost } from './webHost';
 export { webHostNetGroup } from './webNetHost';
@@ -198,5 +190,5 @@ export {
   webHostWindowLifecycle,
 } from './webWindow';
 export { webHostWindow } from './webWindowHost';
-export { createWebSocketBackend, webHostSocket } from './webSocket';
+export { webHostSocket } from './webSocket';
 export { webHostSocketGroup } from './webSocketHost';

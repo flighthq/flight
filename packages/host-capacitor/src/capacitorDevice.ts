@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorDeviceInfo,
@@ -6,15 +5,14 @@ import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
-  Entity,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability & Entity {
-  const out = allocateEntity<HostDeviceCapability & Entity>();
+export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability {
+  const out = {} as HostDeviceCapability;
   populateCapacitorDevice(out, capacitor);
-  return finishEntity(out);
+  return out;
 }
 
 // Maps Flight's HostDeviceCapability onto Capacitor's `@capacitor/device`. Provider reads are synchronous

@@ -49,10 +49,6 @@ function fakeCapacitor() {
 }
 
 describe('capacitorHostFileSystem', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostFileSystem(fakeCapacitor().capacitor)).toBe(true);
-  });
-
   it('round-trips a text file', async () => {
     const backend = capacitorHostFileSystem(fakeCapacitor().capacitor);
     expect(await backend.writeTextFile?.('/a.txt', 'hello')).toBe(true);

@@ -1,22 +1,15 @@
 import { appendPathClose, appendPathLineTo, appendPathMoveTo } from '@flighthq/path/contract';
 import type { GlyphOutlineSource, Path } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createGlyphRasterizerBackendFromGlyphOutlineSource,
+  allocateGlyphRasterizerBackendFromGlyphOutlineSource,
   initializeGlyphRasterizerBackendFromGlyphOutlineSource,
 } from './glyphOutlineSource';
 
-describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource())).toBe(
-      true,
-    );
-  });
-
+describe('allocateGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   it('maps codepoints to glyph indices and rasterizes design-unit outlines at the requested em size', () => {
-    const backend = createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
+    const backend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
     const raster = backend.rasterize(0x41, { fontFamily: 'embedded', fontSize: 20 });
 
     expect(raster).not.toBeNull();
@@ -30,7 +23,7 @@ describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   });
 
   it('returns scaled outline metrics to glyphatlas', () => {
-    const backend = createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
+    const backend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
 
     expect(backend.measureMetrics?.({ fontFamily: 'embedded', fontSize: 20 })).toEqual({
       ascent: 16,
@@ -40,7 +33,7 @@ describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   });
 
   it('returns a zero-area raster with an advance for an empty glyph', () => {
-    const backend = createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
+    const backend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
 
     expect(backend.rasterize(0x20, { fontFamily: 'embedded', fontSize: 20 })).toEqual({
       advance: 5,
@@ -53,7 +46,7 @@ describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   });
 
   it('sentinels for an unmapped codepoint or invalid em scale', () => {
-    const backend = createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
+    const backend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
 
     expect(backend.rasterize(0x42, { fontFamily: 'embedded', fontSize: 20 })).toBeNull();
     expect(backend.rasterize(0x41, { fontFamily: 'embedded', fontSize: 0 })).toBeNull();
@@ -89,7 +82,7 @@ function createTestGlyphOutlineSource(): GlyphOutlineSource {
   };
 }
 describe('initializeGlyphRasterizerBackendFromGlyphOutlineSource', () => {
-  it('is the construction initializer of createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
+  it('is the construction initializer of allocateGlyphRasterizerBackendFromGlyphOutlineSource', () => {
     expect(typeof initializeGlyphRasterizerBackendFromGlyphOutlineSource).toBe('function');
   });
 });

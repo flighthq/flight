@@ -402,7 +402,7 @@ function deriveRegistry(root: string): Registry {
       }
     }
   }
-  byCall.set('createWebCursorBackend', 'Cursor');
+  byCall.set('allocateWebCursorBackend', 'Cursor');
 
   const closure = new Map<string, ReadonlySet<string>>();
   const expand = (enabler: string, visiting = new Set<string>()): ReadonlySet<string> => {

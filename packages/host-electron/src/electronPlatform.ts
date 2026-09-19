@@ -1,16 +1,14 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
-  Entity,
   HostPlatformCapabilities,
   HostPlatformCapability,
   PlatformName,
 } from '@flighthq/types/contract';
 
-export function electronHostPlatform(electron: ElectronApi): HostPlatformCapability & Entity {
-  const out = allocateEntity<HostPlatformCapability & Entity>();
+export function electronHostPlatform(electron: ElectronApi): HostPlatformCapability {
+  const out = {} as HostPlatformCapability;
   populateElectronHostPlatform(out, electron);
-  return finishEntity(out);
+  return out;
 }
 
 export function electronHostPlatformGroup(electron: ElectronApi): Required<Pick<HostPlatformCapabilities, 'info'>> {

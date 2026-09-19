@@ -1,8 +1,5 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createPath, flattenPath, getPathBounds } from '@flighthq/path/contract';
 import type {
-  Entity,
-  EntityConstruction,
   GlyphMetrics,
   GlyphOutlineSource,
   GlyphRasterizeOptions,
@@ -11,12 +8,12 @@ import type {
   RectangleLike,
 } from '@flighthq/types/contract';
 
-export function createGlyphRasterizerBackendFromGlyphOutlineSource(
+export function allocateGlyphRasterizerBackendFromGlyphOutlineSource(
   source: GlyphOutlineSource,
-): HostGlyphRasterizerCapability & Entity {
-  const out = allocateEntity<HostGlyphRasterizerCapability & Entity>();
+): HostGlyphRasterizerCapability {
+  const out = {} as HostGlyphRasterizerCapability;
   initializeGlyphRasterizerBackendFromGlyphOutlineSource(out, source);
-  return finishEntity(out);
+  return out;
 }
 
 // Adapts an index-keyed vector font into the codepoint-keyed rasterizer consumed by glyphatlas. The
@@ -25,7 +22,7 @@ export function createGlyphRasterizerBackendFromGlyphOutlineSource(
 // portable 4x4 coverage scan over flattened contours: it needs no DOM/canvas and therefore works for
 // imported fonts in browser, worker, native-host, and headless environments alike.
 export function initializeGlyphRasterizerBackendFromGlyphOutlineSource(
-  out: EntityConstruction<HostGlyphRasterizerCapability & Entity>,
+  out: HostGlyphRasterizerCapability,
   source: GlyphOutlineSource,
 ): void {
   out.measureMetrics = (options): GlyphMetrics | null => {

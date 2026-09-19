@@ -1,6 +1,7 @@
 // Prevents SDK production code from silently bypassing an installed host transport. The allowed
-// population is structural: a direct web primitive is legal only while lexically enclosed by a
-// `createWeb*Backend` implementation. There is no file/site allowlist, so moving the same call into an
+// population is structural: a direct web primitive is legal only while lexically enclosed by the web
+// backend that owns it — a `createWeb*Backend` implementation, or the exported `webHost*` const whose
+// object literal holds the operation. There is no file/site allowlist, so moving the same call into an
 // ordinary helper makes it a violation even when that helper happens to be called by a web backend.
 //
 // The file population is derived from tracked and untracked package source on every run. Tests,
@@ -63,6 +64,11 @@ const CONSTRUCTOR_PRIMITIVES = new Set<TransportPrimitive>([
 ]);
 const GLOBAL_OBJECTS = new Set(['global', 'globalThis', 'self', 'window']);
 const WEB_BACKEND_NAME = /^(?:create|initialize)Web[A-Za-z0-9]*Backend$/;
+// A host capability is plain data, so the backend that owns a transport is often the exported
+// `webHost*` const itself rather than a factory function — the primitive then sits in an arrow held by
+// that object literal, with no enclosing `createWeb*Backend` frame. Ownership is what this gate checks,
+// and the const names it just as precisely; an ordinary helper still matches neither form.
+const WEB_BACKEND_OWNER_NAME = /^webHost[A-Za-z0-9]*$/;
 const SOURCE_EXTENSION = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 const TEST_SOURCE = /(?:^|\/)(?:__tests__|tests?)(?:\/|$)|\.(?:spec|test)\.(?:[cm]?[jt]s|[jt]sx)$/;
 
@@ -113,13 +119,13 @@ export function formatTransportBypassReport(report: Readonly<TransportBypassRepo
       {
         command: 'npm run check:transport-bypasses (scripts/check-transport-bypasses.ts)',
         counting:
-          'one unit = one production source file scanned; a violation is one call site of a listed primitive not lexically enclosed by a createWeb*Backend function',
+          'one unit = one production source file scanned; a violation is one call site of a listed primitive not lexically enclosed by its owning createWeb*Backend function or webHost* const',
         scope:
           'tracked and untracked packages/*/src source, derived on every run; declaration source, test source and the tool-* family excluded by role, never by path roster',
       },
       readGateTreeState(process.cwd()),
     ),
-    `${passed ? pc.green('OK') : pc.yellow('!')} ${pc.bold('Direct web transports stay inside createWeb*Backend implementations')} ${pc.dim(`(${report.scannedFiles} production files scanned, ${report.allowed.length} backend site${report.allowed.length === 1 ? '' : 's'} allowed, ${report.excluded.length} source file${report.excluded.length === 1 ? '' : 's'} excluded)`)}`,
+    `${passed ? pc.green('OK') : pc.yellow('!')} ${pc.bold('Direct web transports stay inside the web backend that owns them')} ${pc.dim(`(${report.scannedFiles} production files scanned, ${report.allowed.length} backend site${report.allowed.length === 1 ? '' : 's'} allowed, ${report.excluded.length} source file${report.excluded.length === 1 ? '' : 's'} excluded)`)}`,
     `  Predicate: ${pc.dim('fetch(), new XMLHttpRequest(), new Request(), new WebSocket(), new Image(), new EventSource()')}`,
     '  Derived exclusions:',
     `  - declaration-source: ${exclusionCounts.get('declaration-source') ?? 0}`,
@@ -288,6 +294,10 @@ function bindingNames(name: ts.BindingName): string[] {
 
 function enclosingWebBackendName(node: ts.Node): string | null {
   for (let current = node.parent; current !== undefined; current = current.parent) {
+    if (ts.isVariableDeclaration(current) && ts.isIdentifier(current.name)) {
+      if (WEB_BACKEND_OWNER_NAME.test(current.name.text)) return current.name.text;
+      continue;
+    }
     if (!isFunctionLike(current)) continue;
     const name = functionName(current);
     if (name !== null && WEB_BACKEND_NAME.test(name)) return name;

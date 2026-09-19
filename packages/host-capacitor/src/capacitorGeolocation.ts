@@ -5,13 +5,12 @@ import type {
   GeolocationPositionResult,
   CapacitorApi,
   CapacitorPosition,
-  Entity,
 } from '@flighthq/types/contract';
 
-export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocationCapability & Entity {
-  const out = allocateEntity<HostGeolocationCapability & Entity>();
+export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocationCapability {
+  const out = {} as HostGeolocationCapability;
   populateCapacitorGeolocation(out, capacitor);
-  return finishEntity(out);
+  return out;
 }
 
 // Maps Flight's HostGeolocationCapability onto Capacitor's `@capacitor/geolocation`. getCurrentPosition and the
@@ -92,7 +91,7 @@ function toGeolocationPosition(position: Readonly<CapacitorPosition>): Geolocati
   out.heading = coords.heading ?? 0;
   out.speed = coords.speed ?? 0;
   out.timestamp = position.timestamp;
-  return out;
+  return finishEntity(out);
 }
 
 // Capacitor reports 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'; the last folds to 'prompt'.

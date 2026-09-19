@@ -1,4 +1,9 @@
-import { createWebCursorBackend, webHostAudioDevice, webHostAudioMixer, webHostInputIngress } from '@flighthq/host-web';
+import {
+  allocateWebCursorBackend,
+  webHostAudioDevice,
+  webHostAudioMixer,
+  webHostInputIngress,
+} from '@flighthq/host-web';
 import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -84,7 +89,7 @@ root.scaleY = scale;
 registerDefaultHitTests();
 const canvasElement = canvas;
 const interactionManager = createInteractionManager(root, {
-  cursorBackend: createWebCursorBackend(canvasElement),
+  cursorBackend: allocateWebCursorBackend(canvasElement),
 });
 const inputManager = createInputManager();
 attachPointerInput(webHostInputIngress, inputManager, canvasElement);

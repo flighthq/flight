@@ -1,23 +1,12 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Entity,
-  EntityConstruction,
   GlyphMetrics,
   GlyphRasterizeOptions,
   GlyphRasterizedBitmap,
   HostGlyphRasterizerCapability,
 } from '@flighthq/types/contract';
 
-export function createWebGlyphRasterizerBackend(): HostGlyphRasterizerCapability & Entity {
-  const out = allocateEntity<HostGlyphRasterizerCapability & Entity>();
-  initializeWebGlyphRasterizerBackend(out);
-  return finishEntity(out);
-}
-
-export function initializeWebGlyphRasterizerBackend(
-  out: EntityConstruction<HostGlyphRasterizerCapability & Entity>,
-): void {
-  out.measureMetrics = (options): GlyphMetrics | null => {
+export const webHostGlyphRasterizer: HostGlyphRasterizerCapability = {
+  measureMetrics: (options): GlyphMetrics | null => {
     const context = _acquireGlyphRasterContext();
     if (context === null) return null;
     _applyGlyphRasterFont(context, options);
@@ -26,15 +15,13 @@ export function initializeWebGlyphRasterizerBackend(
     const descent = metrics.fontBoundingBoxDescent;
     if (!(ascent > 0) || !(descent >= 0)) return null;
     return { ascent, descent, lineGap: 0 };
-  };
-  out.rasterize = (codepoint, options): GlyphRasterizedBitmap | null => {
+  },
+  rasterize: (codepoint, options): GlyphRasterizedBitmap | null => {
     const context = _acquireGlyphRasterContext();
     if (context === null) return null;
     return _rasterizeGlyphOnContext(context, codepoint, options);
-  };
-}
-
-export const webHostGlyphRasterizer: HostGlyphRasterizerCapability & Entity = createWebGlyphRasterizerBackend();
+  },
+};
 
 function _acquireGlyphRasterContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null {
   try {

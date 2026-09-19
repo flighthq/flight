@@ -44,7 +44,7 @@ export type Cursor =
   | (string & Record<never, never>);
 /**
  * Backend seam for applying cursor changes driven by pointer rollover. The web backend
- * (`createWebCursorBackend`) sets `element.style.cursor`; native hosts provide their own. A backend
+ * (`allocateWebCursorBackend`) sets `element.style.cursor`; native hosts provide their own. A backend
  * is held per `InteractionManager` (`manager.cursorBackend`), not globally. `setCursor(null)` clears
  * to the element/host default.
  */

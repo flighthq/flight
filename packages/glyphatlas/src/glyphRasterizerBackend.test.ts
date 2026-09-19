@@ -1,17 +1,15 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createStubGlyphRasterizerBackend, initializeStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { allocateStubGlyphRasterizerBackend, initializeStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
-describe('createStubGlyphRasterizerBackend', () => {
-  it('returns an Entity with a rasterize method', () => {
-    const backend = createStubGlyphRasterizerBackend();
-    expect(EntityRuntimeKey in backend).toBe(true);
+describe('allocateStubGlyphRasterizerBackend', () => {
+  it('returns a backend with a rasterize method', () => {
+    const backend = allocateStubGlyphRasterizerBackend();
     expect(typeof backend.rasterize).toBe('function');
   });
 
   it('produces a non-null glyph for any codepoint and font size', () => {
-    const backend = createStubGlyphRasterizerBackend();
+    const backend = allocateStubGlyphRasterizerBackend();
     const glyph = backend.rasterize(65, { fontFamily: 'mock', fontSize: 16 });
     expect(glyph).not.toBeNull();
     expect(glyph!.width).toBeGreaterThan(0);
@@ -21,19 +19,19 @@ describe('createStubGlyphRasterizerBackend', () => {
   });
 
   it('returns a new entity on each call', () => {
-    const a = createStubGlyphRasterizerBackend();
-    const b = createStubGlyphRasterizerBackend();
+    const a = allocateStubGlyphRasterizerBackend();
+    const b = allocateStubGlyphRasterizerBackend();
     expect(a).not.toBe(b);
   });
 
   it('fills pixels with 255 (opaque white)', () => {
-    const backend = createStubGlyphRasterizerBackend();
+    const backend = allocateStubGlyphRasterizerBackend();
     const glyph = backend.rasterize(65, { fontFamily: 'mock', fontSize: 16 })!;
     expect(glyph.pixels.every((v) => v === 255)).toBe(true);
   });
 });
 describe('initializeStubGlyphRasterizerBackend', () => {
-  it('is the construction initializer of createStubGlyphRasterizerBackend', () => {
+  it('is the construction initializer of allocateStubGlyphRasterizerBackend', () => {
     expect(typeof initializeStubGlyphRasterizerBackend).toBe('function');
   });
 });

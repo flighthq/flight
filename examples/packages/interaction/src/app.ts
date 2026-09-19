@@ -1,4 +1,4 @@
-import { createWebCursorBackend, webHostInputIngress } from '@flighthq/host-web';
+import { allocateWebCursorBackend, webHostInputIngress } from '@flighthq/host-web';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -46,7 +46,7 @@ registerDefaultHitTests();
 registerShapeHitTest();
 
 const manager = createInteractionManager(root, {
-  cursorBackend: createWebCursorBackend(canvasElement),
+  cursorBackend: allocateWebCursorBackend(canvasElement),
   precise: true,
 });
 

@@ -29,6 +29,11 @@ interface FixtureResult {
   modules: string[];
   rawBytes: number;
   gzipBytes: number;
+  // Bytes contributed by SDK modules only, excluding this directory's own fixture glue. Whole-bundle
+  // bytes cannot express subadditivity once isolation is exact: the entry glue differs per fixture
+  // (combined names four bindings, each individual names one), and that difference does not shrink
+  // when capabilities share nothing.
+  libraryBytes: number;
   code: string;
 }
 
@@ -82,9 +87,18 @@ async function buildFixture(name: string): Promise<FixtureResult> {
   const rawBytes = Buffer.byteLength(code, 'utf-8');
   const gzipBytes = gzipSync(code).byteLength;
 
+  let libraryBytes = 0;
+  for (const chunk of chunks) {
+    for (const [id, module] of Object.entries(chunk.modules)) {
+      if (id.includes('/evidence/')) continue;
+      libraryBytes += module.renderedLength;
+    }
+  }
+
   return {
     code,
     gzipBytes,
+    libraryBytes,
     modules: [...allModules].map((id) => id.replace(ROOT + '/', '')),
     rawBytes,
   };
@@ -168,7 +182,7 @@ describe('evidence: tree-shaking isolation', { timeout: EVIDENCE_TEST_TIMEOUT_MS
           `gzip=${fixture.gzipBytes} (${gzipDelta >= 0 ? '+' : ''}${gzipDelta})`,
       );
     }
-    console.log(`combined: raw=${combined.rawBytes}, gzip=${combined.gzipBytes}`);
+    console.log(`combined: raw=${combined.rawBytes}, gzip=${combined.gzipBytes}, library=${combined.libraryBytes}`);
     console.log(`control: raw=${control.rawBytes}, gzip=${control.gzipBytes}`);
 
     const sumRaw = individualResults.reduce((s, r) => s + r.rawBytes, 0);
@@ -181,7 +195,12 @@ describe('evidence: tree-shaking isolation', { timeout: EVIDENCE_TEST_TIMEOUT_MS
 
     expect(combined.rawBytes).toBeGreaterThan(Math.max(...individualResults.map((r) => r.rawBytes)));
 
-    expect(combined.rawBytes + (n - 1) * control.rawBytes).toBeLessThanOrEqual(sumRaw);
+    // Subadditivity in SDK bytes: importing the capabilities together must never pull more library
+    // code than importing them separately. Measured on module bytes rather than whole-bundle bytes
+    // because the `(n - 1) * control` normalization only approximates per-fixture entry glue, and that
+    // approximation error is no longer masked now that these capabilities share no runtime at all.
+    const sumLibrary = individualResults.reduce((s, r) => s + r.libraryBytes, 0);
+    expect(combined.libraryBytes).toBeLessThanOrEqual(sumLibrary);
     expect(combined.gzipBytes + (n - 1) * control.gzipBytes).toBeLessThanOrEqual(sumGzip);
   });
 });

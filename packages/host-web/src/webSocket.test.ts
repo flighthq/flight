@@ -1,16 +1,13 @@
 import type { SocketCloseInfo, SocketEventSink, SocketMessage } from '@flighthq/types/contract';
 
 import { webHostSocket as fromPublicLane } from './index';
-import { createWebSocketBackend, initializeWebSocketBackend, webHostSocket } from './webSocket';
+import { webHostSocket } from './webSocket';
 
-describe('createWebSocketBackend', () => {
+describe('webHostSocket', () => {
   it('constructs a WebSocket with url and protocols and sets binaryType', () => {
     const restore = installFakeWebSocket();
     try {
-      createWebSocketBackend().openSocket(
-        { url: 'ws://host', protocols: ['chat'], binaryType: 'arraybuffer' },
-        noopSink(),
-      );
+      webHostSocket.openSocket({ url: 'ws://host', protocols: ['chat'], binaryType: 'arraybuffer' }, noopSink());
       const ws = FakeWebSocket.last!;
       expect(ws.url).toBe('ws://host');
       expect(ws.protocols).toEqual(['chat']);
@@ -24,7 +21,7 @@ describe('createWebSocketBackend', () => {
     const restore = installFakeWebSocket();
     try {
       const received: SocketMessage[] = [];
-      createWebSocketBackend().openSocket({ url: 'ws://x' }, sinkCollecting(received));
+      webHostSocket.openSocket({ url: 'ws://x' }, sinkCollecting(received));
       FakeWebSocket.last!.onmessage!({ data: 'hello' } as MessageEvent);
       expect(received).toEqual([{ data: 'hello', binary: false }]);
     } finally {
@@ -36,7 +33,7 @@ describe('createWebSocketBackend', () => {
     const restore = installFakeWebSocket();
     try {
       const received: SocketMessage[] = [];
-      createWebSocketBackend().openSocket({ url: 'ws://x' }, sinkCollecting(received));
+      webHostSocket.openSocket({ url: 'ws://x' }, sinkCollecting(received));
       const buffer = new Uint8Array([9]).buffer;
       FakeWebSocket.last!.onmessage!({ data: buffer } as MessageEvent);
       expect(received[0]).toEqual({ data: buffer, binary: true });
@@ -55,7 +52,7 @@ describe('createWebSocketBackend', () => {
         handleSocketOpen: () => (opened = true),
         handleSocketClose: (i) => closes.push(i),
       };
-      createWebSocketBackend().openSocket({ url: 'ws://x' }, sink);
+      webHostSocket.openSocket({ url: 'ws://x' }, sink);
       const ws = FakeWebSocket.last!;
       ws.onopen!(new Event('open'));
       ws.onclose!({ code: 1000, reason: 'done', wasClean: true } as CloseEvent);
@@ -69,7 +66,7 @@ describe('createWebSocketBackend', () => {
   it('sends only when the WebSocket is OPEN and closes with code/reason', () => {
     const restore = installFakeWebSocket();
     try {
-      const connection = createWebSocketBackend().openSocket({ url: 'ws://x' }, noopSink())!;
+      const connection = webHostSocket.openSocket({ url: 'ws://x' }, noopSink())!;
       const ws = FakeWebSocket.last!;
       ws.readyState = FakeWebSocket.CONNECTING;
       expect(connection.sendSocketFrame('x')).toBe(false);
@@ -87,45 +84,10 @@ describe('createWebSocketBackend', () => {
     const original = (globalThis as { WebSocket?: unknown }).WebSocket;
     (globalThis as { WebSocket?: unknown }).WebSocket = undefined;
     try {
-      expect(createWebSocketBackend().openSocket({ url: 'ws://x' }, noopSink())).toBeNull();
+      expect(webHostSocket.openSocket({ url: 'ws://x' }, noopSink())).toBeNull();
     } finally {
       (globalThis as { WebSocket?: unknown }).WebSocket = original;
     }
-  });
-});
-
-describe('initializeWebSocketBackend', () => {
-  it('is the construction initializer of createWebSocketBackend', () => {
-    expect(typeof initializeWebSocketBackend).toBe('function');
-  });
-});
-
-describe('webHostSocket', () => {
-  // Builder composes `webHostNet` from this value, so it has to be reachable from the package root,
-  // not just from the module file. A provider only webHost can see cannot be composed by anyone else.
-  // Statically imported, not `await import('./index')`: the barrel pulls in every provider and blows
-  // the per-test timeout, which reads as "not exported" when the export is fine.
-  it('is exported from the package public lane for host-group composition', () => {
-    expect(fromPublicLane).toBe(webHostSocket);
-  });
-
-  it('is a stable provider value rather than an installed singleton', async () => {
-    const again = (await import('./webSocket')).webHostSocket;
-    expect(again).toBe(webHostSocket);
-  });
-
-  // Truthfulness of the slot: in a DOM-less environment the provider is still present but reports it
-  // cannot open, rather than the Host pretending the transport exists.
-  it('opens a connection or reports none, without throwing', () => {
-    const sink = {
-      handleSocketClose() {},
-      handleSocketError() {},
-      handleSocketMessage() {},
-      handleSocketOpen() {},
-    } as SocketEventSink;
-    const connection = webHostSocket.openSocket({ url: 'wss://example.test' }, sink);
-    if (connection !== null) connection.closeSocketConnection();
-    expect(connection === null || typeof connection.sendSocketFrame === 'function').toBe(true);
   });
 });
 

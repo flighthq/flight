@@ -15,7 +15,7 @@ export interface ImageResource extends TextureSource {
   readonly source: HostImageSource;
 }
 
-// The image-decode seam realized by the web default (`createWebImageBackend`) and by native hosts. A
+// The image-decode seam realized by the web default (`webHostImage`) and by native hosts. A
 // backend turns a URL into a decoded `ImageResource`; `@flighthq/image` dispatches every URL load
 // through it, and every other loader in that package — base64, blob, bytes — funnels into the same
 // call, so a host replaces one method rather than four.

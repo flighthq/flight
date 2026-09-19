@@ -1,13 +1,6 @@
 import type { SoftKeyboardInfo } from '@flighthq/types/contract';
 
-import {
-  createWebSoftKeyboardChangeBackend,
-  createWebSoftKeyboardInfoBackend,
-  createWebSoftKeyboardVisibilityBackend,
-  initializeWebSoftKeyboardChangeBackend,
-  initializeWebSoftKeyboardInfoBackend,
-  initializeWebSoftKeyboardVisibilityBackend,
-} from './webKeyboard';
+import { webHostSoftKeyboardVisibility, webHostSoftKeyboardInfo, webHostSoftKeyboardChange } from './webKeyboard';
 
 type VirtualKeyboardStub = {
   boundingRect: DOMRect;
@@ -45,9 +38,9 @@ function blankInfo(): SoftKeyboardInfo {
   return { visible: false, height: 0, x: 0, y: 0, width: 0 };
 }
 
-describe('createWebSoftKeyboardChangeBackend', () => {
+describe('webHostSoftKeyboardChange', () => {
   it('subscribe returns ok with an unsubscribe function', async () => {
-    const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
+    const subscription = await webHostSoftKeyboardChange.subscribe(() => {});
     if (subscription.result === 'ok') {
       expect(() => subscription.unsubscribe!()).not.toThrow();
     }
@@ -67,7 +60,7 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     const restore = stubVisualViewport(viewport as unknown as VisualViewport);
     try {
       let fires = 0;
-      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      const subscription = await webHostSoftKeyboardChange.subscribe(() => fires++);
       expect(subscription.result).toBe('ok');
       expect(events.has('resize')).toBe(true);
       expect(events.has('scroll')).toBe(true);
@@ -83,7 +76,7 @@ describe('createWebSoftKeyboardChangeBackend', () => {
   it('subscribe returns acquisition-failed when visualViewport is absent', async () => {
     const restore = stubVisualViewport(null);
     try {
-      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
+      const subscription = await webHostSoftKeyboardChange.subscribe(() => {});
       expect(subscription.result).toBe('acquisition-failed');
       expect(subscription.unsubscribe).toBeNull();
     } finally {
@@ -106,7 +99,7 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     });
     try {
       let fires = 0;
-      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      const subscription = await webHostSoftKeyboardChange.subscribe(() => fires++);
       expect(subscription.result).toBe('ok');
       expect(events.has('geometrychange')).toBe(true);
       events.get('geometrychange')!();
@@ -118,15 +111,15 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     }
   });
 });
-describe('createWebSoftKeyboardInfoBackend', () => {
+describe('webHostSoftKeyboardInfo', () => {
   it('reads info without throwing', () => {
     const out = blankInfo();
-    expect(typeof createWebSoftKeyboardInfoBackend().getInfo(out).visible).toBe('boolean');
+    expect(typeof webHostSoftKeyboardInfo.getInfo(out).visible).toBe('boolean');
   });
 
   it('returns rect fields with height 0 when no keyboard is present', () => {
     const out = blankInfo();
-    createWebSoftKeyboardInfoBackend().getInfo(out);
+    webHostSoftKeyboardInfo.getInfo(out);
     expect(out.height).toBe(0);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
@@ -138,7 +131,7 @@ describe('createWebSoftKeyboardInfoBackend', () => {
     try {
       stubWindowMetrics(900, 375);
       const out = blankInfo();
-      createWebSoftKeyboardInfoBackend().getInfo(out);
+      webHostSoftKeyboardInfo.getInfo(out);
       expect(out.visible).toBe(true);
       expect(out.height).toBe(300);
       expect(out.width).toBe(375);
@@ -153,7 +146,7 @@ describe('createWebSoftKeyboardInfoBackend', () => {
     try {
       stubWindowMetrics(900, 375);
       const out = blankInfo();
-      createWebSoftKeyboardInfoBackend().getInfo(out);
+      webHostSoftKeyboardInfo.getInfo(out);
       expect(out.visible).toBe(false);
       expect(out.height).toBe(0);
       expect(out.width).toBe(0);
@@ -173,7 +166,7 @@ describe('createWebSoftKeyboardInfoBackend', () => {
     });
     try {
       const out = blankInfo();
-      createWebSoftKeyboardInfoBackend().getInfo(out);
+      webHostSoftKeyboardInfo.getInfo(out);
       expect(out.height).toBe(280);
       expect(out.width).toBe(320);
       expect(out.x).toBe(5);
@@ -185,7 +178,7 @@ describe('createWebSoftKeyboardInfoBackend', () => {
   });
 });
 
-describe('createWebSoftKeyboardVisibilityBackend', () => {
+describe('webHostSoftKeyboardVisibility', () => {
   it('returns ok when VirtualKeyboard API is present', async () => {
     let shown = false;
     let hidden = false;
@@ -201,7 +194,7 @@ describe('createWebSoftKeyboardVisibilityBackend', () => {
       },
     });
     try {
-      const backend = createWebSoftKeyboardVisibilityBackend();
+      const backend = webHostSoftKeyboardVisibility;
       expect(await backend.show()).toBe('ok');
       expect(await backend.hide()).toBe('ok');
       expect(shown).toBe(true);
@@ -212,25 +205,8 @@ describe('createWebSoftKeyboardVisibilityBackend', () => {
   });
 
   it('returns operation-failed without VirtualKeyboard API', async () => {
-    const backend = createWebSoftKeyboardVisibilityBackend();
+    const backend = webHostSoftKeyboardVisibility;
     expect(await backend.show()).toBe('operation-failed');
     expect(await backend.hide()).toBe('operation-failed');
-  });
-});
-describe('initializeWebSoftKeyboardChangeBackend', () => {
-  it('is the construction initializer of createWebSoftKeyboardChangeBackend', () => {
-    expect(typeof initializeWebSoftKeyboardChangeBackend).toBe('function');
-  });
-});
-
-describe('initializeWebSoftKeyboardInfoBackend', () => {
-  it('is the construction initializer of createWebSoftKeyboardInfoBackend', () => {
-    expect(typeof initializeWebSoftKeyboardInfoBackend).toBe('function');
-  });
-});
-
-describe('initializeWebSoftKeyboardVisibilityBackend', () => {
-  it('is the construction initializer of createWebSoftKeyboardVisibilityBackend', () => {
-    expect(typeof initializeWebSoftKeyboardVisibilityBackend).toBe('function');
   });
 });

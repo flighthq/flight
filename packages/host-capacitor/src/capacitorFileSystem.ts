@@ -1,17 +1,9 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CapacitorApi,
-  Entity,
-  EntityConstruction,
-  FileEntry,
-  FileStat,
-  HostFileSystemCapability,
-} from '@flighthq/types/contract';
+import type { CapacitorApi, FileEntry, FileStat, HostFileSystemCapability } from '@flighthq/types/contract';
 
-export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemCapability & Entity {
-  const out = allocateEntity<HostFileSystemCapability & Entity>();
+export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemCapability {
+  const out = {} as HostFileSystemCapability;
   populateCapacitorFileSystem(out, capacitor);
-  return finishEntity(out);
+  return out;
 }
 
 // Maps Flight's honest HostFileSystemCapability onto Capacitor's async `@capacitor/filesystem`. Both sides are
@@ -22,10 +14,7 @@ export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystem
 // Capacitor-resolvable path (a `file://` URI, or a path the host's default Directory resolves).
 //
 // Operations the plugin cannot perform are absent from the returned provider.
-function populateCapacitorFileSystem(
-  out: EntityConstruction<HostFileSystemCapability & Entity>,
-  capacitor: CapacitorApi,
-): void {
+function populateCapacitorFileSystem(out: HostFileSystemCapability, capacitor: CapacitorApi): void {
   const filesystem = capacitor.filesystem;
   out.readTextFile = async (path, signal) => {
     signal?.throwIfAborted();

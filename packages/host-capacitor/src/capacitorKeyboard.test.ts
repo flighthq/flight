@@ -51,10 +51,6 @@ function blankInfo(): SoftKeyboardInfo {
 }
 
 describe('capacitorHostSoftKeyboardAccessoryBar', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostSoftKeyboardAccessoryBar(fakeCapacitor().capacitor)).toBe(true);
-  });
-
   it('returns ok on success', async () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = capacitorHostSoftKeyboardAccessoryBar(capacitor);
@@ -108,10 +104,6 @@ describe('capacitorHostSoftKeyboardChange', () => {
 });
 
 describe('capacitorHostSoftKeyboardInfo', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostSoftKeyboardInfo(fakeCapacitor().capacitor)).toBe(true);
-  });
-
   it('tracks the keyboard mirror from will-show/will-hide events', async () => {
     const { capacitor, fire } = fakeCapacitor();
     const backend = capacitorHostSoftKeyboardInfo(capacitor);

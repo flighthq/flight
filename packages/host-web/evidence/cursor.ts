@@ -1,3 +1,3 @@
-import { createWebCursorBackend } from '@flighthq/host-web';
+import { allocateWebCursorBackend } from '@flighthq/host-web';
 
-(globalThis as Record<string, unknown>).__evidence = createWebCursorBackend;
+(globalThis as Record<string, unknown>).__evidence = allocateWebCursorBackend;

@@ -3,7 +3,7 @@ import {
   registerDeflateDecompressor,
   unregisterDecompressor,
 } from '@flighthq/compression/contract';
-import { createGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
+import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import { clearImageDecoders } from '@flighthq/image-codec/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
@@ -151,7 +151,7 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
       createSwf([createTag(TAG_DEFINE_FONT_2, font), createTag(TAG_END)]),
     )!;
     const source = sources.get(4)!;
-    const rasterizerBackend = createGlyphRasterizerBackendFromGlyphOutlineSource(source);
+    const rasterizerBackend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(source);
     const atlas = createGlyphAtlas({
       fontFamily: 'embedded-swf',
       fontSize: 32,

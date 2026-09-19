@@ -1,7 +1,7 @@
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
-  createStubGlyphRasterizerBackend,
+  allocateStubGlyphRasterizerBackend,
   getGlyphAtlasBitmap,
 } from '@flighthq/glyphatlas/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -321,7 +321,7 @@ describe('updateBitmapText', () => {
       fontFamily: 'unavailable',
       fontSize: 24,
       height: 256,
-      rasterizerBackend: createStubGlyphRasterizerBackend(),
+      rasterizerBackend: allocateStubGlyphRasterizerBackend(),
       width: 256,
     });
     const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { text: 'Hi' });
