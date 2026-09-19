@@ -2,7 +2,7 @@ export {
   bakeWgpuEnvironmentIbl,
   beginWgpuMeshDraw,
   drawWgpuEnvironmentSkybox,
-  drawWgpuScene3D,
+  renderWgpuScene3D,
   drawWgpuScene3DShadowMap,
   ensureWgpuShadowSampleLayout,
   prepareWgpuScene3DForwardLights,

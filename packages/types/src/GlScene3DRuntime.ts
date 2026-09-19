@@ -42,7 +42,7 @@ export interface GlScene3DIbl {
 
 // A per-subset draw record held in the two-pass draw lists. Pooled on GlScene3DRuntime to avoid
 // per-frame allocation. Fields are set at partition time and consumed during the opaque/blended
-// passes; the pool is never exposed outside drawGlScene3D.
+// passes; the pool is never exposed outside renderGlScene3D.
 export interface GlScene3DDrawEntry {
   alpha: number;
   colorMatrix: object | null;
@@ -81,13 +81,13 @@ export interface GlScene3DRuntime {
   activeColorMatrixRun: boolean;
   activeInstancedRun: boolean;
   activeMeshProgram: GlMeshProgram | null;
-  // Whether the draw run currently being bound is skinned. drawGlScene3D sets it before each bind()
+  // Whether the draw run currently being bound is skinned. renderGlScene3D sets it before each bind()
   // so ensureGl*Program folds HAS_SKIN into the selected program variant without every material
   // renderer threading a skin flag — skinned-ness is a geometry property orthogonal to the material.
   activeSkinnedRun: boolean;
   blendedDrawList: GlScene3DDrawEntry[];
   blendedPool: GlScene3DDrawEntry[];
-  // Opt-in color-space guard, null until enableGlScene3DColorSpaceGuards installs it. drawGlScene3D reaches
+  // Opt-in color-space guard, null until enableGlScene3DColorSpaceGuards installs it. renderGlScene3D reaches
   // it only through this slot (so the base path references no message or @flighthq/log), calling it when
   // the scene is drawn straight to the canvas with no target to declare 'linear' on — the output would
   // then reach the canvas un-encoded (dark).
@@ -98,7 +98,7 @@ export interface GlScene3DRuntime {
   // and warns once per shader when one mismatches what the renderer uploads — most importantly
   // u_normalMatrix, which the renderer uploads as mat3, so a shader declaring it mat4 draws nothing.
   customShaderGuard?: ((state: GlRenderState, program: WebGLProgram, shaderKey: string) => void) | null;
-  // Opt-in deform guard, null until enableGlScene3DDeformGuards installs it. drawGlScene3D reaches it only
+  // Opt-in deform guard, null until enableGlScene3DDeformGuards installs it. renderGlScene3D reaches it only
   // through this slot (so the base path references no message or @flighthq/log), calling it once per
   // visible mesh so it can warn when a morphed or GPU-skinned mesh reaches the draw without its deform
   // pass having run this frame (prepareScene3DMorph / prepareScene3DSkinning) — the mesh would draw at bind
@@ -119,7 +119,7 @@ export interface GlScene3DRuntime {
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
   // Opt-in forward-light selection guard, null until enableGlScene3DForwardLightSelectionGuards installs
-  // it. drawGlScene3D reaches it only when excess punctual lights would be silently input-truncated and
+  // it. renderGlScene3D reaches it only when excess punctual lights would be silently input-truncated and
   // no prepared per-object selection list was supplied.
   forwardLightSelectionGuard?: ((lights: Readonly<Scene3DLightsLike>) => void) | null;
   opaqueDrawList: GlScene3DDrawEntry[];

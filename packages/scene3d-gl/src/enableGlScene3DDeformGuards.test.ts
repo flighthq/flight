@@ -23,9 +23,9 @@ import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/c
 import type { Camera3D, GlRenderPass, GlRenderTarget, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
 import { beforeEach } from 'vitest';
 
-import { drawGlScene3D } from './drawGlScene3D';
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards';
 import { makeGlScene3DState } from './glScene3DTestHelper';
+import { renderGlScene3D } from './renderGlScene3D';
 
 beforeEach(() => {
   clearLogOnceKeys();
@@ -75,7 +75,7 @@ function drawWithGuard(scene: ReturnType<typeof createNode3D>): number {
   const sink = createMemoryLogSink(8);
   addLogSink(sink.sink);
   try {
-    drawGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
+    renderGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
     return getMemoryLogSinkEntries(sink).length;
   } finally {
     removeLogSink(sink.sink);

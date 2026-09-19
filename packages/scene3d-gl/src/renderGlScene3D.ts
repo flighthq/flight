@@ -49,7 +49,7 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 
 // Draws a prepared 3D scene on the Gl backend. The app runs prepareScene3DRender(state, scene, camera,
 // lights) first (resolving world matrices, the camera view-projection, frustum culling, and the
-// packed light block into the per-state Scene3DRenderList); drawGlScene3D retrieves that same cached list
+// packed light block into the per-state Scene3DRenderList); renderGlScene3D retrieves that same cached list
 // (prepareScene3DRender is idempotent per-state scratch) and, for each visible Mesh, draws each of its
 // geometry subsets with the subset's resolved material's registered mesh-material renderer.
 //
@@ -66,12 +66,12 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 // issues the per-subset indexed draw. A subset whose material resolves to no renderer (and no
 // StandardMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
 // material renderer's bind; the surrounding rgba16f + MSAA + depth scene target is the effect
-// pipeline's (beginGlEffectState), not drawGlScene3D's.
+// pipeline's (beginGlEffectState), not renderGlScene3D's.
 //
 // Draw-entry pools and per-frame draw lists are held on the GlScene3DRuntime so two independent render
 // states never share allocation (module-level singletons would interleave if two states drew in the
 // same tick, even though JS is single-threaded today).
-export function drawGlScene3D(
+export function renderGlScene3D(
   pass: GlRenderPass,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
@@ -345,7 +345,7 @@ export function drawGlScene3D(
 
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
-  // drawGlScene3D path renders a scene's emitters without the caller also invoking the emitter pass
+  // renderGlScene3D path renders a scene's emitters without the caller also invoking the emitter pass
   // by hand. drawGlScene3DParticleEmitter3Ds stays exported for manual ordering; it early-returns (and
   // skips its own cache invalidation) when the scene has no emitters, so the mesh-only path is
   // unaffected and the invalidate below still covers it.
@@ -397,7 +397,7 @@ function compareBlendedEntriesDescending(a: GlScene3DDrawEntry, b: GlScene3DDraw
   return b.depth - a.depth;
 }
 
-// Typed alias for cast-free access inside drawGlScene3D; GlScene3DDrawEntry uses `object` fields for
+// Typed alias for cast-free access inside renderGlScene3D; GlScene3DDrawEntry uses `object` fields for
 // the header to remain free of scene-gl-internal types.
 interface DrawEntry {
   alpha: number;
@@ -442,7 +442,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
   };
 }
 
-// The reused per-draw proxy handed to a renderer's draw. Owned by drawGlScene3D, valid only for the
+// The reused per-draw proxy handed to a renderer's draw. Owned by renderGlScene3D, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
   colorMatrix: null,
@@ -461,7 +461,7 @@ const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
 
 // Assigns a stable integer to each unique (renderer, material) pair within one frame. Entries with
 // the same key sort together, so the opaque pass minimizes bind() calls regardless of scene-graph
-// order. Cleared at the start of each drawGlScene3D.
+// order. Cleared at the start of each renderGlScene3D.
 let sortKeyCounter = 0;
 const sortKeyMap = new Map<object, number>();
 

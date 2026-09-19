@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -47,7 +47,7 @@ declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with a white (0xffffff) wireframe cube centered at (0.5*W, 0.5*H) = (400, 300). The cube uses a deliberate one-point perspective pose, not an arbitrary rotation: the camera is 2.5 units from a unit cube and its 480 px focal length projects the near face to a 240×240 square and the far face to a separate 160×160 square. Their corresponding corners join on four depth edges, so all 12 outer edges remain distinguishable instead of collapsing into one straight-on square. Every outer corner and edge midpoint lands on an integer pixel coordinate before a controlled 1/2-pixel horizontal and 9/20-pixel vertical projection phase. Only thin triangle edges are visible against the dark background — no filled faces or shading gradient; the six face diagonals are visible because the cube faces are triangulated. Frame corners are dark background.',
 );
 
-// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// renderWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same cube as render.webgl.ts. Wgpu state init is async.
@@ -88,7 +88,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

@@ -41,10 +41,15 @@ import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline';
 import { drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
-// Draws a prepared 3D scene on the Wgpu backend — the WGSL mirror of scene-gl's drawGlScene3D. The app
+export function isWgpuMeshGpuSkinned(state: WgpuRenderState, mesh: Readonly<Mesh>): boolean {
+  const skinning = getWgpuScene3DRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
+  return skinning !== null && skinning.isGpuSkinned(mesh);
+}
+
+// Draws a prepared 3D scene on the Wgpu backend — the WGSL mirror of scene-gl's renderGlScene3D. The app
 // runs prepareScene3DRender(state, scene, camera, lights) first (resolving world matrices, the camera
 // view-projection, frustum culling, and the packed light block into the per-state Scene3DRenderList);
-// drawWgpuScene3D retrieves that same cached list (prepareScene3DRender is idempotent per-state scratch) and,
+// renderWgpuScene3D retrieves that same cached list (prepareScene3DRender is idempotent per-state scratch) and,
 // for each visible Mesh, draws each of its geometry subsets with the subset's resolved material's
 // registered mesh-material renderer.
 //
@@ -58,8 +63,8 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // issues the per-subset indexed draw. A subset whose material resolves to no renderer (and no
 // StandardMaterialKind fallback) is skipped — no built-in fallback. Depth/cull state is owned by the
 // material renderer's pipeline; the surrounding rgba16float scene render pass + depth attachment is
-// the effect pipeline's, not drawWgpuScene3D's. The pass names the target the scene lands in.
-export function drawWgpuScene3D(
+// the effect pipeline's, not renderWgpuScene3D's. The pass names the target the scene lands in.
+export function renderWgpuScene3D(
   pass: WgpuRenderPass,
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
@@ -168,8 +173,8 @@ export function drawWgpuScene3D(
 
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
-  // drawWgpuScene3D path renders a scene's emitters without the caller also invoking the emitter pass
-  // by hand — mirroring drawGlScene3D. drawWgpuScene3DParticleEmitter3Ds stays exported for manual ordering;
+  // renderWgpuScene3D path renders a scene's emitters without the caller also invoking the emitter pass
+  // by hand — mirroring renderGlScene3D. drawWgpuScene3DParticleEmitter3Ds stays exported for manual ordering;
   // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
@@ -178,11 +183,6 @@ export function drawWgpuScene3D(
   runtime.activeColorAdjustmentRun = false;
   runtime.activeColorMatrixRun = false;
   runtime.activeSkinnedRun = false;
-}
-
-export function isWgpuMeshGpuSkinned(state: WgpuRenderState, mesh: Readonly<Mesh>): boolean {
-  const skinning = getWgpuScene3DRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
-  return skinning !== null && skinning.isGpuSkinned(mesh);
 }
 
 function drawEntries(
@@ -345,7 +345,7 @@ function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Arr
   return scratchInstanceData;
 }
 
-// The reused per-draw proxy handed to a renderer's draw. Owned by drawWgpuScene3D, valid only for the
+// The reused per-draw proxy handed to a renderer's draw. Owned by renderWgpuScene3D, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
   alpha: 1,

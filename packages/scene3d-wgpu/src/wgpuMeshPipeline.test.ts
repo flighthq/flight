@@ -1083,7 +1083,7 @@ describe('writeWgpuDrawUniform', () => {
   });
 
   it('persists the stash across draws so a material shared by many meshes tiles every one', () => {
-    // Regression: drawWgpuScene3D binds once per material then draws many meshes. The stash must survive
+    // Regression: renderWgpuScene3D binds once per material then draws many meshes. The stash must survive
     // each writeWgpuDrawUniform (not be consumed), or only the first mesh under a bind would tile.
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({

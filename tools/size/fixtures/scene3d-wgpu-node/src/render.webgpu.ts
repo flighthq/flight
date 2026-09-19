@@ -17,7 +17,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
@@ -48,7 +48,7 @@ const lights = createScene3DLights();
 
 const pass = beginWgpuRenderPass(state, screen, screenClear);
 prepareScene3DRender(state, scene, camera, lights);
-drawWgpuScene3D(pass, scene, camera, lights);
+renderWgpuScene3D(pass, scene, camera, lights);
 endWgpuRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dWgpuNode', { scene, state });

@@ -996,7 +996,7 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
 
   // mat3x3f uv transform: three vec3 columns each padded to vec4 (std140) → floats 28..39. The stash
   // (set by a family's bind() via stashWgpuUvTransform) is already column-major and PERSISTS across
-  // draws — read, never reset here. drawWgpuScene3D binds once per material then draws many meshes, so the
+  // draws — read, never reset here. renderWgpuScene3D binds once per material then draws many meshes, so the
   // transform must survive every draw under one bind, mirroring the persistent GL u_uvTransform uniform.
   // Every family's bind stashes authoritatively (its map, or identity for non-texturing families), so
   // switching materials always re-establishes the correct value and no stale transform leaks forward.

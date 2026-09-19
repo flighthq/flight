@@ -3,7 +3,7 @@ export * from './blinnPhongGlMeshMaterialRenderer';
 export * from './clearcoatPbrGlExtension';
 export * from './customShaderGlMeshMaterialRenderer';
 export * from './depthGlMeshMaterialRenderer';
-export * from './drawGlScene3D';
+export * from './renderGlScene3D';
 export * from './emissiveGlMeshMaterialRenderer';
 export * from './enableGlPbrExtensionGuards';
 export * from './enableGlScene3DColorSpaceGuards';

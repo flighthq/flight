@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -57,7 +57,7 @@ declareExpectedImageDescription(
 // probe just outside the bind-pose quad silhouette (background at weight 0) is covered at weight 1. A morph
 // path that failed to blend or re-upload would draw the bind-pose quad and the probe would stay background.
 //
-// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// renderGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -92,7 +92,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DMorph(scene);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

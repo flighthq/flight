@@ -2,7 +2,7 @@ export * from './explainWgpuScene3DCoverage';
 export * from './blinnPhongWgpuMeshMaterialRenderer';
 export * from './customShaderWgpuMeshMaterialRenderer';
 export * from './depthWgpuMeshMaterialRenderer';
-export * from './drawWgpuScene3D';
+export * from './renderWgpuScene3D';
 export * from './enableWgpuScene3DForwardLightSelectionGuards';
 export * from './enableWgpuScene3DCustomShaderGuards';
 export * from './explainWgpuScene3DForwardLightSelection';

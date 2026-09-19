@@ -21,7 +21,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
-import { drawWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
@@ -72,7 +72,7 @@ export { camera, lights, scene };
 const pass = beginWgpuRenderPass(state, screen, screenClear);
 orientScene3DBillboardsToCamera(scene, camera);
 prepareScene3DRender(state, scene, camera, lights);
-drawWgpuScene3D(pass, scene, camera, lights);
+renderWgpuScene3D(pass, scene, camera, lights);
 endWgpuRenderPass(pass);
 
 Reflect.set(globalThis, '__flightScene3dWgpuBillboard', { scene, state });

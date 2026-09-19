@@ -20,7 +20,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { drawGlScene3D } from '@flighthq/sdk/rendering';
+import { renderGlScene3D } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
@@ -57,6 +57,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }

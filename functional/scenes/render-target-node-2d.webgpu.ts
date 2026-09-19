@@ -1,5 +1,5 @@
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -124,7 +124,7 @@ renderIntoWgpuRenderTexture(
   renderTexture,
   (texturePass) => {
     prepareScene3DRender(state, scene, camera, lights);
-    drawWgpuScene3D(texturePass, scene, camera, lights);
+    renderWgpuScene3D(texturePass, scene, camera, lights);
   },
   { color: [0x05 / 0xff, 0x07 / 0xff, 0x0d / 0xff, 1], depth: 1.0, stencil: 0 },
 );

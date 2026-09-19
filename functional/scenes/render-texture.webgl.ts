@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { GlEffectState, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -101,7 +101,7 @@ renderIntoGlRenderTexture(
   renderMap,
   (pass) => {
     prepareScene3DRender(pass.state, producerScene, producerCamera, lights);
-    drawGlScene3D(pass, producerScene, producerCamera, lights);
+    renderGlScene3D(pass, producerScene, producerCamera, lights);
   },
   { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
 );
@@ -134,7 +134,7 @@ const pipeline: GlEffectState = createGlEffectState(state, {
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
-drawGlScene3D(pass, consumerScene, consumerCamera, lights);
+renderGlScene3D(pass, consumerScene, consumerCamera, lights);
 endGlEffectState(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {

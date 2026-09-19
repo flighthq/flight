@@ -7,7 +7,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Bakes a backend-native environment capture into the same split-sum IBL resources used by
 // bakeGlEnvironmentIbl. A GlCubeRenderTarget cannot honestly be wrapped as Flight's cross-backend
 // Texture — it is already a GL handle with caller-owned lifetime — so this explicit bridge is the
-// wiring point for subsequent drawGlScene3D calls. Scene3DLightsLike continues to carry the direct
+// wiring point for subsequent renderGlScene3D calls. Scene3DLightsLike continues to carry the direct
 // analytic lights; the baked environment is state-scoped, as the existing PBR bind expects.
 //
 // The capture bake advances environmentSourceRevision without destroying the Environment source cube

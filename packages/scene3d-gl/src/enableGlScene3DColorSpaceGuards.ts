@@ -9,9 +9,9 @@ export function areGlScene3DColorSpaceGuardsEnabled(state: GlRenderState): boole
   return getGlScene3DRuntime(state).colorSpaceGuard != null;
 }
 
-// Installs the shakeable scene color-space guard on `state`: when drawGlScene3D renders straight to the
+// Installs the shakeable scene color-space guard on `state`: when renderGlScene3D renders straight to the
 // canvas (no bound render target), its linear HDR radiance reaches the 8-bit canvas with no present pass
-// to apply the sRGB encode, so the frame looks dark. drawGlScene3D reaches this guard only through its
+// to apply the sRGB encode, so the frame looks dark. renderGlScene3D reaches this guard only through its
 // nullable scene-runtime slot and warns once. Not calling this — the production default — costs the draw
 // path nothing: the message and the @flighthq/log dependency live only in this separately-imported
 // module. Idempotent.
@@ -25,7 +25,7 @@ function warnGlScene3DDrawnToCanvas(): void {
     LogLevel.Warn,
     {
       message:
-        'drawGlScene3D: scene drawn directly to the canvas — linear radiance is not sRGB-encoded (output will be dark). Render into a target and present with presentGlScene3D, or draw through the effect pipeline.',
+        'renderGlScene3D: scene drawn directly to the canvas — linear radiance is not sRGB-encoded (output will be dark). Render into a target and present with presentGlScene3D, or draw through the effect pipeline.',
     },
     'scene-gl',
   );

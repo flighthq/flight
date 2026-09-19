@@ -77,7 +77,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in BlinnPhong renderer for BlinnPhongMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with BlinnPhong
+// top-level side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with BlinnPhong
 // materials draw.
 export function registerWgpuBlinnPhongMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);

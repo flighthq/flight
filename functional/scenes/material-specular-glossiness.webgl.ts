@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -44,7 +44,7 @@ declareExpectedImageDescription(
     'mirror-sharp point nor a completely matte wash. A sphere lit uniformly, or one brighter on the left, is the ' +
     'failure. The background stays near-black.',
 );
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
+// renderGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
 // Gl forward-lit 3D column. The PBR renderer writes linear HDR into the effect pipeline's
@@ -84,7 +84,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

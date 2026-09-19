@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -52,9 +52,9 @@ declareExpectedImageDescription(
     'its shadow is missing or detached sideways.',
 );
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// renderGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl scene functions directly. drawGlScene3DShadowMap renders scene depth from the light into
-// the shadow map (setting the per-state shadow on the runtime); drawGlScene3D's lit binds then PCF-sample
+// the shadow map (setting the per-state shadow on the runtime); renderGlScene3D's lit binds then PCF-sample
 // it during shading.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -100,14 +100,14 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 
 // shadow-directional — proves the directional shadow recipe on the Gl backend: a sphere hovering over a
 // ground plane, lit by one straight-down white sun, casts a dark shadow onto the plane beneath it. The
 // recipe is two passes (render.webgl.ts): drawGlScene3DShadowMap renders scene depth from the light into a
-// shadow map, then drawGlScene3D's lit shaders PCF-sample it so the plane under the sphere is darkened.
+// shadow map, then renderGlScene3D's lit shaders PCF-sample it so the plane under the sphere is darkened.
 //
 // The scene assertion samples the ground in the foreground (lit) and the ground directly under the sphere
 // (shadowed) and asserts the under-sphere ground is clearly darker — the signature of a real shadow (an

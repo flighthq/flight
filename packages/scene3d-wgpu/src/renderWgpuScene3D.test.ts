@@ -31,8 +31,8 @@ import {
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
+import { renderWgpuScene3D, isWgpuMeshGpuSkinned } from './renderWgpuScene3D';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
@@ -58,7 +58,27 @@ const LIGHTS: Scene3DLightsLike = {
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };
 
-describe('drawWgpuScene3D', () => {
+describe('isWgpuMeshGpuSkinned', () => {
+  it('selects GPU skinning only for a skin plus joints0 and weights0 geometry', () => {
+    const { pass, state } = makeWgpuScene3DState();
+    registerWgpuGpuSkinning(state);
+    const rigid = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    expect(isWgpuMeshGpuSkinned(state, rigid)).toBe(false);
+
+    const skinned = createMesh(
+      createMeshGeometry({
+        indices: new Uint16Array([0, 0, 0]),
+        layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+        vertices: new Float32Array(20),
+      }),
+      [createStandardPbrMaterial()],
+    );
+    skinned.skin = { skeleton: { jointMatrices: new Float32Array(16) } as Skeleton3D };
+    expect(isWgpuMeshGpuSkinned(state, skinned)).toBe(true);
+  });
+});
+
+describe('renderWgpuScene3D', () => {
   it('uploads one shared geometry once across a primary and derived state on the same device', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
@@ -79,8 +99,8 @@ describe('drawWgpuScene3D', () => {
     addNodeChild(scene, createMesh(geometry, [createStandardPbrMaterial()]));
     const meshBuffersBefore = countMeshBuffers(fake.calls);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
-    drawWgpuScene3D(derivedPass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(derivedPass, scene, makeCamera(), LIGHTS);
 
     // 2 geometry buffers (vertex + index, shared across states) + 2 per-state instance buffers.
     expect(countMeshBuffers(fake.calls)).toBe(meshBuffersBefore + 4);
@@ -94,7 +114,7 @@ describe('drawWgpuScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(true);
@@ -107,7 +127,7 @@ describe('drawWgpuScene3D', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
@@ -122,7 +142,7 @@ describe('drawWgpuScene3D', () => {
     addNodeChild(scene, meshA);
     addNodeChild(scene, meshB);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     // Same material across both meshes: pipeline bound once, drawn twice.
     expect(fake.calls.filter((c) => c.name === 'setPipeline').length).toBe(1);
@@ -138,7 +158,7 @@ describe('drawWgpuScene3D', () => {
     mesh.enabled = false;
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
@@ -153,7 +173,7 @@ describe('drawWgpuScene3D', () => {
     addNodeChild(scene, blended);
     addNodeChild(scene, opaque);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
@@ -171,7 +191,7 @@ describe('drawWgpuScene3D', () => {
     const material = createStandardPbrMaterial({ alphaMode: 'blend', blendMode: BlendMode.Add });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     expect(
       Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) =>
@@ -189,7 +209,7 @@ describe('drawWgpuScene3D', () => {
     const material = createStandardPbrMaterial({ alphaMode: 'blend' });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     const keys = Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys());
     expect(keys.some((key) => key.endsWith('|blend:Normal|rigid|direct'))).toBe(true);
@@ -204,7 +224,7 @@ describe('drawWgpuScene3D', () => {
     mesh.alpha = 0.5;
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList).toHaveLength(0);
@@ -229,7 +249,7 @@ describe('drawWgpuScene3D', () => {
     addNodeChild(scene, near);
     addNodeChild(scene, far);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     expect(getWgpuScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([far, near]);
   });
@@ -254,7 +274,7 @@ describe('drawWgpuScene3D', () => {
       projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
     });
     setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
-    drawWgpuScene3D(pass, scene, camera, LIGHTS);
+    renderWgpuScene3D(pass, scene, camera, LIGHTS);
     expect(getWgpuScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([far, near]);
   });
 
@@ -270,11 +290,11 @@ describe('drawWgpuScene3D', () => {
     addNodeChild(scene, blended);
     const camera = makeCamera();
 
-    drawWgpuScene3D(pass, scene, camera, LIGHTS);
+    renderWgpuScene3D(pass, scene, camera, LIGHTS);
     const runtime = getWgpuScene3DRuntime(state);
     const opaqueEntry = runtime.opaqueDrawList[0];
     const blendedEntry = runtime.blendedDrawList[0];
-    drawWgpuScene3D(pass, scene, camera, LIGHTS);
+    renderWgpuScene3D(pass, scene, camera, LIGHTS);
 
     expect(runtime.opaqueDrawList[0]).toBe(opaqueEntry);
     expect(runtime.blendedDrawList[0]).toBe(blendedEntry);
@@ -286,9 +306,9 @@ describe('drawWgpuScene3D', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, makeParticleEmitter2D(3));
-    // No mesh and no manual drawWgpuScene3DParticleEmitter3Ds — drawWgpuScene3D must render the emitter itself
-    // (a 6-index instanced quad draw), mirroring drawGlScene3D's automatic emitter pass.
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    // No mesh and no manual drawWgpuScene3DParticleEmitter3Ds — renderWgpuScene3D must render the emitter itself
+    // (a 6-index instanced quad draw), mirroring renderGlScene3D's automatic emitter pass.
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
     expect(draw).toBeDefined();
     expect(draw!.args[0]).toBe(6);
@@ -312,7 +332,7 @@ describe('drawWgpuScene3D', () => {
     setInstancedMeshInstanceColor(mesh, 0, 0xff0000ff);
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     // Select the instance upload by its exact byte size: two 80-byte records. Picking "the largest
     // write" would just as happily return the frame uniform buffer.
@@ -336,33 +356,13 @@ describe('drawWgpuScene3D', () => {
       addNodeChild(scene, mesh);
     }
 
-    drawWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
+    renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
 
     const bound = fake.calls
       .filter((call) => call.name === 'setVertexBuffer' && call.args[0] === 1)
       .map((call) => call.args[1]);
     expect(bound).toHaveLength(2);
     expect(new Set(bound).size).toBe(2);
-  });
-});
-
-describe('isWgpuMeshGpuSkinned', () => {
-  it('selects GPU skinning only for a skin plus joints0 and weights0 geometry', () => {
-    const { pass, state } = makeWgpuScene3DState();
-    registerWgpuGpuSkinning(state);
-    const rigid = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
-    expect(isWgpuMeshGpuSkinned(state, rigid)).toBe(false);
-
-    const skinned = createMesh(
-      createMeshGeometry({
-        indices: new Uint16Array([0, 0, 0]),
-        layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
-        vertices: new Float32Array(20),
-      }),
-      [createStandardPbrMaterial()],
-    );
-    skinned.skin = { skeleton: { jointMatrices: new Float32Array(16) } as Skeleton3D };
-    expect(isWgpuMeshGpuSkinned(state, skinned)).toBe(true);
   });
 });
 

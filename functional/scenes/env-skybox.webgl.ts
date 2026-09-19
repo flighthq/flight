@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlEnvironmentSkybox, drawGlScene3D } from '@flighthq/scene3d-gl';
+import { drawGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -69,7 +69,7 @@ declareExpectedImageDescription(
     'around it, because nothing feeds the environment into the material: it is a rough, ordinary grey ball in ' +
     'front of a coloured backdrop.',
 );
-// drawGlEnvironmentSkybox + drawGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
+// drawGlEnvironmentSkybox + renderGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
 // import the Gl scene functions directly. The skybox draws the environment cubemap as the backdrop
 // (depth off) before the scene draws over it.
 
@@ -115,7 +115,7 @@ export function render(
   drawGlEnvironmentSkybox(state, environment, camera, width / height);
 
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

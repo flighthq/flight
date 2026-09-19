@@ -62,8 +62,8 @@ function ensureGlSkybox(state: GlRenderState): GlSkybox {
 // pixel, reconstructs the world-space view ray from the inverse view-projection and samples the cube.
 // The quad is emitted at the far plane (clip z = w) with depth writes off, so it fills only pixels the
 // opaque scene has not yet covered and never occludes geometry. Call it once, after the color target
-// is bound and cleared and before drawGlScene3D. A no-op when the environment has no complete source
-// cube. `aspect` is the viewport width / height (matches the camera aspect drawGlScene3D uses).
+// is bound and cleared and before renderGlScene3D. A no-op when the environment has no complete source
+// cube. `aspect` is the viewport width / height (matches the camera aspect renderGlScene3D uses).
 export function drawGlEnvironmentSkybox(
   state: GlRenderState,
   environment: Readonly<Environment>,

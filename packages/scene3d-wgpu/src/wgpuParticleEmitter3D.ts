@@ -442,8 +442,8 @@ export function destroyWgpuParticleEmitter3DResources(state: WgpuRenderState): v
 // Draws every ParticleEmitter3D under `scene` on the WebGPU backend — the WGSL mirror of scene-gl's
 // drawGlScene3DParticleEmitter3Ds. Camera3D-facing billboards, instanced, one pipeline per (blend mode,
 // textured) variant, depth-tested but not depth-writing. Must run inside an open scene render pass
-// (reuses the pass on the render-state runtime). drawWgpuScene3D calls this automatically as its final
-// transparent pass (mirroring drawGlScene3D), so the common path needs no manual call; it stays exported
+// (reuses the pass on the render-state runtime). renderWgpuScene3D calls this automatically as its final
+// transparent pass (mirroring renderGlScene3D), so the common path needs no manual call; it stays exported
 // for manual ordering and early-returns when the scene has no emitters.
 export function drawWgpuScene3DParticleEmitter3Ds(
   state: WgpuRenderState,

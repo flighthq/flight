@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -49,7 +49,7 @@ declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit rust (0xc06030) bar-shaped box rotated 90 degrees about the Z axis, so it stands vertical. The front face (depth 3.825, scale s = H/(7.65*tan(PI/8)) ≈ 189 px/unit) spans x W/2 ± 0.175*s ≈ 367–433 (narrow) by y H/2 ± 0.8*s ≈ 149–451 (tall), centered at (0.5*W, 0.5*H) = (400, 300). The bar extends above and below center but not left and right.',
 );
 
-// drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
+// renderWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 
 // Wgpu parity column for the same unlit cube as render.webgl.ts. Wgpu state init is async.
@@ -90,7 +90,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

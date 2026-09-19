@@ -61,7 +61,7 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
 
 // The directional shadow recipe's first pass — the WGSL mirror of scene-gl's drawGlScene3DShadowMap.
 // Renders every mesh's depth from the light's orthographic camera into a sampleable depth32float shadow
-// map, and records the map + the light view-projection on the scene runtime; the subsequent drawWgpuScene3D
+// map, and records the map + the light view-projection on the scene runtime; the subsequent renderWgpuScene3D
 // lit binds (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) read that to PCF-sample the shadow.
 // Shadows are opt-in: an app that never calls this leaves runtime.shadow null, so existing scenes render
 // unchanged (the lit draws bind a dummy depth map gated off by the shadow uniform).

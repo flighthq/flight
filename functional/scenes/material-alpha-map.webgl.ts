@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
     'renders into an HDR rgba16f target and is tone-presented, so the absolute warmth of the left half is ' +
     'backend-dependent while the left-red / right-blue split and the position of the boundary are not.',
 );
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// renderGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.
 
 // Gl column. The BlinnPhong renderer writes linear HDR into the effect pipeline's rgba16f + depth
@@ -91,7 +91,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

@@ -97,7 +97,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 };
 
 // Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no top-
-// level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
+// level side effect); call once per WgpuRenderState before renderWgpuScene3D so meshes with
 // WireframeMaterials draw.
 export function registerWgpuWireframeMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, WireframeMaterialKind, wireframeWgpuMeshMaterialRenderer);

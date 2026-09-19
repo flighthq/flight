@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -45,7 +45,7 @@ declareExpectedImageDescription(
   'An 800×600 dark field (0x101018) with three equally spaced translucent warm-orange squares centered vertically at 0.5*H = 300. The assertion probes at x fractions 0.344, 0.5, 0.656 give centers near 0.344*W = 275, 0.5*W = 400, 0.656*W = 525, each roughly 93 px wide. Each square composites to approximately a muted brown-orange over the dark background due to half-opacity orange fill (rgba 224, 96, 48, 0.5) over the dark field. Gaps between the squares and all frame edges show the dark background. No lighting is applied.',
 );
 
-// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. The
+// Real-WebGPU proof for the ParticleEmitter3D path that renderWgpuScene3D invokes automatically. The
 // colored, partially-transparent sRGB atlas distinguishes post-decode shader premultiplication from an
 // encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
@@ -79,7 +79,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(scenePass, scene, camera, lights);
+  renderWgpuScene3D(scenePass, scene, camera, lights);
   endWgpuEffectState(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

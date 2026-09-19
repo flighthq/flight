@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -62,7 +62,7 @@ declareExpectedImageDescription(
 // The WebGPU twin uses beginWgpuFrame to open its encoder before the shadow pass, then opens the canvas
 // pass with beginWgpuRenderPass on that same encoder.
 //
-// createScene3D / drawGlScene3D collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
+// createScene3D / renderGlScene3D collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
 // import the Gl 3D ones directly. Pipeline wiring mirrors shadow-directional.
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -107,7 +107,7 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

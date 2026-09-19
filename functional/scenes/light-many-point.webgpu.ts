@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/scene3d-wgpu';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -160,7 +160,7 @@ const pass = beginWgpuRenderPass(state, screen, screenClear);
 const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareWgpuScene3DForwardLights(state, renderList, lights);
-drawWgpuScene3D(scenePass, scene, camera, lights, forwardLights);
+renderWgpuScene3D(scenePass, scene, camera, lights, forwardLights);
 endWgpuEffectState(scenePass, pipeline, []);
 endWgpuRenderPass(pass);
 

@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Mesh, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -59,7 +59,7 @@ declareExpectedImageDescription(
 
 // scene-skin-morph-compose — the end-to-end compose proof for Part-1 #3: a single Mesh that is BOTH
 // GPU-skinned and morphed rendering both deforms together on the GPU, driven through the real app path
-// (prepareScene3DMorph → prepareScene3DSkinning → prepareScene3DRender → drawGlScene3D). The glMeshUpload freeze
+// (prepareScene3DMorph → prepareScene3DSkinning → prepareScene3DRender → renderGlScene3D). The glMeshUpload freeze
 // this un-froze (skinBindUploaded ignoring version) would otherwise discard a morph composed onto a
 // skinned draw; the precise across-frames regression for that freeze lives in the ensureGlMeshUpload unit
 // test, while this scene proves the composed frame renders correctly end to end.
@@ -72,7 +72,7 @@ declareExpectedImageDescription(
 //   - morph discarded (the freeze bug): the base stops at y=0 — the deep vertical-extension probe is background.
 //   - skin discarded: a straight-up bar — the sideways leaned-arm probe is background.
 //   - either deform missing entirely: the bar is blank or bind-pose.
-// drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
+// renderGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 // prepareScene3DMorph then prepareScene3DSkinning both run before prepareScene3DRender.
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
@@ -112,7 +112,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   prepareScene3DMorph(scene);
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 

@@ -7,11 +7,11 @@ import type {
   Node3D,
 } from '@flighthq/types/contract';
 
-import { drawGlScene3D } from './drawGlScene3D';
+import { renderGlScene3D } from './renderGlScene3D';
 
 // The no-effects 3D path, now a thin composition of the generic pass + present primitives: begin a pass
 // (clears color + depth from the target's policy by default), draw the scene, end the pass (restore +
-// resolve MSAA), then present (drawGlScene3D stamped the target 'linear', so present runs the sRGB encode
+// resolve MSAA), then present (renderGlScene3D stamped the target 'linear', so present runs the sRGB encode
 // to the canvas). It is an alternative to the effect pipeline, not a companion.
 //
 // This is now trivial enough to inline at the callsite; kept only as a named entry for the common case.
@@ -30,7 +30,7 @@ export function presentGlScene3D(
 ): void {
   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
   try {
-    drawGlScene3D(pass, scene, camera, lights);
+    renderGlScene3D(pass, scene, camera, lights);
   } finally {
     endGlRenderPass(pass);
   }

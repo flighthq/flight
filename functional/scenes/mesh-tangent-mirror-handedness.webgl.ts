@@ -42,7 +42,7 @@ import {
 // backend-agnostic scene assertRender never runs on dom at all (the DOM verifier returns after checking
 // the target element has children). Nothing here speaks to WebGPU.
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -121,7 +121,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3D(pass, scene, camera, lights);
+  renderGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, []);
 }
 
