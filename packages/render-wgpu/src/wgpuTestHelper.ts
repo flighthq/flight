@@ -7,10 +7,10 @@ import type {
   WgpuScreenRenderTargetOptions,
 } from '@flighthq/types/contract';
 
-import { createTestWgpuSurface, createTestWgpuHostBackend } from './wgpuHost';
+import { testWgpuHost, createTestWgpuSurface } from './wgpuHost';
 
-export { createTestWgpuSurface, createTestWgpuHostBackend };
-import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
+export { testWgpuHost, createTestWgpuSurface };
+import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
@@ -338,8 +338,8 @@ export function createWgpuScreenRenderTargetForTest(
   return screen;
 }
 
-const _testWgpuBackend = createTestWgpuHostBackend();
-const _testWgpuPipeline = createEmptyWgpuRenderRegistries();
+const _testWgpuBackend = testWgpuHost;
+const _testWgpuPipeline = allocateEmptyWgpuRenderRegistries();
 
 export function installWgpuMock(): void {
   installWgpuConstants();

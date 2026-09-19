@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { KeyedTable, Renderer, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
@@ -33,7 +33,7 @@ import { defaultWgpuTextLabelRenderer } from './wgpuTextLabel';
 import { defaultWgpuTilemapRenderer } from './wgpuTilemap';
 
 function buildScene2dWgpuRenderers(): KeyedTable<Renderer> {
-  let table = createEmptyWgpuRenderRegistries().renderers;
+  let table = allocateEmptyWgpuRenderRegistries().renderers;
   table = withRegistryTableEntry(table, BitmapTextKind, defaultWgpuBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, defaultWgpuScene2DRenderer);
   table = withRegistryTableEntry(table, MorphShapeKind, defaultWgpuMorphShapeRenderer);
@@ -50,7 +50,7 @@ function buildScene2dWgpuRenderers(): KeyedTable<Renderer> {
   return table;
 }
 
-const _registries = createEmptyWgpuRenderRegistries();
+const _registries = allocateEmptyWgpuRenderRegistries();
 
 export const defaultScene2DWgpuRenderRegistries: Readonly<WgpuRenderRegistries> = {
   ..._registries,

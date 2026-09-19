@@ -9,13 +9,13 @@ import type {
 
 import { webHostAudioDevice } from './webAudioDevice';
 
-export function createWebAudioMixerBackend(): HostAudioMixerCapability {
+function createWebAudioMixerBackend(): HostAudioMixerCapability {
   const out = {} as HostAudioMixerCapability;
   initializeWebAudioMixerBackend(out);
   return out;
 }
 
-export function initializeWebAudioMixerBackend(out: HostAudioMixerCapability): void {
+function initializeWebAudioMixerBackend(out: HostAudioMixerCapability): void {
   let nextHandle = 1;
   const graphs = new Map<number, WebAudioMixerGraph>();
   const buses = new Map<number, WebAudioBusNode>();

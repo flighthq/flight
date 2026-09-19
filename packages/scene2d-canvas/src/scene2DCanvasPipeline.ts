@@ -21,7 +21,7 @@ import { defaultCanvasRenderCacheRenderer } from './canvasCache';
 import { applyCanvasBlendMode } from './canvasMaterials';
 import { defaultCanvasScene2DRenderer } from './canvasNode2D';
 import { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-import { createEmptyCanvasRenderRegistries } from './canvasPipeline';
+import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
 import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 import { defaultCanvasRichTextRenderer } from './canvasRichText';
 import { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
@@ -33,7 +33,7 @@ import { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
 import { defaultCanvasTilemapRenderer } from './canvasTilemap';
 
 function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
-  const registries = createEmptyCanvasRenderRegistries();
+  const registries = allocateEmptyCanvasRenderRegistries();
   let table = registries.renderers;
   table = withRegistryTableEntry(table, BitmapTextKind, defaultCanvasBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, defaultCanvasScene2DRenderer);
@@ -52,7 +52,7 @@ function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
 }
 
 export const defaultScene2DCanvasRenderRegistries: Readonly<CanvasRenderRegistries> = {
-  ...createEmptyCanvasRenderRegistries(),
+  ...allocateEmptyCanvasRenderRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),
   renderers: buildScene2dCanvasRenderers(),

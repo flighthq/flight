@@ -5,22 +5,6 @@ import type {
   HostConnectivityStatusCapability,
 } from '@flighthq/types/contract';
 
-type WebConnectivityBackend = HostConnectivityStatusCapability &
-  HostConnectivityChangeCapability &
-  HostConnectivityReachabilityCapability;
-
-export function createWebConnectivityBackend(): WebConnectivityBackend {
-  const backend = {} as WebConnectivityBackend;
-  initializeWebConnectivityBackend(backend);
-  return backend;
-}
-
-export function initializeWebConnectivityBackend(backend: WebConnectivityBackend): void {
-  initializeWebConnectivityChangeProvider(backend);
-  initializeWebConnectivityReachabilityBackend(backend);
-  initializeWebConnectivityStatusProvider(backend);
-}
-
 export const webHostConnectivityChange = createWebConnectivityChangeProvider();
 export const webHostConnectivityReachability = createWebConnectivityReachabilityProvider();
 export const webHostConnectivityStatus = createWebConnectivityStatusProvider();

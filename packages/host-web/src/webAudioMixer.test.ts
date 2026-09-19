@@ -1,7 +1,7 @@
 import type { AudioDeviceHandle } from '@flighthq/types/contract';
 
 import { webHostAudioDevice } from './webAudioDevice';
-import { createWebAudioMixerBackend, initializeWebAudioMixerBackend, webHostAudioMixer } from './webAudioMixer';
+import { webHostAudioMixer } from './webAudioMixer';
 
 let device: AudioDeviceHandle | null = null;
 
@@ -11,13 +11,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('createWebAudioMixerBackend', () => {
-  it('creates a distinct identity-bearing provider with the frozen operation surface', () => {
-    const first = createWebAudioMixerBackend();
-    const second = createWebAudioMixerBackend();
-
-    expect(first).not.toBe(second);
-    expect(Object.keys(first).sort()).toEqual([
+describe('webHostAudioMixer', () => {
+  it('exposes the frozen operation surface', () => {
+    expect(Object.keys(webHostAudioMixer).sort()).toEqual([
       'createBusNode',
       'createMixerGraph',
       'destroyBusNode',
@@ -35,26 +31,24 @@ describe('createWebAudioMixerBackend', () => {
   it('creates and destroys a master graph for the device context', () => {
     const audio = installFakeAudioContext();
     device = webHostAudioDevice.createDevice(48_000);
-    const backend = createWebAudioMixerBackend();
-    const graph = backend.createMixerGraph(device, 0.75);
+    const graph = webHostAudioMixer.createMixerGraph(device, 0.75);
     const master = audio.gains[0]!;
 
     expect(graph).not.toBe(0);
     expect(master.gain.value).toBe(0.75);
     expect(master.connect).toHaveBeenCalledWith(audio.destination);
 
-    backend.setMasterGain(graph, 0.25);
+    webHostAudioMixer.setMasterGain(graph, 0.25);
     expect(master.gain.value).toBe(0.25);
-    backend.destroyMixerGraph(graph);
+    webHostAudioMixer.destroyMixerGraph(graph);
     expect(master.disconnect).toHaveBeenCalledOnce();
   });
 
   it('creates, updates, fades, and destroys a bus chain', () => {
     const audio = installFakeAudioContext();
     device = webHostAudioDevice.createDevice(48_000);
-    const backend = createWebAudioMixerBackend();
-    const graph = backend.createMixerGraph(device, 1);
-    const bus = backend.createBusNode(graph, 0.6, -0.2);
+    const graph = webHostAudioMixer.createMixerGraph(device, 1);
+    const bus = webHostAudioMixer.createBusNode(graph, 0.6, -0.2);
     const master = audio.gains[0]!;
     const gain = audio.gains[1]!;
     const panner = audio.panners[0]!;
@@ -65,15 +59,15 @@ describe('createWebAudioMixerBackend', () => {
     expect(gain.connect).toHaveBeenCalledWith(panner);
     expect(panner.connect).toHaveBeenCalledWith(master);
 
-    backend.setBusNodeGain(graph, bus, 0.4);
-    backend.setBusNodePan(graph, bus, 0.5);
-    backend.fadeBusNodeGain(graph, bus, 0.8, 500);
+    webHostAudioMixer.setBusNodeGain(graph, bus, 0.4);
+    webHostAudioMixer.setBusNodePan(graph, bus, 0.5);
+    webHostAudioMixer.fadeBusNodeGain(graph, bus, 0.8, 500);
     expect(gain.gain.cancelScheduledValues).toHaveBeenCalledWith(2);
     expect(gain.gain.setValueAtTime).toHaveBeenCalledWith(0.4, 2);
     expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.8, 2.5);
     expect(panner.pan.value).toBe(0.5);
 
-    backend.destroyBusNode(graph, bus);
+    webHostAudioMixer.destroyBusNode(graph, bus);
     expect(gain.disconnect).toHaveBeenCalledOnce();
     expect(panner.disconnect).toHaveBeenCalledOnce();
   });
@@ -81,39 +75,31 @@ describe('createWebAudioMixerBackend', () => {
   it('moves a source output between the default destination and a mixer bus', () => {
     const audio = installFakeAudioContext();
     device = webHostAudioDevice.createDevice(48_000);
-    const backend = createWebAudioMixerBackend();
-    const graph = backend.createMixerGraph(device, 1);
-    const bus = backend.createBusNode(graph, 1, 0);
+    const graph = webHostAudioMixer.createMixerGraph(device, 1);
+    const bus = webHostAudioMixer.createBusNode(graph, 1, 0);
     const buffer = webHostAudioDevice.createBuffer(device, 1, 1, 48_000, [new Float32Array(1)]);
     const source = webHostAudioDevice.createSource(device, buffer);
     const busGain = audio.gains[1]!;
     const sourceGain = audio.gains[2]!;
 
     expect(sourceGain.connect).toHaveBeenCalledWith(audio.destination);
-    backend.routeSourceToBus(graph, source, bus);
+    webHostAudioMixer.routeSourceToBus(graph, source, bus);
     expect(sourceGain.disconnect).toHaveBeenCalledOnce();
     expect(sourceGain.connect).toHaveBeenLastCalledWith(busGain);
 
-    backend.unrouteSource(graph, source);
+    webHostAudioMixer.unrouteSource(graph, source);
     expect(sourceGain.disconnect).toHaveBeenCalledTimes(2);
-    backend.routeSourceToDefault(graph, source);
+    webHostAudioMixer.routeSourceToDefault(graph, source);
     expect(sourceGain.connect).toHaveBeenLastCalledWith(audio.destination);
   });
 
   it('returns zero handles and ignores operations for foreign handles', () => {
     installFakeAudioContext();
-    const backend = createWebAudioMixerBackend();
-    const graph = backend.createMixerGraph(99 as AudioDeviceHandle, 1);
+    const graph = webHostAudioMixer.createMixerGraph(99 as AudioDeviceHandle, 1);
 
     expect(graph).toBe(0);
-    expect(backend.createBusNode(graph, 1, 0)).toBe(0);
-    expect(() => backend.destroyMixerGraph(graph)).not.toThrow();
-  });
-});
-
-describe('initializeWebAudioMixerBackend', () => {
-  it('is the construction initializer of createWebAudioMixerBackend', () => {
-    expect(initializeWebAudioMixerBackend).toBeTypeOf('function');
+    expect(webHostAudioMixer.createBusNode(graph, 1, 0)).toBe(0);
+    expect(() => webHostAudioMixer.destroyMixerGraph(graph)).not.toThrow();
   });
 });
 

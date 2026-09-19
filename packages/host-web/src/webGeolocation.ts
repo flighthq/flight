@@ -8,13 +8,13 @@ import type {
   HostGeolocationCapability,
 } from '@flighthq/types/contract';
 
-export function createWebGeolocationBackend(): HostGeolocationCapability {
+function createWebGeolocationBackend(): HostGeolocationCapability {
   const out = {} as HostGeolocationCapability;
   initializeWebGeolocationBackend(out);
   return out;
 }
 
-export function initializeWebGeolocationBackend(out: HostGeolocationCapability): void {
+function initializeWebGeolocationBackend(out: HostGeolocationCapability): void {
   out.clearWatch = (id) => {
     const geo = getWebGeolocation();
     if (geo === null || typeof geo.clearWatch !== 'function') return;

@@ -1,5 +1,5 @@
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   createGlContextState,
   createGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
@@ -346,7 +346,7 @@ function validateFakeGlDrawElements(
 // getGlScene3DRuntime, exactly as in production.
 export function makeGlScene3DState(
   gl?: FakeGl2,
-  registry: Readonly<GlRenderRegistries> = createEmptyGlRenderRegistries(),
+  registry: Readonly<GlRenderRegistries> = allocateEmptyGlRenderRegistries(),
 ): { state: GlRenderState; gl: FakeGl2 } {
   const context = gl ?? makeFakeGl2();
   const canvas = { width: 256, height: 256 } as HTMLCanvasElement;

@@ -9,13 +9,13 @@ import type {
   Signal,
 } from '@flighthq/types/contract';
 
-export function createWebNetBackend(): HostNetCapability {
+function createWebNetBackend(): HostNetCapability {
   const out = {} as HostNetCapability;
   initializeWebNetBackend(out);
   return out;
 }
 
-export function initializeWebNetBackend(out: HostNetCapability): void {
+function initializeWebNetBackend(out: HostNetCapability): void {
   out.sendNetRequest = async (request, options): Promise<NetResponse> => {
     const controller = new AbortController();
     const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);

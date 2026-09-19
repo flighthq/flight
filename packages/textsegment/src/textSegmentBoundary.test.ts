@@ -11,9 +11,9 @@ import {
   getPreviousWordBoundary,
   getWordRangeAt,
 } from './textSegmentBoundary';
-import { createDefaultTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend';
+import { webTextSegmenterBackend } from './textSegmenterBackend';
 
-const backend = createDefaultTextSegmenterBackend();
+const backend = webTextSegmenterBackend;
 
 // A ZWJ family emoji is a single grapheme cluster spanning several UTF-16 code units.
 const FAMILY = '👨‍👩‍👧';

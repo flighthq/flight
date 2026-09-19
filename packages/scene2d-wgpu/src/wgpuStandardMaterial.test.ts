@@ -1,6 +1,6 @@
 import { getWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import {
-  createEmptyWgpuRenderRegistries,
+  allocateEmptyWgpuRenderRegistries,
   createWgpuDeviceState,
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
@@ -14,7 +14,7 @@ describe('registerWgpuStandardMaterial', () => {
     const state = {} as WgpuRenderState;
     state[EntityRuntimeKey] = createWgpuRenderStateRuntime(
       createWgpuDeviceState({} as GPUDevice),
-      createEmptyWgpuRenderRegistries(),
+      allocateEmptyWgpuRenderRegistries(),
     );
     registerWgpuStandardMaterial(state);
     expect(getWgpuMaterialRenderer(state, StandardMaterialKind)).toBe(standardWgpuMaterialRenderer);

@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { allocateEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 

@@ -5,7 +5,7 @@ import type {
   AccessibilityState,
 } from '@flighthq/types/contract';
 
-export function createWebAccessibilityBackend(container?: HTMLElement): HostAccessibilityCapability {
+function createWebAccessibilityBackend(container?: HTMLElement): HostAccessibilityCapability {
   const out = {} as HostAccessibilityCapability;
   initializeWebAccessibilityBackend(out, container);
   return out;
@@ -13,7 +13,7 @@ export function createWebAccessibilityBackend(container?: HTMLElement): HostAcce
 
 // Builds a visually-hidden ARIA DOM provider. Construction is passive: the default root is created on
 // the first operation, so this factory and webHost are safe to import where no document exists.
-export function initializeWebAccessibilityBackend(out: HostAccessibilityCapability, container?: HTMLElement): void {
+function initializeWebAccessibilityBackend(out: HostAccessibilityCapability, container?: HTMLElement): void {
   const elements = new Map<string, HTMLElement>();
   const liveRegions = new Map<AccessibilityLiveness, HTMLElement>();
   let destroyed = false;

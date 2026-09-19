@@ -1,4 +1,4 @@
-import { createWebHostWgpuContext, initializeWebHostWgpuContext } from './webHostWgpuContext';
+import { webHostWgpuContext } from './webHostWgpuContext';
 import { createWebSurfaceFromElement } from './webSurfaceHandle';
 
 function installMinimalWgpuMock(): void {
@@ -43,41 +43,34 @@ function installMinimalWgpuMock(): void {
 }
 
 beforeAll(installMinimalWgpuMock);
-describe('createWebHostWgpuContext', () => {
+
+describe('webHostWgpuContext', () => {
   it('returns an entity that can acquire a WebGPU device through a surface', async () => {
-    const context = createWebHostWgpuContext();
     const canvas = document.createElement('canvas');
     const target = createWebSurfaceFromElement(canvas);
-    const acquisition = await context.acquire(target, {});
+    const acquisition = await webHostWgpuContext.acquire(target, {});
 
     expect(acquisition.device).toBeDefined();
     expect(acquisition.format).toBe('bgra8unorm');
     expect(acquisition.ownership).toBe('flight');
     expect(acquisition.surface).toBe(canvas);
 
-    context.release(acquisition);
+    webHostWgpuContext.release(acquisition);
   });
 
   it('reports WebGPU support through isSupported', () => {
-    expect(createWebHostWgpuContext().isSupported()).toBe(true);
+    expect(webHostWgpuContext.isSupported()).toBe(true);
   });
 
   it('returns null from attachSurface when the surface is not backed by a canvas', () => {
-    const context = createWebHostWgpuContext();
     const unregisteredSurface = createWebSurfaceFromElement(document.createElement('div'));
 
     expect(
-      context.attachSurface(unregisteredSurface, {
+      webHostWgpuContext.attachSurface(unregisteredSurface, {
         alphaMode: 'premultiplied',
         device: {} as GPUDevice,
         format: 'bgra8unorm',
       }),
     ).toBeNull();
-  });
-});
-
-describe('initializeWebHostWgpuContext', () => {
-  it('is the construction initializer of createWebHostWgpuContext', () => {
-    expect(typeof initializeWebHostWgpuContext).toBe('function');
   });
 });

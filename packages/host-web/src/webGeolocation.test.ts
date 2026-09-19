@@ -1,16 +1,14 @@
-import { createWebGeolocationBackend, initializeWebGeolocationBackend, webHostGeolocation } from './webGeolocation';
+import { webHostGeolocation } from './webGeolocation';
 
-describe('createWebGeolocationBackend', () => {
+describe('webHostGeolocation', () => {
   it('resolves null and does not throw when geolocation is absent', async () => {
-    const backend = createWebGeolocationBackend();
-    expect(await backend.getCurrentPosition({})).toBeNull();
-    expect(typeof backend.watchPosition(() => {}, {})).toBe('number');
-    expect(() => backend.clearWatch(-1)).not.toThrow();
+    expect(await webHostGeolocation.getCurrentPosition({})).toBeNull();
+    expect(typeof webHostGeolocation.watchPosition(() => {}, {})).toBe('number');
+    expect(() => webHostGeolocation.clearWatch(-1)).not.toThrow();
   });
 
   it('getCurrentPositionResult returns unavailable reason when geolocation is absent', async () => {
-    const backend = createWebGeolocationBackend();
-    const result = await backend.getCurrentPositionResult({});
+    const result = await webHostGeolocation.getCurrentPositionResult({});
     expect(result.position).toBeNull();
     expect(result.reason).toBe('unavailable');
   });
@@ -41,8 +39,7 @@ describe('createWebGeolocationBackend', () => {
       },
     });
     try {
-      const backend = createWebGeolocationBackend();
-      const position = await backend.getCurrentPosition({});
+      const position = await webHostGeolocation.getCurrentPosition({});
       expect(position?.floorLevel).toBe(3);
     } finally {
       if (hadOwn && original !== undefined) {
@@ -54,29 +51,18 @@ describe('createWebGeolocationBackend', () => {
   });
 
   it('reports availability only when geolocation exists in a secure context', () => {
-    const backend = createWebGeolocationBackend();
     vi.stubGlobal('navigator', { geolocation: {} });
     vi.stubGlobal('window', { isSecureContext: true });
-    expect(backend.isAvailable()).toBe(true);
+    expect(webHostGeolocation.isAvailable()).toBe(true);
 
     vi.stubGlobal('window', { isSecureContext: false });
-    expect(backend.isAvailable()).toBe(false);
+    expect(webHostGeolocation.isAvailable()).toBe(false);
 
     vi.stubGlobal('navigator', {});
     vi.stubGlobal('window', { isSecureContext: true });
-    expect(backend.isAvailable()).toBe(false);
+    expect(webHostGeolocation.isAvailable()).toBe(false);
   });
 
-  afterEach(() => vi.unstubAllGlobals());
-});
-
-describe('initializeWebGeolocationBackend', () => {
-  it('is the construction initializer of createWebGeolocationBackend', () => {
-    expect(typeof initializeWebGeolocationBackend).toBe('function');
-  });
-});
-
-describe('webHostGeolocation', () => {
   it('is a HostGeolocationCapability', () => {
     expect(typeof webHostGeolocation.isAvailable).toBe('function');
     expect(typeof webHostGeolocation.getCurrentPosition).toBe('function');
@@ -85,4 +71,6 @@ describe('webHostGeolocation', () => {
     expect(typeof webHostGeolocation.clearWatch).toBe('function');
     expect(typeof webHostGeolocation.promptForAccess).toBe('function');
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 });

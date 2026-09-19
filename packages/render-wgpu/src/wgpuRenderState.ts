@@ -27,7 +27,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
-import { createEmptyWgpuRenderRegistries } from './wgpuPipeline';
+import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
@@ -137,7 +137,7 @@ export function createWgpuRenderStateRuntime(
   const resolvedRegistries =
     registries ??
     (EntityRuntimeKey in deviceStateOrRuntime
-      ? createEmptyWgpuRenderRegistries()
+      ? allocateEmptyWgpuRenderRegistries()
       : { ...(deviceStateOrRuntime as WgpuRenderStateRuntime).registries });
   return createWgpuRenderStateRuntimeInternal(deviceRuntime, resolvedRegistries);
 }

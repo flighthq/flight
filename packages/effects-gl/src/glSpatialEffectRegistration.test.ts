@@ -1,5 +1,5 @@
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { createEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
+import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
 
 import * as contractEffects from './contract';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
@@ -57,11 +57,11 @@ describe('GL effect registration', () => {
   ] as const)('registers the public %s runner on only the supplied state', (kind, registerName, runnerName) => {
     const state = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createEmptyGlRenderRegistries(),
+      allocateEmptyGlRenderRegistries(),
     );
     const other = createGlRenderState(
       createWebGlContext(document.createElement('canvas')),
-      createEmptyGlRenderRegistries(),
+      allocateEmptyGlRenderRegistries(),
     );
 
     publicEffects[registerName](state);

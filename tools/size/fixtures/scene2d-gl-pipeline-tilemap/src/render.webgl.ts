@@ -10,7 +10,7 @@ import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   registerGlImageTextureResolver,
   beginGlRenderPass,
@@ -34,7 +34,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const emptyRegistries = createEmptyGlRenderRegistries();
+const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(emptyRegistries.renderers, TilemapKind, defaultGlTilemapRenderer),

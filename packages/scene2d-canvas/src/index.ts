@@ -47,7 +47,7 @@ export {
   acquireCanvasRenderTexture,
   canvasShapeCommandTable,
   createCanvasRenderSurface,
-  createEmptyCanvasRenderRegistries,
+  allocateEmptyCanvasRenderRegistries,
   destroyCanvasRenderTexture,
   destroyCanvasRenderTexturePool,
   destroyCanvasRenderState,

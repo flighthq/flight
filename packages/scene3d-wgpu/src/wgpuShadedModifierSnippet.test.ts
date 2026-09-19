@@ -43,4 +43,4 @@ describe('resolveWgpuModifierSnippet', () => {
   });
 });
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { allocateEmptyWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

@@ -4,9 +4,9 @@ import { vi } from 'vitest';
 
 import { disableTextSegmentGuards, enableTextSegmentGuards } from './enableTextSegmentGuards';
 import { segmentGraphemes } from './textSegment';
-import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
+import { webTextSegmenterBackend } from './textSegmenterBackend';
 
-const backend = createDefaultTextSegmenterBackend();
+const backend = webTextSegmenterBackend;
 
 let entries: LogEntry[];
 

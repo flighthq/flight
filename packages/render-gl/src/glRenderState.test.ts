@@ -29,7 +29,7 @@ import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enab
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
-import { createEmptyGlRenderRegistries } from './glPipeline';
+import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import {
   createGlContextState,
   createGlRenderState,
@@ -59,7 +59,7 @@ function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown
   expect(entityRuntime).toBeUndefined();
 }
 
-const testPipeline = createEmptyGlRenderRegistries();
+const testPipeline = allocateEmptyGlRenderRegistries();
 
 function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOptions = {}) {
   return createGlRenderState(gl, testPipeline, options);

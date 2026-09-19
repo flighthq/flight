@@ -16,7 +16,7 @@ import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contr
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import {
   createWgpuOffscreenRenderState,
-  createEmptyWgpuRenderRegistries,
+  allocateEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import {

@@ -10,7 +10,7 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  createEmptyCanvasRenderRegistries,
+  allocateEmptyCanvasRenderRegistries,
   defaultCanvasParticleEmitter2DRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -44,7 +44,7 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const emptyRegistries = createEmptyCanvasRenderRegistries();
+const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
   renderers: withRegistryTableEntry(

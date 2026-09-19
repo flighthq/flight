@@ -1,7 +1,7 @@
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 
-export function createEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
+export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
   const out = {} as CanvasRenderRegistries;
   initializeEmptyCanvasRenderRegistries(out);
   return out;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { segmentGraphemes } from './textSegment';
-import { createDefaultTextSegmenterBackend } from './textSegmenterBackend';
+import { webTextSegmenterBackend } from './textSegmenterBackend';
 
-const backend = createDefaultTextSegmenterBackend();
+const backend = webTextSegmenterBackend;
 
 const graphemeFixtures: ReadonlyArray<{ clusters: string[]; text: string }> = [
   { text: '🇺🇸🇨🇦', clusters: ['🇺🇸', '🇨🇦'] },

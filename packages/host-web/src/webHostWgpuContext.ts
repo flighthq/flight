@@ -3,13 +3,13 @@ import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult }
 
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
-export function createWebHostWgpuContext(): HostWgpuCapability {
+function createWebHostWgpuContext(): HostWgpuCapability {
   const out = {} as HostWgpuCapability;
   initializeWebHostWgpuContext(out);
   return out;
 }
 
-export function initializeWebHostWgpuContext(out: HostWgpuCapability): void {
+function initializeWebHostWgpuContext(out: HostWgpuCapability): void {
   out.acquire = async (surface, options): Promise<WgpuHostAcquisition> => {
     const canvas = getWebSurfaceCanvasHandle(surface);
     if (canvas === null) throw new Error('Surface is not backed by a canvas element.');

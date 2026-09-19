@@ -1,7 +1,7 @@
 import { createBlurEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
-  createEmptyGlRenderRegistries,
+  allocateEmptyGlRenderRegistries,
   acquireGlRenderTexture,
   createGlRenderState,
   createGlRenderTexturePool,
@@ -21,7 +21,7 @@ import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
 function createGlState() {
   return {
-    state: createGlRenderState(createWebGlContext(document.createElement('canvas')), createEmptyGlRenderRegistries()),
+    state: createGlRenderState(createWebGlContext(document.createElement('canvas')), allocateEmptyGlRenderRegistries()),
   };
 }
 
