@@ -8,6 +8,14 @@ export function allocateEmptyGlRenderRegistries(): GlRenderRegistries {
 }
 
 export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void {
+  // Written as null rather than omitted: the field's presence is what keeps every registries object
+  // one hidden class, so the per-shape reads on the draw path stay monomorphic. The opt-in registrar
+  // fills the slot; a pipeline nobody opts in on allocates no table.
+  out.compressedTextureDecoder = null;
+  out.compressedTextureUpload = null;
+  out.shapeRasterizer = null;
+  out.strokeTessellator = null;
+
   out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
   out.customEffectShaders = createKeyedTable('GlCustomEffectShader', 'Unregistered');
   out.customMaterialShaders = createKeyedTable('GlCustomMaterialShader', 'Unregistered');

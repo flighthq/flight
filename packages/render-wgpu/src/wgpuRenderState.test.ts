@@ -532,11 +532,11 @@ describe('createWgpuRenderStateRuntime', () => {
       registry: 'WgpuRenderEffect',
       shape: 'keyed',
     });
-    expect(runtime.registries.compressedTextureDecoder).toBeUndefined();
+    expect(runtime.registries.compressedTextureDecoder).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.compressedTextureUpload).toBeUndefined();
-    expect(runtime.registries.shapeRasterizer).toBeUndefined();
-    expect(runtime.registries.strokeTessellator).toBeUndefined();
+    expect(runtime.registries.compressedTextureUpload).toBeNull();
+    expect(runtime.registries.shapeRasterizer).toBeNull();
+    expect(runtime.registries.strokeTessellator).toBeNull();
     expect(runtime.registries.velocityWriters).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'WgpuVelocityWriter',

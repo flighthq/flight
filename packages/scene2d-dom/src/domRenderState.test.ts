@@ -76,7 +76,7 @@ describe('createDomRenderStateRuntime', () => {
     const runtime = createDomRenderStateRuntime();
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.shapeRasterizer).toBeUndefined();
+    expect(runtime.registries.shapeRasterizer).toBeNull();
     expect(runtime.registries.textureResolvers).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'DomTextureResolver',

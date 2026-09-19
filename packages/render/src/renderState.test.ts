@@ -37,6 +37,8 @@ describe('createRenderState', () => {
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries).toStrictEqual({
       renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
+      // Present and null, not absent: the stable key set is what keeps the registries one hidden class.
+      strokeTessellator: null,
     });
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
@@ -76,7 +78,7 @@ describe('createRenderStateRuntime', () => {
     expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.renderers).toStrictEqual(createKeyedTable('NodeRenderer', 'Unregistered'));
     // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, never here.
-    expect(runtime.registries.strokeTessellator).toBeUndefined();
+    expect(runtime.registries.strokeTessellator).toBeNull();
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });

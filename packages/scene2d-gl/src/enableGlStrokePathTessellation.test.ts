@@ -10,7 +10,7 @@ describe('enableGlStrokePathTessellation', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     // Nothing allocates the slot until the opt-in runs.
-    expect(runtime.registries.strokeTessellator).toBeUndefined();
+    expect(runtime.registries.strokeTessellator).toBeNull();
 
     enableGlStrokePathTessellation(state);
 

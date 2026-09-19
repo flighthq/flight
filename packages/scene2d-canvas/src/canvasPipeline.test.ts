@@ -5,7 +5,7 @@ describe('allocateEmptyCanvasRenderRegistries', () => {
     const registries = allocateEmptyCanvasRenderRegistries();
     expect(registries.renderers.entries.size).toBe(0);
     expect(registries.renderEffects.entries.size).toBe(0);
-    expect(registries.strokeTessellator).toBeUndefined();
+    expect(registries.strokeTessellator).toBeNull();
   });
 
   it('does not carry blend mode application', () => {

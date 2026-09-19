@@ -40,7 +40,7 @@ describe('registerWgpuShapeRasterizer', () => {
       shape: 'slot',
     });
     expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).not.toBe(before);
-    expect(before).toBeUndefined();
+    expect(before).toBeNull();
   });
 
   it('removes one again, so a state can drop back to tessellation only', async () => {

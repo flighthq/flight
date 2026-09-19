@@ -8,6 +8,11 @@ export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
 }
 
 export function initializeEmptyCanvasRenderRegistries(out: CanvasRenderRegistries): void {
+  // Written as null rather than omitted: the field's presence is what keeps every registries object
+  // one hidden class, so the per-shape reads on the draw path stay monomorphic. The opt-in registrar
+  // fills the slot; a pipeline nobody opts in on allocates no table.
+  out.strokeTessellator = null;
+
   out.renderEffects = createKeyedTable('CanvasRenderEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
 }

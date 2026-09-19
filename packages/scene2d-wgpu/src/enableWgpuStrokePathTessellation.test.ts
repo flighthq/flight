@@ -17,7 +17,7 @@ describe('enableWgpuStrokePathTessellation', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     // Nothing allocates the slot until the opt-in runs.
-    expect(runtime.registries.strokeTessellator).toBeUndefined();
+    expect(runtime.registries.strokeTessellator).toBeNull();
 
     enableWgpuStrokePathTessellation(state);
 
