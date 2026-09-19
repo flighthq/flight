@@ -1,30 +1,21 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { canPlayVideoType } from '@flighthq/video/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  createWebVideoCapabilityBackend,
-  initializeWebVideoCapabilityBackend,
-  webHostVideo,
-} from './webVideoCapability';
+import { webHostVideo } from './webVideoCapability';
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('createWebVideoCapabilityBackend', () => {
+describe('webHostVideo', () => {
   it('constructs a backend with canPlayType and createVideoElement', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     expect(backend.canPlayType).toBeTypeOf('function');
     expect(backend.createVideoElement).toBeTypeOf('function');
   });
 
-  it('constructs an identity-bearing provider Entity', () => {
-    expect(EntityRuntimeKey in createWebVideoCapabilityBackend()).toBe(true);
-  });
-
   it('exposes all video provider operations', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     expect(backend.addEndedListener).toBeTypeOf('function');
     expect(backend.attachStream).toBeTypeOf('function');
     expect(backend.createObjectUrl).toBeTypeOf('function');
@@ -50,10 +41,6 @@ describe('createWebVideoCapabilityBackend', () => {
     expect(backend.setVolume).toBeTypeOf('function');
   });
 
-  it('returns distinct instances on each call', () => {
-    expect(createWebVideoCapabilityBackend()).not.toBe(createWebVideoCapabilityBackend());
-  });
-
   it.each([
     ['', false],
     ['maybe', true],
@@ -61,7 +48,7 @@ describe('createWebVideoCapabilityBackend', () => {
     ['invalid', false],
   ] as const)('normalizes the browser result %j to %j', (result, expected) => {
     vi.spyOn(HTMLVideoElement.prototype, 'canPlayType').mockReturnValue(result as CanPlayTypeResult);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     expect(canPlayVideoType(backend, 'video/mp4')).toBe(expected);
     vi.restoreAllMocks();
   });
@@ -70,43 +57,43 @@ describe('createWebVideoCapabilityBackend', () => {
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw new Error('DOM unavailable');
     });
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     expect(canPlayVideoType(backend, 'video/mp4')).toBe(false);
     vi.restoreAllMocks();
   });
 
   it('createVideoElement returns a video element', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!();
     expect(element).not.toBeNull();
   });
 
   it('getDuration returns 0 for a fresh element', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!();
     expect(backend.getDuration!(element!)).toBe(0);
   });
 
   it('getWidth returns 0 for a fresh element', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!();
     expect(backend.getWidth!(element!)).toBe(0);
   });
 
   it('getHeight returns 0 for a fresh element', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!();
     expect(backend.getHeight!(element!)).toBe(0);
   });
 
   it('isReady returns false for a fresh element', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!();
     expect(backend.isReady!(element!)).toBe(false);
   });
 
   it('releaseElement removes source and reloads', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     const loadSpy = vi.spyOn(element, 'load').mockImplementation(() => {});
     backend.releaseElement!(element);
@@ -116,7 +103,7 @@ describe('createWebVideoCapabilityBackend', () => {
   });
 
   it('attachStream returns an element with srcObject set', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const mockStream = {} as MediaStream;
     const element = backend.attachStream!(mockStream) as HTMLVideoElement;
     expect(element).not.toBeNull();
@@ -127,7 +114,7 @@ describe('createWebVideoCapabilityBackend', () => {
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw new Error('DOM unavailable');
     });
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     expect(backend.attachStream!({} as MediaStream)).toBeNull();
     vi.restoreAllMocks();
   });
@@ -135,7 +122,7 @@ describe('createWebVideoCapabilityBackend', () => {
   it('createObjectUrl and revokeObjectUrl manage blob URLs', () => {
     const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const blob = new Blob(['test'], { type: 'video/mp4' });
     const url = backend.createObjectUrl!(blob);
     expect(url).toBe('blob:test');
@@ -146,73 +133,73 @@ describe('createWebVideoCapabilityBackend', () => {
   });
 
   it('getCurrentTime returns the element currentTime', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     element.currentTime = 5.5;
     expect(backend.getCurrentTime!(element)).toBe(5.5);
   });
 
   it('setCurrentTime sets the element currentTime', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     backend.setCurrentTime!(element, 3.0);
     expect(element.currentTime).toBe(3.0);
   });
 
   it('getVolume returns the element volume', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     expect(backend.getVolume!(element)).toBe(1);
   });
 
   it('setVolume sets the element volume', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     backend.setVolume!(element, 0.5);
     expect(element.volume).toBe(0.5);
   });
 
   it('getMuted returns the element muted state', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     expect(backend.getMuted!(element)).toBe(false);
   });
 
   it('setMuted sets the element muted state', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     backend.setMuted!(element, true);
     expect(element.muted).toBe(true);
   });
 
   it('getPlaybackRate returns the element playbackRate', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     expect(backend.getPlaybackRate!(element)).toBe(1);
   });
 
   it('setPlaybackRate sets the element playbackRate', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     backend.setPlaybackRate!(element, 2.0);
     expect(element.playbackRate).toBe(2.0);
   });
 
   it('getLoop returns the element loop state', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     expect(backend.getLoop!(element)).toBe(false);
   });
 
   it('setLoop sets the element loop state', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     backend.setLoop!(element, true);
     expect(element.loop).toBe(true);
   });
 
   it('pause calls element.pause', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     const pauseSpy = vi.spyOn(element, 'pause');
     backend.pause!(element);
@@ -220,14 +207,14 @@ describe('createWebVideoCapabilityBackend', () => {
   });
 
   it('play calls element.play', async () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     vi.spyOn(element, 'play').mockResolvedValue();
     await expect(backend.play!(element)).resolves.toBeUndefined();
   });
 
   it('addEndedListener and removeEndedListener manage ended event listeners', () => {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const element = backend.createVideoElement!() as HTMLVideoElement;
     const addSpy = vi.spyOn(element, 'addEventListener');
     const removeSpy = vi.spyOn(element, 'removeEventListener');
@@ -240,7 +227,7 @@ describe('createWebVideoCapabilityBackend', () => {
 
   it('loadUrl rejects immediately when signal is already aborted', async () => {
     const createElement = vi.spyOn(document, 'createElement');
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const controller = new AbortController();
     controller.abort(new Error('cancelled'));
     await expect(backend.loadUrl!('test.mp4', undefined, controller.signal)).rejects.toThrow('cancelled');
@@ -251,7 +238,7 @@ describe('createWebVideoCapabilityBackend', () => {
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw new Error('DOM unavailable');
     });
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     await expect(backend.loadUrl!('test.mp4')).rejects.toThrow('No video element available');
     vi.restoreAllMocks();
   });
@@ -260,7 +247,7 @@ describe('createWebVideoCapabilityBackend', () => {
     const element = document.createElement('video');
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
     vi.spyOn(document, 'createElement').mockReturnValue(element as never);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
 
     const promise = backend.loadUrl!('test.mp4');
     expect(element.preload).toBe('auto');
@@ -274,7 +261,7 @@ describe('createWebVideoCapabilityBackend', () => {
   it('loadUrl applies options before resolving at the requested readiness event', async () => {
     const element = document.createElement('video');
     vi.spyOn(document, 'createElement').mockReturnValue(element as never);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
 
     const promise = backend.loadUrl!('test.mp4', {
       crossOrigin: 'anonymous',
@@ -295,7 +282,7 @@ describe('createWebVideoCapabilityBackend', () => {
   it('loadUrl supports canplaythrough readiness', async () => {
     const element = document.createElement('video');
     vi.spyOn(document, 'createElement').mockReturnValue(element as never);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
 
     const promise = backend.loadUrl!('test.mp4', { readiness: 'canplaythrough' });
     element.dispatchEvent(new Event('canplaythrough'));
@@ -308,7 +295,7 @@ describe('createWebVideoCapabilityBackend', () => {
     const load = vi.spyOn(element, 'load').mockImplementation(() => {});
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
     vi.spyOn(document, 'createElement').mockReturnValue(element as never);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
 
     const promise = backend.loadUrl!('bad.mp4');
     element.dispatchEvent(new Event('error'));
@@ -325,7 +312,7 @@ describe('createWebVideoCapabilityBackend', () => {
     const load = vi.spyOn(element, 'load').mockImplementation(() => {});
     const removeEventListener = vi.spyOn(element, 'removeEventListener');
     vi.spyOn(document, 'createElement').mockReturnValue(element as never);
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
     const controller = new AbortController();
     const removeAbortListener = vi.spyOn(controller.signal, 'removeEventListener');
 
@@ -338,49 +325,5 @@ describe('createWebVideoCapabilityBackend', () => {
     expect(removeEventListener).toHaveBeenCalledWith('canplay', expect.any(Function));
     expect(removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
     expect(removeAbortListener).toHaveBeenCalledWith('abort', expect.any(Function));
-  });
-});
-
-describe('initializeWebVideoCapabilityBackend', () => {
-  it('is the construction initializer of createWebVideoCapabilityBackend', () => {
-    expect(typeof initializeWebVideoCapabilityBackend).toBe('function');
-  });
-});
-
-describe('webHostVideo', () => {
-  it('is an Entity with canPlayType and createVideoElement', () => {
-    expect(EntityRuntimeKey in webHostVideo).toBe(true);
-    expect(webHostVideo.canPlayType).toBeTypeOf('function');
-    expect(webHostVideo.createVideoElement).toBeTypeOf('function');
-  });
-
-  it('is a stable singleton', () => {
-    expect(webHostVideo).toBe(webHostVideo);
-  });
-
-  it('exposes all video provider operations', () => {
-    expect(webHostVideo.addEndedListener).toBeTypeOf('function');
-    expect(webHostVideo.attachStream).toBeTypeOf('function');
-    expect(webHostVideo.createObjectUrl).toBeTypeOf('function');
-    expect(webHostVideo.getCurrentTime).toBeTypeOf('function');
-    expect(webHostVideo.getDuration).toBeTypeOf('function');
-    expect(webHostVideo.getHeight).toBeTypeOf('function');
-    expect(webHostVideo.getLoop).toBeTypeOf('function');
-    expect(webHostVideo.getMuted).toBeTypeOf('function');
-    expect(webHostVideo.getPlaybackRate).toBeTypeOf('function');
-    expect(webHostVideo.getVolume).toBeTypeOf('function');
-    expect(webHostVideo.getWidth).toBeTypeOf('function');
-    expect(webHostVideo.isReady).toBeTypeOf('function');
-    expect(webHostVideo.loadUrl).toBeTypeOf('function');
-    expect(webHostVideo.pause).toBeTypeOf('function');
-    expect(webHostVideo.play).toBeTypeOf('function');
-    expect(webHostVideo.releaseElement).toBeTypeOf('function');
-    expect(webHostVideo.removeEndedListener).toBeTypeOf('function');
-    expect(webHostVideo.revokeObjectUrl).toBeTypeOf('function');
-    expect(webHostVideo.setCurrentTime).toBeTypeOf('function');
-    expect(webHostVideo.setLoop).toBeTypeOf('function');
-    expect(webHostVideo.setMuted).toBeTypeOf('function');
-    expect(webHostVideo.setPlaybackRate).toBeTypeOf('function');
-    expect(webHostVideo.setVolume).toBeTypeOf('function');
   });
 });

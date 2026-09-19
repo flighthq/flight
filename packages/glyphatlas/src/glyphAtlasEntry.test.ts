@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
 import { getGlyphAtlasEntry, setGlyphAtlasEntryGuard } from './glyphAtlasEntry';
-import { createStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { allocateStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('getGlyphAtlasEntry', () => {
   it('produces a non-blank glyph in a headless env with the stub backend (issue #8)', () => {
@@ -12,7 +12,7 @@ describe('getGlyphAtlasEntry', () => {
       fontFamily: 'unavailable',
       fontSize: 32,
       height: 256,
-      rasterizerBackend: createStubGlyphRasterizerBackend(),
+      rasterizerBackend: allocateStubGlyphRasterizerBackend(),
       width: 256,
     });
 

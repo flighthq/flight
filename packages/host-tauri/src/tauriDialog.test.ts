@@ -49,7 +49,6 @@ describe('tauriHostDialog', () => {
   it('constructs exactly the four supported dialog leaves', () => {
     const group = tauriHostDialog(fakeTauri(null, null).tauri);
     expect(Object.keys(group).sort()).toEqual(['directoryOpen', 'fileOpen', 'fileSave', 'message']);
-    expect(Object.values(group).every((provider) => EntityRuntimeKey in provider)).toBe(true);
   });
 });
 
@@ -63,14 +62,13 @@ describe('tauriHostDirectoryOpenDialog', () => {
 });
 
 describe('tauriHostFileOpenDialog', () => {
-  it('exposes independent Entity providers', () => {
+  it('exposes independent providers', () => {
     const tauri = fakeTauri(null, null).tauri;
     const providers = [
       tauriHostDirectoryOpenDialog(tauri),
       tauriHostFileOpenDialog(tauri),
       tauriHostFileSaveDialog(tauri),
     ];
-    expect(providers.every((provider) => EntityRuntimeKey in provider)).toBe(true);
     expect(new Set(providers).size).toBe(3);
   });
 

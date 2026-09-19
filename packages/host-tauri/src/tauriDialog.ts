@@ -1,9 +1,7 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostDirectoryOpenDialogCapability,
   DirectoryOpenDialogResult,
-  Entity,
   FileDialogFilter,
   HostFileOpenDialogCapability,
   FileOpenDialogResult,
@@ -28,28 +26,28 @@ export function tauriHostDialog(
   };
 }
 
-export function tauriHostDirectoryOpenDialog(tauri: TauriApi): HostDirectoryOpenDialogCapability & Entity {
-  const out = allocateEntity<HostDirectoryOpenDialogCapability & Entity>();
+export function tauriHostDirectoryOpenDialog(tauri: TauriApi): HostDirectoryOpenDialogCapability {
+  const out = {} as HostDirectoryOpenDialogCapability;
   configureDirectoryOpenDialog(out, tauri);
-  return finishEntity(out);
+  return out;
 }
 
-export function tauriHostFileOpenDialog(tauri: TauriApi): HostFileOpenDialogCapability & Entity {
-  const out = allocateEntity<HostFileOpenDialogCapability & Entity>();
+export function tauriHostFileOpenDialog(tauri: TauriApi): HostFileOpenDialogCapability {
+  const out = {} as HostFileOpenDialogCapability;
   configureFileOpenDialog(out, tauri);
-  return finishEntity(out);
+  return out;
 }
 
-export function tauriHostFileSaveDialog(tauri: TauriApi): HostFileSaveDialogCapability & Entity {
-  const out = allocateEntity<HostFileSaveDialogCapability & Entity>();
+export function tauriHostFileSaveDialog(tauri: TauriApi): HostFileSaveDialogCapability {
+  const out = {} as HostFileSaveDialogCapability;
   configureFileSaveDialog(out, tauri);
-  return finishEntity(out);
+  return out;
 }
 
-export function tauriHostMessageDialog(tauri: TauriApi): HostMessageDialogCapability & Entity {
-  const out = allocateEntity<HostMessageDialogCapability & Entity>();
+export function tauriHostMessageDialog(tauri: TauriApi): HostMessageDialogCapability {
+  const out = {} as HostMessageDialogCapability;
   configureMessageDialog(out, tauri);
-  return finishEntity(out);
+  return out;
 }
 
 function configureDirectoryOpenDialog(out: HostDirectoryOpenDialogCapability, tauri: TauriApi): void {

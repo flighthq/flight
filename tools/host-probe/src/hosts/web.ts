@@ -1,5 +1,5 @@
 import {
-  createWebCursorBackend,
+  allocateWebCursorBackend,
   createWebPageNotificationCapabilities,
   webHost,
   webHostGlyphRasterizer,
@@ -61,7 +61,7 @@ async function probeWebAccessibility(): Promise<HostProbeResult> {
 
 async function probeWebCursor(): Promise<HostProbeResult> {
   const element = document.createElement('div');
-  const backend = createWebCursorBackend(element);
+  const backend = allocateWebCursorBackend(element);
   backend.setCursor('pointer');
   return {
     detail: element.style.cursor === 'pointer' ? 'DOM cursor style changed' : 'DOM cursor style did not change',

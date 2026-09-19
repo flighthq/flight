@@ -1,4 +1,4 @@
-import { createWebVideoCapabilityBackend } from '@flighthq/host-web';
+import { webHostVideo } from '@flighthq/host-web';
 import { canPlayVideoType } from '@flighthq/video/contract';
 
 export interface VideoCapabilityBrowserResult {
@@ -30,7 +30,7 @@ export function runVideoCapabilityBrowserProbe(): VideoCapabilityBrowserReport {
 
   const results: VideoCapabilityBrowserResult[] = [];
   try {
-    const backend = createWebVideoCapabilityBackend();
+    const backend = webHostVideo;
 
     results.push(runCase('empty-mime', '', false, 0));
     results.push(runCase('non-empty-first', 'video/mp4', null, 1));

@@ -1,16 +1,9 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostImageCapability, ImageResource } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
 
-export function createWebImageBackend(): HostImageCapability & Entity {
-  const out = allocateEntity<HostImageCapability & Entity>();
-  initializeWebImageBackend(out);
-  return finishEntity(out);
-}
-
-export function initializeWebImageBackend(out: HostImageCapability): void {
-  out.createImageFromBitmap = (bitmap): ImageResource => {
+export const webHostImage: HostImageCapability = {
+  createImageFromBitmap: (bitmap): ImageResource => {
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
@@ -18,8 +11,8 @@ export function initializeWebImageBackend(out: HostImageCapability): void {
     domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
     canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
     return createWebImageResourceFromCanvas(canvas);
-  };
-  out.loadImageFromUrl = async (url, crossOrigin, signal): Promise<ImageResource> => {
+  },
+  loadImageFromUrl: async (url, crossOrigin, signal): Promise<ImageResource> => {
     signal?.throwIfAborted();
     const img = new Image();
     if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
@@ -43,10 +36,8 @@ export function initializeWebImageBackend(out: HostImageCapability): void {
       await img.decode();
     }
     return createWebImageResourceFromImageElement(img);
-  };
-}
-
-export const webHostImage: HostImageCapability & Entity = createWebImageBackend();
+  },
+};
 
 function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
   const data = new Uint8ClampedArray(source);

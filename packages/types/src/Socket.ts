@@ -84,7 +84,7 @@ export interface TcpSocketConnection {
   closeTcpSocketConnection(): void;
 }
 
-// The swappable transport seam realized by the web default (host-web's createWebSocketBackend) and by native
+// The swappable transport seam realized by the web default (host-web's webHostSocket) and by native
 // hosts. openSocket opens a framed connection for the given options and returns a live handle,
 // wiring the transport's open/message/close/error into `events`. A native backend may additionally
 // expose openTcpSocket; omission means raw TCP is unsupported and @flighthq/socket returns null.

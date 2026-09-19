@@ -5,7 +5,7 @@ export {
   clearGlyphAtlasDirty,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
-  createStubGlyphRasterizerBackend,
+  allocateStubGlyphRasterizerBackend,
   deriveGlyphMetricsFromFontSize,
   disposeGlyphAtlas,
   getGlyphAtlasDirtyRegion,

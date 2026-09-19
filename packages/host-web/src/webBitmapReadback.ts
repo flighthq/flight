@@ -1,17 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, Entity, EntityConstruction, HostBitmapReadbackCapability } from '@flighthq/types/contract';
+import type { Bitmap, HostBitmapReadbackCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-export function createWebBitmapReadbackBackend(): HostBitmapReadbackCapability & Entity {
-  const out = allocateEntity<HostBitmapReadbackCapability & Entity>();
-  initializeWebBitmapReadbackBackend(out);
-  return finishEntity(out);
-}
-
-export function initializeWebBitmapReadbackBackend(
-  out: EntityConstruction<HostBitmapReadbackCapability & Entity>,
-): void {
-  out.readBitmap = (source, width, height, mode) => {
+export const webHostBitmapReadback: HostBitmapReadbackCapability = {
+  readBitmap: (source, width, height, mode) => {
     if (typeof document === 'undefined') return { bitmap: null, reason: 'no-canvas' };
     const canvas = document.createElement('canvas');
     const probe = mode === 'probe';
@@ -49,10 +41,8 @@ export function initializeWebBitmapReadbackBackend(
       return finishEntity(out);
     })();
     return { bitmap, reason: 'ok' };
-  };
-}
-
-export const webHostBitmapReadback: HostBitmapReadbackCapability & Entity = createWebBitmapReadbackBackend();
+  },
+};
 
 function isExpectedSourceRefusal(error: unknown): boolean {
   return (

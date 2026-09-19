@@ -1,5 +1,4 @@
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { electronHostStorage, electronHostStorageGroup, populateElectronHostStorage } from './electronStorage';
 
@@ -71,10 +70,6 @@ function json(value: Readonly<Record<string, string>>): string {
 }
 
 describe('electronHostStorage', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in electronHostStorage(fakeElectron().electron)).toBe(true);
-  });
-
   it('treats a missing file as successful empty storage', () => {
     const backend = electronHostStorage(fakeElectron().electron);
     expect(backend.getItem('missing')).toEqual({ reason: 'ok', value: null });
@@ -181,10 +176,10 @@ describe('electronHostStorage', () => {
 });
 
 describe('electronHostStorageGroup', () => {
-  it('constructs the Entity-backed local storage slot', () => {
+  it('constructs the local storage slot', () => {
     const storage = electronHostStorageGroup(fakeElectron().electron);
     expect(Object.keys(storage)).toEqual(['local']);
-    expect(EntityRuntimeKey in storage.local).toBe(true);
+    expect(storage.local.getItem).toBeTypeOf('function');
   });
 });
 describe('populateElectronHostStorage', () => {

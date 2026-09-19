@@ -1,29 +1,16 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  createWebGlyphRasterizerBackend,
-  initializeWebGlyphRasterizerBackend,
-  webHostGlyphRasterizer,
-} from './webGlyphRasterizer';
+import { webHostGlyphRasterizer } from './webGlyphRasterizer';
 
-describe('createWebGlyphRasterizerBackend', () => {
+describe('webHostGlyphRasterizer', () => {
   it('constructs a backend with rasterize and measureMetrics', () => {
-    const backend = createWebGlyphRasterizerBackend();
+    const backend = webHostGlyphRasterizer;
     expect(backend.rasterize).toBeTypeOf('function');
     expect(backend.measureMetrics).toBeTypeOf('function');
   });
 
-  it('constructs an identity-bearing provider Entity', () => {
-    expect(EntityRuntimeKey in createWebGlyphRasterizerBackend()).toBe(true);
-  });
-
-  it('returns distinct instances on each call', () => {
-    expect(createWebGlyphRasterizerBackend()).not.toBe(createWebGlyphRasterizerBackend());
-  });
-
   it('rasterize returns null when no canvas context is available', () => {
-    const backend = createWebGlyphRasterizerBackend();
+    const backend = webHostGlyphRasterizer;
     const saved = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
     try {
@@ -34,7 +21,7 @@ describe('createWebGlyphRasterizerBackend', () => {
   });
 
   it('measureMetrics returns null when no canvas context is available', () => {
-    const backend = createWebGlyphRasterizerBackend();
+    const backend = webHostGlyphRasterizer;
     const saved = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
     try {
@@ -42,22 +29,5 @@ describe('createWebGlyphRasterizerBackend', () => {
     } finally {
       HTMLCanvasElement.prototype.getContext = saved;
     }
-  });
-});
-
-describe('initializeWebGlyphRasterizerBackend', () => {
-  it('is the construction initializer of createWebGlyphRasterizerBackend', () => {
-    expect(typeof initializeWebGlyphRasterizerBackend).toBe('function');
-  });
-});
-describe('webHostGlyphRasterizer', () => {
-  it('is an Entity with rasterize and measureMetrics', () => {
-    expect(EntityRuntimeKey in webHostGlyphRasterizer).toBe(true);
-    expect(webHostGlyphRasterizer.rasterize).toBeTypeOf('function');
-    expect(webHostGlyphRasterizer.measureMetrics).toBeTypeOf('function');
-  });
-
-  it('is a stable singleton', () => {
-    expect(webHostGlyphRasterizer).toBe(webHostGlyphRasterizer);
   });
 });

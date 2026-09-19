@@ -16,17 +16,15 @@ import {
 import * as inputContract from '@flighthq/input/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { InputIngressSink, InputPointerData } from '@flighthq/types/contract';
-import { EntityRuntimeKey, KeyCode, KeyModifier } from '@flighthq/types/contract';
+import { KeyCode, KeyModifier } from '@flighthq/types/contract';
 
 import * as hostWebPublic from './index';
 import { webHostInput } from './webInputHost';
 import {
-  createWebInputIngressBackend,
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
   getWebKeyModifierFromKeyboardEvent,
   getWebMouseWheelModeFromWheelEvent,
-  initializeWebInputIngressBackend,
   releaseWebInputPointerCapture,
   setWebInputPointerCapture,
   webHostInputIngress,
@@ -35,127 +33,6 @@ import {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-});
-
-describe('createWebInputIngressBackend', () => {
-  it('creates an Entity implementing all six input attachment families', () => {
-    const backend = createWebInputIngressBackend();
-    expect(EntityRuntimeKey in backend).toBe(true);
-    expect(backend.attachGamepad).toBeTypeOf('function');
-    expect(backend.attachKeyboard).toBeTypeOf('function');
-    expect(backend.attachPointer).toBeTypeOf('function');
-    expect(backend.attachRelativePointer).toBeTypeOf('function');
-    expect(backend.attachText).toBeTypeOf('function');
-    expect(backend.attachWheel).toBeTypeOf('function');
-  });
-
-  it('owns gamepad polling and emits only changed Web state', () => {
-    const frames = installManualAnimationFrames();
-    const getGamepads = vi.fn<() => Gamepad[]>();
-    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
-    const manager = createInputManager();
-    const axes: number[] = [];
-    const buttons: number[] = [];
-    connectSignal(manager.onGamepadAxisMove, (data) => axes.push(data.value));
-    connectSignal(manager.onGamepadButtonUp, (data) => buttons.push(data.value));
-    attachGamepadInput(webHostInputIngress, manager, window);
-
-    const initial = createGamepad(0, 'Pad', [0.25], [{ pressed: true, touched: true, value: 1 }]);
-    getGamepads.mockReturnValue([initial]);
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', initial));
-    frames.runAllCurrent();
-    expect(axes).toEqual([]);
-    expect(buttons).toEqual([]);
-
-    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [{ pressed: false, touched: false, value: 0 }])]);
-    frames.runAllCurrent();
-    expect(axes).toEqual([0.75]);
-    expect(buttons).toEqual([0]);
-    frames.runAllCurrent();
-    expect(axes).toEqual([0.75]);
-    expect(buttons).toEqual([0]);
-    detachGamepadInput(manager, window);
-  });
-
-  it('keeps Web polling state and releases independent per source', () => {
-    const frames = installManualAnimationFrames();
-    const getGamepads = vi.fn<() => Gamepad[]>().mockReturnValue([createGamepad(0, 'Pad', [0.5], [])]);
-    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
-    const firstSource = new EventTarget();
-    const secondSource = new EventTarget();
-    const firstManager = createInputManager();
-    const secondManager = createInputManager();
-    let firstMoves = 0;
-    let secondMoves = 0;
-    connectSignal(firstManager.onGamepadAxisMove, () => firstMoves++);
-    connectSignal(secondManager.onGamepadAxisMove, () => secondMoves++);
-    attachGamepadInput(webHostInputIngress, firstManager, firstSource);
-    attachGamepadInput(webHostInputIngress, secondManager, secondSource);
-
-    frames.runAllCurrent();
-    expect([firstMoves, secondMoves]).toEqual([1, 1]);
-    detachGamepadInput(firstManager, firstSource);
-    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [])]);
-    frames.runAllCurrent();
-    expect([firstMoves, secondMoves]).toEqual([1, 2]);
-    detachGamepadInput(secondManager, secondSource);
-    expect(frames.pending.size).toBe(0);
-  });
-
-  it('cannot resurrect Web polling when detached from a sink callback', () => {
-    const frames = installManualAnimationFrames();
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [createGamepad(0, 'Pad', [0.5], [])],
-    });
-    const manager = createInputManager();
-    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, window));
-    attachGamepadInput(webHostInputIngress, manager, window);
-
-    frames.runAllCurrent();
-    expect(frames.pending.size).toBe(0);
-    expect(frames.cancel).toHaveBeenCalledOnce();
-  });
-
-  it('routes two window identities only to their corresponding managers', () => {
-    installManualAnimationFrames();
-    const firstFrame = document.createElement('iframe');
-    const secondFrame = document.createElement('iframe');
-    document.body.append(firstFrame, secondFrame);
-    const firstWindow = firstFrame.contentWindow!;
-    const secondWindow = secondFrame.contentWindow!;
-    const firstManager = createInputManager();
-    const secondManager = createInputManager();
-    const firstEvents: number[] = [];
-    const secondEvents: number[] = [];
-    connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
-    connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
-    attachKeyboardInput(webHostInputIngress, firstManager, firstWindow);
-    attachKeyboardInput(webHostInputIngress, secondManager, secondWindow);
-
-    firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([]);
-
-    secondWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([KeyCode.B]);
-
-    detachKeyboardInput(firstManager, firstWindow);
-    detachKeyboardInput(secondManager, secondWindow);
-    firstFrame.remove();
-    secondFrame.remove();
-  });
-
-  it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
-    const frames = installManualAnimationFrames();
-    const backend = createWebInputIngressBackend();
-    const source = {};
-    const sink = {} as InputIngressSink;
-    expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
-    expect(() => backend.attachGamepad(source, sink)()).not.toThrow();
-    expect(frames.request).not.toHaveBeenCalled();
-  });
 });
 
 describe('getWebCoalescedPointerEvents', () => {
@@ -255,12 +132,6 @@ describe('getWebMouseWheelModeFromWheelEvent', () => {
       'pages',
     );
     expect(getWebMouseWheelModeFromWheelEvent(createWheelEvent({ deltaMode: 99 }))).toBe('unknown');
-  });
-});
-
-describe('initializeWebInputIngressBackend', () => {
-  it('is the construction initializer of createWebInputIngressBackend', () => {
-    expect(typeof initializeWebInputIngressBackend).toBe('function');
   });
 });
 
@@ -409,26 +280,122 @@ describe('web input ingress listeners', () => {
 });
 
 describe('webHostInputIngress', () => {
-  it('is the stable input ingress leaf composed into webHostInput', () => {
-    expect(webHostInput.ingress).toBe(webHostInputIngress);
-    expect(hostWebPublic.webHostInputIngress).toBe(webHostInputIngress);
+  it('implements all six input attachment families', () => {
+    const backend = webHostInputIngress;
+    expect(backend.attachGamepad).toBeTypeOf('function');
+    expect(backend.attachKeyboard).toBeTypeOf('function');
+    expect(backend.attachPointer).toBeTypeOf('function');
+    expect(backend.attachRelativePointer).toBeTypeOf('function');
+    expect(backend.attachText).toBeTypeOf('function');
+    expect(backend.attachWheel).toBeTypeOf('function');
   });
 
-  it('removes the old Web ingress names from input and exports only the renamed helpers from host-web', () => {
-    expect(inputContract).not.toHaveProperty('createWebInputIngressBackend');
-    expect(inputContract).not.toHaveProperty('initializeWebInputIngressBackend');
-    expect(inputContract).not.toHaveProperty('getCoalescedInputPointerEvents');
-    expect(inputContract).not.toHaveProperty('getKeyCodeFromDomKeyboardEvent');
-    expect(inputContract).not.toHaveProperty('getKeyModifierFromDomKeyboardEvent');
-    expect(inputContract).not.toHaveProperty('getMouseWheelModeFromDomWheelEvent');
-    expect(inputContract).not.toHaveProperty('releaseInputPointerCapture');
-    expect(inputContract).not.toHaveProperty('setInputPointerCapture');
-    expect(hostWebPublic.getWebCoalescedPointerEvents).toBe(getWebCoalescedPointerEvents);
-    expect(hostWebPublic.getWebKeyCodeFromKeyboardEvent).toBe(getWebKeyCodeFromKeyboardEvent);
-    expect(hostWebPublic.getWebKeyModifierFromKeyboardEvent).toBe(getWebKeyModifierFromKeyboardEvent);
-    expect(hostWebPublic.getWebMouseWheelModeFromWheelEvent).toBe(getWebMouseWheelModeFromWheelEvent);
-    expect(hostWebPublic.releaseWebInputPointerCapture).toBe(releaseWebInputPointerCapture);
-    expect(hostWebPublic.setWebInputPointerCapture).toBe(setWebInputPointerCapture);
+  it('owns gamepad polling and emits only changed Web state', () => {
+    const frames = installManualAnimationFrames();
+    const getGamepads = vi.fn<() => Gamepad[]>();
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
+    const manager = createInputManager();
+    const axes: number[] = [];
+    const buttons: number[] = [];
+    connectSignal(manager.onGamepadAxisMove, (data) => axes.push(data.value));
+    connectSignal(manager.onGamepadButtonUp, (data) => buttons.push(data.value));
+    attachGamepadInput(webHostInputIngress, manager, window);
+
+    const initial = createGamepad(0, 'Pad', [0.25], [{ pressed: true, touched: true, value: 1 }]);
+    getGamepads.mockReturnValue([initial]);
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', initial));
+    frames.runAllCurrent();
+    expect(axes).toEqual([]);
+    expect(buttons).toEqual([]);
+
+    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [{ pressed: false, touched: false, value: 0 }])]);
+    frames.runAllCurrent();
+    expect(axes).toEqual([0.75]);
+    expect(buttons).toEqual([0]);
+    frames.runAllCurrent();
+    expect(axes).toEqual([0.75]);
+    expect(buttons).toEqual([0]);
+    detachGamepadInput(manager, window);
+  });
+
+  it('keeps Web polling state and releases independent per source', () => {
+    const frames = installManualAnimationFrames();
+    const getGamepads = vi.fn<() => Gamepad[]>().mockReturnValue([createGamepad(0, 'Pad', [0.5], [])]);
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
+    const firstSource = new EventTarget();
+    const secondSource = new EventTarget();
+    const firstManager = createInputManager();
+    const secondManager = createInputManager();
+    let firstMoves = 0;
+    let secondMoves = 0;
+    connectSignal(firstManager.onGamepadAxisMove, () => firstMoves++);
+    connectSignal(secondManager.onGamepadAxisMove, () => secondMoves++);
+    attachGamepadInput(webHostInputIngress, firstManager, firstSource);
+    attachGamepadInput(webHostInputIngress, secondManager, secondSource);
+
+    frames.runAllCurrent();
+    expect([firstMoves, secondMoves]).toEqual([1, 1]);
+    detachGamepadInput(firstManager, firstSource);
+    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [])]);
+    frames.runAllCurrent();
+    expect([firstMoves, secondMoves]).toEqual([1, 2]);
+    detachGamepadInput(secondManager, secondSource);
+    expect(frames.pending.size).toBe(0);
+  });
+
+  it('cannot resurrect Web polling when detached from a sink callback', () => {
+    const frames = installManualAnimationFrames();
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [createGamepad(0, 'Pad', [0.5], [])],
+    });
+    const manager = createInputManager();
+    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, window));
+    attachGamepadInput(webHostInputIngress, manager, window);
+
+    frames.runAllCurrent();
+    expect(frames.pending.size).toBe(0);
+    expect(frames.cancel).toHaveBeenCalledOnce();
+  });
+
+  it('routes two window identities only to their corresponding managers', () => {
+    installManualAnimationFrames();
+    const firstFrame = document.createElement('iframe');
+    const secondFrame = document.createElement('iframe');
+    document.body.append(firstFrame, secondFrame);
+    const firstWindow = firstFrame.contentWindow!;
+    const secondWindow = secondFrame.contentWindow!;
+    const firstManager = createInputManager();
+    const secondManager = createInputManager();
+    const firstEvents: number[] = [];
+    const secondEvents: number[] = [];
+    connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
+    connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
+    attachKeyboardInput(webHostInputIngress, firstManager, firstWindow);
+    attachKeyboardInput(webHostInputIngress, secondManager, secondWindow);
+
+    firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    expect(firstEvents).toEqual([KeyCode.A]);
+    expect(secondEvents).toEqual([]);
+
+    secondWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
+    expect(firstEvents).toEqual([KeyCode.A]);
+    expect(secondEvents).toEqual([KeyCode.B]);
+
+    detachKeyboardInput(firstManager, firstWindow);
+    detachKeyboardInput(secondManager, secondWindow);
+    firstFrame.remove();
+    secondFrame.remove();
+  });
+
+  it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
+    const frames = installManualAnimationFrames();
+    const backend = webHostInputIngress;
+    const source = {};
+    const sink = {} as InputIngressSink;
+    expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
+    expect(() => backend.attachGamepad(source, sink)()).not.toThrow();
+    expect(frames.request).not.toHaveBeenCalled();
   });
 });
 

@@ -17,11 +17,7 @@ const PACK_TIMEOUT_MS = 120_000;
 const ENTITY_CONSTRUCTORS = [
   'tauriHost',
   'tauriHostApp',
-  'tauriHostDirectoryOpenDialog',
-  'tauriHostFileOpenDialog',
-  'tauriHostFileSaveDialog',
   'tauriHostMenu',
-  'tauriHostMessageDialog',
   'tauriHostNotification',
   'tauriHostTray',
 ] as const;

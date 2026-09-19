@@ -50,10 +50,6 @@ function fakeCapacitor(permission = 'granted') {
 }
 
 describe('capacitorHostGeolocation', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostGeolocation(fakeCapacitor().capacitor)).toBe(true);
-  });
-
   it('reports an installed Capacitor geolocation provider as available', () => {
     const backend = capacitorHostGeolocation(fakeCapacitor().capacitor);
     expect(backend.isAvailable()).toBe(true);

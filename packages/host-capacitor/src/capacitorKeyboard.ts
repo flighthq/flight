@@ -1,8 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
-  Entity,
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
   SoftKeyboardChangeSubscription,
@@ -23,54 +21,48 @@ import {
   SoftKeyboardStyleDarkKind,
 } from '@flighthq/types/contract';
 
-export function capacitorHostSoftKeyboardAccessoryBar(
-  capacitor: CapacitorApi,
-): HostSoftKeyboardAccessoryBarCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardAccessoryBarCapability & Entity>();
+export function capacitorHostSoftKeyboardAccessoryBar(capacitor: CapacitorApi): HostSoftKeyboardAccessoryBarCapability {
+  const out = {} as HostSoftKeyboardAccessoryBarCapability;
   populateCapacitorSoftKeyboardAccessoryBar(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
-export function capacitorHostSoftKeyboardChange(capacitor: CapacitorApi): HostSoftKeyboardChangeCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardChangeCapability & Entity>();
+export function capacitorHostSoftKeyboardChange(capacitor: CapacitorApi): HostSoftKeyboardChangeCapability {
+  const out = {} as HostSoftKeyboardChangeCapability;
   populateCapacitorSoftKeyboardChange(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
-export function capacitorHostSoftKeyboardInfo(capacitor: CapacitorApi): HostSoftKeyboardInfoCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardInfoCapability & Entity>();
+export function capacitorHostSoftKeyboardInfo(capacitor: CapacitorApi): HostSoftKeyboardInfoCapability {
+  const out = {} as HostSoftKeyboardInfoCapability;
   populateCapacitorSoftKeyboardInfo(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
 export function capacitorHostSoftKeyboardResizeModeWrite(
   capacitor: CapacitorApi,
-): HostSoftKeyboardResizeModeWriteCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardResizeModeWriteCapability & Entity>();
+): HostSoftKeyboardResizeModeWriteCapability {
+  const out = {} as HostSoftKeyboardResizeModeWriteCapability;
   populateCapacitorSoftKeyboardResizeModeWrite(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
-export function capacitorHostSoftKeyboardScrollAssist(
-  capacitor: CapacitorApi,
-): HostSoftKeyboardScrollAssistCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardScrollAssistCapability & Entity>();
+export function capacitorHostSoftKeyboardScrollAssist(capacitor: CapacitorApi): HostSoftKeyboardScrollAssistCapability {
+  const out = {} as HostSoftKeyboardScrollAssistCapability;
   populateCapacitorSoftKeyboardScrollAssist(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
-export function capacitorHostSoftKeyboardStyle(capacitor: CapacitorApi): HostSoftKeyboardStyleCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardStyleCapability & Entity>();
+export function capacitorHostSoftKeyboardStyle(capacitor: CapacitorApi): HostSoftKeyboardStyleCapability {
+  const out = {} as HostSoftKeyboardStyleCapability;
   populateCapacitorSoftKeyboardStyle(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
-export function capacitorHostSoftKeyboardVisibility(
-  capacitor: CapacitorApi,
-): HostSoftKeyboardVisibilityCapability & Entity {
-  const out = allocateEntity<HostSoftKeyboardVisibilityCapability & Entity>();
+export function capacitorHostSoftKeyboardVisibility(capacitor: CapacitorApi): HostSoftKeyboardVisibilityCapability {
+  const out = {} as HostSoftKeyboardVisibilityCapability;
   populateCapacitorSoftKeyboardVisibility(out, capacitor.keyboard);
-  return finishEntity(out);
+  return out;
 }
 
 function populateCapacitorSoftKeyboardAccessoryBar(
