@@ -80,15 +80,11 @@ const RELOCATED_WEB_APIS = [
   'initializeWebAudioDeviceBackend',
 ] as const;
 const WEB_BACKEND_DECLARATIONS: ReadonlyMap<string, string> = new Map([
-  ['createWebAudioDeviceBackend', 'packages/host-web/src/webAudioDevice.ts'],
-  ['createWebAudioMixerBackend', 'packages/host-web/src/webAudioMixer.ts'],
   ['createWebVideoCapabilityBackend', 'packages/host-web/src/webVideoCapability.ts'],
   ['getAudioDeviceContext', 'packages/host-web/src/webAudioDevice.ts'],
   ['getAudioSourceBufferSourceNode', 'packages/host-web/src/webAudioDevice.ts'],
   ['getAudioSourceGainNode', 'packages/host-web/src/webAudioDevice.ts'],
   ['hasAudioDeviceWebNodeAccess', 'packages/host-web/src/webAudioDevice.ts'],
-  ['initializeWebAudioDeviceBackend', 'packages/host-web/src/webAudioDevice.ts'],
-  ['initializeWebAudioMixerBackend', 'packages/host-web/src/webAudioMixer.ts'],
   ['initializeWebVideoCapabilityBackend', 'packages/host-web/src/webVideoCapability.ts'],
   ['webHostAudioDevice', 'packages/host-web/src/webAudioDevice.ts'],
   ['webHostAudioMixer', 'packages/host-web/src/webAudioMixer.ts'],
