@@ -37,7 +37,6 @@ describe('createRenderState', () => {
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries).toStrictEqual({
       renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
-      strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
     });
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
@@ -76,7 +75,8 @@ describe('createRenderStateRuntime', () => {
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.renderers).toStrictEqual(createKeyedTable('NodeRenderer', 'Unregistered'));
-    expect(runtime.registries.strokeTessellator).toStrictEqual(createSlotTable('StrokeTessellator', 'Rasterize'));
+    // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, never here.
+    expect(runtime.registries.strokeTessellator).toBeUndefined();
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });
@@ -86,7 +86,6 @@ describe('createRenderStateRuntime', () => {
     const b = createRenderStateRuntime();
     expect(a).not.toBe(b);
     expect(a.registries.renderers).not.toBe(b.registries.renderers);
-    expect(a.registries.strokeTessellator).not.toBe(b.registries.strokeTessellator);
   });
 });
 

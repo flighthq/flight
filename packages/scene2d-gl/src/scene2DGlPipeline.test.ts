@@ -81,8 +81,8 @@ describe('defaultScene2DGlRenderRegistries', () => {
 
   it('carries the stroke tessellator in the slot table', () => {
     const registries = defaultScene2DGlRenderRegistries;
-    expect(registries.strokeTessellator.entry).not.toBeNull();
-    expect(registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(registries.strokeTessellator?.entry).not.toBeNull();
+    expect(registries.strokeTessellator?.entry?.state).toBe(RegistryEntryState.Bound);
   });
 
   it('carries the standard material renderer for StandardMaterialKind', () => {

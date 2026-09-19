@@ -1,4 +1,4 @@
-import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 
 export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
@@ -10,5 +10,4 @@ export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
 export function initializeEmptyCanvasRenderRegistries(out: CanvasRenderRegistries): void {
   out.renderEffects = createKeyedTable('CanvasRenderEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
-  out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
 }

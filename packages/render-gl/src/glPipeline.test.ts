@@ -15,7 +15,9 @@ describe('allocateEmptyGlRenderRegistries', () => {
     expect(registries.pbrExtensions.shape).toBe('keyed');
     expect(registries.renderEffects.shape).toBe('keyed');
     expect(registries.shapeRasterizer.shape).toBe('slot');
-    expect(registries.strokeTessellator.shape).toBe('slot');
+    // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, not by the
+    // pipeline, so a pipeline nobody opted in on carries no table for it.
+    expect(registries.strokeTessellator).toBeUndefined();
     expect(registries.textureResolvers.shape).toBe('keyed');
     expect(registries.velocityWriters.shape).toBe('keyed');
   });

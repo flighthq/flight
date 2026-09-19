@@ -551,12 +551,7 @@ describe('createWgpuRenderStateRuntime', () => {
       registry: 'WgpuShapeRasterizer',
       shape: 'slot',
     });
-    expectEntitySlot(runtime.registries.strokeTessellator, {
-      entry: null,
-      onMiss: 'Rasterize',
-      registry: 'StrokeTessellator',
-      shape: 'slot',
-    });
+    expect(runtime.registries.strokeTessellator).toBeUndefined();
     expect(runtime.registries.velocityWriters).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'WgpuVelocityWriter',

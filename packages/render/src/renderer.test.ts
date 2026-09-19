@@ -130,7 +130,7 @@ describe('copyRenderStateRegistrations', () => {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentUnsupportedGuard },
     };
     getRenderStateRuntime(source).registries.strokeTessellator = {
-      ...getRenderStateRuntime(source).registries.strokeTessellator,
+      ...createSlotTable('StrokeTessellator', 'Rasterize'),
       entry: { state: RegistryEntryState.Bound, value: strokeTessellator },
     };
     getRenderStateRuntime(source).registries.renderRootGuard = {
@@ -171,15 +171,18 @@ describe('copyRenderStateRegistrations', () => {
     expect(sourceRuntime.registries.colorAdjustmentUnsupportedGuard).not.toBe(sharedGuardSnapshot);
     expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
     expect(targetRuntime.registries.strokeTessellator).toBe(sourceRuntime.registries.strokeTessellator);
-    expect(targetRuntime.registries.strokeTessellator.entry).toEqual({
+    expect(targetRuntime.registries.strokeTessellator?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: strokeTessellator,
     });
     const sharedStrokeSnapshot = targetRuntime.registries.strokeTessellator;
-    sourceRuntime.registries.strokeTessellator = { ...sourceRuntime.registries.strokeTessellator, entry: null };
+    sourceRuntime.registries.strokeTessellator = {
+      ...createSlotTable('StrokeTessellator', 'Rasterize'),
+      entry: null,
+    };
     expect(sourceRuntime.registries.strokeTessellator).not.toBe(sharedStrokeSnapshot);
     expect(targetRuntime.registries.strokeTessellator).toBe(sharedStrokeSnapshot);
-    expect(targetRuntime.registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(targetRuntime.registries.strokeTessellator?.entry?.state).toBe(RegistryEntryState.Bound);
     expect(targetRuntime.registries.effectPaddingResolvers).toBe(sourceRuntime.registries.effectPaddingResolvers);
     expect(targetRuntime.registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({
       state: RegistryEntryState.Bound,

@@ -22,7 +22,6 @@ export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void
   out.renderEffects = createKeyedTable('GlRenderEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.shapeRasterizer = createSlotTable('GlShapeRasterizer', 'Unregistered');
-  out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
   out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');
 }
