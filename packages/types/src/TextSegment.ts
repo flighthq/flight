@@ -34,12 +34,12 @@ export interface HostTextSegmenterCapability {
   segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[];
 }
 
-export type TextSegmenterBackendKind = 'custom' | 'web-intl';
+export type TextSegmenterKind = 'custom' | 'web-intl';
 
 // Pull-style description of the selected provider and whether its runtime primitive can answer now.
-export interface TextSegmenterBackendExplanation {
+export interface TextSegmenterExplanation {
   available: boolean;
-  backend: TextSegmenterBackendKind;
+  backend: TextSegmenterKind;
   intlSegmenterAvailable: boolean;
 }
 

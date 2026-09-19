@@ -2,7 +2,7 @@ import type {
   HostTextSegmenterCapability,
   TextSegment,
   TextSegmentGranularity,
-  TextSegmenterBackendExplanation,
+  TextSegmenterExplanation,
 } from '@flighthq/types/contract';
 
 import { reportTextSegmenterUnavailable } from './textSegmentGuards';
@@ -26,7 +26,7 @@ function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
 /** Describes which provider an operation would use and whether Intl.Segmenter is present. */
 export function explainTextSegmenterBackend(
   textSegmenter: Readonly<HostTextSegmenterCapability>,
-): TextSegmenterBackendExplanation {
+): TextSegmenterExplanation {
   const web = textSegmenter === webTextSegmenterBackend;
   const intlSegmenterAvailable = hasIntlSegmenter();
   return {

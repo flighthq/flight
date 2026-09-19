@@ -38,7 +38,7 @@ export interface FileSystemUsage {
 }
 
 // Required subset shared by Web OPFS and Capacitor Filesystem.
-export interface FileSystemBasicBackend {
+export interface FileSystemBasicOperations {
   appendTextFile(path: string, data: string, signal?: AbortSignal): Promise<boolean>;
   copy(from: string, to: string): Promise<boolean>;
   directoryExists(path: string): Promise<boolean>;
@@ -55,11 +55,11 @@ export interface FileSystemBasicBackend {
   writeTextFile(path: string, data: string, signal?: AbortSignal): Promise<boolean>;
 }
 
-// Honest host-provider surface. Provider coverage varies beyond FileSystemBasicBackend, so every
+// Honest host-provider surface. Provider coverage varies beyond FileSystemBasicOperations, so every
 // member is structurally omittable. The seven public absence operations (symlink, permissions, real
 // path, watch, and well-known path lookup) are deliberately not host members; @flighthq/filesystem
 // owns their documented sentinel results.
-export interface HostFileSystemCapability extends Partial<FileSystemBasicBackend> {
+export interface HostFileSystemCapability extends Partial<FileSystemBasicOperations> {
   canAccessFile?(path: string, mode: 'readable' | 'writable' | 'executable'): Promise<boolean>;
   getFileSystemUsage?(): Promise<FileSystemUsage | null>;
   openFileReadStream?(path: string, signal?: AbortSignal): Promise<ReadableStream<Uint8Array> | null>;

@@ -34,7 +34,7 @@ export function electronHostStorageGroup(
 // Maps synchronous Storage commands to one JSON file in Electron's userData directory. Mutations build
 // a candidate record, write it to a temporary file in the SAME directory, atomically rename it over the
 // target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
-// not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
+// not fsync or power-loss durability; the public StorageMutationOutcome contract states that distinction.
 export function populateElectronHostStorage(
   out: HostPreferencesCapability,
   electron: ElectronApi,

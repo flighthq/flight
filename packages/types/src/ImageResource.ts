@@ -35,4 +35,4 @@ export interface HostImageCapability {
   ): Promise<ImageResource>;
 }
 
-export type ImageBackendOperation = keyof HostImageCapability;
+export type ImageOperation = keyof HostImageCapability;
