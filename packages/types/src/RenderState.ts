@@ -59,7 +59,7 @@ export interface RenderRegistries {
   // closed strokes, which is the default every pipeline gets for free: the slot is allocated by
   // enableGlStrokePathTessellation / enableWgpuStrokePathTessellation, not by pipeline construction, so
   // a state that never opts in carries no table for it.
-  strokeTessellator?: SlotTable<StrokeTessellator>;
+  strokeTessellator: SlotTable<StrokeTessellator> | null;
 }
 
 export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;

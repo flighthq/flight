@@ -41,7 +41,7 @@ describe('registerDomShapeRasterizer', () => {
 
     const after = getDomRenderStateRuntime(state).registries.shapeRasterizer;
     expect(after).not.toBe(before);
-    expect(before).toBeUndefined();
+    expect(before).toBeNull();
     expect(after?.entry).toEqual({ state: 'bound', value: rasterizer });
   });
 
