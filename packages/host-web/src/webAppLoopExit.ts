@@ -2,18 +2,17 @@ import type { HostAppExitCapability } from '@flighthq/types/contract';
 
 export const webHostAppLoopExit: HostAppExitCapability = {
   subscribe(listener) {
-    webHostAppLoopExit.unsubscribe(listener);
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return noop;
     const pageWindow = window;
-    _applicationExitOrigins.set(listener, pageWindow);
-    pageWindow.addEventListener('beforeunload', listener);
-  },
-  unsubscribe(listener) {
-    const pageWindow = _applicationExitOrigins.get(listener);
-    if (pageWindow === undefined) return;
-    _applicationExitOrigins.delete(listener);
-    pageWindow.removeEventListener('beforeunload', listener);
+    const handler = () => listener();
+    pageWindow.addEventListener('beforeunload', handler);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      pageWindow.removeEventListener('beforeunload', handler);
+    };
   },
 };
 
-const _applicationExitOrigins = new Map<() => void, Window>();
+function noop(): void {}

@@ -7,7 +7,7 @@ import type {
 import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
 type WebClipboardChangeProvider = HostClipboardChangeCapability &
-  Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>;
+  Required<Pick<HostClipboardChangeCapability, 'subscribe'>>;
 type WebClipboardBackend = HostClipboardFormatsCapability &
   HostClipboardImageCapability &
   HostClipboardTextCapability &
@@ -51,14 +51,13 @@ function createWebClipboardTextProvider(): HostClipboardTextCapability {
 
 function initializeWebClipboardChangeProvider(out: WebClipboardChangeProvider): void {
   out.subscribe = (callback: () => void) => {
-    if (typeof window === 'undefined') return;
-    if ('onclipboardchange' in window) {
-      window.addEventListener('clipboardchange' as keyof WindowEventMap, callback as EventListener);
-    }
-  };
-  out.unsubscribe = (callback: () => void) => {
-    if (typeof window === 'undefined' || !('onclipboardchange' in window)) return;
-    window.removeEventListener('clipboardchange' as keyof WindowEventMap, callback as EventListener);
+    if (typeof window === 'undefined' || !('onclipboardchange' in window)) return noop;
+    const pageWindow = window;
+    const handler = () => callback();
+    pageWindow.addEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
+    return () => {
+      pageWindow.removeEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
+    };
   };
 }
 
@@ -153,6 +152,8 @@ async function getWebClipboardFormats(): Promise<string[]> {
     return [];
   }
 }
+
+function noop(): void {}
 
 function getWritableWebClipboard(): Clipboard | null {
   const clipboard = getWebClipboard();

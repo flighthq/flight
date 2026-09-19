@@ -5,6 +5,5 @@ export type FullscreenTargetHandle = Entity & { readonly __brand: 'FullscreenTar
 export interface HostElementFullscreenCapability {
   exit(): Promise<boolean>;
   request(target: FullscreenTargetHandle): Promise<boolean>;
-  subscribe?(callback: (fullscreen: boolean) => void): void;
-  unsubscribe?(callback: (fullscreen: boolean) => void): void;
+  subscribe?(callback: (fullscreen: boolean) => void): () => void;
 }

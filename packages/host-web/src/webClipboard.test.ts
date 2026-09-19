@@ -88,22 +88,22 @@ describe('webHostClipboard providers', () => {
     let changes = 0;
     const callback = () => changes++;
 
-    webHostClipboardChange.subscribe(callback);
+    const release = webHostClipboardChange.subscribe(callback);
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
 
     expect(changes).toBe(0);
-    expect(() => webHostClipboardChange.unsubscribe(callback)).not.toThrow();
+    expect(() => release()).not.toThrow();
   });
 
-  it('removes the exact clipboardchange callback on unsubscribe', () => {
+  it('returns a release for the exact clipboardchange subscription', () => {
     const fakeWindow = Object.assign(new EventTarget(), { onclipboardchange: null });
     vi.stubGlobal('window', fakeWindow);
     let changes = 0;
     const callback = () => changes++;
 
-    webHostClipboardChange.subscribe(callback);
+    const release = webHostClipboardChange.subscribe(callback);
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
-    webHostClipboardChange.unsubscribe(callback);
+    release();
     fakeWindow.dispatchEvent(new Event('clipboardchange'));
 
     expect(changes).toBe(1);

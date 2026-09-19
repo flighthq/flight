@@ -96,10 +96,13 @@ function createExitTestHost(): ExitTestHost {
         subscribe(listener) {
           calls.push('subscribe');
           listeners.add(listener);
-        },
-        unsubscribe(listener) {
-          calls.push('unsubscribe');
-          listeners.delete(listener);
+          let active = true;
+          return () => {
+            if (!active) return;
+            active = false;
+            calls.push('release');
+            listeners.delete(listener);
+          };
         },
       },
     },
@@ -122,7 +125,7 @@ describe('attachAppLoopExit', () => {
     expect(host.app.exit.calls).toEqual(['subscribe']);
   });
 
-  it('unsubscribes the prior host before replacing the exit listener', () => {
+  it('releases the prior host before replacing the exit listener', () => {
     const first = createExitTestHost();
     const second = createExitTestHost();
     const app = createAppLoop();
@@ -135,7 +138,7 @@ describe('attachAppLoopExit', () => {
     second.app.exit.emit();
 
     expect(count).toBe(1);
-    expect(first.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(first.app.exit.calls).toEqual(['subscribe', 'release']);
     expect(second.app.exit.calls).toEqual(['subscribe']);
   });
 });
@@ -225,7 +228,7 @@ describe('detachAppLoopExit', () => {
     host.app.exit.emit();
 
     expect(called).toBe(false);
-    expect(host.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(host.app.exit.calls).toEqual(['subscribe', 'release']);
   });
 });
 
@@ -249,7 +252,7 @@ describe('disposeAppLoop', () => {
     expect(app.isRunning).toBe(false);
     exitHost.app.exit.emit();
     expect(exitCalled).toBe(false);
-    expect(exitHost.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(exitHost.app.exit.calls).toEqual(['subscribe', 'release']);
   });
 });
 

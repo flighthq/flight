@@ -257,7 +257,7 @@ describe('writeClipboardHtml', () => {
 interface FakeClipboardBackend
   extends
     HostClipboardBookmarkCapability,
-    Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>,
+    Required<Pick<HostClipboardChangeCapability, 'subscribe'>>,
     HostClipboardFormatsCapability,
     HostClipboardImageCapability,
     HostClipboardTextCapability {
@@ -272,7 +272,7 @@ interface FakeClipboardBackend
 
 type FakeClipboardHost = { readonly clipboard: { readonly bookmark: HostClipboardBookmarkCapability } } & {
   readonly clipboard: {
-    readonly change: Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>;
+    readonly change: Required<Pick<HostClipboardChangeCapability, 'subscribe'>>;
   };
 } & { readonly clipboard: { readonly formats: HostClipboardFormatsCapability } } & {
   readonly clipboard: { readonly image: HostClipboardImageCapability };
@@ -358,9 +358,7 @@ function fakeBackend(): FakeClipboardBackend {
   };
   out.subscribe = (callback: () => void) => {
     out.listeners.add(callback);
-  };
-  out.unsubscribe = (callback: () => void) => {
-    out.listeners.delete(callback);
+    return () => out.listeners.delete(callback);
   };
   out.writeBookmark = async (title: string, url: string) => {
     out.bookmark = { title, url };

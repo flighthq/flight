@@ -16,14 +16,14 @@ import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contrac
 // Attaches watch to the explicitly supplied host's clipboard change subscription. Attaching the
 // same watch again first releases its prior subscription, even when the new host is different.
 export function attachClipboardWatch(
-  hostClipboardChange: Readonly<Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>>,
+  hostClipboardChange: Readonly<Required<Pick<HostClipboardChangeCapability, 'subscribe'>>>,
   watch: ClipboardWatch,
 ): void {
   detachClipboardWatch(watch);
-  const change = hostClipboardChange;
-  const callback = () => emitSignal(watch.onChange);
-  change.subscribe(callback);
-  _watchSubscriptions.set(watch, { callback, change });
+  _watchSubscriptions.set(
+    watch,
+    hostClipboardChange.subscribe(() => emitSignal(watch.onChange)),
+  );
 }
 
 // Clears the system clipboard. Returns false when the host denies access. Sentinel, not throw.
@@ -41,11 +41,10 @@ export function createClipboardWatch(): ClipboardWatch {
 
 // Stops delivery to watch and forgets its subscription. Safe to call when not attached.
 export function detachClipboardWatch(watch: ClipboardWatch): void {
-  const subscription = _watchSubscriptions.get(watch);
-  if (subscription !== undefined) {
-    subscription.change.unsubscribe(subscription.callback);
-    _watchSubscriptions.delete(watch);
-  }
+  const unsubscribe = _watchSubscriptions.get(watch);
+  if (unsubscribe === undefined) return;
+  _watchSubscriptions.delete(watch);
+  unsubscribe();
 }
 
 // Detaches watch's provider subscription and releases it for garbage collection.
@@ -203,10 +202,4 @@ export function writeClipboardText(
 
 // Active watches are deliberate registry roots until detach/dispose; enumeration is unnecessary now
 // that provider selection is explicit and subscriptions never rebind through a later provider choice.
-const _watchSubscriptions = new Map<
-  ClipboardWatch,
-  {
-    readonly callback: () => void;
-    readonly change: Readonly<Required<Pick<HostClipboardChangeCapability, 'subscribe' | 'unsubscribe'>>>;
-  }
->();
+const _watchSubscriptions = new Map<ClipboardWatch, () => void>();

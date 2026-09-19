@@ -5,23 +5,26 @@ describe('webHostAppLoopExit', () => {
   it('owns the browser beforeunload subscription and removes the exact listener', () => {
     const listener = vi.fn();
 
-    webHostAppLoopExit.subscribe(listener);
+    const release = webHostAppLoopExit.subscribe(listener);
     window.dispatchEvent(new Event('beforeunload'));
-    webHostAppLoopExit.unsubscribe(listener);
+    release();
     window.dispatchEvent(new Event('beforeunload'));
 
     expect(listener).toHaveBeenCalledOnce();
   });
 
-  it('replaces a repeated subscription without duplicating delivery', () => {
+  it('returns an independent release for each subscription', () => {
     const listener = vi.fn();
 
-    webHostAppLoopExit.subscribe(listener);
-    webHostAppLoopExit.subscribe(listener);
+    const releaseFirst = webHostAppLoopExit.subscribe(listener);
+    const releaseSecond = webHostAppLoopExit.subscribe(listener);
     window.dispatchEvent(new Event('beforeunload'));
-    webHostAppLoopExit.unsubscribe(listener);
+    releaseFirst();
+    window.dispatchEvent(new Event('beforeunload'));
+    releaseSecond();
+    window.dispatchEvent(new Event('beforeunload'));
 
-    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenCalledTimes(3);
   });
 
   it('occupies the explicit web host application-exit slot', () => {
