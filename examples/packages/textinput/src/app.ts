@@ -28,7 +28,7 @@ import {
   redoTextInput,
   setTextInputSelection,
   undoTextInput,
-} from '@flighthq/sdk/text';
+} from '@flighthq/sdk/textinput';
 
 import { canvas, render, scale } from './render';
 

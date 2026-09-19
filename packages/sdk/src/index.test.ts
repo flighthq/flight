@@ -1,5 +1,7 @@
 import * as sdk from './index';
-import * as rendering from './rendering';
+import * as renderGl from './render-gl';
+import * as renderWgpu from './render-wgpu';
+import * as scene2dCanvas from './scene2d-canvas';
 
 describe('package exports', () => {
   describe('adjustments domain', () => {
@@ -71,12 +73,13 @@ describe('package exports', () => {
       expect(sdk.registerRenderer).toBeTypeOf('function');
     });
 
-    it('exports caller-owned 2D root transforms through both SDK render barrels', () => {
-      for (const barrel of [sdk, rendering]) {
-        expect(barrel.setCanvasRenderTransform2D).toBeTypeOf('function');
-        expect(barrel.setGlRenderTransform2D).toBeTypeOf('function');
-        expect(barrel.setWgpuRenderTransform2D).toBeTypeOf('function');
-      }
+    it('exports caller-owned 2D root transforms through the root and each owning subpath', () => {
+      expect(sdk.setCanvasRenderTransform2D).toBeTypeOf('function');
+      expect(sdk.setGlRenderTransform2D).toBeTypeOf('function');
+      expect(sdk.setWgpuRenderTransform2D).toBeTypeOf('function');
+      expect(scene2dCanvas.setCanvasRenderTransform2D).toBe(sdk.setCanvasRenderTransform2D);
+      expect(renderGl.setGlRenderTransform2D).toBe(sdk.setGlRenderTransform2D);
+      expect(renderWgpu.setWgpuRenderTransform2D).toBe(sdk.setWgpuRenderTransform2D);
     });
   });
 

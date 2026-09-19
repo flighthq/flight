@@ -25,7 +25,7 @@ import {
   pauseClock,
   resumeClock,
   setClockScale,
-} from '@flighthq/sdk/application';
+} from '@flighthq/sdk/clock';
 
 import { render, scale } from './render';
 

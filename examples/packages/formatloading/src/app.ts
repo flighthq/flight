@@ -12,7 +12,9 @@ import {
   getMeshGeometryVertexPosition,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { parseGltf, parseTexturePackerSpritesheet, parseTiledTmj } from '@flighthq/sdk/formats';
+import { parseGltf } from '@flighthq/sdk/scene3d-formats';
+import { parseTexturePackerSpritesheet } from '@flighthq/sdk/spritesheet-formats';
+import { parseTiledTmj } from '@flighthq/sdk/tilemap-formats';
 
 import { render, scale } from './render';
 
@@ -138,7 +140,7 @@ function addPanel(x: number, accent: number): void {
 }
 
 addLabel('Standard Format Loading', 24, 20, 28, 0xf4f7fbff);
-addLabel('Three authoring formats parsed through @flighthq/sdk/formats', 25, 57, 15, 0x91a4bfff);
+addLabel('Three authoring formats parsed through @flighthq/sdk format subpaths', 25, 57, 15, 0x91a4bfff);
 
 addPanel(24, 0x61dafbff);
 addPanel(284, 0xffc857ff);

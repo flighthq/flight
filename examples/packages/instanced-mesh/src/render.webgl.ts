@@ -20,7 +20,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/sdk/rendering';
+import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/sdk/scene3d-gl';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();

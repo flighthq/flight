@@ -15,7 +15,7 @@ import {
   invalidateNodeLocalTransform,
   setTextLabelString,
 } from '@flighthq/sdk';
-import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/sdk/game';
+import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/sdk/snapshot';
 
 import { render, scale } from './render';
 

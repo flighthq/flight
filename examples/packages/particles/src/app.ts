@@ -20,7 +20,7 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   particleColorCurveFromKeyframes,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/particles';
 
 import { canvas, render, scale } from './render';
 

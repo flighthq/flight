@@ -20,7 +20,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderGlScene3D } from '@flighthq/sdk/rendering';
+import { renderGlScene3D } from '@flighthq/sdk/scene3d-gl';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;

@@ -21,7 +21,7 @@ import {
   testCircleCircleCollision2D,
   testCirclePolygonCollision2D,
   testPolygonPolygonCollision2D,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/collision';
 
 import { canvas, render, scale } from './render';
 

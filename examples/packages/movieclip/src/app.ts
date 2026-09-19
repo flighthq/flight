@@ -31,7 +31,7 @@ import {
   setMovieClipSource,
   stopMovieClip,
   updateMovieClip,
-} from '@flighthq/sdk/animation';
+} from '@flighthq/sdk/movieclip';
 
 import { render, scale } from './render';
 

@@ -19,7 +19,7 @@ import {
   dollyOrbitCameraController,
   rotateOrbitCameraController,
   updateOrbitCameraController,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/camera-controls';
 
 import { createSyntheticAwd2 } from './createSyntheticAwd2';
 import { canvas, render, scale } from './render';

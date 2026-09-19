@@ -28,7 +28,7 @@ import {
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
-import { enableCanvasTextInput } from '@flighthq/sdk/rendering';
+import { enableCanvasTextInput } from '@flighthq/sdk/scene2d-canvas';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);

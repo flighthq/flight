@@ -45,8 +45,9 @@ import {
   dollyOrbitCameraController,
   rotateOrbitCameraController,
   updateOrbitCameraController,
-} from '@flighthq/sdk/game';
-import { createNode3D, createScene3DHit, pickScene3D } from '@flighthq/sdk/scene3d';
+} from '@flighthq/sdk/camera-controls';
+import { createScene3DHit, pickScene3D } from '@flighthq/sdk/picking';
+import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render';
 

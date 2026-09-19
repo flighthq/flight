@@ -22,8 +22,8 @@ import {
   getMotionPathProgress,
   setMotionPathProgress,
   updateMotionPath,
-} from '@flighthq/sdk/animation';
-import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/sdk/scene2d';
+} from '@flighthq/sdk/motionpath';
+import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/sdk/path';
 
 import { render, scale } from './render';
 
