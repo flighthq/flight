@@ -1,5 +1,7 @@
 import type { GlRenderState } from './GlRenderState';
+import type { Signal } from './Signal';
+
 export interface GlContextLossSignals {
-  onGlContextLost: ((state: GlRenderState) => void)[];
-  onGlContextRestored: ((state: GlRenderState) => void)[];
+  onGlContextLost: Signal<(state: GlRenderState) => void>;
+  onGlContextRestored: Signal<(state: GlRenderState) => void>;
 }
