@@ -76,12 +76,12 @@ describe('registerWgpuCompressedTextureDecoder', () => {
     const decoder = vi.fn(() => new Uint8ClampedArray(64));
     registerWgpuCompressedTextureDecoder(state, decoder);
     expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
-    expect(runtime.registries.compressedTextureDecoder.entry).toEqual({
+    expect(runtime.registries.compressedTextureDecoder?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: decoder,
     });
     registerWgpuCompressedTextureDecoder(state, null);
-    expect(runtime.registries.compressedTextureDecoder.entry).toBeNull();
+    expect(runtime.registries.compressedTextureDecoder?.entry).toBeNull();
   });
 });
 
@@ -92,12 +92,12 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const before = runtime.registries.compressedTextureUpload;
     registerWgpuCompressedTextureUpload(state);
     expect(runtime.registries.compressedTextureUpload).not.toBe(before);
-    expect(runtime.registries.compressedTextureUpload.entry).toMatchObject({
+    expect(runtime.registries.compressedTextureUpload?.entry).toMatchObject({
       state: RegistryEntryState.Bound,
       value: expect.any(Function),
     });
     registerWgpuCompressedTextureUpload(state, null);
-    expect(runtime.registries.compressedTextureUpload.entry).toBeNull();
+    expect(runtime.registries.compressedTextureUpload?.entry).toBeNull();
   });
 
   it('lets the compressed-image binder consume its source', async () => {

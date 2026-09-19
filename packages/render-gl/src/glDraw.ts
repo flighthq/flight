@@ -466,9 +466,9 @@ function uploadGlCompressedImage(
   colorSpace: TextureColorSpace,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const uploadEntry = runtime.registries.compressedTextureUpload.entry;
+  const uploadEntry = runtime.registries.compressedTextureUpload?.entry;
   if (uploadEntry?.state !== RegistryEntryState.Bound) return;
-  const decoderEntry = runtime.registries.compressedTextureDecoder.entry;
+  const decoderEntry = runtime.registries.compressedTextureDecoder?.entry;
   uploadEntry.value(
     state.gl,
     image as Readonly<CompressedImageResource>,

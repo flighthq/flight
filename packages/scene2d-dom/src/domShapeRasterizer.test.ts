@@ -23,6 +23,13 @@ describe('registerDomShapeRasterizer', () => {
     registerDomShapeRasterizer(state, rasterizer);
 
     expect(getDomShapeRasterizer(state)).toBe(rasterizer);
+    // The opt-in must build a whole table, not just an entry: `{...undefined}` is legal JavaScript,
+    // so a missing fallback would yield a slot with no shape, registry, or miss policy.
+    expect(getDomRenderStateRuntime(state).registries.shapeRasterizer).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'DomShapeRasterizer',
+      shape: 'slot',
+    });
   });
 
   it('replaces the persistent slot without mutating an earlier snapshot', () => {
@@ -34,8 +41,8 @@ describe('registerDomShapeRasterizer', () => {
 
     const after = getDomRenderStateRuntime(state).registries.shapeRasterizer;
     expect(after).not.toBe(before);
-    expect(before.entry).toBeNull();
-    expect(after.entry).toEqual({ state: 'bound', value: rasterizer });
+    expect(before).toBeUndefined();
+    expect(after?.entry).toEqual({ state: 'bound', value: rasterizer });
   });
 
   it('removes one again, so a state can drop back to tessellation only', () => {
@@ -47,6 +54,6 @@ describe('registerDomShapeRasterizer', () => {
     registerDomShapeRasterizer(state, null);
 
     expect(getDomShapeRasterizer(state)).toBeNull();
-    expect(before.entry).toEqual({ state: 'bound', value: rasterizer });
+    expect(before?.entry).toEqual({ state: 'bound', value: rasterizer });
   });
 });

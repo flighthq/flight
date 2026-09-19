@@ -105,7 +105,14 @@ describe('registerWgpuGpuSkinning', () => {
     expect(getWgpuScene3DRuntime(state).skinningAdapter).toBeNull();
     registerWgpuGpuSkinning(state);
     expect(getWgpuScene3DRuntime(state).skinningAdapter).toBe(defaultWgpuSkinningAdapter);
-    expect(getWgpuRenderStateRuntime(state).registries.gpuSkinning.entry).toEqual({
+    // The opt-in must build a whole table, not just an entry: `{...undefined}` is legal JavaScript,
+    // so a missing fallback would yield a slot with no shape, registry, or miss policy.
+    expect(getWgpuRenderStateRuntime(state).registries.gpuSkinning).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'WgpuGpuSkinning',
+      shape: 'slot',
+    });
+    expect(getWgpuRenderStateRuntime(state).registries.gpuSkinning?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: defaultWgpuSkinningAdapter,
     });

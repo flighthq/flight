@@ -1,10 +1,11 @@
+import { createSlotTable } from '@flighthq/registry/contract';
 import type { DomRenderState, ShapeRasterizer } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 
 export function getDomShapeRasterizer(state: DomRenderState): ShapeRasterizer | null {
-  const entry = getDomRenderStateRuntime(state).registries.shapeRasterizer.entry;
+  const entry = getDomRenderStateRuntime(state).registries.shapeRasterizer?.entry;
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
@@ -13,7 +14,7 @@ export function getDomShapeRasterizer(state: DomRenderState): ShapeRasterizer | 
 // reaches for a rasterizer the caller did not name. Pass null to remove one.
 export function registerDomShapeRasterizer(state: DomRenderState, rasterizer: ShapeRasterizer | null): void {
   const runtime = getDomRenderStateRuntime(state);
-  const table = runtime.registries.shapeRasterizer;
+  const table = runtime.registries.shapeRasterizer ?? createSlotTable('DomShapeRasterizer', 'Unregistered');
   runtime.registries.shapeRasterizer = {
     ...table,
     entry: rasterizer === null ? null : { state: RegistryEntryState.Bound, value: rasterizer },

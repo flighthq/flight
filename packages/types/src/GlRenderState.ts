@@ -45,8 +45,8 @@ export interface GlRenderRegistries extends RenderRegistries {
   colorAdjustmentFeatureGuard?: SlotTable<GlColorAdjustmentMaterialFeatureGuard>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
-  compressedTextureDecoder: SlotTable<GlCompressedTextureDecoder>;
-  compressedTextureUpload: SlotTable<GlCompressedTextureUploader>;
+  compressedTextureDecoder?: SlotTable<GlCompressedTextureDecoder>;
+  compressedTextureUpload?: SlotTable<GlCompressedTextureUploader>;
   customEffectShaders: KeyedTable<string>;
   customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
@@ -60,7 +60,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
   pbrExtensionRevision: number;
   renderEffects: KeyedTable<GlRenderEffectRegistration>;
-  shapeRasterizer: SlotTable<ShapeRasterizer>;
+  shapeRasterizer?: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
   velocityWriters: KeyedTable<GlVelocityWriter>;
 }

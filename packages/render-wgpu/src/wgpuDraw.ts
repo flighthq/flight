@@ -587,9 +587,9 @@ function uploadWgpuCompressedImageEntry(
   colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const uploadEntry = runtime.registries.compressedTextureUpload.entry;
+  const uploadEntry = runtime.registries.compressedTextureUpload?.entry;
   if (uploadEntry?.state !== RegistryEntryState.Bound) return null;
-  const decoderEntry = runtime.registries.compressedTextureDecoder.entry;
+  const decoderEntry = runtime.registries.compressedTextureDecoder?.entry;
   return uploadEntry.value(
     state,
     image as Readonly<CompressedImageResource>,

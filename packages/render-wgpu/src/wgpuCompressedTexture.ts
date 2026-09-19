@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { createSlotTable } from '@flighthq/registry/contract';
 import type {
   CompressedImageResource,
   EntityConstruction,
@@ -73,7 +74,8 @@ export function registerWgpuCompressedTextureDecoder(
   decode: WgpuCompressedTextureDecoder | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const table = runtime.registries.compressedTextureDecoder;
+  const table =
+    runtime.registries.compressedTextureDecoder ?? createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered');
   runtime.registries.compressedTextureDecoder = {
     ...table,
     entry: decode === null ? null : { state: RegistryEntryState.Bound, value: decode },
@@ -82,7 +84,8 @@ export function registerWgpuCompressedTextureDecoder(
 
 export function registerWgpuCompressedTextureUpload(state: WgpuRenderState, uploader?: null): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const table = runtime.registries.compressedTextureUpload;
+  const table =
+    runtime.registries.compressedTextureUpload ?? createSlotTable('WgpuCompressedTextureUpload', 'Unregistered');
   runtime.registries.compressedTextureUpload = {
     ...table,
     entry: uploader === null ? null : { state: RegistryEntryState.Bound, value: uploadWgpuCompressedImage },

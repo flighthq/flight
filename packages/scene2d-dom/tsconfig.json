@@ -16,12 +16,6 @@
       "path": "../color"
     },
     {
-      "path": "../scene2d"
-    },
-    {
-      "path": "../scene2d-canvas"
-    },
-    {
       "path": "../entity"
     },
     {
@@ -40,13 +34,22 @@
       "path": "../node"
     },
     {
+      "path": "../registry"
+    },
+    {
       "path": "../render"
     },
     {
-      "path": "../signals"
+      "path": "../scene2d"
+    },
+    {
+      "path": "../scene2d-canvas"
     },
     {
       "path": "../shape"
+    },
+    {
+      "path": "../signals"
     },
     {
       "path": "../text"

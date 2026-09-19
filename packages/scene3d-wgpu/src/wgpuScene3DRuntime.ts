@@ -14,7 +14,7 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
   const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
-    const skinningEntry = stateRuntime.registries.gpuSkinning.entry;
+    const skinningEntry = stateRuntime.registries.gpuSkinning?.entry;
     // The runtime accessor routes this slot to the device tier. A derived state must retain the map
     // already installed by its primary instead of replacing it with a state-local upload identity.
     let uploadCache = stateRuntime.context.sceneMeshUploadCache as WeakMap<object, WgpuMeshUpload> | null | undefined;
