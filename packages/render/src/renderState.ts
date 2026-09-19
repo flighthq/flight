@@ -1,5 +1,5 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
   RenderState,
@@ -30,7 +30,6 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.registryMiss = null;
   runtime.registries = {
     renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
-    strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
   };
   runtime.rendererMapId = 0;
   runtime.tempStack = [];

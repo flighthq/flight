@@ -55,9 +55,11 @@ export interface RenderRegistries {
   // Optional diagnostic policy reached before a root walk. Backends bind this to diagnose pipeline-
   // policy mistakes without adding their warning dependency to the substrate-independent render path.
   renderRootGuard?: SlotTable<RenderRootGuard>;
-  // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
-  // rasterizes closed strokes.
-  strokeTessellator: SlotTable<StrokeTessellator>;
+  // Opt-in closed-ring/self-intersection stroke kernel. Absent means the compact mesh lane rasterizes
+  // closed strokes, which is the default every pipeline gets for free: the slot is allocated by
+  // enableGlStrokePathTessellation / enableWgpuStrokePathTessellation, not by pipeline construction, so
+  // a state that never opts in carries no table for it.
+  strokeTessellator?: SlotTable<StrokeTessellator>;
 }
 
 export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;

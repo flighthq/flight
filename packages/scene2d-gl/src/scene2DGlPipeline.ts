@@ -1,5 +1,5 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createSlotTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   standardGlBlendRealizations,
@@ -67,7 +67,7 @@ export const defaultScene2DGlRenderRegistries: Readonly<GlRenderRegistries> = {
   ),
   renderers: buildScene2DGlRenderers(),
   strokeTessellator: {
-    ...allocateEmptyGlRenderRegistries().strokeTessellator,
+    ...createSlotTable('StrokeTessellator', 'Rasterize'),
     entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },
   },
   textureResolvers: standardGlTextureResolvers,

@@ -9,13 +9,20 @@ describe('enableGlStrokePathTessellation', () => {
   it('replaces the full stroke-tessellator policy slot', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    const before = runtime.registries.strokeTessellator;
-    expect(before.entry).toBeNull();
+    // Nothing allocates the slot until the opt-in runs.
+    expect(runtime.registries.strokeTessellator).toBeUndefined();
 
     enableGlStrokePathTessellation(state);
 
-    expect(runtime.registries.strokeTessellator).not.toBe(before);
-    expect(runtime.registries.strokeTessellator.entry).toEqual({
+    // The slot the opt-in creates must be a whole table, not just an entry: `{...undefined}` is legal
+    // JavaScript, so a missing fallback would silently yield a table with no shape, registry, or miss
+    // policy and every identity-based check downstream would read undefined.
+    expect(runtime.registries.strokeTessellator).toMatchObject({
+      onMiss: 'Rasterize',
+      registry: 'StrokeTessellator',
+      shape: 'slot',
+    });
+    expect(runtime.registries.strokeTessellator?.entry).toEqual({
       state: RegistryEntryState.Bound,
       value: tessellateStrokePath,
     });

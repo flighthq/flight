@@ -19,7 +19,6 @@ export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): 
   out.renderEffects = createKeyedTable('WgpuRenderEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.shapeRasterizer = createSlotTable('WgpuShapeRasterizer', 'Unregistered');
-  out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
   out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');
 }
