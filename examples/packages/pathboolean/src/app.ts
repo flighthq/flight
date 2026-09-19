@@ -11,14 +11,14 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { appendPathCircle, appendPathRoundedRectangle, createPath } from '@flighthq/sdk/scene2d';
+import { appendPathCircle, appendPathRoundedRectangle, createPath } from '@flighthq/sdk/path';
 import {
-  martinezPathBooleanKernel,
   differencePaths,
   intersectPaths,
+  martinezPathBooleanKernel,
   unionPaths,
   xorPaths,
-} from '@flighthq/sdk/scene2d';
+} from '@flighthq/sdk/path-boolean';
 
 import { canvas, render, scale } from './render';
 

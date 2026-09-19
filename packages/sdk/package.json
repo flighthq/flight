@@ -20,57 +20,621 @@
       "types": "./dist/contract.d.ts",
       "default": "./dist/contract.js"
     },
+    "./abc": {
+      "types": "./dist/abc.d.ts",
+      "default": "./dist/abc.js"
+    },
+    "./accessibility": {
+      "types": "./dist/accessibility.d.ts",
+      "default": "./dist/accessibility.js"
+    },
+    "./adjustments": {
+      "types": "./dist/adjustments.d.ts",
+      "default": "./dist/adjustments.js"
+    },
     "./animation": {
       "types": "./dist/animation.d.ts",
       "default": "./dist/animation.js"
     },
-    "./application": {
-      "types": "./dist/application.d.ts",
-      "default": "./dist/application.js"
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
     },
-    "./core": {
-      "types": "./dist/core.d.ts",
-      "default": "./dist/core.js"
+    "./assets": {
+      "types": "./dist/assets.d.ts",
+      "default": "./dist/assets.js"
     },
-    "./formats": {
-      "types": "./dist/formats.d.ts",
-      "default": "./dist/formats.js"
+    "./audio": {
+      "types": "./dist/audio.d.ts",
+      "default": "./dist/audio.js"
     },
-    "./game": {
-      "types": "./dist/game.d.ts",
-      "default": "./dist/game.js"
+    "./binpack": {
+      "types": "./dist/binpack.d.ts",
+      "default": "./dist/binpack.js"
+    },
+    "./bitmap": {
+      "types": "./dist/bitmap.d.ts",
+      "default": "./dist/bitmap.js"
+    },
+    "./bitmapfont": {
+      "types": "./dist/bitmapfont.d.ts",
+      "default": "./dist/bitmapfont.js"
+    },
+    "./bitmapfont-formats": {
+      "types": "./dist/bitmapfont-formats.d.ts",
+      "default": "./dist/bitmapfont-formats.js"
+    },
+    "./bitmaptext": {
+      "types": "./dist/bitmaptext.d.ts",
+      "default": "./dist/bitmaptext.js"
+    },
+    "./camera": {
+      "types": "./dist/camera.d.ts",
+      "default": "./dist/camera.js"
+    },
+    "./camera-controls": {
+      "types": "./dist/camera-controls.d.ts",
+      "default": "./dist/camera-controls.js"
+    },
+    "./capture": {
+      "types": "./dist/capture.d.ts",
+      "default": "./dist/capture.js"
+    },
+    "./clip": {
+      "types": "./dist/clip.d.ts",
+      "default": "./dist/clip.js"
+    },
+    "./clipboard": {
+      "types": "./dist/clipboard.d.ts",
+      "default": "./dist/clipboard.js"
+    },
+    "./clock": {
+      "types": "./dist/clock.d.ts",
+      "default": "./dist/clock.js"
+    },
+    "./collision": {
+      "types": "./dist/collision.d.ts",
+      "default": "./dist/collision.js"
+    },
+    "./color": {
+      "types": "./dist/color.d.ts",
+      "default": "./dist/color.js"
+    },
+    "./command": {
+      "types": "./dist/command.d.ts",
+      "default": "./dist/command.js"
+    },
+    "./compression": {
+      "types": "./dist/compression.d.ts",
+      "default": "./dist/compression.js"
+    },
+    "./connectivity": {
+      "types": "./dist/connectivity.d.ts",
+      "default": "./dist/connectivity.js"
+    },
+    "./debug": {
+      "types": "./dist/debug.d.ts",
+      "default": "./dist/debug.js"
+    },
+    "./device": {
+      "types": "./dist/device.d.ts",
+      "default": "./dist/device.js"
+    },
+    "./dialog": {
+      "types": "./dist/dialog.d.ts",
+      "default": "./dist/dialog.js"
+    },
+    "./easing": {
+      "types": "./dist/easing.d.ts",
+      "default": "./dist/easing.js"
+    },
+    "./effects": {
+      "types": "./dist/effects.d.ts",
+      "default": "./dist/effects.js"
+    },
+    "./effects-canvas": {
+      "types": "./dist/effects-canvas.d.ts",
+      "default": "./dist/effects-canvas.js"
+    },
+    "./effects-gl": {
+      "types": "./dist/effects-gl.d.ts",
+      "default": "./dist/effects-gl.js"
+    },
+    "./effects-wgpu": {
+      "types": "./dist/effects-wgpu.d.ts",
+      "default": "./dist/effects-wgpu.js"
+    },
+    "./encoding": {
+      "types": "./dist/encoding.d.ts",
+      "default": "./dist/encoding.js"
+    },
+    "./entity": {
+      "types": "./dist/entity.d.ts",
+      "default": "./dist/entity.js"
+    },
+    "./filesystem": {
+      "types": "./dist/filesystem.d.ts",
+      "default": "./dist/filesystem.js"
+    },
+    "./flow": {
+      "types": "./dist/flow.d.ts",
+      "default": "./dist/flow.js"
+    },
+    "./font": {
+      "types": "./dist/font.d.ts",
+      "default": "./dist/font.js"
+    },
+    "./font-formats": {
+      "types": "./dist/font-formats.d.ts",
+      "default": "./dist/font-formats.js"
+    },
+    "./geolocation": {
+      "types": "./dist/geolocation.d.ts",
+      "default": "./dist/geolocation.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "default": "./dist/geometry.js"
+    },
+    "./gizmo": {
+      "types": "./dist/gizmo.d.ts",
+      "default": "./dist/gizmo.js"
+    },
+    "./glyphatlas": {
+      "types": "./dist/glyphatlas.d.ts",
+      "default": "./dist/glyphatlas.js"
+    },
+    "./gui": {
+      "types": "./dist/gui.d.ts",
+      "default": "./dist/gui.js"
+    },
+    "./haptics": {
+      "types": "./dist/haptics.d.ts",
+      "default": "./dist/haptics.js"
+    },
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "default": "./dist/host.js"
+    },
+    "./image": {
+      "types": "./dist/image.d.ts",
+      "default": "./dist/image.js"
+    },
+    "./image-codec": {
+      "types": "./dist/image-codec.d.ts",
+      "default": "./dist/image-codec.js"
+    },
+    "./importdiagnostics": {
+      "types": "./dist/importdiagnostics.d.ts",
+      "default": "./dist/importdiagnostics.js"
+    },
+    "./input": {
+      "types": "./dist/input.d.ts",
+      "default": "./dist/input.js"
     },
     "./interaction": {
       "types": "./dist/interaction.d.ts",
       "default": "./dist/interaction.js"
     },
+    "./intl": {
+      "types": "./dist/intl.d.ts",
+      "default": "./dist/intl.js"
+    },
+    "./ipc": {
+      "types": "./dist/ipc.d.ts",
+      "default": "./dist/ipc.js"
+    },
+    "./keyboard": {
+      "types": "./dist/keyboard.d.ts",
+      "default": "./dist/keyboard.js"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "default": "./dist/layout.js"
+    },
+    "./lifecycle": {
+      "types": "./dist/lifecycle.d.ts",
+      "default": "./dist/lifecycle.js"
+    },
+    "./lighting": {
+      "types": "./dist/lighting.d.ts",
+      "default": "./dist/lighting.js"
+    },
+    "./loader": {
+      "types": "./dist/loader.d.ts",
+      "default": "./dist/loader.js"
+    },
+    "./log": {
+      "types": "./dist/log.d.ts",
+      "default": "./dist/log.js"
+    },
+    "./materials": {
+      "types": "./dist/materials.d.ts",
+      "default": "./dist/materials.js"
+    },
+    "./math": {
+      "types": "./dist/math.d.ts",
+      "default": "./dist/math.js"
+    },
     "./media": {
       "types": "./dist/media.d.ts",
       "default": "./dist/media.js"
+    },
+    "./mediasession": {
+      "types": "./dist/mediasession.d.ts",
+      "default": "./dist/mediasession.js"
+    },
+    "./menu": {
+      "types": "./dist/menu.d.ts",
+      "default": "./dist/menu.js"
+    },
+    "./mesh": {
+      "types": "./dist/mesh.d.ts",
+      "default": "./dist/mesh.js"
+    },
+    "./midi": {
+      "types": "./dist/midi.d.ts",
+      "default": "./dist/midi.js"
+    },
+    "./motionpath": {
+      "types": "./dist/motionpath.d.ts",
+      "default": "./dist/motionpath.js"
+    },
+    "./movieclip": {
+      "types": "./dist/movieclip.d.ts",
+      "default": "./dist/movieclip.js"
+    },
+    "./net": {
+      "types": "./dist/net.d.ts",
+      "default": "./dist/net.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./notification": {
+      "types": "./dist/notification.d.ts",
+      "default": "./dist/notification.js"
+    },
+    "./particleemitter": {
+      "types": "./dist/particleemitter.d.ts",
+      "default": "./dist/particleemitter.js"
+    },
+    "./particles": {
+      "types": "./dist/particles.d.ts",
+      "default": "./dist/particles.js"
+    },
+    "./particles-formats": {
+      "types": "./dist/particles-formats.d.ts",
+      "default": "./dist/particles-formats.js"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "default": "./dist/path.js"
+    },
+    "./path-boolean": {
+      "types": "./dist/path-boolean.d.ts",
+      "default": "./dist/path-boolean.js"
+    },
+    "./path-formats": {
+      "types": "./dist/path-formats.d.ts",
+      "default": "./dist/path-formats.js"
+    },
+    "./permissions": {
+      "types": "./dist/permissions.d.ts",
+      "default": "./dist/permissions.js"
+    },
+    "./physics2d": {
+      "types": "./dist/physics2d.d.ts",
+      "default": "./dist/physics2d.js"
+    },
+    "./physics2d-abi": {
+      "types": "./dist/physics2d-abi.d.ts",
+      "default": "./dist/physics2d-abi.js"
+    },
+    "./physics3d": {
+      "types": "./dist/physics3d.d.ts",
+      "default": "./dist/physics3d.js"
+    },
+    "./physics3d-abi": {
+      "types": "./dist/physics3d-abi.d.ts",
+      "default": "./dist/physics3d-abi.js"
+    },
+    "./picking": {
+      "types": "./dist/picking.d.ts",
+      "default": "./dist/picking.js"
     },
     "./platform": {
       "types": "./dist/platform.d.ts",
       "default": "./dist/platform.js"
     },
-    "./rendering": {
-      "types": "./dist/rendering.d.ts",
-      "default": "./dist/rendering.js"
+    "./power": {
+      "types": "./dist/power.d.ts",
+      "default": "./dist/power.js"
     },
-    "./resources": {
-      "types": "./dist/resources.d.ts",
-      "default": "./dist/resources.js"
+    "./preferences": {
+      "types": "./dist/preferences.d.ts",
+      "default": "./dist/preferences.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "default": "./dist/protocol.js"
+    },
+    "./quadbatch": {
+      "types": "./dist/quadbatch.d.ts",
+      "default": "./dist/quadbatch.js"
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "default": "./dist/registry.js"
+    },
+    "./registry-catalog": {
+      "types": "./dist/registry-catalog.d.ts",
+      "default": "./dist/registry-catalog.js"
+    },
+    "./registry-codegen": {
+      "types": "./dist/registry-codegen.d.ts",
+      "default": "./dist/registry-codegen.js"
+    },
+    "./render": {
+      "types": "./dist/render.d.ts",
+      "default": "./dist/render.js"
+    },
+    "./render-gl": {
+      "types": "./dist/render-gl.d.ts",
+      "default": "./dist/render-gl.js"
+    },
+    "./render-wgpu": {
+      "types": "./dist/render-wgpu.d.ts",
+      "default": "./dist/render-wgpu.js"
+    },
+    "./requirements": {
+      "types": "./dist/requirements.d.ts",
+      "default": "./dist/requirements.js"
+    },
+    "./scene-document": {
+      "types": "./dist/scene-document.d.ts",
+      "default": "./dist/scene-document.js"
     },
     "./scene2d": {
       "types": "./dist/scene2d.d.ts",
       "default": "./dist/scene2d.js"
     },
+    "./scene2d-canvas": {
+      "types": "./dist/scene2d-canvas.d.ts",
+      "default": "./dist/scene2d-canvas.js"
+    },
+    "./scene2d-dom": {
+      "types": "./dist/scene2d-dom.d.ts",
+      "default": "./dist/scene2d-dom.js"
+    },
+    "./scene2d-formats": {
+      "types": "./dist/scene2d-formats.d.ts",
+      "default": "./dist/scene2d-formats.js"
+    },
+    "./scene2d-gl": {
+      "types": "./dist/scene2d-gl.d.ts",
+      "default": "./dist/scene2d-gl.js"
+    },
+    "./scene2d-resources": {
+      "types": "./dist/scene2d-resources.d.ts",
+      "default": "./dist/scene2d-resources.js"
+    },
+    "./scene2d-wgpu": {
+      "types": "./dist/scene2d-wgpu.d.ts",
+      "default": "./dist/scene2d-wgpu.js"
+    },
     "./scene3d": {
       "types": "./dist/scene3d.d.ts",
       "default": "./dist/scene3d.js"
     },
+    "./scene3d-formats": {
+      "types": "./dist/scene3d-formats.d.ts",
+      "default": "./dist/scene3d-formats.js"
+    },
+    "./scene3d-gl": {
+      "types": "./dist/scene3d-gl.d.ts",
+      "default": "./dist/scene3d-gl.js"
+    },
+    "./scene3d-resources": {
+      "types": "./dist/scene3d-resources.d.ts",
+      "default": "./dist/scene3d-resources.js"
+    },
+    "./scene3d-wgpu": {
+      "types": "./dist/scene3d-wgpu.d.ts",
+      "default": "./dist/scene3d-wgpu.js"
+    },
+    "./screen": {
+      "types": "./dist/screen.d.ts",
+      "default": "./dist/screen.js"
+    },
+    "./selection": {
+      "types": "./dist/selection.d.ts",
+      "default": "./dist/selection.js"
+    },
+    "./sensors": {
+      "types": "./dist/sensors.d.ts",
+      "default": "./dist/sensors.js"
+    },
+    "./shading": {
+      "types": "./dist/shading.d.ts",
+      "default": "./dist/shading.js"
+    },
+    "./shape": {
+      "types": "./dist/shape.d.ts",
+      "default": "./dist/shape.js"
+    },
+    "./shape-formats": {
+      "types": "./dist/shape-formats.d.ts",
+      "default": "./dist/shape-formats.js"
+    },
+    "./share": {
+      "types": "./dist/share.d.ts",
+      "default": "./dist/share.js"
+    },
+    "./shell": {
+      "types": "./dist/shell.d.ts",
+      "default": "./dist/shell.js"
+    },
+    "./shortcut": {
+      "types": "./dist/shortcut.d.ts",
+      "default": "./dist/shortcut.js"
+    },
+    "./signals": {
+      "types": "./dist/signals.d.ts",
+      "default": "./dist/signals.js"
+    },
+    "./skeleton2d": {
+      "types": "./dist/skeleton2d.d.ts",
+      "default": "./dist/skeleton2d.js"
+    },
+    "./skeleton2d-formats": {
+      "types": "./dist/skeleton2d-formats.d.ts",
+      "default": "./dist/skeleton2d-formats.js"
+    },
+    "./skeleton3d": {
+      "types": "./dist/skeleton3d.d.ts",
+      "default": "./dist/skeleton3d.js"
+    },
+    "./snapshot": {
+      "types": "./dist/snapshot.d.ts",
+      "default": "./dist/snapshot.js"
+    },
+    "./socket": {
+      "types": "./dist/socket.d.ts",
+      "default": "./dist/socket.js"
+    },
+    "./spatial": {
+      "types": "./dist/spatial.d.ts",
+      "default": "./dist/spatial.js"
+    },
+    "./spring": {
+      "types": "./dist/spring.d.ts",
+      "default": "./dist/spring.js"
+    },
+    "./spritesheet": {
+      "types": "./dist/spritesheet.d.ts",
+      "default": "./dist/spritesheet.js"
+    },
+    "./spritesheet-formats": {
+      "types": "./dist/spritesheet-formats.d.ts",
+      "default": "./dist/spritesheet-formats.js"
+    },
+    "./statechart": {
+      "types": "./dist/statechart.d.ts",
+      "default": "./dist/statechart.js"
+    },
+    "./statusbar": {
+      "types": "./dist/statusbar.d.ts",
+      "default": "./dist/statusbar.js"
+    },
+    "./surface": {
+      "types": "./dist/surface.d.ts",
+      "default": "./dist/surface.js"
+    },
+    "./swf": {
+      "types": "./dist/swf.d.ts",
+      "default": "./dist/swf.js"
+    },
     "./text": {
       "types": "./dist/text.d.ts",
       "default": "./dist/text.js"
+    },
+    "./text-markup": {
+      "types": "./dist/text-markup.d.ts",
+      "default": "./dist/text-markup.js"
+    },
+    "./textbidi": {
+      "types": "./dist/textbidi.d.ts",
+      "default": "./dist/textbidi.js"
+    },
+    "./textinput": {
+      "types": "./dist/textinput.d.ts",
+      "default": "./dist/textinput.js"
+    },
+    "./textlayout": {
+      "types": "./dist/textlayout.d.ts",
+      "default": "./dist/textlayout.js"
+    },
+    "./textsegment": {
+      "types": "./dist/textsegment.d.ts",
+      "default": "./dist/textsegment.js"
+    },
+    "./textshaper": {
+      "types": "./dist/textshaper.d.ts",
+      "default": "./dist/textshaper.js"
+    },
+    "./textshaper-canvas": {
+      "types": "./dist/textshaper-canvas.d.ts",
+      "default": "./dist/textshaper-canvas.js"
+    },
+    "./texture": {
+      "types": "./dist/texture.d.ts",
+      "default": "./dist/texture.js"
+    },
+    "./texture-formats": {
+      "types": "./dist/texture-formats.d.ts",
+      "default": "./dist/texture-formats.js"
+    },
+    "./textureatlas": {
+      "types": "./dist/textureatlas.d.ts",
+      "default": "./dist/textureatlas.js"
+    },
+    "./textureatlas-formats": {
+      "types": "./dist/textureatlas-formats.d.ts",
+      "default": "./dist/textureatlas-formats.js"
+    },
+    "./tilemap": {
+      "types": "./dist/tilemap.d.ts",
+      "default": "./dist/tilemap.js"
+    },
+    "./tilemap-formats": {
+      "types": "./dist/tilemap-formats.d.ts",
+      "default": "./dist/tilemap-formats.js"
+    },
+    "./timeline": {
+      "types": "./dist/timeline.d.ts",
+      "default": "./dist/timeline.js"
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.ts",
+      "default": "./dist/tokens.js"
+    },
+    "./tray": {
+      "types": "./dist/tray.d.ts",
+      "default": "./dist/tray.js"
+    },
+    "./tween": {
+      "types": "./dist/tween.d.ts",
+      "default": "./dist/tween.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./updater": {
+      "types": "./dist/updater.d.ts",
+      "default": "./dist/updater.js"
+    },
+    "./useragent": {
+      "types": "./dist/useragent.d.ts",
+      "default": "./dist/useragent.js"
+    },
+    "./velocity": {
+      "types": "./dist/velocity.d.ts",
+      "default": "./dist/velocity.js"
+    },
+    "./video": {
+      "types": "./dist/video.d.ts",
+      "default": "./dist/video.js"
+    },
+    "./webcam": {
+      "types": "./dist/webcam.d.ts",
+      "default": "./dist/webcam.js"
+    },
+    "./xml": {
+      "types": "./dist/xml.d.ts",
+      "default": "./dist/xml.js"
     }
   },
   "files": [
@@ -94,7 +658,6 @@
     "@flighthq/accessibility": "*",
     "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
-    "@flighthq/app": "*",
     "@flighthq/app": "*",
     "@flighthq/assets": "*",
     "@flighthq/audio": "*",

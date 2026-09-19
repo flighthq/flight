@@ -50,6 +50,7 @@ if (!scoped) {
   add('packages:check', 'tsx', ['scripts/packages.ts']);
   add('license-provenance:check', 'tsx', ['scripts/check-license-provenance.ts']);
   add('package-dist-orphans:check', 'tsx', ['scripts/check-package-dist-orphans.ts']);
+  add('sdk-subpaths:check', 'tsx', ['scripts/check-sdk-subpaths.ts']);
   add('transport-bypasses:check', 'tsx', ['scripts/check-transport-bypasses.ts']);
 }
 

@@ -44,7 +44,7 @@ import {
   createOrbitCameraController,
   rotateOrbitCameraController,
   updateOrbitCameraController,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/camera-controls';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { render, scale } from './render';

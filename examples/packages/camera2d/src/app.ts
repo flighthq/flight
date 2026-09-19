@@ -27,7 +27,7 @@ import {
   invalidateNodeLocalTransform,
   setTextLabelString,
 } from '@flighthq/sdk';
-import { updateCamera2DFollow } from '@flighthq/sdk/game';
+import { updateCamera2DFollow } from '@flighthq/sdk/camera-controls';
 
 import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, render, scale } from './render';
 

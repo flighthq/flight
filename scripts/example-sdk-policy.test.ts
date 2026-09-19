@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
 
 describe('example SDK consumption policy', () => {
-  it('allows the SDK root and public group subpaths', () => {
+  it('allows the SDK root and per-package subpaths', () => {
     expect(
       getInvalidExampleFlightImportSpecifiers([
         '@flighthq/sdk',
-        '@flighthq/sdk/game',
-        '@flighthq/sdk/rendering',
+        '@flighthq/sdk/collision',
+        '@flighthq/sdk/render-gl',
         './render',
       ]),
     ).toEqual([]);

@@ -22,7 +22,7 @@ import {
   setTextLabelString,
   updateParticleEmitter2D,
 } from '@flighthq/sdk';
-import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/animation';
+import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/spring';
 
 import { canvas, render, scale } from './render';
 

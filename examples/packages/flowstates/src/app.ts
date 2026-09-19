@@ -20,7 +20,7 @@ import {
   pushFlowState,
   replaceFlowState,
   updateFlowStack,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/flow';
 
 import { render, scale } from './render';
 

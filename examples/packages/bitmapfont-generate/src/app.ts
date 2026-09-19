@@ -14,13 +14,13 @@ import {
   getBitmapTextPages,
   refreshBitmapTextGlyphLayout,
   updateBitmapText,
-} from '@flighthq/sdk/text';
+} from '@flighthq/sdk/bitmaptext';
 import {
+  allocateStubGlyphRasterizerBackend,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
-  allocateStubGlyphRasterizerBackend,
   getGlyphAtlasBitmap,
-} from '@flighthq/sdk/text';
+} from '@flighthq/sdk/glyphatlas';
 
 import { render, scale } from './render';
 

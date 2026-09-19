@@ -21,8 +21,8 @@ import {
   createOrbitCameraController,
   rotateOrbitCameraController,
   updateOrbitCameraController,
-} from '@flighthq/sdk/game';
-import { createScene3DHit, pickScene3D } from '@flighthq/sdk/scene3d';
+} from '@flighthq/sdk/camera-controls';
+import { createScene3DHit, pickScene3D } from '@flighthq/sdk/picking';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
 import { canvas, render, scale } from './render';

@@ -23,7 +23,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderWgpuScene3D } from '@flighthq/sdk/rendering';
+import { renderWgpuScene3D } from '@flighthq/sdk/scene3d-wgpu';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;

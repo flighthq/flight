@@ -20,7 +20,7 @@ import {
   createIdentityColorMatrix,
   createSaturationColorMatrix,
   fuseColorMatrices,
-} from '@flighthq/sdk/rendering';
+} from '@flighthq/sdk/adjustments';
 
 import { render, scale } from './render';
 

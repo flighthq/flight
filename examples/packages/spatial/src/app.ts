@@ -24,7 +24,7 @@ import {
   querySpatialRay2D,
   querySpatialRegion2D,
   updateSpatialObject2D,
-} from '@flighthq/sdk/game';
+} from '@flighthq/sdk/spatial';
 
 import { canvas, render, scale } from './render';
 
