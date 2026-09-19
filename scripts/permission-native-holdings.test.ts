@@ -28,6 +28,9 @@ describe('permission host ownership', () => {
 
   it('moves every Web permission operation behind the webHostPermissions singleton', () => {
     const source = readFileSync(resolve('packages/host-web/src/webPermissions.ts'), 'utf8');
+    // The factory is deliberately unexported — the const singleton is the API, per the entity boundary
+    // rule for dispatch infrastructure. What this gate pins is that the browser permission calls sit
+    // behind it in this one file, which is true whether or not the factory itself is exported.
     expect(source).toMatch(/function createWebPermissionsBackend/u);
     expect(source).toMatch(/export const webHostPermissions = createWebPermissionsBackend\(\);/u);
     expect(source).toMatch(/navigator\.permissions/u);

@@ -79,6 +79,10 @@ const RELOCATED_WEB_APIS = [
   'hasAudioDeviceWebNodeAccess',
   'initializeWebAudioDeviceBackend',
 ] as const;
+// The audio device/mixer factories are deliberately unexported — the const singleton is the API, per the
+// entity boundary rule that dispatch infrastructure is plain data. An unexported function cannot be
+// constructed anywhere else, so the location invariant this table enforces is carried by the
+// webHostAudioDevice / webHostAudioMixer entries below. Video still exports its factory pair.
 const WEB_BACKEND_DECLARATIONS: ReadonlyMap<string, string> = new Map([
   ['createWebVideoCapabilityBackend', 'packages/host-web/src/webVideoCapability.ts'],
   ['getAudioDeviceContext', 'packages/host-web/src/webAudioDevice.ts'],
