@@ -26,9 +26,7 @@ export function attachAppLoopExit(hostAppExit: Readonly<HostAppExitCapability>, 
   const observers = getAppLoopObservers(app);
   observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
-  const exit = hostAppExit;
-  exit.subscribe(handler);
-  observers.set(kExit, () => exit.unsubscribe(handler));
+  observers.set(kExit, hostAppExit.subscribe(handler));
 }
 
 // Wires window onDeactivate → pauseAppLoop and onActivate → resumeAppLoop so the

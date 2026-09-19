@@ -120,14 +120,14 @@ describe('webHostFullscreen', () => {
     expect(exit).toHaveBeenCalledOnce();
   });
 
-  it('subscribes and unsubscribes the exact fullscreen listener', () => {
+  it('returns a release for the exact fullscreen subscription', () => {
     Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
     const callback = vi.fn();
-    webHostFullscreen.subscribe(callback);
+    const release = webHostFullscreen.subscribe(callback);
     document.dispatchEvent(new Event('fullscreenchange'));
     Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: document.body });
     document.dispatchEvent(new Event('fullscreenchange'));
-    webHostFullscreen.unsubscribe(callback);
+    release();
     document.dispatchEvent(new Event('fullscreenchange'));
 
     expect(callback).toHaveBeenCalledTimes(2);

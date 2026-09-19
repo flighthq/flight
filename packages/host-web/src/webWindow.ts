@@ -48,17 +48,11 @@ export const webHostFullscreen: WebFullscreen = {
     }
   },
   subscribe: (callback) => {
-    webHostFullscreen.unsubscribe(callback);
-    if (typeof document === 'undefined') return;
-    const handler = (): void => callback(document.fullscreenElement !== null);
-    _fullscreenListeners.set(callback, handler);
-    document.addEventListener('fullscreenchange', handler);
-  },
-  unsubscribe: (callback) => {
-    const handler = _fullscreenListeners.get(callback);
-    if (handler === undefined) return;
-    _fullscreenListeners.delete(callback);
-    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
+    if (typeof document === 'undefined') return noop;
+    const pageDocument = document;
+    const handler = (): void => callback(pageDocument.fullscreenElement !== null);
+    pageDocument.addEventListener('fullscreenchange', handler);
+    return trackWebWindowSubscription(() => pageDocument.removeEventListener('fullscreenchange', handler));
   },
 };
 
@@ -237,15 +231,13 @@ export function initializeWebWindowResizeTargetHandle(
 
 let _handles = new WeakMap<Window, AppWindow>();
 let _records = new WeakMap<AppWindow, WebWindowRecord>();
-const _fullscreenListeners = new Map<(fullscreen: boolean) => void, () => void>();
 let _fullscreenTargets = new WeakMap<FullscreenTargetHandle, Element>();
 const _windowSubscriptionCleanups = new Set<() => void>();
 let _windowResizeTargets = new WeakMap<WindowResizeTargetHandle, Element>();
 
 // What each web window capability actually supplies, required on the const's type: the optional hook is
 // present here, so a caller reads the operations rather than testing each one for absent-ness.
-type WebFullscreen = HostElementFullscreenCapability &
-  Required<Pick<HostElementFullscreenCapability, 'subscribe' | 'unsubscribe'>>;
+type WebFullscreen = HostElementFullscreenCapability & Required<Pick<HostElementFullscreenCapability, 'subscribe'>>;
 type WebWindowAppearance = HostWindowAppearanceCapability & Required<Pick<HostWindowAppearanceCapability, 'setIcon'>>;
 type WebWindowGeometry = HostWindowGeometryCapability &
   Required<Pick<HostWindowGeometryCapability, 'center' | 'subscribeMove' | 'subscribeResize'>>;
@@ -292,10 +284,6 @@ function detachWebWindow(win: AppWindow, closeOwned: boolean): void {
 }
 
 export function resetWebWindowBackendForTest(): void {
-  for (const handler of _fullscreenListeners.values()) {
-    if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
-  }
-  _fullscreenListeners.clear();
   for (const cleanup of [..._windowSubscriptionCleanups]) cleanup();
   _windowSubscriptionCleanups.clear();
   _fullscreenTargets = new WeakMap();

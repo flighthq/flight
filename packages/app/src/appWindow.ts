@@ -123,7 +123,7 @@ export function attachWindowFocus(
 }
 
 export function attachWindowFullscreen(
-  hostFullscreen: Readonly<Required<Pick<HostElementFullscreenCapability, 'subscribe' | 'unsubscribe'>>>,
+  hostFullscreen: Readonly<Required<Pick<HostElementFullscreenCapability, 'subscribe'>>>,
   win: AppWindow,
 ): void {
   const observers = getAppWindowObservers(win);
@@ -132,8 +132,7 @@ export function attachWindowFullscreen(
     win.fullscreen = fullscreen;
     emitSignal(win.onFullscreenChanged);
   };
-  hostFullscreen.subscribe(handler);
-  observers.set(kFullscreen, () => hostFullscreen.unsubscribe(handler));
+  observers.set(kFullscreen, hostFullscreen.subscribe(handler));
 }
 
 // Wires host-originated window movement to the entity and its onMove signal.

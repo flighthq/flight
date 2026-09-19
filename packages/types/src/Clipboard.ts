@@ -18,11 +18,10 @@ export interface HostClipboardBookmarkCapability {
   writeBookmark(title: string, url: string): Promise<boolean>;
 }
 
-// Clipboard change delivery is optional at the method level so a consumer trait can make the
-// subscribe/unsubscribe teardown obligation explicit as one eligibility edge.
+// Clipboard change delivery is optional at the method level so a consumer can require the complete
+// subscription-and-release obligation as one eligibility edge.
 export interface HostClipboardChangeCapability {
-  subscribe?(callback: () => void): void;
-  unsubscribe?(callback: () => void): void;
+  subscribe?(callback: () => void): () => void;
 }
 
 // Rich and arbitrary flavored clipboard transport. HTML and RTF share this slot with the generic

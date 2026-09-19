@@ -363,10 +363,13 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
   out.subscribe = (callback) => {
     calls.push('subscribe');
     callbacks.add(callback);
-  };
-  out.unsubscribe = (callback) => {
-    calls.push('unsubscribe');
-    callbacks.delete(callback);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      calls.push('release');
+      callbacks.delete(callback);
+    };
   };
   return out;
 }
@@ -1080,7 +1083,7 @@ describe('detachWindowFullscreen', () => {
     detachWindowFullscreen(win);
     host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
-    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'release']);
   });
 });
 
@@ -1190,7 +1193,7 @@ describe('disposeAppWindow', () => {
     });
     host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
-    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'release']);
   });
 });
 
