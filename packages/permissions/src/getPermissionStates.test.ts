@@ -3,7 +3,7 @@ import type {
   HostMidiPermissionCapability,
   HostPermissionsCapability,
   HostPreferencesPersistenceQueryCapability,
-  StoragePersistenceResult,
+  StoragePersistenceOutcome,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -132,13 +132,13 @@ describe('getPermissionStates', () => {
   it('captures the persistence-query owner once and preserves repeated entries and order', async () => {
     const events: string[] = [];
     const second = {
-      async getPersistence(): Promise<StoragePersistenceResult> {
+      async getPersistence(): Promise<StoragePersistenceOutcome> {
         events.push('work:second');
         return { outcome: 'persistent' as const, permissionState: 'granted' as const };
       },
     };
     const first = {
-      async getPersistence(): Promise<StoragePersistenceResult> {
+      async getPersistence(): Promise<StoragePersistenceOutcome> {
         events.push('work:first');
         active = second;
         return { outcome: 'best-effort' as const, permissionState: null };

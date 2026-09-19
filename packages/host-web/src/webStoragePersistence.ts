@@ -4,7 +4,7 @@ import type {
   HostPreferencesPersistenceQueryCapability,
   HostPreferencesPersistenceRequestCapability,
   PermissionState,
-  StoragePersistenceResult,
+  StoragePersistenceOutcome,
   WebWindowStoragePersistenceApi,
   WebWindowStoragePersistenceCapabilities,
   WebWorkerStoragePersistenceApi,
@@ -15,7 +15,7 @@ export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,
 ): WebWindowStoragePersistenceCapabilities {
   const persistenceRequest = {} as HostPreferencesPersistenceRequestCapability;
-  persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceResult> => {
+  persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceOutcome> => {
     const outcome = await observePersistenceOutcome(() => api.persist());
     const permissionState = await observePermissionState(() => api.getPermissionState());
     return { outcome, permissionState };
@@ -46,7 +46,7 @@ export function initializeWebWorkerStoragePersistenceCapabilities(
 
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
   const backend = {} as HostPreferencesPersistenceQueryCapability;
-  backend.getPersistence = async (): Promise<StoragePersistenceResult> => {
+  backend.getPersistence = async (): Promise<StoragePersistenceOutcome> => {
     const outcome = await observePersistenceOutcome(() => api.persisted());
     const permissionState = await observePermissionState(() => api.getPermissionState());
     return { outcome, permissionState };
