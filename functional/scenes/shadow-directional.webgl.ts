@@ -95,7 +95,7 @@ export function render(
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

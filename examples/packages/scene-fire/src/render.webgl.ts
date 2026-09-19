@@ -62,7 +62,7 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   effects: readonly RenderEffect[],
 ): void {
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(pass, scene, camera, lights);
   endGlEffectState(pass, pipeline, effects);

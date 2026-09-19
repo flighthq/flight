@@ -132,7 +132,7 @@ const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
 });
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
-const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 drawGlScene3D(pass, consumerScene, consumerCamera, lights);
 endGlEffectState(pass, pipeline, []);

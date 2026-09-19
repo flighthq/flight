@@ -56,7 +56,7 @@ export function render(
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

@@ -102,7 +102,7 @@ const screenClear = { color: [0x05 / 0xff, 0x07 / 0xff, 0x0c / 0xff, 1], depth: 
 const sceneTimeSeconds = 0.35;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   const gl = state.gl;
   gl.depthMask(true);

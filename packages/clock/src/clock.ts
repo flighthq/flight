@@ -11,14 +11,14 @@ export function addClockChild(parent: Clock, child: Clock): void {
   parent.children.push(child);
 }
 
-// Advances a clock tree by one step. `deltaSeconds` is the real elapsed seconds for a root clock (the
+// Advances a clock tree by one step. `deltaTime` is the real elapsed milliseconds for a root clock (the
 // value the frame loop supplies); the cascade feeds each child its parent's already-scaled delta. Each
-// clock's scaled delta is `paused ? 0 : deltaSeconds * scale`; that becomes its deltaTime, accumulates
+// clock's scaled delta is `paused ? 0 : deltaTime * scale`; that becomes its deltaTime, accumulates
 // into elapsed, emits its (opt-in) onTick, and drives its children — so scale and pause compose down the
 // whole subtree in one pass. Pre-order: a clock's onTick fires before its children advance. Call once per
-// frame on the root: advanceClock(root, dtSeconds).
-export function advanceClock(clock: Clock, deltaSeconds: number): void {
-  const scaledDelta = clock.paused ? 0 : deltaSeconds * clock.scale;
+// frame on the root: advanceClock(root, dtMs).
+export function advanceClock(clock: Clock, deltaTime: number): void {
+  const scaledDelta = clock.paused ? 0 : deltaTime * clock.scale;
   clock.deltaTime = scaledDelta;
   clock.elapsed += scaledDelta;
   if (clock.onTick !== null) emitSignal(clock.onTick, scaledDelta);
@@ -76,7 +76,7 @@ export function getClockParent(clock: Readonly<Clock>): Clock | null {
 }
 
 // Allocates a root clock (no parent). Defaults to realtime and running; pass options to start scaled or
-// paused. Drive it each frame with advanceClock(clock, dtSeconds).
+// paused. Drive it each frame with advanceClock(clock, dtMs).
 export function initializeClock(out: EntityConstruction<Clock>, options?: Readonly<ClockOptions>): void {
   out.scale = options?.scale ?? 1;
   out.paused = options?.paused ?? false;

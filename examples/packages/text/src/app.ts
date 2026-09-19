@@ -75,7 +75,7 @@ alignLeft.data.height = 24;
 alignLeft.data.text = 'Left aligned (default)';
 alignLeft.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'left' };
 alignLeft.data.border = true;
-alignLeft.data.borderColor = 0xcccccc;
+alignLeft.data.borderColor = 0xccccccff;
 addNodeChild(root, alignLeft);
 
 const alignCenter = createRichText();
@@ -86,7 +86,7 @@ alignCenter.data.height = 24;
 alignCenter.data.text = 'Center aligned';
 alignCenter.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'center' };
 alignCenter.data.border = true;
-alignCenter.data.borderColor = 0xcccccc;
+alignCenter.data.borderColor = 0xccccccff;
 addNodeChild(root, alignCenter);
 
 const alignRight = createRichText();
@@ -97,7 +97,7 @@ alignRight.data.height = 24;
 alignRight.data.text = 'Right aligned';
 alignRight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'right' };
 alignRight.data.border = true;
-alignRight.data.borderColor = 0xcccccc;
+alignRight.data.borderColor = 0xccccccff;
 addNodeChild(root, alignRight);
 
 // Section 3: RichText with word wrapping — a paragraph of text.
@@ -197,9 +197,9 @@ bgLight.data.height = 30;
 bgLight.data.text = 'Light background';
 bgLight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x333333ff };
 bgLight.data.background = true;
-bgLight.data.backgroundColor = 0xf0f0f0;
+bgLight.data.backgroundColor = 0xf0f0f0ff;
 bgLight.data.border = true;
-bgLight.data.borderColor = 0xcccccc;
+bgLight.data.borderColor = 0xccccccff;
 addNodeChild(root, bgLight);
 
 const bgColored = createRichText();
@@ -210,9 +210,9 @@ bgColored.data.height = 30;
 bgColored.data.text = 'Colored background';
 bgColored.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0xffffffff };
 bgColored.data.background = true;
-bgColored.data.backgroundColor = 0x336699;
+bgColored.data.backgroundColor = 0x336699ff;
 bgColored.data.border = true;
-bgColored.data.borderColor = 0x224466;
+bgColored.data.borderColor = 0x224466ff;
 addNodeChild(root, bgColored);
 
 const bgWarning = createRichText();
@@ -223,9 +223,9 @@ bgWarning.data.height = 30;
 bgWarning.data.text = 'Warning style';
 bgWarning.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x856404ff };
 bgWarning.data.background = true;
-bgWarning.data.backgroundColor = 0xfff3cd;
+bgWarning.data.backgroundColor = 0xfff3cdff;
 bgWarning.data.border = true;
-bgWarning.data.borderColor = 0xffc107;
+bgWarning.data.borderColor = 0xffc107ff;
 addNodeChild(root, bgWarning);
 
 const bgMultiline = createRichText();
@@ -240,9 +240,9 @@ bgMultiline.data.text =
   'and the background and border wrap the content area.';
 bgMultiline.data.defaultTextFormat = { font: 'sans-serif', size: 13, color: 0x333333ff, leading: 3 };
 bgMultiline.data.background = true;
-bgMultiline.data.backgroundColor = 0xeef6ff;
+bgMultiline.data.backgroundColor = 0xeef6ffff;
 bgMultiline.data.border = true;
-bgMultiline.data.borderColor = 0x99bbdd;
+bgMultiline.data.borderColor = 0x99bbddff;
 addNodeChild(root, bgMultiline);
 
 const bgCode = createRichText();
@@ -255,9 +255,9 @@ bgCode.data.text =
   "const label = createTextLabel();\nlabel.data.text = 'Hello Flight';\nlabel.data.textFormat = { font: 'monospace' };";
 bgCode.data.defaultTextFormat = { font: 'monospace', size: 13, color: 0xd4d4d4ff };
 bgCode.data.background = true;
-bgCode.data.backgroundColor = 0x1e1e1e;
+bgCode.data.backgroundColor = 0x1e1e1eff;
 bgCode.data.border = true;
-bgCode.data.borderColor = 0x444444;
+bgCode.data.borderColor = 0x444444ff;
 addNodeChild(root, bgCode);
 
 function enterFrame(): void {
