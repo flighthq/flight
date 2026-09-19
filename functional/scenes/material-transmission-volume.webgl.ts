@@ -104,7 +104,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
     width: opaqueSceneTarget.width,
   });
 
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);

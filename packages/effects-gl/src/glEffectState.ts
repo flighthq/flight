@@ -46,8 +46,8 @@ import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 export function beginGlEffectState(
   state: GlRenderState,
   pipeline: GlEffectState,
-  colorSpace: RenderTargetColorSpace = 'srgb',
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
+  colorSpace: RenderTargetColorSpace = 'srgb',
 ): GlRenderPass {
   const w = state.gl.drawingBufferWidth;
   const h = state.gl.drawingBufferHeight;

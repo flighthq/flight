@@ -222,15 +222,15 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   }
 });
 
-function formatTime(seconds: number): string {
-  return seconds.toFixed(1) + 's';
+function formatTime(ms: number): string {
+  return (ms / 1000).toFixed(1) + 's';
 }
 
 let lastTime = performance.now();
 
 function enterFrame(): void {
   const now = performance.now();
-  const rawDelta = captureMode ? 1 / 60 : (now - lastTime) / 1000;
+  const rawDelta = captureMode ? 1000 / 60 : now - lastTime;
   lastTime = now;
 
   // Advance the root clock; children are advanced recursively.
@@ -238,14 +238,14 @@ function enterFrame(): void {
 
   // Rotate each shape proportionally to its clock's elapsed time. A full rotation per ~4 seconds at
   // scale 1 gives a readable spin speed.
-  const degreesPerSecond = 90;
-  rootShape.rotation = rootClock.elapsed * degreesPerSecond;
+  const degreesPerMs = 90 / 1000;
+  rootShape.rotation = rootClock.elapsed * degreesPerMs;
   invalidateNodeLocalTransform(rootShape);
 
-  childShapeA.rotation = childClockA.elapsed * degreesPerSecond;
+  childShapeA.rotation = childClockA.elapsed * degreesPerMs;
   invalidateNodeLocalTransform(childShapeA);
 
-  childShapeB.rotation = childClockB.elapsed * degreesPerSecond;
+  childShapeB.rotation = childClockB.elapsed * degreesPerMs;
   invalidateNodeLocalTransform(childShapeB);
 
   // Update info labels.
@@ -254,7 +254,7 @@ function enterFrame(): void {
     'elapsed ' +
       formatTime(rootClock.elapsed) +
       '  dt ' +
-      rootClock.deltaTime.toFixed(3) +
+      rootClock.deltaTime.toFixed(1) +
       '  scale ' +
       rootClock.scale.toFixed(2),
   );
@@ -264,7 +264,7 @@ function enterFrame(): void {
     'elapsed ' +
       formatTime(childClockA.elapsed) +
       '  dt ' +
-      childClockA.deltaTime.toFixed(3) +
+      childClockA.deltaTime.toFixed(1) +
       '  scale ' +
       childClockA.scale.toFixed(2) +
       '  eff ' +
@@ -276,7 +276,7 @@ function enterFrame(): void {
     'elapsed ' +
       formatTime(childClockB.elapsed) +
       '  dt ' +
-      childClockB.deltaTime.toFixed(3) +
+      childClockB.deltaTime.toFixed(1) +
       '  scale ' +
       childClockB.scale.toFixed(2) +
       '  eff ' +

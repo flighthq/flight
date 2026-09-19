@@ -73,7 +73,7 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
   endGlEffectState(pass, pipeline, [
     createLiftGammaGainAdjustment({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),

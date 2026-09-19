@@ -5,15 +5,15 @@ import type { Signal } from './Signal';
 // pausable time. Driven by whoever owns the frame loop (@flighthq/app) via advanceClock on the
 // root; time-driven consumers (tween, timeline, spritesheet) read deltaTime/elapsed instead of a raw
 // delta. Scale and pause compose down the tree — a child's effective rate is the product of its own and
-// every ancestor's scale, and any paused ancestor freezes the whole subtree. Times are in seconds.
+// every ancestor's scale, and any paused ancestor freezes the whole subtree. Times are in milliseconds.
 export interface Clock extends Entity {
   // Local time scale applied to the incoming delta (1 = realtime, 0.5 = half speed, 2 = double).
   scale: number;
   // When true, this clock and its whole subtree receive a zero delta while advancing (elapsed frozen).
   paused: boolean;
-  // Scaled seconds from the most recent advanceClock pass — the value consumers read each frame.
+  // Scaled milliseconds from the most recent advanceClock pass — the value consumers read each frame.
   deltaTime: number;
-  // Accumulated scaled seconds this clock has advanced through since creation or the last resetClock.
+  // Accumulated scaled milliseconds this clock has advanced through since creation or the last resetClock.
   elapsed: number;
   // Parent whose scaled delta feeds this clock, or null for a root clock. Set via addClockChild /
   // createChildClock / removeClockChild — do not reassign directly.

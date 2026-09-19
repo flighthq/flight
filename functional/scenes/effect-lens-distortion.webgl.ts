@@ -73,7 +73,7 @@ const LENS_AMOUNT = 0.35;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
   endGlEffectState(pass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }

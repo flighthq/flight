@@ -122,7 +122,7 @@ shadowCamera.projection = createOrthographicProjection({ halfHeight: 40, halfWid
 
 prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);

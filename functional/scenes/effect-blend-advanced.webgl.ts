@@ -113,7 +113,7 @@ function renderBackdrop(root: Node2D): GlRenderTarget {
 
 export function render(layerRoot: Node2D): void {
   if (!prepareScene2DRender(state, layerRoot)) return;
-  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, layerRoot);
   endGlEffectState(pass, pipeline, [createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY })]);
 }

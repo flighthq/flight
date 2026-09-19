@@ -78,7 +78,7 @@ const TILT_WIDTH = 0.25;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
   endGlEffectState(pass, pipeline, [createTiltShiftEffect({ center: TILT_CENTER, width: TILT_WIDTH, blur: 6 })]);
 }

@@ -28,7 +28,7 @@ describe('beginGlEffectState', () => {
     const pass = beginGlEffectState(state, pipeline);
     const target = pipeline.sceneTarget;
     endGlRenderPass(pass);
-    beginGlEffectState(state, pipeline, 'linear');
+    beginGlEffectState(state, pipeline, undefined, 'linear');
 
     expect(pipeline.sceneTarget).toBe(target);
     expect(target?.colorSpace).toBe('linear');

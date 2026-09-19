@@ -49,7 +49,7 @@ export const scale = pixelRatio;
 const screenClear = { color: [0x07 / 0xff, 0x10 / 0xff, 0x1d / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

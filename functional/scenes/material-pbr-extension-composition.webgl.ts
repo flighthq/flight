@@ -101,7 +101,7 @@ export function render(
     bakeGlEnvironmentIbl(state, environment);
     baked = true;
   }
-  const pass = beginGlEffectState(state, pipeline, 'linear', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);

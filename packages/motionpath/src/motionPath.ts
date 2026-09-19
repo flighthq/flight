@@ -90,7 +90,7 @@ export function setMotionPathProgress(mp: MotionPath, t: number): void {
   mp.distance = clamped * mp.length;
 }
 
-// Advance `mp` by `deltaTime` seconds: move the marker `speed * deltaTime` path units along its
+// Advance `mp` by `deltaTime` milliseconds: move the marker `speed * deltaTime` path units along its
 // current `direction`, then resolve the end behavior (`applyMotionPathLoopMode`). `deltaTime <= 0`
 // and a zero-length path are no-ops. `distance` (and, for `pingpong`, `direction`) are updated in
 // place; all inputs are read into locals before any write, so `mp` aliasing itself is safe.

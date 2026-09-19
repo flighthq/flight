@@ -77,7 +77,7 @@ const screenClear = { color: [0x80 / 0xff, 0x80 / 0xff, 0x80 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, 'srgb', screenClear);
+  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
   endGlEffectState(pass, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
 }
