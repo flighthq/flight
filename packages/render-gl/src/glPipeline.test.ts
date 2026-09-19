@@ -38,8 +38,8 @@ describe('initializeEmptyGlRenderRegistries', () => {
   // same key set, so V8 gives them one hidden class and the per-shape reads on the draw path stay
   // monomorphic. An optional field that some pipelines omit would silently reintroduce a second shape.
   it('gives every registries object an identical key set, including the unfilled opt-in slots', () => {
-    const first = Object.keys(createEmptyGlRenderRegistries()).sort();
-    const second = Object.keys(createEmptyGlRenderRegistries()).sort();
+    const first = Object.keys(allocateEmptyGlRenderRegistries()).sort();
+    const second = Object.keys(allocateEmptyGlRenderRegistries()).sort();
 
     expect(first).toEqual(second);
     expect(first).toEqual(
@@ -53,7 +53,7 @@ describe('initializeEmptyGlRenderRegistries', () => {
   });
 
   it('leaves the opt-in slots null rather than allocating an empty table for them', () => {
-    const registries = createEmptyGlRenderRegistries();
+    const registries = allocateEmptyGlRenderRegistries();
 
     expect(registries.compressedTextureDecoder).toBeNull();
     expect(registries.compressedTextureUpload).toBeNull();
