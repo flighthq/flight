@@ -26,9 +26,9 @@ describe('permission host ownership', () => {
     expect(hostTypes).toMatch(/readonly permissions: HostPermissionsCapabilities;/u);
   });
 
-  it('moves every Web permission operation behind createWebPermissionsBackend', () => {
+  it('moves every Web permission operation behind the webHostPermissions singleton', () => {
     const source = readFileSync(resolve('packages/host-web/src/webPermissions.ts'), 'utf8');
-    expect(source).toMatch(/export function createWebPermissionsBackend/u);
+    expect(source).toMatch(/function createWebPermissionsBackend/u);
     expect(source).toMatch(/navigator\.permissions/u);
     expect(source).toMatch(/navigator\.mediaDevices/u);
     expect(source).toMatch(/navigator\.wakeLock/u);
