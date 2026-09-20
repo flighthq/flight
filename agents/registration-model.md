@@ -56,7 +56,7 @@ The per-kind wrapper is **pure ergonomics, and that is worth stating because the
 trap**: an audit of the wrappers confirmed each one registers *exactly* what the equivalent generic call
 registers — same kind, same runner, no implicit companions registered on the side. So door 2 does **not**
 under-register a built-in relative to door 1. If you register `'BloomEffect'` yourself with
-`defaultGlBloomEffectRunner`, you have what `registerGlBloomEffect(state)` would have given you, and
+`glBloomEffectRunner`, you have what `registerGlBloomEffect(state)` would have given you, and
 nothing is silently missing. Choose between the doors on ergonomics, not on completeness.
 
 Coverage is complete in the sense that matters: on every backend the number of per-kind registrars equals
@@ -65,7 +65,7 @@ the number of public runners exactly, so door 1 reaches every kind the backend i
 ### Door 2 — generic, for built-ins today and for your own kinds always
 
 ```ts
-registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);   // a built-in, by hand
+registerGlRenderEffect(state, 'BloomEffect', glBloomEffectRunner);   // a built-in, by hand
 registerGlRenderEffect(state, 'acme.Kaleidoscope', myKaleidoscopeRunner);   // your own
 ```
 
@@ -88,7 +88,7 @@ not implement gets no registrar and no runner rather than a stub that registers 
 
 **Read the two directions differently, because only one of them is mechanically enforced.**
 
-- **Absence is a reliable negative.** If `registerCanvasSsaoEffect` and `defaultCanvasSsaoEffectRunner` do
+- **Absence is a reliable negative.** If `registerCanvasSsaoEffect` and `canvasSsaoEffectRunner` do
   not exist, canvas does not implement SSAO, and no call you could write would unlock it. Nothing is
   hiding behind a flag. This is the direction you can lean on without further checking.
 - **Presence is a claim about shape, not proof of behaviour.** `npm run reachability:check` verifies that a
@@ -103,7 +103,7 @@ looking, rather than by inferring behaviour from the API surface.
 
 **Two artifacts carry the signal, and they agree with each other.** Ask either:
 
-- `registerGlBloomEffect` exists → GL is wired for bloom. So is `defaultGlBloomEffectRunner`.
+- `registerGlBloomEffect` exists → GL is wired for bloom. So is `glBloomEffectRunner`.
 - Neither exists for a kind a backend does not implement. There is nothing to register, and nothing coming
   that a call would unlock.
 
@@ -218,7 +218,7 @@ needs a renderer is a render-layer rule, so the scene reports and the consumer d
 Two shapes look alike and are not:
 
 ```ts
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);  // fine
+registerCanvasShapeCommands(state, canvasShapeCommands);  // fine
 registerBuiltInGlModifierSnippets(state);                        // not
 ```
 

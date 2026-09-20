@@ -241,7 +241,7 @@ joints) verifies the no-cap data-texture path renders rather than falling back.
 
 **Implemented.** `wgpuShadedPrelude` composes the ordered built-in modifier stack into `shaded:`
 pipeline variants over the shared Frame/Draw and combined shadow/IBL groups;
-`shadedWgpuMeshMaterialRenderer` uploads the base surface, modifier uniform block, and modifier maps.
+`wgpuShadedMeshMaterialRenderer` uploads the base surface, modifier uniform block, and modifier maps.
 The family combines with opaque/blend pipeline variants and retains working tangent-space normal
 mapping. `shading-globe.webgpu.ts` and `shading-normal-map.webgpu.ts` provide SwiftShader raster proof.
 
@@ -249,7 +249,7 @@ mapping. `shading-globe.webgpu.ts` and `shading-normal-map.webgpu.ts` provide Sw
 
 The new `@flighthq/shading` modifier tier (fresnel / normalPerturb / emissive / envReflect-skybox /
 fog / vertexDisplace / dissolve / toon, composed into a `ShadedMaterial` modifier stack) has a **gl
-renderer only** (`glShadedPrelude.ts` + `shadedGlMeshMaterialRenderer` in `scene-gl`). `scene-wgpu` has
+renderer only** (`glShadedPrelude.ts` + `glShadedMeshMaterialRenderer` in `scene-gl`). `scene-wgpu` has
 **no ShadedMaterial renderer** — a `ShadedMaterial` resolves to no wgpu mesh-material renderer and its
 subset is **skipped** (`drawWgpuScene.ts:54`, `if (renderer === null) continue`). The mesh silently
 disappears (that subset draws nothing), not even bind-pose-wrong.
@@ -259,7 +259,7 @@ disappears (that subset draws nothing), not even bind-pose-wrong.
 `glShadedPrelude.ts` composes the modifier stack into one GLSL program: each modifier contributes a WGSL/
 GLSL snippet and a uniform block, spliced into shared vertex (`vertexDisplace`) and fragment
 (fresnel/emissive/envReflect/fog/dissolve/toon/normalPerturb) insertion points, with the define-key
-namespacing the compiled variant per active modifier set. The `shadedGlMeshMaterialRenderer` binds the
+namespacing the compiled variant per active modifier set. The `glShadedMeshMaterialRenderer` binds the
 per-modifier uniforms and any modifier maps (env cube for envReflect, dissolve map). Critically, GL also
 **fixed the previously-disabled normal map** here — the normalPerturb modifier is the home of working
 tangent-space normal mapping.
@@ -270,7 +270,7 @@ tangent-space normal mapping.
    modifier emits a WGSL snippet + a uniform-struct fragment; splice into the shared `WGPU_MESH_PRELUDE`
    vertex (`vertexDisplace`) and a shaded `fs_main` (the fragment modifiers). Namespace the pipeline-cache
    key by the active-modifier define-key exactly as GL does, so each modifier combination compiles once.
-2. **`shadedWgpuMeshMaterialRenderer`** registers under the ShadedMaterial kind, binds the composed
+2. **`wgpuShadedMeshMaterialRenderer`** registers under the ShadedMaterial kind, binds the composed
    material uniform block + modifier maps (env cube, dissolve map) into a group(2) material bind group,
    and reuses the shared Frame/Draw groups. Register it via the same `registerWgpu*MeshMaterials` opt-in
    surface the other families use.

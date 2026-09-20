@@ -27,7 +27,7 @@ Verified against `packages/scene2d-canvas/src/` as of this review date:
 
 - **`CanvasPipeline` entity**: `createCanvasPipeline` wraps registries in an Entity; `getCanvasPipelineRegistries` reads them back; `createEmptyCanvasRegistries` builds the three registry tables (renderers, renderEffects, strokeTessellator). The `scene2dCanvasPipeline` const is the turnkey assembly with all 12 renderers, the native blend-mode application function, and the 16-command shape-command table.
 
-- **Shape command spine**: 16 commands registered by `canvasShapeCommandTable()` -- 14 in `defaultCanvasShapeCommands` (beginFill, beginGradientFill, cubicCurveTo, curveTo, drawCircle, drawEllipse, drawPath, drawRectangle, drawRoundRectangle, endFill, lineGradientStyle, lineStyle, lineTo, moveTo) plus 2 texture-backed commands in `defaultCanvasTextureShapeCommands` (beginTextureFill, lineTextureStyle). Each carries a `draw` function and paired `fillBounds`/`strokeBounds` functions delegating to `@flighthq/shape`. The command set is extensible through `registerCanvasShapeCommand` / `registerCanvasShapeCommands`.
+- **Shape command spine**: 16 commands registered by `canvasShapeCommandTable()` -- 14 in `canvasShapeCommands` (beginFill, beginGradientFill, cubicCurveTo, curveTo, drawCircle, drawEllipse, drawPath, drawRectangle, drawRoundRectangle, endFill, lineGradientStyle, lineStyle, lineTo, moveTo) plus 2 texture-backed commands in `canvasTextureShapeCommands` (beginTextureFill, lineTextureStyle). Each carries a `draw` function and paired `fillBounds`/`strokeBounds` functions delegating to `@flighthq/shape`. The command set is extensible through `registerCanvasShapeCommand` / `registerCanvasShapeCommands`.
 
 - **Material seam**: `canvasMaterialRegistry.ts` provides `registerCanvasMaterialRenderer`, `resolveCanvasMaterialRenderer`, `getCanvasMaterialRenderer`, and `applyCanvasMaterial`. The apply function brackets a `save`/`restore` only when a material contributes draw state (composite, filter) -- the common no-material path pays nothing.
 
@@ -63,7 +63,7 @@ Verified against the AAA display-object feature target and the charter:
 
 - **Per-frame `CanvasShapeDrawState` allocation.** `renderCanvasShapeCommands` (`canvasShape.ts:43`) calls `createCanvasShapeDrawState` every invocation, allocating a fresh object with a `flush` closure. For a scene with many shapes this is measurable GC pressure on the hot path. The status doc identifies this; a module-level scratch with per-call reset is the known fix.
 
-- **`lineStyle` drops `pixelHinting` and `scaleMode`.** `defaultCanvasLineStyle` reads `buf[i]` (thickness), `buf[i+1]` (color), `buf[i+2]` (alpha), `buf[i+5]` (caps), `buf[i+6]` (joints), `buf[i+7]` (miterLimit), skipping indices 3 and 4. `CanvasShapeDrawState` (in `@flighthq/types`) has no `strokeScaleMode` field, so all four `LineScaleMode` values render identically. Adding the field is a `@flighthq/types` change; reading and applying it spans both `@flighthq/types` and this package.
+- **`lineStyle` drops `pixelHinting` and `scaleMode`.** `canvasLineStyle` reads `buf[i]` (thickness), `buf[i+1]` (color), `buf[i+2]` (alpha), `buf[i+5]` (caps), `buf[i+6]` (joints), `buf[i+7]` (miterLimit), skipping indices 3 and 4. `CanvasShapeDrawState` (in `@flighthq/types`) has no `strokeScaleMode` field, so all four `LineScaleMode` values render identically. Adding the field is a `@flighthq/types` change; reading and applying it spans both `@flighthq/types` and this package.
 
 - **No dashed strokes.** The `lineStyle` command tuple carries no dash fields, and no source calls `setLineDash`. Blocked on `dashPattern`/`dashOffset` fields in `@flighthq/types` + `@flighthq/shape`.
 
@@ -127,7 +127,7 @@ These are questions from the charter's Open directions section, verified as stil
 
 5. **The line between "Canvas command" extensibility and `@flighthq/shape`.** Several features (dash, bitmap-fill repeat, pixel-snapping) are blocked on upstream tuple changes. The boundary question remains open.
 
-6. **`LineScaleMode 'horizontal'` / `'vertical'`.** Still fall back to `'normal'`. No `strokeScaleMode` field exists on `CanvasShapeDrawState` to carry the mode, and `defaultCanvasLineStyle` does not read `buf[i+4]`. Implementing any `LineScaleMode` support requires adding the field to `@flighthq/types` first.
+6. **`LineScaleMode 'horizontal'` / `'vertical'`.** Still fall back to `'normal'`. No `strokeScaleMode` field exists on `CanvasShapeDrawState` to carry the mode, and `canvasLineStyle` does not read `buf[i+4]`. Implementing any `LineScaleMode` support requires adding the field to `@flighthq/types` first.
 
 7. **Image-smoothing parity across kinds.** Unaudited. Different kinds use different smoothing decision logic.
 

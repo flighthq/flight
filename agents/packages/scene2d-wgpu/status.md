@@ -32,7 +32,7 @@ per-backend comparisons) on 2026-08-08. A file:line here is a claim about this t
   has its 3D twin; there is no `explainWgpuScene2DCoverage`, so a WebGPU state cannot report which
   blend realizations and 2D material renderers it is missing.
 - **The shape command vocabulary is still borrowed from Canvas.** `contract.ts:29-47` re-exports
-  sixteen `defaultCanvas*` commands under `defaultWgpu*` names, and `@flighthq/scene2d-canvas` remains
+  sixteen `canvas*` commands under `wgpu*` names, and `@flighthq/scene2d-canvas` remains
   a runtime dependency in `package.json`. Gradient and texture fills have no WGSL-native form.
 - **What falls off the mesh lane.** `drawWgpuShape` tries the mesh path and falls through to
   `drawWgpuRasterShape` (`wgpuShape.ts`); a gradient fill, texture fill, or **closed** stroke leaves

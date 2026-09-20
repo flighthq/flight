@@ -42,7 +42,7 @@ about this tree, not about a session.
 - **No chain metadata or validation.** `RenderEffectChainHint`, `validateGlRenderEffectChain`, and
   `orderGlRenderEffectChain` are absent from `packages/`; ordering hazards and HDR/depth mismatches are
   undetectable.
-- **Two kinds are GL-only.** `defaultGlBokehDepthOfFieldEffectRunner` and `defaultGlCustomShaderEffectRunner`
+- **Two kinds are GL-only.** `glBokehDepthOfFieldEffectRunner` and `glCustomShaderEffectRunner`
   have no `effects-wgpu` counterpart, so a chain using either silently degrades to identity there.
 
 ## Log
