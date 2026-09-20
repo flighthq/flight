@@ -10,7 +10,7 @@ import {
   registerGlDisplacementEffect,
 } from './glDisplacementEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 const programMock = {
@@ -132,8 +132,8 @@ describe('registerGlDisplacementEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'DisplacementEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'DisplacementEffect')).toBeNull();
     registerGlDisplacementEffect(state);
-    expect(getGlRenderEffectRunner(state, 'DisplacementEffect')).toBe(defaultGlDisplacementEffectRunner);
+    expect(getGlEffectRunner(state, 'DisplacementEffect')).toBe(defaultGlDisplacementEffectRunner);
   });
 });

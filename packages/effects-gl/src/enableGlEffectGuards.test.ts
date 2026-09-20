@@ -14,38 +14,34 @@ import {
   createGlRenderTexturePool,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState, LogEntry, RenderEffect } from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, LogEntry, RenderEffect } from '@flighthq/types/contract';
 
-import {
-  areGlRenderEffectGuardsEnabled,
-  disableGlRenderEffectGuards,
-  enableGlRenderEffectGuards,
-} from './enableGlRenderEffectGuards';
+import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards';
 import { registerGlCustomShaderSource } from './glCustomShaderEffect';
+import { registerGlEffect } from './glEffectRegistry';
 import { beginGlEffectPass, createGlEffectState, endGlEffectPass } from './glEffectState';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
-import { applyGlRenderEffectsToRenderTexture } from './glRenderTextureEffect';
+import { applyGlEffectsToRenderTexture } from './glRenderTextureEffect';
 
 beforeEach(() => clearLogOnceKeys());
 
-describe('areGlRenderEffectGuardsEnabled', () => {
+describe('areGlEffectGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {
     const state = createState();
-    expect(areGlRenderEffectGuardsEnabled(state)).toBe(false);
+    expect(areGlEffectGuardsEnabled(state)).toBe(false);
 
-    enableGlRenderEffectGuards(state);
-    expect(areGlRenderEffectGuardsEnabled(state)).toBe(true);
+    enableGlEffectGuards(state);
+    expect(areGlEffectGuardsEnabled(state)).toBe(true);
 
-    disableGlRenderEffectGuards(state);
-    expect(areGlRenderEffectGuardsEnabled(state)).toBe(false);
+    disableGlEffectGuards(state);
+    expect(areGlEffectGuardsEnabled(state)).toBe(false);
   });
 });
 
-describe('disableGlRenderEffectGuards', () => {
+describe('disableGlEffectGuards', () => {
   it('stops reporting, leaving the silent sentinel silent again', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
-    disableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
+    disableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.disabled-kind'])).toBe(false);
@@ -55,13 +51,13 @@ describe('disableGlRenderEffectGuards', () => {
   });
 });
 
-describe('enableGlRenderEffectGuards', () => {
+describe('enableGlEffectGuards', () => {
   // logOnce suppresses a key for the whole PROCESS, so a fired key can never fire again in a later
   // test. Both the fire and the silence assertions live in this one test, in order, and every test in
   // this file uses distinct effect kinds so no two share a key.
   it('WARNS that an unregistered chain returned false without writing dest, then stays quiet', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.unregistered-a'])).toBe(false);
@@ -69,7 +65,7 @@ describe('enableGlRenderEffectGuards', () => {
     expect(entries.length).toBe(1);
     // The consequence is the point: dest is never written, so the caller samples a stale texture.
     expect(messageOf(entries[0])).toContain('NEVER WRITTEN');
-    expect(messageOf(entries[0])).toContain('registerGlRenderEffect');
+    expect(messageOf(entries[0])).toContain('registerGlEffect');
 
     // Same observation again is suppressed — the miss recurs every frame and must not flood.
     const repeat = captureLog(() => {
@@ -80,8 +76,8 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('WARNS that a partially registered chain silently DROPPED the effects it could not run', () => {
     const state = createState();
-    registerGlRenderEffect(state, 'test.registered-b', noopRunner);
-    enableGlRenderEffectGuards(state);
+    registerGlEffect(state, 'test.registered-b', noopRunner);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       // It succeeds — which is exactly why this one is invisible without a crumb.
@@ -95,7 +91,7 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('WARNS when a failed chain leaves a previously published destination stale', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.stale-destination'], true)).toBe(false);
@@ -108,7 +104,7 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('WARNS that re-registered shader source will NOT run, because the program is cached by key', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       registerGlCustomShaderSource(state, 'test.reregistered-a', 'void main() { o_color = vec4(1.0); }');
@@ -122,7 +118,7 @@ describe('enableGlRenderEffectGuards', () => {
 
     // Negative control for the guard itself: with the guard OFF the same sequence says nothing, so the
     // assertion above is measuring the guard rather than some other source of log traffic.
-    disableGlRenderEffectGuards(state);
+    disableGlEffectGuards(state);
     const afterDisable = captureLog(() => {
       registerGlCustomShaderSource(state, 'test.reregistered-b', 'void main() { o_color = vec4(1.0); }');
       registerGlCustomShaderSource(state, 'test.reregistered-b', 'void main() { o_color = vec4(0.0); }');
@@ -132,8 +128,8 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('WARNS that an unresolvable effect COPIED THROUGH rather than being dropped', () => {
     const state = createState();
-    registerGlRenderEffect(state, 'test.unresolved-a', noopRunner, () => false);
-    enableGlRenderEffectGuards(state);
+    registerGlEffect(state, 'test.unresolved-a', noopRunner, () => false);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       // It returns TRUE and writes dest — the pass ran, it just did nothing. That is the whole hazard.
@@ -149,7 +145,7 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('WARNS that a pipeline pass DROPPED an effect kind with no runner, once per kind', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
     const pipeline = createGlEffectState(state);
 
     const entries = captureLog(() => {
@@ -185,7 +181,7 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', () => {
     const state = createState();
-    enableGlRenderEffectGuards(state);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, [])).toBe(false);
@@ -197,8 +193,8 @@ describe('enableGlRenderEffectGuards', () => {
 
   it('stays SILENT when every requested effect has a runner', () => {
     const state = createState();
-    registerGlRenderEffect(state, 'test.registered-c', noopRunner);
-    enableGlRenderEffectGuards(state);
+    registerGlEffect(state, 'test.registered-c', noopRunner);
+    enableGlEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.registered-c'])).toBe(true);
@@ -224,7 +220,7 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
         return finishEntity(out) as unknown;
       })() as Readonly<RenderEffect>,
   );
-  return applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
+  return applyGlEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
 
 function captureLog(run: () => void): readonly LogEntry[] {
@@ -250,4 +246,4 @@ function messageOf(entry: Readonly<LogEntry>): string {
   return typeof data === 'string' ? data : String(data.message);
 }
 
-const noopRunner: GlRenderEffectRunner = () => {};
+const noopRunner: GlEffectRunner = () => {};

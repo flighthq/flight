@@ -5,7 +5,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import {
   applyScreenSpaceFogEffectToGl,
   defaultGlScreenSpaceFogEffectRunner,
@@ -182,8 +182,8 @@ describe('registerGlScreenSpaceFogEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'ScreenSpaceFogEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'ScreenSpaceFogEffect')).toBeNull();
     registerGlScreenSpaceFogEffect(state);
-    expect(getGlRenderEffectRunner(state, 'ScreenSpaceFogEffect')).toBe(defaultGlScreenSpaceFogEffectRunner);
+    expect(getGlEffectRunner(state, 'ScreenSpaceFogEffect')).toBe(defaultGlScreenSpaceFogEffectRunner);
   });
 });

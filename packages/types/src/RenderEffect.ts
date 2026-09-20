@@ -1,7 +1,7 @@
 import type { Entity, Kind } from './Entity';
 
 // Substrate-agnostic render-effect intents. Each is plain data carrying a `kind` discriminant; per-backend
-// recipes register a runner against that `kind` (registerGlRenderEffect) and the effect pipeline
+// recipes register a runner against that `kind` (registerGlEffect) and the effect pipeline
 // dispatches an agnostic RenderEffect[] through the registry, so one intent list drives every backend.
 // RenderEffect is an open base contract: a new effect is added by defining its interface (extending
 // RenderEffect with a literal `kind`) and registering a runner — no central union to edit here.

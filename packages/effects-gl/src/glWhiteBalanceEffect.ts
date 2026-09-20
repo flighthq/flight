@@ -1,13 +1,13 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   WhiteBalanceEffect,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // White balance: warm/cool temperature and magenta/green tint channel shift.
 export function applyWhiteBalanceEffectToGl(
@@ -25,12 +25,12 @@ export function applyWhiteBalanceEffectToGl(
   });
 }
 
-export const defaultGlWhiteBalanceEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlWhiteBalanceEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyWhiteBalanceEffectToGl(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
 
 export function registerGlWhiteBalanceEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
+  registerGlEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
 }
 
 const WHITE_BALANCE_FRAGMENT_SRC = `#version 300 es

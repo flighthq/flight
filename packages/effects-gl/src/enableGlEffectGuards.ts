@@ -1,17 +1,17 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderEffectApplicationExplanation, GlRenderState } from '@flighthq/types/contract';
+import type { GlEffectApplicationExplanation, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setGlCustomShaderSourceGuard } from './glCustomShaderEffect';
 import { setGlEffectStateSkipGuard } from './glEffectState';
-import { setGlRenderEffectApplicationGuard } from './glRenderTextureEffect';
+import { setGlEffectApplicationGuard } from './glRenderTextureEffect';
 
-export function areGlRenderEffectGuardsEnabled(state: GlRenderState): boolean {
+export function areGlEffectGuardsEnabled(state: GlRenderState): boolean {
   return _guardedStates.has(state);
 }
 
-export function disableGlRenderEffectGuards(state: GlRenderState): void {
-  setGlRenderEffectApplicationGuard(state, null);
+export function disableGlEffectGuards(state: GlRenderState): void {
+  setGlEffectApplicationGuard(state, null);
   setGlCustomShaderSourceGuard(state, null);
   setGlEffectStateSkipGuard(state, null);
   _guardedStates.delete(state);
@@ -21,8 +21,8 @@ export function disableGlRenderEffectGuards(state: GlRenderState): void {
 // an unregistered chain returns false having never written `dest`, so a sprite sampling that texture
 // shows whatever was last in it, and a partially registered chain succeeds while silently dropping
 // the effects it could not run. Both are correct by contract and neither surfaces anywhere.
-export function enableGlRenderEffectGuards(state: GlRenderState): void {
-  setGlRenderEffectApplicationGuard(state, warnGlRenderEffectApplication);
+export function enableGlEffectGuards(state: GlRenderState): void {
+  setGlEffectApplicationGuard(state, warnGlEffectApplication);
   setGlCustomShaderSourceGuard(state, warnGlCustomShaderSourceReregistered);
   setGlEffectStateSkipGuard(state, warnGlEffectStateSkip);
   _guardedStates.add(state);
@@ -51,34 +51,31 @@ function warnGlCustomShaderSourceReregistered(
   );
 }
 
-function getGlRenderEffectApplicationMessage(explanation: Readonly<GlRenderEffectApplicationExplanation>): string {
+function getGlEffectApplicationMessage(explanation: Readonly<GlEffectApplicationExplanation>): string {
   switch (explanation.status) {
     case 'partial-registration':
-      return `applyGlRenderEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerGlRenderEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
+      return `applyGlEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerGlEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
     case 'source-unavailable':
-      return 'applyGlRenderEffectsToRenderTexture: the source render Texture has no realized GL target, so the call returned false and the destination was NOT written — render into the source before applying effects';
+      return 'applyGlEffectsToRenderTexture: the source render Texture has no realized GL target, so the call returned false and the destination was NOT written — render into the source before applying effects';
     case 'partial-resolution':
-      return `applyGlRenderEffectsToRenderTexture: ${explanation.unresolvedIndexes.length} of ${explanation.requestedCount} effects have a runner but nothing to run with, so those stages COPIED THE INPUT THROUGH UNCHANGED — they were not dropped and the destination WAS written; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
+      return `applyGlEffectsToRenderTexture: ${explanation.unresolvedIndexes.length} of ${explanation.requestedCount} effects have a runner but nothing to run with, so those stages COPIED THE INPUT THROUGH UNCHANGED — they were not dropped and the destination WAS written; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
     case 'stale-destination':
-      return 'applyGlRenderEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
+      return 'applyGlEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
     case 'unresolved-effects':
-      return `applyGlRenderEffectsToRenderTexture: every effect has a runner but NONE can resolve what it names, so the whole chain COPIED THE INPUT THROUGH UNCHANGED — the call returned true and the destination WAS written, which looks like effects that did nothing rather than effects that failed; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
+      return `applyGlEffectsToRenderTexture: every effect has a runner but NONE can resolve what it names, so the whole chain COPIED THE INPUT THROUGH UNCHANGED — the call returned true and the destination WAS written, which looks like effects that did nothing rather than effects that failed; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
     default:
-      return `applyGlRenderEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerGlRenderEffect(state, kind, runner)`;
+      return `applyGlEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerGlEffect(state, kind, runner)`;
   }
 }
 
-function warnGlRenderEffectApplication(
-  _state: GlRenderState,
-  explanation: Readonly<GlRenderEffectApplicationExplanation>,
-): void {
+function warnGlEffectApplication(_state: GlRenderState, explanation: Readonly<GlEffectApplicationExplanation>): void {
   // Keyed by status plus the kinds involved: a chain missing a different effect is a different
   // observation worth reporting, while the same miss every frame is not.
   logOnce(
     `effects-gl:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}:${explanation.unresolvedIndexes.join(',')}`,
     LogLevel.Warn,
     {
-      message: getGlRenderEffectApplicationMessage(explanation),
+      message: getGlEffectApplicationMessage(explanation),
       registeredCount: explanation.registeredCount,
       requestedCount: explanation.requestedCount,
       status: explanation.status,
@@ -100,7 +97,7 @@ function warnGlEffectStateSkip(_state: GlRenderState, kind: string): void {
     LogLevel.Warn,
     {
       kind,
-      message: `endGlEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerGlRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
+      message: `endGlEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerGlEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-gl',
   );

@@ -13,7 +13,7 @@ import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
 // produce them — a depth/velocity-dependent recipe reads them when present and falls back to a
 // sentinel/color-only path when null. Both are 2D-capable G-buffers: depth comes from a depth-writing
 // scene pass; velocity from per-node current-vs-previous transform deltas.
-export interface GlRenderEffectContext {
+export interface GlEffectContext {
   readonly state: GlRenderState;
   readonly source: Readonly<GlTextureRenderTarget>;
   readonly dest: Readonly<GlTextureRenderTarget>;
@@ -25,9 +25,9 @@ export interface GlRenderEffectContext {
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
 // (e.g. through registerGlBloomEffect); register an alternative under the same key to swap algorithms.
-export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect: Readonly<RenderEffect>) => void;
+export type GlEffectRunner = (ctx: Readonly<GlEffectContext>, effect: Readonly<RenderEffect>) => void;
 
-// Why an applyGlRenderEffectsToRenderTexture call would not write its destination, as plain data.
+// Why an applyGlEffectsToRenderTexture call would not write its destination, as plain data.
 //
 //   complete              every requested effect has a runner; the destination gets written
 //   no-effects            an empty chain — a legitimate no-op, NOT a registration miss
@@ -54,7 +54,7 @@ export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect
 // without a crumb — but they produce different wrong pictures. Unregistered effects are DROPPED (dest
 // unwritten, or the chain short a stage); unresolved effects PASS THROUGH (dest written, stage present
 // and doing nothing). Naming the right one is what makes the warning actionable.
-export type GlRenderEffectApplicationStatus =
+export type GlEffectApplicationStatus =
   | 'complete'
   | 'no-effects'
   | 'partial-registration'
@@ -64,10 +64,10 @@ export type GlRenderEffectApplicationStatus =
   | 'unregistered-effects'
   | 'unresolved-effects';
 
-export interface GlRenderEffectApplicationExplanation {
+export interface GlEffectApplicationExplanation {
   readonly registeredCount: number;
   readonly requestedCount: number;
-  readonly status: GlRenderEffectApplicationStatus;
+  readonly status: GlEffectApplicationStatus;
   readonly unregisteredKinds: readonly string[];
   // Positions in the submitted chain, NOT kinds: resolution is per effect instance, so a kind here
   // would be wrong the moment a chain carries two effects of the same kind naming different targets.
@@ -77,17 +77,17 @@ export interface GlRenderEffectApplicationExplanation {
 /**
  * The optional second half of a registration: whether THIS effect instance can resolve into a real
  * pass, given whatever else its runner needs (a registered shader source, a loaded LUT). Passed to
- * registerGlRenderEffect beside the runner rather than to a registry of its own — one call registers
+ * registerGlEffect beside the runner rather than to a registry of its own — one call registers
  * both, so there is no second registration to forget and no way to express a runner whose resolver was
  * never installed. A kind registered without one is always resolvable.
  */
-export type GlRenderEffectResolver = (state: GlRenderState, effect: Readonly<RenderEffect>) => boolean;
+export type GlEffectResolver = (state: GlRenderState, effect: Readonly<RenderEffect>) => boolean;
 
 // What one registered kind holds. The resolver rides with the runner rather than in a parallel map, so
 // there is no state in which a runner exists and its resolver was never installed.
-export interface GlRenderEffectRegistration {
-  readonly isResolvable?: GlRenderEffectResolver;
-  readonly runner: GlRenderEffectRunner;
+export interface GlEffectRegistration {
+  readonly isResolvable?: GlEffectResolver;
+  readonly runner: GlEffectRunner;
 }
 
 /**
@@ -107,9 +107,9 @@ export type GlCustomShaderSourceGuard = (
 // downstream can tell a skipped effect from one that ran and had no visible result.
 export type GlEffectStateSkipGuard = (state: GlRenderState, kind: string) => void;
 
-export type GlRenderEffectApplicationGuard = (
+export type GlEffectApplicationGuard = (
   state: GlRenderState,
-  explanation: Readonly<GlRenderEffectApplicationExplanation>,
+  explanation: Readonly<GlEffectApplicationExplanation>,
 ) => void;
 
 export interface EffectStateOptions {
@@ -134,7 +134,7 @@ export interface GlEffectState extends Entity {
   readonly lutCache: ColorLutCache;
   readonly lutTexture: GlColorLutTextureCache;
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
-  // blur, TAA). Produced separately by renderGlVelocity and set via setGlRenderEffectVelocityTexture;
+  // blur, TAA). Produced separately by renderGlVelocity and set via setGlEffectVelocityTexture;
   // null when no velocity pass ran (velocity-driven effects then sentinel-fall-back). Depth, by contrast,
   // comes from the scene target directly.
   velocityTexture: WebGLTexture | null;

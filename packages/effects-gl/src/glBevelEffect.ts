@@ -10,7 +10,7 @@ import type {
   GlContext,
   BevelEffect,
   GlFullscreenProgram,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
@@ -18,8 +18,8 @@ import type {
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+import { registerGlEffect } from './glEffectRegistry';
 import { applyGlEffectTintPass } from './glEffectTintShader';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType and composited over the source.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -103,12 +103,12 @@ export function applyBevelEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlBevelEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBevelEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBevelEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
 };
 
 export function registerGlBevelEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
+  registerGlEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
 }
 
 // Reads the blurred alpha field (unit 0) and source (unit 1); writes the tinted, clipped bevel mask,

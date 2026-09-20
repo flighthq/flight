@@ -17,7 +17,7 @@ import {
   defaultGlBlurEffectRunner,
   registerGlBlurEffect,
 } from './glBlurEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 
 function createGlState() {
   return {
@@ -91,7 +91,7 @@ describe('registerGlBlurEffect', () => {
 
     registerGlBlurEffect(state);
 
-    expect(getGlRenderEffectRunner(state, 'BlurEffect')).toBe(defaultGlBlurEffectRunner);
-    expect(getGlRenderEffectRunner(other, 'BlurEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'BlurEffect')).toBe(defaultGlBlurEffectRunner);
+    expect(getGlEffectRunner(other, 'BlurEffect')).toBeNull();
   });
 });

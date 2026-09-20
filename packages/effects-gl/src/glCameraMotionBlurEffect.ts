@@ -1,13 +1,13 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   CameraMotionBlurEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own. Two richer variants are 2D-native
@@ -28,12 +28,12 @@ export function applyCameraMotionBlurEffectToGl(
   });
 }
 
-export const defaultGlCameraMotionBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlCameraMotionBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyCameraMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
 
 export function registerGlCameraMotionBlurEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'CameraMotionBlurEffect', defaultGlCameraMotionBlurEffectRunner);
+  registerGlEffect(state, 'CameraMotionBlurEffect', defaultGlCameraMotionBlurEffectRunner);
 }
 
 const CAMERA_MOTION_BLUR_FRAGMENT_SRC = `#version 300 es

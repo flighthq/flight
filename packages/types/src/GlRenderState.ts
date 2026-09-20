@@ -8,7 +8,7 @@ import type { GlContextRuntime } from './GlContextRuntime';
 import type { GlContextState } from './GlContextState';
 import type { GlCubeRenderTarget } from './GlCubeRenderTarget';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
-import type { GlRenderEffectRegistration } from './GlEffectState';
+import type { GlEffectRegistration } from './GlEffectState';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlModifierSnippet } from './GlModifierSnippet';
@@ -59,7 +59,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   // Incremented whenever pbrExtensions is replaced. The compiled-program cache key includes this
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
   pbrExtensionRevision: number;
-  renderEffects: KeyedTable<GlRenderEffectRegistration>;
+  renderEffects: KeyedTable<GlEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<GlTextureResolver>;
   velocityWriters: KeyedTable<GlVelocityWriter>;

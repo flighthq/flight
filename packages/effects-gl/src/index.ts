@@ -1,4 +1,4 @@
-export * from './enableGlRenderEffectGuards';
+export * from './enableGlEffectGuards';
 export { defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
 export {
   defaultGlBitmapDisplacementEffectRunner,
@@ -41,7 +41,7 @@ export {
   destroyGlEffectState,
   endGlEffectPass,
   setGlEffectStateSkipGuard,
-  setGlRenderEffectVelocityTexture,
+  setGlEffectVelocityTexture,
 } from './glEffectState';
 export { defaultGlFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
 export { defaultGlFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
@@ -63,7 +63,7 @@ export { defaultGlOutlineEffectRunner, registerGlOutlineEffect } from './glOutli
 export { defaultGlPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
 export { defaultGlPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect';
 export { defaultGlRadialBlurEffectRunner, registerGlRadialBlurEffect } from './glRadialBlurEffect';
-export * from './glRenderEffectRegistry';
+export * from './glEffectRegistry';
 export * from './glRenderTextureEffect';
 export { defaultGlScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect';
 export { defaultGlScreenSpaceFogEffectRunner, registerGlScreenSpaceFogEffect } from './glScreenSpaceFogEffect';

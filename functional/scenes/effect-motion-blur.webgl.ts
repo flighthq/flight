@@ -38,7 +38,7 @@ import {
   registerRenderer,
   renderGlScene2D,
   renderGlVelocity,
-  setGlRenderEffectVelocityTexture,
+  setGlEffectVelocityTexture,
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
@@ -98,7 +98,7 @@ export function render(root: Node2D): void {
     if (child !== null) contributeVelocity(velocityField, child, 40, 0);
   }
   renderGlVelocity(state, root, velocityField, velocityTarget);
-  setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  setGlEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);

@@ -1,12 +1,12 @@
 import { createSsaoEffect } from '@flighthq/effects/contract';
 import type {
   ContactShadowsEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 import { applySsaoEffectToGl } from './glSsaoEffect';
 
 // Contact shadows share the local-occlusion realization used by SSAO until the effect pipeline
@@ -30,10 +30,10 @@ export function applyContactShadowsEffectToGl(
   );
 }
 
-export const defaultGlContactShadowsEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlContactShadowsEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyContactShadowsEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ContactShadowsEffect);
 };
 
 export function registerGlContactShadowsEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'ContactShadowsEffect', defaultGlContactShadowsEffectRunner);
+  registerGlEffect(state, 'ContactShadowsEffect', defaultGlContactShadowsEffectRunner);
 }

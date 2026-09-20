@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlitchEffect,
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { GlitchEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
@@ -31,12 +26,12 @@ export function applyGlitchEffectToGl(
   });
 }
 
-export const defaultGlGlitchEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlGlitchEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyGlitchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
 
 export function registerGlGlitchEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'GlitchEffect', defaultGlGlitchEffectRunner);
+  registerGlEffect(state, 'GlitchEffect', defaultGlGlitchEffectRunner);
 }
 
 const GLITCH_FRAGMENT_SRC = `#version 300 es

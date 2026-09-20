@@ -10,7 +10,7 @@ import {
   endGlEffectPass,
   initializeGlEffectState,
   setGlEffectStateSkipGuard,
-  setGlRenderEffectVelocityTexture,
+  setGlEffectVelocityTexture,
 } from './glEffectState';
 
 describe('beginGlEffectPass', () => {
@@ -90,8 +90,8 @@ describe('setGlEffectStateSkipGuard', () => {
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });
 });
-describe('setGlRenderEffectVelocityTexture', () => {
+describe('setGlEffectVelocityTexture', () => {
   it('is a function', () => {
-    expect(typeof setGlRenderEffectVelocityTexture).toBe('function');
+    expect(typeof setGlEffectVelocityTexture).toBe('function');
   });
 });

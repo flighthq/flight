@@ -2,14 +2,14 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   AdvancedBlendMode,
   BlendEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Advanced-blend composite pass: sample the incoming layer (`u_texture0`, the effect's `source`) and a
 // registered backdrop (`u_texture1`), compute the destination-reading / non-separable blend named by the
@@ -46,7 +46,7 @@ export function applyBlendEffectToGl(
   });
 }
 
-export const defaultGlBlendEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBlendEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBlendEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BlendEffect);
 };
 
@@ -64,7 +64,7 @@ export function getGlBlendEffectBackdrop(state: GlRenderState, backdropKey: stri
 }
 
 export function registerGlBlendEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
+  registerGlEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
 }
 
 // Registers a backdrop texture under `backdropKey` for this state, so a BlendEffect naming that key

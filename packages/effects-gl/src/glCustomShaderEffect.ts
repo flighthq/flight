@@ -3,7 +3,7 @@ import { drawGlFullscreenPass, getGlRenderStateRuntime } from '@flighthq/render-
 import type {
   CustomShaderEffect,
   GlCustomShaderSourceGuard,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   RenderEffect,
@@ -11,7 +11,7 @@ import type {
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Runs a user-authored fragment shader as a fullscreen post-process pass. The descriptor carries a
 // `shaderKey` — a reference into the per-state custom-shader registry populated by
@@ -68,7 +68,7 @@ export function applyCustomShaderEffectToGl(
   });
 }
 
-export const defaultGlCustomShaderEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlCustomShaderEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyCustomShaderEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CustomShaderEffect);
 };
 
@@ -90,12 +90,7 @@ export function isGlCustomShaderEffectResolvable(state: GlRenderState, effect: R
 export function registerGlCustomShaderEffect(state: GlRenderState): void {
   // The resolver is what makes the identity-passthrough fallback visible: without it a chain naming an
   // unregistered shaderKey reports 'complete' while copying its input through untouched.
-  registerGlRenderEffect(
-    state,
-    'CustomShaderEffect',
-    defaultGlCustomShaderEffectRunner,
-    isGlCustomShaderEffectResolvable,
-  );
+  registerGlEffect(state, 'CustomShaderEffect', defaultGlCustomShaderEffectRunner, isGlCustomShaderEffectResolvable);
 }
 
 // Registers a fragment shader source under `shaderKey` for this state, so a CustomShaderEffect naming
@@ -103,7 +98,7 @@ export function registerGlCustomShaderEffect(state: GlRenderState): void {
 // u_texture0;` for the input, reads texcoords from `in vec2 v_texCoord;`, writes `out vec4 o_color;`,
 // and may declare any float/vec uniforms it wants supplied through the effect's `uniforms` bag.
 // Last write wins for the source lookup, while the compiled program is cached by the shaderKey — so
-// the two disagree after a re-registration. enableGlRenderEffectGuards reports that divergence.
+// the two disagree after a re-registration. enableGlEffectGuards reports that divergence.
 export function registerGlCustomShaderSource(state: GlRenderState, shaderKey: string, fragmentSource: string): void {
   const runtime = getGlRenderStateRuntime(state);
   // The seam, not a message: core carries no warning strings, and an unguarded state pays one map

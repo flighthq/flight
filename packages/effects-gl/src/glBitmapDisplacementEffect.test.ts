@@ -17,8 +17,8 @@ import {
   registerGlBitmapDisplacementEffect,
 } from './glBitmapDisplacementEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner, isGlRenderEffectResolvable } from './glRenderEffectRegistry';
-import { explainGlRenderEffectApplication } from './glRenderTextureEffect';
+import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry';
+import { explainGlEffectApplication } from './glRenderTextureEffect';
 
 const sourceTexture = {} as WebGLTexture;
 const mapTexture = {} as WebGLTexture;
@@ -173,13 +173,13 @@ describe('registerGlBitmapDisplacementEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBeNull();
+    expect(getGlEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBeNull();
     registerGlBitmapDisplacementEffect(registeredState);
-    expect(getGlRenderEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
+    expect(getGlEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
       defaultGlBitmapDisplacementEffectRunner,
     );
-    expect(isGlRenderEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
-    expect(explainGlRenderEffectApplication(registeredState, [effect({ map: null })], true)).toMatchObject({
+    expect(isGlEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
+    expect(explainGlEffectApplication(registeredState, [effect({ map: null })], true)).toMatchObject({
       status: 'unresolved-effects',
       unresolvedIndexes: [0],
     });

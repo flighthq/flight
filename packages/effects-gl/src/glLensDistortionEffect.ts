@@ -1,13 +1,13 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   LensDistortionEffect,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
@@ -26,12 +26,12 @@ export function applyLensDistortionEffectToGl(
   });
 }
 
-export const defaultGlLensDistortionEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlLensDistortionEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
 export function registerGlLensDistortionEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'LensDistortionEffect', defaultGlLensDistortionEffectRunner);
+  registerGlEffect(state, 'LensDistortionEffect', defaultGlLensDistortionEffectRunner);
 }
 
 const LENS_DISTORTION_FRAGMENT_SRC = `#version 300 es

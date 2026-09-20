@@ -8,7 +8,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  applyGlRenderEffectsToRenderTexture,
+  applyGlEffectsToRenderTexture,
   computeRenderEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
@@ -145,9 +145,7 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
     },
     { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
   );
-  if (
-    !applyGlRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])
-  ) {
+  if (!applyGlEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])) {
     throw new Error(`[per-node-effect-glow-shadow] ${effect.kind} did not run`);
   }
   releaseGlRenderTexture(state, pool, scratchTexture);

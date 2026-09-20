@@ -5,8 +5,8 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
+import { getGlEffectRunner } from './glEffectRegistry';
 import { applyGodRaysEffectToGl, defaultGlGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),
@@ -126,8 +126,8 @@ describe('registerGlGodRaysEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'GodRaysEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'GodRaysEffect')).toBeNull();
     registerGlGodRaysEffect(state);
-    expect(getGlRenderEffectRunner(state, 'GodRaysEffect')).toBe(defaultGlGodRaysEffectRunner);
+    expect(getGlEffectRunner(state, 'GodRaysEffect')).toBe(defaultGlGodRaysEffectRunner);
   });
 });

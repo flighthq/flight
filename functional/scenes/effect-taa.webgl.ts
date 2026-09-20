@@ -1,4 +1,4 @@
-import { hasGlRenderEffectRunner } from '@flighthq/effects-gl/contract';
+import { hasGlEffectRunner } from '@flighthq/effects-gl/contract';
 import {
   webHostGl,
   appendWebSurface,
@@ -109,7 +109,7 @@ render(root);
 // should retain high luminance (> 200) after the TAA pass, verifying the pipeline processes content
 // correctly. Without the pipeline, the frame is blank.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  if (hasGlRenderEffectRunner(state, 'TaaEffect')) {
+  if (hasGlEffectRunner(state, 'TaaEffect')) {
     throw new Error(
       '[effect-taa] Gl now has a registered TAA runner — update this control cell and its description, ' +
         'which both say that capability is absent',

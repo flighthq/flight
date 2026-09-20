@@ -1,13 +1,13 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   BokehDepthOfFieldEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Bokeh depth-of-field: a disc-shaped blur. When the scene supplied a sampleable depth texture
 // (ctx.sceneDepthTexture), it computes a per-pixel circle of confusion from focusDistance/focusRange and
@@ -34,7 +34,7 @@ export function applyBokehDepthOfFieldEffectToGl(
   });
 }
 
-export const defaultGlBokehDepthOfFieldEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBokehDepthOfFieldEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBokehDepthOfFieldEffectToGl(
     ctx.state,
     ctx.source,
@@ -45,7 +45,7 @@ export const defaultGlBokehDepthOfFieldEffectRunner: GlRenderEffectRunner = (ctx
 };
 
 export function registerGlBokehDepthOfFieldEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BokehDepthOfFieldEffect', defaultGlBokehDepthOfFieldEffectRunner);
+  registerGlEffect(state, 'BokehDepthOfFieldEffect', defaultGlBokehDepthOfFieldEffectRunner);
 }
 
 const BOKEH_DOF_FRAGMENT_SRC = `#version 300 es

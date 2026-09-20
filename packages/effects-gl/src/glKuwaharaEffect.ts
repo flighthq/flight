@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  KuwaharaEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, KuwaharaEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 // overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens
@@ -26,12 +21,12 @@ export function applyKuwaharaEffectToGl(
   });
 }
 
-export const defaultGlKuwaharaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlKuwaharaEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyKuwaharaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
 
 export function registerGlKuwaharaEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'KuwaharaEffect', defaultGlKuwaharaEffectRunner);
+  registerGlEffect(state, 'KuwaharaEffect', defaultGlKuwaharaEffectRunner);
 }
 
 const KUWAHARA_FRAGMENT_SRC = `#version 300 es

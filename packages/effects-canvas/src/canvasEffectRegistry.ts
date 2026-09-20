@@ -4,7 +4,7 @@ import type { CanvasEffectRunner, CanvasRenderState } from '@flighthq/types/cont
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Canvas 2D runner — the material-renderer
-// pattern one tier up, and the Canvas parallel of registerGlRenderEffect. Registration is opt-in
+// pattern one tier up, and the Canvas parallel of registerGlEffect. Registration is opt-in
 // (import a runner only to register it) and dispatch is a Map lookup, so there is no monolithic switch
 // and unused effect recipes tree-shake away. Register an alternative runner under the same key to swap
 // algorithms. A built-in registerCanvas<Kind>Effect wrapper is pure ergonomics: it calls this function

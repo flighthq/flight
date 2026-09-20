@@ -5,12 +5,12 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, RadialBlurEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
+import { getGlEffectRunner } from './glEffectRegistry';
 import {
   applyRadialBlurEffectToGl,
   defaultGlRadialBlurEffectRunner,
   registerGlRadialBlurEffect,
 } from './glRadialBlurEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),
@@ -145,8 +145,8 @@ describe('registerGlRadialBlurEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'RadialBlurEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'RadialBlurEffect')).toBeNull();
     registerGlRadialBlurEffect(state);
-    expect(getGlRenderEffectRunner(state, 'RadialBlurEffect')).toBe(defaultGlRadialBlurEffectRunner);
+    expect(getGlEffectRunner(state, 'RadialBlurEffect')).toBe(defaultGlRadialBlurEffectRunner);
   });
 });

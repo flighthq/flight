@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  RadialBlurEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, RadialBlurEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
 // `strength`, normalized by the sample count. Single-pass reference recipe.
@@ -34,12 +29,12 @@ export function applyRadialBlurEffectToGl(
   });
 }
 
-export const defaultGlRadialBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlRadialBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyRadialBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
 
 export function registerGlRadialBlurEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'RadialBlurEffect', defaultGlRadialBlurEffectRunner);
+  registerGlEffect(state, 'RadialBlurEffect', defaultGlRadialBlurEffectRunner);
 }
 
 const RADIAL_BLUR_FRAGMENT_SRC = `#version 300 es

@@ -5,7 +5,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 import {
   applyTiltShiftEffectToGl,
@@ -148,8 +148,8 @@ describe('registerGlTiltShiftEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'TiltShiftEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'TiltShiftEffect')).toBeNull();
     registerGlTiltShiftEffect(state);
-    expect(getGlRenderEffectRunner(state, 'TiltShiftEffect')).toBe(defaultGlTiltShiftEffectRunner);
+    expect(getGlEffectRunner(state, 'TiltShiftEffect')).toBe(defaultGlTiltShiftEffectRunner);
   });
 });

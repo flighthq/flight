@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  ToneMapEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, ToneMapEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Tone map: compress HDR to displayable range via the selected operator. Single-pass reference recipe.
 export function applyToneMapEffectToGl(
@@ -25,12 +20,12 @@ export function applyToneMapEffectToGl(
   });
 }
 
-export const defaultGlToneMapEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlToneMapEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyToneMapEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
 
 export function registerGlToneMapEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
+  registerGlEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 }
 
 function buildToneMapFragment(operator: string): string {

@@ -5,8 +5,8 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
+import { getGlEffectRunner } from './glEffectRegistry';
 import { applyGlitchEffectToGl, defaultGlGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 // The shader is module-private, so it is read back from the argument the effect hands the program
@@ -145,8 +145,8 @@ describe('registerGlGlitchEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'GlitchEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'GlitchEffect')).toBeNull();
     registerGlGlitchEffect(state);
-    expect(getGlRenderEffectRunner(state, 'GlitchEffect')).toBe(defaultGlGlitchEffectRunner);
+    expect(getGlEffectRunner(state, 'GlitchEffect')).toBe(defaultGlGlitchEffectRunner);
   });
 });

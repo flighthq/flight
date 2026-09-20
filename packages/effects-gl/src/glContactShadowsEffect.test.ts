@@ -7,7 +7,7 @@ import {
   defaultGlContactShadowsEffectRunner,
   registerGlContactShadowsEffect,
 } from './glContactShadowsEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import * as glSsaoEffect from './glSsaoEffect';
 
 beforeEach(() => {
@@ -58,6 +58,6 @@ describe('registerGlContactShadowsEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
     registerGlContactShadowsEffect(state);
-    expect(getGlRenderEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultGlContactShadowsEffectRunner);
+    expect(getGlEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultGlContactShadowsEffectRunner);
   });
 });

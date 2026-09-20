@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  PosterizeEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, PosterizeEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Posterize: floor each channel to `levels` discrete steps.
 export function applyPosterizeEffectToGl(
@@ -23,12 +18,12 @@ export function applyPosterizeEffectToGl(
   });
 }
 
-export const defaultGlPosterizeEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlPosterizeEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
 export function registerGlPosterizeEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
+  registerGlEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
 }
 
 const POSTERIZE_FRAGMENT_SRC = `#version 300 es
