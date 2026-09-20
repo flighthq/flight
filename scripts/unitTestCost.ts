@@ -148,9 +148,6 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   // because several assert module-set isolation rather than bytes.
   { capability: 'builds-bundle', path: 'packages/gizmo/src/gizmoTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/gui/src/guiTreeShaking.test.ts' },
-  { capability: 'builds-bundle', path: 'packages/host-electron/src/electronHostTreeShaking.test.ts' },
-  { capability: 'builds-bundle', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
-  { capability: 'builds-bundle', path: 'packages/host-web/src/evidence.test.ts' },
   { capability: 'builds-bundle', path: 'packages/layout/src/layoutTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/render-gl/src/glContext.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-formats/src/gltfTreeShaking.test.ts' },
@@ -158,7 +155,6 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/spineBinaryTreeShaking.test.ts' },
 
   // RUNS-COMPILER — builds a TypeScript program to assert a structural rule over real source.
-  { capability: 'runs-compiler', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
 
   // ★ SPAWNS-PROCESS IS EXEMPTED HERE ONLY BECAUSE THERE IS NOWHERE ELSE TO PUT IT, and that is a
   // hole, not an endorsement. These two drive real executables — `npm`, `tsc`, a packaging CLI — which
@@ -167,6 +163,4 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   // echo, and the gate that ran it is commented out in `scripts/check.ts`. So the exemption records
   // where they landed rather than claiming they belong here. Give them a runner and they leave the
   // ledger — the ratchet's stale-entry half will then insist on it.
-  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriHost.test.ts' },
-  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
 ];
