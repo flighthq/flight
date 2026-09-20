@@ -110,7 +110,12 @@ if (!scoped) {
   add('assertions:check', 'node', ['scripts/assertion-sensitivity.mjs', '--check']);
 
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
-  add('exports:check', 'tsx', ['scripts/check-exports.ts']);
+  // Named for what it governs (the two blessed export LANES per `exports.yml`), not `exports:check`,
+  // which has long belonged to `completeness.ts` — the every-export-has-a-test gate that AGENTS.md and
+  // agents/commands.md both cite under that name. Registering this one under it collided, and since
+  // `add` now rejects a duplicate the whole sweep failed to register rather than silently running one
+  // stage twice.
+  add('export-lanes:check', 'tsx', ['scripts/check-exports.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
   add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
   add('degree-constants:check', 'tsx', ['scripts/check-degree-constants.ts']);
