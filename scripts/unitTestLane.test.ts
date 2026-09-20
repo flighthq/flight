@@ -24,8 +24,9 @@ describe('readUnitTestLaneFiles', () => {
     }
   });
 
-  it('drops the routed and isolated files', () => {
+  it('drops host backends, dev tools, and isolated files', () => {
     const root = makeTree({
+      'packages/host-web/src/routed.test.ts': '',
       'packages/tool-capture/src/routed.test.ts': '',
       'packages/alpha/src/kept.test.ts': '',
     });
@@ -60,8 +61,9 @@ describe('UNIT_TEST_LANE_EXCLUDE', () => {
     for (const file of REGISTRY_ISOLATED_TEST_FILES) expect(UNIT_TEST_LANE_EXCLUDE).toContain(file);
   });
 
-  it('routes tool-capture away from the unit project', () => {
-    expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/tool-capture/src/**/*.test.ts');
+  it('routes host backends and dev tools away from the unit runner', () => {
+    expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/host-*/src/**/*.test.ts');
+    expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/tool-*/src/**/*.test.ts');
   });
 });
 
