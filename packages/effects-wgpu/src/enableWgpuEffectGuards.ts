@@ -21,7 +21,7 @@ export function disableWgpuEffectGuards(state: WgpuRenderState): void {
 // whatever was last in it, and a partially registered chain succeeds while silently dropping the effects
 // it could not run. Both are correct by contract and neither surfaces anywhere.
 //
-// The WGPU sibling of enableGlRenderEffectGuards. WGPU now observes per-instance resolution for effects
+// The WGPU sibling of enableGlEffectGuards. WGPU now observes per-instance resolution for effects
 // that name external resources (BitmapDisplacementEffect); GL alone additionally guards custom-shader
 // source re-registration because WGPU has no custom-shader effect.
 export function enableWgpuEffectGuards(state: WgpuRenderState): void {

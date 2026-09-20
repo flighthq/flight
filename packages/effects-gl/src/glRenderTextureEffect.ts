@@ -5,20 +5,20 @@ import {
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
 import type {
-  GlRenderEffectApplicationExplanation,
-  GlRenderEffectApplicationGuard,
+  GlEffectApplicationExplanation,
+  GlEffectApplicationGuard,
   GlRenderState,
   GlRenderTexturePool,
   RenderEffect,
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { getGlRenderEffectRunner, isGlRenderEffectResolvable } from './glRenderEffectRegistry';
+import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry';
 
 // Applies the registered members of a chain from one RenderTexture to another. Each effect composites
 // into its destination and this function never clears `dest` or `scratch`; callers reusing either
 // texture across frames must clear it first with `clearGlRenderTexture` for frame-stable replacement.
-export function applyGlRenderEffectsToRenderTexture(
+export function applyGlEffectsToRenderTexture(
   state: GlRenderState,
   pool: GlRenderTexturePool,
   source: Readonly<RenderTexture>,
@@ -27,18 +27,18 @@ export function applyGlRenderEffectsToRenderTexture(
   effects: ReadonlyArray<Readonly<RenderEffect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
-    throw new Error('applyGlRenderEffectsToRenderTexture: source, destination, and scratch must be distinct');
+    throw new Error('applyGlEffectsToRenderTexture: source, destination, and scratch must be distinct');
   }
   const sourceTarget = getGlRenderTextureTarget(state, source);
   const operations = effects.flatMap((effect) => {
-    const runner = getGlRenderEffectRunner(state, effect.kind);
+    const runner = getGlEffectRunner(state, effect.kind);
     return runner === null ? [] : [{ effect, runner }];
   });
   // Report BEFORE returning: both sentinel exits below leave `dest` unchanged, so a caller that then
   // samples it sees either no published texture or plausible pixels from an older application.
-  reportGlRenderEffectApplication(
+  reportGlEffectApplication(
     state,
-    explainGlRenderEffectApplication(
+    explainGlEffectApplication(
       state,
       effects,
       sourceTarget !== null,
@@ -77,26 +77,26 @@ export function applyGlRenderEffectsToRenderTexture(
 // the same registry the apply path consults, so a caller can ask ahead of time or explain after the
 // fact. `sourceAvailable` reports whether the source RenderTexture has a realized GL target;
 // `destinationAvailable` reports whether a failed call would leave previously published pixels behind.
-export function explainGlRenderEffectApplication(
+export function explainGlEffectApplication(
   state: GlRenderState,
   effects: ReadonlyArray<Readonly<RenderEffect>>,
   sourceAvailable: boolean,
   destinationAvailable = false,
-): GlRenderEffectApplicationExplanation {
+): GlEffectApplicationExplanation {
   const unregisteredKinds: string[] = [];
   // Indexes, not kinds: two effects of the SAME kind can differ on whether they resolve, so the only
   // honest identifier for an unresolved effect is where it sits in the submitted chain.
   const unresolvedIndexes: number[] = [];
   for (let index = 0; index < effects.length; index++) {
     const effect = effects[index];
-    if (getGlRenderEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
-    else if (!isGlRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
+    if (getGlEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
+    else if (!isGlEffectResolvable(state, effect)) unresolvedIndexes.push(index);
   }
   const requestedCount = effects.length;
   const registeredCount = requestedCount - unregisteredKinds.length;
   return { registeredCount, requestedCount, status: getStatus(), unregisteredKinds, unresolvedIndexes };
 
-  function getStatus(): GlRenderEffectApplicationExplanation['status'] {
+  function getStatus(): GlEffectApplicationExplanation['status'] {
     // An empty chain is a no-op the caller asked for, NOT a miss — reporting it would train readers to
     // ignore the crumb. A ready destination is the highest-cost failed-call outcome because consumers
     // keep sampling plausible pixels from an older application instead of an empty texture.
@@ -113,22 +113,16 @@ export function explainGlRenderEffectApplication(
   }
 }
 
-// The diagnostics seam. Core stays message-free; enableGlRenderEffectGuards installs the reporter that
+// The diagnostics seam. Core stays message-free; enableGlEffectGuards installs the reporter that
 // turns these observations into caller-facing warnings.
-export function setGlRenderEffectApplicationGuard(
-  state: GlRenderState,
-  guard: GlRenderEffectApplicationGuard | null,
-): void {
+export function setGlEffectApplicationGuard(state: GlRenderState, guard: GlEffectApplicationGuard | null): void {
   if (guard === null) _guards.delete(state);
   else _guards.set(state, guard);
 }
 
-function reportGlRenderEffectApplication(
-  state: GlRenderState,
-  explanation: Readonly<GlRenderEffectApplicationExplanation>,
-): void {
+function reportGlEffectApplication(state: GlRenderState, explanation: Readonly<GlEffectApplicationExplanation>): void {
   if (explanation.status === 'complete' || explanation.status === 'no-effects') return;
   _guards.get(state)?.(state, explanation);
 }
 
-const _guards = new WeakMap<GlRenderState, GlRenderEffectApplicationGuard>();
+const _guards = new WeakMap<GlRenderState, GlEffectApplicationGuard>();

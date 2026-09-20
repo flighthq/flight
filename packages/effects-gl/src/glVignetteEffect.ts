@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  VignetteEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, VignetteEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 // falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
@@ -34,12 +29,12 @@ export function applyVignetteEffectToGl(
   });
 }
 
-export const defaultGlVignetteEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlVignetteEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyVignetteEffectToGl(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 export function registerGlVignetteEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
+  registerGlEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
 }
 
 const VIGNETTE_FRAGMENT_SRC = `#version 300 es

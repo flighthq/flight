@@ -5,7 +5,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   DropShadowEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
@@ -13,8 +13,8 @@ import type {
 
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+import { registerGlEffect } from './glEffectRegistry';
 import { applyGlEffectTintPass } from './glEffectTintShader';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then composite the source over the shadow.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -77,10 +77,10 @@ export function applyDropShadowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlDropShadowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlDropShadowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
 
 export function registerGlDropShadowEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
+  registerGlEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
 }

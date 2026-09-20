@@ -6,7 +6,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   BloomEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
@@ -14,7 +14,7 @@ import type {
 
 import { applyGaussianBlurToGl } from './glBlurEffect';
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
 // additively composite back. The multi-pass reference recipe — it acquires intermediate targets from
@@ -52,12 +52,12 @@ export function applyBloomEffectToGl(
   releaseGlTextureRenderTarget(pool, temp);
 }
 
-export const defaultGlBloomEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBloomEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBloomEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
 export function registerGlBloomEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+  registerGlEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
 }
 
 const BLOOM_BRIGHT_FRAGMENT_SRC = `#version 300 es

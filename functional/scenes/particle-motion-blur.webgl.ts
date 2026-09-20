@@ -44,7 +44,7 @@ import {
   renderGlScene2D,
   renderGlVelocity,
   reserveParticleEmitter2D,
-  setGlRenderEffectVelocityTexture,
+  setGlEffectVelocityTexture,
   getBitmapPixelRgb,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -99,7 +99,7 @@ export function render(root: Node2D): void {
   // contribution is needed here; the field is passed for the (unused) display-object writer path.
   beginVelocityFrame(velocityField);
   renderGlVelocity(state, root, velocityField, velocityTarget);
-  setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  setGlEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);

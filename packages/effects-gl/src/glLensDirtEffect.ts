@@ -4,7 +4,7 @@ import {
   releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
@@ -13,7 +13,7 @@ import type {
 
 import { applyGaussianBlurToGl } from './glBlurEffect';
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Lens dirt: isolate bright energy, spread it spatially, then admit it through a procedural smudge mask.
 // The bright branch must blur before the mask: masking only the source pixel cannot carry any energy
@@ -54,12 +54,12 @@ export function applyLensDirtEffectToGl(
   releaseGlTextureRenderTarget(pool, temp);
 }
 
-export const defaultGlLensDirtEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlLensDirtEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as LensDirtEffect);
 };
 
 export function registerGlLensDirtEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'LensDirtEffect', defaultGlLensDirtEffectRunner);
+  registerGlEffect(state, 'LensDirtEffect', defaultGlLensDirtEffectRunner);
 }
 
 const LENS_DIRT_BRIGHT_FRAGMENT_SRC = `#version 300 es

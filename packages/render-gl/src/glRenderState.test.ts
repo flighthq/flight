@@ -445,7 +445,7 @@ describe('createGlRenderStateRuntime', () => {
     expect(runtime.registries.pbrExtensionRevision).toBe(0);
     expect(runtime.registries.renderEffects).toMatchObject({
       onMiss: 'Unregistered',
-      registry: 'GlRenderEffect',
+      registry: 'GlEffect',
       shape: 'keyed',
     });
     expect(runtime.registries.compressedTextureDecoder).toBeNull();

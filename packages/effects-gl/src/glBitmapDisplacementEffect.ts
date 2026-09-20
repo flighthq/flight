@@ -1,7 +1,7 @@
 import { drawGlFullscreenPass, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   BitmapDisplacementEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   RenderEffect,
@@ -9,7 +9,7 @@ import type {
 import { ImageChannel, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Samples the displacement map and source in one fullscreen pass. Map channels are centred around
 // 0.5, converted to pixel offsets by scaleX/scaleY, then normalized by the source resolution. Positive
@@ -57,7 +57,7 @@ export function applyBitmapDisplacementEffectToGl(
   });
 }
 
-export const defaultGlBitmapDisplacementEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBitmapDisplacementEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBitmapDisplacementEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
 };
 
@@ -70,7 +70,7 @@ export function isGlBitmapDisplacementEffectResolvable(state: GlRenderState, eff
 }
 
 export function registerGlBitmapDisplacementEffect(state: GlRenderState): void {
-  registerGlRenderEffect(
+  registerGlEffect(
     state,
     'BitmapDisplacementEffect',
     defaultGlBitmapDisplacementEffectRunner,

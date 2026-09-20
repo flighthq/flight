@@ -11,7 +11,7 @@ import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRender
 // distinct targets the pipeline ping-pongs between stages. `sceneDepthTexture`/`sceneVelocityTexture`
 // are the scene's depth and per-pixel velocity attachments, or null when the scene did not produce
 // them — a depth/velocity-dependent recipe reads them when present and falls back to a color-only
-// path when null. The Wgpu mirror of GlRenderEffectContext.
+// path when null. The Wgpu mirror of GlEffectContext.
 export interface WgpuEffectContext {
   readonly state: WgpuRenderState;
   readonly source: Readonly<WgpuTextureRenderTarget>;
@@ -53,7 +53,7 @@ export interface WgpuEffectState extends Entity {
 }
 
 // Why an application of a WGPU effect chain to a render texture did not do what the caller asked. The
-// WGPU sibling of GlRenderEffectApplicationExplanation. Registration and per-instance resolution are
+// WGPU sibling of GlEffectApplicationExplanation. Registration and per-instance resolution are
 // separate axes: BitmapDisplacementEffect can have a registered runner while its map Texture2D is still
 // absent or unresolved. Such a stage copies through, and unresolvedIndexes makes that sentinel visible.
 export type WgpuEffectApplicationStatus =

@@ -729,7 +729,7 @@
     },
     {
       "packageName": "effects-gl",
-      "symbol": "registerGlRenderEffect",
+      "symbol": "registerGlEffect",
       "dot": true,
       "contract": true
     },

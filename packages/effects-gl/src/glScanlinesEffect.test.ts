@@ -5,7 +5,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import {
   applyScanlinesEffectToGl,
   defaultGlScanlinesEffectRunner,
@@ -110,8 +110,8 @@ describe('registerGlScanlinesEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
 
-    expect(getGlRenderEffectRunner(state, 'ScanlinesEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'ScanlinesEffect')).toBeNull();
     registerGlScanlinesEffect(state);
-    expect(getGlRenderEffectRunner(state, 'ScanlinesEffect')).toBe(defaultGlScanlinesEffectRunner);
+    expect(getGlEffectRunner(state, 'ScanlinesEffect')).toBe(defaultGlScanlinesEffectRunner);
   });
 });

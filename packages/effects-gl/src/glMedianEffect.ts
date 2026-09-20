@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  MedianEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, MedianEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Largest median-filter radius the WebGL path supports (radius 2 → a 5×5, 25-sample window). The cap
 // is the fixed sort-array size in the fragment shader; larger radii are unsupported on this backend.
@@ -31,12 +26,12 @@ export function applyMedianEffectToGl(
   });
 }
 
-export const defaultGlMedianEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlMedianEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyMedianEffectToGl(ctx.state, ctx.source, ctx.dest, effect as MedianEffect);
 };
 
 export function registerGlMedianEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'MedianEffect', defaultGlMedianEffectRunner);
+  registerGlEffect(state, 'MedianEffect', defaultGlMedianEffectRunner);
 }
 
 const MEDIAN_FRAGMENT_SRC = `#version 300 es

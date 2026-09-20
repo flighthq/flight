@@ -8,14 +8,14 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   BlurEffect,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   RenderTexture,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
@@ -91,7 +91,7 @@ export function applyGaussianBlurToGlRenderTextures(
   return true;
 }
 
-export const defaultGlBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
   const temp = acquireGlTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToGl(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
@@ -99,7 +99,7 @@ export const defaultGlBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => 
 };
 
 export function registerGlBlurEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+  registerGlEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
 }
 
 function applyGlGaussianBlurPass(

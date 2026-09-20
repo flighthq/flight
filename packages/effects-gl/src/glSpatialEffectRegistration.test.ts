@@ -2,7 +2,7 @@ import { createWebGlContext } from '@flighthq/host-web/contract';
 import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
 
 import * as contractEffects from './contract';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import * as publicEffects from './index';
 
 describe('GL effect registration', () => {
@@ -66,7 +66,7 @@ describe('GL effect registration', () => {
 
     publicEffects[registerName](state);
 
-    expect(getGlRenderEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
-    expect(getGlRenderEffectRunner(other, kind)).toBeNull();
+    expect(getGlEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
+    expect(getGlEffectRunner(other, kind)).toBeNull();
   });
 });

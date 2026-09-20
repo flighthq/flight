@@ -2,7 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type {
   CompositeEffect,
   CompositeOperator,
-  GlRenderEffectRunner,
+  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/co
 
 import { getGlBlendEffectBackdrop } from './glBlendEffect';
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Porter-Duff composite pass: sample the incoming layer (`u_texture0`, the effect's `source`) and a
 // registered backdrop (`u_texture1`), combine them with the coverage factors of the effect's `operator`
@@ -45,7 +45,7 @@ export function applyCompositeEffectToGl(
   });
 }
 
-export const defaultGlCompositeEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlCompositeEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyCompositeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
 };
 
@@ -56,7 +56,7 @@ export function getCompositeEffectOperatorIndex(operator: CompositeOperator): nu
 }
 
 export function registerGlCompositeEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'CompositeEffect', defaultGlCompositeEffectRunner);
+  registerGlEffect(state, 'CompositeEffect', defaultGlCompositeEffectRunner);
 }
 
 // CompositeOperator → shader branch index. Kept in lockstep with the if-chain in COMPOSITE_FRAGMENT_SRC

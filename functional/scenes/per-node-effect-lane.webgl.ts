@@ -9,7 +9,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  applyGlRenderEffectsToRenderTexture,
+  applyGlEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
   computeRenderEffectPadding,
   createBlurEffect,
@@ -207,7 +207,7 @@ function captureSubtree(): {
     },
     { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
   );
-  if (!applyGlRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)) {
+  if (!applyGlEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)) {
     throw new Error('[per-node-effect-lane] the registered blur effect did not run');
   }
   return { destTexture, scratchTexture, sourceTexture };

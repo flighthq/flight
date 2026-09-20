@@ -1,8 +1,8 @@
 public:
   - setGlCustomShaderSourceGuard
   - setGlEffectStateSkipGuard
-  - setGlRenderEffectApplicationGuard
-  - setGlRenderEffectVelocityTexture
+  - setGlEffectApplicationGuard
+  - setGlEffectVelocityTexture
 
 protected:
   - BITMAP_DISPLACEMENT_FRAGMENT_SRC

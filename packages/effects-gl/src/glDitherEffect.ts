@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  DitherEffect,
-  GlRenderEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { DitherEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.
@@ -25,12 +20,12 @@ export function applyDitherEffectToGl(
   });
 }
 
-export const defaultGlDitherEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlDitherEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDitherEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
 
 export function registerGlDitherEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'DitherEffect', defaultGlDitherEffectRunner);
+  registerGlEffect(state, 'DitherEffect', defaultGlDitherEffectRunner);
 }
 
 const DITHER_FRAGMENT_SRC = `#version 300 es

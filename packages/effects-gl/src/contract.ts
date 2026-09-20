@@ -1,4 +1,4 @@
-export * from './enableGlRenderEffectGuards';
+export * from './enableGlEffectGuards';
 export * from './glBevelEffect';
 export * from './glBitmapDisplacementEffect';
 export * from './glBlendEffect';
@@ -44,7 +44,7 @@ export * from './glOutlineEffect';
 export * from './glPixelateEffect';
 export * from './glPosterizeEffect';
 export * from './glRadialBlurEffect';
-export * from './glRenderEffectRegistry';
+export * from './glEffectRegistry';
 export * from './glRenderTextureEffect';
 export * from './glScanlinesEffect';
 export * from './glScreenSpaceFogEffect';

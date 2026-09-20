@@ -6,7 +6,7 @@ import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contr
 
 import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 // The shader is a module-private string, so it is read back from the argument the effect hands the
@@ -110,8 +110,8 @@ describe('registerGlCrtEffect', () => {
     const canvas = document.createElement('canvas');
     const state = createGlRenderState(createWebGlContext(canvas), allocateEmptyGlRenderRegistries());
 
-    expect(getGlRenderEffectRunner(state, 'CrtEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'CrtEffect')).toBeNull();
     registerGlCrtEffect(state);
-    expect(getGlRenderEffectRunner(state, 'CrtEffect')).toBe(defaultGlCrtEffectRunner);
+    expect(getGlEffectRunner(state, 'CrtEffect')).toBe(defaultGlCrtEffectRunner);
   });
 });

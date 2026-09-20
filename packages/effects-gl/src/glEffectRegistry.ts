@@ -1,11 +1,6 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  GlRenderEffectResolver,
-  GlRenderEffectRunner,
-  GlRenderState,
-  RenderEffect,
-} from '@flighthq/types/contract';
+import type { GlEffectResolver, GlEffectRunner, GlRenderState, RenderEffect } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
@@ -15,7 +10,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // is pure ergonomics: it calls this function with the literal kind and public default runner, and
 // installs no padding, shader-source, or backdrop companions.
 
-export function getGlRenderEffectRunner(state: GlRenderState, kind: string): GlRenderEffectRunner | null {
+export function getGlEffectRunner(state: GlRenderState, kind: string): GlEffectRunner | null {
   const entry = getGlRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
 }
@@ -23,7 +18,7 @@ export function getGlRenderEffectRunner(state: GlRenderState, kind: string): GlR
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
 // chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
 // your own policy (warn, throw, filter) rather than relying on silent no-ops.
-export function hasGlRenderEffectRunner(state: GlRenderState, kind: string): boolean {
+export function hasGlEffectRunner(state: GlRenderState, kind: string): boolean {
   return getGlRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound;
 }
 
@@ -31,7 +26,7 @@ export function hasGlRenderEffectRunner(state: GlRenderState, kind: string): boo
 // kind has a runner. A kind registered without a resolver is always resolvable; an unregistered kind is
 // not resolvable because there is nothing to resolve it with, which the pipeline reports as a
 // registration miss rather than a resolution one.
-export function isGlRenderEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
+export function isGlEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
   const entry = getGlRenderStateRuntime(state).registries.renderEffects.entries.get(effect.kind);
   if (entry?.state !== RegistryEntryState.Bound) return false;
   return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
@@ -42,11 +37,11 @@ export function isGlRenderEffectResolvable(state: GlRenderState, effect: Readonl
 // declares how to detect that here, so the pipeline can report a passthrough instead of calling it
 // complete. Registering the two together makes the runner-without-resolver gap unrepresentable rather
 // than merely detectable.
-export function registerGlRenderEffect(
+export function registerGlEffect(
   state: GlRenderState,
   kind: string,
-  runner: GlRenderEffectRunner,
-  isResolvable?: GlRenderEffectResolver,
+  runner: GlEffectRunner,
+  isResolvable?: GlEffectResolver,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, {

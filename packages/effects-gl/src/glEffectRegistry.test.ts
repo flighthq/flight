@@ -3,73 +3,68 @@ import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, RenderEffect } from '@flighthq/types/contract';
 
-import {
-  getGlRenderEffectRunner,
-  hasGlRenderEffectRunner,
-  isGlRenderEffectResolvable,
-  registerGlRenderEffect,
-} from './glRenderEffectRegistry';
+import { getGlEffectRunner, hasGlEffectRunner, isGlEffectResolvable, registerGlEffect } from './glEffectRegistry';
 
-describe('getGlRenderEffectRunner', () => {
+describe('getGlEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof getGlRenderEffectRunner).toBe('function');
+    expect(typeof getGlEffectRunner).toBe('function');
   });
 
   it('returns null for an unregistered kind', () => {
     const state = createState();
-    expect(getGlRenderEffectRunner(state, 'UnknownEffect')).toBeNull();
+    expect(getGlEffectRunner(state, 'UnknownEffect')).toBeNull();
   });
 });
 
-describe('hasGlRenderEffectRunner', () => {
+describe('hasGlEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof hasGlRenderEffectRunner).toBe('function');
+    expect(typeof hasGlEffectRunner).toBe('function');
   });
 
   it('returns false for an unregistered kind', () => {
     const state = createState();
-    expect(hasGlRenderEffectRunner(state, 'NotRegisteredEffect')).toBe(false);
+    expect(hasGlEffectRunner(state, 'NotRegisteredEffect')).toBe(false);
   });
 
   it('returns true after a runner is registered', () => {
     const state = createState();
     const runner = vi.fn();
-    registerGlRenderEffect(state, 'HasTestEffect', runner);
-    expect(hasGlRenderEffectRunner(state, 'HasTestEffect')).toBe(true);
+    registerGlEffect(state, 'HasTestEffect', runner);
+    expect(hasGlEffectRunner(state, 'HasTestEffect')).toBe(true);
   });
 });
 
-describe('isGlRenderEffectResolvable', () => {
+describe('isGlEffectResolvable', () => {
   it('treats a kind registered without a resolver as always resolvable', () => {
     const state = createState();
-    registerGlRenderEffect(state, 'ResolvableTestEffect', vi.fn());
-    expect(isGlRenderEffectResolvable(state, effect('ResolvableTestEffect'))).toBe(true);
+    registerGlEffect(state, 'ResolvableTestEffect', vi.fn());
+    expect(isGlEffectResolvable(state, effect('ResolvableTestEffect'))).toBe(true);
   });
 
   it('asks the registered resolver, per effect instance', () => {
     const state = createState();
-    registerGlRenderEffect(state, 'ResolverTestEffect', vi.fn(), (_state, candidate) => 'key' in candidate);
-    expect(isGlRenderEffectResolvable(state, effect('ResolverTestEffect'))).toBe(false);
-    expect(isGlRenderEffectResolvable(state, effect('ResolverTestEffect', { key: 'k' }))).toBe(true);
+    registerGlEffect(state, 'ResolverTestEffect', vi.fn(), (_state, candidate) => 'key' in candidate);
+    expect(isGlEffectResolvable(state, effect('ResolverTestEffect'))).toBe(false);
+    expect(isGlEffectResolvable(state, effect('ResolverTestEffect', { key: 'k' }))).toBe(true);
   });
 
   it('reports an unregistered kind as unresolvable, since there is nothing to resolve it with', () => {
     const state = createState();
-    expect(isGlRenderEffectResolvable(state, effect('NeverRegisteredEffect'))).toBe(false);
+    expect(isGlEffectResolvable(state, effect('NeverRegisteredEffect'))).toBe(false);
   });
 });
 
-describe('registerGlRenderEffect', () => {
+describe('registerGlEffect', () => {
   it('is a function', () => {
-    expect(typeof registerGlRenderEffect).toBe('function');
+    expect(typeof registerGlEffect).toBe('function');
   });
 
   it('registers and retrieves a runner', () => {
     const state = createState();
     const runner = vi.fn();
     const before = getGlRenderStateRuntime(state).registries.renderEffects;
-    registerGlRenderEffect(state, 'TestEffect', runner);
-    expect(getGlRenderEffectRunner(state, 'TestEffect')).toBe(runner);
+    registerGlEffect(state, 'TestEffect', runner);
+    expect(getGlEffectRunner(state, 'TestEffect')).toBe(runner);
     expect(getGlRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
@@ -78,10 +73,10 @@ describe('registerGlRenderEffect', () => {
     const state = createState();
     const runnerA = vi.fn();
     const runnerB = vi.fn();
-    registerGlRenderEffect(state, 'TestEffect2', runnerA);
+    registerGlEffect(state, 'TestEffect2', runnerA);
     const before = getGlRenderStateRuntime(state).registries.renderEffects;
-    registerGlRenderEffect(state, 'TestEffect2', runnerB);
-    expect(getGlRenderEffectRunner(state, 'TestEffect2')).toBe(runnerB);
+    registerGlEffect(state, 'TestEffect2', runnerB);
+    expect(getGlEffectRunner(state, 'TestEffect2')).toBe(runnerB);
     expect(before.entries.get('TestEffect2')).toEqual({
       state: 'bound',
       value: { isResolvable: undefined, runner: runnerA },

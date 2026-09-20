@@ -17,7 +17,7 @@ export function getWgpuEffectRunner(state: WgpuRenderState, kind: string): WgpuE
 }
 
 // Returns true if a runner is registered for the given kind in this state. Symmetric with
-// hasGlRenderEffectRunner. Use to validate an effect chain before dispatching — the pipeline
+// hasGlEffectRunner. Use to validate an effect chain before dispatching — the pipeline
 // silently skips unregistered kinds; check up front to apply your own policy (warn, filter)
 // rather than relying on silent no-ops.
 export function hasWgpuEffectRunner(state: WgpuRenderState, kind: string): boolean {

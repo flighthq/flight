@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { FxaaEffect, GlRenderEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { FxaaEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlRenderEffect } from './glRenderEffectRegistry';
+import { registerGlEffect } from './glEffectRegistry';
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 // recipe. Reads u_texture0; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
@@ -20,12 +20,12 @@ export function applyFxaaEffectToGl(
   });
 }
 
-export const defaultGlFxaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+export const defaultGlFxaaEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyFxaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
 
 export function registerGlFxaaEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+  registerGlEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 }
 
 const FXAA_FRAGMENT_SRC = `#version 300 es

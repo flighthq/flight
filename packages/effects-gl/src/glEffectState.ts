@@ -36,7 +36,7 @@ import type {
 
 import { applyColorLutPassToGl } from './glColorLutPass';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlEffectRunner } from './glEffectRegistry';
 
 // Opt-in post-process pipeline. The scene renders into the pipeline's (optionally MSAA / HDR) target
 // between begin/end; end resolves MSAA, runs the agnostic effect list through the per-state registry
@@ -145,7 +145,7 @@ export function endGlEffectPass(
       pending.push(operation as Adjustment);
       continue;
     }
-    const runner = getGlRenderEffectRunner(state, operation.kind);
+    const runner = getGlEffectRunner(state, operation.kind);
     if (runner === null) {
       reportGlEffectStateSkip(state, operation.kind);
       continue;
@@ -191,15 +191,15 @@ export function initializeGlEffectState(
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame. Pass the texture
 // produced by renderGlVelocity (e.g. `velocityTarget.texture`), or null to clear it.
-// The diagnostics seam. Core stays message-free; enableGlRenderEffectGuards installs the reporter that
-// turns a dropped effect into a caller-facing warning. Mirrors setGlRenderEffectApplicationGuard, which
+// The diagnostics seam. Core stays message-free; enableGlEffectGuards installs the reporter that
+// turns a dropped effect into a caller-facing warning. Mirrors setGlEffectApplicationGuard, which
 // covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
 export function setGlEffectStateSkipGuard(state: GlRenderState, guard: GlEffectStateSkipGuard | null): void {
   if (guard === null) _skipGuards.delete(state);
   else _skipGuards.set(state, guard);
 }
 
-export function setGlRenderEffectVelocityTexture(pipeline: GlEffectState, texture: WebGLTexture | null): void {
+export function setGlEffectVelocityTexture(pipeline: GlEffectState, texture: WebGLTexture | null): void {
   pipeline.velocityTexture = texture;
 }
 

@@ -399,7 +399,7 @@
     },
     {
       "packageName": "effects-gl",
-      "registrar": "registerGlRenderEffect"
+      "registrar": "registerGlEffect"
     },
     {
       "packageName": "effects-gl",

@@ -212,7 +212,7 @@ export function setWgpuEffectStateSampleCountGuard(
 }
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame, or null to
-// clear it. The Wgpu mirror of setGlRenderEffectVelocityTexture.
+// clear it. The Wgpu mirror of setGlEffectVelocityTexture.
 // The diagnostics seam. Core stays message-free; enableWgpuEffectGuards installs the reporter that
 // turns a dropped effect into a caller-facing warning. Mirrors setWgpuEffectApplicationGuard, which
 // covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
