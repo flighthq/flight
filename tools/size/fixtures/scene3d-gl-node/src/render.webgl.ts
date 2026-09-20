@@ -11,7 +11,7 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
-import { createNode3D, Node3DKind } from '@flighthq/scene3d';
+import { createNode3D } from '@flighthq/scene3d';
 import { renderGlScene3D } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 
@@ -27,7 +27,7 @@ document.body.style.margin = '0';
 const state = createGlRenderState(glSurface.context, allocateEmptyGlRenderRegistries(), {
   pixelRatio: 1,
 });
-const scene = createNode3D(Node3DKind);
+const scene = createNode3D();
 const camera = createCamera3D({
   far: 10,
   near: 0.1,

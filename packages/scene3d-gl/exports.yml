@@ -1,3 +1,8 @@
+public:
+  - getGlScene3DTime
+  - setGlPbrTransmissionSceneColor
+  - setGlScene3DTime
+
 protected:
   - GL_DIRECTIONAL_SHADOW_GLSL
   - GL_INSTANCE_VERTEX_DECLARATIONS_GLSL
@@ -60,8 +65,6 @@ protected:
   - drawGlMeshSubset
   - drawGlScene3DParticleEmitter3Ds
   - ensureGlMeshUpload
-  - setGlPbrTransmissionSceneColor
-  - setGlScene3DTime
   - ensureGlClassicProgram
   - ensureGlDebugProgram
   - ensureGlEnvironmentSourceCube
@@ -91,7 +94,6 @@ protected:
   - getGlPbrVertexSource
   - getGlPbrVertexSourceForKey
   - getGlScene3DRuntime
-  - getGlScene3DTime
   - getGlScene3DViewportAspect
   - getGlToonFragmentSourceForKey
   - getGlToonVertexSourceForKey

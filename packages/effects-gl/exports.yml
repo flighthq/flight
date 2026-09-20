@@ -2,9 +2,9 @@ public:
   - setGlCustomShaderSourceGuard
   - setGlEffectStateSkipGuard
   - setGlRenderEffectApplicationGuard
+  - setGlRenderEffectVelocityTexture
 
 protected:
-  - setGlRenderEffectVelocityTexture
   - BITMAP_DISPLACEMENT_FRAGMENT_SRC
   - BLEND_FRAGMENT_SRC
   - MAX_CONVOLUTION_EFFECT_GL_KERNEL_SIZE

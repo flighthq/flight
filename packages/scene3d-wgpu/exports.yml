@@ -1,3 +1,7 @@
+public:
+  - getWgpuScene3DTime
+  - setWgpuScene3DTime
+
 protected:
   - INSTANCE_RECORD_FLOATS
   - SHADOW_DEPTH_FORMAT
@@ -43,7 +47,6 @@ protected:
   - drawWgpuScene3DParticleEmitter3Ds
   - beginWgpuMeshDraw
   - ensureWgpuShadowSampleLayout
-  - setWgpuScene3DTime
   - writeWgpuDrawUniform
   - ensureWgpuClassicPipeline
   - ensureWgpuDebugPipeline
@@ -83,7 +86,6 @@ protected:
   - getWgpuPbrModuleBody
   - getWgpuPbrModuleSourceForKey
   - getWgpuScene3DRuntime
-  - getWgpuScene3DTime
   - getWgpuShadedBaseFlags
   - getWgpuShadedModuleSource
   - getWgpuSkinningAdapter
