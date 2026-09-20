@@ -12,9 +12,6 @@ import {
 } from './unitTestLane';
 
 describe('findMissingIntegrationTestFiles', () => {
-  // The integration project's include is exact paths, so a renamed entry matches nothing and vitest
-  // still passes on the files that DO match. Without this the routed test would stop running silently,
-  // which is the failure that makes "routed, never dropped" a promise instead of a claim.
   it('names an integration path that no longer exists', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-lane-'));
     try {
@@ -34,49 +31,39 @@ describe('INTEGRATION_TEST_FILES', () => {
     expect(new Set(INTEGRATION_TEST_FILES).size).toBe(INTEGRATION_TEST_FILES.length);
   });
 
-  // ★ THE PARTITION HAS TO BE TOTAL. Lane and integration are complements, and a file in neither would
-  // run nowhere while both lists still looked healthy — so the claim is asserted, not assumed.
-  it('is disjoint from the lane and, with it, covers every test file under the two roots', () => {
+  it('is disjoint from the lane', () => {
     const lane = readUnitTestLaneFiles(process.cwd());
-
     for (const file of INTEGRATION_TEST_FILES) expect(lane).not.toContain(file);
     expect(UNIT_TEST_LANE_EXCLUDE).toEqual(expect.arrayContaining([...INTEGRATION_TEST_FILES]));
   });
 });
 
 describe('readUnitTestLaneFiles', () => {
-  // Built against a temporary tree rather than the repository, so the case states its own population.
-  // The real lane's reach is floored inside the gate (`MINIMUM_LANE_FILES`), which is where a
-  // scanned-nothing result has to fail — a unit test re-walking the repository to prove that would pay
-  // for the claim on every `npm test` and still leave the gate able to pass over an empty scan.
-  it('collects package src and scripts tests, and nothing else', () => {
+  it('collects package src tests only', () => {
     const root = makeTree({
       'packages/alpha/src/a.test.ts': '',
       'packages/alpha/src/nested/b.test.ts': '',
       'packages/alpha/src/notATest.ts': '',
       'packages/alpha/test/outsideSrc.test.ts': '',
       'scripts/c.test.ts': '',
-      'scripts/notATest.ts': '',
     });
     try {
       expect(readUnitTestLaneFiles(root)).toEqual([
         'packages/alpha/src/a.test.ts',
         'packages/alpha/src/nested/b.test.ts',
-        'scripts/c.test.ts',
       ]);
     } finally {
       rmSync(root, { force: true, recursive: true });
     }
   });
 
-  it('drops the routed and isolated files the shared project does not run', () => {
+  it('drops the routed and isolated files', () => {
     const root = makeTree({
       'packages/tool-capture/src/routed.test.ts': '',
-      'scripts/kept.test.ts': '',
-      'scripts/testRunCoverage.test.ts': '',
+      'packages/alpha/src/kept.test.ts': '',
     });
     try {
-      expect(readUnitTestLaneFiles(root)).toEqual(['scripts/kept.test.ts']);
+      expect(readUnitTestLaneFiles(root)).toEqual(['packages/alpha/src/kept.test.ts']);
     } finally {
       rmSync(root, { force: true, recursive: true });
     }
@@ -91,7 +78,7 @@ describe('readUnitTestLaneFiles', () => {
     }
   });
 
-  it('returns nothing for a tree with neither root', () => {
+  it('returns nothing for a tree with no packages', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-lane-'));
     try {
       expect(readUnitTestLaneFiles(root)).toEqual([]);
@@ -102,20 +89,18 @@ describe('readUnitTestLaneFiles', () => {
 });
 
 describe('UNIT_TEST_LANE_EXCLUDE', () => {
-  // The whole point of this module is that the runner and the gate cannot disagree about the lane, so
-  // the exclusions the config relies on have to actually be present here.
   it('carries every registry-isolated file', () => {
     for (const file of REGISTRY_ISOLATED_TEST_FILES) expect(UNIT_TEST_LANE_EXCLUDE).toContain(file);
   });
 
-  it('routes tool-capture away from the shared project', () => {
+  it('routes tool-capture away from the unit project', () => {
     expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/tool-capture/src/**/*.test.ts');
   });
 });
 
 describe('UNIT_TEST_LANE_INCLUDE', () => {
-  it('names the two roots the shared project runs', () => {
-    expect(UNIT_TEST_LANE_INCLUDE).toEqual(['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts']);
+  it('covers package-colocated tests only', () => {
+    expect(UNIT_TEST_LANE_INCLUDE).toEqual(['packages/**/src/**/*.test.ts']);
   });
 });
 

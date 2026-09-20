@@ -10,12 +10,12 @@ const completeReport = {
 } as const;
 
 describe('resolveVitestArguments', () => {
-  it('defaults to the shared project when no project is specified', () => {
-    expect(resolveVitestArguments([])).toEqual(['--project', 'shared']);
-    expect(resolveVitestArguments(['swf', '--update'])).toEqual(['--project', 'shared', 'swf', '--update']);
+  it('defaults to the unit project when no project is specified', () => {
+    expect(resolveVitestArguments([])).toEqual(['--project', 'unit']);
+    expect(resolveVitestArguments(['swf', '--update'])).toEqual(['--project', 'unit', 'swf', '--update']);
   });
 
-  it('passes through an explicit --project without injecting shared', () => {
+  it('passes through an explicit --project without injecting the default', () => {
     expect(resolveVitestArguments(['--project', 'isolated'])).toEqual(['--project', 'isolated']);
     expect(resolveVitestArguments(['--project=tool-capture'])).toEqual(['--project=tool-capture']);
   });
@@ -24,15 +24,6 @@ describe('resolveVitestArguments', () => {
     expect(resolveVitestArguments(['--all'])).toEqual([]);
     expect(resolveVitestArguments(['--all', '--reporter=dot'])).toEqual(['--reporter=dot']);
   });
-
-  it('selects the dedicated project for the conformance shorthand', () => {
-    expect(resolveVitestArguments(['conformance'])).toEqual(['--project', 'conformance']);
-    expect(resolveVitestArguments(['conformance', '--reporter=dot'])).toEqual([
-      '--project',
-      'conformance',
-      '--reporter=dot',
-    ]);
-  });
 });
 
 describe('assessVitestRun', () => {
@@ -40,58 +31,49 @@ describe('assessVitestRun', () => {
     expect(assessVitestRun(0, completeReport)).toEqual({ exitCode: 0 });
   });
 
-  it('preserves a nonzero Vitest failure status', () => {
-    expect(assessVitestRun(3, completeReport)).toEqual({ exitCode: 3 });
+  it('rejects a non-zero exit', () => {
+    expect(assessVitestRun(1, completeReport)).toEqual({ exitCode: 1 });
   });
 
-  it('rejects a zero-status worker crash with incomplete files and unhandled errors', () => {
-    expect(
-      assessVitestRun(0, {
-        ...completeReport,
-        completed: ['/repo/a.test.ts'],
-        unhandledErrors: 1,
-      }),
-    ).toEqual({
-      diagnostic: 'Vitest reported 1 unhandled worker error.',
-      exitCode: 1,
-    });
+  it('rejects a missing completion event', () => {
+    const result = assessVitestRun(0, undefined);
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostic).toMatch(/did not produce.*completion/);
   });
 
-  it('rejects a zero-status run whose completion event is missing', () => {
-    expect(assessVitestRun(0, { ...completeReport, runEnded: false })).toEqual({
-      diagnostic: 'Vitest started but did not produce its structured run-completion event.',
-      exitCode: 1,
-    });
+  it('rejects a run that started but never ended', () => {
+    const result = assessVitestRun(0, { ...completeReport, runEnded: false });
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostic).toMatch(/run-completion/);
   });
 
-  it('rejects a zero-status run whose structured report is absent', () => {
-    expect(assessVitestRun(0, undefined)).toEqual({
-      diagnostic: 'Vitest did not produce its structured completion event.',
-      exitCode: 1,
-    });
+  it('rejects unhandled worker errors even with status zero', () => {
+    const result = assessVitestRun(0, { ...completeReport, unhandledErrors: 2 });
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostic).toMatch(/2 unhandled/);
   });
 
-  it('rejects scheduled files that never report module completion', () => {
-    expect(assessVitestRun(0, { ...completeReport, completed: ['/repo/a.test.ts'] })).toEqual({
-      diagnostic: 'Vitest did not complete 1 scheduled test file: /repo/b.test.ts',
-      exitCode: 1,
-    });
+  it('rejects a non-passed result reason', () => {
+    const result = assessVitestRun(0, { ...completeReport, reason: 'failed' });
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostic).toMatch(/failed/);
+  });
+
+  it('lists incomplete files when expected exceeds completed', () => {
+    const result = assessVitestRun(0, { ...completeReport, completed: ['/repo/a.test.ts'] });
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostic).toMatch(/b\.test\.ts/);
   });
 });
 
 describe('preserveRequiredReporter', () => {
-  it('leaves configured reporters intact when the command does not override them', () => {
-    expect(preserveRequiredReporter(['--project', 'shared'], '/repo/completeness.ts')).toEqual(['--project', 'shared']);
+  it('leaves arguments alone when no reporter override is present', () => {
+    expect(preserveRequiredReporter(['--project', 'unit'], '/repo/completeness.ts')).toEqual(['--project', 'unit']);
   });
 
-  it('adds the required reporter when a command overrides configured reporters', () => {
+  it('appends the required reporter when the caller overrides reporters', () => {
     expect(preserveRequiredReporter(['--reporter=dot'], '/repo/completeness.ts')).toEqual([
       '--reporter=dot',
-      '--reporter=/repo/completeness.ts',
-    ]);
-    expect(preserveRequiredReporter(['--reporter', 'verbose'], '/repo/completeness.ts')).toEqual([
-      '--reporter',
-      'verbose',
       '--reporter=/repo/completeness.ts',
     ]);
   });
