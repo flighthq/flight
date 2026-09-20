@@ -1,0 +1,4 @@
+public:
+  - setGlCustomShaderSourceGuard       # user-facing guard setter
+  - setGlEffectStateSkipGuard          # user-facing guard setter
+  - setGlRenderEffectApplicationGuard  # user-facing guard setter

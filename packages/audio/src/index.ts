@@ -1,36 +1,24 @@
+export * from './audioDecoderRegistry';
+export * from './audioFormat';
 export {
-  canPlayAudioType,
   cloneAudioResource,
   createAudioResource,
-  createAudioResourceFailure,
-  createAudioResourceFromSamples,
-  createEmbeddedAudioResourceReference,
-  createExternalAudioResourceReference,
-  detectAudioMimeType,
   disposeAudioResource,
-  explainAudioResourceReferenceResolution,
-  findAudioResourceReferenceByName,
-  getAudioDecoder,
-  getAudioDecoderMimeTypes,
-  getAudioMimeTypeEssence,
-  getAudioMimeTypeParameter,
   getAudioResourceByteSize,
   getAudioResourceChannelCount,
   getAudioResourceChannelData,
   getAudioResourceDuration,
   getAudioResourceSampleRate,
-  hasAudioDecoder,
   hasAudioResourceBuffer,
-  inferAudioMimeType,
   isAudioResourceEmpty,
-  loadAudioResourceFromBase64,
-  loadAudioResourceFromBlob,
-  loadAudioResourceFromBytes,
-  loadAudioResourceFromUrl,
-  loadAudioResourceFromUrls,
-  registerAudioDecoder,
+} from './audioResource';
+export * from './audioResourceFrom';
+export {
+  createAudioResourceFailure,
+  createEmbeddedAudioResourceReference,
+  createExternalAudioResourceReference,
+  explainAudioResourceReferenceResolution,
+  findAudioResourceReferenceByName,
   resetFailedAudioResourceReference,
   resolveAudioResourceReference,
-  selectAudioResourceUrl,
-  unregisterAudioDecoder,
-} from './contract';
+} from './audioResourceReference';

@@ -1,0 +1,2 @@
+public:
+  - reportImportDiagnostic  # public diagnostic seam function

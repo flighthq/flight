@@ -1,16 +1,17 @@
+export * from './enableTextShaperGuards';
+export * from './textShaper';
 export {
-  acquireShapedRun,
-  clearShapedRun,
   clearTextShaperCache,
-  createShapedRun,
   createTextShaperCache,
-  disableTextShaperGuards,
   disposeTextShaperCache,
-  disposeTextShaperSignals,
-  enableTextShaperGuards,
-  enableTextShaperSignals,
-  getCaretPositionsForRun,
-  getClusterForIndex,
+  shapeTextRunCached,
+} from './textShaperCache';
+export * from './textShaperCluster';
+export * from './textShaperItemize';
+export { acquireShapedRun, releaseShapedRun } from './textShaperPool';
+export {
+  clearShapedRun,
+  createShapedRun,
   getCodePointForGlyph,
   getFontMetrics,
   getFontMetricsInto,
@@ -20,13 +21,7 @@ export {
   getGlyphExtentsInto,
   getGlyphIndexForCodePoint,
   getGlyphName,
-  getIndexRangeForCluster,
-  getTextShaperSignals,
-  itemizeText,
-  measureText,
-  releaseShapedRun,
   shapeTextRun,
-  shapeTextRunCached,
   shapeTextRunInto,
-  shapeTextRuns,
-} from './contract';
+} from './textShaperRun';
+export { disposeTextShaperSignals, enableTextShaperSignals, getTextShaperSignals } from './textShaperSignals';

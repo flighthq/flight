@@ -3,6 +3,8 @@ export {
   cloneTilemap,
   computeTilemapLocalBoundsRectangle,
   createTilemap,
+  createTilemapData,
+  createTilemapSignals,
   enableTilemapSignals,
   fillTilemapTiles,
   getTilemapColumnAtX,
@@ -15,6 +17,6 @@ export {
   getTilemapTileRect,
   resizeTilemap,
   setTilemapTile,
-  setTilemapTileTint,
   setTilemapTiles,
-} from './contract';
+  setTilemapTileTint,
+} from './tilemap';

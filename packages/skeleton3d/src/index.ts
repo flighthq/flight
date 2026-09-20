@@ -1,24 +1,20 @@
+export * from './enableSkeleton3DGuards';
+export * from './getMeshSkinBounds';
+export * from './prepareScene3DSkinning';
 export {
-  captureMeshSkinBindPose,
   cloneSkeleton3D,
   cloneSkeleton3DJointHierarchy,
   computeSkeleton3DJointMatrices,
   createSkeleton3D,
   disposeSkeleton3D,
   equalsSkeleton3D,
-  getMeshSkinConservativeBounds,
-  getMeshSkinExactBounds,
   getSkeleton3DJointIndexByName,
   getSkeleton3DJointWorldMatrix,
   getSkeleton3DJointWorldMatrixByName,
-  prepareMeshSkinning,
-  prepareScene3DSkinning,
   setSkeleton3DBindPose,
-  skinMeshGeometry,
-  skinTangents,
-  skinVertices,
-  updateMeshDeformation,
-  updateMeshSkin,
-  updateMeshSkinBindPoseDeformInput,
   validateSkeleton3D,
-} from './contract';
+} from './skeleton3d';
+export * from './skinMeshGeometry';
+export * from './skinVertices';
+export * from './updateMeshDeformation';
+export * from './updateMeshSkin';

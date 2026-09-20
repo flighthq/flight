@@ -1,13 +1,10 @@
+export * from './enableMovieClipGuards';
 export {
   addMovieClipFrameScript,
-  areMovieClipGuardsEnabled,
   createMovieClip,
-  createSpritesheetTimelineSource,
-  disableMovieClipGuards,
+  createMovieClipData,
   disposeMovieClipSignals,
-  enableMovieClipGuards,
   enableMovieClipSignals,
-  explainSpritesheetTimelineSource,
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
   getMovieClipFrameScript,
@@ -23,4 +20,5 @@ export {
   setMovieClipSource,
   stopMovieClip,
   updateMovieClip,
-} from './contract';
+} from './movieClip';
+export { createSpritesheetTimelineSource, explainSpritesheetTimelineSource } from './spritesheetTimelineSource';

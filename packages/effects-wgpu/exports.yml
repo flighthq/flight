@@ -1,0 +1,4 @@
+public:
+  - setWgpuEffectStateSampleCountGuard   # user-facing guard setter
+  - setWgpuEffectStateSkipGuard          # user-facing guard setter
+  - setWgpuRenderEffectApplicationGuard  # user-facing guard setter

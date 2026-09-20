@@ -1,24 +1,22 @@
 export {
   computeBitmapTextLocalBoundsRectangle,
   createBitmapText,
-  disableBitmapTextGuards,
-  enableBitmapTextGuards,
-  explainBitmapTextMissingGlyphs,
+  createBitmapTextData,
   getBitmapTextBounds,
   getBitmapTextLineCount,
   getBitmapTextPages,
   isBitmapTextGlyphLayoutStale,
   isBitmapTextTruncated,
-  refreshBitmapTextGlyphLayout,
   reserveBitmapText,
   setBitmapTextAlign,
   setBitmapTextEllipsis,
   setBitmapTextGlyphSource,
-  setBitmapTextMissingGlyphGuard,
   setBitmapTextLetterSpacing,
   setBitmapTextLineHeight,
   setBitmapTextMaxLines,
   setBitmapTextText,
   setBitmapTextWrapWidth,
-  updateBitmapText,
-} from './contract';
+} from './bitmapText';
+export * from './enableBitmapTextGuards';
+export * from './explainBitmapTextMissingGlyphs';
+export { refreshBitmapTextGlyphLayout, setBitmapTextMissingGlyphGuard, updateBitmapText } from './updateBitmapText';

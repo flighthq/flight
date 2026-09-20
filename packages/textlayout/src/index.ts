@@ -1,46 +1,17 @@
 export {
   clearRichTextContent,
-  clearTextLayoutResult,
-  computeRichTextBottomScrollV,
-  computeRichTextCharIndexAtPoint,
   computeRichTextContent,
-  computeRichTextLineCount,
-  computeRichTextLineMetrics,
-  computeRichTextMaxScrollH,
-  computeRichTextMaxScrollV,
-  computeRichTextTextHeight,
-  computeRichTextTextWidth,
-  computeTextBoundsHeight,
-  computeTextBoundsOffsetX,
-  computeTextBoundsRectangle,
-  computeTextBoundsWidth,
-  computeTextLayout,
   createRichTextContent,
-  createTextFormatRange,
-  createTextLayoutGroup,
-  createTextLayoutResult,
-  getRichTextCharBoundaries,
   getRichTextContent,
-  getRichTextFirstCharInParagraph,
-  getRichTextLineIndexAtPoint,
-  getRichTextLineIndexOfChar,
-  getRichTextLineLength,
-  getRichTextLineOffset,
-  getRichTextLineText,
-  getRichTextLinkAtPoint,
-  getRichTextParagraphLength,
-  getRichTextScrollYOffset,
-  getRichTextSelectionRectangles,
-  getTextFormatAscent,
-  getTextFormatDescent,
-  getTextFormatHeight,
-  getTextFormatLeading,
-  getTextLayoutMeasureProvider,
-  getTextLayoutResult,
-  getTextLineBreakIndex,
-  getTextLineBreaks,
-  getTextMetrics,
-  isTextLayoutTruncated,
-  mergeTextFormat,
-  setTextLayoutMeasureProvider,
-} from './contract';
+} from './richTextContent';
+export * from './richTextMetrics';
+export * from './richTextQuery';
+export * from './textBounds';
+export * from './textFormat';
+export { createTextFormatRange } from './textFormatRange';
+export { TEXT_LAYOUT_GUTTER, computeTextLayout, createTextLayoutResult, isTextLayoutTruncated } from './textLayout';
+export { createTextLayoutGroup } from './textLayoutGroup';
+export * from './textLayoutMeasure';
+export * from './textLayoutRuntime';
+export * from './textLineBreaks';
+export { createTextMetrics, getTextMetrics } from './textMetrics';

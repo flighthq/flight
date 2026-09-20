@@ -1,0 +1,5 @@
+protected:
+  - _loadFontFaceFromBytes
+  - _loadFontFaceFromUrl
+  - _loadFontFaceFromUrls
+  - _loadFontFacesFromName

@@ -1,111 +1,46 @@
+export { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap';
+export * from './bitmapAffine';
+export * from './bitmapAlpha';
+export * from './bitmapBevel';
+export * from './bitmapBlur';
+export { mergeBitmapChannels, splitBitmapChannels } from './bitmapChannel';
+export * from './bitmapColorMatrix';
+export * from './bitmapCompare';
+export * from './bitmapComposite';
+export * from './bitmapConvolution';
+export * from './bitmapCopy';
+export * from './bitmapCoverage';
+export * from './bitmapCrop';
+export * from './bitmapDisplacement';
+export * from './bitmapDissolve';
+export * from './bitmapEncode';
+export * from './bitmapFill';
 export {
-  ImageChannel,
   BITMAP_FINGERPRINT_COMPUTATION_ID,
-  BITMAP_NOISE_CHANNEL_A,
-  BITMAP_NOISE_CHANNEL_B,
-  BITMAP_NOISE_CHANNEL_G,
-  BITMAP_NOISE_CHANNEL_R,
-  applyBitmapColorScaleBias,
-  applyBitmapCurve,
-  applyBitmapLevels,
-  applyBitmapPaletteMap,
-  applyBitmapThreshold,
-  bevelBitmap,
-  blurBitmapPixelsHorizontal,
-  blurBitmapPixelsHorizontalWeighted,
-  blurBitmapPixelsVertical,
-  blurBitmapPixelsVerticalWeighted,
-  boxBlurBitmap,
-  buildBitmapBrightnessColorMatrix,
-  buildBitmapContrastColorMatrix,
-  buildBitmapGradientRamp,
-  buildBitmapGrayscaleColorMatrix,
-  buildBitmapHueRotationColorMatrix,
-  buildBitmapInvertColorMatrix,
-  buildBitmapSaturationColorMatrix,
-  buildBitmapSepiaColorMatrix,
-  cloneBitmap,
-  colorMatrixBitmap,
-  compareBitmap,
   compareBitmapFingerprints,
-  compositeBitmapPixels,
-  compositeBitmapRegion,
-  computeGaussianKernel,
-  concatBitmapColorMatrix,
-  convertBitmapAlphaType,
-  convertBitmapPixelOrder,
-  convolveBitmap,
-  copyBitmapAlpha,
-  copyBitmapChannel,
-  copyBitmapPixels,
-  createBitmap,
   createBitmapFingerprint,
-  captureBitmapFromImageResource,
-  createBitmapFromImageSource,
-  explainBitmapReadback,
-  createBitmapRegion,
-  cropBitmap,
-  dilateBitmap,
-  displaceBitmap,
-  dissolveBitmapPixels,
-  dropShadowBitmap,
-  encodeBitmap,
-  explainBitmapEncodeFailure,
-  equalizeBitmapHistogram,
-  erodeBitmap,
-  extendBitmap,
-  extractBitmapPixels,
-  extractBitmapPixels32,
-  fillBitmapLinearGradient,
-  fillBitmapNoise,
-  fillBitmapPerlinNoise,
-  fillBitmapRadialGradient,
-  fillBitmapRectangle,
-  fillBitmapTurbulence,
-  flipBitmapHorizontal,
-  flipBitmapVertical,
-  floodFillBitmap,
   formatBitmapFingerprint,
-  gaussianBlurBitmap,
-  getBitmapColorBoundsRectangle,
-  getBitmapCoverage,
-  getBitmapHistogram,
-  getBitmapMismatch,
-  getBitmapPixel,
-  getBitmapPixelChannel,
-  getBitmapPixelLuminance,
-  getBitmapPixelRgb,
-  glowBitmap,
-  gradientBevelBitmap,
-  gradientGlowBitmap,
-  innerGlowBitmap,
-  innerShadowBitmap,
-  invalidateBitmap,
-  medianBitmap,
-  mergeBitmap,
-  mergeBitmapChannels,
-  multiplyBitmapAlpha,
   parseBitmapFingerprint,
-  pixelateBitmap,
-  premultiplyBitmapPixels,
-  resizeBitmap,
-  rotateBitmap,
-  rotateBitmap180,
-  rotateBitmapClockwise,
-  rotateBitmapCounterClockwise,
-  scrollBitmap,
-  setBitmapAlpha,
-  setBitmapColorMatrixIdentity,
-  setBitmapPixel,
-  setBitmapPixelRgb,
-  setBitmapRegion,
-  sharpenBitmap,
-  splitBitmapChannels,
-  transformBitmap,
-  trimBitmap,
-  unpremultiplyBitmapPixels,
-  warpBitmap,
-  warpBitmapQuad,
-  writeBitmapPixels,
-  writeBitmapPixels32,
-} from './contract';
+} from './bitmapFingerprint';
+export * from './bitmapFlip';
+export * from './bitmapFormat';
+export * from './bitmapFrom';
+export * from './bitmapGradient';
+export * from './bitmapGradientFill';
+export * from './bitmapHistogram';
+export * from './bitmapMedian';
+export * from './bitmapMorphological';
+export * from './bitmapNoise';
+export * from './bitmapPaletteMap';
+export * from './bitmapPixel';
+export * from './bitmapPixelate';
+export * from './bitmapQuery';
+export * from './bitmapRegion';
+export * from './bitmapResize';
+export * from './bitmapRotate';
+export * from './bitmapShadow';
+export * from './bitmapSharpen';
+export * from './bitmapTone';
+export * from './bitmapTransform';
+export * from './bitmapWarp';
+export * from './explainBitmapReadback';

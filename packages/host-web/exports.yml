@@ -1,0 +1,12 @@
+# host-web: exports where the shared classifier gets it wrong.
+# The classifier defaults to public unless a pattern rule says protected.
+# This file lists only the disagreements.
+
+protected:
+  - createWebPowerReadings          # low-level power sensor access
+  - createWebSurfaceFromElement     # internal surface factory
+  - getAudioSourceBufferSourceNode  # low-level Web Audio node access
+  - getAudioSourceGainNode          # low-level Web Audio node access
+
+exclude:
+  - file: webMidi                    # incomplete: missing const webHostMidi seam

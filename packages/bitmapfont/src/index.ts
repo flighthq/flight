@@ -1,15 +1,16 @@
 export {
   createBitmapFont,
-  createBitmapFontFromGlyphAtlas,
-  createGlyphSourceFromBitmapFont,
-  disableBitmapFontGuards,
-  enableBitmapFontGuards,
-  explainBitmapFontGlyph,
   getBitmapFontGlyph,
   getBitmapFontKerning,
   getBitmapFontMetrics,
   getBitmapFontPage,
   getBitmapFontPages,
   hasBitmapFontGlyph,
-  summarizeBitmapFont,
-} from './contract';
+  packBitmapFontKerningKey,
+  unpackBitmapFontKerningKey,
+} from './bitmapFont';
+export * from './bitmapFontFromGlyphAtlas';
+export { createGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource';
+export * from './enableBitmapFontGuards';
+export * from './explainBitmapFontGlyph';
+export * from './summarizeBitmapFont';

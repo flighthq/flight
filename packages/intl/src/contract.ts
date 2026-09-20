@@ -1,3 +1,4 @@
+export * from './cache';
 export * from './collator';
 export * from './datetime';
 export * from './list';
