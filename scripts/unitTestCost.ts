@@ -141,36 +141,32 @@ const IMPORT_SPECIFIER =
 // The files that already reached for an integration capability when this gate was written. Each is a
 // candidate for relocation, not a permanent grant; shrinking this list is the point of the gate.
 export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
-  // BUILDS-BUNDLE — each of these runs a real Rollup/Vite/esbuild build to prove a tree-shaking or
-  // packaging claim. That claim is the SIZE harness's job: `tools/size` already bundles 66 fixtures and
-  // compares them to a committed baseline, and AGENTS.md already names `npm run size` as the checkpoint
-  // for a change that may affect tree-shaking. Folding these in needs the size baseline to record a
-  // MODULE LIST per case and not only a byte count, because several of them assert module-set isolation
-  // rather than bytes. Measured cost while they stay here: 33.6s, for 111 tests.
+  // BUILDS-BUNDLE — each runs a real Rollup/Vite/esbuild build to prove a tree-shaking or packaging
+  // claim. That claim is the SIZE harness's job: `tools/size` already bundles its fixtures against a
+  // committed baseline, and AGENTS.md names `npm run size` as the checkpoint for tree-shaking changes.
+  // Folding these in needs the size baseline to record a MODULE LIST per case, not only a byte count,
+  // because several assert module-set isolation rather than bytes.
   { capability: 'builds-bundle', path: 'packages/gizmo/src/gizmoTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/gui/src/guiTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/host-electron/src/electronHostTreeShaking.test.ts' },
+  { capability: 'builds-bundle', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
   { capability: 'builds-bundle', path: 'packages/host-web/src/evidence.test.ts' },
   { capability: 'builds-bundle', path: 'packages/layout/src/layoutTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/render-gl/src/glContext.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-formats/src/gltfTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-resources/src/sceneResourceResolverTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/spineBinaryTreeShaking.test.ts' },
-  { capability: 'builds-bundle', path: 'scripts/format-parser-tree-shaking.test.ts' },
 
-  // RUNS-COMPILER — these build a TypeScript program (or a ts-morph Project) to assert a structural rule
-  // over real source. The rule is a gate's claim, not a unit's: every one of them is a whole-repository
-  // static analysis, which is precisely the shape `scripts/check.ts` already registers a dozen times.
-  { capability: 'runs-compiler', path: 'scripts/entity-contracts.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/export-inventory.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/host-runtime-direct-provider.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/media-host-seam.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/size-runner.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/video-host-seam.test.ts' },
-  { capability: 'runs-compiler', path: 'scripts/vitestConfig.test.ts' },
+  // RUNS-COMPILER — builds a TypeScript program to assert a structural rule over real source.
+  { capability: 'runs-compiler', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
 
-  // SPAWNS-PROCESS has NO entries, and that is the finished state the other two groups are aiming at:
-  // every child-process test now lives in the integration project (`INTEGRATION_TEST_FILES`), run by
-  // `integration-tests:check`. The capability stays in the rule so a NEW lane file reaching for a child
-  // process fails here rather than quietly rejoining the inner loop.
+  // ★ SPAWNS-PROCESS IS EXEMPTED HERE ONLY BECAUSE THERE IS NOWHERE ELSE TO PUT IT, and that is a
+  // hole, not an endorsement. These two drive real executables — `npm`, `tsc`, a packaging CLI — which
+  // is what the rule exists to keep out of the inner loop. They were routed to a dedicated integration
+  // project; the single-flat-runner refactor removed that project, `npm run test:integration` is now an
+  // echo, and the gate that ran it is commented out in `scripts/check.ts`. So the exemption records
+  // where they landed rather than claiming they belong here. Give them a runner and they leave the
+  // ledger — the ratchet's stale-entry half will then insist on it.
+  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriHost.test.ts' },
+  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
 ];
