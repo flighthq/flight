@@ -205,9 +205,9 @@ describe('minimal size fixture harness', () => {
   test('limits DOM shape Canvas bridge fixtures to their exact rasterization symbols', () => {
     const expectedBridge = [
       '@flighthq/host-web:webCanvasRenderSurfaceCreator',
+      '@flighthq/scene2d-canvas:canvasShapeCommands',
       '@flighthq/scene2d-canvas:createCanvasShapeRasterizer',
       '@flighthq/scene2d-canvas:createCanvasTextureResolvers',
-      '@flighthq/scene2d-canvas:canvasShapeCommands',
       '@flighthq/scene2d-canvas:registerCanvasShapeCommands',
     ];
     for (const name of domShapeCanvasBridgeFixtures) {

@@ -51,7 +51,7 @@ describe('Scene3D size fixture isolation', () => {
     // The aggregate host, not the narrow leaves: webHostGl and webHostWgpuContext are exactly what a
     // fixture should import, and a substring ban on 'webHost' would forbid them along with it.
     expect(source).not.toMatch(/\bwebHost\b/);
-    expect(source).toContain(`unlit${spec.backend}MeshMaterialRenderer`);
+    expect(source).toContain(`${spec.backend.toLowerCase()}UnlitMeshMaterialRenderer`);
     expect(source).toContain('meshMaterialRenderers: withRegistryTableEntry(');
 
     const bitmapResolver = `register${spec.backend}BitmapTextureResolver`;
