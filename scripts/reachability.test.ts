@@ -98,6 +98,16 @@ describe('source-derived capability reachability', () => {
       },
       {
         packageName: 'fixture',
+        registrar: 'registerGlEffect',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-kind',
+        uncataloguedBucket: null,
+        door: null,
+        kind: null,
+        implementation: null,
+      },
+      {
+        packageName: 'fixture',
         registrar: 'registerGlPair',
         status: 'catalogued',
         mechanismShape: null,
@@ -115,16 +125,6 @@ describe('source-derived capability reachability', () => {
         door: 'registerGlEffect',
         kind: 'BlurEffect',
         implementation: 'defaultGlBlurEffectRunner',
-      },
-      {
-        packageName: 'fixture',
-        registrar: 'registerGlEffect',
-        status: 'mechanism',
-        mechanismShape: 'caller-supplied-kind',
-        uncataloguedBucket: null,
-        door: null,
-        kind: null,
-        implementation: null,
       },
     ]);
   });
