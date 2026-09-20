@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 const packagesDirectory = resolve(import.meta.dirname, '../packages');
 
 // A detector has to name what it forbids, and a negative test has to contain the very shape it proves is
-// caught. The p5 host-bypass gate is both: it still recognizes drawBitmap inside
+// caught. The host-bypass gate is both: it still recognizes drawBitmap inside
 // packages/bitmap/src/bitmapDraw.ts so a reintroduction there is reported rather than ignored, and its
 // test feeds it fixtures spelled the same way. This file is the third, since it must list every retired
 // name in order to forbid it.
@@ -18,12 +18,16 @@ const packagesDirectory = resolve(import.meta.dirname, '../packages');
 // The exemption is per file and by name on purpose. Skipping a directory — scripts/, or anything under
 // test — would take real production coverage with it; these three paths are the only ones whose JOB is to
 // carry a retired spelling.
-const DETECTOR_FILES = ['scripts/host-web-seam.test.ts', 'scripts/p5-host-bypass.test.ts', 'scripts/p5-host-bypass.ts'];
+const DETECTOR_FILES = [
+  'scripts/host-web-seam.test.ts',
+  'scripts/check-host-bypasses.test.ts',
+  'scripts/check-host-bypasses.ts',
+];
 
 // Packages that must name no browser type. Each was a source of one before the cleanup.
 const PORTABLE_PACKAGES = ['bitmap', 'image', 'image-codec', 'textureatlas'];
 
-// Browser types, not browser globals: `document` and `window` access is the p5 host-bypass gate's
+// Browser types, not browser globals: `document` and `window` access is the host-bypass gate's
 // subject and is checked there against the whole repository.
 const BROWSER_TYPES = [
   'CanvasImageSource',

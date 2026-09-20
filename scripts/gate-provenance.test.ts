@@ -17,7 +17,7 @@ import {
   formatGateProvenance,
   readGateTreeState,
 } from './gate-provenance';
-import { createEmptyP5HostBypassReport, formatP5HostBypassReport } from './p5-host-bypass';
+import { createEmptyHostBypassReport, formatHostBypassReport } from './check-host-bypasses';
 
 const PROVENANCE = {
   command: 'npm run example (scripts/example.ts)',
@@ -103,9 +103,9 @@ describe('every derived gate prints its provenance', () => {
       renderPopulated: () => formatTransportBypassReport({ ...createEmptyTransportBypassReport(), scannedFiles: 17 }),
     },
     {
-      name: 'p5-host-bypass',
-      renderEmpty: () => formatP5HostBypassReport(createEmptyP5HostBypassReport()),
-      renderPopulated: () => formatP5HostBypassReport({ ...createEmptyP5HostBypassReport(), scannedFiles: 17 }),
+      name: 'host-bypass',
+      renderEmpty: () => formatHostBypassReport(createEmptyHostBypassReport()),
+      renderPopulated: () => formatHostBypassReport({ ...createEmptyHostBypassReport(), scannedFiles: 17 }),
     },
   ];
 

@@ -7,71 +7,71 @@ import ts from 'typescript';
 
 import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 
-type P5HostBypassKindV1 = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
+type HostBypassKindV1 = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
 
-type P5HostBypassKindV3 = P5HostBypassKindV1 | 'frame-scheduling';
+type HostBypassKindV3 = HostBypassKindV1 | 'frame-scheduling';
 
-export type P5HostBypassKind = P5HostBypassKindV3 | 'render-surface';
+export type HostBypassKind = HostBypassKindV3 | 'render-surface';
 
-export type P5HostBypassExclusion =
+export type HostBypassExclusion =
   | 'explicit-web-adapter'
   | 'host-implementation'
-  | 'p3-transport'
-  | 'p4-window-attachment'
+  | 'transport'
+  | 'window-attachment'
   | 'technology-specific-renderer'
   | 'test-support'
   | 'tooling';
 
-export interface P5HostBypassSite {
+export interface HostBypassSite {
   readonly column: number;
   readonly expression: string;
-  readonly exclusion: P5HostBypassExclusion | null;
+  readonly exclusion: HostBypassExclusion | null;
   readonly file: string;
   readonly functionName: string | null;
   readonly inputEventName: string | null;
   readonly inputListenerOperation: 'registration' | 'removal' | null;
-  readonly kind: P5HostBypassKind | 'p3-transport';
+  readonly kind: HostBypassKind | 'transport';
   readonly line: number;
 }
 
-export interface P5InputIngressListenerOperations {
+export interface InputIngressListenerOperations {
   readonly registrationNames: readonly string[];
   readonly removalNames: readonly string[];
 }
 
-export interface P5HostBypassReport {
-  readonly excluded: readonly P5HostBypassSite[];
-  readonly p5: readonly P5HostBypassSite[];
+export interface HostBypassReport {
+  readonly excluded: readonly HostBypassSite[];
+  readonly sites: readonly HostBypassSite[];
   readonly scannedFiles: number;
 }
 
 // The empty report, owned beside the type it builds. See `createEmptyBackendLifecycleReport` for why
 // every report type carries one: a fixture that needs a valid report rather than a particular one
 // starts here, so a new field is supplied once instead of at each construction site.
-export function createEmptyP5HostBypassReport(): P5HostBypassReport {
-  return { excluded: [], p5: [], scannedFiles: 0 };
+export function createEmptyHostBypassReport(): HostBypassReport {
+  return { excluded: [], sites: [], scannedFiles: 0 };
 }
 
-export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
+export type HostBypassBudget = Readonly<Record<HostBypassKind, number>>;
 
-type P5HostBypassBudgetV1 = Readonly<Record<P5HostBypassKindV1, number>>;
+type HostBypassBudgetV1 = Readonly<Record<HostBypassKindV1, number>>;
 
-type P5HostBypassBudgetV3 = Readonly<Record<P5HostBypassKindV3, number>>;
+type HostBypassBudgetV3 = Readonly<Record<HostBypassKindV3, number>>;
 
-export interface P5HostBypassBudgetEvidence {
-  readonly budget: P5HostBypassBudgetV1;
+export interface HostBypassBudgetEvidence {
+  readonly budget: HostBypassBudgetV1;
   readonly reason: string;
   readonly total: number;
 }
 
-export interface P5HostBypassV3BudgetEvidence {
-  readonly budget: P5HostBypassBudgetV3;
+export interface HostBypassV3BudgetEvidence {
+  readonly budget: HostBypassBudgetV3;
   readonly reason: string;
   readonly total: number;
 }
 
-export interface P5HostBypassV4BudgetEvidence {
-  readonly budget: P5HostBypassBudget;
+export interface HostBypassV4BudgetEvidence {
+  readonly budget: HostBypassBudget;
   readonly reason: string;
   // Sites this checkpoint repaired, DECLARED by the entry rather than inferred from its position. The
   // delta alone cannot tell "repaired three sites" from "repaired one and mis-stated the total", and the
@@ -81,53 +81,53 @@ export interface P5HostBypassV4BudgetEvidence {
   readonly total: number;
 }
 
-const P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE =
-  'a P5 seam repair is complete only when every existing production consumer migrates in the same slice; a lowered census alone is incomplete';
+const HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE =
+  'a host-bypass seam repair is complete only when every existing production consumer migrates in the same slice; a lowered census alone is incomplete';
 
-export const P5_HOST_BYPASS_SLICE_GUIDANCE = P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE;
+export const HOST_BYPASS_SLICE_GUIDANCE = HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE;
 
-type P5HostBypassVersionedBudget = Readonly<Partial<Record<P5HostBypassKind, number>>>;
+type HostBypassVersionedBudget = Readonly<Partial<Record<HostBypassKind, number>>>;
 
-export interface P5HostBypassRecategorisation {
+export interface HostBypassRecategorisation {
   readonly count: number;
-  readonly from: P5HostBypassKind;
+  readonly from: HostBypassKind;
   readonly reason: string;
-  readonly to: P5HostBypassKind;
+  readonly to: HostBypassKind;
 }
 
-export interface P5HostBypassNewDetection {
+export interface HostBypassNewDetection {
   readonly count: number;
-  readonly kind: P5HostBypassKind;
+  readonly kind: HostBypassKind;
   readonly reason: string;
 }
 
-export interface P5HostBypassClassificationEvidence {
-  readonly fromBudget: P5HostBypassVersionedBudget;
+export interface HostBypassClassificationEvidence {
+  readonly fromBudget: HostBypassVersionedBudget;
   readonly fromTotal: number;
   readonly fromVersion: number;
-  readonly newlyDetected: readonly P5HostBypassNewDetection[];
+  readonly newlyDetected: readonly HostBypassNewDetection[];
   readonly reason: string;
-  readonly recategorised: readonly P5HostBypassRecategorisation[];
-  readonly toBudget: P5HostBypassVersionedBudget;
+  readonly recategorised: readonly HostBypassRecategorisation[];
+  readonly toBudget: HostBypassVersionedBudget;
   readonly toTotal: number;
   readonly toVersion: number;
 }
 
-export interface P5HostBypassDetectorProvenance {
+export interface HostBypassDetectorProvenance {
   readonly detects: string;
   readonly zeroMeaning: string;
 }
 
-export interface P5HostBypassVersionedDetectorProvenance extends P5HostBypassDetectorProvenance {
+export interface HostBypassVersionedDetectorProvenance extends HostBypassDetectorProvenance {
   readonly taxonomyVersion: number;
 }
 
 // IMMUTABLE PREFIX. These accepted checkpoints pin every category, total and reason. History
 // validation compares against this full prefix, so even a coherent category-and-total rewrite fails.
-const P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
+const HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
   {
     budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 6 },
-    reason: 'initial runtime-derived P5 host-bypass census',
+    reason: 'initial runtime-derived host-bypass census',
     total: 68,
   },
   {
@@ -155,19 +155,19 @@ const P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
     reason: 'Shortcut platform identity routed through the selected platform backend',
     total: 30,
   },
-] as const satisfies readonly P5HostBypassBudgetEvidence[];
+] as const satisfies readonly HostBypassBudgetEvidence[];
 
 // APPEND ONLY. Each entry is an evidenced repair state, not a current number to edit in place. Future
 // repairs append a lower state with its category breakdown and reason without editing the accepted
 // prefix above.
-export const P5_HOST_BYPASS_BUDGET_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX,
-] as const satisfies readonly P5HostBypassBudgetEvidence[];
+export const HOST_BYPASS_BUDGET_HISTORY = [
+  ...HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX,
+] as const satisfies readonly HostBypassBudgetEvidence[];
 
 // Classification changes are append-only evidence, not repairs. A pure relabel preserves the census;
 // a discovery explicitly raises it. Keeping these events separate prevents a detector improvement from
 // being disguised as repair progress or used to rewrite the accepted v1 checkpoints above.
-const P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
+const HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
   {
     fromBudget: { 'direct-dom': 14, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
     fromTotal: 30,
@@ -197,7 +197,7 @@ const P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
         reason: 'two requestAnimationFrame calls and one cancelAnimationFrame call',
       },
     ],
-    reason: 'gamepad frame scheduling added to P5 classification coverage',
+    reason: 'gamepad frame scheduling added to host-bypass classification coverage',
     recategorised: [],
     toBudget: {
       'direct-dom': 12,
@@ -240,13 +240,13 @@ const P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
     toTotal: 28,
     toVersion: 4,
   },
-] as const satisfies readonly P5HostBypassClassificationEvidence[];
+] as const satisfies readonly HostBypassClassificationEvidence[];
 
-export const P5_HOST_BYPASS_CLASSIFICATION_HISTORY: readonly P5HostBypassClassificationEvidence[] = [
-  ...P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX,
-] as const satisfies readonly P5HostBypassClassificationEvidence[];
+export const HOST_BYPASS_CLASSIFICATION_HISTORY: readonly HostBypassClassificationEvidence[] = [
+  ...HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX,
+] as const satisfies readonly HostBypassClassificationEvidence[];
 
-const P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX = [
+const HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX = [
   {
     budget: {
       'direct-dom': 12,
@@ -255,7 +255,7 @@ const P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX = [
       'scratch-surface': 16,
       'webgpu-acquisition': 0,
     },
-    reason: 'P5 taxonomy v3 classification baseline',
+    reason: 'host-bypass taxonomy v3 classification baseline',
     total: 33,
   },
   {
@@ -269,13 +269,13 @@ const P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX = [
     reason: 'gamepad sampling and scheduling moved into the explicit Web ingress adapter',
     total: 28,
   },
-] as const satisfies readonly P5HostBypassV3BudgetEvidence[];
+] as const satisfies readonly HostBypassV3BudgetEvidence[];
 
-export const P5_HOST_BYPASS_V3_PROGRESS_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX,
-] as const satisfies readonly P5HostBypassV3BudgetEvidence[];
+export const HOST_BYPASS_V3_PROGRESS_HISTORY = [
+  ...HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX,
+] as const satisfies readonly HostBypassV3BudgetEvidence[];
 
-const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
+const HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
   {
     budget: {
       'direct-dom': 12,
@@ -285,7 +285,7 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
       'render-surface': 2,
       'webgpu-acquisition': 0,
     },
-    reason: 'P5 taxonomy v4 classification baseline',
+    reason: 'host-bypass taxonomy v4 classification baseline',
     repairedSites: 0,
     total: 28,
   },
@@ -315,9 +315,9 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
     repairedSites: 1,
     total: 26,
   },
-] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
+] as const satisfies readonly HostBypassV4BudgetEvidence[];
 
-const P5_HOST_BYPASS_S09_V4_PROGRESS = {
+const HOST_BYPASS_BITMAP_DRAW_V4_PROGRESS = {
   budget: {
     'direct-dom': 12,
     'input-ingress': 0,
@@ -329,9 +329,9 @@ const P5_HOST_BYPASS_S09_V4_PROGRESS = {
   reason: 'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
   repairedSites: 1,
   total: 25,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
+const HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
   budget: {
     'direct-dom': 9,
     'input-ingress': 0,
@@ -343,9 +343,9 @@ const P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
   reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
   repairedSites: 3,
   total: 22,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_S10_V4_PROGRESS = {
+const HOST_BYPASS_VIDEO_MIME_V4_PROGRESS = {
   budget: {
     'direct-dom': 8,
     'input-ingress': 0,
@@ -357,9 +357,9 @@ const P5_HOST_BYPASS_S10_V4_PROGRESS = {
   reason: 'Video MIME capability probing routed through the selected video capability backend',
   repairedSites: 1,
   total: 21,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS = {
+const HOST_BYPASS_FONT_LOAD_V4_PROGRESS = {
   budget: {
     'direct-dom': 7,
     'input-ingress': 0,
@@ -371,9 +371,9 @@ const P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS = {
   reason: 'Font face loading routed through the selected font-loading backend',
   repairedSites: 1,
   total: 20,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS = {
+const HOST_BYPASS_FONT_ADD_V4_PROGRESS = {
   budget: {
     'direct-dom': 6,
     'input-ingress': 0,
@@ -385,9 +385,9 @@ const P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS = {
   reason: 'Font face registration routed through the selected font-loading backend',
   repairedSites: 1,
   total: 19,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS = {
+const HOST_BYPASS_FONT_CHECK_V4_PROGRESS = {
   budget: {
     'direct-dom': 5,
     'input-ingress': 0,
@@ -399,9 +399,9 @@ const P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS = {
   reason: 'Font availability check routed through the selected font-loading backend',
   repairedSites: 1,
   total: 18,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS = {
+const HOST_BYPASS_FONT_READY_V4_PROGRESS = {
   budget: {
     'direct-dom': 4,
     'input-ingress': 0,
@@ -413,9 +413,9 @@ const P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS = {
   reason: 'Font readiness query routed through the selected font-loading backend',
   repairedSites: 1,
   total: 17,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS = {
+const HOST_BYPASS_IMAGE_CAPTURE_V4_PROGRESS = {
   budget: {
     'direct-dom': 4,
     'input-ingress': 0,
@@ -427,9 +427,9 @@ const P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS = {
   reason: 'Image-resource capture composed through the existing image-source readback primitive',
   repairedSites: 1,
   total: 16,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS = {
+const HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS = {
   budget: {
     'direct-dom': 4,
     'input-ingress': 0,
@@ -441,9 +441,9 @@ const P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS = {
   reason: 'Bitmap encoding scratch canvas creation routed through the selected bitmap encode backend',
   repairedSites: 1,
   total: 15,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
+const HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
   budget: {
     'direct-dom': 4,
     'input-ingress': 0,
@@ -455,13 +455,13 @@ const P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
   reason: 'Bitmap encoding ImageData construction routed through the selected bitmap encode backend',
   repairedSites: 1,
   total: 14,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
 // Immutable historical checkpoint: Screen R3 later deleted ScreenBackend, but this reason deliberately
-// preserves the symbol used by the audited P5 repair when the checkpoint was recorded.
+// preserves the symbol used by the audited host-bypass repair when the checkpoint was recorded.
 // One checkpoint for one slice. Both window-management sites were routed together, so the honest evidence
 // is a single entry declaring what it repaired rather than two synthetic one-site steps.
-const P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS = {
+const HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS = {
   budget: {
     'direct-dom': 2,
     'input-ingress': 0,
@@ -474,9 +474,9 @@ const P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS = {
     'window-management permission query and change subscription routed through two optional ScreenBackend operations',
   repairedSites: 2,
   total: 12,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS = {
+const HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS = {
   budget: {
     'direct-dom': 2,
     'input-ingress': 0,
@@ -488,9 +488,9 @@ const P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS = {
   reason: 'GL and WGPU shape raster scratch surfaces routed through the shared Raster2DSurfaceProvider',
   repairedSites: 2,
   total: 10,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_H8C_VIDEO_ELEMENT_V4_PROGRESS = {
+const HOST_BYPASS_VIDEO_ELEMENT_V4_PROGRESS = {
   budget: {
     'direct-dom': 0,
     'input-ingress': 0,
@@ -502,9 +502,9 @@ const P5_HOST_BYPASS_H8C_VIDEO_ELEMENT_V4_PROGRESS = {
   reason: 'Video element creation routed through VideoCapabilityBackend.createVideoElement',
   repairedSites: 2,
   total: 8,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS = {
+const HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS = {
   budget: {
     'direct-dom': 0,
     'input-ingress': 0,
@@ -516,9 +516,9 @@ const P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS = {
   reason: 'Bitmap construction and explanation routed through the selected BitmapReadbackBackend',
   repairedSites: 2,
   total: 6,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS = {
+const HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS = {
   budget: {
     'direct-dom': 0,
     'input-ingress': 0,
@@ -530,9 +530,9 @@ const P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS = {
   reason: 'GL and WGPU Scale9 raster scratch surfaces routed through the shared Raster2DSurfaceProvider',
   repairedSites: 2,
   total: 4,
-} as const satisfies P5HostBypassV4BudgetEvidence;
+} as const satisfies HostBypassV4BudgetEvidence;
 
-const P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS = {
+const HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS = {
   budget: {
     'direct-dom': 0,
     'input-ingress': 0,
@@ -544,28 +544,28 @@ const P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS = {
   reason: 'GL and WGPU RichText and TextLabel scratch surfaces routed through the shared Raster2DSurfaceProvider',
   repairedSites: 4,
   total: 0,
-} as const satisfies P5HostBypassV4BudgetEvidence;
-export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
-  P5_HOST_BYPASS_S09_V4_PROGRESS,
-  P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS,
-  P5_HOST_BYPASS_S10_V4_PROGRESS,
-  P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS,
-  P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS,
-  P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS,
-  P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS,
-  P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS,
-  P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS,
-  P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS,
-  P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS,
-  P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS,
-  P5_HOST_BYPASS_H8C_VIDEO_ELEMENT_V4_PROGRESS,
-  P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS,
-  P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS,
-  P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS,
-] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
+} as const satisfies HostBypassV4BudgetEvidence;
+export const HOST_BYPASS_V4_PROGRESS_HISTORY = [
+  ...HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
+  HOST_BYPASS_BITMAP_DRAW_V4_PROGRESS,
+  HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS,
+  HOST_BYPASS_VIDEO_MIME_V4_PROGRESS,
+  HOST_BYPASS_FONT_LOAD_V4_PROGRESS,
+  HOST_BYPASS_FONT_ADD_V4_PROGRESS,
+  HOST_BYPASS_FONT_CHECK_V4_PROGRESS,
+  HOST_BYPASS_FONT_READY_V4_PROGRESS,
+  HOST_BYPASS_IMAGE_CAPTURE_V4_PROGRESS,
+  HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS,
+  HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS,
+  HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS,
+  HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS,
+  HOST_BYPASS_VIDEO_ELEMENT_V4_PROGRESS,
+  HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS,
+  HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS,
+  HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS,
+] as const satisfies readonly HostBypassV4BudgetEvidence[];
 
-const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
+const HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
   {
     detects:
       'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
@@ -578,26 +578,26 @@ const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
     taxonomyVersion: 4,
     zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
   },
-] as const satisfies readonly P5HostBypassVersionedDetectorProvenance[];
+] as const satisfies readonly HostBypassVersionedDetectorProvenance[];
 
-export const P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX,
-] as const satisfies readonly P5HostBypassVersionedDetectorProvenance[];
+export const HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY = [
+  ...HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX,
+] as const satisfies readonly HostBypassVersionedDetectorProvenance[];
 
-export const P5_HOST_BYPASS_DETECTOR_PROVENANCE: P5HostBypassVersionedDetectorProvenance = {
-  ...P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY[P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY.length - 1],
+export const HOST_BYPASS_DETECTOR_PROVENANCE: HostBypassVersionedDetectorProvenance = {
+  ...HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY[HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY.length - 1],
 };
 
 // Category upper bounds, not source membership. The active budget is the latest evidenced repair in
 // the current taxonomy, so there is no second lone number an ordinary bypass addition can edit green.
-export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget =
-  P5_HOST_BYPASS_V4_PROGRESS_HISTORY[P5_HOST_BYPASS_V4_PROGRESS_HISTORY.length - 1].budget;
+export const HOST_BYPASS_BUDGET: HostBypassBudget =
+  HOST_BYPASS_V4_PROGRESS_HISTORY[HOST_BYPASS_V4_PROGRESS_HISTORY.length - 1].budget;
 
 // Which argument of a WGPU entry point IS the presentation surface, which is the only thing that makes
 // the ownership claim checkable at a call site. Both entry points take the host's WGPU provider first,
 // so the surface sits one position right of where it did before `wgpuHost` was threaded through: the
 // index is a function of the signature, not a fixed 0/1. A further signature change must move it here
-// too — `p5WgpuSurfaceArgumentFailures` reads these declarations and fails the gate loudly when the
+// too — `wgpuSurfaceArgumentFailures` reads these declarations and fails the gate loudly when the
 // recorded position no longer names `surface`, so a stale index cannot silently start reading the host.
 const WGPU_SURFACE_ARGUMENT: Readonly<Record<string, { readonly file: string; readonly index: number }>> = {
   createWgpuAcquisition: { file: 'packages/render-wgpu/src/wgpuRenderState.ts', index: 1 },
@@ -606,7 +606,7 @@ const WGPU_SURFACE_ARGUMENT: Readonly<Record<string, { readonly file: string; re
 
 const PRESENTATION_PARAMETER_NAMES = new Set(['drawable', 'surface', 'target']);
 
-const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
+const TRANSPORT_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
   'beforeinput',
   'compositionend',
@@ -633,19 +633,19 @@ const INPUT_EVENT_NAMES = new Set([
  * Derives the production TypeScript population from the workspace on every run. There is deliberately
  * no source-file allowlist: adding a package or file makes it part of the next scan automatically.
  */
-export function scanP5HostBypasses(root: string): P5HostBypassReport {
+export function scanHostBypasses(root: string): HostBypassReport {
   const packagesDirectory = join(root, 'packages');
   const files = collectProductionSourceFiles(packagesDirectory);
   const sites = files.flatMap((file) =>
-    scanP5HostBypassSource(relative(root, file).split(sep).join('/'), readFileSync(file, 'utf8')),
+    scanHostBypassSource(relative(root, file).split(sep).join('/'), readFileSync(file, 'utf8')),
   );
-  return createP5HostBypassReport(files.length, sites);
+  return createHostBypassReport(files.length, sites);
 }
 
-export function scanP5HostBypassSource(file: string, source: string): P5HostBypassSite[] {
+export function scanHostBypassSource(file: string, source: string): HostBypassSite[] {
   const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
   const webAdapterFunctions = collectWebAdapterFunctionNames(parsed);
-  const sites: P5HostBypassSite[] = [];
+  const sites: HostBypassSite[] = [];
 
   const visit = (node: ts.Node): void => {
     const functionNames = enclosingFunctionNames(node);
@@ -662,7 +662,7 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
       sites.push({
         column: position.character + 1,
         expression: node.getText(parsed),
-        exclusion: finding.kind === 'p3-transport' ? 'p3-transport' : structuralExclusion,
+        exclusion: finding.kind === 'transport' ? 'transport' : structuralExclusion,
         file,
         functionName,
         inputEventName: finding.inputEventName ?? null,
@@ -694,7 +694,7 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
 // different bypass with its own kind ('scratch-surface') and its own budget. Only the surface that
 // actually presents is this gate's subject, which is why the check follows the identifier handed to the
 // presentation call rather than every createElement in the file.
-export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: string): string[] {
+export function wgpuRenderSurfaceConsumerSourceFailures(file: string, source: string): string[] {
   const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
   const presentationSurfaces: { line: number; name: string }[] = [];
   const hostCanvasBindings = new Set<string>();
@@ -778,13 +778,13 @@ function importsFromHostWeb(parsed: ts.SourceFile, name: string): boolean {
   );
 }
 
-export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
+export function wgpuRenderSurfaceConsumerFailures(root: string): string[] {
   const failures: string[] = [];
   const functionalFiles: string[] = [];
   collectTypeScriptFiles(join(root, 'functional'), functionalFiles);
   for (const path of functionalFiles) {
     const file = relative(root, path).split(sep).join('/');
-    failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(file, readFileSync(path, 'utf8')));
+    failures.push(...wgpuRenderSurfaceConsumerSourceFailures(file, readFileSync(path, 'utf8')));
   }
 
   const harnessFile = 'tools/harness/webgpu.ts';
@@ -794,7 +794,7 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
       `${harnessFile}: shared WebGPU harness no longer creates its surface through the host capability seam`,
     );
   } else {
-    failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
+    failures.push(...wgpuRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
   }
   return failures;
 }
@@ -802,7 +802,7 @@ export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
 // The gate checks a call site by position, so the position has to still name the surface. Reading the
 // declaration rather than trusting the table is what keeps a re-threaded host parameter from turning
 // the check into a comparison against whatever now sits at the old index.
-export function p5WgpuSurfaceArgumentFailures(root: string): string[] {
+export function wgpuSurfaceArgumentFailures(root: string): string[] {
   const failures: string[] = [];
   for (const [functionName, argument] of Object.entries(WGPU_SURFACE_ARGUMENT)) {
     const parameters = exportedFunctionParameterNames(join(root, argument.file), functionName);
@@ -824,15 +824,15 @@ export function p5WgpuSurfaceArgumentFailures(root: string): string[] {
   return failures;
 }
 
-export function p5WgpuRenderSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function wgpuRenderSurfaceRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter((site) => site.kind === 'render-surface')
     .map((site) => `${site.file}:${site.functionName ?? '<module>'}`);
   return remaining.length === 0 ? [] : [`S08 must leave no render surfaces; found [${remaining.join(', ')}]`];
 }
 
-export function p5BitmapDrawTransferRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function bitmapDrawTransferRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -845,8 +845,8 @@ export function p5BitmapDrawTransferRepairFailures(report: Readonly<P5HostBypass
     : [`S09 must remove the bitmapDraw global ImageData transfer; found [${remaining.join(', ')}]`];
 }
 
-export function p5BitmapEncodeRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function bitmapEncodeRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -859,8 +859,8 @@ export function p5BitmapEncodeRepairFailures(report: Readonly<P5HostBypassReport
     : [`Bitmap encoding must leave no portable scratch construction; found [${remaining.join(', ')}]`];
 }
 
-export function p5BitmapReadbackRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function bitmapReadbackRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -874,8 +874,8 @@ export function p5BitmapReadbackRepairFailures(report: Readonly<P5HostBypassRepo
     : [`H15 must remove both bitmap-readback scratch surfaces; found [${remaining.join(', ')}]`];
 }
 
-export function p5ShapeRasterSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function shapeRasterSurfaceRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -890,8 +890,8 @@ export function p5ShapeRasterSurfaceRepairFailures(report: Readonly<P5HostBypass
     : [`H8 must remove both shape-raster scratch surfaces; found [${remaining.join(', ')}]`];
 }
 
-export function p5Scale9RasterSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function scale9RasterSurfaceRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -906,8 +906,8 @@ export function p5Scale9RasterSurfaceRepairFailures(report: Readonly<P5HostBypas
     : [`Scale9 must remove both raster scratch surfaces; found [${remaining.join(', ')}]`];
 }
 
-export function p5TextRasterSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
-  const remaining = report.p5
+export function textRasterSurfaceRepairFailures(report: Readonly<HostBypassReport>): string[] {
+  const remaining = report.sites
     .filter(
       (site) =>
         site.kind === 'scratch-surface' &&
@@ -923,9 +923,9 @@ export function p5TextRasterSurfaceRepairFailures(report: Readonly<P5HostBypassR
     : [`H13 must remove all four text-raster scratch surfaces; found [${remaining.join(', ')}]`];
 }
 
-export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
+export function videoCapabilityRepairFailures(report: Readonly<HostBypassReport>): string[] {
   const failures: string[] = [];
-  const target = report.p5.filter(
+  const target = report.sites.filter(
     (site) =>
       site.kind === 'direct-dom' &&
       site.file === 'packages/video/src/videoFormat.ts' &&
@@ -942,7 +942,7 @@ export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassRep
 
   // H8-C repaired both videoResourceFrom sites by routing through VideoCapabilityBackend.
   // Verify the repair holds: these sites must NOT reappear as direct-dom.
-  const repaired = report.p5.filter(
+  const repaired = report.sites.filter(
     (site) =>
       site.kind === 'direct-dom' &&
       site.file === 'packages/video/src/videoResourceFrom.ts' &&
@@ -958,19 +958,19 @@ export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassRep
   return failures;
 }
 
-export function createP5HostBypassReport(scannedFiles: number, sites: readonly P5HostBypassSite[]): P5HostBypassReport {
+export function createHostBypassReport(scannedFiles: number, sites: readonly HostBypassSite[]): HostBypassReport {
   const sorted = [...sites].sort(
     (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column || a.kind.localeCompare(b.kind),
   );
   return {
     excluded: sorted.filter((site) => site.exclusion !== null),
-    p5: sorted.filter((site) => site.exclusion === null),
+    sites: sorted.filter((site) => site.exclusion === null),
     scannedFiles,
   };
 }
 
-export function countP5HostBypasses(report: Readonly<P5HostBypassReport>): Record<P5HostBypassKind, number> {
-  const counts: Record<P5HostBypassKind, number> = {
+export function countHostBypasses(report: Readonly<HostBypassReport>): Record<HostBypassKind, number> {
+  const counts: Record<HostBypassKind, number> = {
     'direct-dom': 0,
     'input-ingress': 0,
     'frame-scheduling': 0,
@@ -978,14 +978,14 @@ export function countP5HostBypasses(report: Readonly<P5HostBypassReport>): Recor
     'render-surface': 0,
     'webgpu-acquisition': 0,
   };
-  for (const site of report.p5) counts[site.kind as P5HostBypassKind]++;
+  for (const site of report.sites) counts[site.kind as HostBypassKind]++;
   return counts;
 }
 
-export function deriveP5InputIngressListenerOperations(
-  report: Readonly<P5HostBypassReport>,
-): P5InputIngressListenerOperations {
-  const sites = [...report.p5, ...report.excluded].filter(
+export function deriveInputIngressListenerOperations(
+  report: Readonly<HostBypassReport>,
+): InputIngressListenerOperations {
+  const sites = [...report.sites, ...report.excluded].filter(
     (site) => site.kind === 'input-ingress' && site.file === 'packages/host-web/src/webInputIngress.ts',
   );
   return {
@@ -1000,7 +1000,7 @@ export function deriveP5InputIngressListenerOperations(
   };
 }
 
-export function p5InputIngressPairingFailures(operations: Readonly<P5InputIngressListenerOperations>): string[] {
+export function inputIngressPairingFailures(operations: Readonly<InputIngressListenerOperations>): string[] {
   if (
     operations.registrationNames.length === operations.removalNames.length &&
     operations.registrationNames.every((name, index) => name === operations.removalNames[index])
@@ -1012,176 +1012,179 @@ export function p5InputIngressPairingFailures(operations: Readonly<P5InputIngres
   ];
 }
 
-export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>, budget: P5HostBypassBudget): string[] {
-  const counts = countP5HostBypasses(report);
-  return (Object.keys(counts) as P5HostBypassKind[])
+export function hostBypassBudgetFailures(report: Readonly<HostBypassReport>, budget: HostBypassBudget): string[] {
+  const counts = countHostBypasses(report);
+  return (Object.keys(counts) as HostBypassKind[])
     .filter((kind) => counts[kind] > budget[kind])
     .map((kind) => `${kind}: found ${counts[kind]}, budget ${budget[kind]}`);
 }
 
-export function p5HostBypassCurrentBudgetFailures(
-  report: Readonly<P5HostBypassReport>,
-  budget: P5HostBypassBudget,
+export function hostBypassCurrentBudgetFailures(
+  report: Readonly<HostBypassReport>,
+  budget: HostBypassBudget,
 ): string[] {
-  const counts = countP5HostBypasses(report);
-  const failures = (Object.keys(counts) as P5HostBypassKind[])
+  const counts = countHostBypasses(report);
+  const failures = (Object.keys(counts) as HostBypassKind[])
     .filter((kind) => counts[kind] !== budget[kind])
-    .map((kind) => `P5 current ${kind}: found ${counts[kind]}, expected ${budget[kind]}`);
-  const expectedTotal = totalP5HostBypassBudget(budget);
-  if (report.p5.length !== expectedTotal) {
-    failures.push(`P5 current outstanding: found ${report.p5.length}, expected ${expectedTotal}`);
+    .map((kind) => `host-bypass current ${kind}: found ${counts[kind]}, expected ${budget[kind]}`);
+  const expectedTotal = totalHostBypassBudget(budget);
+  if (report.sites.length !== expectedTotal) {
+    failures.push(`host-bypass current outstanding: found ${report.sites.length}, expected ${expectedTotal}`);
   }
   return failures;
 }
 
-export function p5TextRasterSurfaceCurrentFailures(report: Readonly<P5HostBypassReport>): string[] {
-  return p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS.budget);
+export function textRasterSurfaceCurrentFailures(report: Readonly<HostBypassReport>): string[] {
+  return hostBypassCurrentBudgetFailures(report, HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS.budget);
 }
 
-export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypassBudgetEvidence[]): string[] {
-  if (history.length === 0) return ['P5 budget history is empty'];
+export function hostBypassBudgetHistoryFailures(history: readonly HostBypassBudgetEvidence[]): string[] {
+  if (history.length === 0) return ['host-bypass budget history is empty'];
   const failures: string[] = [];
-  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX.length; index++) {
-    const accepted = P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX[index];
+  for (let index = 0; index < HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX.length; index++) {
+    const accepted = HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX[index];
     const entry = history[index];
-    if (entry === undefined || !p5HostBypassBudgetEvidenceMatches(entry, accepted)) {
+    if (entry === undefined || !hostBypassBudgetEvidenceMatches(entry, accepted)) {
       failures.push(
-        `P5 budget history[${index}] rewrites immutable accepted checkpoint total ${accepted.total} (categories and reason are pinned)`,
+        `host-bypass budget history[${index}] rewrites immutable accepted checkpoint total ${accepted.total} (categories and reason are pinned)`,
       );
     }
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const categoryTotal = totalP5HostBypassVersionedBudget(entry.budget);
+    const categoryTotal = totalHostBypassVersionedBudget(entry.budget);
     if (categoryTotal !== entry.total) {
       failures.push(
-        `P5 budget history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+        `host-bypass budget history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
       );
     }
     const prior = history[index - 1];
     if (prior !== undefined && entry.total >= prior.total) {
-      failures.push(`P5 budget history[${index}] total ${entry.total} is not below prior total ${prior.total}`);
+      failures.push(
+        `host-bypass budget history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+      );
     }
   }
   return failures;
 }
 
-export function p5HostBypassSliceGuidanceFailures(guidance: string): string[] {
-  return guidance === P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE
+export function hostBypassSliceGuidanceFailures(guidance: string): string[] {
+  return guidance === HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE
     ? []
-    : ['P5 seam-slice guidance no longer requires same-slice production consumer migration'];
+    : ['host-bypass seam-slice guidance no longer requires same-slice production consumer migration'];
 }
 
-export function p5HostBypassClassificationHistoryFailures(
-  history: readonly P5HostBypassClassificationEvidence[],
+export function hostBypassClassificationHistoryFailures(
+  history: readonly HostBypassClassificationEvidence[],
 ): string[] {
-  if (history.length === 0) return ['P5 taxonomy history is empty'];
+  if (history.length === 0) return ['host-bypass taxonomy history is empty'];
   const failures: string[] = [];
-  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX.length; index++) {
-    const accepted = P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX[index];
+  for (let index = 0; index < HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX.length; index++) {
+    const accepted = HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX[index];
     const entry = history[index];
-    if (entry === undefined || !p5HostBypassClassificationEvidenceMatches(entry, accepted)) {
-      failures.push(`P5 taxonomy history[${index}] rewrites immutable accepted classification evidence`);
+    if (entry === undefined || !hostBypassClassificationEvidenceMatches(entry, accepted)) {
+      failures.push(`host-bypass taxonomy history[${index}] rewrites immutable accepted classification evidence`);
     }
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const fromCategoryTotal = totalP5HostBypassVersionedBudget(entry.fromBudget);
-    const toCategoryTotal = totalP5HostBypassVersionedBudget(entry.toBudget);
+    const fromCategoryTotal = totalHostBypassVersionedBudget(entry.fromBudget);
+    const toCategoryTotal = totalHostBypassVersionedBudget(entry.toBudget);
     if (fromCategoryTotal !== entry.fromTotal) {
       failures.push(
-        `P5 taxonomy history[${index}] before-category sum ${fromCategoryTotal} does not match evidenced total ${entry.fromTotal}`,
+        `host-bypass taxonomy history[${index}] before-category sum ${fromCategoryTotal} does not match evidenced total ${entry.fromTotal}`,
       );
     }
     if (toCategoryTotal !== entry.toTotal) {
       failures.push(
-        `P5 taxonomy history[${index}] after-category sum ${toCategoryTotal} does not match evidenced total ${entry.toTotal}`,
+        `host-bypass taxonomy history[${index}] after-category sum ${toCategoryTotal} does not match evidenced total ${entry.toTotal}`,
       );
     }
 
     const newCount = entry.newlyDetected.reduce((sum, evidence) => sum + evidence.count, 0);
     if (newCount === 0 && entry.fromTotal !== entry.toTotal) {
-      failures.push(`P5 taxonomy history[${index}] pure relabel changes total ${entry.fromTotal} -> ${entry.toTotal}`);
+      failures.push(
+        `host-bypass taxonomy history[${index}] pure relabel changes total ${entry.fromTotal} -> ${entry.toTotal}`,
+      );
     }
     if (entry.toTotal - entry.fromTotal !== newCount) {
       failures.push(
-        `P5 taxonomy history[${index}] census delta ${entry.toTotal - entry.fromTotal} does not match ${newCount} newly detected sites`,
+        `host-bypass taxonomy history[${index}] census delta ${entry.toTotal - entry.fromTotal} does not match ${newCount} newly detected sites`,
       );
     }
 
-    const derived = completeP5HostBypassBudget(entry.fromBudget);
+    const derived = completeHostBypassBudget(entry.fromBudget);
     for (const recategorisation of entry.recategorised) {
       derived[recategorisation.from] -= recategorisation.count;
       derived[recategorisation.to] += recategorisation.count;
     }
     for (const detection of entry.newlyDetected) derived[detection.kind] += detection.count;
-    if (!p5HostBypassBudgetsMatch(derived, entry.toBudget)) {
-      failures.push(`P5 taxonomy history[${index}] derived categories do not match its evidenced after-budget`);
+    if (!hostBypassBudgetsMatch(derived, entry.toBudget)) {
+      failures.push(
+        `host-bypass taxonomy history[${index}] derived categories do not match its evidenced after-budget`,
+      );
     }
 
     if (entry.toVersion !== entry.fromVersion + 1) {
       failures.push(
-        `P5 taxonomy history[${index}] version ${entry.fromVersion} does not advance exactly once to ${entry.toVersion}`,
+        `host-bypass taxonomy history[${index}] version ${entry.fromVersion} does not advance exactly once to ${entry.toVersion}`,
       );
     }
     const prior = history[index - 1];
     if (
       prior !== undefined &&
       (entry.fromVersion !== prior.toVersion ||
-        (!p5HostBypassBudgetsMatch(entry.fromBudget, prior.toBudget) &&
-          !p5HostBypassClassificationStartsFromAcceptedProgress(entry)))
+        (!hostBypassBudgetsMatch(entry.fromBudget, prior.toBudget) &&
+          !hostBypassClassificationStartsFromAcceptedProgress(entry)))
     ) {
-      failures.push(`P5 taxonomy history[${index}] does not continue the prior classification state`);
+      failures.push(`host-bypass taxonomy history[${index}] does not continue the prior classification state`);
     }
   }
   return failures;
 }
 
-export function p5HostBypassV3ProgressHistoryFailures(history: readonly P5HostBypassV3BudgetEvidence[]): string[] {
-  if (history.length === 0) return ['P5 taxonomy v3 progress history is empty'];
+export function hostBypassV3ProgressHistoryFailures(history: readonly HostBypassV3BudgetEvidence[]): string[] {
+  if (history.length === 0) return ['host-bypass taxonomy v3 progress history is empty'];
   const failures: string[] = [];
-  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX.length; index++) {
-    const accepted = P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX[index];
+  for (let index = 0; index < HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX.length; index++) {
+    const accepted = HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX[index];
     const entry = history[index];
-    if (entry === undefined || !p5HostBypassV3BudgetEvidenceMatches(entry, accepted)) {
-      failures.push(`P5 taxonomy v3 progress history[${index}] rewrites immutable accepted checkpoint`);
+    if (entry === undefined || !hostBypassV3BudgetEvidenceMatches(entry, accepted)) {
+      failures.push(`host-bypass taxonomy v3 progress history[${index}] rewrites immutable accepted checkpoint`);
     }
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const categoryTotal = totalP5HostBypassVersionedBudget(entry.budget);
+    const categoryTotal = totalHostBypassVersionedBudget(entry.budget);
     if (categoryTotal !== entry.total) {
       failures.push(
-        `P5 taxonomy v3 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+        `host-bypass taxonomy v3 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
       );
     }
     const prior = history[index - 1];
     if (prior !== undefined && entry.total >= prior.total) {
       failures.push(
-        `P5 taxonomy v3 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+        `host-bypass taxonomy v3 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
       );
     }
   }
   return failures;
 }
 
-export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  if (history.length === 0) return ['P5 taxonomy v4 progress history is empty'];
+export function hostBypassV4ProgressHistoryFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  if (history.length === 0) return ['host-bypass taxonomy v4 progress history is empty'];
   const failures: string[] = [];
-  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX.length; index++) {
-    const accepted = P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX[index];
+  for (let index = 0; index < HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX.length; index++) {
+    const accepted = HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX[index];
     const entry = history[index];
-    if (entry === undefined || !p5HostBypassV4BudgetEvidenceMatches(entry, accepted)) {
-      failures.push(`P5 taxonomy v4 progress history[${index}] rewrites immutable accepted checkpoint`);
+    if (entry === undefined || !hostBypassV4BudgetEvidenceMatches(entry, accepted)) {
+      failures.push(`host-bypass taxonomy v4 progress history[${index}] rewrites immutable accepted checkpoint`);
     }
   }
-  const pointerLockEntry = findP5HostBypassV4ProgressEntry(
-    history,
-    P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS.reason,
-  );
+  const pointerLockEntry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS.reason);
   if (
     pointerLockEntry === undefined ||
-    !p5HostBypassV4BudgetEvidenceMatches(pointerLockEntry, P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS)
+    !hostBypassV4BudgetEvidenceMatches(pointerLockEntry, HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS)
   ) {
     failures.push(
       'Input pointer-lock taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason',
@@ -1189,122 +1192,119 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    const categoryTotal = totalHostBypassBudget(entry.budget);
     if (categoryTotal !== entry.total) {
       failures.push(
-        `P5 taxonomy v4 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+        `host-bypass taxonomy v4 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
       );
     }
     const prior = history[index - 1];
     if (prior !== undefined && entry.total >= prior.total) {
       failures.push(
-        `P5 taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+        `host-bypass taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
       );
     }
     if (prior !== undefined && entry.total !== prior.total - entry.repairedSites) {
       failures.push(
-        `P5 taxonomy v4 progress history[${index}] declares ${entry.repairedSites} repaired site(s) but moves ${prior.total} -> ${entry.total}`,
+        `host-bypass taxonomy v4 progress history[${index}] declares ${entry.repairedSites} repaired site(s) but moves ${prior.total} -> ${entry.total}`,
       );
     }
   }
   return failures;
 }
 
-export function p5BitmapDrawTransferProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_S09_V4_PROGRESS.reason);
-  return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_S09_V4_PROGRESS)
+export function bitmapDrawTransferProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_BITMAP_DRAW_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_BITMAP_DRAW_V4_PROGRESS)
     ? []
     : ['S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
 }
 
-export function p5BitmapEncodeProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
+export function bitmapEncodeProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
   const canvas = history[11];
   const imageData = history[12];
   return canvas !== undefined &&
     imageData !== undefined &&
-    p5HostBypassV4BudgetEvidenceMatches(canvas, P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS) &&
-    p5HostBypassV4BudgetEvidenceMatches(imageData, P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS)
+    hostBypassV4BudgetEvidenceMatches(canvas, HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS) &&
+    hostBypassV4BudgetEvidenceMatches(imageData, HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS)
     ? []
     : ['Bitmap encode taxonomy v4 progress checkpoints no longer pin the exact totals, categories, and reasons'];
 }
 
-export function p5BitmapReadbackProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS.reason);
-  return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS)
+export function bitmapReadbackProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS)
     ? []
     : [
         'H15 bitmap-readback taxonomy v4 progress checkpoint no longer pins the exact total, categories, repair count, and reason',
       ];
 }
 
-export function p5VideoCapabilityProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_S10_V4_PROGRESS.reason);
-  return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_S10_V4_PROGRESS)
+export function videoCapabilityProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_VIDEO_MIME_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_VIDEO_MIME_V4_PROGRESS)
     ? []
     : ['S10 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
 }
 
-export function p5ShapeRasterSurfaceProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS.reason);
-  return entry !== undefined &&
-    p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS)
+export function shapeRasterSurfaceProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS)
     ? []
     : [
         'H8 shape-raster taxonomy v4 progress checkpoint no longer pins the exact total, categories, repair count, and reason',
       ];
 }
 
-export function p5Scale9RasterSurfaceProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS.reason);
-  return entry !== undefined &&
-    p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS)
+export function scale9RasterSurfaceProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS)
     ? []
     : [
         'Scale9 raster taxonomy v4 progress checkpoint no longer pins the exact total, categories, repair count, and reason',
       ];
 }
 
-export function p5TextRasterSurfaceProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
-  const entry = findP5HostBypassV4ProgressEntry(history, P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS.reason);
-  return entry !== undefined &&
-    p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS)
+export function textRasterSurfaceProgressFailures(history: readonly HostBypassV4BudgetEvidence[]): string[] {
+  const entry = findHostBypassV4ProgressEntry(history, HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS.reason);
+  return entry !== undefined && hostBypassV4BudgetEvidenceMatches(entry, HOST_BYPASS_TEXT_RASTER_SURFACE_V4_PROGRESS)
     ? []
     : [
         'H13 text-raster taxonomy v4 progress checkpoint no longer pins the exact total, categories, repair count, and reason',
       ];
 }
 
-export function p5HostBypassDetectorProvenanceHistoryFailures(
-  history: readonly P5HostBypassVersionedDetectorProvenance[],
+export function hostBypassDetectorProvenanceHistoryFailures(
+  history: readonly HostBypassVersionedDetectorProvenance[],
 ): string[] {
   const failures: string[] = [];
-  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.length; index++) {
-    const accepted = P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX[index];
+  for (let index = 0; index < HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.length; index++) {
+    const accepted = HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX[index];
     const entry = history[index];
     if (entry === undefined || JSON.stringify(entry) !== JSON.stringify(accepted)) {
       failures.push(
-        `P5 detector provenance history[${index}] rewrites immutable taxonomy v${accepted.taxonomyVersion}`,
+        `host-bypass detector provenance history[${index}] rewrites immutable taxonomy v${accepted.taxonomyVersion}`,
       );
     }
   }
   return failures;
 }
 
-export function p5HostBypassDetectorProvenanceFailures(provenance: Readonly<P5HostBypassDetectorProvenance>): string[] {
-  const accepted = P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.at(-1)!;
+export function hostBypassDetectorProvenanceFailures(provenance: Readonly<HostBypassDetectorProvenance>): string[] {
+  const accepted = HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.at(-1)!;
   const failures: string[] = [];
   if (provenance.detects !== accepted.detects) {
-    failures.push('P5 detector provenance rewrites the accepted hand-written detection floor');
+    failures.push('host-bypass detector provenance rewrites the accepted hand-written detection floor');
   }
   if (provenance.zeroMeaning !== accepted.zeroMeaning) {
-    failures.push('P5 detector provenance rewrites the accepted non-exhaustive zero meaning');
+    failures.push('host-bypass detector provenance rewrites the accepted non-exhaustive zero meaning');
   }
   return failures;
 }
 
-function p5HostBypassBudgetEvidenceMatches(
-  entry: Readonly<P5HostBypassBudgetEvidence>,
-  accepted: Readonly<P5HostBypassBudgetEvidence>,
+function hostBypassBudgetEvidenceMatches(
+  entry: Readonly<HostBypassBudgetEvidence>,
+  accepted: Readonly<HostBypassBudgetEvidence>,
 ): boolean {
   return (
     entry.total === accepted.total &&
@@ -1316,52 +1316,52 @@ function p5HostBypassBudgetEvidenceMatches(
   );
 }
 
-function p5HostBypassClassificationEvidenceMatches(
-  entry: Readonly<P5HostBypassClassificationEvidence>,
-  accepted: Readonly<P5HostBypassClassificationEvidence>,
+function hostBypassClassificationEvidenceMatches(
+  entry: Readonly<HostBypassClassificationEvidence>,
+  accepted: Readonly<HostBypassClassificationEvidence>,
 ): boolean {
   return JSON.stringify(entry) === JSON.stringify(accepted);
 }
 
-function p5HostBypassClassificationStartsFromAcceptedProgress(
-  entry: Readonly<P5HostBypassClassificationEvidence>,
+function hostBypassClassificationStartsFromAcceptedProgress(
+  entry: Readonly<HostBypassClassificationEvidence>,
 ): boolean {
   if (entry.fromVersion !== 3) return false;
-  const latest = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length - 1];
-  return entry.fromTotal === latest.total && p5HostBypassBudgetsMatch(entry.fromBudget, latest.budget);
+  const latest = HOST_BYPASS_V3_PROGRESS_HISTORY[HOST_BYPASS_V3_PROGRESS_HISTORY.length - 1];
+  return entry.fromTotal === latest.total && hostBypassBudgetsMatch(entry.fromBudget, latest.budget);
 }
 
-function p5HostBypassV3BudgetEvidenceMatches(
-  entry: Readonly<P5HostBypassV3BudgetEvidence>,
-  accepted: Readonly<P5HostBypassV3BudgetEvidence>,
+function hostBypassV3BudgetEvidenceMatches(
+  entry: Readonly<HostBypassV3BudgetEvidence>,
+  accepted: Readonly<HostBypassV3BudgetEvidence>,
 ): boolean {
   return (
     entry.total === accepted.total &&
     entry.reason === accepted.reason &&
-    p5HostBypassBudgetsMatch(entry.budget, accepted.budget)
+    hostBypassBudgetsMatch(entry.budget, accepted.budget)
   );
 }
 
-function p5HostBypassV4BudgetEvidenceMatches(
-  entry: Readonly<P5HostBypassV4BudgetEvidence>,
-  accepted: Readonly<P5HostBypassV4BudgetEvidence>,
+function hostBypassV4BudgetEvidenceMatches(
+  entry: Readonly<HostBypassV4BudgetEvidence>,
+  accepted: Readonly<HostBypassV4BudgetEvidence>,
 ): boolean {
   return (
     entry.total === accepted.total &&
     entry.reason === accepted.reason &&
     entry.repairedSites === accepted.repairedSites &&
-    p5HostBypassBudgetsMatch(entry.budget, accepted.budget)
+    hostBypassBudgetsMatch(entry.budget, accepted.budget)
   );
 }
 
-function findP5HostBypassV4ProgressEntry(
-  history: readonly P5HostBypassV4BudgetEvidence[],
+function findHostBypassV4ProgressEntry(
+  history: readonly HostBypassV4BudgetEvidence[],
   reason: string,
-): P5HostBypassV4BudgetEvidence | undefined {
+): HostBypassV4BudgetEvidence | undefined {
   return history.find((entry) => entry.reason === reason);
 }
 
-function completeP5HostBypassBudget(budget: P5HostBypassVersionedBudget): Record<P5HostBypassKind, number> {
+function completeHostBypassBudget(budget: HostBypassVersionedBudget): Record<HostBypassKind, number> {
   return {
     'direct-dom': budget['direct-dom'] ?? 0,
     'input-ingress': budget['input-ingress'] ?? 0,
@@ -1372,50 +1372,48 @@ function completeP5HostBypassBudget(budget: P5HostBypassVersionedBudget): Record
   };
 }
 
-function p5HostBypassBudgetsMatch(left: P5HostBypassVersionedBudget, right: P5HostBypassVersionedBudget): boolean {
-  const completedLeft = completeP5HostBypassBudget(left);
-  const completedRight = completeP5HostBypassBudget(right);
-  return (Object.keys(completedLeft) as P5HostBypassKind[]).every(
-    (kind) => completedLeft[kind] === completedRight[kind],
-  );
+function hostBypassBudgetsMatch(left: HostBypassVersionedBudget, right: HostBypassVersionedBudget): boolean {
+  const completedLeft = completeHostBypassBudget(left);
+  const completedRight = completeHostBypassBudget(right);
+  return (Object.keys(completedLeft) as HostBypassKind[]).every((kind) => completedLeft[kind] === completedRight[kind]);
 }
 
-function totalP5HostBypassVersionedBudget(budget: P5HostBypassVersionedBudget): number {
+function totalHostBypassVersionedBudget(budget: HostBypassVersionedBudget): number {
   return Object.values(budget).reduce((sum, count) => sum + (count ?? 0), 0);
 }
 
-export function totalP5HostBypassBudget(budget: P5HostBypassBudget): number {
+export function totalHostBypassBudget(budget: HostBypassBudget): number {
   return Object.values(budget).reduce((sum, count) => sum + count, 0);
 }
 
-export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): string {
-  const counts = countP5HostBypasses(report);
+export function formatHostBypassReport(report: Readonly<HostBypassReport>): string {
+  const counts = countHostBypasses(report);
   const lines = [
     formatGateProvenance(
       {
-        command: 'npm run check:p5-host-bypass (scripts/p5-host-bypass.ts)',
+        command: 'npm run check:host-bypasses (scripts/check-host-bypasses.ts)',
         counting:
           'one unit = one packages/*/src/**/*.ts file scanned; a site is one direct host-API expression, tallied per detected kind',
         scope:
-          'runtime directory walk of packages/*/src/**/*.ts with no file roster; tests and helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom and *-canvas technology adapters, P4 window attachment and P3 transport syntax all excluded',
+          'runtime directory walk of packages/*/src/**/*.ts with no file roster; tests and helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom and *-canvas technology adapters, window attachment and transport syntax all excluded',
       },
       readGateTreeState(process.cwd()),
     ),
-    'P5 host-bypass census',
+    'host-bypass census',
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
-    `SLICE ${P5_HOST_BYPASS_SLICE_GUIDANCE}`,
-    `TAXONOMY v${P5_HOST_BYPASS_DETECTOR_PROVENANCE.taxonomyVersion}`,
-    `DETECTS ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.detects}`,
-    `ZERO ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.zeroMeaning}`,
-    'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application P4 window attachment, and P3 fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
-    `P5 outstanding=${report.p5.length} ${Object.entries(counts)
+    `SLICE ${HOST_BYPASS_SLICE_GUIDANCE}`,
+    `TAXONOMY v${HOST_BYPASS_DETECTOR_PROVENANCE.taxonomyVersion}`,
+    `DETECTS ${HOST_BYPASS_DETECTOR_PROVENANCE.detects}`,
+    `ZERO ${HOST_BYPASS_DETECTOR_PROVENANCE.zeroMeaning}`,
+    'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application window attachment, and fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
+    `host-bypass outstanding=${report.sites.length} ${Object.entries(counts)
       .map(([kind, count]) => `${kind}=${count}`)
       .join(' ')}`,
-    'P5 budget history (append-only)',
+    'host-bypass budget history (append-only)',
   ];
-  for (let index = 0; index < P5_HOST_BYPASS_BUDGET_HISTORY.length; index++) {
-    const entry = P5_HOST_BYPASS_BUDGET_HISTORY[index];
-    const prior = P5_HOST_BYPASS_BUDGET_HISTORY[index - 1];
+  for (let index = 0; index < HOST_BYPASS_BUDGET_HISTORY.length; index++) {
+    const entry = HOST_BYPASS_BUDGET_HISTORY[index];
+    const prior = HOST_BYPASS_BUDGET_HISTORY[index - 1];
     const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
     lines.push(
       `  ${entry.total}${delta} ${Object.entries(entry.budget)
@@ -1423,8 +1421,8 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
         .join(' ')} — ${entry.reason}`,
     );
   }
-  lines.push('P5 taxonomy history (append-only)');
-  for (const entry of P5_HOST_BYPASS_CLASSIFICATION_HISTORY) {
+  lines.push('host-bypass taxonomy history (append-only)');
+  for (const entry of HOST_BYPASS_CLASSIFICATION_HISTORY) {
     const recategorised = entry.recategorised.reduce((sum, evidence) => sum + evidence.count, 0);
     const newlyDetected = entry.newlyDetected.reduce((sum, evidence) => sum + evidence.count, 0);
     const recategorisationProvenance =
@@ -1441,10 +1439,10 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
       `  v${entry.fromVersion} -> v${entry.toVersion} total ${entry.fromTotal} -> ${entry.toTotal} (${delta}) recategorised=${recategorised} from-to=${recategorisationProvenance} new=${newlyDetected} detected=${discoveryProvenance} — ${entry.reason}`,
     );
   }
-  lines.push('P5 repair history (taxonomy v3)');
-  for (let index = 0; index < P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length; index++) {
-    const entry = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[index];
-    const prior = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[index - 1];
+  lines.push('host-bypass repair history (taxonomy v3)');
+  for (let index = 0; index < HOST_BYPASS_V3_PROGRESS_HISTORY.length; index++) {
+    const entry = HOST_BYPASS_V3_PROGRESS_HISTORY[index];
+    const prior = HOST_BYPASS_V3_PROGRESS_HISTORY[index - 1];
     const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
     lines.push(
       `  ${entry.total}${delta} ${Object.entries(entry.budget)
@@ -1452,10 +1450,10 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
         .join(' ')} — ${entry.reason}`,
     );
   }
-  lines.push('P5 repair history (taxonomy v4)');
-  for (let index = 0; index < P5_HOST_BYPASS_V4_PROGRESS_HISTORY.length; index++) {
-    const entry = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[index];
-    const prior = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[index - 1];
+  lines.push('host-bypass repair history (taxonomy v4)');
+  for (let index = 0; index < HOST_BYPASS_V4_PROGRESS_HISTORY.length; index++) {
+    const entry = HOST_BYPASS_V4_PROGRESS_HISTORY[index];
+    const prior = HOST_BYPASS_V4_PROGRESS_HISTORY[index - 1];
     const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
     lines.push(
       `  ${entry.total}${delta} ${Object.entries(entry.budget)
@@ -1463,12 +1461,12 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
         .join(' ')} — ${entry.reason}`,
     );
   }
-  for (const site of report.p5)
+  for (const site of report.sites)
     lines.push(`  ${site.kind} ${site.file}:${site.line}:${site.column} ${site.expression}`);
 
-  const excludedCounts = new Map<P5HostBypassExclusion, number>();
+  const excludedCounts = new Map<HostBypassExclusion, number>();
   for (const site of report.excluded) {
-    const exclusion = site.exclusion as P5HostBypassExclusion;
+    const exclusion = site.exclusion as HostBypassExclusion;
     excludedCounts.set(exclusion, (excludedCounts.get(exclusion) ?? 0) + 1);
   }
   lines.push(
@@ -1478,48 +1476,48 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
       .join(' ')}`,
   );
   lines.push(
-    'P3 PARTITION owner=builder3 primitives=fetch,XMLHttpRequest,Request,Image,WebSocket,EventSource (reported here; enforced only by the independent P3 transport gate)',
+    'TRANSPORT PARTITION primitives=fetch,XMLHttpRequest,Request,Image,WebSocket,EventSource (reported here; enforced only by the independent transport gate)',
   );
-  for (const site of report.excluded.filter((candidate) => candidate.exclusion === 'p3-transport')) {
-    lines.push(`  P3 ${site.file}:${site.line}:${site.column} ${site.expression}`);
+  for (const site of report.excluded.filter((candidate) => candidate.exclusion === 'transport')) {
+    lines.push(`  TRANSPORT ${site.file}:${site.line}:${site.column} ${site.expression}`);
   }
   return lines.join('\n');
 }
 
 if (isMainModule(import.meta.url, process.argv[1])) {
-  const report = scanP5HostBypasses(process.cwd());
-  process.stdout.write(`${formatP5HostBypassReport(report)}\n`);
+  const report = scanHostBypasses(process.cwd());
+  process.stdout.write(`${formatHostBypassReport(report)}\n`);
   const failures = [
-    ...p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY),
-    ...p5HostBypassSliceGuidanceFailures(P5_HOST_BYPASS_SLICE_GUIDANCE),
-    ...p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY),
-    ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
-    ...p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5BitmapEncodeProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5BitmapReadbackProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5VideoCapabilityProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5ShapeRasterSurfaceProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5Scale9RasterSurfaceProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5TextRasterSurfaceProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
-    ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
-    ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
-    ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
-    ...p5WgpuSurfaceArgumentFailures(process.cwd()),
-    ...p5WgpuRenderSurfaceRepairFailures(report),
-    ...p5BitmapDrawTransferRepairFailures(report),
-    ...p5BitmapEncodeRepairFailures(report),
-    ...p5BitmapReadbackRepairFailures(report),
-    ...p5VideoCapabilityRepairFailures(report),
-    ...p5ShapeRasterSurfaceRepairFailures(report),
-    ...p5Scale9RasterSurfaceRepairFailures(report),
-    ...p5TextRasterSurfaceRepairFailures(report),
-    ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
-    ...p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
-    ...p5TextRasterSurfaceCurrentFailures(report),
+    ...hostBypassBudgetHistoryFailures(HOST_BYPASS_BUDGET_HISTORY),
+    ...hostBypassSliceGuidanceFailures(HOST_BYPASS_SLICE_GUIDANCE),
+    ...hostBypassClassificationHistoryFailures(HOST_BYPASS_CLASSIFICATION_HISTORY),
+    ...hostBypassV3ProgressHistoryFailures(HOST_BYPASS_V3_PROGRESS_HISTORY),
+    ...hostBypassV4ProgressHistoryFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...bitmapDrawTransferProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...bitmapEncodeProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...bitmapReadbackProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...videoCapabilityProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...shapeRasterSurfaceProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...scale9RasterSurfaceProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...textRasterSurfaceProgressFailures(HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...hostBypassDetectorProvenanceHistoryFailures(HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
+    ...hostBypassDetectorProvenanceFailures(HOST_BYPASS_DETECTOR_PROVENANCE),
+    ...wgpuRenderSurfaceConsumerFailures(process.cwd()),
+    ...wgpuSurfaceArgumentFailures(process.cwd()),
+    ...wgpuRenderSurfaceRepairFailures(report),
+    ...bitmapDrawTransferRepairFailures(report),
+    ...bitmapEncodeRepairFailures(report),
+    ...bitmapReadbackRepairFailures(report),
+    ...videoCapabilityRepairFailures(report),
+    ...shapeRasterSurfaceRepairFailures(report),
+    ...scale9RasterSurfaceRepairFailures(report),
+    ...textRasterSurfaceRepairFailures(report),
+    ...hostBypassBudgetFailures(report, HOST_BYPASS_BUDGET),
+    ...hostBypassCurrentBudgetFailures(report, HOST_BYPASS_BUDGET),
+    ...textRasterSurfaceCurrentFailures(report),
   ];
   if (failures.length > 0) {
-    process.stderr.write(`P5 host-bypass ratchet exceeded:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);
+    process.stderr.write(`host-bypass ratchet exceeded:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);
     process.exitCode = 1;
   }
 }
@@ -1587,18 +1585,18 @@ function classifyNode(
 ): {
   readonly inputEventName?: string;
   readonly inputListenerOperation?: 'registration' | 'removal';
-  readonly kind: P5HostBypassKind | 'p3-transport';
+  readonly kind: HostBypassKind | 'transport';
 } | null {
   if (ts.isNewExpression(node)) {
     const constructorName = expressionName(node.expression);
     if (constructorName === 'ImageData' || constructorName === 'OffscreenCanvas') return { kind: 'scratch-surface' };
-    if (constructorName !== null && P3_CONSTRUCTORS.has(constructorName)) return { kind: 'p3-transport' };
+    if (constructorName !== null && TRANSPORT_CONSTRUCTORS.has(constructorName)) return { kind: 'transport' };
     return null;
   }
 
   if (ts.isCallExpression(node)) {
     const calledName = expressionName(node.expression);
-    if (calledName === 'fetch') return { kind: 'p3-transport' };
+    if (calledName === 'fetch') return { kind: 'transport' };
     if (calledName === 'getGamepads' && isRootedInBrowserGlobal(node.expression)) {
       return { kind: 'input-ingress' };
     }
@@ -1646,7 +1644,7 @@ function classifyStructuralExclusion(
   file: string,
   functionNames: readonly string[],
   webAdapterFunctions: ReadonlySet<string>,
-): P5HostBypassExclusion | null {
+): HostBypassExclusion | null {
   const parts = file.split('/');
   const packageName = parts[0] === 'packages' ? (parts[1] ?? '') : '';
   const fileName = basename(file);
@@ -1656,7 +1654,7 @@ function classifyStructuralExclusion(
   }
   if (packageName.startsWith('host-')) return 'host-implementation';
   if (packageName.startsWith('tool-')) return 'tooling';
-  if (packageName === 'application') return 'p4-window-attachment';
+  if (packageName === 'application') return 'window-attachment';
   if (packageName.endsWith('-dom') || packageName.endsWith('-canvas')) return 'technology-specific-renderer';
   if (
     functionNames.some((name) => webAdapterFunctions.has(name)) ||
