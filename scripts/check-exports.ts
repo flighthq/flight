@@ -164,7 +164,7 @@ const GOVERNED_PACKAGES = [
   'tool-registry',
   'tray',
   'tween',
-  'types',
+  // 'types' is excluded: it exports only types via `export *` re-exports, not functions/consts/lets.
   'updater',
   'useragent',
   'velocity',
