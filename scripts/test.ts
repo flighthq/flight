@@ -16,10 +16,9 @@ export interface TestRunAssessment {
 }
 
 export function resolveVitestArguments(arguments_: readonly string[]): string[] {
-  if (arguments_[0] === 'conformance') return ['--project', 'conformance', ...arguments_.slice(1)];
   if (arguments_.includes('--all')) return arguments_.filter((a) => a !== '--all');
   if (arguments_.some((a) => a === '--project' || a.startsWith('--project='))) return [...arguments_];
-  return ['--project', 'shared', ...arguments_];
+  return ['--project', 'unit', ...arguments_];
 }
 
 export function preserveRequiredReporter(arguments_: readonly string[], reporterPath: string): string[] {
