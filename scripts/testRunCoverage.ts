@@ -38,6 +38,7 @@ export function findUnrunTestPackages(root: string, executedFiles: readonly stri
   const unrun: string[] = [];
   for (const name of readdirSync(packagesDir)) {
     if (ran.has(name)) continue;
+    if (name.startsWith('host-') || name.startsWith('tool-')) continue;
     if (hasTestFile(join(packagesDir, name, 'src'))) unrun.push(name);
   }
   return unrun.sort();

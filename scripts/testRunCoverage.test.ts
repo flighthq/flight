@@ -107,12 +107,20 @@ describe('findOmittedTestFiles', () => {
 });
 
 describe('findUnrunTestPackages', () => {
-  it('names a package that owns tests but contributed none', () => {
-    // tool-capture owns tests; pretend nothing from it executed.
+  it('names an SDK package that owns tests but contributed none', () => {
     const unrun = findUnrunTestPackages(ROOT, [join(ROOT, 'packages', 'skeleton2d', 'src', 'skeleton2d.test.ts')]);
 
-    expect(unrun).toContain('tool-capture');
+    expect(unrun).toContain('math');
     expect(unrun).not.toContain('skeleton2d');
+  });
+
+  it('excludes host and tool packages (they have their own lanes)', () => {
+    const unrun = findUnrunTestPackages(ROOT, []);
+
+    expect(unrun).not.toContain('host-web');
+    expect(unrun).not.toContain('host-electron');
+    expect(unrun).not.toContain('tool-capture');
+    expect(unrun).not.toContain('tool-registry');
   });
 
   it('names nothing when every package with tests contributed one', () => {
@@ -123,8 +131,6 @@ describe('findUnrunTestPackages', () => {
   });
 
   it('ignores a package that owns no test file at all', () => {
-    // A package with no tests is not an omission — there was nothing to run. Built against a synthetic
-    // tree rather than a named real package, so it cannot rot when that package gains tests.
     const root = mkdtempSync(join(tmpdir(), 'run-coverage-'));
     mkdirSync(join(root, 'packages', 'withtests', 'src'), { recursive: true });
     mkdirSync(join(root, 'packages', 'notests', 'src'), { recursive: true });
@@ -132,6 +138,18 @@ describe('findUnrunTestPackages', () => {
     writeFileSync(join(root, 'packages', 'notests', 'src', 'a.ts'), '');
 
     expect(findUnrunTestPackages(root, [])).toEqual(['withtests']);
+  });
+
+  it('ignores host and tool packages even when they own tests', () => {
+    const root = mkdtempSync(join(tmpdir(), 'run-coverage-'));
+    mkdirSync(join(root, 'packages', 'host-web', 'src'), { recursive: true });
+    mkdirSync(join(root, 'packages', 'tool-capture', 'src'), { recursive: true });
+    mkdirSync(join(root, 'packages', 'sdk-pkg', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'host-web', 'src', 'a.test.ts'), '');
+    writeFileSync(join(root, 'packages', 'tool-capture', 'src', 'b.test.ts'), '');
+    writeFileSync(join(root, 'packages', 'sdk-pkg', 'src', 'c.test.ts'), '');
+
+    expect(findUnrunTestPackages(root, [])).toEqual(['sdk-pkg']);
   });
 });
 
