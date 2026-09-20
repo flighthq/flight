@@ -36,8 +36,8 @@ import {
   createVertexColorMaterial,
   createWireframeMaterial,
   invalidateNodeLocalTransform,
-  normalizeVector3,
   Node3DKind,
+  normalizeVector3,
   setMeshGeometryVertexColor0,
 } from '@flighthq/sdk';
 import {

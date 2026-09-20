@@ -19,9 +19,9 @@ import {
   createVector3,
   dollyOrbitCameraController,
   invalidateNodeLocalTransform,
+  Node3DKind,
   normalizeVector3,
   rotateOrbitCameraController,
-  Node3DKind,
   updateOrbitCameraController,
 } from '@flighthq/sdk';
 import { createNode3D } from '@flighthq/sdk/scene3d';

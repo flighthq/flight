@@ -18,6 +18,7 @@ import {
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createNode3D } from '@flighthq/scene3d';
 import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
