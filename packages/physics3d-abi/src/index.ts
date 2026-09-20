@@ -1,14 +1,4 @@
-export {
-  createPhysics3DAbi,
-  createPhysics3DAbiWorld,
-  destroyPhysics3DAbiWorld,
-  executePhysics3DAbiCommands,
-  getPhysics3DAbiWorldStatus,
-  readPhysics3DAbiBodies,
-  readPhysics3DAbiContacts,
-  readPhysics3DAbiJoints,
-  stepPhysics3DAbiWorld,
-} from './physics3DAbi';
+export * from './physics3DAbi';
 export {
   clearPhysics3DAbiCommandBuffer,
   createPhysics3DAbiBodyBuffer,

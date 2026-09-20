@@ -1,20 +1,15 @@
+export * from './builtInScene2DDocumentImporters';
+export * from './enableScene2DResourceFailureGuards';
+export * from './loadScene2DAudioResources';
+export * from './loadScene2DImageResources';
+export * from './resolveScene2DResources';
+export { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 export {
-  areScene2DResourceFailureGuardsEnabled,
-  createScene2DDocument,
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
-  createScene2DSlotReference,
-  disableScene2DResourceFailureGuards,
-  enableScene2DResourceFailureGuards,
-  explainScene2DResourceCoverage,
-  loadScene2DAudioResources,
-  loadScene2DDocumentFromUrl,
-  loadScene2DImageResources,
-  registerLottieScene2DDocumentImporter,
-  registerRiveScene2DDocumentImporter,
   registerScene2DDocumentImporter,
-  registerSvgScene2DDocumentImporter,
-  resolveScene2DResources,
-  setScene2DSlotReferenceContent,
   unregisterScene2DDocumentImporter,
-} from './contract';
+} from './scene2DDocumentImporterRegistry';
+export * from './scene2DDocumentSource';
+export { explainScene2DResourceCoverage } from './scene2DResourceDiagnostics';
+export * from './scene2DSlotReference';

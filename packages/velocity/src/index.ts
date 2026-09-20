@@ -1,15 +1,14 @@
+export * from './transformVelocity';
 export {
   addVelocity,
   beginVelocityFrame,
   clampVelocity,
-  contributeTransformVelocity,
   contributeVelocity,
   copyVelocity,
   createVelocityField,
   dampVelocity,
   explainVelocity,
   getVelocity,
-  getVelocitySampleAt,
   hasVelocity,
   isVelocityZero,
   lengthOfVelocity,
@@ -19,4 +18,5 @@ export {
   subtractVelocity,
   suppressVelocity,
   zeroVelocity,
-} from './contract';
+} from './velocityField';
+export * from './velocitySample';
