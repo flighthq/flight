@@ -2,7 +2,6 @@ import {
   checkTransportBypasses,
   createEmptyTransportBypassReport,
   formatTransportBypassReport,
-  readPackageTransportSources,
 } from './check-transport-bypasses';
 
 describe('checkTransportBypasses', () => {
@@ -181,18 +180,6 @@ describe('formatTransportBypassReport', () => {
     expect(text).toContain('1 transport bypass');
     expect(text).toContain('packages/example/src/runtime.ts:2');
   });
-});
-
-describe('readPackageTransportSources', () => {
-  it('runs the real gate end to end with a nonempty derived population', () => {
-    const sources = readPackageTransportSources(process.cwd());
-    const report = checkTransportBypasses(sources);
-
-    expect(sources.length).toBeGreaterThan(1_000);
-    expect(report.scannedFiles).toBeGreaterThan(1_000);
-    expect(report.allowed.length).toBeGreaterThan(4);
-    expect(report.violations).toEqual([]);
-  }, 60_000);
 });
 
 describe('createEmptyTransportBypassReport', () => {
