@@ -10,6 +10,7 @@ import {
   createEmptyBackendOperationSeamReport,
   formatBackendOperationSeamReport,
 } from './backend-operation-seam-core';
+import { createEmptyHostBypassReport, formatHostBypassReport } from './check-host-bypasses';
 import { createEmptyTransportBypassReport, formatTransportBypassReport } from './check-transport-bypasses';
 import {
   GATE_PROVENANCE_FIELDS,
@@ -17,7 +18,6 @@ import {
   formatGateProvenance,
   readGateTreeState,
 } from './gate-provenance';
-import { createEmptyHostBypassReport, formatHostBypassReport } from './check-host-bypasses';
 
 const PROVENANCE = {
   command: 'npm run example (scripts/example.ts)',
