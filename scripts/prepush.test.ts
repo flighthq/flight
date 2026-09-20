@@ -24,8 +24,6 @@ describe('shouldRunPrepushTypecheck', () => {
 describe('resolveChangedTestArguments', () => {
   it('defaults to half the available parallelism when the override is unset', () => {
     expect(resolveChangedTestArguments('origin/main', undefined, 16)).toEqual([
-      '--project',
-      'unit',
       '--changed',
       'origin/main',
       '--maxWorkers',
@@ -40,8 +38,6 @@ describe('resolveChangedTestArguments', () => {
 
   it('uses the explicit worker override over the default', () => {
     expect(resolveChangedTestArguments('origin/main', '4', 16)).toEqual([
-      '--project',
-      'unit',
       '--changed',
       'origin/main',
       '--maxWorkers',
