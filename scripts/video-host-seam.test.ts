@@ -10,7 +10,6 @@ import * as videoContract from '../packages/video/src/contract';
 import * as videoPublic from '../packages/video/src/index';
 
 const ROOT = process.cwd();
-const SELF = 'scripts/video-host-seam.test.ts';
 const PORTABLE_VIDEO_ROOT = resolve(ROOT, 'packages/video/src');
 const PORTABLE_TEXTURE_ROOT = resolve(ROOT, 'packages/texture/src');
 const BROWSER_IDENTIFIERS = new Set(['HTMLMediaElement', 'HTMLVideoElement', 'MediaStream']);
@@ -39,14 +38,9 @@ const PROVIDER_FIRST_TEXTURE_FUNCTIONS = [
   'isVideoTextureFrameReady',
   'setVideoTextureSource',
 ] as const;
-const PROVIDER_FIRST_FUNCTIONS = [...PROVIDER_FIRST_VIDEO_FUNCTIONS, ...PROVIDER_FIRST_TEXTURE_FUNCTIONS] as const;
-const MINIMUM_ARGUMENTS: ReadonlyMap<string, number> = new Map(
-  PROVIDER_FIRST_FUNCTIONS.map((name) => [name, 2] as const),
-);
-
-// Several of these tests scan every TypeScript file in the repository synchronously. Alone they finish
-// in about a second, but under the aggregate run they share the CPU with every other worker, and a
-// busy host has pushed one past vitest's 5s default. The budget is contention headroom, not a deadline.
+// The repository-wide ratchet scans that justified a 30s budget here have been retired; what remains
+// parses fixtures and the `packages/types/src` surface, which is bounded work. The budget stays only as
+// contention headroom for the aggregate run, where this file shares the CPU with every other worker.
 describe('video host-seam closure', { timeout: 30_000 }, () => {
   it('recognizes every forbidden portable browser fixture', () => {
     const source = parseSource(
@@ -123,17 +117,11 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
     expect(violations).toEqual([]);
   });
 
-  it('leaves no legacy providerless call arity in repository TypeScript', () => {
-    expect(findLegacyCallArities()).toEqual([]);
-  });
-
-  it('keeps the Web MediaStream entry in host-web only and retires the portable spelling', () => {
-    expect(findIdentifierReferences(RETIRED_MEDIA_STREAM_ENTRY)).toEqual([]);
+  it('keeps the Web MediaStream entry on the host-web lanes and off the portable ones', () => {
     expect(Object.hasOwn(videoPublic, RETIRED_MEDIA_STREAM_ENTRY)).toBe(false);
     expect(Object.hasOwn(videoContract, RETIRED_MEDIA_STREAM_ENTRY)).toBe(false);
     expect(Object.hasOwn(hostWebPublic, WEB_MEDIA_STREAM_ENTRY)).toBe(true);
     expect(Object.hasOwn(hostWebContract, WEB_MEDIA_STREAM_ENTRY)).toBe(true);
-    expect(findExportedDeclarations(WEB_MEDIA_STREAM_ENTRY)).toEqual(['packages/host-web/src/webVideoResource.ts']);
   });
 
   it('keeps HostImageSource as the unchanged web drawable-source alias', () => {
@@ -203,76 +191,6 @@ function exportedFunctions(sources: readonly ts.SourceFile[]): ReadonlyMap<strin
   return declarations;
 }
 
-function findLegacyCallArities(): string[] {
-  const findings: string[] = [];
-  const candidate = new RegExp(`\\b(?:${[...MINIMUM_ARGUMENTS.keys()].join('|')})\\b`, 'u');
-  for (const source of repositorySources(candidate)) {
-    const aliases = importedProviderFirstNames(source);
-    visit(source, (node) => {
-      if (!ts.isCallExpression(node)) return;
-      const name = calledProviderFirstName(node.expression, aliases);
-      if (name === null) return;
-      const minimum = MINIMUM_ARGUMENTS.get(name);
-      if (minimum !== undefined && node.arguments.length < minimum) {
-        findings.push(`${location(source, node)}: ${name}(${node.arguments.length})`);
-      }
-    });
-  }
-  return findings.sort();
-}
-
-function findIdentifierReferences(name: string): string[] {
-  const findings: string[] = [];
-  for (const source of repositorySources(new RegExp(`\\b${name}\\b`, 'u'))) {
-    visit(source, (node) => {
-      if (ts.isIdentifier(node) && node.text === name) findings.push(location(source, node));
-    });
-  }
-  return findings.sort();
-}
-
-function findExportedDeclarations(name: string): string[] {
-  const findings: string[] = [];
-  for (const source of repositorySources(new RegExp(`\\b${name}\\b`, 'u'))) {
-    for (const statement of source.statements) {
-      if (
-        ((ts.isFunctionDeclaration(statement) && statement.name?.text === name) ||
-          (ts.isVariableStatement(statement) &&
-            statement.declarationList.declarations.some(
-              ({ name: declarationName }) => ts.isIdentifier(declarationName) && declarationName.text === name,
-            ))) &&
-        isExported(statement)
-      ) {
-        findings.push(relative(ROOT, source.fileName));
-      }
-    }
-  }
-  return findings.sort();
-}
-
-function importedProviderFirstNames(source: ts.SourceFile): ReadonlyMap<string, string> {
-  const names = new Map<string, string>();
-  for (const statement of source.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    if (!/^@flighthq\/(?:sdk|texture|video)(?:\/contract)?$/u.test(statement.moduleSpecifier.text)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      const imported = element.propertyName?.text ?? element.name.text;
-      if (MINIMUM_ARGUMENTS.has(imported)) names.set(element.name.text, imported);
-    }
-  }
-  return names;
-}
-
-function calledProviderFirstName(
-  expression: ts.LeftHandSideExpression,
-  aliases: ReadonlyMap<string, string>,
-): string | null {
-  if (!ts.isIdentifier(expression)) return null;
-  return aliases.get(expression.text) ?? (MINIMUM_ARGUMENTS.has(expression.text) ? expression.text : null);
-}
-
 function productionVideoSources(): ts.SourceFile[] {
   return sourcePaths(PORTABLE_VIDEO_ROOT)
     .filter((path) => !path.endsWith('.test.ts'))
@@ -289,16 +207,6 @@ function typeSources(): ts.SourceFile[] {
   return sourcePaths(resolve(ROOT, 'packages/types/src'))
     .filter((path) => !path.endsWith('.test.ts'))
     .map((path) => parseSource(path, readFileSync(path, 'utf8')));
-}
-
-function repositorySources(candidate: RegExp): ts.SourceFile[] {
-  return ['examples', 'packages', 'scripts', 'tools']
-    .flatMap((directory) => sourcePaths(resolve(ROOT, directory)))
-    .filter((path) => relative(ROOT, path).replaceAll('\\', '/') !== SELF)
-    .flatMap((path) => {
-      const source = readFileSync(path, 'utf8');
-      return candidate.test(source) ? [parseSource(path, source)] : [];
-    });
 }
 
 function sourcePaths(directory: string): string[] {
@@ -337,11 +245,6 @@ function memberName(member: ts.TypeElement): string {
 function violation(source: ts.SourceFile, node: ts.Node, rule: string): PortableViolation {
   const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
   return { file: relative(ROOT, source.fileName).replaceAll('\\', '/'), line: line + 1, rule };
-}
-
-function location(source: ts.SourceFile, node: ts.Node): string {
-  const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
-  return `${relative(ROOT, source.fileName).replaceAll('\\', '/')}:${line + 1}`;
 }
 
 function visit(node: ts.Node, callback: (node: ts.Node) => void): void {

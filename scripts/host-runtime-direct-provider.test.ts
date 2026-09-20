@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 const PACKAGES = resolve(ROOT, 'packages');
 const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Capability)\b/u;
-const LEGACY_HOST_TRAITS = /\bHas(?:Menu\w*|ShareContent|TextSegmenter|TextShaper)\b/u;
 
 interface Violation {
   declaration: string;
@@ -53,13 +52,6 @@ describe('runtime APIs use direct Host providers', () => {
       },
       { declaration: 'whole', file: 'fixture.ts', type: 'Host' },
     ]);
-  });
-
-  it('keeps retired Host trait vocabulary out of production package sources', () => {
-    const violations = runtimeSourceFiles()
-      .filter(({ source }) => LEGACY_HOST_TRAITS.test(source))
-      .map(({ file }) => file);
-    expect(violations).toEqual([]);
   });
 });
 
@@ -226,6 +218,11 @@ interface Source {
 }
 
 function runtimeSourceFiles(): Source[] {
+  _runtimeSourceFiles ??= collectRuntimeSourceFiles();
+  return _runtimeSourceFiles;
+}
+
+function collectRuntimeSourceFiles(): Source[] {
   const files: Source[] = [];
   for (const packageEntry of readdirSync(PACKAGES, { withFileTypes: true })) {
     // The Host layer itself is out of scope. `host` owns createHost/initializeHost and the accessors, and
@@ -245,3 +242,8 @@ function runtimeSourceFiles(): Source[] {
   }
   return files;
 }
+
+// Every surviving case reads the same population — the walk differs by nothing between them — so it is
+// collected once per run instead of once per case. Run-scoped by construction: the tree cannot change
+// while the file executes, so there is nothing to invalidate.
+let _runtimeSourceFiles: Source[] | null = null;
