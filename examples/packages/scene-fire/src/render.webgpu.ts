@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuEffectState } from '@flighthq/sdk';
+import type { Camera3D, Node3D, Effect, Scene3DLightsLike, WgpuEffectState } from '@flighthq/sdk';
 import {
   beginWgpuEffectPass,
   beginWgpuRenderPass,
@@ -65,7 +65,7 @@ export function render(
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
-  effects: readonly RenderEffect[],
+  effects: readonly Effect[],
 ): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');

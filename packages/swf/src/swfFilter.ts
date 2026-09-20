@@ -12,7 +12,7 @@ import {
 } from '@flighthq/effects/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { Adjustment, ImportDiagnostic, RenderEffect, SwfFilterListGuard } from '@flighthq/types/contract';
+import type { Adjustment, ImportDiagnostic, Effect, SwfFilterListGuard } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
@@ -29,7 +29,7 @@ import type { SwfReader } from './swfReader';
 // without desynchronizing every record after it; callers must not read fields trailing that list.
 export function readSwfFilterList(
   reader: SwfReader,
-  outEffects: RenderEffect[],
+  outEffects: Effect[],
   outAdjustments: Adjustment[],
   diagnostics?: ImportDiagnostic[],
 ): boolean {

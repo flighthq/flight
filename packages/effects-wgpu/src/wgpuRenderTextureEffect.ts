@@ -1,6 +1,6 @@
 import { getWgpuRenderTextureTarget, writeWgpuRenderTextureTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  RenderEffect,
+  Effect,
   RenderTexture,
   WgpuEffectApplicationExplanation,
   WgpuEffectApplicationGuard,
@@ -20,7 +20,7 @@ export function applyWgpuEffectsToRenderTexture(
   source: Readonly<RenderTexture>,
   dest: RenderTexture,
   scratch: RenderTexture,
-  effects: ReadonlyArray<Readonly<RenderEffect>>,
+  effects: ReadonlyArray<Readonly<Effect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
     throw new Error('applyWgpuEffectsToRenderTexture: source, destination, and scratch must be distinct');
@@ -84,7 +84,7 @@ export function explainWgpuEffectApplication(
   state: WgpuRenderState,
   source: Readonly<RenderTexture>,
   dest: Readonly<RenderTexture>,
-  effects: ReadonlyArray<Readonly<RenderEffect>>,
+  effects: ReadonlyArray<Readonly<Effect>>,
 ): WgpuEffectApplicationExplanation {
   const unregisteredKinds: string[] = [];
   const unresolvedIndexes: number[] = [];

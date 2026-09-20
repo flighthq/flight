@@ -23,7 +23,7 @@ import type {
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   EntityConstruction,
-  RenderEffect,
+  Effect,
   EffectStateOptions,
   RenderTargetClear,
 } from '@flighthq/types/contract';
@@ -105,7 +105,7 @@ export function destroyCanvasEffectState(_state: CanvasRenderState, pipeline: Ca
 export function endCanvasEffectPass(
   scenePass: CanvasRenderPass,
   pipeline: CanvasEffectState,
-  operations: ReadonlyArray<RenderEffect | Adjustment>,
+  operations: ReadonlyArray<Effect | Adjustment>,
 ): void {
   const state = scenePass.state;
   const scene = pipeline.sceneTarget;
@@ -159,7 +159,7 @@ export function endCanvasEffectPass(
     // later pass never reads an uninitialized ping-pong target. Keeping this composition rule here
     // avoids per-kind passthrough registrations that would falsely advertise renderer support.
     if (runner === null) drawCanvasEffectPass(dest, source, 'none');
-    else runner({ state, source, dest, pool }, operation as Readonly<RenderEffect>);
+    else runner({ state, source, dest, pool }, operation as Readonly<Effect>);
     source = dest;
   }
   flushAdjustments();

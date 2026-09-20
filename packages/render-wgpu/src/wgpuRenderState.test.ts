@@ -16,7 +16,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   Entity,
-  RenderEffectPaddingResolver,
+  EffectPaddingResolver,
   RenderRootGuard,
   RenderState,
   WgpuColorAdjustmentMaterialFeature,
@@ -110,16 +110,16 @@ function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderStat
   return state;
 }
 
-function getPaddingResolver(state: RenderState, kind: string): RenderEffectPaddingResolver | null {
+function getPaddingResolver(state: RenderState, kind: string): EffectPaddingResolver | null {
   const table = getRenderStateRuntime(state).registries.effectPaddingResolvers;
   return table === undefined ? null : getRegistryTableEntry(table, kind);
 }
 
-function registerPaddingResolver(state: RenderState, kind: string, resolver: RenderEffectPaddingResolver): void {
+function registerPaddingResolver(state: RenderState, kind: string, resolver: EffectPaddingResolver): void {
   const runtime = getRenderStateRuntime(state);
   runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
     runtime.registries.effectPaddingResolvers ??
-      createKeyedTable<RenderEffectPaddingResolver>('RenderEffectPaddingResolver', 'Zero'),
+      createKeyedTable<EffectPaddingResolver>('EffectPaddingResolver', 'Zero'),
     kind,
     resolver,
   );

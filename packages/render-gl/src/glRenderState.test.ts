@@ -20,7 +20,7 @@ import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlRenderOptions,
-  RenderEffectPaddingResolver,
+  EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
@@ -65,16 +65,16 @@ function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOp
   return createGlRenderState(gl, testPipeline, options);
 }
 
-function getPaddingResolver(state: RenderState, kind: string): RenderEffectPaddingResolver | null {
+function getPaddingResolver(state: RenderState, kind: string): EffectPaddingResolver | null {
   const table = getRenderStateRuntime(state).registries.effectPaddingResolvers;
   return table === undefined ? null : getRegistryTableEntry(table, kind);
 }
 
-function registerPaddingResolver(state: RenderState, kind: string, resolver: RenderEffectPaddingResolver): void {
+function registerPaddingResolver(state: RenderState, kind: string, resolver: EffectPaddingResolver): void {
   const runtime = getRenderStateRuntime(state);
   runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
     runtime.registries.effectPaddingResolvers ??
-      createKeyedTable<RenderEffectPaddingResolver>('RenderEffectPaddingResolver', 'Zero'),
+      createKeyedTable<EffectPaddingResolver>('EffectPaddingResolver', 'Zero'),
     kind,
     resolver,
   );

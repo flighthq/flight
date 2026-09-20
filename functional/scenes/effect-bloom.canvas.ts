@@ -34,7 +34,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 
 // Canvas parity column for the same bloom intent as render.webgl.ts: bright shapes on a dark
 // background bleed glow. The Canvas bloom recipe bright-passes and blurs via ctx.filter, then adds
-// the glow back over the scene — the same RenderEffect intent realized with Canvas 2D compositing.
+// the glow back over the scene — the same Effect intent realized with Canvas 2D compositing.
 declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(

@@ -16,7 +16,7 @@ export function createBrightnessContrastAdjustment(
 // Expanded, that is affine per channel: `rgb·contrast + (brightness·contrast + 0.5·(1 − contrast))`, so the
 // matrix is scale `contrast`, normalized bias `brightness·contrast + 0.5·(1 − contrast)`.
 // Alpha is unchanged. Identity defaults are brightness 0, contrast 1 (the prior
-// `renderEffectDefaults` listed `contrast: 0`, which disagreed with the shader's `contrast ?? 1` identity —
+// `effectDefaults` listed `contrast: 0`, which disagreed with the shader's `contrast ?? 1` identity —
 // this corrects it to contrast 1).
 export function initializeBrightnessContrastAdjustment(
   out: EntityConstruction<BrightnessContrastAdjustment>,

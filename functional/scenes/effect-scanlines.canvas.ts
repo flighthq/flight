@@ -46,7 +46,7 @@ declareExpectedImageDescription(
 
 // Canvas parity column for the same scanlines intent as render.webgl.ts.
 // Scanlines (REAL on Canvas): the scene is drawn, then a set of darkening horizontal lines is
-// overlaid at `intensity` — the same RenderEffect intent realized with Canvas 2D draw ops.
+// overlaid at `intensity` — the same Effect intent realized with Canvas 2D draw ops.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);

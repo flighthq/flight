@@ -99,7 +99,7 @@ describe('destroyRenderState', () => {
     runtime.registries.effectPaddingResolvers = {
       entries: new Map(),
       onMiss: 'Zero',
-      registry: 'RenderEffectPaddingResolver',
+      registry: 'EffectPaddingResolver',
       shape: 'keyed',
     };
 

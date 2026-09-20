@@ -39,7 +39,7 @@ function getRenderRegistriesMissMessage(state: RenderState, registry: RenderRegi
     case RenderRegistryTable.BlendRealization:
       return 'a blend mode this scene uses has no registered GL realization, so the node composites as Normal instead — call registerGlBlendMode(state, blendMode, realization)';
     case RenderRegistryTable.EffectPaddingResolver:
-      return 'computeRenderEffectPadding: effect kind has no registered padding resolver — call registerRenderEffectPaddingResolver(state, kind, resolver)';
+      return 'computeEffectPadding: effect kind has no registered padding resolver — call registerEffectPaddingResolver(state, kind, resolver)';
     // Reported by the resource layer, not the frame path: a material kind with no lister has its
     // texture slots invisible to anything that walks materials. Discovery no longer depends on this
     // (it reads the resource back-edge). On an all-unlisted mesh, reveal-on-resolve leaves the starting

@@ -11,7 +11,7 @@ import type {
   InnerGlowEffect,
   InnerShadowEffect,
   OuterGlowEffect,
-  RenderEffect,
+  Effect,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
@@ -278,9 +278,9 @@ function readGlow(angle: Uint8Array, distance: Uint8Array, diagnostics: ImportDi
   readSwfFilterList(new SwfReader(bytes, 0, bytes.length), [], [], diagnostics);
 }
 
-function read(bytes: Uint8Array): { adjustments: Adjustment[]; complete: boolean; effects: RenderEffect[] } {
+function read(bytes: Uint8Array): { adjustments: Adjustment[]; complete: boolean; effects: Effect[] } {
   const adjustments: Adjustment[] = [];
-  const effects: RenderEffect[] = [];
+  const effects: Effect[] = [];
   const complete = readSwfFilterList(new SwfReader(bytes, 0, bytes.length), effects, adjustments);
   return { adjustments, complete, effects };
 }

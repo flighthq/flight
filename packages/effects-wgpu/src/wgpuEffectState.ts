@@ -24,7 +24,7 @@ import {
 import type {
   Adjustment,
   EntityConstruction,
-  RenderEffect,
+  Effect,
   EffectStateOptions,
   RenderTargetClear,
   RenderTargetColorSpace,
@@ -100,7 +100,7 @@ export function destroyWgpuEffectState(state: WgpuRenderState, pipeline: WgpuEff
 export function endWgpuEffectPass(
   scenePass: WgpuRenderPass,
   pipeline: WgpuEffectState,
-  operations: ReadonlyArray<RenderEffect | Adjustment>,
+  operations: ReadonlyArray<Effect | Adjustment>,
 ): void {
   const state = scenePass.state;
   const scene = pipeline.sceneTarget;
@@ -167,7 +167,7 @@ export function endWgpuEffectPass(
         sceneDepthTexture: null,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      operation as Readonly<RenderEffect>,
+      operation as Readonly<Effect>,
     );
     source = dest;
   }

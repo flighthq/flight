@@ -1,7 +1,7 @@
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, RenderEffect } from '@flighthq/types/contract';
+import type { GlRenderState, Effect } from '@flighthq/types/contract';
 
 import { getGlEffectRunner, hasGlEffectRunner, isGlEffectResolvable, registerGlEffect } from './glEffectRegistry';
 
@@ -91,6 +91,6 @@ function createState(): GlRenderState {
   return createGlRenderState(createWebGlContext(canvas), allocateEmptyGlRenderRegistries());
 }
 
-function effect(kind: string, extra: Readonly<Record<string, unknown>> = {}): Readonly<RenderEffect> {
-  return { kind, ...extra } as unknown as Readonly<RenderEffect>;
+function effect(kind: string, extra: Readonly<Record<string, unknown>> = {}): Readonly<Effect> {
+  return { kind, ...extra } as unknown as Readonly<Effect>;
 }

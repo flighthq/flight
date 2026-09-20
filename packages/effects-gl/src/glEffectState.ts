@@ -28,7 +28,7 @@ import type {
   GlRenderPass,
   GlRenderState,
   GlTextureRenderTarget,
-  RenderEffect,
+  Effect,
   EffectStateOptions,
   RenderTargetClear,
   RenderTargetColorSpace,
@@ -93,7 +93,7 @@ export function destroyGlEffectState(state: GlRenderState, pipeline: GlEffectSta
 export function endGlEffectPass(
   pass: GlRenderPass,
   pipeline: GlEffectState,
-  operations: ReadonlyArray<RenderEffect | Adjustment>,
+  operations: ReadonlyArray<Effect | Adjustment>,
 ): void {
   const state = pass.state;
   const scene = pipeline.sceneTarget;
@@ -164,7 +164,7 @@ export function endGlEffectPass(
         sceneDepthTexture: scene.depthTexture,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      operation as Readonly<RenderEffect>,
+      operation as Readonly<Effect>,
     );
     source = dest;
   }

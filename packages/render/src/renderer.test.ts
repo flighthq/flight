@@ -140,7 +140,7 @@ describe('copyRenderStateRegistrations', () => {
     getRenderStateRuntime(source).registries.effectPaddingResolvers = {
       entries: new Map([['acme.Effect', { state: RegistryEntryState.Bound, value: resolver }]]),
       onMiss: 'Zero',
-      registry: 'RenderEffectPaddingResolver',
+      registry: 'EffectPaddingResolver',
       shape: 'keyed',
     };
 

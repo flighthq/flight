@@ -56,7 +56,7 @@ import type {
   Node2DRuntime,
   Node2DTraits,
   Rectangle,
-  RenderEffect,
+  Effect,
   RichText,
   Scene2DDocument,
   Scene2DDocumentImportContext,
@@ -457,7 +457,7 @@ interface SwfPlacement {
   depth: number;
   directLinkage: string | null;
   // The record's filter list as spatial effect descriptors, in authored order. Reported, never attached.
-  effects: readonly RenderEffect[];
+  effects: readonly Effect[];
   // The pointwise members of the record's filter list. A declared list replaces this channel, including
   // when it is empty; silence on a move inherits it.
   filterAdjustments: readonly Adjustment[];
@@ -1573,7 +1573,7 @@ function readPlaceObject(
   // reached its end. An unknown filter has no skippable payload length; the blend byte is then out of
   // reach and must not be invented from the unknown payload's first byte.
   const hasFilterList = (extendedFlags & 0x01) !== 0;
-  const readEffects: RenderEffect[] = [];
+  const readEffects: Effect[] = [];
   const readFilterAdjustments: Adjustment[] = [];
   const filterListComplete = !hasFilterList || readSwfFilterList(body, readEffects, readFilterAdjustments, diagnostics);
   const declaresBlendMode = (extendedFlags & 0x02) !== 0;
@@ -3332,7 +3332,7 @@ const ALPHA_CHANNEL = 3;
 const EMPTY_ADJUSTMENTS: readonly Adjustment[] = [];
 // A placement with no filter list shares one empty array, so an untouched effect list compares equal by
 // reference across every frame and instance.
-const EMPTY_EFFECTS: readonly RenderEffect[] = [];
+const EMPTY_EFFECTS: readonly Effect[] = [];
 // A colour transform's add terms are byte-domain, where 255 adds one whole channel; a ColorScaleBias
 // carries the same quantity normalized.
 const COLOR_CHANNEL_ONE = 0xff;

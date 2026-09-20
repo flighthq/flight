@@ -9,7 +9,7 @@ import type {
   GlEffectApplicationGuard,
   GlRenderState,
   GlRenderTexturePool,
-  RenderEffect,
+  Effect,
   RenderTexture,
 } from '@flighthq/types/contract';
 
@@ -24,7 +24,7 @@ export function applyGlEffectsToRenderTexture(
   source: Readonly<RenderTexture>,
   dest: RenderTexture,
   scratch: RenderTexture,
-  effects: ReadonlyArray<Readonly<RenderEffect>>,
+  effects: ReadonlyArray<Readonly<Effect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
     throw new Error('applyGlEffectsToRenderTexture: source, destination, and scratch must be distinct');
@@ -79,7 +79,7 @@ export function applyGlEffectsToRenderTexture(
 // `destinationAvailable` reports whether a failed call would leave previously published pixels behind.
 export function explainGlEffectApplication(
   state: GlRenderState,
-  effects: ReadonlyArray<Readonly<RenderEffect>>,
+  effects: ReadonlyArray<Readonly<Effect>>,
   sourceAvailable: boolean,
   destinationAvailable = false,
 ): GlEffectApplicationExplanation {

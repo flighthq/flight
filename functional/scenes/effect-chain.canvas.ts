@@ -56,7 +56,7 @@ declareExpectedImageDescription(
 );
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the
-// same RenderEffect stack intent realized with Canvas 2D compositing.
+// same Effect stack intent realized with Canvas 2D compositing.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);

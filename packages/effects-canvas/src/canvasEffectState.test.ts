@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasEffectRunner, RenderEffect } from '@flighthq/types/contract';
+import type { CanvasEffectRunner, Effect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { registerCanvasEffect } from './canvasEffectRegistry';
@@ -103,7 +103,7 @@ describe('endCanvasEffectPass', () => {
         out.kind = 'RealizedEffect';
         return finishEntity(out);
       })(),
-    ] as RenderEffect[]);
+    ] as Effect[]);
 
     const [unregisteredDest, realizedDest] = pipeline.pool.free;
     expect(unregisteredDest).toBeDefined();

@@ -4,7 +4,7 @@ import type {
   MatrixLike,
   Node2D,
   RectangleLike,
-  RenderEffectPadding,
+  EffectPadding,
   RenderTargetAxes,
   RenderTargetAxisDifference,
   RenderTargetDescriptor,
@@ -32,7 +32,7 @@ export function computeRenderCacheTransform(
 export function computeRenderTargetSize(
   out: { width: number; height: number },
   bounds: Readonly<RectangleLike>,
-  padding: number | Readonly<RenderEffectPadding> = 0,
+  padding: number | Readonly<EffectPadding> = 0,
   minWidth: number = 1,
   minHeight: number = 1,
 ): { width: number; height: number } {

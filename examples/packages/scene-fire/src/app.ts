@@ -6,7 +6,7 @@ import type {
   ParticleEmitterConfig,
   ParticleEmitterState,
   PointLight,
-  RenderEffect,
+  Effect,
   Scene3DLightsLike,
 } from '@flighthq/sdk';
 import {
@@ -286,7 +286,7 @@ const lights: Scene3DLightsLike = {
   directional: null,
   point: pointLights,
 };
-const effects: readonly RenderEffect[] = [
+const effects: readonly Effect[] = [
   createBloomEffect({ intensity: 1.45, radius: 12, threshold: 0.42 }),
   createVignetteEffect({ intensity: 0.55, radius: 0.78, softness: 0.56 }),
   createToneMapEffect({ exposure: 1.1, operator: 'aces' }),

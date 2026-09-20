@@ -14,7 +14,7 @@ import {
   createGlRenderTexturePool,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlEffectRunner, GlRenderState, LogEntry, RenderEffect } from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, LogEntry, Effect } from '@flighthq/types/contract';
 
 import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards';
 import { registerGlCustomShaderSource } from './glCustomShaderEffect';
@@ -154,7 +154,7 @@ describe('enableGlEffectGuards', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
-          return finishEntity(out) as RenderEffect;
+          return finishEntity(out) as Effect;
         })(),
       ]);
     });
@@ -171,7 +171,7 @@ describe('enableGlEffectGuards', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
-          return finishEntity(out) as RenderEffect;
+          return finishEntity(out) as Effect;
         })(),
       ]);
     });
@@ -218,7 +218,7 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
         const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
-      })() as Readonly<RenderEffect>,
+      })() as Readonly<Effect>,
   );
   return applyGlEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }

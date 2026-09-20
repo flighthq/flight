@@ -6,7 +6,7 @@ import {
   endWgpuRenderPass,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect } from '@flighthq/types/contract';
+import type { Effect } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
@@ -289,7 +289,7 @@ describe('endWgpuEffectPass', () => {
         const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-unregistered';
         return finishEntity(out);
-      })() as RenderEffect,
+      })() as Effect,
     ];
 
     const screenPass = beginWgpuScreenRenderPassForTest(state);
@@ -318,7 +318,7 @@ describe('setWgpuEffectStateSkipGuard', () => {
         const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-skip-seam';
         return finishEntity(out);
-      })() as RenderEffect,
+      })() as Effect,
     ];
 
     setWgpuEffectStateSkipGuard(state, (_state, kind) => dropped.push(kind));

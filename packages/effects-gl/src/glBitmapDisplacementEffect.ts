@@ -4,7 +4,7 @@ import type {
   GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
-  RenderEffect,
+  Effect,
 } from '@flighthq/types/contract';
 import { ImageChannel, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
@@ -64,7 +64,7 @@ export const defaultGlBitmapDisplacementEffectRunner: GlEffectRunner = (ctx, eff
 // Whether this instance resolves to the map-driven pass. The runner still copies through when false;
 // pairing this query with registration lets the render-texture explanation distinguish that sentinel
 // from a working displacement whose output happens to resemble its input.
-export function isGlBitmapDisplacementEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
+export function isGlBitmapDisplacementEffectResolvable(state: GlRenderState, effect: Readonly<Effect>): boolean {
   const map = (effect as Readonly<BitmapDisplacementEffect>).map;
   return map !== null && resolveGlTexture(state, map, false, map.colorSpace === 'linear' ? 'linear' : 'srgb') !== null;
 }

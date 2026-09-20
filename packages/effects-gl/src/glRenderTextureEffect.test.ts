@@ -11,7 +11,7 @@ import {
   isGlRenderTextureReady,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlEffectRunner, GlRenderState, RenderEffect } from '@flighthq/types/contract';
+import type { GlEffectRunner, GlRenderState, Effect } from '@flighthq/types/contract';
 
 import { applyGaussianBlurToGlRenderTextures } from './glBlurEffect';
 import { getGlEffectRunner, registerGlEffect } from './glEffectRegistry';
@@ -212,11 +212,7 @@ describe('explainGlEffectApplication', () => {
         return finishEntity(out);
       })(),
     ];
-    const explanation = explainGlEffectApplication(
-      state,
-      chain as unknown as ReadonlyArray<Readonly<RenderEffect>>,
-      true,
-    );
+    const explanation = explainGlEffectApplication(state, chain as unknown as ReadonlyArray<Readonly<Effect>>, true);
     expect(explanation.status).toBe('partial-resolution');
     expect(explanation.unresolvedIndexes).toEqual([1]);
     // Not 'unresolved-effects': one stage really runs, so the chain is short one stage, not inert.
@@ -309,14 +305,14 @@ describe('setGlEffectApplicationGuard', () => {
   });
 });
 
-function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>> {
+function effects(kinds: readonly string[]): ReadonlyArray<Readonly<Effect>> {
   return kinds.map(
     (kind) =>
       (() => {
         const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
-      })() as Readonly<RenderEffect>,
+      })() as Readonly<Effect>,
   );
 }
 

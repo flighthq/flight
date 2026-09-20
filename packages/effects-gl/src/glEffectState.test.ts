@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { allocateEmptyGlRenderRegistries, createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
-import type { RenderEffect } from '@flighthq/types/contract';
+import type { Effect } from '@flighthq/types/contract';
 
 import {
   beginGlEffectPass,
@@ -72,7 +72,7 @@ describe('setGlEffectStateSkipGuard', () => {
         const out = allocateEntity<any>();
         out.kind = 'test.pipeline-skip-seam';
         return finishEntity(out);
-      })() as RenderEffect,
+      })() as Effect,
     ];
 
     setGlEffectStateSkipGuard(state, (_state, kind) => dropped.push(kind));
