@@ -7,7 +7,7 @@ protected:
   - createWgpuRichTextData
   - createWgpuScale9ShapeData
   - createWgpuShapeData
-  - defaultWgpuQuadBatchVelocityWriter
+  - wgpuQuadBatchVelocityWriter
   - destroyWgpuRichTextData
   - destroyWgpuScale9ShapeData
   - destroyWgpuShapeData

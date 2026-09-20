@@ -18,7 +18,7 @@ protected:
   - createGlRichTextData
   - createGlScale9ShapeData
   - createGlShapeData
-  - defaultGlQuadBatchVelocityWriter
+  - glQuadBatchVelocityWriter
   - destroyGlRichTextData
   - destroyGlScale9ShapeData
   - destroyGlShapeData

@@ -13,8 +13,8 @@ protected:
   - createCanvasRenderStateRuntime
   - createCanvasTextMeasure
   - createGradientPattern
-  - defaultCanvasBeginTextureFill
-  - defaultCanvasLineTextureStyle
+  - canvasBeginTextureFill
+  - canvasLineTextureStyle
   - destroyCanvasRenderCacheTarget
   - drawCanvasAtlasRegion
   - drawCanvasParticleEmitter2D
