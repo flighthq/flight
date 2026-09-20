@@ -93,6 +93,7 @@ interface RegistrationMapping {
 }
 
 const PREFIX: Record<EffectBackend, string> = { canvas: 'Canvas', gl: 'Gl', wgpu: 'Wgpu' };
+const LOWER_PREFIX: Record<EffectBackend, string> = { canvas: 'canvas', gl: 'gl', wgpu: 'wgpu' };
 // The generic door each built-in wrapper of a backend must call. Spelled per backend rather than derived
 // from PREFIX so each backend's naming remains explicit as the Effect families evolve independently.
 const EFFECT_REGISTRATION_DOOR: Record<EffectBackend, string> = {
@@ -108,11 +109,12 @@ const EMPTY_KIND_CONSTANTS: RegistrarKindConstants = { identifiers: new Map(), m
 export function auditEffectBackend(options: EffectAuditOptions): ReachabilityViolation[] {
   const packageName = `effects-${options.backend}`;
   const prefix = PREFIX[options.backend];
+  const lowerPrefix = LOWER_PREFIX[options.backend];
   const violations: ReachabilityViolation[] = [];
   const runnerKinds = new Set<string>();
   const registerKinds = new Set<string>();
   const generic = EFFECT_REGISTRATION_DOOR[options.backend];
-  const runnerPattern = new RegExp(`^default${prefix}(.+Effect)Runner$`);
+  const runnerPattern = new RegExp(`^${lowerPrefix}(.+Effect)Runner$`);
   const registerPattern = new RegExp(`^register${prefix}(.+Effect)$`);
 
   for (const declaration of declarationsIn(options.sourceFiles)) {
@@ -128,7 +130,7 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
     if (registerMatch === null || name === generic) continue;
     const kind = registerMatch[1];
     if (kind === undefined) continue;
-    const runner = `default${prefix}${kind}Runner`;
+    const runner = `${lowerPrefix}${kind}Runner`;
     registerKinds.add(kind);
     const mapped = registrationMappings(declaration.node).some(
       (mapping) => mapping.door === generic && mapping.kind === kind && mapping.implementation === runner,
@@ -146,7 +148,7 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
     if (registerKinds.has(kind)) continue;
     violations.push({
       packageName,
-      symbol: `default${prefix}${kind}Runner`,
+      symbol: `${lowerPrefix}${kind}Runner`,
       rule: 'missing-registration',
       detail: `real built-in runner requires register${prefix}${kind}; delete the runner if it is not real`,
     });
@@ -157,16 +159,17 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
       packageName,
       symbol: `register${prefix}${kind}`,
       rule: 'missing-runner',
-      detail: `capability claim requires default${prefix}${kind}Runner`,
+      detail: `capability claim requires ${lowerPrefix}${kind}Runner`,
     });
   }
   return violations;
 }
 
 export function effectReachabilitySymbols(backend: EffectBackend, sourceFiles: readonly string[]): Set<string> {
+  const lowerPrefix = LOWER_PREFIX[backend];
   const prefix = PREFIX[backend];
   const generic = EFFECT_REGISTRATION_DOOR[backend];
-  const runnerPattern = new RegExp(`^default${prefix}.+EffectRunner$`);
+  const runnerPattern = new RegExp(`^${lowerPrefix}.+EffectRunner$`);
   const registerPattern = new RegExp(`^register${prefix}.+Effect$`);
   const symbols = new Set<string>([generic]);
   for (const { name } of declarationsIn(sourceFiles)) {
@@ -178,7 +181,8 @@ export function effectReachabilitySymbols(backend: EffectBackend, sourceFiles: r
 export function defaultCompositionSymbols(sourceFiles: readonly string[]): Set<string> {
   const symbols = new Set<string>();
   for (const { name } of declarationsIn(sourceFiles)) {
-    if (/^default[A-Z].*(?:Renderer|Runner)$/.test(name) && !name.endsWith('EffectRunner')) symbols.add(name);
+    if (/^(?:gl|canvas|dom|wgpu)[A-Z].*(?:Renderer|Runner)$/.test(name) && !name.endsWith('EffectRunner'))
+      symbols.add(name);
   }
   return symbols;
 }
