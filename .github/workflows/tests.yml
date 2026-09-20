@@ -93,6 +93,48 @@ jobs:
             echo "docs=$FILTER_DOCS" >> "$GITHUB_OUTPUT"
           fi
 
+  test-scripts:
+    name: Tests · scripts
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:scripts
+
+  test-host:
+    name: Tests · host backends
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:host
+
+  test-tools:
+    name: Tests · dev tools
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:tools
+
   # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
   # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
   # second output comparing exactly equal to 'false' is the failure mode this job exists to
