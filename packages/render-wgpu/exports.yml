@@ -1,4 +1,8 @@
 protected:
+  - bindWgpuRenderTexture
+  - resolveWgpuApplyBlendMode
+  - resolveWgpuSmoothingBindGroup
+  - setWgpuRenderTransform2D
   - UNIFORM_BYTE_SIZE
   - acquireWgpuTextureRenderTarget
   - allocateEmptyWgpuRenderRegistries

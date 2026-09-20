@@ -21,7 +21,7 @@ export { defaultCanvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2
 export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
 export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
 export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
-export * from './canvasRenderPass';
+export { beginCanvasRenderPass, endCanvasRenderPass, getCanvasActiveRenderPass } from './canvasRenderPass';
 export {
   createCanvasRenderState,
   destroyCanvasRenderState,
@@ -34,7 +34,6 @@ export {
   registerCanvasSurfaceCreator,
 } from './canvasRenderSurface';
 export {
-  bindCanvasRenderTexture,
   destroyCanvasRenderTexture,
   explainCanvasRenderTexture,
   renderIntoCanvasRenderTexture,

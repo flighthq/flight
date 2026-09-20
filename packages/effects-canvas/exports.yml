@@ -1,4 +1,8 @@
 protected:
+  - applyCanvasGradientRampLookup
+  - buildCanvasGradientRamp
+  - clipCanvasBevelBand
+  - unregisterCanvasBlendEffectBackdrop
   - acquireCanvasRenderTarget
   - acquireTestCanvasRenderSurface
   - applyBevelEffectToCanvas

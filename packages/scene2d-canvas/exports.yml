@@ -1,4 +1,6 @@
 protected:
+  - bindCanvasRenderTexture
+  - setCanvasRenderTransform2D
   - CANVAS_SCALE9_SPRITE_SLICE_STRIDE
   - acquireCanvasTextureResolverSurface
   - acquireTestCanvasRenderSurface

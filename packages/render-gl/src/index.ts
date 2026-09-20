@@ -2,34 +2,19 @@ export { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 export { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
 export { enableGlTextureResolverGuards } from './enableGlTextureResolverGuards';
 export * from './explainGlTextureResolution';
-export {
-  registerGlCompressedTextureDecoder,
-  registerGlCompressedTextureUpload,
-  uploadGlCompressedTextureContainer,
-} from './glCompressedTexture';
+export { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 export {
   beginGlCubeRenderFace,
   createGlCubeRenderTarget,
   destroyGlCubeRenderTarget,
   endGlCubeRenderFace,
 } from './glCubeRenderTarget';
-export {
-  applyGlBlendMode,
-  bindGlImageResourceTexture,
-  bindGlTexture,
-  drawGlQuad,
-  enableGlBlendModeSupport,
-} from './glDraw';
+export { enableGlBlendModeSupport } from './glDraw';
 export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture';
-export {
-  clearGlRenderTarget,
-  clearGlRenderTargetAttachments,
-  drawGlFullscreenPass,
-  fillGlRect,
-} from './glFullscreenPass';
+export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass';
 export { allocateEmptyGlRenderRegistries } from './glPipeline';
 export * from './glPresentRenderTarget';
-export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass, setGlRenderTransform2D } from './glRenderPass';
+export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass } from './glRenderPass';
 export { createGlRenderState, destroyGlRenderState } from './glRenderState';
 export * from './glRenderStateBracket';
 export {
@@ -44,7 +29,6 @@ export {
   isGlRenderTargetFormatSupported,
 } from './glRenderTarget';
 export {
-  bindGlRenderTexture,
   clearGlRenderTexture,
   destroyGlRenderTexture,
   explainGlRenderTexture,

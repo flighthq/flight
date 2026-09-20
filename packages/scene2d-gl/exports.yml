@@ -13,6 +13,8 @@ protected:
   - destroyGlRichTextData
   - destroyGlScale9ShapeData
   - destroyGlShapeData
+  - drawGlScale9Sprite
+  - drawGlSprite
   - drawGlMeshShape
   - drawGlParticleEmitter2D
   - drawGlRasterShape

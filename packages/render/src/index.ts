@@ -1,22 +1,13 @@
-export {
-  areColorAdjustmentsEnabled,
-  createImageSurface,
-  destroyImageSurface,
-  disableSceneRenderGuards,
-  enableColorAdjustments,
-  enableSceneRenderGuards,
-  createRenderCache,
-  destroyRenderState,
-  disposeScene2DRender,
-  enableRenderRegistriesGuards,
-  enableRenderRegistrySignals,
-  explainRenderRegistriesMisses,
-  explainScene2DPipelineCoverage,
-  explainScene3DPipelineCoverage,
-  packScene3DLightBlock,
-  prepareScene2DRender,
-  prepareScene3DRender,
-  registerRenderer,
-  useRenderCache,
-} from './contract';
-export { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace';
+export * from './enableColorAdjustments';
+export * from './enableSceneRenderGuards';
+export * from './explainScene2DPipelineCoverage';
+export * from './explainScene3DPipelineCoverage';
+export * from './imageSurface';
+export { createRenderCache, useRenderCache } from './renderCache';
+export { disposeScene2DRender, prepareScene2DRender } from './renderProxy';
+export { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from './renderRegistryGuards';
+export * from './renderRegistrySignals';
+export { destroyRenderState } from './renderState';
+export { registerRenderer } from './renderer';
+export * from './scene2dWorkingColorSpace';
+export { prepareScene3DRender } from './sceneRender';

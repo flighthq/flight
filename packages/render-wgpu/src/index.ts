@@ -7,11 +7,11 @@ export {
   getWgpuDeviceLoss,
   isWgpuDeviceLost,
 } from './wgpuDeviceLoss';
-export { enableWgpuBlendModeSupport, resolveWgpuSmoothingBindGroup } from './wgpuDraw';
+export { enableWgpuBlendModeSupport } from './wgpuDraw';
 export { createExternalWgpuTexture, disposeExternalWgpuTexture } from './wgpuExternalTexture';
 export { beginWgpuFrame, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 export { registerWgpuMipmapGeneration } from './wgpuMipmap';
-export { beginWgpuRenderPass, endWgpuRenderPass, setWgpuRenderTransform2D } from './wgpuRenderPass';
+export { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 export {
   createWgpuAcquisition,
   createWgpuDeviceState,
@@ -21,10 +21,8 @@ export {
   createWgpuRenderState,
   destroyWgpuRenderState,
   releaseWgpuAcquisition,
-  resolveWgpuApplyBlendMode,
 } from './wgpuRenderState';
 export {
-  bindWgpuRenderTexture,
   destroyWgpuRenderTexture,
   explainWgpuRenderTexture,
   isWgpuRenderTextureReady,

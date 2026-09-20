@@ -41,6 +41,10 @@ protected:
   - destroyWgpuSkinPalette
   - drawWgpuMeshSubset
   - drawWgpuScene3DParticleEmitter3Ds
+  - beginWgpuMeshDraw
+  - ensureWgpuShadowSampleLayout
+  - setWgpuScene3DTime
+  - writeWgpuDrawUniform
   - ensureWgpuClassicPipeline
   - ensureWgpuDebugPipeline
   - ensureWgpuEnvironmentSourceCube
