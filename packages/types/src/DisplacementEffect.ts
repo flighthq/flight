@@ -1,8 +1,8 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
 // Heat-haze / shimmer: warp the sample position by an animated sine field for a refractive-air or
 // underwater wobble. `seed` animates it frame to frame.
-export interface DisplacementEffect extends RenderEffect {
+export interface DisplacementEffect extends Effect {
   kind: 'DisplacementEffect';
   intensity?: number; // max warp in pixels. Default 8.
   frequency?: number; // wave count across the frame. Default 12.

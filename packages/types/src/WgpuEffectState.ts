@@ -1,7 +1,7 @@
 import type { ColorLutCache } from './ColorLutCache';
+import type { Effect } from './Effect';
 import type { Entity } from './Entity';
 import type { EffectStateOptions } from './GlEffectState';
-import type { RenderEffect } from './RenderEffect';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
 import type { WgpuRenderState } from './WgpuRenderState';
 import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget';
@@ -24,9 +24,9 @@ export interface WgpuEffectContext {
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
 // (e.g. through registerWgpuBloomEffect); register an alternative under the same key to swap algorithms.
-export type WgpuEffectRunner = (ctx: Readonly<WgpuEffectContext>, effect: Readonly<RenderEffect>) => void;
+export type WgpuEffectRunner = (ctx: Readonly<WgpuEffectContext>, effect: Readonly<Effect>) => void;
 
-export type WgpuEffectResolver = (state: WgpuRenderState, effect: Readonly<RenderEffect>) => boolean;
+export type WgpuEffectResolver = (state: WgpuRenderState, effect: Readonly<Effect>) => boolean;
 
 export interface WgpuEffectRegistration {
   readonly isResolvable?: WgpuEffectResolver;

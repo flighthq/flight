@@ -3,13 +3,13 @@ import type {
   DirectionalBlurEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createDirectionalBlurEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DirectionalBlurEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createDirectionalBlurEffect(
   return finishEntity(out);
 }
 
-export function getDirectionalBlurEffectPadding(effect: Readonly<DirectionalBlurEffect>): RenderEffectPadding {
+export function getDirectionalBlurEffectPadding(effect: Readonly<DirectionalBlurEffect>): EffectPadding {
   // `angle` is DEGREES on the descriptor (authoring layer); trig is radians, so convert here. This is
   // the same seam every other angle-carrying effect converts at, and it is a consumer rather than a
   // runner — a unit change that missed this one would leave the padding right for one angle only.
@@ -36,16 +36,16 @@ export function initializeDirectionalBlurEffect(
   out: EntityConstruction<DirectionalBlurEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<DirectionalBlurEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'DirectionalBlurEffect');
+  initializeEffect(out, 'DirectionalBlurEffect');
   out.angle = options.angle;
   out.length = options.length;
   out.samples = options.samples;
 }
 
 export function registerDirectionalBlurEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'DirectionalBlurEffect', resolveDirectionalBlurEffectPadding);
+  registerEffectPaddingResolver(state, 'DirectionalBlurEffect', resolveDirectionalBlurEffectPadding);
 }
 
-function resolveDirectionalBlurEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveDirectionalBlurEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getDirectionalBlurEffectPadding(effect as Readonly<DirectionalBlurEffect>);
 }

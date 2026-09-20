@@ -3,13 +3,13 @@ import type {
   BlurEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Plain separable Gaussian blur intent. `blurX`/`blurY` are the per-axis Gaussian standard deviations
 // in pixels; the backends realize them as a two-pass separable blur bouncing through an offscreen
@@ -20,23 +20,23 @@ export function createBlurEffect(options: Readonly<Omit<EntityWithoutRuntime<Blu
   return finishEntity(out);
 }
 
-export function getBlurEffectPadding(effect: Readonly<BlurEffect>): RenderEffectPadding {
-  return getGaussianRenderEffectPadding(effect.blurX ?? 4, effect.blurY ?? 4);
+export function getBlurEffectPadding(effect: Readonly<BlurEffect>): EffectPadding {
+  return getGaussianEffectPadding(effect.blurX ?? 4, effect.blurY ?? 4);
 }
 
 export function initializeBlurEffect(
   out: EntityConstruction<BlurEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<BlurEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'BlurEffect');
+  initializeEffect(out, 'BlurEffect');
   out.blurX = options.blurX;
   out.blurY = options.blurY;
 }
 
 export function registerBlurEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'BlurEffect', resolveBlurEffectPadding);
+  registerEffectPaddingResolver(state, 'BlurEffect', resolveBlurEffectPadding);
 }
 
-function resolveBlurEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveBlurEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getBlurEffectPadding(effect as Readonly<BlurEffect>);
 }

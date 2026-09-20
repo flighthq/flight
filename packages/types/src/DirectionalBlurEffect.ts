@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface DirectionalBlurEffect extends RenderEffect {
+export interface DirectionalBlurEffect extends Effect {
   kind: 'DirectionalBlurEffect';
   /**
    * Direction the frame is smeared along, in DEGREES (default 0).

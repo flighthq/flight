@@ -1,25 +1,25 @@
+import type { Effect } from './Effect';
 import { EntityRuntimeKey } from './Entity';
-import type { RenderEffect } from './RenderEffect';
 
-describe('RenderEffect', () => {
+describe('Effect', () => {
   describe('open base contract', () => {
     it('accepts a foreign custom effect kind', () => {
-      interface AcmeEffect extends RenderEffect {
+      interface AcmeEffect extends Effect {
         kind: 'acme.Sparkle';
         density: number;
       }
 
       const effect: AcmeEffect = { [EntityRuntimeKey]: undefined, kind: 'acme.Sparkle', density: 10 };
-      const base: RenderEffect = effect;
+      const base: Effect = effect;
       expect(base.kind).toBe('acme.Sparkle');
     });
 
     it('narrows on kind discriminant', () => {
-      interface RedEffect extends RenderEffect {
+      interface RedEffect extends Effect {
         kind: 'RedEffect';
         strength: number;
       }
-      interface BlueEffect extends RenderEffect {
+      interface BlueEffect extends Effect {
         kind: 'BlueEffect';
         amount: number;
       }
@@ -32,7 +32,7 @@ describe('RenderEffect', () => {
     });
 
     it('accepts any string kind', () => {
-      const effect: RenderEffect = { [EntityRuntimeKey]: undefined, kind: 'SomeEffect' };
+      const effect: Effect = { [EntityRuntimeKey]: undefined, kind: 'SomeEffect' };
       expect(effect.kind).toBe('SomeEffect');
     });
   });

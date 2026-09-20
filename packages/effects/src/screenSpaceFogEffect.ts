@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createScreenSpaceFogEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ScreenSpaceFogEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeScreenSpaceFogEffect(
   out: EntityConstruction<ScreenSpaceFogEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<ScreenSpaceFogEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'ScreenSpaceFogEffect');
+  initializeEffect(out, 'ScreenSpaceFogEffect');
   out.color = options.color;
   out.near = options.near;
   out.far = options.far;

@@ -1,25 +1,25 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { RenderEffect, RenderState } from '@flighthq/types/contract';
+import type { Effect, RenderState } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect';
 import {
-  computeRenderEffectPadding,
-  explainRenderEffectPadding,
-  getDirectionalRenderEffectPadding,
-  getGaussianRenderEffectPadding,
-  registerRenderEffectPaddingResolver,
-} from './renderEffectPadding';
+  computeEffectPadding,
+  explainEffectPadding,
+  getDirectionalEffectPadding,
+  getGaussianEffectPadding,
+  registerEffectPaddingResolver,
+} from './effectPadding';
 
-describe('computeRenderEffectPadding', () => {
+describe('computeEffectPadding', () => {
   let state: RenderState;
 
   beforeEach(() => {
     state = createRenderState();
     registerBlurEffectPaddingResolver(state);
-    registerRenderEffectPaddingResolver(state, 'acme.Pointwise', () => ({
+    registerEffectPaddingResolver(state, 'acme.Pointwise', () => ({
       bottom: 0,
       left: 0,
       right: 0,
@@ -29,12 +29,12 @@ describe('computeRenderEffectPadding', () => {
 
   it('adds each side across a sequential effect chain while pointwise effects add zero', () => {
     expect(
-      computeRenderEffectPadding(state, [
+      computeEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 1 }),
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Pointwise';
-          return finishEntity(out) as RenderEffect;
+          return finishEntity(out) as Effect;
         })(),
         createBlurEffect({ blurX: 1, blurY: 4 }),
       ]),
@@ -45,16 +45,16 @@ describe('computeRenderEffectPadding', () => {
     const effect = (() => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Missing';
-      return finishEntity(out) as RenderEffect;
+      return finishEntity(out) as Effect;
     })();
-    expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
+    expect(computeEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 
   it('writes into a caller-owned output object when supplied', () => {
     const out = { bottom: -1, left: -1, right: -1, top: -1 };
 
     expect(
-      computeRenderEffectPadding(
+      computeEffectPadding(
         state,
         [createBlurEffect({ blurX: 2, blurY: 1 }), createBlurEffect({ blurX: 1, blurY: 4 })],
         out,
@@ -69,12 +69,12 @@ describe('computeRenderEffectPadding', () => {
       misses.push([registry, kind]);
     });
     expect(
-      computeRenderEffectPadding(
+      computeEffectPadding(
         state,
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
-          return finishEntity(out) as RenderEffect;
+          return finishEntity(out) as Effect;
         })(),
       ),
     ).toEqual({
@@ -87,18 +87,18 @@ describe('computeRenderEffectPadding', () => {
   });
 });
 
-describe('explainRenderEffectPadding', () => {
+describe('explainEffectPadding', () => {
   it('reports every missing resolver kind while preserving resolved padding', () => {
     const state = createRenderState();
     registerBlurEffectPaddingResolver(state);
 
     expect(
-      explainRenderEffectPadding(state, [
+      explainEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 3 }),
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
-          return finishEntity(out) as RenderEffect;
+          return finishEntity(out) as Effect;
         })(),
       ]),
     ).toEqual({
@@ -109,9 +109,9 @@ describe('explainRenderEffectPadding', () => {
   });
 });
 
-describe('getDirectionalRenderEffectPadding', () => {
+describe('getDirectionalEffectPadding', () => {
   it('adds positive screen-space offsets only to the reached sides', () => {
-    expect(getDirectionalRenderEffectPadding(2, 3, 4.25, 5.5)).toEqual({
+    expect(getDirectionalEffectPadding(2, 3, 4.25, 5.5)).toEqual({
       bottom: 15,
       left: 6,
       right: 11,
@@ -120,7 +120,7 @@ describe('getDirectionalRenderEffectPadding', () => {
   });
 
   it('adds negative screen-space offsets only to left and top', () => {
-    expect(getDirectionalRenderEffectPadding(1, 1, -2.5, -4.25)).toEqual({
+    expect(getDirectionalEffectPadding(1, 1, -2.5, -4.25)).toEqual({
       bottom: 3,
       left: 6,
       right: 3,
@@ -129,22 +129,22 @@ describe('getDirectionalRenderEffectPadding', () => {
   });
 });
 
-describe('getGaussianRenderEffectPadding', () => {
+describe('getGaussianEffectPadding', () => {
   it('uses a sanitized three-sigma extent on each axis', () => {
-    expect(getGaussianRenderEffectPadding(2.1, -4)).toEqual({ bottom: 0, left: 7, right: 7, top: 0 });
+    expect(getGaussianEffectPadding(2.1, -4)).toEqual({ bottom: 0, left: 7, right: 7, top: 0 });
   });
 });
 
-describe('registerRenderEffectPaddingResolver', () => {
+describe('registerEffectPaddingResolver', () => {
   it('adds and removes a state-local resolver', () => {
     const state = createRenderState();
     const resolver = vi.fn(() => ({ bottom: 1, left: 2, right: 3, top: 4 }));
 
-    registerRenderEffectPaddingResolver(state, 'acme.Effect', resolver);
+    registerEffectPaddingResolver(state, 'acme.Effect', resolver);
     const before = getRenderStateRuntime(state).registries.effectPaddingResolvers;
     expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: resolver });
 
-    registerRenderEffectPaddingResolver(state, 'acme.Effect', null);
+    registerEffectPaddingResolver(state, 'acme.Effect', null);
     expect(getRenderStateRuntime(state).registries.effectPaddingResolvers).not.toBe(before);
     expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('acme.Effect')).toBe(false);
   });
@@ -153,10 +153,10 @@ describe('registerRenderEffectPaddingResolver', () => {
     const state = createRenderState();
     const first = vi.fn(() => ({ bottom: 1, left: 2, right: 3, top: 4 }));
     const replacement = vi.fn(() => ({ bottom: 4, left: 3, right: 2, top: 1 }));
-    registerRenderEffectPaddingResolver(state, 'acme.Effect', first);
+    registerEffectPaddingResolver(state, 'acme.Effect', first);
     const before = getRenderStateRuntime(state).registries.effectPaddingResolvers;
 
-    registerRenderEffectPaddingResolver(state, 'acme.Effect', replacement);
+    registerEffectPaddingResolver(state, 'acme.Effect', replacement);
 
     expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: first });
     expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({

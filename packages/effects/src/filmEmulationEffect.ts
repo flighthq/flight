@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, FilmEmulationEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createFilmEmulationEffect(
   options: Readonly<Omit<EntityWithoutRuntime<FilmEmulationEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeFilmEmulationEffect(
   out: EntityConstruction<FilmEmulationEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<FilmEmulationEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'FilmEmulationEffect');
+  initializeEffect(out, 'FilmEmulationEffect');
   out.gateWeave = options.gateWeave;
   out.grainIntensity = options.grainIntensity;
   out.halationRadius = options.halationRadius;

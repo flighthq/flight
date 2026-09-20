@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   InnerGlowEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then draw or hide the source.
 export function createInnerGlowEffect(
@@ -20,15 +20,15 @@ export function createInnerGlowEffect(
   return finishEntity(out);
 }
 
-export function getInnerGlowEffectPadding(effect: Readonly<InnerGlowEffect>): RenderEffectPadding {
-  return getGaussianRenderEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
+export function getInnerGlowEffectPadding(effect: Readonly<InnerGlowEffect>): EffectPadding {
+  return getGaussianEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
 }
 
 export function initializeInnerGlowEffect(
   out: EntityConstruction<InnerGlowEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<InnerGlowEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'InnerGlowEffect');
+  initializeEffect(out, 'InnerGlowEffect');
   out.alpha = options.alpha;
   out.blurX = options.blurX;
   out.blurY = options.blurY;
@@ -39,9 +39,9 @@ export function initializeInnerGlowEffect(
 }
 
 export function registerInnerGlowEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'InnerGlowEffect', resolveInnerGlowEffectPadding);
+  registerEffectPaddingResolver(state, 'InnerGlowEffect', resolveInnerGlowEffectPadding);
 }
 
-function resolveInnerGlowEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveInnerGlowEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getInnerGlowEffectPadding(effect as Readonly<InnerGlowEffect>);
 }

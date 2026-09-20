@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface TaaEffect extends RenderEffect {
+export interface TaaEffect extends Effect {
   kind: 'TaaEffect'; // [TEMPORAL] needs a history buffer + motion vectors.
   feedback?: number;
 }

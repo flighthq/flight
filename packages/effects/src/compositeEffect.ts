@@ -6,7 +6,7 @@ import type {
   EntityWithoutRuntime,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 // Porter-Duff composite effect: merges the incoming pipeline layer over a registered backdrop with a
 // coverage operator (the CompositeOperator vocabulary — Erase = DestinationOut, Alpha = DestinationIn,
@@ -28,7 +28,7 @@ export function initializeCompositeEffect(
   operator: CompositeOperator,
   options: Readonly<Omit<EntityWithoutRuntime<CompositeEffect>, 'kind' | 'operator'>>,
 ): void {
-  initializeRenderEffect(out, 'CompositeEffect');
+  initializeEffect(out, 'CompositeEffect');
   out.operator = operator;
   out.backdropKey = options.backdropKey;
 }

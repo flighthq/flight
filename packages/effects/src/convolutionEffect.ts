@@ -3,13 +3,13 @@ import type {
   ConvolutionEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createConvolutionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,
@@ -19,7 +19,7 @@ export function createConvolutionEffect(
   return finishEntity(out);
 }
 
-export function getConvolutionEffectPadding(effect: Readonly<ConvolutionEffect>): RenderEffectPadding {
+export function getConvolutionEffectPadding(effect: Readonly<ConvolutionEffect>): EffectPadding {
   const offsetX = Math.floor(Math.max(0, effect.matrixX) * 0.5);
   const offsetY = Math.floor(Math.max(0, effect.matrixY) * 0.5);
   return {
@@ -34,7 +34,7 @@ export function initializeConvolutionEffect(
   out: EntityConstruction<ConvolutionEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'ConvolutionEffect');
+  initializeEffect(out, 'ConvolutionEffect');
   out.matrix = options.matrix;
   out.matrixX = options.matrixX;
   out.matrixY = options.matrixY;
@@ -46,9 +46,9 @@ export function initializeConvolutionEffect(
 }
 
 export function registerConvolutionEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'ConvolutionEffect', resolveConvolutionEffectPadding);
+  registerEffectPaddingResolver(state, 'ConvolutionEffect', resolveConvolutionEffectPadding);
 }
 
-function resolveConvolutionEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveConvolutionEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getConvolutionEffectPadding(effect as Readonly<ConvolutionEffect>);
 }

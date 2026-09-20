@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface SmaaEffect extends RenderEffect {
+export interface SmaaEffect extends Effect {
   kind: 'SmaaEffect';
   threshold?: number;
 }

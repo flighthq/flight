@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, SmaaEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createSmaaEffect(options: Readonly<Omit<EntityWithoutRuntime<SmaaEffect>, 'kind'>> = {}): SmaaEffect {
   const out = allocateEntity<SmaaEffect>();
@@ -13,6 +13,6 @@ export function initializeSmaaEffect(
   out: EntityConstruction<SmaaEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<SmaaEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'SmaaEffect');
+  initializeEffect(out, 'SmaaEffect');
   out.threshold = options.threshold;
 }

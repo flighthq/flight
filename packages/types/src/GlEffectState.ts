@@ -1,9 +1,9 @@
 import type { ColorLutCache } from './ColorLutCache';
+import type { Effect } from './Effect';
 import type { Entity } from './Entity';
 import type { GlColorLutTextureCache } from './GlColorLutTextureCache';
 import type { GlRenderState } from './GlRenderState';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget';
-import type { RenderEffect } from './RenderEffect';
 import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
 
 // What a Gl effect runner is handed: the state, the input it reads, the output it writes, the pool
@@ -25,7 +25,7 @@ export interface GlEffectContext {
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
 // (e.g. through registerGlBloomEffect); register an alternative under the same key to swap algorithms.
-export type GlEffectRunner = (ctx: Readonly<GlEffectContext>, effect: Readonly<RenderEffect>) => void;
+export type GlEffectRunner = (ctx: Readonly<GlEffectContext>, effect: Readonly<Effect>) => void;
 
 // Why an applyGlEffectsToRenderTexture call would not write its destination, as plain data.
 //
@@ -81,7 +81,7 @@ export interface GlEffectApplicationExplanation {
  * both, so there is no second registration to forget and no way to express a runner whose resolver was
  * never installed. A kind registered without one is always resolvable.
  */
-export type GlEffectResolver = (state: GlRenderState, effect: Readonly<RenderEffect>) => boolean;
+export type GlEffectResolver = (state: GlRenderState, effect: Readonly<Effect>) => boolean;
 
 // What one registered kind holds. The resolver rides with the runner rather than in a parallel map, so
 // there is no state in which a runner exists and its resolver was never installed.

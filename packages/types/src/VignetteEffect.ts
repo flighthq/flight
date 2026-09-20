@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface VignetteEffect extends RenderEffect {
+export interface VignetteEffect extends Effect {
   kind: 'VignetteEffect';
   intensity?: number;
   radius?: number;

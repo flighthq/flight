@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface HalftoneEffect extends RenderEffect {
+export interface HalftoneEffect extends Effect {
   kind: 'HalftoneEffect';
   scale?: number;
   /**

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, SketchEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createSketchEffect(
   options: Readonly<Omit<EntityWithoutRuntime<SketchEffect>, 'kind'>> = {},
@@ -15,6 +15,6 @@ export function initializeSketchEffect(
   out: EntityConstruction<SketchEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<SketchEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'SketchEffect');
+  initializeEffect(out, 'SketchEffect');
   out.strength = options.strength;
 }

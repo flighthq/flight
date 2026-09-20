@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface SsrEffect extends RenderEffect {
+export interface SsrEffect extends Effect {
   kind: 'SsrEffect'; // [DEPTH]
   maxDistance?: number;
   resolution?: number;

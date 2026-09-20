@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface KuwaharaEffect extends RenderEffect {
+export interface KuwaharaEffect extends Effect {
   kind: 'KuwaharaEffect';
   radius?: number;
 }

@@ -24,13 +24,13 @@ import type {
   NodeAny,
   MatrixLike,
   Rectangle,
-  RenderEffect,
-  RenderEffectCaptureGeometry,
+  Effect,
+  EffectCaptureGeometry,
 } from '@flighthq/types/contract';
 import { Node2DTraitsKey } from '@flighthq/types/contract';
 
-import { computeRenderEffectCaptureGeometry } from './renderEffectCaptureGeometry';
-import { computeRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { computeEffectCaptureGeometry } from './effectCaptureGeometry';
+import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const node = createNode('CaptureGeometryTest') as Node2D;
@@ -48,7 +48,7 @@ function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   return node;
 }
 
-function createOut(): RenderEffectCaptureGeometry {
+function createOut(): EffectCaptureGeometry {
   return {
     bounds: createRectangle(),
     captureTransform: createMatrix(),
@@ -58,7 +58,7 @@ function createOut(): RenderEffectCaptureGeometry {
   };
 }
 
-function captureOutValues(out: Readonly<RenderEffectCaptureGeometry>): number[] {
+function captureOutValues(out: Readonly<EffectCaptureGeometry>): number[] {
   return [
     out.bounds.x,
     out.bounds.y,
@@ -88,7 +88,7 @@ function expectMatrixToBeCloseTo(actual: Readonly<MatrixLike>, expected: Readonl
   expect(actual.ty).toBeCloseTo(expected.ty);
 }
 
-describe('computeRenderEffectCaptureGeometry', () => {
+describe('computeEffectCaptureGeometry', () => {
   it('returns false and preserves every output field for empty root-local bounds', () => {
     const state = createRenderState();
     const source = createCaptureNode(createRectangle(3, 4, 0, 9));
@@ -100,7 +100,7 @@ describe('computeRenderEffectCaptureGeometry', () => {
     out.targetHeight = 12;
     const before = captureOutValues(out);
 
-    expect(computeRenderEffectCaptureGeometry(out, state, source, [])).toBe(false);
+    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(false);
     expect(captureOutValues(out)).toEqual(before);
   });
 
@@ -108,14 +108,14 @@ describe('computeRenderEffectCaptureGeometry', () => {
     const state = createRenderState();
     const effect = allocateEntity<Node2D>();
     effect.kind = 'acme.Asymmetric';
-    registerRenderEffectPaddingResolver(state, effect.kind, () => ({ bottom: 7, left: 2, right: 5, top: 3 }));
+    registerEffectPaddingResolver(state, effect.kind, () => ({ bottom: 7, left: 2, right: 5, top: 3 }));
     const source = createCaptureNode(createRectangle(-10, 6, 20.4, 11.2));
     source.x = 50;
     source.y = -30;
     source.rotation = 27;
     const out = createOut();
 
-    expect(computeRenderEffectCaptureGeometry(out, state, source, effect)).toBe(true);
+    expect(computeEffectCaptureGeometry(out, state, source, effect)).toBe(true);
     expect(out.bounds).toMatchObject({ height: 11.2, width: 20.4, x: -10, y: 6 });
     expect(out.padding).toEqual({ bottom: 7, left: 2, right: 5, top: 3 });
     expect(out.targetWidth).toBe(28);
@@ -132,8 +132,8 @@ describe('computeRenderEffectCaptureGeometry', () => {
     first.kind = 'acme.First';
     const second = allocateEntity<Node2D>();
     second.kind = 'acme.Second';
-    registerRenderEffectPaddingResolver(state, first.kind, () => ({ bottom: 1, left: 2, right: 3, top: 4 }));
-    registerRenderEffectPaddingResolver(state, second.kind, () => ({ bottom: 5, left: 6, right: 7, top: 8 }));
+    registerEffectPaddingResolver(state, first.kind, () => ({ bottom: 1, left: 2, right: 3, top: 4 }));
+    registerEffectPaddingResolver(state, second.kind, () => ({ bottom: 5, left: 6, right: 7, top: 8 }));
     const source = createCaptureNode(createRectangle(-2, -3, 10.25, 20.75));
     const child = createCaptureNode(createRectangle(0, 0, 4, 6));
     child.x = 30;
@@ -142,11 +142,11 @@ describe('computeRenderEffectCaptureGeometry', () => {
     const effects = [first, second];
     const out = createOut();
 
-    expect(computeRenderEffectCaptureGeometry(out, state, source, effects)).toBe(true);
+    expect(computeEffectCaptureGeometry(out, state, source, effects)).toBe(true);
 
     const bounds = createRectangle();
     computeNodeRootLocalBoundsRectangle(bounds, source);
-    const padding = computeRenderEffectPadding(state, effects);
+    const padding = computeEffectPadding(state, effects);
     const targetSize = { height: 0, width: 0 };
     computeRenderTargetSize(targetSize, bounds, padding);
     const captureTransform = createMatrix();
@@ -166,9 +166,9 @@ describe('computeRenderEffectCaptureGeometry', () => {
     const padding = out.padding;
     const captureTransform = out.captureTransform;
 
-    expect(computeRenderEffectCaptureGeometry(out, state, source, [])).toBe(true);
+    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(true);
     source.x = 17;
-    expect(computeRenderEffectCaptureGeometry(out, state, source, [])).toBe(true);
+    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(true);
     expect(out.bounds).toBe(bounds);
     expect(out.padding).toBe(padding);
     expect(out.captureTransform).toBe(captureTransform);
@@ -178,11 +178,11 @@ describe('computeRenderEffectCaptureGeometry', () => {
     const state = createRenderState();
     const source: NodeAny = createCaptureNode(createRectangle(0, 0, 8, 9));
     const out = createOut();
-    expect(computeRenderEffectCaptureGeometry(out, state, source, [])).toBe(true);
+    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(true);
 
     const non2D: NodeAny = createNode('Non2D');
     const before = captureOutValues(out);
-    expect(computeRenderEffectCaptureGeometry(out, state, non2D, [])).toBe(false);
+    expect(computeEffectCaptureGeometry(out, state, non2D, [])).toBe(false);
     expect(captureOutValues(out)).toEqual(before);
   });
 });

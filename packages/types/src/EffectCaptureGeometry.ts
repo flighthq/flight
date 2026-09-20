@@ -1,11 +1,11 @@
+import type { EffectPadding } from './EffectPadding';
 import type { MatrixLike } from './Matrix';
 import type { RectangleLike } from './Rectangle';
-import type { RenderEffectPadding } from './RenderEffectPadding';
 
-export interface RenderEffectCaptureGeometry {
+export interface EffectCaptureGeometry {
   readonly bounds: RectangleLike;
   readonly captureTransform: MatrixLike;
-  readonly padding: RenderEffectPadding;
+  readonly padding: EffectPadding;
   targetHeight: number;
   targetWidth: number;
 }

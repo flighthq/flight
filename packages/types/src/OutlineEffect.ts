@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface OutlineEffect extends RenderEffect {
+export interface OutlineEffect extends Effect {
   kind: 'OutlineEffect';
   threshold?: number;
   thickness?: number;

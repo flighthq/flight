@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, VolumetricLightEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createVolumetricLightEffect(
   options: Readonly<Omit<EntityWithoutRuntime<VolumetricLightEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeVolumetricLightEffect(
   out: EntityConstruction<VolumetricLightEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<VolumetricLightEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'VolumetricLightEffect');
+  initializeEffect(out, 'VolumetricLightEffect');
   out.density = options.density;
   out.lightColor = options.lightColor;
   out.lightX = options.lightX;

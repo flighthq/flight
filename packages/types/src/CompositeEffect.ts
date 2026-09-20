@@ -1,5 +1,5 @@
 import type { CompositeOperator } from './CompositeOperator';
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
 // Merge this node's isolated layer into its parent with a Porter-Duff coverage operator instead of the
 // default source-over. Unlike BlendEffect (which samples a backdrop and runs blend math in a shader), a
@@ -10,7 +10,7 @@ import type { RenderEffect } from './RenderEffect';
 // texture cannot live in serializable data, so the intent carries the key and the backend resolves it. An
 // unregistered key composites over an implicit transparent backdrop (which reduces most operators to a
 // passthrough or clear) rather than erroring.
-export interface CompositeEffect extends RenderEffect {
+export interface CompositeEffect extends Effect {
   kind: 'CompositeEffect';
   operator: CompositeOperator;
   backdropKey?: string;

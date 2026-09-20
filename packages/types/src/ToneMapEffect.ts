@@ -1,8 +1,8 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
 export type ToneMapOperator = 'reinhard' | 'aces' | 'filmic' | 'agx' | 'uncharted2';
 
-export interface ToneMapEffect extends RenderEffect {
+export interface ToneMapEffect extends Effect {
   kind: 'ToneMapEffect'; // [HDR]
   operator?: ToneMapOperator;
   exposure?: number;

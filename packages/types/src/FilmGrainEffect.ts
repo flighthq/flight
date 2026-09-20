@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface FilmGrainEffect extends RenderEffect {
+export interface FilmGrainEffect extends Effect {
   kind: 'FilmGrainEffect';
   intensity?: number;
   size?: number;

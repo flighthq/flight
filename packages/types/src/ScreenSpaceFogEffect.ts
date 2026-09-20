@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface ScreenSpaceFogEffect extends RenderEffect {
+export interface ScreenSpaceFogEffect extends Effect {
   kind: 'ScreenSpaceFogEffect'; // [DEPTH]
   // Packed sRGB RGBA (`0xRRGGBBAA`). Default 0xc8d2dcff.
   color?: number;

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, PanniniProjectionEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createPanniniProjectionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<PanniniProjectionEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializePanniniProjectionEffect(
   out: EntityConstruction<PanniniProjectionEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<PanniniProjectionEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'PanniniProjectionEffect');
+  initializeEffect(out, 'PanniniProjectionEffect');
   out.compression = options.compression;
   out.crop = options.crop;
 }

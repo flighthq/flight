@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CrtEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createCrtEffect(options: Readonly<Omit<EntityWithoutRuntime<CrtEffect>, 'kind'>> = {}): CrtEffect {
   const out = allocateEntity<CrtEffect>();
@@ -13,7 +13,7 @@ export function initializeCrtEffect(
   out: EntityConstruction<CrtEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<CrtEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'CrtEffect');
+  initializeEffect(out, 'CrtEffect');
   out.curvature = options.curvature;
   out.scanlineIntensity = options.scanlineIntensity;
   out.vignette = options.vignette;

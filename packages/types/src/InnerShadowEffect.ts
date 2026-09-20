@@ -1,10 +1,10 @@
+import type { Effect } from './Effect';
 import type { InnerEffectSourceMode } from './EffectSourceMode';
-import type { RenderEffect } from './RenderEffect';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then draw or hide the source.
 // Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer
 // whose alpha multiplies the separate alpha field, and angles are degrees.
-export interface InnerShadowEffect extends RenderEffect {
+export interface InnerShadowEffect extends Effect {
   kind: 'InnerShadowEffect';
   alpha?: number;
   /**

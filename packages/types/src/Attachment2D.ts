@@ -4,7 +4,7 @@ import type { Entity } from './Entity';
 // its bone: a textured region, a deformable mesh, and later a bounding box / path / clipping / point.
 // An OPEN family: each concrete attachment is its own type carrying a string `kind`, dispatched by a
 // registry/switch in the deformer and display layers, so a consumer can add a custom attachment kind
-// (vendor-prefixed) without editing a central union. Mirrors the Material / RenderEffect open-family
+// (vendor-prefixed) without editing a central union. Mirrors the Material / Effect open-family
 // posture. The runtime interprets an attachment against the slot's bone world transform.
 export interface Attachment2D extends Entity {
   kind: string;

@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface ScanlinesEffect extends RenderEffect {
+export interface ScanlinesEffect extends Effect {
   kind: 'ScanlinesEffect';
   count?: number;
   intensity?: number;

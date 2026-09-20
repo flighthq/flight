@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   GradientGlowEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode decides source compositing.
 export function createGradientGlowEffect(
@@ -20,15 +20,15 @@ export function createGradientGlowEffect(
   return finishEntity(out);
 }
 
-export function getGradientGlowEffectPadding(effect: Readonly<GradientGlowEffect>): RenderEffectPadding {
-  return getGaussianRenderEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
+export function getGradientGlowEffectPadding(effect: Readonly<GradientGlowEffect>): EffectPadding {
+  return getGaussianEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
 }
 
 export function initializeGradientGlowEffect(
   out: EntityConstruction<GradientGlowEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<GradientGlowEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'GradientGlowEffect');
+  initializeEffect(out, 'GradientGlowEffect');
   out.alphas = options.alphas;
   out.blurX = options.blurX;
   out.blurY = options.blurY;
@@ -40,9 +40,9 @@ export function initializeGradientGlowEffect(
 }
 
 export function registerGradientGlowEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'GradientGlowEffect', resolveGradientGlowEffectPadding);
+  registerEffectPaddingResolver(state, 'GradientGlowEffect', resolveGradientGlowEffectPadding);
 }
 
-function resolveGradientGlowEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveGradientGlowEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getGradientGlowEffectPadding(effect as Readonly<GradientGlowEffect>);
 }

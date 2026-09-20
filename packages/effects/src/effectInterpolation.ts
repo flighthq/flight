@@ -1,12 +1,12 @@
 import { lerpColor } from '@flighthq/color/contract';
-import type { RenderEffect, RenderEffectFieldRoles } from '@flighthq/types/contract';
+import type { Effect, EffectFieldRoles } from '@flighthq/types/contract';
 
 // Animation-friendly interpolation for render-effect intents. Allows tween/timeline to animate
 // effect parameters smoothly across keyframes. All functions are alias-safe.
 
 // Returns true if `a` and `b` can be interpolated: they must be the same `kind`.
 // A mismatch (different kinds, or either undefined) returns false — callers should snap in that case.
-export function canLerpRenderEffects(a: Readonly<RenderEffect>, b: Readonly<RenderEffect>): boolean {
+export function canLerpEffects(a: Readonly<Effect>, b: Readonly<Effect>): boolean {
   return a.kind === b.kind;
 }
 
@@ -14,7 +14,7 @@ export function canLerpRenderEffects(a: Readonly<RenderEffect>, b: Readonly<Rend
 // the field declarations in @flighthq/types, where every one of these carries a "Packed sRGB RGBA"
 // comment. A caller with vendor effect kinds spreads its own entries over this table; a kind that is
 // absent is treated as all-scalar, which is the pre-existing behaviour rather than a new guess.
-export const RENDER_EFFECT_FIELD_ROLES: RenderEffectFieldRoles = {
+export const EFFECT_FIELD_ROLES: EffectFieldRoles = {
   BevelEffect: { highlightColor: 'packedColor', shadowColor: 'packedColor' },
   ConvolutionEffect: { color: 'packedColor' },
   DropShadowEffect: { color: 'packedColor' },
@@ -41,12 +41,12 @@ export const RENDER_EFFECT_FIELD_ROLES: RenderEffectFieldRoles = {
 // interpolates in linear space, and repacks — rather than as scalars. Lerping a packed integer borrows
 // across byte boundaries: halfway between 0xff0000ff and 0x0000ffff is 0x7f8080ff, a grey-blue whose
 // green channel neither endpoint has.
-export function lerpRenderEffect(
-  a: Readonly<RenderEffect>,
-  b: Readonly<RenderEffect>,
+export function lerpEffect(
+  a: Readonly<Effect>,
+  b: Readonly<Effect>,
   t: number,
-  out: RenderEffect,
-  roles: RenderEffectFieldRoles = RENDER_EFFECT_FIELD_ROLES,
+  out: Effect,
+  roles: EffectFieldRoles = EFFECT_FIELD_ROLES,
 ): boolean {
   if (a.kind !== b.kind) return false;
   const tc = Math.max(0, Math.min(1, t));

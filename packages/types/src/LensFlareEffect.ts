@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface LensFlareEffect extends RenderEffect {
+export interface LensFlareEffect extends Effect {
   kind: 'LensFlareEffect'; // [HDR]
   threshold?: number;
   intensity?: number;

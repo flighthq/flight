@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, HalftoneEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createHalftoneEffect(
   options: Readonly<Omit<EntityWithoutRuntime<HalftoneEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeHalftoneEffect(
   out: EntityConstruction<HalftoneEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<HalftoneEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'HalftoneEffect');
+  initializeEffect(out, 'HalftoneEffect');
   out.scale = options.scale;
   out.angle = options.angle;
 }

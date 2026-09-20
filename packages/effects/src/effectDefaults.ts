@@ -1,15 +1,15 @@
-import type { RenderEffect } from '@flighthq/types/contract';
+import type { Effect } from '@flighthq/types/contract';
 
 // Per-kind default values for every built-in render effect. The table holds only the fields
 // that have documented non-zero defaults (fields that default to 0/false/undefined are omitted).
-// `getRenderEffectDefaults(kind)` returns a copy (so the caller can mutate it freely);
-// `normalizeRenderEffect(effect, out)` merges the table defaults with a partial effect intent,
+// `getEffectDefaults(kind)` returns a copy (so the caller can mutate it freely);
+// `normalizeEffect(effect, out)` merges the table defaults with a partial effect intent,
 // filling in missing fields with their defaults. Both are alias-safe.
 
 // Returns a fresh object containing the documented default field values for the given effect kind.
 // Returns an empty object if the kind has no default table entry (e.g. user-defined custom effects).
 // The returned object does NOT include `kind`; it is raw defaults that can be spread into an effect.
-export function getRenderEffectDefaults(kind: string): Record<string, unknown> {
+export function getEffectDefaults(kind: string): Record<string, unknown> {
   const entry = DEFAULTS[kind];
   if (!entry) return {};
   return { ...entry };
@@ -22,7 +22,7 @@ export function getRenderEffectDefaults(kind: string): Record<string, unknown> {
 // and leaves `out` unchanged in that case.
 //
 // Alias-safe: reads all fields from `effect` and defaults into locals before writing to `out`.
-export function normalizeRenderEffect(effect: Readonly<RenderEffect>, out: RenderEffect): boolean {
+export function normalizeEffect(effect: Readonly<Effect>, out: Effect): boolean {
   const entry = DEFAULTS[effect.kind];
   if (!entry) return false;
   // Read snapshot of both sources before writing.

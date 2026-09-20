@@ -1,5 +1,5 @@
-import type { RenderEffect } from './RenderEffect';
-export interface ContactShadowsEffect extends RenderEffect {
+import type { Effect } from './Effect';
+export interface ContactShadowsEffect extends Effect {
   kind: 'ContactShadowsEffect';
   /**
    * Occlusion search radius, as the normalized radius forwarded to the SSAO pass (default 0.5). A

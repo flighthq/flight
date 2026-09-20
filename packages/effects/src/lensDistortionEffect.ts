@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, LensDistortionEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createLensDistortionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<LensDistortionEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeLensDistortionEffect(
   out: EntityConstruction<LensDistortionEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<LensDistortionEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'LensDistortionEffect');
+  initializeEffect(out, 'LensDistortionEffect');
   out.amount = options.amount;
   out.scale = options.scale;
 }

@@ -1,23 +1,23 @@
 import { createBevelEffect } from './bevelEffect';
 import { createBloomEffect } from './bloomEffect';
-import { canLerpRenderEffects, lerpRenderEffect } from './renderEffectInterpolation';
+import { canLerpEffects, lerpEffect } from './effectInterpolation';
 import { createVignetteEffect } from './vignetteEffect';
 
-describe('canLerpRenderEffects', () => {
+describe('canLerpEffects', () => {
   it('returns true for same kind', () => {
-    expect(canLerpRenderEffects(createBloomEffect(), createBloomEffect())).toBe(true);
+    expect(canLerpEffects(createBloomEffect(), createBloomEffect())).toBe(true);
   });
   it('returns false for different kinds', () => {
-    expect(canLerpRenderEffects(createBloomEffect(), createVignetteEffect())).toBe(false);
+    expect(canLerpEffects(createBloomEffect(), createVignetteEffect())).toBe(false);
   });
 });
 
-describe('lerpRenderEffect', () => {
+describe('lerpEffect', () => {
   it('returns false and leaves out unchanged for mismatched kinds', () => {
     const a = createBloomEffect({ threshold: 0.5 });
     const b = createVignetteEffect({ intensity: 1 });
     const out = createBloomEffect({ threshold: 0.99 });
-    const result = lerpRenderEffect(a, b, 0.5, out);
+    const result = lerpEffect(a, b, 0.5, out);
     expect(result).toBe(false);
     expect(out.threshold).toBe(0.99);
   });
@@ -25,7 +25,7 @@ describe('lerpRenderEffect', () => {
     const a = createBloomEffect({ threshold: 0.2, radius: 4 });
     const b = createBloomEffect({ threshold: 0.8, radius: 16 });
     const out = createBloomEffect();
-    lerpRenderEffect(a, b, 0, out);
+    lerpEffect(a, b, 0, out);
     expect(out.threshold).toBeCloseTo(0.2, 5);
     expect(out.radius).toBeCloseTo(4, 5);
   });
@@ -33,7 +33,7 @@ describe('lerpRenderEffect', () => {
     const a = createBloomEffect({ threshold: 0.2, radius: 4 });
     const b = createBloomEffect({ threshold: 0.8, radius: 16 });
     const out = createBloomEffect();
-    lerpRenderEffect(a, b, 1, out);
+    lerpEffect(a, b, 1, out);
     expect(out.threshold).toBeCloseTo(0.8, 5);
     expect(out.radius).toBeCloseTo(16, 5);
   });
@@ -41,7 +41,7 @@ describe('lerpRenderEffect', () => {
     const a = createBloomEffect({ threshold: 0, radius: 0 });
     const b = createBloomEffect({ threshold: 1, radius: 10 });
     const out = createBloomEffect();
-    lerpRenderEffect(a, b, 0.5, out);
+    lerpEffect(a, b, 0.5, out);
     expect(out.threshold).toBeCloseTo(0.5, 5);
     expect(out.radius).toBeCloseTo(5, 5);
   });
@@ -49,12 +49,12 @@ describe('lerpRenderEffect', () => {
     const a = createBloomEffect();
     const b = createBloomEffect();
     const out = createBloomEffect();
-    expect(lerpRenderEffect(a, b, 0.5, out)).toBe(true);
+    expect(lerpEffect(a, b, 0.5, out)).toBe(true);
   });
   it('is alias-safe when out === a', () => {
     const a = createBloomEffect({ threshold: 0, radius: 0 });
     const b = createBloomEffect({ threshold: 1, radius: 10 });
-    lerpRenderEffect(a, b, 0.5, a);
+    lerpEffect(a, b, 0.5, a);
     expect(a.threshold).toBeCloseTo(0.5, 5);
   });
   it('interpolates a packed colour per channel instead of lerping the integer', () => {
@@ -64,7 +64,7 @@ describe('lerpRenderEffect', () => {
     const a = createVignetteEffect({ color: 0xff0000ff });
     const b = createVignetteEffect({ color: 0x0000ffff });
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0.5, out);
+    lerpEffect(a, b, 0.5, out);
     expect(channelOf(out.color as number, 1)).toBe(0);
     expect(out.color).not.toBe(Math.round(0xff0000ff + (0x0000ffff - 0xff0000ff) * 0.5));
   });
@@ -75,7 +75,7 @@ describe('lerpRenderEffect', () => {
     const a = createVignetteEffect({ color: 0x3366ccff });
     const b = createVignetteEffect({ color: 0x3366ccff });
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0.37, out);
+    lerpEffect(a, b, 0.37, out);
     expect(out.color).toBe(0x3366ccff);
   });
 
@@ -83,9 +83,9 @@ describe('lerpRenderEffect', () => {
     const a = createVignetteEffect({ color: 0xff0000ff });
     const b = createVignetteEffect({ color: 0x00ff00ff });
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0, out);
+    lerpEffect(a, b, 0, out);
     expect(out.color).toBe(0xff0000ff);
-    lerpRenderEffect(a, b, 1, out);
+    lerpEffect(a, b, 1, out);
     expect(out.color).toBe(0x00ff00ff);
   });
 
@@ -96,7 +96,7 @@ describe('lerpRenderEffect', () => {
     const a = createVignetteEffect({ color: 0xff0000ff });
     const b = createVignetteEffect({ color: 0x00ff0000 });
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0.5, out);
+    lerpEffect(a, b, 0.5, out);
     expect(Number.isInteger(out.color)).toBe(true);
     const alpha = channelOf(out.color as number, 3);
     expect(alpha).toBeGreaterThan(0);
@@ -109,7 +109,7 @@ describe('lerpRenderEffect', () => {
     const a = createBevelEffect({ highlightColor: 0xff0000ff, shadowColor: 0xff0000ff });
     const b = createBevelEffect({ highlightColor: 0x0000ffff, shadowColor: 0x0000ffff });
     const out = createBevelEffect();
-    lerpRenderEffect(a, b, 0.5, out);
+    lerpEffect(a, b, 0.5, out);
     expect(channelOf(out.highlightColor as number, 1)).toBe(0);
     expect(channelOf(out.shadowColor as number, 1)).toBe(0);
   });
@@ -119,14 +119,14 @@ describe('lerpRenderEffect', () => {
     const a = createVignetteEffect({ color: 0xff0000ff, intensity: 0 });
     const b = createVignetteEffect({ color: 0x0000ffff, intensity: 1 });
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0.25, out);
+    lerpEffect(a, b, 0.25, out);
     expect(out.intensity).toBeCloseTo(0.25, 5);
   });
 
   it('is alias-safe for a colour field when out === a', () => {
     const a = createVignetteEffect({ color: 0xff0000ff });
     const b = createVignetteEffect({ color: 0x0000ffff });
-    lerpRenderEffect(a, b, 0.5, a);
+    lerpEffect(a, b, 0.5, a);
     expect(channelOf(a.color as number, 1)).toBe(0);
   });
 
@@ -136,9 +136,9 @@ describe('lerpRenderEffect', () => {
     const b = createVignetteEffect();
     (b as unknown as Record<string, unknown>).enabled = true;
     const out = createVignetteEffect();
-    lerpRenderEffect(a, b, 0.4, out);
+    lerpEffect(a, b, 0.4, out);
     expect((out as unknown as Record<string, unknown>).enabled).toBe(false);
-    lerpRenderEffect(a, b, 0.5, out);
+    lerpEffect(a, b, 0.5, out);
     expect((out as unknown as Record<string, unknown>).enabled).toBe(true);
   });
 });

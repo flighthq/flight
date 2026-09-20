@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface BloomEffect extends RenderEffect {
+export interface BloomEffect extends Effect {
   kind: 'BloomEffect'; // [HDR]
   threshold?: number; // bright-pass cutoff in linear light. Default 0.8.
   intensity?: number; // additive strength. Default 1.

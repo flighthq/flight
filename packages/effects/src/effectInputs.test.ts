@@ -2,40 +2,40 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import { createBloomEffect } from './bloomEffect';
 import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect';
-import { getRenderEffectInputs, getRenderEffectKinds, RENDER_EFFECT_KINDS } from './renderEffectInputs';
+import { getEffectInputs, getEffectKinds, EFFECT_KINDS } from './effectInputs';
 import { createSsaoEffect } from './ssaoEffect';
 import { createTaaEffect } from './taaEffect';
 import { createToneMapEffect } from './toneMapEffect';
 import { createVignetteEffect } from './vignetteEffect';
 
-describe('getRenderEffectInputs', () => {
+describe('getEffectInputs', () => {
   it('returns Hdr for BloomEffect', () => {
-    expect(getRenderEffectInputs(createBloomEffect())).toEqual(['Hdr']);
+    expect(getEffectInputs(createBloomEffect())).toEqual(['Hdr']);
   });
 
   it('returns Hdr for ToneMapEffect', () => {
-    expect(getRenderEffectInputs(createToneMapEffect())).toEqual(['Hdr']);
+    expect(getEffectInputs(createToneMapEffect())).toEqual(['Hdr']);
   });
 
   it('returns Depth for SsaoEffect', () => {
-    expect(getRenderEffectInputs(createSsaoEffect())).toEqual(['Depth']);
+    expect(getEffectInputs(createSsaoEffect())).toEqual(['Depth']);
   });
 
   it('returns Depth for BokehDepthOfFieldEffect', () => {
-    expect(getRenderEffectInputs(createBokehDepthOfFieldEffect())).toEqual(['Depth']);
+    expect(getEffectInputs(createBokehDepthOfFieldEffect())).toEqual(['Depth']);
   });
 
   it('returns Temporal for TaaEffect', () => {
-    expect(getRenderEffectInputs(createTaaEffect())).toEqual(['Temporal']);
+    expect(getEffectInputs(createTaaEffect())).toEqual(['Temporal']);
   });
 
   it('returns empty array for effects that need only the color buffer', () => {
-    expect(getRenderEffectInputs(createVignetteEffect())).toEqual([]);
+    expect(getEffectInputs(createVignetteEffect())).toEqual([]);
   });
 
   it('returns empty array for unknown kind', () => {
     expect(
-      getRenderEffectInputs(
+      getEffectInputs(
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.UnknownEffect';
@@ -46,21 +46,21 @@ describe('getRenderEffectInputs', () => {
   });
 });
 
-describe('getRenderEffectKinds', () => {
+describe('getEffectKinds', () => {
   it('returns an array containing known effect kinds', () => {
-    const kinds = getRenderEffectKinds();
+    const kinds = getEffectKinds();
     expect(kinds).toContain('BloomEffect');
     expect(kinds).toContain('ToneMapEffect');
     expect(kinds).toContain('SsaoEffect');
     expect(kinds).toContain('VignetteEffect');
   });
 
-  it('returns the same reference as RENDER_EFFECT_KINDS', () => {
-    expect(getRenderEffectKinds()).toBe(RENDER_EFFECT_KINDS);
+  it('returns the same reference as EFFECT_KINDS', () => {
+    expect(getEffectKinds()).toBe(EFFECT_KINDS);
   });
 
   it('kinds are in alphabetical order', () => {
-    const kinds = getRenderEffectKinds();
+    const kinds = getEffectKinds();
     for (let i = 1; i < kinds.length; i++) {
       expect(kinds[i - 1].localeCompare(kinds[i])).toBeLessThan(0);
     }

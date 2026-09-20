@@ -1,5 +1,5 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
 // Advanced blend as an explicit composite effect: blend the incoming pipeline layer (the effect's
 // `source`, treated as the foreground) over a backdrop using a destination-reading / non-separable mode
@@ -10,7 +10,7 @@ import type { RenderEffect } from './RenderEffect';
 // the key and the backend resolves it. An unregistered key
 // composites the layer over an implicit transparent backdrop (source-over passthrough) rather than
 // erroring. `opacity` scales the layer's contribution 0..1 (W3C `mix` term), default 1.
-export interface BlendEffect extends RenderEffect {
+export interface BlendEffect extends Effect {
   kind: 'BlendEffect';
   mode: AdvancedBlendMode;
   backdropKey?: string;
