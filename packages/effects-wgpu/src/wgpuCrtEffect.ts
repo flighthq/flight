@@ -29,13 +29,13 @@ export function applyCrtEffectToWgpu(
   });
 }
 
-export const defaultWgpuCrtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuCrtEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'CrtEffect', wgpuCrtEffectRunner);
+}
+
+export const wgpuCrtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyCrtEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CrtEffect);
 };
-
-export function registerWgpuCrtEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
-}
 
 // Slot layout: [0]=curvature, [1]=scanlineIntensity, [2]=vignette, [3]=aberration, [4..5]=resolution.
 const CRT_FRAGMENT_WGSL = /* wgsl */ `

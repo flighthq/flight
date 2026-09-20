@@ -26,7 +26,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-import { defaultGlRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
+import { glRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
@@ -98,18 +98,9 @@ function solidShape() {
   return shape;
 }
 
-describe('defaultGlRasterShapeRenderer', () => {
-  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
-    expect(defaultGlRasterShapeRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultGlRasterShapeRenderer.createData).toBe('function');
-    expect(typeof defaultGlRasterShapeRenderer.destroyData).toBe('function');
-    expect(defaultGlRasterShapeRenderer.submit).toBe(drawGlRasterShape);
-  });
-});
-
 describe('drawGlRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', () => {
-    // The behavioural difference from defaultGlShapeRenderer: no tessellation is attempted first, so a
+    // The behavioural difference from glShapeRenderer: no tessellation is attempted first, so a
     // solid rectangle still goes through the canvas replay.
     const { state, gl } = createGlState();
     setTestRasterProvider(state);
@@ -168,5 +159,14 @@ describe('drawGlRasterShape', () => {
     drawGlRasterShape(state, makeShapeNode({ commands: [], version: 1 }));
     drawGlRasterShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }, null));
     expect(rasterizer).not.toHaveBeenCalled();
+  });
+});
+
+describe('glRasterShapeRenderer', () => {
+  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
+    expect(glRasterShapeRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof glRasterShapeRenderer.createData).toBe('function');
+    expect(typeof glRasterShapeRenderer.destroyData).toBe('function');
+    expect(glRasterShapeRenderer.submit).toBe(drawGlRasterShape);
   });
 });

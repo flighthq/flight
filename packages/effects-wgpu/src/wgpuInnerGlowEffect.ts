@@ -57,13 +57,13 @@ export function applyInnerGlowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuInnerGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuInnerGlowEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'InnerGlowEffect', wgpuInnerGlowEffectRunner);
+}
+
+export const wgpuInnerGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
-
-export function registerWgpuInnerGlowEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'InnerGlowEffect', defaultWgpuInnerGlowEffectRunner);
-}
 
 function getInvertTintEdgeColor(
   color: number,

@@ -18,12 +18,12 @@ export function applyPosterizeEffectToGl(
   });
 }
 
-export const defaultGlPosterizeEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glPosterizeEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
 export function registerGlPosterizeEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
+  registerGlEffect(state, 'PosterizeEffect', glPosterizeEffectRunner);
 }
 
 const POSTERIZE_FRAGMENT_SRC = `#version 300 es

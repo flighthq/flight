@@ -5,11 +5,7 @@ import type { GodRaysEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@f
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
 import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import {
-  applyGodRaysEffectToWgpu,
-  defaultWgpuGodRaysEffectRunner,
-  registerWgpuGodRaysEffect,
-} from './wgpuGodRaysEffect';
+import { applyGodRaysEffectToWgpu, wgpuGodRaysEffectRunner, registerWgpuGodRaysEffect } from './wgpuGodRaysEffect';
 
 const recorded = {
   pipelines: [] as { blend: string; key: string; wgsl: string }[],
@@ -117,26 +113,26 @@ describe('applyGodRaysEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuGodRaysEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
-
-    defaultWgpuGodRaysEffectRunner(
-      { dest: target, pool: {}, source: target, state: {} } as never,
-      createGodRaysEffect({ centerY: 0.25 }),
-    );
-
-    expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);
-  });
-});
-
 describe('registerWgpuGodRaysEffect', () => {
   it('makes the runner resolvable for the GodRaysEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
     expect(getWgpuEffectRunner(state, 'GodRaysEffect')).toBeNull();
     registerWgpuGodRaysEffect(state);
-    expect(getWgpuEffectRunner(state, 'GodRaysEffect')).toBe(defaultWgpuGodRaysEffectRunner);
+    expect(getWgpuEffectRunner(state, 'GodRaysEffect')).toBe(wgpuGodRaysEffectRunner);
+  });
+});
+
+describe('wgpuGodRaysEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    recorded.uniforms.length = 0;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
+
+    wgpuGodRaysEffectRunner(
+      { dest: target, pool: {}, source: target, state: {} } as never,
+      createGodRaysEffect({ centerY: 0.25 }),
+    );
+
+    expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);
   });
 });

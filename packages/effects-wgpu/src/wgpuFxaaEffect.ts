@@ -26,13 +26,13 @@ export function applyFxaaEffectToWgpu(
   });
 }
 
-export const defaultWgpuFxaaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuFxaaEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'FxaaEffect', wgpuFxaaEffectRunner);
+}
+
+export const wgpuFxaaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyFxaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
-
-export function registerWgpuFxaaEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'FxaaEffect', defaultWgpuFxaaEffectRunner);
-}
 
 // Slots [0..1]=resolution (vec2f), [2]=edgeThreshold; the trailing scalar fits in the same 16-byte block.
 const FXAA_FRAGMENT_WGSL = /* wgsl */ `

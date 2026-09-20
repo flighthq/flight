@@ -68,10 +68,6 @@ export function applyCustomShaderEffectToGl(
   });
 }
 
-export const defaultGlCustomShaderEffectRunner: GlEffectRunner = (ctx, effect) => {
-  applyCustomShaderEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CustomShaderEffect);
-};
-
 // Returns the fragment source registered under `shaderKey` for this state, or null when none is
 // registered. Doubles as the introspection query for the identity-passthrough fallback in
 // applyCustomShaderEffectToGl.
@@ -79,6 +75,10 @@ export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string)
   const entry = getGlRenderStateRuntime(state).registries.customEffectShaders.entries.get(shaderKey);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
+
+export const glCustomShaderEffectRunner: GlEffectRunner = (ctx, effect) => {
+  applyCustomShaderEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CustomShaderEffect);
+};
 
 // Whether this CustomShaderEffect names a shaderKey that has source registered for the state. An
 // effect that does not still RUNS — it copies the input through unchanged — so this is the query that
@@ -90,7 +90,7 @@ export function isGlCustomShaderEffectResolvable(state: GlRenderState, effect: R
 export function registerGlCustomShaderEffect(state: GlRenderState): void {
   // The resolver is what makes the identity-passthrough fallback visible: without it a chain naming an
   // unregistered shaderKey reports 'complete' while copying its input through untouched.
-  registerGlEffect(state, 'CustomShaderEffect', defaultGlCustomShaderEffectRunner, isGlCustomShaderEffectResolvable);
+  registerGlEffect(state, 'CustomShaderEffect', glCustomShaderEffectRunner, isGlCustomShaderEffectResolvable);
 }
 
 // Registers a fragment shader source under `shaderKey` for this state, so a CustomShaderEffect naming

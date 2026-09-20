@@ -7,14 +7,14 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-  defaultCanvasShapeRenderer,
-  defaultCanvasTextLabelRenderer,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
+  canvasShapeRenderer,
+  canvasTextLabelRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   prepareScene2DRender,
@@ -22,7 +22,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -39,7 +39,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -48,15 +48,15 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasShapeCommands(state, [
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
 ]);
 
 export const scale = pixelRatio;

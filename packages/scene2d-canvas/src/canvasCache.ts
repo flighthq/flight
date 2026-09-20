@@ -83,7 +83,7 @@ export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: 
 }
 
 export function enableCanvasRenderCache(state: RenderState): void {
-  registerRenderCacheRenderer(state, defaultCanvasRenderCacheRenderer);
+  registerRenderCacheRenderer(state, canvasRenderCacheRenderer);
 }
 
 /**
@@ -204,7 +204,7 @@ function destroyOwnedCanvasRenderCacheTargets(state: CanvasRenderState): void {
   _renderCacheTargets.delete(state);
 }
 
-export const defaultCanvasRenderCacheRenderer: Scene2DRenderer = {
+export const canvasRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasRenderCache,
 };

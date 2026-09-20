@@ -8,7 +8,7 @@ import {
 import type { Bitmap, GlEffectState, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -22,7 +22,7 @@ import {
   createShape,
   getBitmapPixelRgb,
   registerGlLensFlareEffect,
-  defaultGlShapeRenderer,
+  glShapeRenderer,
   endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
@@ -58,10 +58,10 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerRenderer(state, ShapeKind, glShapeRenderer);
 registerGlLensFlareEffect(state);
 
 const pipeline: GlEffectState = createGlEffectState(state, {

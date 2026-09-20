@@ -8,7 +8,7 @@ import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D 
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
+import { canvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
@@ -65,10 +65,10 @@ function makeProxy(source: BitmapText): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-describe('defaultCanvasBitmapTextRenderer', () => {
+describe('canvasBitmapTextRenderer', () => {
   it('has submit and createData', () => {
-    expect(typeof defaultCanvasBitmapTextRenderer.submit).toBe('function');
-    expect(typeof defaultCanvasBitmapTextRenderer.createData).toBe('function');
+    expect(typeof canvasBitmapTextRenderer.submit).toBe('function');
+    expect(typeof canvasBitmapTextRenderer.createData).toBe('function');
   });
 });
 

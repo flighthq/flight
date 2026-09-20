@@ -119,7 +119,7 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   runtime.quadBatchWriterCount += SCALE9_QUAD_COUNT;
 }
 
-export const defaultGlScale9SpriteRenderer: Scene2DRenderer = {
+export const glScale9SpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createSpriteRendererData,
   isDirty: isSpriteRendererDirty,

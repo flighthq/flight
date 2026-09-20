@@ -7,7 +7,7 @@ import { RichTextKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import {
-  defaultDomRichTextRenderer,
+  domRichTextRenderer,
   drawDomRichText,
   drawDomRichTextMask,
   initializeDomRichTextData,
@@ -17,7 +17,7 @@ import {
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
+  registerRenderer(state, RichTextKind, domRichTextRenderer);
   return state;
 }
 
@@ -27,10 +27,10 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultDomRichTextRenderer', () => {
+describe('domRichTextRenderer', () => {
   it('has submit, and createData', () => {
-    expect(typeof defaultDomRichTextRenderer.submit).toBe('function');
-    expect(typeof defaultDomRichTextRenderer.createData).toBe('function');
+    expect(typeof domRichTextRenderer.submit).toBe('function');
+    expect(typeof domRichTextRenderer.createData).toBe('function');
   });
 });
 

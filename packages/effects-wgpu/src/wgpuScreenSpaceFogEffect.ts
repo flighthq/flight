@@ -39,13 +39,13 @@ export function applyScreenSpaceFogEffectToWgpu(
   });
 }
 
-export const defaultWgpuScreenSpaceFogEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuScreenSpaceFogEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ScreenSpaceFogEffect', wgpuScreenSpaceFogEffectRunner);
+}
+
+export const wgpuScreenSpaceFogEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyScreenSpaceFogEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
 };
-
-export function registerWgpuScreenSpaceFogEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ScreenSpaceFogEffect', defaultWgpuScreenSpaceFogEffectRunner);
-}
 
 // Slot layout: [0]=density, [1..3]=pad, [4..6]=fog color rgb. The std140-style struct aligns the vec3
 // color to a 16-byte boundary, so the JS writes skip slots [1..3].

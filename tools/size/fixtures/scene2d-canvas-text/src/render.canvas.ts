@@ -10,7 +10,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasTextLabelRenderer,
+  canvasTextLabelRenderer,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -21,7 +21,7 @@ import { RegistryEntryState, TextLabelKind } from '@flighthq/types';
 // REQUIRED WIRING for one text primitive, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  TextLabelKind -> defaultCanvasTextLabelRenderer
+//   renderer  TextLabelKind -> canvasTextLabelRenderer
 //   commands  NONE. A TextLabel does not replay a shape command stream, so no command table is built
 //             at all — not an empty one bound defensively, simply absent.
 //   resolvers an EMPTY CanvasTextureResolvers container. Canvas draws text through the 2D context's
@@ -40,7 +40,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, TextLabelKind, defaultCanvasTextLabelRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, TextLabelKind, canvasTextLabelRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

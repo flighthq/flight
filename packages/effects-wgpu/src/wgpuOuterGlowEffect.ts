@@ -62,10 +62,10 @@ export function applyOuterGlowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
-export const defaultWgpuOuterGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuOuterGlowEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'OuterGlowEffect', wgpuOuterGlowEffectRunner);
+}
+
+export const wgpuOuterGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
-
-export function registerWgpuOuterGlowEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'OuterGlowEffect', defaultWgpuOuterGlowEffectRunner);
-}

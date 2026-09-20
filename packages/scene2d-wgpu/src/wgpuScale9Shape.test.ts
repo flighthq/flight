@@ -19,7 +19,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   acquireWgpuScale9ShapeRasterSurface,
   createWgpuScale9ShapeData,
-  defaultWgpuScale9ShapeRenderer,
+  wgpuScale9ShapeRenderer,
   destroyWgpuScale9ShapeData,
   drawWgpuScale9Shape,
   drawWgpuScale9ShapeMask,
@@ -128,14 +128,6 @@ describe('createWgpuScale9ShapeData', () => {
   });
 });
 
-describe('defaultWgpuScale9ShapeRenderer', () => {
-  it('wires createData, destroyData, and submit', () => {
-    expect(defaultWgpuScale9ShapeRenderer.createData).toBe(createWgpuScale9ShapeData);
-    expect(defaultWgpuScale9ShapeRenderer.destroyData).toBe(destroyWgpuScale9ShapeData);
-    expect(defaultWgpuScale9ShapeRenderer.submit).toBe(drawWgpuScale9Shape);
-  });
-});
-
 describe('destroyWgpuScale9ShapeData', () => {
   it('removes its cached texture before destroying its per-node surface, idempotently', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -229,5 +221,13 @@ describe('getWgpuScale9ShapeData', () => {
     const rendererData = createWgpuScale9ShapeData({} as never, createScale9Shape(grid));
 
     expect(getWgpuScale9ShapeData(rendererData)?.surface).toBeNull();
+  });
+});
+
+describe('wgpuScale9ShapeRenderer', () => {
+  it('wires createData, destroyData, and submit', () => {
+    expect(wgpuScale9ShapeRenderer.createData).toBe(createWgpuScale9ShapeData);
+    expect(wgpuScale9ShapeRenderer.destroyData).toBe(destroyWgpuScale9ShapeData);
+    expect(wgpuScale9ShapeRenderer.submit).toBe(drawWgpuScale9Shape);
   });
 });

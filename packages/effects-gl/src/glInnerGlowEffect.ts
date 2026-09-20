@@ -103,12 +103,12 @@ export function applyInnerGlowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlInnerGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glInnerGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
 
 export function registerGlInnerGlowEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'InnerGlowEffect', defaultGlInnerGlowEffectRunner);
+  registerGlEffect(state, 'InnerGlowEffect', glInnerGlowEffectRunner);
 }
 
 function applyGlInnerClipPass(

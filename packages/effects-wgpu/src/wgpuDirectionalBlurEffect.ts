@@ -33,13 +33,13 @@ export function applyDirectionalBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuDirectionalBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuDirectionalBlurEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'DirectionalBlurEffect', wgpuDirectionalBlurEffectRunner);
+}
+
+export const wgpuDirectionalBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDirectionalBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
-
-export function registerWgpuDirectionalBlurEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);
-}
 
 // Slot layout: [0]=angle, [1]=length, [2]=samples, [3]=pad, [4]=resolution.x, [5]=resolution.y.
 const DIRECTIONAL_BLUR_FRAGMENT_WGSL = /* wgsl */ `

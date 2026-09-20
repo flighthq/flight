@@ -7,7 +7,7 @@ import * as wgpuEffectPassMod from './wgpuEffectPass';
 import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
 import {
   applyInnerGlowEffectToWgpu,
-  defaultWgpuInnerGlowEffectRunner,
+  wgpuInnerGlowEffectRunner,
   registerWgpuInnerGlowEffect,
 } from './wgpuInnerGlowEffect';
 
@@ -123,9 +123,9 @@ describe('applyInnerGlowEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuInnerGlowEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuInnerGlowEffectRunner).toBe('function');
+describe('registerWgpuInnerGlowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuInnerGlowEffect).toBeTypeOf('function');
   });
 });
 
@@ -141,8 +141,8 @@ function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
 
-describe('registerWgpuInnerGlowEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerWgpuInnerGlowEffect).toBeTypeOf('function');
+describe('wgpuInnerGlowEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuInnerGlowEffectRunner).toBe('function');
   });
 });

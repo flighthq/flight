@@ -197,7 +197,7 @@ single-delegating-statement shape rather than letting an unreadable registrar di
 
 **There is no per-kind node-renderer registrar, no built-in table, and therefore nothing to read.** The
 only door is the generic `registerRenderer(state, kind, renderer)`, and the pairing
-`ShapeKind → defaultCanvasShapeRenderer` exists **only at application call sites**. `renderer.ts:46`
+`ShapeKind → canvasShapeRenderer` exists **only at application call sites**. `renderer.ts:46`
 states the refusal as a design position:
 
 > The registry stays open and tree-shakable: only the renderers the caller references are pulled in —
@@ -207,9 +207,9 @@ That rule is right and is not up for revision. Its consequence is that the knowl
 default renderer *is* lives in examples and in people's heads, nowhere a tool can read.
 
 **Name derivation cannot rescue it.** Pairing `default{Backend}{X}Renderer` with `{X}Kind` breaks on the
-canvas list's own entries: `defaultCanvasRenderCacheRenderer` is registered through
+canvas list's own entries: `canvasRenderCacheRenderer` is registered through
 `registerRenderCacheRenderer(state, renderer)`, a different door taking no kind at all, and
-`defaultCanvasMorphShapeRenderer` is an alias of `defaultCanvasShapeRenderer`. Unlike the derived half,
+`canvasMorphShapeRenderer` is an alias of `canvasShapeRenderer`. Unlike the derived half,
 there is no body to confirm a guess against — so a name scan is a guess wearing a check's clothing, and a
 wrong entry generates a wrong call, which is worse than no entry.
 
@@ -246,12 +246,12 @@ of it — the thing itself, in production, exercised by every functional test:
 ```ts
 for (const kind of options.kinds ?? []) {
   if (kind === ShapeKind) {
-    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-    registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+    registerRenderer(state, ShapeKind, canvasShapeRenderer);
+    registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
   } else if (kind === RichTextKind) {
-    registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
+    registerRenderer(state, RichTextKind, canvasRichTextRenderer);
   } else if (kind === QuadBatchKind) {
-    registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+    registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
   } // …
 }
 ```
@@ -303,9 +303,9 @@ it is already hand-written throughout the examples.
 scene uses:
 
 ```ts
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasShapeCommands(state, [defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerCanvasShapeCommands(state, [canvasBeginFill, canvasDrawRectangle]);
 ```
 
 Generation writes that file instead of a person writing it. It is committed, reviewed, and diffed like
@@ -317,7 +317,7 @@ any source — see [No bundler plugin](#no-bundler-plugin-deliberately) for why 
 both `registrar` and `module`; `Unavailable`, `FallbackUnavailable`, and `Satisfied` expose neither.
 There is no nullable remedy pair. The strict definition of an unavailable result is: **no call you
 could write would unlock it.** This is the reliable-negative case [registration model §3](registration-model.md)
-already promises: if `registerCanvasSsaoEffect` and `defaultCanvasSsaoEffectRunner` do not exist, Canvas
+already promises: if `registerCanvasSsaoEffect` and `canvasSsaoEffectRunner` do not exist, Canvas
 does not implement SSAO. A miss that can name its own repair is the mechanism the whole anti-shotgun
 argument rests on — see [Why an agent reaches for it](#why-an-agent-reaches-for-it-instead-of-a-bundle).
 
@@ -622,7 +622,7 @@ Generating example wiring from the catalog changes three things at once:
 - **The default lesson inverts.** Copying an example copies the minimal path.
 - **The capture suite becomes the catalog's correctness oracle.** This is what closes the gap left open
   in [the declared half](#declared--node-renderers-because-source-never-states-them): a check cannot
-  confirm `ShapeKind → defaultCanvasShapeRenderer` is the *right* pairing, but an example generated from
+  confirm `ShapeKind → canvasShapeRenderer` is the *right* pairing, but an example generated from
   that row and rendered into `test:functional:regression` can. The committed baseline is evidence
   external to the catalog, so this is verification and not circularity.
 - **`npm run size` becomes a minimality gate on codegen.** Examples are what the size baseline measures,
@@ -654,10 +654,10 @@ So every stage answers to one question: **does this end in a call?**
 // src/registries.gen.ts — the terminal artifact, generated and committed
 import { registerGlBlurEffect } from '@flighthq/effects-gl';
 import { registerRenderer } from '@flighthq/render';
-import { defaultGlShapeRenderer } from '@flighthq/scene2d-gl';
+import { glShapeRenderer } from '@flighthq/scene2d-gl';
 
 export function createGlRenderRegistries(state: GlRenderState): void {
-  registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+  registerRenderer(state, ShapeKind, glShapeRenderer);
   registerGlBlurEffect(state);
 }
 ```

@@ -19,7 +19,7 @@ import {
   setCanvasGlobalAlpha,
   setCanvasImageSmoothing,
 } from './canvasTestSupport';
-import { defaultScene2DCanvasRenderRegistries } from './scene2DCanvasPipeline';
+import { canvasScene2DRenderRegistries } from './scene2DCanvasPipeline';
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {
@@ -38,10 +38,7 @@ describe('createCanvasRenderState', () => {
 
 describe('createCanvasRenderStateRuntime', () => {
   it('allocates an entity runtime', () => {
-    const runtime = createCanvasRenderStateRuntime(
-      defaultScene2DCanvasRenderRegistries,
-      createCanvasTextureResolvers(),
-    );
+    const runtime = createCanvasRenderStateRuntime(canvasScene2DRenderRegistries, createCanvasTextureResolvers());
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();

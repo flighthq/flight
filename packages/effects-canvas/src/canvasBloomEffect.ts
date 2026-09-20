@@ -83,10 +83,10 @@ export function applyBloomEffectToCanvas(
   releaseCanvasRenderTarget(pool, blurred);
 }
 
-export const defaultCanvasBloomEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasBloomEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBloomEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
 export function registerCanvasBloomEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
+  registerCanvasEffect(state, 'BloomEffect', canvasBloomEffectRunner);
 }

@@ -39,10 +39,10 @@ export function applyPosterizeEffectToCanvas(
   });
 }
 
-export const defaultCanvasPosterizeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasPosterizeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToCanvas(ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
 export function registerCanvasPosterizeEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'PosterizeEffect', defaultCanvasPosterizeEffectRunner);
+  registerCanvasEffect(state, 'PosterizeEffect', canvasPosterizeEffectRunner);
 }

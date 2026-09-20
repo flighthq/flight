@@ -1,11 +1,7 @@
 import { createDropShadowEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import {
-  applyDropShadowEffectToGl,
-  defaultGlDropShadowEffectRunner,
-  registerGlDropShadowEffect,
-} from './glDropShadowEffect';
+import { applyDropShadowEffectToGl, glDropShadowEffectRunner, registerGlDropShadowEffect } from './glDropShadowEffect';
 import * as glEffectBlitShader from './glEffectBlitShader';
 import * as glEffectBoxBlur from './glEffectBoxBlur';
 import * as glEffectTintShader from './glEffectTintShader';
@@ -99,9 +95,9 @@ describe('applyDropShadowEffectToGl', () => {
   });
 });
 
-describe('defaultGlDropShadowEffectRunner', () => {
+describe('glDropShadowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlDropShadowEffectRunner).toBe('function');
+    expect(typeof glDropShadowEffectRunner).toBe('function');
   });
 });
 

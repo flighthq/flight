@@ -23,7 +23,7 @@ import {
   TextureAtlasRotation,
 } from '@flighthq/types/contract';
 
-import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
+import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -37,16 +37,6 @@ afterEach(() => {
 
 beforeAll(() => {
   installWgpuMock();
-});
-
-describe('defaultWgpuParticleEmitter2DRenderer', () => {
-  it('has a createData function', () => {
-    expect(typeof defaultWgpuParticleEmitter2DRenderer.createData).toBe('function');
-  });
-
-  it('has a submit function', () => {
-    expect(typeof defaultWgpuParticleEmitter2DRenderer.submit).toBe('function');
-  });
 });
 
 describe('drawWgpuParticleEmitter2D', () => {
@@ -167,5 +157,15 @@ describe('drawWgpuParticleEmitter2D', () => {
     drawWgpuParticleEmitter2D(state, renderProxy);
     expect(runtime.particleInstanceData![12]).toBe(40);
     expect(runtime.particleInstanceData![13]).toBe(-20);
+  });
+});
+
+describe('wgpuParticleEmitter2DRenderer', () => {
+  it('has a createData function', () => {
+    expect(typeof wgpuParticleEmitter2DRenderer.createData).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof wgpuParticleEmitter2DRenderer.submit).toBe('function');
   });
 });

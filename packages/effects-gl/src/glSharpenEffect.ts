@@ -19,12 +19,12 @@ export function applySharpenEffectToGl(
   });
 }
 
-export const defaultGlSharpenEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glSharpenEffectRunner: GlEffectRunner = (ctx, effect) => {
   applySharpenEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
 };
 
 export function registerGlSharpenEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'SharpenEffect', defaultGlSharpenEffectRunner);
+  registerGlEffect(state, 'SharpenEffect', glSharpenEffectRunner);
 }
 
 const SHARPEN_FRAGMENT_SRC = `#version 300 es

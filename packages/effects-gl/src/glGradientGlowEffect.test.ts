@@ -1,6 +1,6 @@
 import {
   applyGradientGlowEffectToGl,
-  defaultGlGradientGlowEffectRunner,
+  glGradientGlowEffectRunner,
   registerGlGradientGlowEffect,
 } from './glGradientGlowEffect';
 
@@ -10,9 +10,9 @@ describe('applyGradientGlowEffectToGl', () => {
   });
 });
 
-describe('defaultGlGradientGlowEffectRunner', () => {
+describe('glGradientGlowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlGradientGlowEffectRunner).toBe('function');
+    expect(typeof glGradientGlowEffectRunner).toBe('function');
   });
 });
 

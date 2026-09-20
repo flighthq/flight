@@ -34,7 +34,7 @@ export function applyBokehDepthOfFieldEffectToGl(
   });
 }
 
-export const defaultGlBokehDepthOfFieldEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glBokehDepthOfFieldEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBokehDepthOfFieldEffectToGl(
     ctx.state,
     ctx.source,
@@ -45,7 +45,7 @@ export const defaultGlBokehDepthOfFieldEffectRunner: GlEffectRunner = (ctx, effe
 };
 
 export function registerGlBokehDepthOfFieldEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'BokehDepthOfFieldEffect', defaultGlBokehDepthOfFieldEffectRunner);
+  registerGlEffect(state, 'BokehDepthOfFieldEffect', glBokehDepthOfFieldEffectRunner);
 }
 
 const BOKEH_DOF_FRAGMENT_SRC = `#version 300 es

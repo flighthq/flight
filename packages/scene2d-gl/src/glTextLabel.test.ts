@@ -12,7 +12,7 @@ import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
-import { defaultGlTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel';
+import { glTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -111,55 +111,13 @@ function installTestImageSurfaceCreator(
   };
 }
 
-describe('defaultGlTextLabelRenderer', () => {
-  it('declares BatchFormat.Quad', () => {
-    expect(defaultGlTextLabelRenderer.format).toBe(BatchFormat.Quad);
-  });
-
-  it('has a createData function', () => {
-    expect(typeof defaultGlTextLabelRenderer.createData).toBe('function');
-  });
-
-  it('creates RendererData with an entity runtime slot', () => {
-    const data = defaultGlTextLabelRenderer.createData!(createGlState().state, createTextLabel())!;
-    expect(EntityRuntimeKey in data).toBe(true);
-  });
-
-  it('has a submit function pointing to drawGlTextLabel', () => {
-    expect(defaultGlTextLabelRenderer.submit).toBe(drawGlTextLabel);
-  });
-
-  it('removes the GPU cache entry before returning the node surface to its creator', () => {
-    const order: string[] = [];
-    const { state, gl } = createGlState();
-    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestImageSurfaceCreator(state, (surface) => {
-      order.push('surface');
-      expect(cache.has(surface.image)).toBe(false);
-    });
-    registerGlStandardMaterial(state);
-    const data = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
-    drawGlTextLabel(state, makeTextProxy('owned', data));
-    const surface = (data as RendererData & { surface: ImageSurface }).surface;
-    const entry = cache.get(surface.image)!;
-    vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
-      if (texture === entry.texture) order.push('texture');
-    });
-
-    defaultGlTextLabelRenderer.destroyData!(state, data);
-
-    expect(cache.has(surface.image)).toBe(false);
-    expect(order).toEqual(['texture', 'surface']);
-  });
-});
-
 describe('drawGlTextLabel', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
     const { state } = createGlState();
     installTestImageSurfaceCreator(state);
     registerGlStandardMaterial(state);
-    const firstData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
-    const secondData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
+    const firstData = glTextLabelRenderer.createData!(state, createTextLabel())!;
+    const secondData = glTextLabelRenderer.createData!(state, createTextLabel())!;
 
     drawGlTextLabel(state, makeTextProxy('first', firstData));
     drawGlTextLabel(state, makeTextProxy('second', secondData));
@@ -268,6 +226,48 @@ describe('drawGlTextLabel', () => {
     drawGlTextLabel(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
     expect(data.surface.image.version).toBe(rasterized);
+  });
+});
+
+describe('glTextLabelRenderer', () => {
+  it('declares BatchFormat.Quad', () => {
+    expect(glTextLabelRenderer.format).toBe(BatchFormat.Quad);
+  });
+
+  it('has a createData function', () => {
+    expect(typeof glTextLabelRenderer.createData).toBe('function');
+  });
+
+  it('creates RendererData with an entity runtime slot', () => {
+    const data = glTextLabelRenderer.createData!(createGlState().state, createTextLabel())!;
+    expect(EntityRuntimeKey in data).toBe(true);
+  });
+
+  it('has a submit function pointing to drawGlTextLabel', () => {
+    expect(glTextLabelRenderer.submit).toBe(drawGlTextLabel);
+  });
+
+  it('removes the GPU cache entry before returning the node surface to its creator', () => {
+    const order: string[] = [];
+    const { state, gl } = createGlState();
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    installTestImageSurfaceCreator(state, (surface) => {
+      order.push('surface');
+      expect(cache.has(surface.image)).toBe(false);
+    });
+    registerGlStandardMaterial(state);
+    const data = glTextLabelRenderer.createData!(state, createTextLabel())!;
+    drawGlTextLabel(state, makeTextProxy('owned', data));
+    const surface = (data as RendererData & { surface: ImageSurface }).surface;
+    const entry = cache.get(surface.image)!;
+    vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
+      if (texture === entry.texture) order.push('texture');
+    });
+
+    glTextLabelRenderer.destroyData!(state, data);
+
+    expect(cache.has(surface.image)).toBe(false);
+    expect(order).toEqual(['texture', 'surface']);
   });
 });
 describe('initializeGlTextLabelData', () => {

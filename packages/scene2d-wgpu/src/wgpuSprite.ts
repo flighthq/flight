@@ -84,7 +84,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   runtime.quadBatchWriterCount++;
 }
 
-export const defaultWgpuSpriteRenderer: Scene2DRenderer = {
+export const wgpuSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createSpriteRendererData,
   isDirty: isSpriteRendererDirty,

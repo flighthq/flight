@@ -1,6 +1,6 @@
 import {
   applyScanlinesEffectToCanvas,
-  defaultCanvasScanlinesEffectRunner,
+  canvasScanlinesEffectRunner,
   registerCanvasScanlinesEffect,
 } from './canvasScanlinesEffect';
 
@@ -10,9 +10,9 @@ describe('applyScanlinesEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasScanlinesEffectRunner', () => {
+describe('canvasScanlinesEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasScanlinesEffectRunner).toBe('function');
+    expect(typeof canvasScanlinesEffectRunner).toBe('function');
   });
 });
 

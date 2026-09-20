@@ -27,13 +27,13 @@ export function applySmaaEffectToWgpu(
   });
 }
 
-export const defaultWgpuSmaaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuSmaaEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'SmaaEffect', wgpuSmaaEffectRunner);
+}
+
+export const wgpuSmaaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySmaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
-
-export function registerWgpuSmaaEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'SmaaEffect', defaultWgpuSmaaEffectRunner);
-}
 
 // Slots [0..1]=resolution (vec2f), [2]=threshold; the trailing scalar fits in the same 16-byte block.
 const SMAA_FRAGMENT_WGSL = /* wgsl */ `

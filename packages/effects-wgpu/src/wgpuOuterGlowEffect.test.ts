@@ -7,7 +7,7 @@ import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
 import {
   applyOuterGlowEffectToWgpu,
-  defaultWgpuOuterGlowEffectRunner,
+  wgpuOuterGlowEffectRunner,
   registerWgpuOuterGlowEffect,
 } from './wgpuOuterGlowEffect';
 
@@ -95,9 +95,9 @@ describe('applyOuterGlowEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuOuterGlowEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuOuterGlowEffectRunner).toBe('function');
+describe('registerWgpuOuterGlowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuOuterGlowEffect).toBeTypeOf('function');
   });
 });
 
@@ -113,8 +113,8 @@ function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
 
-describe('registerWgpuOuterGlowEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerWgpuOuterGlowEffect).toBeTypeOf('function');
+describe('wgpuOuterGlowEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuOuterGlowEffectRunner).toBe('function');
   });
 });

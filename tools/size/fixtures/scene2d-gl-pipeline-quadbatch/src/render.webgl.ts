@@ -19,7 +19,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultGlQuadBatchRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glQuadBatchRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
@@ -37,7 +37,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, QuadBatchKind, defaultGlQuadBatchRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, QuadBatchKind, glQuadBatchRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);

@@ -1,6 +1,6 @@
 import {
   applyBokehDepthOfFieldEffectToGl,
-  defaultGlBokehDepthOfFieldEffectRunner,
+  glBokehDepthOfFieldEffectRunner,
   registerGlBokehDepthOfFieldEffect,
 } from './glBokehDepthOfFieldEffect';
 
@@ -10,9 +10,9 @@ describe('applyBokehDepthOfFieldEffectToGl', () => {
   });
 });
 
-describe('defaultGlBokehDepthOfFieldEffectRunner', () => {
+describe('glBokehDepthOfFieldEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlBokehDepthOfFieldEffectRunner).toBe('function');
+    expect(typeof glBokehDepthOfFieldEffectRunner).toBe('function');
   });
 });
 

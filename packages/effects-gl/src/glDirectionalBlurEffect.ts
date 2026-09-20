@@ -31,12 +31,12 @@ export function applyDirectionalBlurEffectToGl(
   });
 }
 
-export const defaultGlDirectionalBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glDirectionalBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDirectionalBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
 
 export function registerGlDirectionalBlurEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'DirectionalBlurEffect', defaultGlDirectionalBlurEffectRunner);
+  registerGlEffect(state, 'DirectionalBlurEffect', glDirectionalBlurEffectRunner);
 }
 
 const DIRECTIONAL_BLUR_FRAGMENT_SRC = `#version 300 es

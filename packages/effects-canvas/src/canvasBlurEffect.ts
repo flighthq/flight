@@ -22,10 +22,10 @@ export function applyBlurEffectToCanvas(
   drawCanvasEffectPass(dest, source, radius > 0 ? `blur(${radius}px)` : 'none');
 }
 
-export const defaultCanvasBlurEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasBlurEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBlurEffectToCanvas(ctx.source, ctx.dest, effect as BlurEffect);
 };
 
 export function registerCanvasBlurEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'BlurEffect', defaultCanvasBlurEffectRunner);
+  registerCanvasEffect(state, 'BlurEffect', canvasBlurEffectRunner);
 }

@@ -2,13 +2,13 @@ import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/con
 import { createNativeText, getNativeTextRuntime } from '@flighthq/text/contract';
 import { NativeTextKind } from '@flighthq/types/contract';
 
-import { defaultDomNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText';
+import { domNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, NativeTextKind, defaultDomNativeTextRenderer);
+  registerRenderer(state, NativeTextKind, domNativeTextRenderer);
   return state;
 }
 
@@ -18,10 +18,10 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultDomNativeTextRenderer', () => {
+describe('domNativeTextRenderer', () => {
   it('has submit and createData', () => {
-    expect(typeof defaultDomNativeTextRenderer.submit).toBe('function');
-    expect(typeof defaultDomNativeTextRenderer.createData).toBe('function');
+    expect(typeof domNativeTextRenderer.submit).toBe('function');
+    expect(typeof domNativeTextRenderer.createData).toBe('function');
   });
 });
 

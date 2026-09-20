@@ -89,12 +89,12 @@ export function applyGradientGlowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlGradientGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glGradientGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
 
 export function registerGlGradientGlowEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'GradientGlowEffect', defaultGlGradientGlowEffectRunner);
+  registerGlEffect(state, 'GradientGlowEffect', glGradientGlowEffectRunner);
 }
 
 function applyGradientLookupPass(

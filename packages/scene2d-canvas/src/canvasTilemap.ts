@@ -65,7 +65,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
   if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
-export const defaultCanvasTilemapRenderer: SpriteRenderer = {
+export const canvasTilemapRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: drawCanvasTilemap,
 };

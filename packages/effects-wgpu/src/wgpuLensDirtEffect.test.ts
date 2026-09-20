@@ -4,11 +4,7 @@ import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import * as wgpuBlurEffectModule from './wgpuBlurEffect';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
-import {
-  applyLensDirtEffectToWgpu,
-  defaultWgpuLensDirtEffectRunner,
-  registerWgpuLensDirtEffect,
-} from './wgpuLensDirtEffect';
+import { applyLensDirtEffectToWgpu, wgpuLensDirtEffectRunner, registerWgpuLensDirtEffect } from './wgpuLensDirtEffect';
 
 let nextTargetId = 0;
 
@@ -113,9 +109,9 @@ describe('applyLensDirtEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuLensDirtEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuLensDirtEffectRunner).toBe('function');
+describe('registerWgpuLensDirtEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuLensDirtEffect).toBeTypeOf('function');
   });
 });
 
@@ -131,8 +127,8 @@ function createTarget(id: string): never {
   return { format: 'rgba8', height: 16, id, texture: {}, width: 32 } as never;
 }
 
-describe('registerWgpuLensDirtEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerWgpuLensDirtEffect).toBeTypeOf('function');
+describe('wgpuLensDirtEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuLensDirtEffectRunner).toBe('function');
   });
 });

@@ -32,13 +32,13 @@ export function applyDisplacementEffectToWgpu(
   });
 }
 
-export const defaultWgpuDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuDisplacementEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'DisplacementEffect', wgpuDisplacementEffectRunner);
+}
+
+export const wgpuDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
 };
-
-export function registerWgpuDisplacementEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'DisplacementEffect', defaultWgpuDisplacementEffectRunner);
-}
 
 // Slot layout: [0]=amount, [1]=scale.
 // Slot layout: [0]=intensity, [1]=frequency, [2]=seed, [4..5]=resolution.

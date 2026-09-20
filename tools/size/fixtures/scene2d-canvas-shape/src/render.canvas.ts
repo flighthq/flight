@@ -10,10 +10,10 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasShapeRenderer,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasShapeRenderer,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -25,7 +25,7 @@ import { RegistryEntryState, ShapeKind } from '@flighthq/types';
 // REQUIRED WIRING for a filled vector rectangle, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost. Nothing here reaches a whole-store host.
-//   renderer  ShapeKind -> defaultCanvasShapeRenderer
+//   renderer  ShapeKind -> canvasShapeRenderer
 //   commands  beginFill, drawRectangle, endFill — the three this shape's stream actually replays.
 //             `canvasShapeCommandTable()` is deliberately avoided: it binds every default command
 //             plus every texture command, which is the aggregate this fixture exists to measure
@@ -45,14 +45,14 @@ const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 // on the registries type — starting from the explicit empty table states the three-command intent
 // without a non-null assertion.
 let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
-for (const command of [defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]) {
+for (const command of [canvasBeginFill, canvasDrawRectangle, canvasEndFill]) {
   shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);
 }
 
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, ShapeKind, defaultCanvasShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, ShapeKind, canvasShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

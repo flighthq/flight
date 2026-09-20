@@ -7,14 +7,14 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-  defaultCanvasShapeRenderer,
+  canvasBeginFill,
+  canvasDrawCircle,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
+  canvasShapeRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   prepareScene2DRender,
@@ -22,7 +22,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -38,7 +38,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -46,15 +46,15 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
 registerCanvasShapeCommands(state, [
-  defaultCanvasBeginFill,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
+  canvasBeginFill,
+  canvasDrawCircle,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
 ]);
 
 export const scale = pixelRatio;

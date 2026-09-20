@@ -49,10 +49,10 @@ export function applyPixelateEffectToCanvas(
   releaseCanvasRenderTarget(pool, small);
 }
 
-export const defaultCanvasPixelateEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasPixelateEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyPixelateEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as PixelateEffect);
 };
 
 export function registerCanvasPixelateEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'PixelateEffect', defaultCanvasPixelateEffectRunner);
+  registerCanvasEffect(state, 'PixelateEffect', canvasPixelateEffectRunner);
 }

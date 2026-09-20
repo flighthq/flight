@@ -1,6 +1,6 @@
 import {
   applyFilmGrainEffectToCanvas,
-  defaultCanvasFilmGrainEffectRunner,
+  canvasFilmGrainEffectRunner,
   registerCanvasFilmGrainEffect,
 } from './canvasFilmGrainEffect';
 
@@ -10,9 +10,9 @@ describe('applyFilmGrainEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasFilmGrainEffectRunner', () => {
+describe('canvasFilmGrainEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasFilmGrainEffectRunner).toBe('function');
+    expect(typeof canvasFilmGrainEffectRunner).toBe('function');
   });
 });
 

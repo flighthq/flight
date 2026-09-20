@@ -55,17 +55,17 @@ describe('source-derived capability reachability', () => {
   it('records every readable registrar mapping and reports every unreadable registrar', () => {
     const fixture = entries(
       `
-      export const defaultGlBlurEffectRunner = () => {};
-      export const defaultGlBloomEffectRunner = () => {};
+      export const glBlurEffectRunner = () => {};
+      export const glBloomEffectRunner = () => {};
       export function registerGlEffect(state: object, kind: string, runner: Function): void {
         registry.set(kind, runner);
       }
       export function registerGlBlurEffect(state: object): void {
-        registerGlEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+        registerGlEffect(state, 'BlurEffect', glBlurEffectRunner);
       }
       export function registerGlPair(state: object): void {
-        registerGlEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
-        registerGlEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+        registerGlEffect(state, 'BlurEffect', glBlurEffectRunner);
+        registerGlEffect(state, 'BloomEffect', glBloomEffectRunner);
       }
       export function registerGlBundle(state: object): void {
         registerGlBlurEffect(state);
@@ -84,7 +84,7 @@ describe('source-derived capability reachability', () => {
         uncataloguedBucket: null,
         door: 'registerGlEffect',
         kind: 'BlurEffect',
-        implementation: 'defaultGlBlurEffectRunner',
+        implementation: 'glBlurEffectRunner',
       },
       {
         packageName: 'fixture',
@@ -114,7 +114,7 @@ describe('source-derived capability reachability', () => {
         uncataloguedBucket: null,
         door: 'registerGlEffect',
         kind: 'BloomEffect',
-        implementation: 'defaultGlBloomEffectRunner',
+        implementation: 'glBloomEffectRunner',
       },
       {
         packageName: 'fixture',
@@ -124,7 +124,7 @@ describe('source-derived capability reachability', () => {
         uncataloguedBucket: null,
         door: 'registerGlEffect',
         kind: 'BlurEffect',
-        implementation: 'defaultGlBlurEffectRunner',
+        implementation: 'glBlurEffectRunner',
       },
     ]);
   });
@@ -133,7 +133,7 @@ describe('source-derived capability reachability', () => {
     const fixture = entries(
       `
       export function registerGlComputedKind(state: object): void {
-        registerGlEffect(state, BlurEffectKind, defaultGlBlurEffectRunner);
+        registerGlEffect(state, BlurEffectKind, glBlurEffectRunner);
       }
       export function registerGlComputedImplementation(state: object): void {
         registerGlEffect(state, 'BlurEffect', createBlurRunner());
@@ -334,13 +334,13 @@ describe('source-derived capability reachability', () => {
   it('accepts a mapped public registrar and public raw runner', () => {
     const fixture = entries(
       `
-      export const defaultGlBlurEffectRunner = () => {};
+      export const glBlurEffectRunner = () => {};
       export function registerGlEffect(state: object, kind: string, runner: Function): void {}
       export function registerGlBlurEffect(state: object): void {
-        registerGlEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+        registerGlEffect(state, 'BlurEffect', glBlurEffectRunner);
       }
     `,
-      ['registerGlEffect', 'registerGlBlurEffect', 'defaultGlBlurEffectRunner'],
+      ['registerGlEffect', 'registerGlBlurEffect', 'glBlurEffectRunner'],
     );
 
     expect(auditEffectBackend({ backend: 'gl', ...fixture })).toEqual([]);
@@ -349,25 +349,25 @@ describe('source-derived capability reachability', () => {
   it('uses the WgpuEffect registration door after the backend naming cleanup', () => {
     const fixture = entries(
       `
-      export const defaultWgpuBlurEffectRunner = () => {};
+      export const wgpuBlurEffectRunner = () => {};
       export function registerWgpuEffect(state: object, kind: string, runner: Function): void {}
       export function registerWgpuBlurEffect(state: object): void {
-        registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+        registerWgpuEffect(state, 'BlurEffect', wgpuBlurEffectRunner);
       }
     `,
-      ['registerWgpuEffect', 'registerWgpuBlurEffect', 'defaultWgpuBlurEffectRunner'],
+      ['registerWgpuEffect', 'registerWgpuBlurEffect', 'wgpuBlurEffectRunner'],
     );
 
     expect(auditEffectBackend({ backend: 'wgpu', ...fixture })).toEqual([]);
     expect(effectReachabilitySymbols('wgpu', fixture.sourceFiles)).toEqual(
-      new Set(['registerWgpuEffect', 'defaultWgpuBlurEffectRunner', 'registerWgpuBlurEffect']),
+      new Set(['registerWgpuEffect', 'wgpuBlurEffectRunner', 'registerWgpuBlurEffect']),
     );
   });
 
   it('rejects an unregistered passthrough runner as a false capability', () => {
-    const fixture = entries('export const defaultGlTaaEffectRunner = () => {};', ['defaultGlTaaEffectRunner']);
+    const fixture = entries('export const glTaaEffectRunner = () => {};', ['glTaaEffectRunner']);
     expect(auditEffectBackend({ backend: 'gl', ...fixture })).toMatchObject([
-      { symbol: 'defaultGlTaaEffectRunner', rule: 'missing-registration' },
+      { symbol: 'glTaaEffectRunner', rule: 'missing-registration' },
     ]);
   });
 
@@ -376,7 +376,7 @@ describe('source-derived capability reachability', () => {
       `
       export function registerGlEffect(state: object, kind: string, runner: Function): void {}
       export function registerGlTaaEffect(state: object): void {
-        registerGlEffect(state, 'TaaEffect', defaultGlTaaEffectRunner);
+        registerGlEffect(state, 'TaaEffect', glTaaEffectRunner);
       }
     `,
       ['registerGlEffect', 'registerGlTaaEffect'],
@@ -389,13 +389,13 @@ describe('source-derived capability reachability', () => {
   it('rejects a register declaration that maps the wrong kind', () => {
     const fixture = entries(
       `
-      export const defaultGlBlurEffectRunner = () => {};
+      export const glBlurEffectRunner = () => {};
       export function registerGlEffect(state: object, kind: string, runner: Function): void {}
       export function registerGlBlurEffect(state: object): void {
-        registerGlEffect(state, 'BloomEffect', defaultGlBlurEffectRunner);
+        registerGlEffect(state, 'BloomEffect', glBlurEffectRunner);
       }
     `,
-      ['registerGlEffect', 'registerGlBlurEffect', 'defaultGlBlurEffectRunner'],
+      ['registerGlEffect', 'registerGlBlurEffect', 'glBlurEffectRunner'],
     );
     expect(auditEffectBackend({ backend: 'gl', ...fixture })).toMatchObject([
       { symbol: 'registerGlBlurEffect', rule: 'registration-mapping' },
@@ -405,8 +405,8 @@ describe('source-derived capability reachability', () => {
   it('tracks lane placement without treating it as a hard invariant', () => {
     const fixture = entries(
       `
-      export const defaultGlBitmapTextRenderer = {};
-      export const defaultGlBlurEffectRunner = () => {};
+      export const glBitmapTextRenderer = {};
+      export const glBlurEffectRunner = () => {};
       export function registerGlEffect(): void {}
       export function registerGlBlurEffect(): void {}
     `,
@@ -418,8 +418,8 @@ describe('source-derived capability reachability', () => {
     ]);
 
     expect(collectReachabilityLanes({ packageName: 'fixture', ...fixture, symbols })).toEqual([
-      { packageName: 'fixture', symbol: 'defaultGlBitmapTextRenderer', dot: false, contract: true },
-      { packageName: 'fixture', symbol: 'defaultGlBlurEffectRunner', dot: false, contract: true },
+      { packageName: 'fixture', symbol: 'glBitmapTextRenderer', dot: false, contract: true },
+      { packageName: 'fixture', symbol: 'glBlurEffectRunner', dot: false, contract: true },
       { packageName: 'fixture', symbol: 'registerGlBlurEffect', dot: true, contract: true },
       { packageName: 'fixture', symbol: 'registerGlEffect', dot: true, contract: true },
     ]);

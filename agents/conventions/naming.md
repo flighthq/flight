@@ -8,7 +8,7 @@ Exported names that start with `default` are **pluggable stock implementations**
 
 Pre-built renderer or effect-runner objects registered by kind. The existing noun suffix (`Renderer`, `EffectRunner`) already signals "this is a value."
 
-Examples: `defaultCanvasBitmapRenderer`, `defaultGlBitmapRenderer`, `defaultWgpuBloomEffectRunner`.
+Examples: `canvasBitmapRenderer`, `glBitmapRenderer`, `wgpuBloomEffectRunner`.
 
 No additional suffix needed — the noun makes the role clear.
 

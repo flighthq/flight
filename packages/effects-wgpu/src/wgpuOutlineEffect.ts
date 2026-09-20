@@ -39,13 +39,13 @@ export function applyOutlineEffectToWgpu(
   });
 }
 
-export const defaultWgpuOutlineEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuOutlineEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'OutlineEffect', wgpuOutlineEffectRunner);
+}
+
+export const wgpuOutlineEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyOutlineEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
-
-export function registerWgpuOutlineEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
-}
 
 // Slot layout: [0]=threshold, [1]=thickness, [2..3]=resolution, [4..7]=color rgba.
 const OUTLINE_FRAGMENT_WGSL = /* wgsl */ `

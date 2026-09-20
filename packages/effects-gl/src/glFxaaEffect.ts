@@ -20,12 +20,12 @@ export function applyFxaaEffectToGl(
   });
 }
 
-export const defaultGlFxaaEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glFxaaEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyFxaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
 
 export function registerGlFxaaEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+  registerGlEffect(state, 'FxaaEffect', glFxaaEffectRunner);
 }
 
 const FXAA_FRAGMENT_SRC = `#version 300 es

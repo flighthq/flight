@@ -28,13 +28,13 @@ export function applyToneMapEffectToWgpu(
   });
 }
 
-export const defaultWgpuToneMapEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuToneMapEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ToneMapEffect', wgpuToneMapEffectRunner);
+}
+
+export const wgpuToneMapEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyToneMapEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
-
-export function registerWgpuToneMapEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
-}
 
 function buildToneMapFragment(operator: string): string {
   return TONEMAP_FRAGMENT_HEAD + (TONEMAP_OPERATORS[operator] ?? TONEMAP_OPERATORS.aces) + TONEMAP_FRAGMENT_TAIL;

@@ -5,12 +5,12 @@ import type { RichText } from '@flighthq/types/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomRichTextRenderer, drawDomRichText } from './domRichText';
+import { domRichTextRenderer, drawDomRichText } from './domRichText';
 import { drawDomTextInputOverlay, enableDomTextInput } from './domTextInput';
 
 function makeState() {
   const state = createDomRenderState(document.createElement('div'));
-  registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
+  registerRenderer(state, RichTextKind, domRichTextRenderer);
   return state;
 }
 

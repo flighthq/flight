@@ -1,8 +1,4 @@
-import {
-  applyVignetteEffectToWgpu,
-  defaultWgpuVignetteEffectRunner,
-  registerWgpuVignetteEffect,
-} from './wgpuVignetteEffect';
+import { applyVignetteEffectToWgpu, wgpuVignetteEffectRunner, registerWgpuVignetteEffect } from './wgpuVignetteEffect';
 
 describe('applyVignetteEffectToWgpu', () => {
   it('is a function', () => {
@@ -10,14 +6,14 @@ describe('applyVignetteEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuVignetteEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuVignetteEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuVignetteEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuVignetteEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuVignetteEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuVignetteEffectRunner).toBe('function');
   });
 });

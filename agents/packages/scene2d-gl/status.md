@@ -15,7 +15,7 @@ Every item below was re-checked against `packages/scene2d-gl/src/` (and `render-
 `shape`) on 2026-08-08. A file:line here is a claim about this tree, not about a session.
 
 - **The shape command vocabulary is still borrowed from Canvas.** `contract.ts:31-49` re-exports
-  sixteen `defaultCanvas*` commands under `defaultGl*` names, and `@flighthq/scene2d-canvas` remains a
+  sixteen `canvas*` commands under `gl*` names, and `@flighthq/scene2d-canvas` remains a
   runtime dependency in `package.json`. Gradient fills and texture fills have no GL-native form; they
   are a canvas replay uploaded as a texture.
 - **What falls off the mesh lane, and what happens then.** `drawGlMeshShape` returns false for any

@@ -1,6 +1,6 @@
 import {
   applyMotionBlurEffectToWgpu,
-  defaultWgpuMotionBlurEffectRunner,
+  wgpuMotionBlurEffectRunner,
   registerWgpuMotionBlurEffect,
 } from './wgpuMotionBlurEffect';
 
@@ -10,14 +10,14 @@ describe('applyMotionBlurEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuMotionBlurEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuMotionBlurEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuMotionBlurEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuMotionBlurEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuMotionBlurEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuMotionBlurEffectRunner).toBe('function');
   });
 });

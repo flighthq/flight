@@ -55,12 +55,12 @@ export function applyDropShadowEffectToCanvas(
   applyDropShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasDropShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasDropShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
 
 export function registerCanvasDropShadowEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'DropShadowEffect', defaultCanvasDropShadowEffectRunner);
+  registerCanvasEffect(state, 'DropShadowEffect', canvasDropShadowEffectRunner);
 }
 
 function applyDropShadowEffectToCanvasWithPool(

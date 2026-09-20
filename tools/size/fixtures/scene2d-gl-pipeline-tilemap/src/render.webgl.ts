@@ -18,7 +18,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultGlTilemapRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glTilemapRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
@@ -37,7 +37,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, TilemapKind, defaultGlTilemapRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, TilemapKind, glTilemapRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);

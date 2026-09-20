@@ -12,7 +12,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultGlMorphShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glMorphShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import {
   appendMorphShapePath,
   appendShapeBeginFill,
@@ -35,7 +35,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, defaultGlMorphShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, glMorphShapeRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);

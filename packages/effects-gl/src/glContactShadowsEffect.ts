@@ -30,10 +30,10 @@ export function applyContactShadowsEffectToGl(
   );
 }
 
-export const defaultGlContactShadowsEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glContactShadowsEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyContactShadowsEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ContactShadowsEffect);
 };
 
 export function registerGlContactShadowsEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ContactShadowsEffect', defaultGlContactShadowsEffectRunner);
+  registerGlEffect(state, 'ContactShadowsEffect', glContactShadowsEffectRunner);
 }

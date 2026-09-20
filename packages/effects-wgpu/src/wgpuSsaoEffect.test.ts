@@ -1,4 +1,4 @@
-import { applySsaoEffectToWgpu, defaultWgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect';
+import { applySsaoEffectToWgpu, wgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect';
 
 describe('applySsaoEffectToWgpu', () => {
   it('is a function', () => {
@@ -6,14 +6,14 @@ describe('applySsaoEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuSsaoEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuSsaoEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuSsaoEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuSsaoEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuSsaoEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuSsaoEffectRunner).toBe('function');
   });
 });

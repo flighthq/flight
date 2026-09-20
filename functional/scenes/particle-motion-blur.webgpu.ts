@@ -32,8 +32,8 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWgpuVelocityTarget,
-  defaultWgpuParticleEmitter2DRenderer,
-  defaultWgpuParticleEmitter2DVelocityWriter,
+  wgpuParticleEmitter2DRenderer,
+  wgpuParticleEmitter2DVelocityWriter,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -48,7 +48,7 @@ import {
   renderWgpuVelocity,
   reserveParticleEmitter2D,
   setWgpuEffectVelocityTexture,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   createWgpuSurface,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -83,16 +83,16 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerWgpuImageTextureResolver(state);
-registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
+registerRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
 registerWgpuMotionBlurEffect(state);
-registerWgpuVelocityWriter(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DVelocityWriter);
+registerWgpuVelocityWriter(state, ParticleEmitter2DKind, wgpuParticleEmitter2DVelocityWriter);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 const velocityTarget = createWgpuVelocityTarget(state, canvas.width, canvas.height);

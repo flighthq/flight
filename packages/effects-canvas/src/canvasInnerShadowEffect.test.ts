@@ -10,7 +10,7 @@ import {
 } from './canvasEffectTestSupport';
 import {
   applyInnerShadowEffectToCanvas,
-  defaultCanvasInnerShadowEffectRunner,
+  canvasInnerShadowEffectRunner,
   registerCanvasInnerShadowEffect,
 } from './canvasInnerShadowEffect';
 
@@ -164,7 +164,7 @@ describe('applyInnerShadowEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasInnerShadowEffectRunner', () => {
+describe('canvasInnerShadowEffectRunner', () => {
   it('applies the shadow through the pipeline context', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const { source, dest } = scene();
@@ -172,7 +172,7 @@ describe('defaultCanvasInnerShadowEffectRunner', () => {
     const log: Draw[] = [];
     recordAll(log, [...targets, dest]);
 
-    defaultCanvasInnerShadowEffectRunner({ state, source, dest, pool }, innerShadow());
+    canvasInnerShadowEffectRunner({ state, source, dest, pool }, innerShadow());
 
     expect(log.map((d) => d.entry)).toContain('source->shadow|destination-in');
   });
@@ -183,6 +183,6 @@ describe('registerCanvasInnerShadowEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasInnerShadowEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'InnerShadowEffect')).toBe(defaultCanvasInnerShadowEffectRunner);
+    expect(getCanvasEffectRunner(state, 'InnerShadowEffect')).toBe(canvasInnerShadowEffectRunner);
   });
 });

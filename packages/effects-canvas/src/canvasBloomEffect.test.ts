@@ -2,11 +2,7 @@ import { createBloomEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import {
-  applyBloomEffectToCanvas,
-  defaultCanvasBloomEffectRunner,
-  registerCanvasBloomEffect,
-} from './canvasBloomEffect';
+import { applyBloomEffectToCanvas, canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 
@@ -166,11 +162,11 @@ describe('applyBloomEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasBloomEffectRunner', () => {
+describe('canvasBloomEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const dest = createTarget([0, 0, 0, 0]);
 
-    defaultCanvasBloomEffectRunner(
+    canvasBloomEffectRunner(
       { dest, pool: createPool(1), source: createTarget([255, 255, 255, 255]), state: {} as never },
       createBloomEffect({ intensity: 1, threshold: 0.6 }),
     );
@@ -186,6 +182,6 @@ describe('registerCanvasBloomEffect', () => {
 
     expect(getCanvasEffectRunner(state, 'BloomEffect')).toBeNull();
     registerCanvasBloomEffect(state);
-    expect(getCanvasEffectRunner(state, 'BloomEffect')).toBe(defaultCanvasBloomEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BloomEffect')).toBe(canvasBloomEffectRunner);
   });
 });

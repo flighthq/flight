@@ -17,11 +17,11 @@ import {
   createCanvasTextureResolvers,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultCanvasShapeCommands,
-  defaultCanvasTextureShapeCommands,
-  defaultWgpuRichTextRenderer,
-  defaultWgpuShapeRenderer,
-  defaultWgpuTextLabelRenderer,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
+  wgpuRichTextRenderer,
+  wgpuShapeRenderer,
+  wgpuTextLabelRenderer,
   enableFlightDiagnostics,
   enableWgpuTextInput,
   endWgpuRenderPass,
@@ -33,7 +33,7 @@ import {
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
   RichTextKind,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   TextLabelKind,
   createWgpuSurface,
@@ -56,7 +56,7 @@ document.body.style.margin = '0';
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
@@ -65,8 +65,8 @@ export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgp
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0xd0 / 0xff, 0xd0 / 0xff, 0xd0 / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, RichTextKind, wgpuRichTextRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -75,10 +75,10 @@ const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSur
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
-registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
+registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+registerRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
 enableWgpuTextInput();
 
 export const scale = pixelRatio;

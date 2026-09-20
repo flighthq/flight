@@ -1,6 +1,6 @@
 import {
   applyDirectionalBlurEffectToWgpu,
-  defaultWgpuDirectionalBlurEffectRunner,
+  wgpuDirectionalBlurEffectRunner,
   registerWgpuDirectionalBlurEffect,
 } from './wgpuDirectionalBlurEffect';
 
@@ -10,14 +10,14 @@ describe('applyDirectionalBlurEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuDirectionalBlurEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuDirectionalBlurEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuDirectionalBlurEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuDirectionalBlurEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuDirectionalBlurEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuDirectionalBlurEffectRunner).toBe('function');
   });
 });

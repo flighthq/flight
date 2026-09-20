@@ -5,7 +5,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { defaultGlScene2DRenderer, drawGlScene2D, renderGlScene2D } from './glNode2D';
+import { glScene2DRenderer, drawGlScene2D, renderGlScene2D } from './glNode2D';
 
 function makeState(): GlRenderState {
   const canvas = document.createElement('canvas');
@@ -25,17 +25,17 @@ function makeRenderer() {
   } as any;
 }
 
-describe('defaultGlScene2DRenderer', () => {
-  it('has draw, and createData functions', () => {
-    expect(defaultGlScene2DRenderer.createData({} as any, {} as any)).toBeNull();
-    expect(defaultGlScene2DRenderer.submit).toBe(drawGlScene2D);
-  });
-});
-
 describe('drawGlScene2D', () => {
   it('does not draw plain display object geometry', () => {
     const state = makeState();
     expect(() => drawGlScene2D(state, {} as any)).not.toThrow();
+  });
+});
+
+describe('glScene2DRenderer', () => {
+  it('has draw, and createData functions', () => {
+    expect(glScene2DRenderer.createData({} as any, {} as any)).toBeNull();
+    expect(glScene2DRenderer.submit).toBe(drawGlScene2D);
   });
 });
 

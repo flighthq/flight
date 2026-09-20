@@ -9,7 +9,7 @@ import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { defaultGlBitmapTextRenderer } from './glBitmapText';
+import { glBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
@@ -58,14 +58,14 @@ function makeProxy(source: BitmapText, colorScaleBias: unknown = null): RenderPr
   } as unknown as RenderProxy2D;
 }
 
-describe('defaultGlBitmapTextRenderer', () => {
+describe('glBitmapTextRenderer', () => {
   it('has createData and submit functions', () => {
-    expect(typeof defaultGlBitmapTextRenderer.createData).toBe('function');
-    expect(typeof defaultGlBitmapTextRenderer.submit).toBe('function');
+    expect(typeof glBitmapTextRenderer.createData).toBe('function');
+    expect(typeof glBitmapTextRenderer.submit).toBe('function');
   });
 });
 
-describe('defaultGlBitmapTextRenderer.submit', () => {
+describe('glBitmapTextRenderer.submit', () => {
   it('draws one instanced pass covering every laid-out glyph', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
@@ -74,7 +74,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const { state, gl } = createGlState();
     registerGlImageTextureResolver(state);
     registerGlStandardMaterial(state);
-    defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
+    glBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
@@ -86,7 +86,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     const { state, gl } = createGlState();
     registerGlImageTextureResolver(state);
     registerGlStandardMaterial(state);
-    defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
+    glBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     registerGlStandardMaterial(state);
     registerGlColorAdjustmentMaterialFeature(state);
     // The resolved color adjustment arrives on the proxy; submit must draw without throwing through the fold.
-    defaultGlBitmapTextRenderer.submit(
+    glBitmapTextRenderer.submit(
       state,
       makeProxy(text, {
         redScale: 0,

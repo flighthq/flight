@@ -1,4 +1,4 @@
-import { applyOutlineEffectToGl, defaultGlOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect';
+import { applyOutlineEffectToGl, glOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect';
 
 describe('applyOutlineEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyOutlineEffectToGl', () => {
   });
 });
 
-describe('defaultGlOutlineEffectRunner', () => {
+describe('glOutlineEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlOutlineEffectRunner).toBe('function');
+    expect(typeof glOutlineEffectRunner).toBe('function');
   });
 });
 

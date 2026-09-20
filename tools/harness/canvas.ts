@@ -10,16 +10,16 @@ import {
   createCanvasRenderSurface,
   createCanvasTextureResolvers,
   createMatrix,
-  defaultCanvasParticleEmitter2DRenderer,
-  defaultCanvasQuadBatchRenderer,
-  defaultCanvasRichTextRenderer,
-  defaultCanvasScale9ShapeRenderer,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
-  defaultCanvasSpriteRenderer,
-  defaultCanvasTextLabelRenderer,
-  defaultCanvasTextureShapeCommands,
-  defaultCanvasTilemapRenderer,
+  canvasParticleEmitter2DRenderer,
+  canvasQuadBatchRenderer,
+  canvasRichTextRenderer,
+  canvasScale9ShapeRenderer,
+  canvasShapeCommands,
+  canvasShapeRenderer,
+  canvasSpriteRenderer,
+  canvasTextLabelRenderer,
+  canvasTextureShapeCommands,
+  canvasTilemapRenderer,
   enableCanvasBlendMode,
   enableCanvasClip,
   enableCanvasRenderCache,
@@ -36,7 +36,7 @@ import {
   registerRenderer,
   renderCanvasScene2D,
   RichTextKind,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -63,7 +63,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     }),
   );
   const state = createCanvasRenderState(
-    defaultScene2DCanvasRenderRegistries,
+    canvasScene2DRenderRegistries,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
     { pixelRatio, sceneGraphSyncPolicy: options.syncPolicy },
   );
@@ -90,24 +90,24 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerRenderer(state, ShapeKind, canvasShapeRenderer);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
+      registerRenderer(state, RichTextKind, canvasRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+      registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+      registerRenderer(state, SpriteKind, canvasSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
+      registerRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+      registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
+      registerRenderer(state, TilemapKind, canvasTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+      registerRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
       // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }
   }
 

@@ -29,13 +29,13 @@ export function applyDitherEffectToWgpu(
   });
 }
 
-export const defaultWgpuDitherEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuDitherEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'DitherEffect', wgpuDitherEffectRunner);
+}
+
+export const wgpuDitherEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDitherEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
-
-export function registerWgpuDitherEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'DitherEffect', defaultWgpuDitherEffectRunner);
-}
 
 // Slot layout: [0]=levels, [1]=pad, [2..3]=resolution.
 const DITHER_FRAGMENT_WGSL = /* wgsl */ `

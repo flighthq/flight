@@ -1,4 +1,4 @@
-import { applySketchEffectToGl, defaultGlSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect';
+import { applySketchEffectToGl, glSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect';
 
 describe('applySketchEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applySketchEffectToGl', () => {
   });
 });
 
-describe('defaultGlSketchEffectRunner', () => {
+describe('glSketchEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlSketchEffectRunner).toBe('function');
+    expect(typeof glSketchEffectRunner).toBe('function');
   });
 });
 

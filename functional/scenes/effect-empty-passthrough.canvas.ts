@@ -15,8 +15,8 @@ import {
   createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
+  canvasShapeCommands,
+  canvasShapeRenderer,
   endCanvasEffectPass,
   endCanvasRenderPass,
   getBitmapPixelRgb,
@@ -25,7 +25,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -58,7 +58,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio },
 );
@@ -72,8 +72,8 @@ const screenClear = {
     (BACKGROUND_COLOR & 0xff) / 0xff,
   ] as const,
 };
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 
 const pipeline = createCanvasEffectState(state);
 

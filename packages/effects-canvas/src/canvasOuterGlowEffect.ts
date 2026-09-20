@@ -55,12 +55,12 @@ export function applyOuterGlowEffectToCanvas(
   applyOuterGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasOuterGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasOuterGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
 
 export function registerCanvasOuterGlowEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'OuterGlowEffect', defaultCanvasOuterGlowEffectRunner);
+  registerCanvasEffect(state, 'OuterGlowEffect', canvasOuterGlowEffectRunner);
 }
 
 function applyOuterGlowEffectToCanvasWithPool(

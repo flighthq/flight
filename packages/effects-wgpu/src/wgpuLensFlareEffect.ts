@@ -33,13 +33,13 @@ export function applyLensFlareEffectToWgpu(
   });
 }
 
-export const defaultWgpuLensFlareEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuLensFlareEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'LensFlareEffect', wgpuLensFlareEffectRunner);
+}
+
+export const wgpuLensFlareEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyLensFlareEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
-
-export function registerWgpuLensFlareEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'LensFlareEffect', defaultWgpuLensFlareEffectRunner);
-}
 
 // Slot layout: [0]=threshold, [1]=intensity, [2]=ghosts, [3]=halo.
 const LENS_FLARE_FRAGMENT_WGSL = /* wgsl */ `

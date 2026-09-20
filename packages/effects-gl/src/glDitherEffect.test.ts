@@ -1,4 +1,4 @@
-import { applyDitherEffectToGl, defaultGlDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
+import { applyDitherEffectToGl, glDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
 
 describe('applyDitherEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyDitherEffectToGl', () => {
   });
 });
 
-describe('defaultGlDitherEffectRunner', () => {
+describe('glDitherEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlDitherEffectRunner).toBe('function');
+    expect(typeof glDitherEffectRunner).toBe('function');
   });
 });
 

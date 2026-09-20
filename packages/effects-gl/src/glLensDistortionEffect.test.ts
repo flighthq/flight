@@ -1,6 +1,6 @@
 import {
   applyLensDistortionEffectToGl,
-  defaultGlLensDistortionEffectRunner,
+  glLensDistortionEffectRunner,
   registerGlLensDistortionEffect,
 } from './glLensDistortionEffect';
 
@@ -10,9 +10,9 @@ describe('applyLensDistortionEffectToGl', () => {
   });
 });
 
-describe('defaultGlLensDistortionEffectRunner', () => {
+describe('glLensDistortionEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlLensDistortionEffectRunner).toBe('function');
+    expect(typeof glLensDistortionEffectRunner).toBe('function');
   });
 });
 

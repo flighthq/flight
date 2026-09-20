@@ -15,7 +15,7 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
+import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
@@ -133,15 +133,6 @@ function solidShape() {
   return shape;
 }
 
-describe('defaultWgpuRasterShapeRenderer', () => {
-  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
-    expect(defaultWgpuRasterShapeRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultWgpuRasterShapeRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuRasterShapeRenderer.destroyData).toBe('function');
-    expect(defaultWgpuRasterShapeRenderer.submit).toBe(drawWgpuRasterShape);
-  });
-});
-
 describe('drawWgpuRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -221,5 +212,14 @@ describe('drawWgpuRasterShape', () => {
     drawWgpuRasterShape(state, makeShapeProxy({ commands: solidShape().data.commands, version: 1 }, null));
 
     expect(rasterizer).not.toHaveBeenCalled();
+  });
+});
+
+describe('wgpuRasterShapeRenderer', () => {
+  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
+    expect(wgpuRasterShapeRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof wgpuRasterShapeRenderer.createData).toBe('function');
+    expect(typeof wgpuRasterShapeRenderer.destroyData).toBe('function');
+    expect(wgpuRasterShapeRenderer.submit).toBe(drawWgpuRasterShape);
   });
 });

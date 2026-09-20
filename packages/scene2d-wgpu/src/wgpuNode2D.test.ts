@@ -2,17 +2,10 @@ import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/ren
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { defaultWgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D';
+import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D';
 
 beforeAll(() => {
   installWgpuMock();
-});
-
-describe('defaultWgpuScene2DRenderer', () => {
-  it('has createData and draw functions', () => {
-    expect(typeof defaultWgpuScene2DRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuScene2DRenderer.submit).toBe('function');
-  });
 });
 
 describe('drawWgpuScene2D', () => {
@@ -32,5 +25,12 @@ describe('renderWgpuScene2D', () => {
     const root = createDisplayObject();
     expect(() => renderWgpuScene2D(pass, root)).not.toThrow();
     submitWgpuFrame(state);
+  });
+});
+
+describe('wgpuScene2DRenderer', () => {
+  it('has createData and draw functions', () => {
+    expect(typeof wgpuScene2DRenderer.createData).toBe('function');
+    expect(typeof wgpuScene2DRenderer.submit).toBe('function');
   });
 });

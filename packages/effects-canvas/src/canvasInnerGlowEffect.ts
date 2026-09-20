@@ -57,12 +57,12 @@ export function applyInnerGlowEffectToCanvas(
   applyInnerGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasInnerGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasInnerGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
 
 export function registerCanvasInnerGlowEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'InnerGlowEffect', defaultCanvasInnerGlowEffectRunner);
+  registerCanvasEffect(state, 'InnerGlowEffect', canvasInnerGlowEffectRunner);
 }
 
 function applyInnerGlowEffectToCanvasWithPool(

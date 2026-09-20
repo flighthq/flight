@@ -1,4 +1,4 @@
-import { applyToneMapEffectToGl, defaultGlToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect';
+import { applyToneMapEffectToGl, glToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect';
 
 describe('applyToneMapEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyToneMapEffectToGl', () => {
   });
 });
 
-describe('defaultGlToneMapEffectRunner', () => {
+describe('glToneMapEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlToneMapEffectRunner).toBe('function');
+    expect(typeof glToneMapEffectRunner).toBe('function');
   });
 });
 

@@ -59,13 +59,13 @@ export function applyBloomEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, temp);
 }
 
-export const defaultWgpuBloomEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuBloomEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'BloomEffect', wgpuBloomEffectRunner);
+}
+
+export const wgpuBloomEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyBloomEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
-
-export function registerWgpuBloomEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
-}
 
 // The composite pipeline reads two textures (scene = group 1, blurred = group 2) so it uses the
 // dual-source filter primitive; cached per state alongside the single-source pipelines.

@@ -6,7 +6,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import {
   createCanvasCacheState,
   createCanvasOffscreenRenderState,
-  defaultCanvasRenderCacheRenderer,
+  canvasRenderCacheRenderer,
   destroyCanvasRenderCacheTarget,
   enableCanvasRenderCache,
   ensureCanvasRenderCacheTarget,
@@ -52,13 +52,33 @@ function makeOffscreenState(ownerState: ReturnType<typeof makeCanvasState>, opti
   return createCanvasOffscreenRenderState(ownerState.registries, createCanvasTextureResolvers(), options);
 }
 
+describe('canvasRenderCacheRenderer', () => {
+  it('does nothing when no cache is attached to the source', () => {
+    const state = makeCanvasState();
+    const spy = vi.spyOn(state.context, 'drawImage');
+    canvasRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('draws the cache target attached to the source node', () => {
+    const state = makeCanvasState();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    const target = ensureCanvasRenderCacheTarget(state, cache, 16, 16);
+    const spy = vi.spyOn(state.context, 'drawImage');
+    canvasRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    expect(spy).toHaveBeenCalledWith(target.canvas, 0, 0);
+  });
+});
+
 describe('createCanvasCacheState', () => {
   it('copies the screen state renderers', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
     const cacheState = makeCacheState(screen);
     expect(getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.renderers, RenderCacheKind)).toBe(
-      defaultCanvasRenderCacheRenderer,
+      canvasRenderCacheRenderer,
     );
   });
 
@@ -135,26 +155,6 @@ describe('createCanvasOffscreenRenderState', () => {
   });
 });
 
-describe('defaultCanvasRenderCacheRenderer', () => {
-  it('does nothing when no cache is attached to the source', () => {
-    const state = makeCanvasState();
-    const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('draws the cache target attached to the source node', () => {
-    const state = makeCanvasState();
-    const obj = createDisplayObject();
-    const cache = createRenderCache();
-    useRenderCache(state, obj, cache);
-    const target = ensureCanvasRenderCacheTarget(state, cache, 16, 16);
-    const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(spy).toHaveBeenCalledWith(target.canvas, 0, 0);
-  });
-});
-
 describe('destroyCanvasRenderCacheTarget', () => {
   it('collapses the canvas to zero size and removes the target', () => {
     const state = makeCanvasState();
@@ -180,7 +180,7 @@ describe('enableCanvasRenderCache', () => {
     const state = makeCanvasState();
     enableCanvasRenderCache(state);
     expect(getRegistryTableEntry(getCanvasRenderStateRuntime(state).registries.renderers, RenderCacheKind)).toBe(
-      defaultCanvasRenderCacheRenderer,
+      canvasRenderCacheRenderer,
     );
   });
 });

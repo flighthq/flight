@@ -1,4 +1,4 @@
-import { applyPixelateEffectToGl, defaultGlPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
+import { applyPixelateEffectToGl, glPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
 
 describe('applyPixelateEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyPixelateEffectToGl', () => {
   });
 });
 
-describe('defaultGlPixelateEffectRunner', () => {
+describe('glPixelateEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlPixelateEffectRunner).toBe('function');
+    expect(typeof glPixelateEffectRunner).toBe('function');
   });
 });
 

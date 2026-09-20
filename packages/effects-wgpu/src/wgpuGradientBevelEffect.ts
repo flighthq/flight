@@ -124,13 +124,13 @@ export function applyGradientBevelEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuGradientBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuGradientBevelEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'GradientBevelEffect', wgpuGradientBevelEffectRunner);
+}
+
+export const wgpuGradientBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
-
-export function registerWgpuGradientBevelEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
-}
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded value

@@ -20,9 +20,9 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
 // content: a scene of solid fills never rasterizes, while one gradient fill makes the full canvas
 // command vocabulary a requirement.
 //
-// Register defaultWgpuMeshShapeRenderer or defaultWgpuRasterShapeRenderer instead to pin the strategy —
+// Register wgpuMeshShapeRenderer or wgpuRasterShapeRenderer instead to pin the strategy —
 // each pays for only its own path and has a wiring requirement that does not depend on the scene.
-export const defaultWgpuShapeRenderer: Scene2DRenderer = {
+export const wgpuShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createWgpuShapeData,
   destroyData: destroyWgpuShapeData,
@@ -30,4 +30,4 @@ export const defaultWgpuShapeRenderer: Scene2DRenderer = {
 };
 
 // MorphShape owns a distinct kind while sharing Shape's mesh/raster renderer and cache lifecycle.
-export const defaultWgpuMorphShapeRenderer: Scene2DRenderer = defaultWgpuShapeRenderer;
+export const wgpuMorphShapeRenderer: Scene2DRenderer = wgpuShapeRenderer;

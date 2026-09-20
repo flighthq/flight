@@ -22,7 +22,7 @@ const _fillMatrixInverse: Matrix = createMatrix();
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
-export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
+export const canvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
   fillBounds: defaultShapeBoundsFlush,
   key: 'beginTextureFill',
   strokeBounds: defaultShapeBoundsFlush,
@@ -55,7 +55,7 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
 
 const textureFillViewSize = { x: 0, y: 0 };
 
-export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
+export const canvasBeginFill: CanvasShapeCommand<'beginFill'> = {
   fillBounds: defaultShapeBoundsFlush,
   key: 'beginFill',
   strokeBounds: defaultShapeBoundsFlush,
@@ -71,7 +71,7 @@ export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
   },
 };
 
-export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFill'> = {
+export const canvasBeginGradientFill: CanvasShapeCommand<'beginGradientFill'> = {
   fillBounds: defaultShapeBoundsFlush,
   key: 'beginGradientFill',
   strokeBounds: defaultShapeBoundsFlush,
@@ -105,7 +105,7 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
   },
 };
 
-export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
+export const canvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
   fillBounds: defaultShapeBoundsCubicCurveTo,
   key: 'cubicCurveTo',
   strokeBounds: defaultShapeBoundsCubicCurveTo,
@@ -127,7 +127,7 @@ export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
   },
 };
 
-export const defaultCanvasQuadraticCurveTo: CanvasShapeCommand<'quadraticCurveTo'> = {
+export const canvasQuadraticCurveTo: CanvasShapeCommand<'quadraticCurveTo'> = {
   fillBounds: defaultShapeBoundsQuadraticCurveTo,
   key: 'quadraticCurveTo',
   strokeBounds: defaultShapeBoundsQuadraticCurveTo,
@@ -147,7 +147,7 @@ export const defaultCanvasQuadraticCurveTo: CanvasShapeCommand<'quadraticCurveTo
   },
 };
 
-export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
+export const canvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
   fillBounds: defaultShapeBoundsDrawCircle,
   key: 'drawCircle',
   strokeBounds: defaultShapeBoundsDrawCircle,
@@ -166,7 +166,7 @@ export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
   },
 };
 
-export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
+export const canvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
   fillBounds: defaultShapeBoundsDrawEllipse,
   key: 'drawEllipse',
   strokeBounds: defaultShapeBoundsDrawEllipse,
@@ -186,7 +186,7 @@ export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
   },
 };
 
-export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
+export const canvasDrawPath: CanvasShapeCommand<'drawPath'> = {
   fillBounds: defaultShapeBoundsDrawPath,
   key: 'drawPath',
   strokeBounds: defaultShapeBoundsDrawPath,
@@ -278,7 +278,7 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
   },
 };
 
-export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
+export const canvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
   fillBounds: defaultShapeBoundsDrawRectangle,
   key: 'drawRectangle',
   strokeBounds: defaultShapeBoundsDrawRectangle,
@@ -320,7 +320,7 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
   },
 };
 
-export const defaultCanvasDrawRoundedRectangle: CanvasShapeCommand<'drawRoundedRectangle'> = {
+export const canvasDrawRoundedRectangle: CanvasShapeCommand<'drawRoundedRectangle'> = {
   fillBounds: defaultShapeBoundsDrawRoundedRectangle,
   key: 'drawRoundedRectangle',
   strokeBounds: defaultShapeBoundsDrawRoundedRectangle,
@@ -348,7 +348,7 @@ export const defaultCanvasDrawRoundedRectangle: CanvasShapeCommand<'drawRoundedR
   },
 };
 
-export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
+export const canvasEndFill: CanvasShapeCommand<'endFill'> = {
   fillBounds: defaultShapeBoundsFlush,
   key: 'endFill',
   strokeBounds: defaultShapeBoundsFlush,
@@ -361,7 +361,7 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
   },
 };
 
-export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle'> = {
+export const canvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle'> = {
   fillBounds: null,
   key: 'lineTextureStyle',
   strokeBounds: null,
@@ -375,7 +375,7 @@ export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle
   },
 };
 
-export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientStyle'> = {
+export const canvasLineGradientStyle: CanvasShapeCommand<'lineGradientStyle'> = {
   fillBounds: null,
   key: 'lineGradientStyle',
   strokeBounds: null,
@@ -407,7 +407,7 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
   },
 };
 
-export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
+export const canvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
   fillBounds: defaultShapeBoundsFlush,
   key: 'lineStyle',
   strokeBounds: defaultShapeBoundsLineStyle,
@@ -435,7 +435,7 @@ export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
   },
 };
 
-export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
+export const canvasLineTo: CanvasShapeCommand<'lineTo'> = {
   fillBounds: defaultShapeBoundsLineTo,
   key: 'lineTo',
   strokeBounds: defaultShapeBoundsLineTo,
@@ -453,7 +453,7 @@ export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
   },
 };
 
-export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
+export const canvasMoveTo: CanvasShapeCommand<'moveTo'> = {
   fillBounds: defaultShapeBoundsMoveTo,
   key: 'moveTo',
   strokeBounds: defaultShapeBoundsMoveTo,
@@ -471,31 +471,28 @@ export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
-  defaultCanvasBeginFill,
-  defaultCanvasBeginGradientFill,
-  defaultCanvasCubicCurveTo,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawEllipse,
-  defaultCanvasDrawPath,
-  defaultCanvasDrawRectangle,
-  defaultCanvasDrawRoundedRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineGradientStyle,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-  defaultCanvasQuadraticCurveTo,
+export const canvasShapeCommands: CanvasShapeCommand<any>[] = [
+  canvasBeginFill,
+  canvasBeginGradientFill,
+  canvasCubicCurveTo,
+  canvasDrawCircle,
+  canvasDrawEllipse,
+  canvasDrawPath,
+  canvasDrawRectangle,
+  canvasDrawRoundedRectangle,
+  canvasEndFill,
+  canvasLineGradientStyle,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
+  canvasQuadraticCurveTo,
 ];
 
 // Texture-backed shape styles are an explicit assembly so ordinary vector shapes do not retain
-// Texture source resolution. Register this alongside defaultCanvasShapeCommands when bitmap fills
+// Texture source resolution. Register this alongside canvasShapeCommands when bitmap fills
 // or bitmap strokes are present.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const defaultCanvasTextureShapeCommands: CanvasShapeCommand<any>[] = [
-  defaultCanvasBeginTextureFill,
-  defaultCanvasLineTextureStyle,
-];
+export const canvasTextureShapeCommands: CanvasShapeCommand<any>[] = [canvasBeginTextureFill, canvasLineTextureStyle];
 
 function rgbaString(color: number, alpha: number): string {
   const r = (color >>> 24) & 0xff;

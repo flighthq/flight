@@ -4,11 +4,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import * as glEffectBlitShader from './glEffectBlitShader';
 import * as glEffectBoxBlur from './glEffectBoxBlur';
 import * as glEffectTintShader from './glEffectTintShader';
-import {
-  applyOuterGlowEffectToGl,
-  defaultGlOuterGlowEffectRunner,
-  registerGlOuterGlowEffect,
-} from './glOuterGlowEffect';
+import { applyOuterGlowEffectToGl, glOuterGlowEffectRunner, registerGlOuterGlowEffect } from './glOuterGlowEffect';
 
 let nextTargetId = 0;
 
@@ -78,9 +74,9 @@ describe('applyOuterGlowEffectToGl', () => {
   });
 });
 
-describe('defaultGlOuterGlowEffectRunner', () => {
+describe('glOuterGlowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlOuterGlowEffectRunner).toBe('function');
+    expect(typeof glOuterGlowEffectRunner).toBe('function');
   });
 });
 

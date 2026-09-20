@@ -8,13 +8,13 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createDomRenderState,
-  defaultCanvasShapeCommands,
-  defaultCanvasTextureShapeCommands,
-  defaultDomRichTextRenderer,
-  defaultDomScale9ShapeRenderer,
-  defaultDomShapeRenderer,
-  defaultDomSpriteRenderer,
-  defaultDomTextLabelRenderer,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
+  domRichTextRenderer,
+  domScale9ShapeRenderer,
+  domShapeRenderer,
+  domSpriteRenderer,
+  domTextLabelRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
@@ -33,7 +33,7 @@ import {
   renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -65,20 +65,20 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+      registerRenderer(state, ShapeKind, domShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
+      registerRenderer(state, RichTextKind, domRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+      registerRenderer(state, TextLabelKind, domTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+      registerRenderer(state, SpriteKind, domSpriteRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
+      registerRenderer(state, Scale9ShapeKind, domScale9ShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }
   }
 
@@ -109,7 +109,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    defaultScene2DCanvasRenderRegistries,
+    canvasScene2DRenderRegistries,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

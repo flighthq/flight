@@ -15,9 +15,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   createWgpuVelocityTarget,
-  defaultWgpuNode2DVelocityWriter,
-  defaultWgpuParticleEmitter2DVelocityWriter,
-  defaultWgpuQuadBatchVelocityWriter,
+  wgpuNode2DVelocityWriter,
+  wgpuParticleEmitter2DVelocityWriter,
+  wgpuQuadBatchVelocityWriter,
   drawWgpuVelocityQuad,
   getWgpuVelocityWriter,
   registerWgpuVelocityWriter,
@@ -35,70 +35,6 @@ describe('createWgpuVelocityTarget', () => {
     expect(target.format).toBe('rgba16float');
     expect(target.width).toBe(128);
     expect(target.height).toBe(64);
-  });
-});
-
-describe('defaultWgpuNode2DVelocityWriter', () => {
-  it('is a velocity writer function', () => {
-    expect(typeof defaultWgpuNode2DVelocityWriter).toBe('function');
-  });
-});
-
-describe('defaultWgpuParticleEmitter2DVelocityWriter', () => {
-  it('is a velocity writer function', () => {
-    expect(typeof defaultWgpuParticleEmitter2DVelocityWriter).toBe('function');
-  });
-
-  it('emits per-particle velocity for an emitter with a velocities array without throwing', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const target = createWgpuVelocityTarget(state, 128, 64);
-    const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const emitter = createParticleEmitter2D();
-    reserveParticleEmitter2D(emitter, 2);
-    emitter.data.atlas = atlas;
-    emitter.data.particleCount = 2;
-    emitter.data.ids[0] = 0;
-    emitter.data.ids[1] = 0;
-    emitter.data.transforms.set([10, 10, 0, 1, 40, 20, 0, 1]);
-    emitter.data.velocities.set([3, -2, -1, 4]);
-
-    registerWgpuVelocityWriter(state, emitter.kind, defaultWgpuParticleEmitter2DVelocityWriter);
-    const field = createVelocityField();
-    beginVelocityFrame(field);
-
-    beginWgpuScreenRenderPassForTest(state);
-    expect(() => renderWgpuVelocity(state, emitter, field, target)).not.toThrow();
-  });
-});
-
-describe('defaultWgpuQuadBatchVelocityWriter', () => {
-  it('is a velocity writer function', () => {
-    expect(typeof defaultWgpuQuadBatchVelocityWriter).toBe('function');
-  });
-
-  it('emits per-instance velocity for a batch with an instanceVelocities array without throwing', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const target = createWgpuVelocityTarget(state, 128, 64);
-    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
-    const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const batch = createQuadBatch({
-      data: {
-        atlas,
-        ids: new Uint16Array([0, 0]),
-        instanceCount: 2,
-        transforms: new Float32Array([0, 0, 40, 10]),
-        transformType: 'vector2',
-      },
-    });
-    (getQuadBatchRuntime(batch) as QuadBatchRuntime).instanceVelocities = new Float32Array([3, -2, -1, 4]);
-
-    registerWgpuVelocityWriter(state, QuadBatchKind, defaultWgpuQuadBatchVelocityWriter);
-    const field = createVelocityField();
-    beginVelocityFrame(field);
-
-    beginWgpuScreenRenderPassForTest(state);
-    expect(() => renderWgpuVelocity(state, batch, field, target)).not.toThrow();
   });
 });
 
@@ -121,8 +57,8 @@ describe('registerWgpuVelocityWriter', () => {
   it('registers a writer dispatched by kind', async () => {
     const state = await createWgpuRenderStateForTest();
     const root = createDisplayObject();
-    registerWgpuVelocityWriter(state, root.kind, defaultWgpuNode2DVelocityWriter);
-    expect(getWgpuVelocityWriter(state, root.kind)).toBe(defaultWgpuNode2DVelocityWriter);
+    registerWgpuVelocityWriter(state, root.kind, wgpuNode2DVelocityWriter);
+    expect(getWgpuVelocityWriter(state, root.kind)).toBe(wgpuNode2DVelocityWriter);
   });
 
   it('replaces persistent snapshots and preserves a derived pipeline snapshot', async () => {
@@ -131,7 +67,7 @@ describe('registerWgpuVelocityWriter', () => {
     const replacement = vi.fn();
     const before = getWgpuRenderStateRuntime(state).registries.velocityWriters;
 
-    registerWgpuVelocityWriter(state, kind, defaultWgpuNode2DVelocityWriter);
+    registerWgpuVelocityWriter(state, kind, wgpuNode2DVelocityWriter);
     const registered = getWgpuRenderStateRuntime(state).registries.velocityWriters;
     const offscreen = createWgpuOffscreenRenderState(
       state.deviceState,
@@ -142,9 +78,9 @@ describe('registerWgpuVelocityWriter', () => {
 
     expect(registered).not.toBe(before);
     expect(before.entries.has(kind)).toBe(false);
-    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: defaultWgpuNode2DVelocityWriter });
+    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: wgpuNode2DVelocityWriter });
     expect(getWgpuVelocityWriter(state, kind)).toBe(replacement);
-    expect(getWgpuVelocityWriter(offscreen, kind)).toBe(defaultWgpuNode2DVelocityWriter);
+    expect(getWgpuVelocityWriter(offscreen, kind)).toBe(wgpuNode2DVelocityWriter);
   });
 });
 
@@ -153,7 +89,7 @@ describe('renderWgpuVelocity', () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuVelocityTarget(state, 128, 64);
     const root = createDisplayObject();
-    registerWgpuVelocityWriter(state, root.kind, defaultWgpuNode2DVelocityWriter);
+    registerWgpuVelocityWriter(state, root.kind, wgpuNode2DVelocityWriter);
 
     const field = createVelocityField();
     beginVelocityFrame(field);
@@ -171,5 +107,69 @@ describe('renderWgpuVelocity', () => {
     beginVelocityFrame(field);
 
     expect(() => renderWgpuVelocity(state, root, field, target)).toThrow(/command encoder/);
+  });
+});
+
+describe('wgpuNode2DVelocityWriter', () => {
+  it('is a velocity writer function', () => {
+    expect(typeof wgpuNode2DVelocityWriter).toBe('function');
+  });
+});
+
+describe('wgpuParticleEmitter2DVelocityWriter', () => {
+  it('is a velocity writer function', () => {
+    expect(typeof wgpuParticleEmitter2DVelocityWriter).toBe('function');
+  });
+
+  it('emits per-particle velocity for an emitter with a velocities array without throwing', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const target = createWgpuVelocityTarget(state, 128, 64);
+    const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
+    const emitter = createParticleEmitter2D();
+    reserveParticleEmitter2D(emitter, 2);
+    emitter.data.atlas = atlas;
+    emitter.data.particleCount = 2;
+    emitter.data.ids[0] = 0;
+    emitter.data.ids[1] = 0;
+    emitter.data.transforms.set([10, 10, 0, 1, 40, 20, 0, 1]);
+    emitter.data.velocities.set([3, -2, -1, 4]);
+
+    registerWgpuVelocityWriter(state, emitter.kind, wgpuParticleEmitter2DVelocityWriter);
+    const field = createVelocityField();
+    beginVelocityFrame(field);
+
+    beginWgpuScreenRenderPassForTest(state);
+    expect(() => renderWgpuVelocity(state, emitter, field, target)).not.toThrow();
+  });
+});
+
+describe('wgpuQuadBatchVelocityWriter', () => {
+  it('is a velocity writer function', () => {
+    expect(typeof wgpuQuadBatchVelocityWriter).toBe('function');
+  });
+
+  it('emits per-instance velocity for a batch with an instanceVelocities array without throwing', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const target = createWgpuVelocityTarget(state, 128, 64);
+    const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const atlas = { texture: null, regions: [region] } as TextureAtlas;
+    const batch = createQuadBatch({
+      data: {
+        atlas,
+        ids: new Uint16Array([0, 0]),
+        instanceCount: 2,
+        transforms: new Float32Array([0, 0, 40, 10]),
+        transformType: 'vector2',
+      },
+    });
+    (getQuadBatchRuntime(batch) as QuadBatchRuntime).instanceVelocities = new Float32Array([3, -2, -1, 4]);
+
+    registerWgpuVelocityWriter(state, QuadBatchKind, wgpuQuadBatchVelocityWriter);
+    const field = createVelocityField();
+    beginVelocityFrame(field);
+
+    beginWgpuScreenRenderPassForTest(state);
+    expect(() => renderWgpuVelocity(state, batch, field, target)).not.toThrow();
   });
 });

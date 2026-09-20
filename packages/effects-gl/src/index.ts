@@ -1,40 +1,37 @@
 export * from './enableGlEffectGuards';
-export { defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
+export { glBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
 export {
-  defaultGlBitmapDisplacementEffectRunner,
+  glBitmapDisplacementEffectRunner,
   isGlBitmapDisplacementEffectResolvable,
   registerGlBitmapDisplacementEffect,
 } from './glBitmapDisplacementEffect';
-export { defaultGlBlendEffectRunner, registerGlBlendEffect, registerGlBlendEffectBackdrop } from './glBlendEffect';
-export { defaultGlBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect';
+export { glBlendEffectRunner, registerGlBlendEffect, registerGlBlendEffectBackdrop } from './glBlendEffect';
+export { glBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect';
 export {
   applyBlurEffectToGlRenderTextures,
   applyGaussianBlurToGlRenderTextures,
-  defaultGlBlurEffectRunner,
+  glBlurEffectRunner,
   registerGlBlurEffect,
 } from './glBlurEffect';
-export { defaultGlBokehDepthOfFieldEffectRunner, registerGlBokehDepthOfFieldEffect } from './glBokehDepthOfFieldEffect';
-export { defaultGlCameraMotionBlurEffectRunner, registerGlCameraMotionBlurEffect } from './glCameraMotionBlurEffect';
+export { glBokehDepthOfFieldEffectRunner, registerGlBokehDepthOfFieldEffect } from './glBokehDepthOfFieldEffect';
+export { glCameraMotionBlurEffectRunner, registerGlCameraMotionBlurEffect } from './glCameraMotionBlurEffect';
+export { glChromaticAberrationEffectRunner, registerGlChromaticAberrationEffect } from './glChromaticAberrationEffect';
+export { glCompositeEffectRunner, registerGlCompositeEffect } from './glCompositeEffect';
+export { glContactShadowsEffectRunner, registerGlContactShadowsEffect } from './glContactShadowsEffect';
+export { glConvolutionEffectRunner, registerGlConvolutionEffect } from './glConvolutionEffect';
+export { glCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
 export {
-  defaultGlChromaticAberrationEffectRunner,
-  registerGlChromaticAberrationEffect,
-} from './glChromaticAberrationEffect';
-export { defaultGlCompositeEffectRunner, registerGlCompositeEffect } from './glCompositeEffect';
-export { defaultGlContactShadowsEffectRunner, registerGlContactShadowsEffect } from './glContactShadowsEffect';
-export { defaultGlConvolutionEffectRunner, registerGlConvolutionEffect } from './glConvolutionEffect';
-export { defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
-export {
-  defaultGlCustomShaderEffectRunner,
+  glCustomShaderEffectRunner,
   getGlCustomShaderSource,
   isGlCustomShaderEffectResolvable,
   registerGlCustomShaderEffect,
   registerGlCustomShaderSource,
   setGlCustomShaderSourceGuard,
 } from './glCustomShaderEffect';
-export { defaultGlDirectionalBlurEffectRunner, registerGlDirectionalBlurEffect } from './glDirectionalBlurEffect';
-export { defaultGlDisplacementEffectRunner, registerGlDisplacementEffect } from './glDisplacementEffect';
-export { defaultGlDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
-export { defaultGlDropShadowEffectRunner, registerGlDropShadowEffect } from './glDropShadowEffect';
+export { glDirectionalBlurEffectRunner, registerGlDirectionalBlurEffect } from './glDirectionalBlurEffect';
+export { glDisplacementEffectRunner, registerGlDisplacementEffect } from './glDisplacementEffect';
+export { glDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
+export { glDropShadowEffectRunner, registerGlDropShadowEffect } from './glDropShadowEffect';
 export {
   beginGlEffectPass,
   createGlEffectState,
@@ -43,35 +40,35 @@ export {
   setGlEffectStateSkipGuard,
   setGlEffectVelocityTexture,
 } from './glEffectState';
-export { defaultGlFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
-export { defaultGlFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
-export { defaultGlGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
-export { defaultGlGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
-export { defaultGlGradientBevelEffectRunner, registerGlGradientBevelEffect } from './glGradientBevelEffect';
-export { defaultGlGradientGlowEffectRunner, registerGlGradientGlowEffect } from './glGradientGlowEffect';
-export { defaultGlHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect';
-export { defaultGlInnerGlowEffectRunner, registerGlInnerGlowEffect } from './glInnerGlowEffect';
-export { defaultGlInnerShadowEffectRunner, registerGlInnerShadowEffect } from './glInnerShadowEffect';
-export { defaultGlKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect';
-export { defaultGlLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect';
-export { defaultGlLensDistortionEffectRunner, registerGlLensDistortionEffect } from './glLensDistortionEffect';
-export { defaultGlLensFlareEffectRunner, registerGlLensFlareEffect } from './glLensFlareEffect';
-export { defaultGlMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect';
-export { defaultGlMotionBlurEffectRunner, registerGlMotionBlurEffect } from './glMotionBlurEffect';
-export { defaultGlOuterGlowEffectRunner, registerGlOuterGlowEffect } from './glOuterGlowEffect';
-export { defaultGlOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect';
-export { defaultGlPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
-export { defaultGlPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect';
-export { defaultGlRadialBlurEffectRunner, registerGlRadialBlurEffect } from './glRadialBlurEffect';
+export { glFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
+export { glFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
+export { glGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
+export { glGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
+export { glGradientBevelEffectRunner, registerGlGradientBevelEffect } from './glGradientBevelEffect';
+export { glGradientGlowEffectRunner, registerGlGradientGlowEffect } from './glGradientGlowEffect';
+export { glHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect';
+export { glInnerGlowEffectRunner, registerGlInnerGlowEffect } from './glInnerGlowEffect';
+export { glInnerShadowEffectRunner, registerGlInnerShadowEffect } from './glInnerShadowEffect';
+export { glKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect';
+export { glLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect';
+export { glLensDistortionEffectRunner, registerGlLensDistortionEffect } from './glLensDistortionEffect';
+export { glLensFlareEffectRunner, registerGlLensFlareEffect } from './glLensFlareEffect';
+export { glMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect';
+export { glMotionBlurEffectRunner, registerGlMotionBlurEffect } from './glMotionBlurEffect';
+export { glOuterGlowEffectRunner, registerGlOuterGlowEffect } from './glOuterGlowEffect';
+export { glOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect';
+export { glPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
+export { glPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect';
+export { glRadialBlurEffectRunner, registerGlRadialBlurEffect } from './glRadialBlurEffect';
 export * from './glEffectRegistry';
 export * from './glRenderTextureEffect';
-export { defaultGlScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect';
-export { defaultGlScreenSpaceFogEffectRunner, registerGlScreenSpaceFogEffect } from './glScreenSpaceFogEffect';
-export { defaultGlSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect';
-export { defaultGlSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect';
-export { defaultGlSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect';
-export { defaultGlSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect';
-export { defaultGlTiltShiftEffectRunner, registerGlTiltShiftEffect } from './glTiltShiftEffect';
-export { defaultGlToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect';
-export { defaultGlVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect';
-export { defaultGlWhiteBalanceEffectRunner, registerGlWhiteBalanceEffect } from './glWhiteBalanceEffect';
+export { glScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect';
+export { glScreenSpaceFogEffectRunner, registerGlScreenSpaceFogEffect } from './glScreenSpaceFogEffect';
+export { glSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect';
+export { glSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect';
+export { glSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect';
+export { glSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect';
+export { glTiltShiftEffectRunner, registerGlTiltShiftEffect } from './glTiltShiftEffect';
+export { glToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect';
+export { glVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect';
+export { glWhiteBalanceEffectRunner, registerGlWhiteBalanceEffect } from './glWhiteBalanceEffect';

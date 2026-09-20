@@ -5,8 +5,8 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createDomRenderState,
-  defaultCanvasShapeCommands,
-  defaultDomShapeRenderer,
+  canvasShapeCommands,
+  domShapeRenderer,
   enableFlightDiagnostics,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
@@ -30,7 +30,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#1a1a2e';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+registerRenderer(state, ShapeKind, domShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
 // rather than a render state, and that set is pointed at this state's diagnostics.
@@ -39,7 +39,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 
 export const canvas: HTMLElement = container;
 

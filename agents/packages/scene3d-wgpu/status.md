@@ -20,7 +20,7 @@ is a claim about this tree, not about a session. Gaps stated against GL were re-
   (`wgpuMeshPipeline.ts:1234-1236`). A stride-64 geometry carrying `color0` renders as a solid white
   triangle: every vertex past the first is read 16 bytes early, so the positions are wrong too and
   only the default tint reaches the fragment. Declared in `scripts/support.ts` DECLARED_GAPS and
-  surfaced in [support-matrix](../../support-matrix.md); `vertexColorWgpuMeshMaterialRenderer.ts:23-25`
+  surfaced in [support-matrix](../../support-matrix.md); `wgpuVertexColorMeshMaterialRenderer.ts:23-25`
   carries the durable note.
 - **The same constant is behind three tracked items, and they retire together.** `color0` (above),
   `uv1` (no `uv1` reference exists anywhere in this package — it would take stride 48 → 56), and
@@ -50,7 +50,7 @@ is a claim about this tree, not about a session. Gaps stated against GL were re-
   GL. Tied to the held view-ownership question in
   [render view model](../../render-view-model.md) — unratified, do not build on it.
 - **Specular-glossiness drops its packed map.** The renderer converts the scalars but passes
-  `metallicRoughnessMap: null` (`specularGlossinessPbrWgpuMeshMaterialRenderer.ts:133`, documented at
+  `metallicRoughnessMap: null` (`wgpuSpecularGlossinessPbrMeshMaterialRenderer.ts:133`, documented at
   `:48`), so an asset whose gloss varies per texel renders uniformly rough. Same defect as GL.
 - **Teardown is piecemeal.** `destroyWgpuScene3DShadow` (`wgpuShadowMap.ts:28`),
   `destroyWgpuScene3DIbl` (`wgpuEnvironmentIblBake.ts:58`), and

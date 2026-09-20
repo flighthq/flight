@@ -11,10 +11,10 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawPath,
-  defaultCanvasEndFill,
-  defaultCanvasMorphShapeRenderer,
+  canvasBeginFill,
+  canvasDrawPath,
+  canvasEndFill,
+  canvasMorphShapeRenderer,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -26,11 +26,11 @@ import { MorphShapeKind, RegistryEntryState } from '@flighthq/types';
 // REQUIRED WIRING for one interpolated vector shape, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  MorphShapeKind -> defaultCanvasMorphShapeRenderer
+//   renderer  MorphShapeKind -> canvasMorphShapeRenderer
 //   commands  beginFill, drawPath, endFill. A MorphShape does NOT record the same commands the plain
 //             Shape fixture does: `appendMorphShapePath` samples the morph into a Path and emits a
-//             single drawPath command, so `defaultCanvasDrawPath` is required and
-//             `defaultCanvasDrawRectangle` is not. Registering the Shape fixture's three commands here
+//             single drawPath command, so `canvasDrawPath` is required and
+//             `canvasDrawRectangle` is not. Registering the Shape fixture's three commands here
 //             would leave the shape unrendered.
 //   resolvers an EMPTY CanvasTextureResolvers container. This morph fills with an interpolated solid
 //             colour and samples no texture.
@@ -48,14 +48,14 @@ document.body.appendChild(canvas);
 
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
-for (const command of [defaultCanvasBeginFill, defaultCanvasDrawPath, defaultCanvasEndFill]) {
+for (const command of [canvasBeginFill, canvasDrawPath, canvasEndFill]) {
   shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);
 }
 
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, defaultCanvasMorphShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, canvasMorphShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

@@ -34,12 +34,12 @@ export function applyGodRaysEffectToGl(
   });
 }
 
-export const defaultGlGodRaysEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glGodRaysEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyGodRaysEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
 
 export function registerGlGodRaysEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'GodRaysEffect', defaultGlGodRaysEffectRunner);
+  registerGlEffect(state, 'GodRaysEffect', glGodRaysEffectRunner);
 }
 
 function buildGodRaysFragment(samples: number): string {

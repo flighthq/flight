@@ -8,7 +8,7 @@ basedOn: ./review.md
 
 ## Directed
 
-1. **~~Realize ExtendedPbrMaterial through separately imported extension registrations.~~** — retired 2026-08-05. `extendedPbrGlMeshMaterialRenderer` composes independently registered contributions, `registerGlPbrExtension` advances `pbrExtensionRegistryVersion` on every last-write-wins registration, and `ensureGlPbrProgram` keys compiled variants by that version plus contribution keys without enumerating extensions in the standard PBR path.
+1. **~~Realize ExtendedPbrMaterial through separately imported extension registrations.~~** — retired 2026-08-05. `glExtendedPbrMeshMaterialRenderer` composes independently registered contributions, `registerGlPbrExtension` advances `pbrExtensionRegistryVersion` on every last-write-wins registration, and `ensureGlPbrProgram` keys compiled variants by that version plus contribution keys without enumerating extensions in the standard PBR path.
 2. **Sample every declared extension map and compose lobes coherently.** Bind each map's own UV set and
    texture transform rather than sampling every slot through the base-color map's shared `v_uv0`.
    Extension energy and orientation must survive both punctual and IBL paths—do not implement

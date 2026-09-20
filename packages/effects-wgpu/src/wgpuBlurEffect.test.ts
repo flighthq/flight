@@ -4,7 +4,7 @@ import {
   getWgpuRenderTargetTexelScale,
   applyBlurEffectToWgpu,
   applyGaussianBlurToWgpu,
-  defaultWgpuBlurEffectRunner,
+  wgpuBlurEffectRunner,
   registerWgpuBlurEffect,
 } from './wgpuBlurEffect';
 import { getWgpuEffectRunner } from './wgpuEffectRegistry';
@@ -20,12 +20,6 @@ describe('applyBlurEffectToWgpu', () => {
 describe('applyGaussianBlurToWgpu', () => {
   it('is a function', () => {
     expect(typeof applyGaussianBlurToWgpu).toBe('function');
-  });
-});
-
-describe('defaultWgpuBlurEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuBlurEffectRunner).toBe('function');
   });
 });
 
@@ -60,6 +54,12 @@ describe('registerWgpuBlurEffect', () => {
   it('registers the default runner under BlurEffect', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuBlurEffect(state);
-    expect(getWgpuEffectRunner(state, 'BlurEffect')).toBe(defaultWgpuBlurEffectRunner);
+    expect(getWgpuEffectRunner(state, 'BlurEffect')).toBe(wgpuBlurEffectRunner);
+  });
+});
+
+describe('wgpuBlurEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuBlurEffectRunner).toBe('function');
   });
 });

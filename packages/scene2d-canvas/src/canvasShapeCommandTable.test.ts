@@ -1,24 +1,24 @@
-import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
 
 describe('canvasShapeCommandTable', () => {
   it('holds exactly the default and texture shape commands, one entry per key', () => {
     const table = canvasShapeCommandTable();
-    const keys = [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands].map((command) => command.key);
+    const keys = [...canvasShapeCommands, ...canvasTextureShapeCommands].map((command) => command.key);
     expect(new Set(keys).size).toBe(keys.length);
     expect(table.entries.size).toBe(keys.length);
   });
 
   it('includes every default shape command by key', () => {
     const table = canvasShapeCommandTable();
-    for (const command of defaultCanvasShapeCommands) {
+    for (const command of canvasShapeCommands) {
       expect(table.entries.has(command.key)).toBe(true);
     }
   });
 
   it('includes every texture shape command by key', () => {
     const table = canvasShapeCommandTable();
-    for (const command of defaultCanvasTextureShapeCommands) {
+    for (const command of canvasTextureShapeCommands) {
       expect(table.entries.has(command.key)).toBe(true);
     }
   });

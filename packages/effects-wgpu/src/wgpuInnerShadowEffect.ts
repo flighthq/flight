@@ -62,13 +62,13 @@ export function applyInnerShadowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuInnerShadowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuInnerShadowEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'InnerShadowEffect', wgpuInnerShadowEffectRunner);
+}
+
+export const wgpuInnerShadowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyInnerShadowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerShadowEffect);
 };
-
-export function registerWgpuInnerShadowEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'InnerShadowEffect', defaultWgpuInnerShadowEffectRunner);
-}
 
 function getInvertTintEdgeColor(
   color: number,

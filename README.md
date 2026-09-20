@@ -38,7 +38,7 @@ import {
   createDisplayObject,
   createSprite,
   createTexture,
-  defaultCanvasSpriteRenderer,
+  canvasSpriteRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   loadImageResourceFromUrl,
@@ -73,7 +73,7 @@ const state = createCanvasRenderState(
 const screenClear = { color: [0xee / 0xff, 0xdd / 0xff, 0xcc / 0xff, 1] } as const;
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+registerRenderer(state, SpriteKind, canvasSpriteRenderer);
 
 const root = createDisplayObject();
 root.scaleX = pixelRatio;

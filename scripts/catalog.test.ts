@@ -7,7 +7,7 @@ const entry: RegistryCatalogEntry = {
   backend: 'webgl',
   facet: RequirementFacet.SceneNodeKind,
   implementationImport: '@flighthq/scene2d-gl',
-  implementationSymbol: 'defaultGlShapeRenderer',
+  implementationSymbol: 'glShapeRenderer',
   kind: 'Shape',
   registrarImport: '@flighthq/render',
   registrarSymbol: 'registerRenderer',
@@ -17,7 +17,7 @@ describe('formatBuiltInRegistryCatalogSource', () => {
   it('formats a non-empty inventory as typed deterministic source', () => {
     const source = formatBuiltInRegistryCatalogSource([entry]);
     expect(source).toContain('readonly RegistryCatalogEntry[]');
-    expect(source).toContain('"implementationSymbol": "defaultGlShapeRenderer"');
+    expect(source).toContain('"implementationSymbol": "glShapeRenderer"');
   });
 });
 

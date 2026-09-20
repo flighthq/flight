@@ -4,23 +4,23 @@ import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contrac
 import { createTilemap } from '@flighthq/tilemap/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
-import { defaultWgpuTilemapRenderer } from './wgpuTilemap';
+import { wgpuTilemapRenderer } from './wgpuTilemap';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('defaultWgpuTilemapRenderer', () => {
+describe('wgpuTilemapRenderer', () => {
   it('has a createData function', () => {
-    expect(typeof defaultWgpuTilemapRenderer.createData).toBe('function');
+    expect(typeof wgpuTilemapRenderer.createData).toBe('function');
   });
 
   it('has a submit function', () => {
-    expect(typeof defaultWgpuTilemapRenderer.submit).toBe('function');
+    expect(typeof wgpuTilemapRenderer.submit).toBe('function');
   });
 });
 
-describe('defaultWgpuTilemapRenderer.submit', () => {
+describe('wgpuTilemapRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
@@ -30,7 +30,7 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
     const renderProxy = getRenderProxy2D(state, tilemap)!;
 
     expect(() => {
-      defaultWgpuTilemapRenderer.submit(state, renderProxy);
+      wgpuTilemapRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
     submitWgpuFrame(state);
@@ -42,6 +42,6 @@ describe('defaultWgpuTilemapRenderer.submit', () => {
     prepareScene2DRender(state, tilemap);
     const renderProxy = getRenderProxy2D(state, tilemap)!;
 
-    expect(() => defaultWgpuTilemapRenderer.submit(state, renderProxy)).not.toThrow();
+    expect(() => wgpuTilemapRenderer.submit(state, renderProxy)).not.toThrow();
   });
 });

@@ -18,15 +18,15 @@ export function enableGlPbrExtensionGuards(state: GlRenderState): void {
 function getGlPbrExtensionIssueMessage(issue: Readonly<GlPbrExtensionIssue>): string {
   switch (issue.code) {
     case 'duplicate-kind':
-      return `extendedPbrGlMeshMaterialRenderer: extension kind '${issue.kind}' appears more than once — call createExtendedPbrMaterial with each extension kind at most once`;
+      return `glExtendedPbrMeshMaterialRenderer: extension kind '${issue.kind}' appears more than once — call createExtendedPbrMaterial with each extension kind at most once`;
     case 'framebuffer-feedback':
-      return 'extendedPbrGlMeshMaterialRenderer: transmission scene color aliases the active draw attachment — call setGlPbrTransmissionSceneColor(state, a distinct resolved scene-color target)';
+      return 'glExtendedPbrMeshMaterialRenderer: transmission scene color aliases the active draw attachment — call setGlPbrTransmissionSceneColor(state, a distinct resolved scene-color target)';
     case 'missing-registration':
-      return `extendedPbrGlMeshMaterialRenderer: extension kind '${issue.kind}' has no GL registration — call registerGlPbrExtension(state, kind, registration)`;
+      return `glExtendedPbrMeshMaterialRenderer: extension kind '${issue.kind}' has no GL registration — call registerGlPbrExtension(state, kind, registration)`;
     case 'texture-unit-exhaustion':
-      return 'extendedPbrGlMeshMaterialRenderer: extension maps exceed the available fragment texture units — call createExtendedPbrMaterial with fewer mapped extensions';
+      return 'glExtendedPbrMeshMaterialRenderer: extension maps exceed the available fragment texture units — call createExtendedPbrMaterial with fewer mapped extensions';
     case 'unsupported-extension':
-      return `extendedPbrGlMeshMaterialRenderer: extension kind '${issue.kind}' is unsupported by its GL registration — call registerGlPbrExtension(state, kind, a supported registration)`;
+      return `glExtendedPbrMeshMaterialRenderer: extension kind '${issue.kind}' is unsupported by its GL registration — call registerGlPbrExtension(state, kind, a supported registration)`;
   }
 }
 

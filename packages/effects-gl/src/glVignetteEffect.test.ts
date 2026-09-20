@@ -1,4 +1,4 @@
-import { applyVignetteEffectToGl, defaultGlVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect';
+import { applyVignetteEffectToGl, glVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect';
 
 describe('applyVignetteEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyVignetteEffectToGl', () => {
   });
 });
 
-describe('defaultGlVignetteEffectRunner', () => {
+describe('glVignetteEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlVignetteEffectRunner).toBe('function');
+    expect(typeof glVignetteEffectRunner).toBe('function');
   });
 });
 

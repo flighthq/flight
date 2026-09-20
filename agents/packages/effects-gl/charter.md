@@ -26,7 +26,7 @@ It is the GL sibling of `effects-wgpu` and `effects-canvas`: same effect descrip
 
 _Proposed from the package design + the SDK-wide forks; edit or reject in review._
 
-1. **One real runner per registered effect — never a switch.** Each effect is a self-contained `apply<Name>EffectToGl` + `defaultGl<Name>EffectRunner` pair with its fragment source colocated, wired through a per-state registry so an unused effect tree-shakes out. A fake identity runner is absent rather than hidden on another lane.
+1. **One real runner per registered effect — never a switch.** Each effect is a self-contained `apply<Name>EffectToGl` + `gl<Name>EffectRunner` pair with its fragment source colocated, wired through a per-state registry so an unused effect tree-shakes out. A fake identity runner is absent rather than hidden on another lane.
 2. **The backend differs, the intent does not.** Effect descriptor types live in `@flighthq/types`; substrate-agnostic parameter math lives in `@flighthq/effects`. `effects-gl` consumes those and adds only the GL realization, so GL, WGPU, canvas, and the future Rust backend derive identical results from the same descriptor. (Open: whether consuming the shared math is a contract requirement — see Open directions.)
 3. **Explicit GPU lifecycle.** The pipeline allocates and frees deterministically — `create/destroy` for owned GPU resources (`destroy*`, not `dispose*`), `acquire/release` brackets balanced on every pooled target, program/uniform caches keyed to the object they outlive. No hidden allocation per frame.
 4. **Names tell the truth about what runs.** A registered runner performs the named, parameter-responsive effect. GL TAA and SSR were unconditional identity copies and are therefore absent.

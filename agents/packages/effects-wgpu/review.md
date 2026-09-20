@@ -43,7 +43,7 @@ All claims grounded in `packages/effects-wgpu/src/`.
 
 - `enableWgpuRenderEffectGuards.ts` — `enableWgpuRenderEffectGuards`/`disableWgpuRenderEffectGuards`/`areWgpuRenderEffectGuardsEnabled`. Installs `@flighthq/log`-based `logOnce` reporters for: unregistered effect kind skipped in the pipeline, sample-count substitution, and the full `WgpuRenderEffectApplicationExplanation` covering partial-registration, source-unavailable, partial-resolution, stale-destination, and unresolved-effects. The diagnostics follow the inversion rule: core stays message-free, the guard module is separately importable.
 
-**Effect library — 45 runners**, each `apply<Name>EffectToWgpu` + `defaultWgpu<Name>EffectRunner` + `registerWgpu<Name>Effect`:
+**Effect library — 45 runners**, each `apply<Name>EffectToWgpu` + `wgpu<Name>EffectRunner` + `registerWgpu<Name>Effect`:
 
 Bevel, BitmapDisplacement, Blend, Bloom, Blur, CameraMotionBlur, ChromaticAberration, Composite, ContactShadows, Convolution, Crt, DirectionalBlur, Displacement, Dither, DropShadow, FilmGrain, Fxaa, Glitch, GodRays, GradientBevel, GradientGlow, Halftone, InnerGlow, InnerShadow, Kuwahara, LensDirt, LensDistortion, LensFlare, Median, MotionBlur, OuterGlow, Outline, Pixelate, Posterize, RadialBlur, Scanlines, ScreenSpaceFog, Sharpen, Sketch, Smaa, Ssao, TiltShift, ToneMap, Vignette, WhiteBalance.
 

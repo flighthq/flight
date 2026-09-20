@@ -2,7 +2,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
-import { defaultGlQuadBatchRenderer } from './glQuadBatch';
+import { glQuadBatchRenderer } from './glQuadBatch';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
@@ -46,21 +46,21 @@ function makeQuadBatchNode(data: Record<string, unknown> = {}): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-describe('defaultGlQuadBatchRenderer', () => {
+describe('glQuadBatchRenderer', () => {
   it('has a createData function', () => {
-    expect(typeof defaultGlQuadBatchRenderer.createData).toBe('function');
+    expect(typeof glQuadBatchRenderer.createData).toBe('function');
   });
 
   it('has a submit function', () => {
-    expect(typeof defaultGlQuadBatchRenderer.submit).toBe('function');
+    expect(typeof glQuadBatchRenderer.submit).toBe('function');
   });
 });
 
-describe('defaultGlQuadBatchRenderer.submit', () => {
+describe('glQuadBatchRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: null }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: null }));
     flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
   it('returns early without drawing when atlas.texture is null', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: null } }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: null } }));
     flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -76,7 +76,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
   it('returns early without drawing when atlas Texture is unbound', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: createTexture() } }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { regions: [], texture: createTexture() } }));
     flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -84,7 +84,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
   it('returns early without drawing when instanceCount is 0', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ instanceCount: 0 }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ instanceCount: 0 }));
     flushGlQuadBatchWriter(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -92,7 +92,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
   it('draws all valid instances in a single instanced call with vector2 transform type', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(
+    glQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
         instanceCount: 2,
@@ -114,7 +114,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     atlas.regions[0].height = 40;
     atlas.regions[0].rotation = TextureAtlasRotation.Clockwise90;
 
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
 
     const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(data[0]).toBeCloseTo(40);
@@ -135,7 +135,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     atlas.regions[0].height = 40;
     atlas.regions[0].rotation = TextureAtlasRotation.Counterclockwise90;
 
-    defaultGlQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
+    glQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas }));
 
     const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(data[6]).toBeCloseTo(0);
@@ -147,7 +147,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
   it('excludes out-of-range ids from the instanced draw count', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlQuadBatchRenderer.submit(
+    glQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
         instanceCount: 3,
@@ -165,7 +165,7 @@ describe('defaultGlQuadBatchRenderer.submit', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
     const transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
-    defaultGlQuadBatchRenderer.submit(
+    glQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
         instanceCount: 1,

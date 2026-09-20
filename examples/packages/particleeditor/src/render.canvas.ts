@@ -7,8 +7,8 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasParticleEmitter2DRenderer,
-  defaultCanvasTextLabelRenderer,
+  canvasParticleEmitter2DRenderer,
+  canvasTextLabelRenderer,
   enableCanvasBlendMode,
   enableFlightDiagnostics,
   endCanvasRenderPass,
@@ -19,7 +19,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -35,7 +35,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -45,8 +45,8 @@ const screenClear = { color: [0x0a / 0xff, 0x0a / 0xff, 0x14 / 0xff, 1] } as con
 enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 enableCanvasBlendMode(state);
 
 export const scale = pixelRatio;

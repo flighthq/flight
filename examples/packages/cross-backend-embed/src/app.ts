@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import {
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   addNodeChild,
   addTextureAtlasRegion,
   appendQuadBatchInstance,
@@ -22,7 +22,7 @@ import {
   createTextLabel,
   createTexture,
   createTextureAtlas,
-  defaultGlQuadBatchRenderer,
+  glQuadBatchRenderer,
   endGlRenderPass,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -53,11 +53,11 @@ const producerGlSurface = createGlSurface(webHostGl, appWindow, PRODUCER_WIDTH, 
 });
 if (producerGlSurface === null) throw new Error('Failed to acquire WebGL2 context');
 const producerCanvas = getWebSurfaceCanvas(producerGlSurface)!;
-const producerState = createGlRenderState(producerGlSurface.context, defaultScene3DGlRenderRegistries, {
+const producerState = createGlRenderState(producerGlSurface.context, glScene3DRenderRegistries, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerGlImageTextureResolver(producerState);
-registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);
+registerRenderer(producerState, QuadBatchKind, glQuadBatchRenderer);
 const producerScreenTarget = createGlScreenRenderTarget(producerState.gl);
 
 const atlasCanvas = document.createElement('canvas');

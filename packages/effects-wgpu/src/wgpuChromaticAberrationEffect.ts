@@ -32,13 +32,13 @@ export function applyChromaticAberrationEffectToWgpu(
   });
 }
 
-export const defaultWgpuChromaticAberrationEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuChromaticAberrationEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ChromaticAberrationEffect', wgpuChromaticAberrationEffectRunner);
+}
+
+export const wgpuChromaticAberrationEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyChromaticAberrationEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
-
-export function registerWgpuChromaticAberrationEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ChromaticAberrationEffect', defaultWgpuChromaticAberrationEffectRunner);
-}
 
 // Slot layout: [0]=intensity, [1]=radial flag (1.0/0.0).
 const CHROMATIC_ABERRATION_FRAGMENT_WGSL = /* wgsl */ `

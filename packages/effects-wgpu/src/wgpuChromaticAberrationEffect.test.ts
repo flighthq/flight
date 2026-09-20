@@ -1,6 +1,6 @@
 import {
   applyChromaticAberrationEffectToWgpu,
-  defaultWgpuChromaticAberrationEffectRunner,
+  wgpuChromaticAberrationEffectRunner,
   registerWgpuChromaticAberrationEffect,
 } from './wgpuChromaticAberrationEffect';
 
@@ -10,14 +10,14 @@ describe('applyChromaticAberrationEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuChromaticAberrationEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuChromaticAberrationEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuChromaticAberrationEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuChromaticAberrationEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuChromaticAberrationEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuChromaticAberrationEffectRunner).toBe('function');
   });
 });

@@ -62,15 +62,15 @@ Unified clip hooks installed via `enableGlClipSupport`. Rectangle clips use the 
 
 ### Velocity rasterization (`glVelocity.ts`)
 
-`renderGlVelocity` writes per-node and per-instance motion vectors into an rgba16f render target. Three built-in writers: `defaultGlNode2DVelocityWriter` (display-object world bounds), `defaultGlParticleEmitter2DVelocityWriter` (per-particle), `defaultGlQuadBatchVelocityWriter` (per-instance or coarse fallback). Uses an open registry (`registerGlVelocityWriter`) -- the only family in the package already on the registry-dispatched pattern. Context state (BLEND, viewport, clear color) is fully saved and restored -- a prior leak was fixed and is documented in `status.md`.
+`renderGlVelocity` writes per-node and per-instance motion vectors into an rgba16f render target. Three built-in writers: `glNode2DVelocityWriter` (display-object world bounds), `glParticleEmitter2DVelocityWriter` (per-particle), `glQuadBatchVelocityWriter` (per-instance or coarse fallback). Uses an open registry (`registerGlVelocityWriter`) -- the only family in the package already on the registry-dispatched pattern. Context state (BLEND, viewport, clear color) is fully saved and restored -- a prior leak was fixed and is documented in `status.md`.
 
 ### Shape rendering strategies
 
 Three strategies share one `GlShapeRendererData` cache:
 
-1. **`defaultGlShapeRenderer`** (hybrid) -- tessellates solid fills through `@flighthq/path`, falls back to canvas raster for gradient/texture fills and closed strokes. Pulls both paths into the bundle.
-2. **`defaultGlMeshShapeRenderer`** (GPU-only) -- tessellates everything; untessellatable fills do not draw. Leaves `@flighthq/scene2d-canvas` out of the bundle.
-3. **`defaultGlRasterShapeRenderer`** (canvas-only) -- replays the entire command stream to a canvas. Leaves `@flighthq/path` tessellation out of the bundle.
+1. **`glShapeRenderer`** (hybrid) -- tessellates solid fills through `@flighthq/path`, falls back to canvas raster for gradient/texture fills and closed strokes. Pulls both paths into the bundle.
+2. **`glMeshShapeRenderer`** (GPU-only) -- tessellates everything; untessellatable fills do not draw. Leaves `@flighthq/scene2d-canvas` out of the bundle.
+3. **`glRasterShapeRenderer`** (canvas-only) -- replays the entire command stream to a canvas. Leaves `@flighthq/path` tessellation out of the bundle.
 
 `enableGlStrokePathTessellation` opts in the closed-ring stroke tessellator from `@flighthq/path`.
 
@@ -104,7 +104,7 @@ WebGL2 contexts accept WebGL1 GLSL, so this is not a runtime error, but the inco
 
 ### Canvas2D raster dependency
 
-Gradient fills, texture fills, all strokes (unless `enableGlStrokePathTessellation` is called), and all text (TextLabel, RichText) rasterize through an offscreen Canvas2D and upload as a texture. `@flighthq/scene2d-canvas` is a runtime dependency in `package.json`, and `contract.ts` re-exports sixteen `defaultCanvas*` commands under `defaultGl*` names. This is the package's standing fidelity ceiling, acknowledged in charter and status.
+Gradient fills, texture fills, all strokes (unless `enableGlStrokePathTessellation` is called), and all text (TextLabel, RichText) rasterize through an offscreen Canvas2D and upload as a texture. `@flighthq/scene2d-canvas` is a runtime dependency in `package.json`, and `contract.ts` re-exports sixteen `canvas*` commands under `gl*` names. This is the package's standing fidelity ceiling, acknowledged in charter and status.
 
 ### No context-loss recovery
 

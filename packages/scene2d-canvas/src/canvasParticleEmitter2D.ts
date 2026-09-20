@@ -82,7 +82,7 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
   if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
-export const defaultCanvasParticleEmitter2DRenderer: SpriteRenderer = {
+export const canvasParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: drawCanvasParticleEmitter2D,
 };

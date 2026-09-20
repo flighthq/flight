@@ -6,7 +6,7 @@ import * as glEffectBoxBlur from './glEffectBoxBlur';
 import * as glEffectTintShader from './glEffectTintShader';
 import {
   applyInnerShadowEffectToGl,
-  defaultGlInnerShadowEffectRunner,
+  glInnerShadowEffectRunner,
   registerGlInnerShadowEffect,
 } from './glInnerShadowEffect';
 
@@ -127,9 +127,9 @@ describe('applyInnerShadowEffectToGl', () => {
   });
 });
 
-describe('defaultGlInnerShadowEffectRunner', () => {
+describe('glInnerShadowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlInnerShadowEffectRunner).toBe('function');
+    expect(typeof glInnerShadowEffectRunner).toBe('function');
   });
 });
 

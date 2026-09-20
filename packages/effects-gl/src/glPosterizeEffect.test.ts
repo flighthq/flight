@@ -1,8 +1,4 @@
-import {
-  applyPosterizeEffectToGl,
-  defaultGlPosterizeEffectRunner,
-  registerGlPosterizeEffect,
-} from './glPosterizeEffect';
+import { applyPosterizeEffectToGl, glPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect';
 
 describe('applyPosterizeEffectToGl', () => {
   it('is a function', () => {
@@ -10,9 +6,9 @@ describe('applyPosterizeEffectToGl', () => {
   });
 });
 
-describe('defaultGlPosterizeEffectRunner', () => {
+describe('glPosterizeEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlPosterizeEffectRunner).toBe('function');
+    expect(typeof glPosterizeEffectRunner).toBe('function');
   });
 });
 
