@@ -15,7 +15,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   bakeColorLut,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   getBitmapPixelRgb,
   createGlEffectState,
@@ -23,7 +23,7 @@ import {
   createLookupTableGradeAdjustment,
   createShape,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -76,9 +76,9 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
+  endGlEffectPass(pass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

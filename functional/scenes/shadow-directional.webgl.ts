@@ -6,14 +6,14 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, renderGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   createScene3DLights,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
@@ -28,7 +28,7 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getNode3DWorldBounds,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -53,7 +53,7 @@ declareExpectedImageDescription(
 );
 
 // renderGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
-// import the Gl scene functions directly. drawGlScene3DShadowMap renders scene depth from the light into
+// import the Gl scene functions directly. renderGlScene3DShadowMap renders scene depth from the light into
 // the shadow map (setting the per-state shadow on the runtime); renderGlScene3D's lit binds then PCF-sample
 // it during shading.
 
@@ -91,22 +91,22 @@ export function render(
 ): void {
   prepareScene3DRender(state, scene, camera, lights);
   // 1) Depth pass: render the scene from the light's POV into the shadow map (off the scene target).
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // shadow-directional — proves the directional shadow recipe on the Gl backend: a sphere hovering over a
 // ground plane, lit by one straight-down white sun, casts a dark shadow onto the plane beneath it. The
-// recipe is two passes (render.webgl.ts): drawGlScene3DShadowMap renders scene depth from the light into a
+// recipe is two passes (render.webgl.ts): renderGlScene3DShadowMap renders scene depth from the light into a
 // shadow map, then renderGlScene3D's lit shaders PCF-sample it so the plane under the sphere is darkened.
 //
 // The scene assertion samples the ground in the foreground (lit) and the ground directly under the sphere

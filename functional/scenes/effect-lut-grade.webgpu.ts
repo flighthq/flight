@@ -12,7 +12,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   bakeColorLut,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createDisplayObject,
   createLookupTableGradeAdjustment,
@@ -21,7 +21,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -86,9 +86,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
+  endWgpuEffectPass(scenePass, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
   endWgpuRenderPass(pass);
 }
 

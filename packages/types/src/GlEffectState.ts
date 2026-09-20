@@ -123,7 +123,7 @@ export interface EffectStateOptions {
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
 // into and the intermediate-target pool. The per-frame effect list is data passed to
-// endGlEffectState, not retained here.
+// endGlEffectPass, not retained here.
 export interface GlEffectState extends Entity {
   readonly options: Readonly<EffectStateOptions>;
   sceneTarget: GlTextureRenderTarget | null;

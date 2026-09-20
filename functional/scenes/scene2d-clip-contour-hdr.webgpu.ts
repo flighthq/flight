@@ -13,7 +13,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createBloomEffect,
   createClipRegionFromPath,
@@ -25,7 +25,7 @@ import {
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
   enableWgpuClipSupport,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -86,9 +86,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
+  endWgpuEffectPass(scenePass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
   endWgpuRenderPass(pass);
 }
 

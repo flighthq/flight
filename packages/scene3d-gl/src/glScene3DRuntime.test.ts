@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
+import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import {
   destroyGlScene3DRuntime,
   ensureGlInstanceColorPalette,
@@ -127,7 +127,7 @@ describe('destroyGlScene3DRuntime skybox ownership', () => {
       near: 0.1,
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
-    drawGlEnvironmentSkybox(state, environment, camera, 1);
+    renderGlEnvironmentSkybox(state, environment, camera, 1);
 
     const countAfter = (name: string) => gl.calls.filter((call) => call.name === name).length;
     const before = { buffer: countAfter('deleteBuffer'), vao: countAfter('deleteVertexArray') };

@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createChromaticAberrationEffect,
   createDisplayObject,
   getBitmapPixelRgb,
@@ -23,7 +23,7 @@ import {
   createShape,
   registerGlChromaticAberrationEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -75,11 +75,9 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [
-    createChromaticAberrationEffect({ intensity: ABERRATION_INTENSITY, radial: true }),
-  ]);
+  endGlEffectPass(pass, pipeline, [createChromaticAberrationEffect({ intensity: ABERRATION_INTENSITY, radial: true })]);
 }
 
 // High-contrast white shapes on a dark field, pushed toward the corners where radial aberration is

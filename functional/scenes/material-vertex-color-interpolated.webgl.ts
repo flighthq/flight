@@ -12,7 +12,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createCamera3D,
   createGlEffectState,
@@ -23,7 +23,7 @@ import {
   createScene3DLights,
   createVector3,
   createVertexColorMaterial,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelChannel,
   ImageChannel,
   prepareScene3DRender,
@@ -67,7 +67,7 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   const gl = state.gl;
   gl.depthMask(true);
@@ -75,7 +75,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // BACKEND CAVEAT — scoped to WebGL, and the scoping is the finding rather than a convenience. The Wgpu

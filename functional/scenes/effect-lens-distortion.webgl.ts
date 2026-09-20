@@ -15,7 +15,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -23,7 +23,7 @@ import {
   createShape,
   registerGlLensDistortionEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -73,9 +73,9 @@ const LENS_AMOUNT = 0.35;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
+  endGlEffectPass(pass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }
 
 // Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away

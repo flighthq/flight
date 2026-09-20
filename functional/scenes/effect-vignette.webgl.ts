@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -22,7 +22,7 @@ import {
   createVignetteEffect,
   defaultGlShapeRenderer,
   registerGlVignetteEffect,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -78,9 +78,9 @@ const VIGNETTE_SOFTNESS = 0.5;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [
+  endGlEffectPass(pass, pipeline, [
     createVignetteEffect({ intensity: 1, radius: VIGNETTE_RADIUS, softness: VIGNETTE_SOFTNESS }),
   ]);
 }

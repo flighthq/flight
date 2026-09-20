@@ -16,7 +16,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createBloomEffect,
   createClipRegionFromPath,
   createDisplayObject,
@@ -27,7 +27,7 @@ import {
   registerGlBloomEffect,
   defaultGlShapeRenderer,
   enableGlClipSupport,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -83,9 +83,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
+  endGlEffectPass(pass, pipeline, [createBloomEffect({ threshold: 0.4, intensity: 1.3 })]);
 }
 
 // A bright square masked by a TRIANGULAR (non-rectangular) contour clip, rendered through an HDR

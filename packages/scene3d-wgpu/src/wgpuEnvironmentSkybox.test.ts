@@ -2,7 +2,7 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import type { Camera3D, Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
+import { renderWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture (jsdom cannot run WGSL). These
@@ -36,12 +36,12 @@ function completeEnvironment(): Environment {
   return { environment: cube, intensity: 1 } as Environment;
 }
 
-describe('drawWgpuEnvironmentSkybox', () => {
+describe('renderWgpuEnvironmentSkybox', () => {
   it('is a no-op when the environment has no complete source cube', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     const before = fake.calls.length;
     expect(() =>
-      drawWgpuEnvironmentSkybox(pass, { environment: null, intensity: 1 } as Environment, makeCamera(), 1),
+      renderWgpuEnvironmentSkybox(pass, { environment: null, intensity: 1 } as Environment, makeCamera(), 1),
     ).not.toThrow();
     expect(fake.calls.length).toBe(before);
   });
@@ -50,7 +50,7 @@ describe('drawWgpuEnvironmentSkybox', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     const camera = makeCamera();
     camera.inverseViewProjection.m[0] = 42;
-    drawWgpuEnvironmentSkybox(pass, completeEnvironment(), camera, 1);
+    renderWgpuEnvironmentSkybox(pass, completeEnvironment(), camera, 1);
 
     expect(camera.inverseViewProjection.m[0]).not.toBe(42);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -60,7 +60,7 @@ describe('drawWgpuEnvironmentSkybox', () => {
 
   it('compiles skybox WGSL that reconstructs the ray from the inverse view-projection', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
-    drawWgpuEnvironmentSkybox(pass, completeEnvironment(), makeCamera(), 1);
+    renderWgpuEnvironmentSkybox(pass, completeEnvironment(), makeCamera(), 1);
 
     const shader = fake.calls.find(
       (c) =>

@@ -11,7 +11,7 @@ import { renderWgpuScene3D, setWgpuScene3DTime } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createAmbientLight,
   createAnimatedNormalModifier,
@@ -32,7 +32,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   EmissiveModifierFacing,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   normalizeVector3,
@@ -89,11 +89,11 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
   setWgpuScene3DTime(state, 0.35);
   prepareScene3DRender(state, scene, camera, lights);
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

@@ -37,7 +37,7 @@ import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 // `directionalLight` owns the enable/filter/bias policy. Calling with castsShadow=false actively disables
 // a previously rendered map without destroying its reusable target. All meshes are drawn (no frustum cull
 // — an off-screen caster can still shadow the visible scene).
-export function drawGlScene3DShadowMap(
+export function renderGlScene3DShadowMap(
   state: GlRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
@@ -49,7 +49,7 @@ export function drawGlScene3DShadowMap(
   if (previousShadow !== null) previousShadow.enabled = false;
   if (directionalLight === null || !directionalLight.castsShadow) return;
   if (shadowCamera.projection.kind !== 'orthographic') {
-    throw new Error('drawGlScene3DShadowMap requires an orthographic shadow camera');
+    throw new Error('renderGlScene3DShadowMap requires an orthographic shadow camera');
   }
   if (runtime.shadowTarget === null) {
     runtime.shadowTarget = createGlTextureRenderTarget(state, {

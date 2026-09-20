@@ -100,7 +100,7 @@ function warnGlEffectStateSkip(_state: GlRenderState, kind: string): void {
     LogLevel.Warn,
     {
       kind,
-      message: `endGlEffectState: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerGlRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
+      message: `endGlEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerGlRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-gl',
   );

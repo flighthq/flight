@@ -41,7 +41,7 @@ export interface CanvasRenderTargetPool extends Entity {
 
 // Retains the offscreen canvases an effect pass needs across frames: the scene target the pipeline
 // renders into and the intermediate-target pool. The per-frame effect list is data passed to
-// endCanvasEffectState, not retained here. `options.sampleCount`, `format`, and `depth` are
+// endCanvasEffectPass, not retained here. `options.sampleCount`, `format`, and `depth` are
 // accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
 export interface CanvasEffectState extends Entity {
   readonly options: Readonly<EffectStateOptions>;

@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   getBitmapPixelRgb,
   createGlEffectState,
@@ -23,7 +23,7 @@ import {
   createShape,
   registerGlScreenSpaceFogEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -75,11 +75,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [
-    createScreenSpaceFogEffect({ color: 0x9fb4c8ff, near: 0.1, far: 1, density: 0.6 }),
-  ]);
+  endGlEffectPass(pass, pipeline, [createScreenSpaceFogEffect({ color: 0x9fb4c8ff, near: 0.1, far: 1, density: 0.6 })]);
 }
 
 // A normal scene of bright, saturated shapes on a near-black field. screenSpaceFog is depth-driven:

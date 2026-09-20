@@ -10,7 +10,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
+import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import { renderGlScene3D } from './renderGlScene3D';
 
 // Returns the backend-native cubemap produced by renderGlEnvironmentCapture. The handle can be bound
@@ -48,7 +48,7 @@ export function renderGlEnvironmentCapture(
       getCubeCaptureFaceCamera3D(camera, position, face);
       const pass = beginGlCubeRenderFace(state, cubeTarget, face);
       try {
-        if (environment) drawGlEnvironmentSkybox(state, environment, camera, 1);
+        if (environment) renderGlEnvironmentSkybox(state, environment, camera, 1);
         renderGlScene3D(pass, scene, camera, lights);
       } finally {
         endGlCubeRenderFace(pass);

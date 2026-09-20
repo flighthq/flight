@@ -54,7 +54,7 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, scene.frameBindGroup!);
   // Lit families that PCF-sample the directional shadow map carry a group(3) shadow layout; bind the
-  // shared shadow-sample group (the real depth map when drawWgpuScene3DShadowMap ran this frame, else a
+  // shared shadow-sample group (the real depth map when renderWgpuScene3DShadowMap ran this frame, else a
   // 1x1 dummy gated off by the shadow uniform). Non-lit families have no group(3) and skip this.
   if (pipeline.hasPbrSampleGroup) {
     pass.setBindGroup(3, ensureWgpuPbrSampleBindGroup(state));
@@ -1294,7 +1294,7 @@ const scratchUvMatrix = createMatrix3();
 const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 
 // The sampleable depth format the directional shadow map (and its 1x1 no-shadow dummy) use. depth32float
-// is bindable as a texture_depth_2d for the lit PCF comparison; drawWgpuScene3DShadowMap renders into it.
+// is bindable as a texture_depth_2d for the lit PCF comparison; renderWgpuScene3DShadowMap renders into it.
 export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
 
 // Shared by the PBR, classic, and toon WGSL modules. The uniform's vec4 params mirror the single CPU

@@ -10,17 +10,17 @@ import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D } from '@flight
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
-  beginGlEffectState,
+  beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
   enableFlightDiagnostics,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene3DRender,
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/sdk/scene3d-gl';
+import { renderGlScene3D, renderGlScene3DShadowMap } from '@flighthq/sdk/scene3d-gl';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
@@ -56,13 +56,13 @@ export function render(
 ): void {
   // The directional depth pass must finish before the HDR effect target opens its framebuffer.
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }

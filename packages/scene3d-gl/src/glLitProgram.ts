@@ -38,7 +38,7 @@ const _uploadedLightVersion = new WeakMap<Readonly<GlLitProgram>, number>();
 const _uploadedLightBlock = new WeakMap<Readonly<GlLitProgram>, Readonly<Scene3DLightBlock>>();
 
 // Uploads the packed light block to a lit program's standard light uniforms, then binds the active
-// directional shadow (set by drawGlScene3DShadowMap on the scene runtime) or disables shadowing. The
+// directional shadow (set by renderGlScene3DShadowMap on the scene runtime) or disables shadowing. The
 // block layout (std140) mirrors Scene3DLightBlock.data exactly: directional { direction.xyz @0, _pad,
 // radiance.rgb @4, _pad } then ambient { radiance.rgb @8, _pad }. Radiance is already linear and
 // premultiplied at pack time. The count uniforms (0 or 1) gate each term. Every lit family calls this

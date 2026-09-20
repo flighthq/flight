@@ -12,7 +12,7 @@ import type { Scene3DLightsLike } from './Scene3DLights';
 import type { Texture } from './Texture';
 import type { TextureColorSpace } from './Texture';
 
-// The directional shadow resource for this state, set by drawGlScene3DShadowMap and read by the lit bind
+// The directional shadow resource for this state, set by renderGlScene3DShadowMap and read by the lit bind
 // (bindGlMeshLightBlock) so every lit family samples the same shadow map. `enabled` is the per-frame gate;
 // a disabled object may retain its texture for the next shadow pass. Null = no shadow resource yet.
 export interface GlScene3DShadow {

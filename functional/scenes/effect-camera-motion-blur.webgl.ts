@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createCameraMotionBlurEffect,
   createDisplayObject,
   createGlEffectState,
@@ -22,7 +22,7 @@ import {
   createShape,
   registerGlCameraMotionBlurEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -79,9 +79,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createCameraMotionBlurEffect({ intensity: 0.8, samples: 12 })]);
+  endGlEffectPass(pass, pipeline, [createCameraMotionBlurEffect({ intensity: 0.8, samples: 12 })]);
 }
 
 // A few mid-screen shapes spaced along the horizontal axis with gaps between them, so a full-frame

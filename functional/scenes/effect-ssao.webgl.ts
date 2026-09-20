@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -22,7 +22,7 @@ import {
   createSsaoEffect,
   defaultGlShapeRenderer,
   registerGlSsaoEffect,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -75,9 +75,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 })]);
+  endGlEffectPass(pass, pipeline, [createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 })]);
 }
 
 // A normal scene of bright, saturated shapes on a near-black field. ssao is depth-driven: these tests

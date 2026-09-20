@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -23,7 +23,7 @@ import {
   getBitmapPixelRgb,
   registerGlLensFlareEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -77,9 +77,9 @@ const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createLensFlareEffect({ threshold: 0.7, intensity: 1.6, ghosts: 5, halo: 0.4 })]);
+  endGlEffectPass(pass, pipeline, [createLensFlareEffect({ threshold: 0.7, intensity: 1.6, ghosts: 5, halo: 0.4 })]);
 }
 
 // Bright, saturated shapes on a near-black field — high luminance to seed lens-flare ghosts and halo.

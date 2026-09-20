@@ -59,7 +59,7 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
   scene.pbrSampleShadowView = null;
 }
 
-// The directional shadow recipe's first pass — the WGSL mirror of scene-gl's drawGlScene3DShadowMap.
+// The directional shadow recipe's first pass — the WGSL mirror of scene-gl's renderGlScene3DShadowMap.
 // Renders every mesh's depth from the light's orthographic camera into a sampleable depth32float shadow
 // map, and records the map + the light view-projection on the scene runtime; the subsequent renderWgpuScene3D
 // lit binds (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) read that to PCF-sample the shadow.
@@ -75,7 +75,7 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
 // the state's command encoder, in the same submit as the forward pass (so the shared uniform ring the
 // per-mesh world matrices are written into is uploaded once before submit). A no-op if no command encoder
 // is active. Front faces are culled (back faces recorded) to suppress self-shadow acne, mirroring GL.
-export function drawWgpuScene3DShadowMap(
+export function renderWgpuScene3DShadowMap(
   state: WgpuRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
@@ -89,7 +89,7 @@ export function drawWgpuScene3DShadowMap(
   const encoder = runtime.commandEncoder;
   if (encoder === null) return;
   if (shadowCamera.projection.kind !== 'orthographic') {
-    throw new Error('drawWgpuScene3DShadowMap requires an orthographic shadow camera');
+    throw new Error('renderWgpuScene3DShadowMap requires an orthographic shadow camera');
   }
   let shadow = sceneRuntime.shadow;
   if (shadow === null) {
@@ -207,7 +207,7 @@ function normalizeDirectionalShadowPcfRadius(radius: number): number {
 // Resolves (creating once per state) the minimal depth-only shadow pipeline: a vertex-only WGSL module
 // (position → light clip, with the GL→WebGPU depth remap), no fragment/color scene2d, rendered depth32float
 // with front-face culling. Its group(0) is the shared Draw layout (dynamic-offset per-mesh world matrix),
-// so drawWgpuScene3DShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
+// so renderWgpuScene3DShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
 // compileShadowDepthProgram.
 function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean): GPURenderPipeline {
   const scene = getWgpuScene3DRuntime(state);
@@ -329,7 +329,7 @@ const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 let _shadowInstanceData = new Float32Array(64 * 20);
 
 // The depth-only shadow vertex module. Reads only position from the canonical 48-byte vertex; draw.world
-// already carries the light view-projection (baked per mesh by drawWgpuScene3DShadowMap). The one WebGPU
+// already carries the light view-projection (baked per mesh by renderWgpuScene3DShadowMap). The one WebGPU
 // adaptation from GL's shadow VS: remap the GL-convention clip Z (-1..1) into WebGPU's 0..1 depth range
 // (clip.z = (clip.z + clip.w) * 0.5), the identical remap the lit sampler's depthRef applies — so what is
 // written here and what is compared there agree.

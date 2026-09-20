@@ -21,7 +21,7 @@ import {
   createGlSurface,
   ImageChannel,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAnisotropyPbrExtension,
   createCamera3D,
   createClearcoatPbrExtension,
@@ -41,7 +41,7 @@ import {
   createTexture,
   createVector2,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelChannel,
   getBitmapPixelLuminance,
   normalizeVector3,
@@ -101,14 +101,14 @@ export function render(
     bakeGlEnvironmentIbl(state, environment);
     baked = true;
   }
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // The extension maps deliberately disagree. UV0 runs left-to-right; UV1.x runs bottom-to-top.

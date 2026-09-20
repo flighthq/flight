@@ -10,7 +10,7 @@ import type { Bitmap, Camera3D, Material, Node3D, Scene3DLights } from '@flighth
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   copyQuaternion,
   createAmbientLight,
@@ -32,7 +32,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWireframeMaterial,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -91,11 +91,11 @@ export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

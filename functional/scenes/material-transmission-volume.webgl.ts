@@ -15,7 +15,7 @@ import {
   createScene3DLights,
   addNodeChild,
   beginGlRenderPass,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBoxMeshGeometry,
   createCamera3D,
@@ -31,7 +31,7 @@ import {
   createTransmissionVolumePbrExtension,
   createUnlitMaterial,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   endGlRenderPass,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -104,14 +104,14 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
     width: opaqueSceneTarget.width,
   });
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // material-transmission-volume proves explicit opaque capture/resolve, projected refraction,

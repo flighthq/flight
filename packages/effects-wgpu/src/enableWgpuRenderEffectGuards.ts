@@ -101,7 +101,7 @@ function warnWgpuEffectStateSkip(_state: WgpuRenderState, kind: string): void {
     LogLevel.Warn,
     {
       kind,
-      message: `endWgpuEffectState: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
+      message: `endWgpuEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-wgpu',
   );

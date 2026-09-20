@@ -12,7 +12,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
@@ -24,7 +24,7 @@ import {
   createSpotLight,
   createSphereMeshGeometry,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
@@ -90,14 +90,14 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 const logicalWidth = width / scale;

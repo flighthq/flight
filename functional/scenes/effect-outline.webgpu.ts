@@ -11,7 +11,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createDisplayObject,
   createOutlineEffect,
@@ -20,7 +20,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -81,9 +81,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createOutlineEffect({ threshold: 0.2, thickness: 2, color: 0x000000ff })]);
+  endWgpuEffectPass(scenePass, pipeline, [createOutlineEffect({ threshold: 0.2, thickness: 2, color: 0x000000ff })]);
   endWgpuRenderPass(pass);
 }
 

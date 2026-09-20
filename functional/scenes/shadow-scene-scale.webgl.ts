@@ -6,13 +6,13 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, renderGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { GlEffectState, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   configureDirectionalShadowCamera3DTightFit,
   createAabb,
   createAmbientLight,
@@ -26,7 +26,7 @@ import {
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getNode3DWorldBounds,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -129,14 +129,14 @@ const shadowCamera = createCamera3D({
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
 prepareScene3DRender(state, scene, camera, lights);
-drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+renderGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
-const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 renderGlScene3D(pass, scene, camera, lights);
-endGlEffectState(pass, pipeline, []);
+endGlEffectPass(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   // The centre occluder casts down-light along +X/+Z. Sample its separated shadow around world

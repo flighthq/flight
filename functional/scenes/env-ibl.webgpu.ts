@@ -7,11 +7,11 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { bakeWgpuEnvironmentIbl, drawWgpuEnvironmentSkybox, renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { bakeWgpuEnvironmentIbl, renderWgpuEnvironmentSkybox, renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Environment, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createCamera3D,
   createCubeTexture,
@@ -25,7 +25,7 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixel,
   getBitmapPixelLuminance,
@@ -96,11 +96,11 @@ export function render(
     baked = true;
   }
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
-  drawWgpuEnvironmentSkybox(scenePass, environment, camera, width / height);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
+  renderWgpuEnvironmentSkybox(scenePass, environment, camera, width / height);
   prepareScene3DRender(state, scene, camera, lights);
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }
 

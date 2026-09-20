@@ -10,11 +10,11 @@ import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D } from '@flight
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
-  beginGlEffectState,
+  beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
   enableFlightDiagnostics,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene3DRender,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -51,12 +51,12 @@ export const supportsVertexColor0 = true;
 const screenClear = { color: [0x07 / 0xff, 0x0a / 0xff, 0x11 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }

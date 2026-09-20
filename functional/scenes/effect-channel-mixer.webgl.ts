@@ -14,14 +14,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createChannelMixerAdjustment,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
   createShape,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -68,9 +68,9 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [
+  endGlEffectPass(pass, pipeline, [
     createChannelMixerAdjustment({
       matrix: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
     }),

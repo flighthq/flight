@@ -5,7 +5,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginCanvasEffectState,
+  beginCanvasEffectPass,
   beginCanvasRenderPass,
   createBloomEffect,
   createCanvasElement,
@@ -20,7 +20,7 @@ import {
   createVignetteEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  endCanvasEffectState,
+  endCanvasEffectPass,
   endCanvasRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -90,9 +90,9 @@ export const height = 600;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginCanvasRenderPass(state, screen, screenClear);
-  const scenePass = beginCanvasEffectState(pass, pipeline, screenClear);
+  const scenePass = beginCanvasEffectPass(pass, pipeline, screenClear);
   renderCanvasScene2D(scenePass, root);
-  endCanvasEffectState(scenePass, pipeline, [
+  endCanvasEffectPass(scenePass, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),

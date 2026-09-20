@@ -7,14 +7,14 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
+import { renderGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   createScene3DLights,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createCamera3D,
   createCubeTexture,
@@ -27,7 +27,7 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixel,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
@@ -69,7 +69,7 @@ declareExpectedImageDescription(
     'around it, because nothing feeds the environment into the material: it is a rough, ordinary grey ball in ' +
     'front of a coloured backdrop.',
 );
-// drawGlEnvironmentSkybox + renderGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
+// renderGlEnvironmentSkybox + renderGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
 // import the Gl scene functions directly. The skybox draws the environment cubemap as the backdrop
 // (depth off) before the scene draws over it.
 
@@ -105,24 +105,24 @@ export function render(
   lights: Readonly<Scene3DLights>,
   environment: Readonly<Environment>,
 ): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
 
   // Backdrop: the environment cubemap, behind everything (the pass writes no depth).
-  drawGlEnvironmentSkybox(state, environment, camera, width / height);
+  renderGlEnvironmentSkybox(state, environment, camera, width / height);
 
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // env-skybox — proves the environment skybox recipe on the Gl backend: a radiance cubemap with six
 // distinct face colors drawn as the scene backdrop, with a sphere in front to confirm the skybox sits
 // behind opaque geometry (depth ordering). The cube faces are generated procedurally (solid-color
-// canvases) so the test needs no image assets. drawGlEnvironmentSkybox reconstructs each pixel's world
+// canvases) so the test needs no image assets. renderGlEnvironmentSkybox reconstructs each pixel's world
 // ray from the inverse view-projection and samples the cube, so different screen regions show
 // different faces — the assertion checks for face variation plus a non-blank backdrop.
 

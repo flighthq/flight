@@ -6,13 +6,13 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D, renderWgpuScene3DShadowMap } from '@flighthq/scene3d-wgpu';
 import type { Bitmap, Camera3D, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendInstancedMeshInstance,
   beginWgpuFrame,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   configureDirectionalShadowCamera3D,
   createAabb,
@@ -32,7 +32,7 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   prepareScene3DRender,
@@ -92,11 +92,11 @@ export function render(
 ): void {
   prepareScene3DRender(state, scene, camera, lights);
   beginWgpuFrame(state);
-  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
   submitWgpuFrame(state);
 }

@@ -13,7 +13,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginVelocityFrame,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   contributeVelocity,
   createDisplayObject,
@@ -26,7 +26,7 @@ import {
   createWgpuVelocityTarget,
   defaultWgpuNode2DVelocityWriter,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   getNodeChildAt,
@@ -111,9 +111,9 @@ export function render(root: Node2D): void {
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endWgpuEffectPass(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
   endWgpuRenderPass(pass);
 }
 

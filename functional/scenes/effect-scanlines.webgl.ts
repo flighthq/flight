@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -22,7 +22,7 @@ import {
   createShape,
   registerGlScanlinesEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -74,9 +74,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createScanlinesEffect({ count: 240, intensity: 0.5 })]);
+  endGlEffectPass(pass, pipeline, [createScanlinesEffect({ count: 240, intensity: 0.5 })]);
 }
 
 // Many small, rotated, overlapping shapes pack the frame with fine detail and diagonal edges, giving

@@ -14,7 +14,7 @@ import {
   createScene3DLights,
   addNodeChild,
   addTextureAtlasRegion,
-  beginGlEffectState,
+  beginGlEffectPass,
   createCamera3D,
   createGlEffectState,
   createGlRenderState,
@@ -24,7 +24,7 @@ import {
   createTexture,
   createTextureAtlas,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixel,
   prepareScene3DRender,
   reserveParticleEmitter3D,
@@ -68,14 +68,14 @@ export const height = 600;
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x18 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 const ATLAS_SIZE = 64;

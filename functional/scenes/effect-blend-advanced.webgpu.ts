@@ -12,7 +12,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createBlendEffect,
   createDisplayObject,
@@ -22,7 +22,7 @@ import {
   createWgpuScreenRenderTarget,
   createWgpuTextureRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -103,9 +103,9 @@ export function render(backdropRoot: Node2D, layerRoot: Node2D): void {
   registerWgpuBlendEffectBackdrop(state, BACKDROP_KEY, backdropTarget);
 
   if (prepareScene2DRender(state, layerRoot)) {
-    const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+    const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
     renderWgpuScene2D(scenePass, layerRoot);
-    endWgpuEffectState(scenePass, pipeline, [
+    endWgpuEffectPass(scenePass, pipeline, [
       createBlendEffect(AdvancedBlendMode.Difference, { backdropKey: BACKDROP_KEY }),
     ]);
   }

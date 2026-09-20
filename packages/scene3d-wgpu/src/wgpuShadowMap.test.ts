@@ -34,7 +34,7 @@ import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
 import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { destroyWgpuScene3DShadow, drawWgpuScene3DShadowMap } from './wgpuShadowMap';
+import { destroyWgpuScene3DShadow, renderWgpuScene3DShadowMap } from './wgpuShadowMap';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 const LIGHTS: Scene3DLightsLike = {
@@ -74,7 +74,7 @@ function makeShadowScene3D(): Node3D {
 describe('destroyWgpuScene3DShadow', () => {
   it('destroys the shadow depth texture and clears the slot', () => {
     const { pass, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.shadow).not.toBeNull();
@@ -95,11 +95,11 @@ describe('destroyWgpuScene3DShadow', () => {
   });
 });
 
-describe('drawWgpuScene3DShadowMap', () => {
+describe('renderWgpuScene3DShadowMap', () => {
   it('does not allocate or render when the directional light has shadows disabled', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
 
-    drawWgpuScene3DShadowMap(
+    renderWgpuScene3DShadowMap(
       state,
       makeShadowScene3D(),
       makeShadowCamera(),
@@ -119,10 +119,10 @@ describe('drawWgpuScene3DShadowMap', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
-    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const passCount = fake.calls.filter((call) => call.name === 'beginRenderPass').length;
 
-    drawWgpuScene3DShadowMap(state, scene, camera, null);
+    renderWgpuScene3DShadowMap(state, scene, camera, null);
 
     expect(getWgpuScene3DRuntime(state).shadow!.enabled).toBe(false);
     expect(fake.calls.filter((call) => call.name === 'beginRenderPass')).toHaveLength(passCount);
@@ -130,7 +130,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
   it('creates a sampleable depth32float shadow map and stores it on the runtime', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const depthCreate = fake.calls.find(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
@@ -153,7 +153,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
     const camera = makeShadowCamera();
     if (camera.projection.kind !== 'orthographic') throw new Error('test shadow camera must be orthographic');
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), camera, light);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), camera, light);
 
     expect(getWgpuScene3DRuntime(state).shadow).toEqual(
       expect.objectContaining({
@@ -184,8 +184,8 @@ describe('drawWgpuScene3DShadowMap', () => {
     const first = makeWgpuScene3DState();
     const second = makeWgpuScene3DState();
 
-    drawWgpuScene3DShadowMap(first.state, makeShadowScene3D(), camera, light);
-    drawWgpuScene3DShadowMap(second.state, makeShadowScene3D(), wideCamera, light);
+    renderWgpuScene3DShadowMap(first.state, makeShadowScene3D(), camera, light);
+    renderWgpuScene3DShadowMap(second.state, makeShadowScene3D(), wideCamera, light);
 
     expect(getWgpuScene3DRuntime(second.state).shadow!.normalBiasWorld).toBeCloseTo(
       getWgpuScene3DRuntime(first.state).shadow!.normalBiasWorld * 2,
@@ -200,7 +200,7 @@ describe('drawWgpuScene3DShadowMap', () => {
       projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 4 }),
     });
 
-    expect(() => drawWgpuScene3DShadowMap(state, makeShadowScene3D(), camera, SHADOW_LIGHT)).toThrow(
+    expect(() => renderWgpuScene3DShadowMap(state, makeShadowScene3D(), camera, SHADOW_LIGHT)).toThrow(
       'requires an orthographic shadow camera',
     );
     expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
@@ -211,17 +211,17 @@ describe('drawWgpuScene3DShadowMap', () => {
     const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
 
-    drawWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+    renderWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
     expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
 
-    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const runtime = getWgpuScene3DRuntime(state);
     const shadow = runtime.shadow;
     const passCount = fake.calls.filter((call) => call.name === 'beginRenderPass').length;
     expect(shadow!.enabled).toBe(true);
     expect(passCount).toBeGreaterThan(0);
 
-    drawWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+    renderWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
 
     expect(runtime.shadow).toBe(shadow);
     expect(runtime.shadow!.enabled).toBe(false);
@@ -249,7 +249,7 @@ describe('drawWgpuScene3DShadowMap', () => {
       ),
     );
 
-    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     const draw = fake.calls.find((c) => c.name === 'draw');
     expect(draw).toBeDefined();
@@ -260,7 +260,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
   it('opens a depth-only pass and renders each caster mesh depth', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -289,7 +289,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     mesh.skin = { skeleton: { jointMatrices: new Float32Array(16) } as Skeleton3D };
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     const shaderCalls = fake.calls.filter((call) => call.name === 'createShaderModule');
     const skinnedSource = shaderCalls
@@ -307,7 +307,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
   it('compiles a vertex-only depth module with the GL->WebGPU depth remap', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const shaderCall = fake.calls.find(
       (c) => c.name === 'createShaderModule' && String((c.args[0] as { code: string }).code).includes('draw.world'),
@@ -322,8 +322,8 @@ describe('drawWgpuScene3DShadowMap', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
-    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
-    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const depthCreates = fake.calls.filter(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
     ).length;
@@ -333,7 +333,7 @@ describe('drawWgpuScene3DShadowMap', () => {
   it('is a no-op when no command encoder is active', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     getWgpuRenderStateRuntime(state).commandEncoder = null;
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(false);
     expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
   });
@@ -341,7 +341,7 @@ describe('drawWgpuScene3DShadowMap', () => {
   it('binds a group(3) shadow group on the lit PBR draw that follows', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
@@ -368,7 +368,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     setInstancedMeshInstanceMatrix(mesh, 2, shadowTranslation(-0.5));
     addNodeChild(scene, mesh);
 
-    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     const draws = fake.calls.filter((call) => call.name === 'drawIndexed');
     expect(draws).toHaveLength(1);
@@ -381,7 +381,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createInstancedMesh(createBoxMeshGeometry(), [], 8));
 
-    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     expect(fake.calls.filter((call) => call.name === 'drawIndexed')).toHaveLength(0);
   });
@@ -398,7 +398,7 @@ describe('drawWgpuScene3DShadowMap', () => {
       addNodeChild(scene, mesh);
     }
 
-    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     const bound = fake.calls
       .filter((call) => call.name === 'setVertexBuffer' && call.args[0] === 1)
@@ -410,7 +410,7 @@ describe('drawWgpuScene3DShadowMap', () => {
   it('still draws an ordinary rigid caster with a single non-instanced draw', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
 
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
+    renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const draws = fake.calls.filter((call) => call.name === 'drawIndexed');
     expect(draws).toHaveLength(1);

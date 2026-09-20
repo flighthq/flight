@@ -13,7 +13,7 @@ import {
   defaultScene3DGlRenderRegistries,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
@@ -26,7 +26,7 @@ import {
   createOrthographicProjection,
   createSkeleton3D,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
@@ -167,12 +167,12 @@ const lights = {
 
 prepareScene3DSkinning(scene);
 prepareScene3DRender(state, scene, camera, lights);
-const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 renderGlScene3D(pass, scene, camera, lights);
-endGlEffectState(pass, pipeline, []);
+endGlEffectPass(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const scaled = predictBarWidthPixels(scaledSkeleton, scaledBoundJoint, bitmap.width);

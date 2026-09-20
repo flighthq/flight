@@ -44,9 +44,9 @@ import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 // Opt-in post-process pipeline, the Wgpu mirror of effects-gl's effectState. The caller opens a
 // pass on the screen, then:
-//   beginWgpuEffectState(pass, …) -> opens a pass into the pipeline's offscreen scene target
+//   beginWgpuEffectPass(pass, …) -> opens a pass into the pipeline's offscreen scene target
 //   ...draw the scene tree into the returned pass...
-//   endWgpuEffectState(scenePass, pipeline, effects) -> ends it, runs the agnostic effect list
+//   endWgpuEffectPass(scenePass, pipeline, effects) -> ends it, runs the agnostic effect list
 //     through the per-state registry ping-ponging pooled targets, and presents into the enclosing pass
 // The default render loop imports none of this. The effect list is per-frame data; only the scene target
 // and pool are retained. Depth/velocity G-buffers are not yet produced (follow-up); depth- and
@@ -55,7 +55,7 @@ import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 // `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
 // value, not a property the render state carries around. It defaults to transparent black with the depth
 // buffer reset, which is what an effect chain compositing over the frame beneath it wants.
-export function beginWgpuEffectState(
+export function beginWgpuEffectPass(
   pass: WgpuRenderPass,
   pipeline: WgpuEffectState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
@@ -97,7 +97,7 @@ export function destroyWgpuEffectState(state: WgpuRenderState, pipeline: WgpuEff
   pipeline.lutCache.lut = null;
 }
 
-export function endWgpuEffectState(
+export function endWgpuEffectPass(
   scenePass: WgpuRenderPass,
   pipeline: WgpuEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,

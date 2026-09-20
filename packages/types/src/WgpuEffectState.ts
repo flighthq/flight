@@ -35,7 +35,7 @@ export interface WgpuRenderEffectRegistration {
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
 // into and the intermediate-target pool. The per-frame effect list is data passed to
-// endWgpuEffectState, not retained here. Mirrors GlEffectState; shares
+// endWgpuEffectPass, not retained here. Mirrors GlEffectState; shares
 // EffectStateOptions with the Gl pipeline.
 export interface WgpuEffectState extends Entity {
   readonly options: Readonly<EffectStateOptions>;

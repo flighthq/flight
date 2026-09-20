@@ -7,14 +7,14 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { bakeGlEnvironmentIbl, drawGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
+import { bakeGlEnvironmentIbl, renderGlEnvironmentSkybox, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Environment, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   createScene3DLights,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createCamera3D,
   createCubeTexture,
   createEnvironment,
@@ -25,7 +25,7 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixel,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -96,17 +96,17 @@ export function render(
     baked = true;
   }
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
 
-  drawGlEnvironmentSkybox(state, environment, camera, width / height);
+  renderGlEnvironmentSkybox(state, environment, camera, width / height);
 
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // env-ibl — proves the image-based-lighting bake on the Gl backend: a procedural radiance cubemap is

@@ -122,7 +122,7 @@ export function compileWgpuClassicPipeline(
   });
   // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
   // layout gains [Frame, Draw, Material, Shadow] and beginWgpuMeshDraw binds the shared shadow group each
-  // draw (the real depth map when drawWgpuScene3DShadowMap ran this frame, else a gated-off 1x1 dummy).
+  // draw (the real depth map when renderWgpuScene3DShadowMap ran this frame, else a gated-off 1x1 dummy).
   return createWgpuMeshPipeline(state, {
     blended,
     doubleSided: key.doubleSided,

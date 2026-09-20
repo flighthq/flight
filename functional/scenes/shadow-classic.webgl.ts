@@ -6,14 +6,14 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, renderGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   createScene3DLights,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
@@ -28,7 +28,7 @@ import {
   createPlaneMeshGeometry,
   createSphereMeshGeometry,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getNode3DWorldBounds,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -99,16 +99,16 @@ export function render(
 ): void {
   prepareScene3DRender(state, scene, camera, lights);
   // 1) Depth pass from the light's POV into the shadow map.
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 const logicalWidth = width / scale;

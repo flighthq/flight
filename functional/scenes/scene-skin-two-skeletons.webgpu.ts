@@ -11,7 +11,7 @@ import type { Bitmap, Node3D, Skeleton3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuFrame,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createAmbientLight,
@@ -27,7 +27,7 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -182,9 +182,9 @@ prepareScene3DSkinning(scene);
 prepareScene3DRender(state, scene, camera, lights);
 beginWgpuFrame(state);
 const pass = beginWgpuRenderPass(state, screen, screenClear);
-const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
 renderWgpuScene3D(scenePass, scene, camera, lights);
-endWgpuEffectState(scenePass, pipeline, []);
+endWgpuEffectPass(scenePass, pipeline, []);
 endWgpuRenderPass(pass);
 submitWgpuFrame(state);
 

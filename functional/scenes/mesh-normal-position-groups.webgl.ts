@@ -12,7 +12,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
   computeMeshGeometryPositionGroups,
@@ -27,7 +27,7 @@ import {
   createPerspectiveProjection,
   createScene3DLights,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   prepareScene3DRender,
   setCamera3DViewMatrix4FromLookAt,
@@ -70,14 +70,14 @@ export const height = 600;
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // Two perpendicular triangles duplicate their vertical shared edge so each side can carry distinct

@@ -12,7 +12,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBlinnPhongMaterial,
   createBoxMeshGeometry,
@@ -25,7 +25,7 @@ import {
   createScene3DLights,
   createSpotLight,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -166,14 +166,14 @@ const lights = createScene3DLights({
   spot: spotLights,
 });
 
-const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
 renderGlScene3D(pass, scene, camera, lights, forwardLights);
-endGlEffectState(pass, pipeline, []);
+endGlEffectPass(pass, pipeline, []);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all
 // twelve centers; the tolerance leaves room for small cross-driver float differences without accepting
