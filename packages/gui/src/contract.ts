@@ -1,13 +1,9 @@
 export * from './buttonController';
 export * from './comboBoxController';
+export * from './guiController';
 export * from './guiDialog';
-export {
-  createListController,
-  disposeListController,
-  getListControllerSelectedIndex,
-  getListControllerSignals,
-  setListControllerSelectedIndex,
-} from './listController';
+export * from './guiTestHelper';
+export * from './listController';
 export * from './progressBarController';
 export * from './radioGroupController';
 export * from './scrollBarController';

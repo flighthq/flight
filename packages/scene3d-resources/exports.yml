@@ -1,0 +1,24 @@
+protected:
+  - createScene3DMaterialTextureRegistry
+  - createScene3DResourceSignals
+  - getScene3DMaterialTextures
+  - getScene3DTextureResourceReference
+  - hasScene3DMaterialTextureLister
+  - hasScene3DResourceCoverage
+  - initializeImageResourceFailure
+  - initializeScene3DMaterialTextureRegistry
+  - initializeScene3DResourceResolver
+  - initializeScene3DResourceSignals
+  - registerAnisotropyPbrScene3DMaterialTextures
+  - registerClearcoatPbrScene3DMaterialTextures
+  - registerExtendedPbrScene3DMaterialTextures
+  - registerIridescencePbrScene3DMaterialTextures
+  - registerScene3DMaterialTextures
+  - registerScene3DPbrExtensionTextures
+  - registerShadedScene3DMaterialTextures
+  - registerSheenPbrScene3DMaterialTextures
+  - registerSpecularPbrScene3DMaterialTextures
+  - registerStandardPbrScene3DMaterialTextures
+  - registerTransmissionVolumePbrScene3DMaterialTextures
+  - registerUnlitScene3DMaterialTextures
+  - registerWrappedDiffusePbrScene3DMaterialTextures

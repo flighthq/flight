@@ -1,15 +1,22 @@
+export * from './broadphase';
+export * from './colliderCollision';
 export {
-  clearRigidBody3DForces,
-  integrateRigidBody3DPose,
-  integrateRigidBody3DVelocity,
-  refreshRigidBody3DWorldInertia,
-} from './integrate';
+  createPhysics3DColliderWorldShape,
+  updatePhysics3DColliderWorldShape,
+  writePhysics3DColliderBounds,
+} from './colliderTransform';
+export { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake';
 export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
-export { explainPhysics3DCollision } from './explainPhysics3DCollision';
-export { explainPhysics3DJoints } from './explainPhysics3DJoints';
-export { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
-export { explainPhysics3DStep } from './explainPhysics3DStep';
-export { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
+export * from './continuous';
+export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
+export * from './enablePhysics3DGuards';
+export * from './explainPhysics3DCollision';
+export * from './explainPhysics3DJoints';
+export * from './explainPhysics3DStep';
+export * from './integrate';
+export { buildPhysics3DSolveIslands, isRigidBody3DPairAwake, updatePhysics3DSleep } from './islands';
+export * from './jointBreakage';
+export * from './jointCollisionSuppression';
 export {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DConeTwistJoint,
@@ -19,46 +26,47 @@ export {
   createPhysics3DHingeJoint,
   createPhysics3DSliderJoint,
 } from './jointFactories';
+export * from './jointMath';
 export {
-  addPhysics3DJoint,
-  getPhysics3DJointSolver,
-  invalidatePhysics3DJoint,
-  registerPhysics3DJointSolver,
-  removePhysics3DJoint,
-} from './jointRegistry';
-export {
-  physics3DBallAndSocketJointSolver,
-  physics3DConeTwistJointSolver,
-  physics3DDistanceJointSolver,
-  physics3DFixedJointSolver,
-  physics3DGeneric6DofJointSolver,
-  physics3DHingeJointSolver,
-  physics3DSliderJointSolver,
-  Physics3DBallAndSocketJointKind,
-  Physics3DConeTwistJointKind,
-  Physics3DDistanceJointKind,
-  Physics3DFixedJointKind,
-  Physics3DGeneric6DofJointKind,
-  Physics3DHingeJointKind,
-  Physics3DSliderJointKind,
-} from './joints';
+  accumulatePhysics3DJointRowReaction,
+  clearPhysics3DJointReaction,
+  createPhysics3DJointReaction,
+  getPhysics3DJointReactionForce,
+  getPhysics3DJointReactionTorque,
+  writePhysics3DJointReaction,
+} from './jointReaction';
+export * from './jointRegistry';
+export * from './jointRows';
+export * from './joints';
 export {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
   computePhysics3DCapsuleMassData,
-  computePhysics3DConeMassData,
-  computePhysics3DCylinderMassData,
   computePhysics3DColliderMassData,
+  computePhysics3DConeMassData,
   computePhysics3DConvexHullMassData,
+  computePhysics3DCylinderMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
   setRigidBody3DMassData,
   updateRigidBody3DMassData,
 } from './massProperties';
-export { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
-export { syncPhysics3DBodyToNode3D } from './nodeSync';
-export { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
+export * from './material';
+export * from './nodeSync';
+export * from './ownership';
+export * from './physics3DBroadphasePublication';
+export * from './registerBuiltInPhysics3DJointSolvers';
+export {
+  createPhysics3DContactConstraint,
+  createPhysics3DContactConstraintPoint,
+  preparePhysics3DContactConstraints,
+  solvePhysics3DContactPositions,
+  solvePhysics3DContactVelocities,
+  warmStartPhysics3DContacts,
+} from './solver';
 export { stepPhysics3D, stepPhysics3DInterval } from './step';
+export * from './stepValidation';
+export * from './symmetricTensor';
 export {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -76,7 +84,6 @@ export {
   findPhysics3DBody,
   hydratePhysics3DWorld,
   invalidatePhysics3DCollider,
-  Physics3DWorldVersion,
   removePhysics3DBody,
   removePhysics3DCollider,
   setPhysics3DBodyBullet,
@@ -86,6 +93,7 @@ export {
   setPhysics3DBodyType,
   wakePhysics3DBody,
   writeRigidBody3DWorldCenter,
+  Physics3DWorldVersion,
 } from './world';
 export {
   createPhysics3DQueryFilter,
@@ -98,19 +106,3 @@ export {
   queryPhysics3DRegion,
   queryPhysics3DShapeCast,
 } from './worldQueries';
-export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
-export {
-  hasActivePhysics3DBullet,
-  integratePhysics3DContinuous,
-  writePhysics3DRotationalCcdEnvelope,
-} from './continuous';
-
-export { breakPhysics3DJoint, evaluatePhysics3DJointBreakage, isPhysics3DJointBreakable } from './jointBreakage';
-export {
-  accumulatePhysics3DJointRowReaction,
-  clearPhysics3DJointReaction,
-  createPhysics3DJointReaction,
-  getPhysics3DJointReactionForce,
-  getPhysics3DJointReactionTorque,
-  writePhysics3DJointReaction,
-} from './jointReaction';

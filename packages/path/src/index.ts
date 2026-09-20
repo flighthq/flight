@@ -1,13 +1,28 @@
+export * from './cleanPath';
+export * from './containsPathPoint';
+export * from './copyPath';
+export * from './dashPath';
+export * from './decimatePath';
+export * from './explainPathMorphCreation';
+export * from './explainStrokePathTessellation';
+export * from './fitPathCurves';
+export * from './flattenPath';
+export * from './forEachPathSegment';
+export * from './getPathBounds';
+export * from './getPathContourLengths';
+export * from './getPathCurvatureAtDistance';
+export * from './getPathLength';
+export * from './getPathNearestPoint';
+export * from './getPathPointAtDistance';
+export * from './getPathSegmentAtParameter';
+export * from './getPathSignedArea';
 export {
-  acquirePathMesh,
-  acquirePathMeshTyped,
+  appendPathArc,
   appendPathCircle,
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathArc,
-  appendPathEllipticalArcTo,
-  appendPathTangentArcTo,
   appendPathEllipse,
+  appendPathEllipticalArcTo,
   appendPathLineTo,
   appendPathMoveTo,
   appendPathPolygon,
@@ -16,62 +31,24 @@ export {
   appendPathRectangle,
   appendPathRoundedRectangle,
   appendPathRoundedRectangleWithCornerRadii,
-  cleanPath,
-  clonePath,
-  containsPathPoint,
-  copyPath,
+  appendPathTangentArcTo,
   createPath,
-  createPathMorph,
-  dashPath,
-  decimatePath,
-  explainPathMorphCreation,
-  explainStrokePathTessellation,
-  fitPathCurves,
-  flattenPath,
-  forEachPathSegment,
-  getCubicBezierCurvature,
-  getCubicBezierPoint,
-  getCubicBezierTangent,
-  getPathBounds,
-  getPathContourLengths,
-  getPathContourOrientation,
-  getPathCurvatureAtDistance,
   getPathLastPoint,
-  getPathLength,
-  getPathNearestPoint,
-  getPathPointAtDistance,
-  getPathPositionAtDistance,
-  getPathSegmentCurvatureAtParameter,
-  getPathSegmentPointAtParameter,
-  getPathSegmentTangentAtParameter,
-  getPathSignedArea,
-  getPathTangentAtDistance,
-  getQuadraticBezierCurvature,
-  getQuadraticBezierPoint,
-  getQuadraticBezierTangent,
-  releasePathMesh,
-  releasePathMeshTyped,
-  reversePath,
-  samplePathMorph,
-  strokePath,
-  tessellatePath,
-  tessellatePathInto,
-  tessellatePathTyped,
-  tessellatePathTypedInto,
-  tessellateStrokePath,
-  transformPath,
-  translatePath,
-} from './contract';
-
-export type {
-  PathMorph,
-  PathMorphCreationExplanation,
-  PathMorphCreationReason,
-  StrokePathTessellationExplanation,
-  StrokePathTessellationReason,
-} from './contract';
-
-// Types leave through their own `export type` line: a type named in the value block above
-// compiles away in `contract.ts` but survives as a real named re-export here, so a consumer loading
-// this module as untranspiled ESM asks for a binding that does not exist.
-export type { StrokeStyle } from './contract';
+} from './path';
+export * from './pathMeshPool';
+export { createPathMorph, samplePathMorph } from './pathMorph';
+export {
+  PathMorphIssueNone,
+  PathMorphIssueWindingMismatch,
+  PathMorphIssueContourCountMismatch,
+  PathMorphIssueContourClosednessMismatch,
+  PathMorphIssueContourOrientationMismatch,
+  buildPathMorph,
+} from './pathMorphGeometry';
+export * from './reversePath';
+export * from './strokePath';
+export * from './strokePathGeometry';
+export * from './tessellatePath';
+export * from './tessellatePathTyped';
+export * from './tessellateStrokePath';
+export * from './transformPath';

@@ -1,32 +1,39 @@
+export * from './capsuleContact2D';
+export * from './collideContactManifold2D';
+export * from './collideContactManifold3D';
+export * from './collisionFace3D';
+export * from './collisionShapeValidation2D';
+export * from './collisionShapeValidation3D';
+export * from './collisionSupport2D';
+export * from './collisionSupport3D';
+export * from './contactFeatureId';
+export { clearCollisionContactManifold2D, createCollisionContactManifold2D } from './contactManifold2D';
+export { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D';
+export * from './convexHull3D';
+export * from './convexVertices2D';
+export * from './enableCollisionGuards';
+export * from './explainCollisionTest2D';
+export * from './explainCollisionTest3D';
+export * from './gjk2D';
+export * from './gjk3D';
+export { createCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D';
+export { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D';
+export { clearCollisionManifold3D, createCollisionManifold3D } from './manifold3D';
+export * from './pointContainment2D';
+export * from './pointContainment3D';
+export { createCollisionRaycastHit2D, raycastCollisionShape2D } from './raycastCollisionShape2D';
+export { createCollisionRaycastHit3D, raycastCollisionShape3D } from './raycastCollisionShape3D';
+export * from './registerBuiltInCollisionPairTests2D';
+export * from './registerBuiltInCollisionPairTests3D';
+export * from './segmentCollision2D';
+export * from './shapeCollision2D';
+export * from './shapeCollision3D';
+export * from './shapeContact2D';
+export { createCollisionTimeOfImpact2D, sweepCollisionShape2D } from './sweepCollisionShape2D';
+export { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCollisionShape3D';
+export * from './testCollision2D';
+export * from './testCollision3D';
 export {
-  clearCollisionContactManifold2D,
-  clearCollisionManifold2D,
-  collideAabbAabbContactManifold2D,
-  collideAabbObbContactManifold2D,
-  collideAabbPolygonContactManifold2D,
-  collideCircleAabbContactManifold2D,
-  collideCircleCircleContactManifold2D,
-  collideCircleObbContactManifold2D,
-  collideCirclePolygonContactManifold2D,
-  collideContactManifold2D,
-  collideObbObbContactManifold2D,
-  collideObbPolygonContactManifold2D,
-  collidePolygonPolygonContactManifold2D,
-  createCollisionContactManifold2D,
-  createCollisionManifold2D,
-  areCollisionGuardsEnabled,
-  disableCollisionGuards,
-  enableCollisionGuards,
-  explainCollisionTest2D,
-  explainCollisionTest3D,
-  getCollisionShapeContainsPoint2D,
-  getCollisionShapeContainsPoint3D,
-  createCollisionRaycastHit2D,
-  createCollisionRaycastHit3D,
-  createCollisionTimeOfImpact2D,
-  raycastCollisionShape2D,
-  raycastCollisionShape3D,
-  writeCollisionConvexHullFaces3D,
   collideCollisionHeightfield3D,
   collideCollisionTriangleMesh3D,
   createCollisionHeightfield3D,
@@ -41,72 +48,4 @@ export {
   sweepCollisionTriangleMesh3D,
   writeCollisionHeightfieldBounds3D,
   writeCollisionTriangleMeshBounds3D,
-  sweepCollisionShape2D,
-  testAabbAabbCollision2D,
-  testAabbObbCollision2D,
-  testAabbPolygonCollision2D,
-  testCircleAabbCollision2D,
-  testCircleCircleCollision2D,
-  testCircleObbCollision2D,
-  testCirclePolygonCollision2D,
-  testCollision2D,
-  testObbObbCollision2D,
-  testObbPolygonCollision2D,
-  testPolygonPolygonCollision2D,
-  testSegmentAabbCollision2D,
-  testSegmentCircleCollision2D,
-  testSegmentObbCollision2D,
-  testSegmentPolygonCollision2D,
-  testSegmentSegmentCollision2D,
-} from './contract';
-export {
-  getCollisionPairTest2D,
-  getCollisionSupport2D,
-  registerBuiltInCollisionSupports2D,
-  registerCollisionPairTest2D,
-  registerCollisionSupport2D,
-  supportCollisionAabb2D,
-  supportCollisionCircle2D,
-  supportCollisionObb2D,
-  supportCollisionPolygon2D,
-} from './collisionSupport2D';
-export { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D';
-export { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
-export { registerBuiltInCollisionPairTests3D } from './registerBuiltInCollisionPairTests3D';
-export {
-  testAabbAabbCollision3D,
-  testBoxBoxCollision3D,
-  testCapsuleCapsuleCollision3D,
-  testSphereAabbCollision3D,
-  testSphereBoxCollision3D,
-  testSphereCapsuleCollision3D,
-  testSphereSphereCollision3D,
-} from './shapeCollision3D';
-export {
-  getCollisionPairTest3D,
-  getCollisionSupport3D,
-  registerBuiltInCollisionSupports3D,
-  registerCollisionPairTest3D,
-  registerCollisionSupport3D,
-  supportCollisionAabb3D,
-  supportCollisionBox3D,
-  supportCollisionCapsule3D,
-  supportCollisionCone3D,
-  supportCollisionCylinder3D,
-  supportCollisionConvex3D,
-  supportCollisionSphere3D,
-} from './collisionSupport3D';
-export { testCollisionSupport3D, testCollisionSupportOverlap3D } from './gjk3D';
-export { clearCollisionManifold3D, createCollisionManifold3D } from './manifold3D';
-export { testCollision3D } from './testCollision3D';
-export { collideContactManifold3D } from './collideContactManifold3D';
-export {
-  getCollisionFaceQuery3D,
-  queryCollisionAabbFace3D,
-  queryCollisionBoxFace3D,
-  queryCollisionCapsuleFace3D,
-  queryCollisionConvexFace3D,
-  registerBuiltInCollisionFaceQueries3D,
-  registerCollisionFaceQuery3D,
-} from './collisionFace3D';
-export { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D';
+} from './triangleMesh3D';

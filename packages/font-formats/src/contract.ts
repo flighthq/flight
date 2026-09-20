@@ -1,44 +1,15 @@
-export * from './index';
-export { cffSubroutineBias, runCffCharstring } from './cffCharstring';
-export {
-  CFF_OPERATOR_CHARSTRINGS,
-  CFF_OPERATOR_FD_ARRAY,
-  CFF_OPERATOR_FD_SELECT,
-  CFF_OPERATOR_PRIVATE,
-  CFF_OPERATOR_ROS,
-  CFF_OPERATOR_SUBRS,
-  readCffDict,
-} from './cffDict';
-export { readCffFdSelect } from './cffFdSelect';
-export { readCffIndex } from './cffIndex';
-export { readCffTable } from './cffTable';
-export { findOpenTypeUnicodeSubtable, rankOpenTypeUnicodeEncoding, readOpenTypeCodepointMap } from './openTypeCmap';
-export { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf';
-export {
-  readOpenTypeAdvances,
-  readOpenTypeGlyphCount,
-  readOpenTypeLocaFormat,
-  readOpenTypeMetrics,
-} from './openTypeMetrics';
-export { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory';
-export { readWoffChecksumMismatches, readWoffFont, WOFF_COMPRESSION } from './woffFont';
-export {
-  assembleSfntFont,
-  computeSfntTableChecksum,
-  encodeSfntCompositeGlyph,
-  encodeSfntLoca,
-  encodeSfntSimpleGlyph,
-  packSfntTag,
-} from './sfntAssembly';
-export { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
-export {
-  createWoff2TransformReverser,
-  decodeWoff2Triplet,
-  getWoff2BboxBitmapByteLength,
-  hasWoff2GlyphBbox,
-  isWoff2PointOnCurve,
-  measureWoff2CompositeGlyph,
-  readWoff2GlyfStreams,
-  readWoff2Short,
-  reverseWoff2GlyfTransform,
-} from './woff2GlyfTransform';
+export * from './cffCharstring';
+export * from './cffDict';
+export * from './cffFdSelect';
+export * from './cffIndex';
+export * from './cffTable';
+export * from './openTypeCmap';
+export * from './openTypeGlyf';
+export * from './openTypeGlyphOutlineSource';
+export * from './openTypeMetrics';
+export * from './openTypeTestHelper';
+export * from './sfntAssembly';
+export * from './sfntTableDirectory';
+export * from './woff2Font';
+export * from './woff2GlyfTransform';
+export * from './woffFont';

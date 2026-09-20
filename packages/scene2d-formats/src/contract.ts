@@ -1,7 +1,9 @@
 export * from './lottieDocument';
+export * from './riveAnimation';
 export * from './riveAssetBinding';
 export * from './riveAssets';
 export * from './riveClipping';
+export * from './riveCoreProperties';
 export * from './riveCoreTypes';
 export * from './riveDocument';
 export * from './riveDrawOrder';
@@ -20,3 +22,4 @@ export * from './riveSolo';
 export * from './riveStateMachine';
 export * from './riveText';
 export * from './svgDocument';
+export * from './testHelper';

@@ -1,5 +1,5 @@
-export * from './explainSpatialIndexing2D';
 export * from './bvh3D';
+export * from './explainSpatialIndexing2D';
 export * from './explainSpatialIndexing3D';
 export * from './formatSpatialIndexingNotice';
 export * from './spatialIndex';
@@ -7,7 +7,3 @@ export * from './spatialIndex3D';
 export * from './spatialIndexingGuard';
 export * from './uniformGrid';
 export * from './uniformGrid3D';
-export { initializeUniformGridSpatialBackend3D } from './uniformGrid3D';
-export { initializeSpatialIndex2D } from './spatialIndex';
-export { initializeSpatialIndex3D } from './spatialIndex3D';
-export { initializeBvhSpatialBackend3D } from './bvh3D';
