@@ -13,7 +13,7 @@ function registrarKinds(backend: 'Canvas' | 'Gl' | 'Wgpu'): ReadonlySet<string> 
   const kinds = new Set<string>();
   const pattern = new RegExp(`\\bregister${backend}([A-Z][A-Za-z0-9]*Effect)\\b`, 'g');
   for (const match of source.matchAll(pattern)) {
-    if (match[1] !== 'RenderEffect') kinds.add(match[1]!);
+    if (match[1] !== 'Effect') kinds.add(match[1]!);
   }
   return kinds;
 }

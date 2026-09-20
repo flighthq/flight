@@ -1,5 +1,5 @@
 import { getCanvasRenderTextureTarget, writeCanvasRenderTextureTarget } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderState, CanvasRenderTexturePool, RenderEffect, RenderTexture } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasRenderTexturePool, Effect, RenderTexture } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
 
@@ -13,7 +13,7 @@ export function applyCanvasEffectsToRenderTexture(
   source: Readonly<RenderTexture>,
   dest: RenderTexture,
   scratch: RenderTexture,
-  effects: ReadonlyArray<Readonly<RenderEffect>>,
+  effects: ReadonlyArray<Readonly<Effect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
     throw new Error('applyCanvasEffectsToRenderTexture: source, destination, and scratch must be distinct');

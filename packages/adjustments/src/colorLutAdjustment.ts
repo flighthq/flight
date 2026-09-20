@@ -9,7 +9,7 @@ import { initializeAdjustment } from './adjustment';
 import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
 
 // Returns the rgb→rgb transform a pointwise adjustment contributes to a baked LUT, or null if it is not
-// pointwise (a spatial/composite RenderEffect). A LUT-tier adjustment returns its own `transform`; a
+// pointwise (a spatial/composite Effect). A LUT-tier adjustment returns its own `transform`; a
 // matrix-tier adjustment returns its 4×5 matrix evaluated at opaque alpha (so a mixed run still bakes
 // into one LUT). This lets the pipeline fold any pointwise stack — matrices and nonlinear ops together —
 // into a single `bakeColorLut` without a per-kind switch.

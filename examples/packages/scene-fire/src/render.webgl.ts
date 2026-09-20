@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Camera3D, GlEffectState, Node3D, RenderEffect, Scene3DLightsLike } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Node3D, Effect, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
@@ -60,7 +60,7 @@ export function render(
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightsLike>,
-  effects: readonly RenderEffect[],
+  effects: readonly Effect[],
 ): void {
   const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);

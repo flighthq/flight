@@ -14,7 +14,7 @@ export function createColorMatrixAdjustment(colorMatrix: readonly number[]): Col
 }
 
 // Returns the 4×5 color matrix a stack operation contributes to the fused matrix-tier pass, or null if
-// it is not a matrix-tier adjustment (a spatial/composite RenderEffect, or a LUT-tier adjustment). Lets
+// it is not a matrix-tier adjustment (a spatial/composite Effect, or a LUT-tier adjustment). Lets
 // a pipeline recognise which stack entries fold into the single generic color-matrix pass without a
 // per-kind switch: any operation carrying a valid 4×5 `colorMatrix` fuses, third-party ones included.
 export function getAdjustmentColorMatrix(operation: Readonly<{ kind: string }>): readonly number[] | null {

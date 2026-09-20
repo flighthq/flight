@@ -16,7 +16,7 @@ import {
   installWgpuMock,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { LogEntry, RenderEffect, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import type { LogEntry, Effect, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 
 import { areWgpuEffectGuardsEnabled, disableWgpuEffectGuards, enableWgpuEffectGuards } from './enableWgpuEffectGuards';
 import { registerWgpuEffect } from './wgpuEffectRegistry';
@@ -99,7 +99,7 @@ describe('enableWgpuEffectGuards', () => {
         out.kind = 'test.wgpu-pipeline-dropped-kind';
         return finishEntity(out);
       })(),
-    ] as unknown as Readonly<RenderEffect>[];
+    ] as unknown as Readonly<Effect>[];
 
     const entries = captureLog(() => {
       const screenPass = beginWgpuScreenRenderPassForTest(state);
@@ -190,7 +190,7 @@ function applyChain(state: WgpuRenderState, kinds: readonly string[]): boolean {
         const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
-      })() as Readonly<RenderEffect>,
+      })() as Readonly<Effect>,
   );
   return applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }

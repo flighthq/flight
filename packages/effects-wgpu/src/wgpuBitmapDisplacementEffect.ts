@@ -3,7 +3,7 @@ import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contra
 import type {
   BitmapDisplacementEffect,
   EntityConstruction,
-  RenderEffect,
+  Effect,
   Sampler,
   TextureFilter,
   WgpuEffectPipeline,
@@ -91,10 +91,7 @@ export function initializeWgpuEffectPipeline(
   out.pipeline = pipeline;
 }
 
-export function isWgpuBitmapDisplacementEffectResolvable(
-  state: WgpuRenderState,
-  effect: Readonly<RenderEffect>,
-): boolean {
+export function isWgpuBitmapDisplacementEffectResolvable(state: WgpuRenderState, effect: Readonly<Effect>): boolean {
   const map = (effect as Readonly<BitmapDisplacementEffect>).map;
   return (
     map !== null && resolveWgpuTexture(state, map, false, map.colorSpace === 'linear' ? 'linear' : 'srgb') !== null

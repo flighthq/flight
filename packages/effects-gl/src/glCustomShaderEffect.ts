@@ -6,7 +6,7 @@ import type {
   GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
-  RenderEffect,
+  Effect,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -83,7 +83,7 @@ export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string)
 // Whether this CustomShaderEffect names a shaderKey that has source registered for the state. An
 // effect that does not still RUNS — it copies the input through unchanged — so this is the query that
 // separates "the shader ran" from "the pass did nothing".
-export function isGlCustomShaderEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
+export function isGlCustomShaderEffectResolvable(state: GlRenderState, effect: Readonly<Effect>): boolean {
   return getGlCustomShaderSource(state, (effect as Readonly<CustomShaderEffect>).shaderKey) !== null;
 }
 

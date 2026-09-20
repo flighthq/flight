@@ -1,5 +1,5 @@
 import { setGlRenderTransform2D } from '@flighthq/render-gl/contract';
-import type { Bitmap, RenderEffect, RenderEffectPadding, RenderTexture } from '@flighthq/sdk';
+import type { Bitmap, Effect, EffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   ShapeKind,
   SpriteKind,
@@ -9,7 +9,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   applyGlEffectsToRenderTexture,
-  computeRenderEffectPadding,
+  computeEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
   createGlRenderState,
@@ -84,8 +84,8 @@ const shadow = createDropShadowEffect({
   distance: 18,
   strength: 1,
 });
-const glowPadding = computeRenderEffectPadding(offscreenState, [glow]);
-const shadowPadding = computeRenderEffectPadding(offscreenState, [shadow]);
+const glowPadding = computeEffectPadding(offscreenState, [glow]);
+const shadowPadding = computeEffectPadding(offscreenState, [shadow]);
 const glowTexture = capture(glow, glowPadding);
 const shadowTexture = capture(shadow, shadowPadding);
 
@@ -122,7 +122,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   if (failures.length > 0) throw new Error(`[per-node-effect-glow-shadow] ${failures.join('; ')}`);
 }
 
-function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectPadding>): RenderTexture {
+function capture(effect: Readonly<Effect>, padding: Readonly<EffectPadding>): RenderTexture {
   const descriptor = {
     depth: 'none' as const,
     height: CONTENT_HEIGHT + padding.top + padding.bottom,

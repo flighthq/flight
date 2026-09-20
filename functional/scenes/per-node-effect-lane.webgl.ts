@@ -1,6 +1,6 @@
 import { isGlRenderTextureReady, setGlRenderTransform2D } from '@flighthq/render-gl/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import type { Bitmap, RenderEffect, RenderTexture } from '@flighthq/sdk';
+import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
   ShapeKind,
   SpriteKind,
@@ -11,7 +11,7 @@ import {
   appendShapeRectangle,
   applyGlEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
-  computeRenderEffectPadding,
+  computeEffectPadding,
   createBlurEffect,
   createDisplayObject,
   createGlRenderState,
@@ -74,8 +74,8 @@ const offscreenState = createGlRenderState(state.gl, state.registries);
 const pool = createGlRenderTexturePool();
 registerGlBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
-const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
-const padding = computeRenderEffectPadding(offscreenState, effects);
+const effects: ReadonlyArray<Readonly<Effect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
+const padding = computeEffectPadding(offscreenState, effects);
 const _targetSize = { width: 0, height: 0 };
 
 // The selected subtree stays detached from the displayed graph. Its own transform is intentionally

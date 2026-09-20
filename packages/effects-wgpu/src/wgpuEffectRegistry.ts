@@ -1,13 +1,13 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect, WgpuEffectResolver, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import type { Effect, WgpuEffectResolver, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
 // Map lookup, so there is no monolithic switch and unused effect recipes tree-shake away. Register an
 // alternative runner under the same key to swap algorithms. The Wgpu mirror of the effects-gl
-// renderEffectRegistry — the same agnostic RenderEffect[] drives both backends through their registries.
+// effectRegistry — the same agnostic Effect[] drives both backends through their registries.
 // A built-in registerWgpu<Kind>Effect wrapper is pure ergonomics: it calls this function with the
 // literal kind and public default runner, and installs no padding, shader-source, or backdrop companions.
 
@@ -26,7 +26,7 @@ export function hasWgpuEffectRunner(state: WgpuRenderState, kind: string): boole
   );
 }
 
-export function isWgpuEffectResolvable(state: WgpuRenderState, effect: Readonly<RenderEffect>): boolean {
+export function isWgpuEffectResolvable(state: WgpuRenderState, effect: Readonly<Effect>): boolean {
   const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(effect.kind);
   if (entry?.state !== RegistryEntryState.Bound) return false;
   return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);

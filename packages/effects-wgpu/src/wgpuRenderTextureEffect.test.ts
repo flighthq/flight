@@ -13,7 +13,7 @@ import {
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect, WgpuEffectRunner } from '@flighthq/types/contract';
+import type { Effect, WgpuEffectRunner } from '@flighthq/types/contract';
 
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry';
@@ -119,7 +119,7 @@ describe('explainWgpuEffectApplication', () => {
         out.kind = 'test.explain-missing';
         return finishEntity(out);
       })(),
-    ] as unknown as Readonly<RenderEffect>[]);
+    ] as unknown as Readonly<Effect>[]);
 
     expect(explanation).toMatchObject({
       registeredCount: 1,
@@ -196,7 +196,7 @@ describe('setWgpuEffectApplicationGuard', () => {
         out.kind = 'test.seam-missing';
         return finishEntity(out);
       })(),
-    ] as unknown as Readonly<RenderEffect>[];
+    ] as unknown as Readonly<Effect>[];
 
     setWgpuEffectApplicationGuard(state, (_state, explanation) => seen.push(explanation.status));
     applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, chain);

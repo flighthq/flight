@@ -44,7 +44,7 @@ declareExpectedImageDescription(
 
 // Canvas parity column for the same vignette intent as render.webgl.ts: a full-bleed bright fill
 // darkened toward the corners. The Canvas vignette runner multiplies a radial darkening mask over
-// the scene — the same RenderEffect intent realized with Canvas 2D compositing.
+// the scene — the same Effect intent realized with Canvas 2D compositing.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);

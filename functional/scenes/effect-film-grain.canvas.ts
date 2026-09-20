@@ -42,7 +42,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Canvas parity column for the same film-grain intent as render.webgl.ts: per-pixel noise mixed over
-// a flat mid-gray fill. The fixed seed keeps the static capture deterministic — the same RenderEffect
+// a flat mid-gray fill. The fixed seed keeps the static capture deterministic — the same Effect
 // intent realized with Canvas 2D compositing.
 declareAntialiasingPolicy('no-aa');
 

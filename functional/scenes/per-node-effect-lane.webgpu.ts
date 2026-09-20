@@ -4,7 +4,7 @@ import {
   setWgpuRenderTransform2D,
 } from '@flighthq/render-wgpu/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import type { Bitmap, RenderEffect, RenderTexture } from '@flighthq/sdk';
+import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
   acquireWgpuRenderTexture,
   addNodeChild,
@@ -13,7 +13,7 @@ import {
   appendShapeRectangle,
   applyWgpuEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
-  computeRenderEffectPadding,
+  computeEffectPadding,
   createBlurEffect,
   createDisplayObject,
   createMatrix,
@@ -81,8 +81,8 @@ const offscreenState = createWgpuOffscreenRenderState(
 const pool = createWgpuRenderTexturePool();
 registerWgpuBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
-const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
-const padding = computeRenderEffectPadding(offscreenState, effects);
+const effects: ReadonlyArray<Readonly<Effect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
+const padding = computeEffectPadding(offscreenState, effects);
 const _targetSize = { width: 0, height: 0 };
 
 // The selected subtree is a detached root of the offscreen pipeline. Its dramatic root transform is

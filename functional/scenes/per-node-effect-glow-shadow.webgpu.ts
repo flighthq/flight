@@ -1,5 +1,5 @@
 import { getWgpuRenderStateRuntime, setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
-import type { Bitmap, RenderEffect, RenderEffectPadding, RenderTexture } from '@flighthq/sdk';
+import type { Bitmap, Effect, EffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   acquireWgpuRenderTexture,
   addNodeChild,
@@ -7,7 +7,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   applyWgpuEffectsToRenderTexture,
-  computeRenderEffectPadding,
+  computeEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
   createMatrix,
@@ -89,8 +89,8 @@ const shadow = createDropShadowEffect({
   distance: 18,
   strength: 1,
 });
-const glowPadding = computeRenderEffectPadding(offscreenState, [glow]);
-const shadowPadding = computeRenderEffectPadding(offscreenState, [shadow]);
+const glowPadding = computeEffectPadding(offscreenState, [glow]);
+const shadowPadding = computeEffectPadding(offscreenState, [shadow]);
 const glowTexture = capture(glow, glowPadding);
 const shadowTexture = capture(shadow, shadowPadding);
 
@@ -127,7 +127,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   if (failures.length > 0) throw new Error(`[per-node-effect-glow-shadow] ${failures.join('; ')}`);
 }
 
-function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectPadding>): RenderTexture {
+function capture(effect: Readonly<Effect>, padding: Readonly<EffectPadding>): RenderTexture {
   const descriptor = {
     clearColors: [0x00000000],
     depth: 'none' as const,

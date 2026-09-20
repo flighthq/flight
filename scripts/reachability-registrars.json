@@ -155,7 +155,7 @@
     },
     {
       "packageName": "effects",
-      "registrar": "registerRenderEffectPaddingResolver"
+      "registrar": "registerEffectPaddingResolver"
     },
     {
       "packageName": "effects",

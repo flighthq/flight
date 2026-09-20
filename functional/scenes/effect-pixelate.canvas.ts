@@ -46,7 +46,7 @@ declareExpectedImageDescription(
 
 // Canvas parity column for the same pixelate intent as render.webgl.ts: the frame is quantized into
 // uniform blocks. The Canvas pixelate runner downsamples then upsamples with nearest filtering —
-// the same RenderEffect intent realized with Canvas 2D compositing.
+// the same Effect intent realized with Canvas 2D compositing.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);

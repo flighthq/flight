@@ -1,7 +1,7 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
 import { isCanvasRenderTextureReady, setCanvasRenderTransform2D } from '@flighthq/scene2d-canvas/contract';
-import type { Bitmap, RenderEffect, RenderTexture } from '@flighthq/sdk';
+import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
   acquireCanvasRenderTexture,
   addNodeChild,
@@ -10,7 +10,7 @@ import {
   appendShapeRectangle,
   applyCanvasEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
-  computeRenderEffectPadding,
+  computeEffectPadding,
   createBlurEffect,
   createCanvasOffscreenRenderState,
   createCanvasRenderTexturePool,
@@ -83,8 +83,8 @@ registerCanvasSurfaceCreator(offscreenState, webCanvasRenderSurfaceCreator);
 const pool = createCanvasRenderTexturePool(webCanvasRenderSurfaceCreator);
 registerCanvasBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
-const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
-const padding = computeRenderEffectPadding(offscreenState, effects);
+const effects: ReadonlyArray<Readonly<Effect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
+const padding = computeEffectPadding(offscreenState, effects);
 const _targetSize = { width: 0, height: 0 };
 
 // The selected subtree stays detached from the displayed graph. Root-local capture cancels its own
