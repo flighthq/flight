@@ -1,6 +1,6 @@
 // The UNIT LANE: the population `npm run test` runs. One runner, one project, package-colocated
 // tests only. Everything else — scripts tests, integration tests, isolated-registry tests,
-// tool-capture — belongs in a different command.
+// host backends, dev tools — belongs in a different command.
 import { readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
@@ -11,7 +11,8 @@ export const UNIT_TEST_LANE_INCLUDE: readonly string[] = ['packages/**/src/**/*.
 export const UNIT_TEST_LANE_EXCLUDE: readonly string[] = [
   '**/.claude/**',
   '**/node_modules/**',
-  'packages/tool-capture/src/**/*.test.ts',
+  'packages/host-*/src/**/*.test.ts',
+  'packages/tool-*/src/**/*.test.ts',
   ...REGISTRY_ISOLATED_TEST_FILES,
 ];
 
@@ -19,7 +20,7 @@ export function readUnitTestLaneFiles(root: string): string[] {
   const excluded = new Set(UNIT_TEST_LANE_EXCLUDE.filter((pattern) => !pattern.includes('*')));
   return testFilesUnder(resolve(root, 'packages'))
     .map((path) => relative(root, path).replaceAll('\\', '/'))
-    .filter((path) => !path.startsWith('packages/tool-capture/') && !excluded.has(path))
+    .filter((path) => !path.startsWith('packages/host-') && !path.startsWith('packages/tool-') && !excluded.has(path))
     .filter((path) => /^packages\/[^/]+\/src\//u.test(path))
     .sort();
 }
