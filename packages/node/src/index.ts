@@ -1,90 +1,51 @@
+export * from './boundsRectangle';
+export * from './enableNodeGuards';
+export * from './hasAppearance';
+export * from './hasBlendMode';
+export * from './hasBoundsRectangle';
+export * from './hasClip';
+export * from './hasMaterial';
+export * from './hasTransform2d';
+export * from './hasTransform3d';
 export {
   addNodeChild,
   addNodeChildAt,
   addNodeChildren,
-  addNodeColorAdjustment,
-  addNodeOrderListEntry,
-  applyNodeOrderList,
-  areNodeGuardsEnabled,
-  computeNodeBoundsRectangle,
-  computeNodeRootLocalBoundsRectangle,
-  computeScene2DFitAlignX,
-  computeScene2DFitAlignY,
-  computeScene2DFitFillScale,
-  computeScene2DFitScale,
-  computeScene2DFitTransform,
-  clearNodeOrderList,
   containsNodeChild,
-  convertNodeVector2GlobalToLocal,
-  convertNodeVector2LocalToGlobal,
-  convertNodeVector3GlobalToLocal,
-  convertNodeVector3LocalToGlobal,
-  createNode,
-  createNodeOrderList,
-  createViewport,
-  disableNodeGuards,
-  disposeNode,
-  enableNodeGuards,
-  enableNodeSignals,
-  findNode,
-  findNodeByName,
-  forEachNodeAncestor,
   forEachNodeChild,
-  forEachNodeDescendant,
   getNodeAncestors,
-  getNodeAppearanceRevision,
   getNodeChildAt,
   getNodeChildByName,
   getNodeChildCount,
   getNodeChildIndex,
-  getNodeChildren,
-  getNodeColorAdjustments,
   getNodeCommonAncestor,
-  getNodeDepth,
-  getNodeHeight,
-  getNodeLocalBoundsRectangle,
-  getNodeLocalBoundsRevision,
-  getNodeLocalContentRevision,
-  getNodeLocalMatrix,
-  getNodeLocalMatrix4,
-  getNodeLocalTransformRevision,
-  getNodeNextSibling,
   getNodeParent,
-  getNodeParentBoundsRectangle,
-  getNodePreviousSibling,
   getNodeRoot,
-  getNodeSignals,
-  getNodeTransform2D,
-  getNodeTransform3D,
-  getNodeWidth,
-  getNodeWorldBoundsRectangle,
-  getNodeWorldMatrix,
-  getNodeWorldMatrix4,
-  getNodeWorldTransformRevision,
-  getViewportAspect,
-  invalidateNodeAppearance,
-  invalidateNodeLocalTransform,
-  invalidateNodeRender,
   isNodeAncestorOf,
-  isNodeLocalMatrix4Detached,
   removeNodeChild,
   removeNodeChildAt,
   removeNodeChildren,
   reparentNode,
   replaceNodeChild,
   setNodeChildIndex,
-  setNodeColorAdjustments,
-  setNodeColorAdjustmentsTint,
-  setNodeEnabled,
-  setNodeHeight,
-  setNodeLocalMatrix,
-  setNodeLocalMatrix4,
-  setNodeTransform2D,
-  setNodeTransform3D,
-  setNodeWidth,
   swapNodeChildren,
   swapNodeChildrenAt,
-  walkNodeDescendants,
+} from './hierarchy';
+export {
+  createNode,
+  createNodeSignals,
+  defaultNodeRuntimeCanAddChild,
+  disposeNode,
+  enableNodeSignals,
+  getNodeSignals,
+  setNodeEnabled,
+} from './node';
+export * from './nodeColorAdjustment';
+export {
+  addNodeOrderListEntry,
+  applyNodeOrderList,
+  clearNodeOrderList,
+  createNodeOrderList,
   disposeNodeOrderList,
   forEachNodeOrderListEntry,
   getNodeOrderListEntrySortKey,
@@ -95,4 +56,10 @@ export {
   setNodeOrderListEntryBelow,
   setNodeOrderListFromNodeChildren,
   swapNodeOrderListEntries,
-} from './contract';
+} from './nodeOrderList';
+export * from './nodeTransform2d';
+export * from './nodeTransform3d';
+export * from './revision';
+export * from './stageFit';
+export * from './traversal';
+export { createViewport, getViewportAspect } from './viewport';

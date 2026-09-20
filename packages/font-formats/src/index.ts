@@ -1,1 +1,15 @@
+export * from './cffCharstring';
+export * from './cffDict';
+export * from './cffFdSelect';
+export * from './cffIndex';
+export * from './cffTable';
+export * from './openTypeCmap';
+export * from './openTypeGlyf';
 export { createGlyphOutlineSourceFromOpenTypeFont, explainOpenTypeFont } from './openTypeGlyphOutlineSource';
+export * from './openTypeMetrics';
+export * from './openTypeTestHelper';
+export * from './sfntAssembly';
+export * from './sfntTableDirectory';
+export * from './woff2Font';
+export * from './woff2GlyfTransform';
+export * from './woffFont';

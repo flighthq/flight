@@ -1,10 +1,4 @@
-export {
-  createPhysics2DAbi,
-  createPhysics2DAbiWorld,
-  destroyPhysics2DAbiWorld,
-  executePhysics2DAbiCommands,
-  getPhysics2DAbiWorldStatus,
-} from './physics2DAbi';
+export * from './physics2DAbi';
 export {
   clearPhysics2DAbiCommandBuffer,
   createPhysics2DAbiBodyBuffer,

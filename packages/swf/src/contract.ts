@@ -1,7 +1,15 @@
 export * from './enableSwfGuards';
-export { createSwfJpegAlphaBitmap } from './swfBitmap';
+export * from './swfBitmap';
 export * from './swfDocument';
+export * from './swfEditText';
 export * from './swfExplain';
 export * from './swfFilter';
-export { registerSwfImageDecoders } from './swfImageDecoder';
+export * from './swfFrameAction';
+export * from './swfFrameActionTestHelper';
+export * from './swfImageDecoder';
+export * from './swfKnownTags';
+export * from './swfMorphShape';
+export * from './swfShape';
 export * from './swfTagRegistry';
+export * from './swfTagVocabulary';
+export * from './swfText';

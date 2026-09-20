@@ -1,26 +1,67 @@
+export { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';
+export * from './canvasBitmapTextureResolver';
 export {
-  beginCanvasRenderPass,
   createCanvasCacheState,
-  createCanvasScreenRenderTarget,
-  createCanvasTextureRenderTarget,
-  destroyCanvasTextureRenderTarget,
-  disposeCanvasScreenRenderTarget,
-  endCanvasRenderPass,
-  getCanvasActiveRenderPass,
-  isCanvasScreenRenderTarget,
-  registerCanvasSurfaceCreator,
-  resizeCanvasTextureRenderTarget,
   createCanvasOffscreenRenderState,
-  createCanvasElement,
+  enableCanvasRenderCache,
+  refreshCanvasRenderCache,
+  defaultCanvasRenderCacheRenderer,
+} from './canvasCache';
+export * from './canvasClip';
+export * from './canvasElement';
+export * from './canvasImageSource';
+export * from './canvasImageTextureResolver';
+export {
+  getCanvasMaterialRenderer,
+  registerCanvasMaterialRenderer,
+  resolveCanvasMaterialRenderer,
+} from './canvasMaterialRegistry';
+export { enableCanvasBlendMode } from './canvasMaterials';
+export { defaultCanvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
+export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
+export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
+export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
+export * from './canvasRenderPass';
+export {
   createCanvasRenderState,
-  connectCanvasTextureResolverMisses,
-  createCanvasTextureResolvers,
+  destroyCanvasRenderState,
   getCanvasRenderStateTextureResolvers,
+} from './canvasRenderState';
+export {
+  acquireCanvasRenderSurface,
+  createCanvasRenderSurface,
+  destroyCanvasRenderSurface,
+  registerCanvasSurfaceCreator,
+} from './canvasRenderSurface';
+export {
+  bindCanvasRenderTexture,
+  destroyCanvasRenderTexture,
+  explainCanvasRenderTexture,
+  renderIntoCanvasRenderTexture,
+} from './canvasRenderTexture';
+export {
+  acquireCanvasRenderTexture,
   createCanvasRenderTexturePool,
+  destroyCanvasRenderTexturePool,
+  releaseCanvasRenderTexture,
+  withCanvasRenderTextures,
+} from './canvasRenderTexturePool';
+export * from './canvasRenderTextureResolver';
+export { defaultCanvasRichTextRenderer } from './canvasRichText';
+export { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
+export { defaultCanvasScale9SpriteRenderer } from './canvasScale9Sprite';
+export {
+  createCanvasScreenRenderTarget,
+  disposeCanvasScreenRenderTarget,
+  isCanvasScreenRenderTarget,
+} from './canvasScreenRenderTarget';
+export { defaultCanvasShapeRenderer, defaultCanvasMorphShapeRenderer } from './canvasShape';
+export * from './canvasShapeCommandTable';
+export {
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,
-  defaultCanvasBitmapTextRenderer,
   defaultCanvasCubicCurveTo,
+  defaultCanvasQuadraticCurveTo,
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawPath,
@@ -31,57 +72,32 @@ export {
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
-  defaultCanvasQuadraticCurveTo,
-  defaultCanvasMorphShapeRenderer,
-  defaultCanvasParticleEmitter2DRenderer,
-  defaultCanvasQuadBatchRenderer,
-  defaultCanvasRichTextRenderer,
-  defaultCanvasRenderCacheRenderer,
-  defaultCanvasScale9ShapeRenderer,
-  defaultCanvasScale9SpriteRenderer,
-  defaultCanvasScene2DRenderer,
   defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
-  defaultCanvasSpriteRenderer,
-  defaultCanvasTextLabelRenderer,
   defaultCanvasTextureShapeCommands,
-  defaultCanvasTilemapRenderer,
-  bindCanvasRenderTexture,
-  acquireCanvasRenderTexture,
-  canvasShapeCommandTable,
-  createCanvasRenderSurface,
-  allocateEmptyCanvasRenderRegistries,
-  destroyCanvasRenderTexture,
-  destroyCanvasRenderTexturePool,
-  destroyCanvasRenderState,
-  destroyCanvasRenderSurface,
+} from './canvasShapeCommands';
+export * from './canvasShapeRasterizer';
+export { registerCanvasShapeCommands } from './canvasShapeRegistry';
+export { defaultCanvasSpriteRenderer } from './canvasSprite';
+export {
+  createCanvasRenderState,
+  createCanvasTextureRenderTarget,
+  createCanvasTextureResolvers,
+} from './canvasTestSupport';
+export { enableCanvasTextInput } from './canvasTextInput';
+export { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
+export {
+  createCanvasTextureRenderTarget,
+  destroyCanvasTextureRenderTarget,
+  resizeCanvasTextureRenderTarget,
+} from './canvasTextureRenderTarget';
+export {
+  connectCanvasTextureResolverMisses,
+  createCanvasTextureResolvers,
   destroyCanvasTextureResolvers,
-  enableCanvasBlendMode,
-  enableCanvasClip,
-  explainCanvasScene2DCoverage,
-  hasCanvasScene2DCoverage,
-  enableCanvasRenderCache,
-  enableCanvasTextInput,
-  areCanvasTextureResolverGuardsEnabled,
-  enableCanvasTextureResolverGuards,
-  explainCanvasImageSource,
-  getCanvasMaterialRenderer,
-  registerCanvasMaterialRenderer,
-  resolveCanvasMaterialRenderer,
-  explainCanvasTextureResolution,
-  explainCanvasRenderTexture,
-  refreshCanvasRenderCache,
-  registerCanvasBitmapTextureResolver,
-  registerCanvasImageTextureResolver,
-  registerCanvasRenderTextureResolver,
-  registerCanvasShapeCommands,
   registerCanvasTextureResolver,
-  renderIntoCanvasRenderTexture,
-  releaseCanvasRenderTexture,
-  renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
-  acquireCanvasRenderSurface,
-  setCanvasRenderTransform2D,
-  withCanvasRenderTextures,
-} from './contract';
-export { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
+} from './canvasTextureResolver';
+export { defaultCanvasTilemapRenderer } from './canvasTilemap';
+export * from './enableCanvasTextureResolverGuards';
+export * from './explainCanvasScene2DCoverage';
+export * from './explainCanvasTextureResolution';
+export * from './scene2DCanvasPipeline';

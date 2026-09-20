@@ -1,26 +1,18 @@
-export { explainMorphShapeGradientEndpoints } from './explainMorphShapeGradientEndpoints';
+export * from './compactStrokePath';
+export * from './enableShapeBoundsGuards';
+export * from './explainMorphShapeGradientEndpoints';
+export * from './explainShapeTessellation';
 export * from './morphShape';
 export * from './morphShapeAnimation';
-export {
-  appendMorphShapeBeginFill,
-  appendMorphShapeBeginGradientFill,
-  appendMorphShapeBeginTextureFill,
-  appendMorphShapeLineGradientStyle,
-  appendMorphShapeLineStyle,
-  appendMorphShapeLineTextureStyle,
-} from './morphShapePaint';
+export * from './morphShapePaint';
+export * from './registerDefaultShapeBoundsCommands';
 export * from './scale9Shape';
+export * from './scale9ShapeCommands';
 export * from './shape';
 export * from './shapeBounds';
 export * from './shapeBoundsRegistry';
-export * from './registerDefaultShapeBoundsCommands';
+export * from './shapeCommandGeometry';
 export * from './shapeCommands';
 export * from './shapeFill';
 export * from './shapeStroke';
 export * from './shapeStrokeOutline';
-export * from './scale9ShapeCommands';
-export * from './explainShapeTessellation';
-export * from './enableShapeBoundsGuards';
-export { initializeMorphShapeAnimationTarget } from './morphShapeAnimation';
-export { initializeShapeData } from './shape';
-export { initializeScale9ShapeData } from './scale9Shape';

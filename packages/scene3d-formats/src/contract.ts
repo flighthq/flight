@@ -1,33 +1,27 @@
 export * from './awd2Parse';
+export * from './awd2Schema';
+export * from './colladaMaterial';
 export * from './colladaParse';
 export * from './gltfAnimations';
+export * from './gltfAnisotropy';
 export * from './gltfCameras';
+export * from './gltfClearcoat';
 export * from './gltfCoreFeatureRegistry';
+export * from './gltfDraco';
+export * from './gltfEmissiveStrength';
 export * from './gltfExtensionHandlerRegistry';
+export * from './gltfIridescence';
+export * from './gltfMaterialExtension';
 export * from './gltfParse';
+export * from './gltfPunctualLights';
+export * from './gltfSheen';
 export * from './gltfSkins';
-export { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
-export { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-export {
-  getGltfDracoDecoder,
-  hasGltfDracoDecoder,
-  registerGltfDracoDecoder,
-  unregisterGltfDracoDecoder,
-} from './gltfDraco';
-export { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength';
-export { GltfIridescenceExtensionHandler } from './gltfIridescence';
-export { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension';
-export { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
-export { GltfSheenExtensionHandler } from './gltfSheen';
-export { GltfSpecularExtensionHandler } from './gltfSpecular';
-export { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness';
-export { GltfUnlitExtensionHandler } from './gltfUnlit';
-export {
-  GltfIorExtensionHandler,
-  GltfTransmissionExtensionHandler,
-  GltfVolumeExtensionHandler,
-} from './gltfTransmissionVolume';
+export * from './gltfSpecular';
+export * from './gltfSpecularGlossiness';
+export * from './gltfTransmissionVolume';
+export * from './gltfUnlit';
 export * from './md2Parse';
+export * from './md2Schema';
 export * from './md5AnimParse';
 export * from './md5Parse';
 export * from './mtlParse';
@@ -38,5 +32,7 @@ export * from './registerGltfCameraHandlers';
 export * from './registerGltfLightingExtensionHandlers';
 export * from './registerGltfMaterialExtensionHandlers';
 export * from './registerGltfSkinHandlers';
+export * from './scene3DFormatsTestHelper';
 export * from './sceneSkeleton';
+export * from './shared';
 export * from './threeDsParse';

@@ -1,5 +1,17 @@
+export * from './flightDocumentResourceDependencies';
 export { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
-export { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies';
+export * from './sceneDocumentInteractiveStateBindings';
+export * from './sceneDocumentLayoutBindings';
+export * from './sceneDocumentMaterializationSelection';
+export {
+  checkFlightDocumentFields,
+  checkFlightDocumentInteractiveStates,
+  checkFlightDocumentNodeFields,
+  checkUnregisteredNodeKinds,
+  checkUnregisteredNodeKindsFromRaw,
+  createDocumentRefusal,
+  createSceneRefusal,
+} from './sceneDocumentRefusal';
 export {
   createFlightDocumentFromScene2D,
   createFlightDocumentScene2DMaterialization,
@@ -14,3 +26,4 @@ export {
   explainFlightDocumentScene3DRefusal,
   explainFlightDocumentScene3DRefusalFromText,
 } from './sceneDocumentScene3DMaterialization';
+export * from './sceneDocumentYamlSubset';
