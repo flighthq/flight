@@ -1,6 +1,5 @@
-export { webHostAppLoopExit } from './webAppLoopExit';
-export { webHostAccessibility } from './webAccessibility';
-export { webHostAccessibilityGroup } from './webAccessibilityHost';
+export * from './webAccessibility';
+export * from './webAccessibilityHost';
 export {
   createWebAppCapabilities,
   webHostAppBadge,
@@ -11,14 +10,18 @@ export {
   webHostAppReady,
   webHostAppRelaunch,
 } from './webApp';
-export { webHostApp } from './webAppHost';
+export * from './webAppHost';
+export * from './webAppLoopExit';
 export { webHostAudio } from './webAudio';
 export { getAudioDeviceContext, hasAudioDeviceWebNodeAccess, webHostAudioDevice } from './webAudioDevice';
-export { webHostAudioMixer } from './webAudioMixer';
-export { drawWebBitmap } from './webBitmapDraw';
-export { webHostBitmapEncode } from './webBitmapEncode';
+export * from './webAudioHost';
+export * from './webAudioMixer';
+export * from './webBitmapDraw';
+export * from './webBitmapEncode';
 export { createWebBitmapFromCanvas } from './webBitmapFrom';
-export { webHostBitmapReadback } from './webBitmapReadback';
+export * from './webBitmapHost';
+export * from './webBitmapReadback';
+export * from './webCanvasHost';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export {
   webHostClipboardChange,
@@ -26,21 +29,12 @@ export {
   webHostClipboardImage,
   webHostClipboardText,
 } from './webClipboard';
-export { webHostClipboard } from './webClipboardHost';
-export {
-  webHostConnectivityChange,
-  webHostConnectivityReachability,
-  webHostConnectivityStatus,
-} from './webConnectivity';
-export { webHostConnectivity } from './webConnectivityHost';
-export { allocateWebCursorBackend } from './webCursor';
-export { webHostIpc } from './webIpcHost';
-export { webHostMidi } from './webMidiHost';
-export { webHostNotification } from './webNotificationHost';
-export { webHostShortcut } from './webShortcutHost';
-export { webHostTray } from './webTrayHost';
-export { webHostUpdater } from './webUpdaterHost';
-export { enableWebSafeAreaInsets, webHostDevice } from './webDevice';
+export * from './webClipboardHost';
+export * from './webConnectivity';
+export * from './webConnectivityHost';
+export * from './webCursor';
+export * from './webDevice';
+export * from './webDeviceHost';
 export {
   webHostDirectoryOpenDialog,
   webHostFileOpenDialog,
@@ -51,40 +45,30 @@ export {
   webHostPromptDialog,
   webHostVideoCaptureDialog,
 } from './webDialog';
-export { webHostDialog } from './webDialogHost';
-export { webHostFileSystem } from './webFilesystem';
-export { webHostFontLoading } from './webFontLoading';
-export { webHostGeolocation } from './webGeolocation';
-export { createWebGlContext, getWebGlContext } from './webGlContext';
-export { webHostGlyphRasterizer } from './webGlyphRasterizer';
-export { webHostBitmap } from './webBitmapHost';
-export { webHostGlGroup } from './webGlHost';
-export { webHostImageGroup } from './webImageHost';
-export { webHostSurfaceGroup } from './webSurfaceHost';
-export { webHostCanvasGroup } from './webCanvasHost';
-export { webHostCanvas } from './webHostCanvas';
-export { webHostGl } from './webHostGl';
-export { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface';
-export { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
-export { getWebWindowHandle } from './webWindow';
-export { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
-export { webHostWgpuContext } from './webHostWgpuContext';
-export { webHostWgpu } from './webWgpuHost';
+export * from './webDialogHost';
+export * from './webFileSystemHost';
+export * from './webFilesystem';
+export * from './webFontHost';
+export * from './webFontLoading';
+export * from './webFullscreenHost';
+export * from './webGeolocation';
+export * from './webGeolocationHost';
+export * from './webGlContext';
+export * from './webGlHost';
+export * from './webGlyphHost';
+export * from './webGlyphRasterizer';
 export { webHostHaptics } from './webHaptics';
-export { webHostHapticsGroup } from './webHapticsHost';
-export { webHostImage } from './webImage';
-export {
-  clearWebImageBitmapComposers,
-  disableWebImageBitmapComposition,
-  enableWebImageBitmapComposition,
-  getWebImageBitmapComposer,
-  getWebImageBitmapComposerKinds,
-  hasWebImageBitmapComposer,
-  registerWebImageBitmapComposer,
-  unregisterWebImageBitmapComposer,
-} from './webImageBitmapComposition';
-export { registerWebImageDecoders } from './webImageDecoders';
-export { registerWebImageEncoders } from './webImageEncoders';
+export * from './webHapticsHost';
+export * from './webHost';
+export * from './webHostCanvas';
+export * from './webHostGl';
+export * from './webHostSurface';
+export * from './webHostWgpuContext';
+export * from './webImage';
+export * from './webImageBitmapComposition';
+export * from './webImageDecoders';
+export * from './webImageEncoders';
+export * from './webImageHost';
 export {
   createWebImageResourceFromCanvas,
   createWebImageResourceFromImageBitmap,
@@ -92,53 +76,40 @@ export {
   registerWebImageDimensionResolver,
   webImageDimensionResolver,
 } from './webImageResource';
+export { createWebImageSurfaceCreator, webImageSurfaceCreator } from './webImageSurface';
+export * from './webInputHost';
+export * from './webInputIngress';
 export {
-  createWebTextureAtlasFromCanvas,
-  createWebTextureAtlasFromImageBitmap,
-  createWebTextureAtlasFromImageElement,
-} from './webTextureAtlas';
-export {
-  createWebInputTargetHandle,
-  resetWebInputTargetBackendForTest,
   webHostInputDropFile,
   webHostInputFocus,
   webHostInputPointerLock,
   webHostInputTarget,
+  createWebInputTargetHandle,
 } from './webInputTarget';
-export {
-  getWebCoalescedPointerEvents,
-  getWebKeyCodeFromKeyboardEvent,
-  getWebKeyModifierFromKeyboardEvent,
-  getWebMouseWheelModeFromWheelEvent,
-  releaseWebInputPointerCapture,
-  setWebInputPointerCapture,
-  webHostInputIngress,
-} from './webInputIngress';
-export { webHostInput } from './webInputHost';
-export { webHostLifecycle } from './webLifecycle';
-export { webHostSoftKeyboardChange, webHostSoftKeyboardInfo, webHostSoftKeyboardVisibility } from './webKeyboard';
-export { webHostSoftKeyboard } from './webSoftKeyboardHost';
-export { webHostLoop } from './webLoop';
-export { webHostMediaSessionAction, webHostMediaSession } from './webMediasession';
-export { webHostAudioGroup } from './webAudioHost';
-export { webHostMediaSessionGroup } from './webMediaSessionHost';
-export { webHostVideoGroup } from './webVideoHost';
+export * from './webIpcHost';
+export * from './webKeyboard';
+export * from './webLifecycle';
+export * from './webLifecycleHost';
+export * from './webLoop';
+export * from './webMediaSessionHost';
+export * from './webMediasession';
 export { webHostMenuHighlight, webHostMenuPopup } from './webMenu';
-export { webHostMenu } from './webMenuHost';
-export { webHostMidiAccess, webHostMidiPermission, webMidiAccess, webMidiPermission } from './webMidi';
-export { webHostNet } from './webNet';
+export * from './webMenuHost';
+export { webMidiAccess, webMidiPermission, webHostMidiAccess, webHostMidiPermission } from './webMidi';
+export * from './webMidiHost';
+export * from './webNet';
+export * from './webNetHost';
 export { createWebPageNotificationCapabilities } from './webNotification';
-export { webHostNotificationPermission, webHostPermissions } from './webPermissions';
-export {
-  createWebServiceWorkerNotificationCapabilities,
-  notifyWebServiceWorkerNotificationEvent,
-} from './webServiceWorkerNotification';
-export { webHostPlatform } from './webPlatform';
-export { webHostPowerChange, webHostPowerKeepAwake, webHostPowerStatus, webHostPowerSuspension } from './webPower';
-export { webHostPower } from './webPowerHost';
+export * from './webNotificationHost';
+export * from './webPermissions';
+export * from './webPermissionsHost';
+export * from './webPlatform';
+export * from './webPlatformHost';
+export { webHostPowerKeepAwake, webHostPowerSuspension, webHostPowerChange, webHostPowerStatus } from './webPower';
+export * from './webPowerHost';
+export * from './webPreferencesHost';
 export { createWebProtocolCapabilities, webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
-export { webHostProtocol } from './webProtocolHost';
-export { createWebImageSurfaceCreator, webImageSurfaceCreator } from './webImageSurface';
+export * from './webProtocolHost';
 export {
   createWebScreenCapabilities,
   webHostScreenChange,
@@ -146,41 +117,43 @@ export {
   webHostScreenPermissionChange,
   webHostScreenQuery,
 } from './webScreen';
-export { webHostScreen } from './webScreenHost';
-export { webHostSensors } from './webSensors';
+export * from './webScreenHost';
+export * from './webSensors';
+export * from './webSensorsHost';
+export {
+  createWebServiceWorkerNotificationCapabilities,
+  notifyWebServiceWorkerNotificationEvent,
+} from './webServiceWorkerNotification';
 export { webHostShareContent, webHostShareFiles } from './webShare';
-export { webHostShare } from './webShareHost';
+export * from './webShareHost';
 export { webHostShellExternal } from './webShell';
-export { webHostShell } from './webShellHost';
-export { webHostStatusBarColor } from './webStatusbar';
+export * from './webShellHost';
+export * from './webShortcutHost';
+export * from './webSocket';
+export * from './webSocketHost';
+export * from './webSoftKeyboardHost';
+export * from './webStatusBarHost';
+export * from './webStatusbar';
 export { webHostStorage, webHostStorageChange } from './webStorage';
-export { webHostFileSystemGroup } from './webFileSystemHost';
-export { webHostPreferences } from './webPreferencesHost';
 export {
   createWebWindowStoragePersistenceCapabilities,
   createWebWorkerStoragePersistenceCapabilities,
   webHostStoragePersistenceQuery,
   webHostStoragePersistenceRequest,
 } from './webStoragePersistence';
-export { webHostVideo } from './webVideoCapability';
-export { createWebVideoResourceFromMediaStream } from './webVideoResource';
-export { webHost } from './webHost';
-export { webHostNetGroup } from './webNetHost';
-export { webHostDeviceGroup } from './webDeviceHost';
-export { webHostGeolocationGroup } from './webGeolocationHost';
-export { webHostLifecycleGroup } from './webLifecycleHost';
-export { webHostPermissionsGroup } from './webPermissionsHost';
-export { webHostPlatformGroup } from './webPlatformHost';
-export { webHostSensorsGroup } from './webSensorsHost';
-export { webHostFont } from './webFontHost';
-export { webHostGlyph } from './webGlyphHost';
-export { webHostTextSegment } from './webTextSegmentHost';
-export { webHostTextShaper } from './webTextShaperHost';
-export { webHostFullscreenGroup } from './webFullscreenHost';
-export { webHostStatusBar } from './webStatusBarHost';
+export { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
+export * from './webSurfaceHost';
+export * from './webSurfacePresentation';
+export * from './webTextSegmentHost';
+export * from './webTextShaperHost';
+export * from './webTextureAtlas';
+export * from './webTrayHost';
+export * from './webUpdaterHost';
+export * from './webVideoCapability';
+export * from './webVideoHost';
+export * from './webVideoResource';
+export * from './webWgpuHost';
 export {
-  createWebFullscreenTargetHandle,
-  createWebWindowResizeTargetHandle,
   webHostFullscreen,
   webHostWindowAppearance,
   webHostWindowAttach,
@@ -188,7 +161,8 @@ export {
   webHostWindowFullscreen,
   webHostWindowGeometry,
   webHostWindowLifecycle,
+  createWebFullscreenTargetHandle,
+  createWebWindowResizeTargetHandle,
+  getWebWindowHandle,
 } from './webWindow';
-export { webHostWindow } from './webWindowHost';
-export { webHostSocket } from './webSocket';
-export { webHostSocketGroup } from './webSocketHost';
+export * from './webWindowHost';
