@@ -36,7 +36,6 @@ protected:
   - createCanvasRenderStateWithoutPass
   - createCanvasTextureRenderTarget
   - createCanvasTextureRenderTargetPool
-  - destroyCanvasEffectState
   - drawCanvasAccumulationPass
   - drawCanvasEffectPass
   - drawCanvasImageDataPass

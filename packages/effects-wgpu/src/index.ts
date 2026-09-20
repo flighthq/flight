@@ -31,6 +31,7 @@ export { defaultWgpuDropShadowEffectRunner, registerWgpuDropShadowEffect } from 
 export {
   beginWgpuEffectPass,
   createWgpuEffectState,
+  destroyWgpuEffectState,
   endWgpuEffectPass,
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,

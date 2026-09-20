@@ -35,7 +35,13 @@ export { defaultGlDirectionalBlurEffectRunner, registerGlDirectionalBlurEffect }
 export { defaultGlDisplacementEffectRunner, registerGlDisplacementEffect } from './glDisplacementEffect';
 export { defaultGlDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
 export { defaultGlDropShadowEffectRunner, registerGlDropShadowEffect } from './glDropShadowEffect';
-export { beginGlEffectPass, createGlEffectState, endGlEffectPass, setGlEffectStateSkipGuard } from './glEffectState';
+export {
+  beginGlEffectPass,
+  createGlEffectState,
+  destroyGlEffectState,
+  endGlEffectPass,
+  setGlEffectStateSkipGuard,
+} from './glEffectState';
 export { defaultGlFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
 export { defaultGlFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
 export { defaultGlGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';

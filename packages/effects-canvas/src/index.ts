@@ -14,7 +14,12 @@ export {
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
 export { defaultCanvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
-export { beginCanvasEffectPass, createCanvasEffectState, endCanvasEffectPass } from './canvasEffectState';
+export {
+  beginCanvasEffectPass,
+  createCanvasEffectState,
+  destroyCanvasEffectState,
+  endCanvasEffectPass,
+} from './canvasEffectState';
 export { defaultCanvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
 export { defaultCanvasGradientBevelEffectRunner, registerCanvasGradientBevelEffect } from './canvasGradientBevelEffect';
 export { defaultCanvasGradientGlowEffectRunner, registerCanvasGradientGlowEffect } from './canvasGradientGlowEffect';
