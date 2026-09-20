@@ -1,6 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { REGISTRY_ISOLATED_TEST_FILES } from './scripts/registryIsolatedTests.js';
+import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE } from './scripts/unitTestLane.js';
 import { workspacePackages } from './scripts/workspaces.js';
 import baseConfig from './vitest.config.base.js';
 
@@ -99,13 +100,11 @@ export default mergeConfig(
           test: {
             name: 'shared',
             isolate: false,
-            include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
-            exclude: [
-              ...COMMON_EXCLUDE,
-              ...TOOL_CAPTURE_TEST_FILES,
-              ...REGISTRY_ISOLATED_TEST_FILES,
-              TEST_RUN_COVERAGE_FILE,
-            ],
+            // Taken from `scripts/unitTestLane.ts` rather than spelled out here, because the cost gate
+            // enumerates the same population and a lane defined twice eventually polices a set the
+            // runner does not run.
+            include: [...UNIT_TEST_LANE_INCLUDE],
+            exclude: [...UNIT_TEST_LANE_EXCLUDE],
             sequence: { groupOrder: 0 },
           },
         },
