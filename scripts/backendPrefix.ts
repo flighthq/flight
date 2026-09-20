@@ -118,6 +118,20 @@ function main(): void {
   const checkMode = process.argv.slice(2).includes('--check');
   const { allowed, scanned, violations } = runBackendPrefixScan();
 
+  // ★ THE POPULATION FLOOR BELONGS TO THE GATE, NOT TO THE GATE'S TEST SUITE. A walk that reaches
+  // nothing finds no violations, and "no violations" is the same sentence a clean tree produces — so a
+  // refactor that strands the walk prints OK and exits 0 forever, which is the failure this file's
+  // history already records once. Asserting reach HERE means the executable CI runs proves its own
+  // population. It previously lived only in a Vitest case that re-walked the whole packages tree on
+  // every `npm test`, which paid for the claim in the inner loop and still left the gate itself able
+  // to report a clean zero over an empty scan when invoked any other way.
+  if (scanned < MINIMUM_SCANNED_REGISTRARS) {
+    console.log(
+      `${pc.red('FAIL')} ${pc.bold(`Registrar scan reached only ${scanned} registrars`)} ${pc.dim(`(expected at least ${MINIMUM_SCANNED_REGISTRARS} — the walk did not reach the packages tree, so a clean result here would describe the scan rather than the repository)`)}`,
+    );
+    process.exit(1);
+  }
+
   if (violations.length === 0) {
     console.log(
       `${pc.green('OK')} ${pc.bold('Registrar names prefix the backend to the type')} ${pc.dim(`(${scanned} registrars, ${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
@@ -138,6 +152,12 @@ function main(): void {
   );
   process.exit(checkMode ? 1 : 0);
 }
+
+// Floors the derived population so the gate cannot pass by scanning nothing. Not pinned to an exact
+// count: registrars are added routinely and a hard number would turn a wiring check into a maintenance
+// tax. Declared here, below the functions and above the invocation, because `main` runs from the line
+// that follows and a constant declared after it would still be in the temporal dead zone.
+const MINIMUM_SCANNED_REGISTRARS = 250;
 
 if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) main();
 

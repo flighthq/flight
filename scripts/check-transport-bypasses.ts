@@ -363,9 +363,27 @@ function visit(node: ts.Node, visitor: (node: ts.Node) => void): void {
   ts.forEachChild(node, (child) => visit(child, visitor));
 }
 
+// Floors the derived population so the gate cannot pass by scanning nothing. The header above already
+// promises that "a clean zero cannot hide a smaller scan", but the report only NAMED the exclusions —
+// the exit code ignored them, so an empty derivation printed a clean report and exited 0. The floor is
+// what makes that promise load-bearing. It is deliberately far below the ~1900 files the tree carries,
+// because the number grows with the repository and an exact pin would turn a reach check into a
+// maintenance tax.
+const MINIMUM_SCANNED_TRANSPORT_FILES = 1_000;
+
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const report = checkTransportBypasses(readPackageTransportSources(root));
   console.log(formatTransportBypassReport(report));
-  if (report.violations.length > 0) process.exitCode = 1;
+  // ★ A SCAN THAT REACHED NOTHING IS AN INSTRUMENT DEFECT, NOT A CLEAN TREE, and the two are
+  // indistinguishable in the violations count alone. Checked before the violations branch so the
+  // failure names the real cause rather than reporting zero bypasses over an empty population.
+  if (report.scannedFiles < MINIMUM_SCANNED_TRANSPORT_FILES) {
+    console.log(
+      pc.red(
+        `FAIL transport-bypass scan reached only ${report.scannedFiles} files (expected at least ${MINIMUM_SCANNED_TRANSPORT_FILES}); the derivation did not reach the package sources, so this result describes the scan rather than the repository.`,
+      ),
+    );
+    process.exitCode = 1;
+  } else if (report.violations.length > 0) process.exitCode = 1;
 }
