@@ -23,11 +23,11 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlScale9ShapeRenderer,
-  defaultGlShapeCommands,
+  defaultCanvasShapeCommands,
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
-  defaultGlTextureShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultGlTilemapRenderer,
   enableFlightDiagnostics,
   enableGlBlendModeSupport,
@@ -43,7 +43,7 @@ import {
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
-  registerGlShapeCommands,
+  registerCanvasShapeCommands,
   registerGlShapeRasterizer,
   registerRenderer,
   renderGlScene2D,
@@ -106,7 +106,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerGlShapeCommands(state, [...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -122,7 +122,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerGlShapeCommands(state, [...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

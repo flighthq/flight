@@ -17,6 +17,8 @@ export * from './glEnvironmentCapture';
 export { bakeGlEnvironmentCaptureIbl, bakeGlEnvironmentIbl } from './glEnvironmentIblBake';
 export { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 export * from './glMeshMaterialRegistry';
+export { setGlPbrTransmissionSceneColor } from './glPbrTransmissionSceneColor';
+export { getGlScene3DTime, setGlScene3DTime } from './glScene3DTime';
 export {
   explainGlPbrExtensions,
   getGlPbrExtensionRegistration,

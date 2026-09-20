@@ -35,6 +35,7 @@ export {
   endWgpuEffectPass,
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,
+  setWgpuRenderEffectVelocityTexture,
 } from './wgpuEffectState';
 export { defaultWgpuFilmGrainEffectRunner, registerWgpuFilmGrainEffect } from './wgpuFilmGrainEffect';
 export { defaultWgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect';

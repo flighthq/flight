@@ -1,17 +1,13 @@
-import {
-  defaultGlDrawEllipse,
-  defaultGlDrawRoundedRectangle,
-  defaultGlQuadraticCurveTo,
-  defaultGlShapeCommands,
-} from './contract';
+import { defaultGlShapeRenderer, registerGlShapeRasterizer } from './contract';
 
-describe('defaultGlShapeCommands', () => {
-  it('carries every canonical geometry descriptor through the GL renderer assembly', () => {
-    expect(defaultGlQuadraticCurveTo.key).toBe('quadraticCurveTo');
-    expect(defaultGlDrawEllipse.key).toBe('drawEllipse');
-    expect(defaultGlDrawRoundedRectangle.key).toBe('drawRoundedRectangle');
-    expect(defaultGlShapeCommands).toEqual(
-      expect.arrayContaining([defaultGlQuadraticCurveTo, defaultGlDrawEllipse, defaultGlDrawRoundedRectangle]),
-    );
+describe('defaultGlShapeRenderer', () => {
+  it('is a Scene2DRenderer with a submit function', () => {
+    expect(typeof defaultGlShapeRenderer.submit).toBe('function');
+  });
+});
+
+describe('registerGlShapeRasterizer', () => {
+  it('is exported as a function', () => {
+    expect(typeof registerGlShapeRasterizer).toBe('function');
   });
 });

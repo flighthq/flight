@@ -3,6 +3,7 @@ import { createRenderState } from '@flighthq/render/contract';
 import type { EntityConstruction, GlBitmapShader, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
+import { vi } from 'vitest';
 
 import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
