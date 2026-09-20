@@ -16,25 +16,11 @@ import type {
   MidiPort,
   PermissionQueryOutcome,
   PermissionState,
-  WebMidiAccessCapabilities,
-  WebMidiPermissionAccessCapabilities,
 } from '@flighthq/types/contract';
-
-export function createWebMidiAccessCapabilities(
-  api: Readonly<Pick<Navigator, 'requestMIDIAccess'>>,
-): WebMidiAccessCapabilities {
-  return createWebMidiProfile(api, false);
-}
-
-export function createWebMidiPermissionAccessCapabilities(
-  api: Readonly<Pick<Navigator, 'permissions' | 'requestMIDIAccess'>>,
-): WebMidiPermissionAccessCapabilities {
-  return createWebMidiProfile(api, true);
-}
 
 export function initializeWebMidiAccessBackend(
   out: HostMidiAccessCapability,
-  api: Readonly<WebMidiProfileApi>,
+  api: Readonly<Pick<Navigator, 'requestMIDIAccess'>>,
   toAccess: (native: MIDIAccess) => MidiAccess,
 ): void {
   out.requestAccess = async () => {
@@ -45,13 +31,6 @@ export function initializeWebMidiAccessBackend(
       return { reason: classifyWebMidiRequestFailure(error) } as const;
     }
   };
-}
-
-export function initializeWebMidiAccessCapabilities(
-  out: EntityConstruction<WebMidiAccessCapabilities>,
-  access: HostMidiAccessCapability,
-): void {
-  out.access = access;
 }
 
 export function initializeWebMidiEventAttachment(
@@ -73,15 +52,6 @@ export function initializeWebMidiEventAttachment(
   };
 }
 
-export function initializeWebMidiPermissionAccessCapabilities(
-  out: EntityConstruction<WebMidiPermissionAccessCapabilities>,
-  access: HostMidiAccessCapability,
-  permission: HostMidiPermissionCapability,
-): void {
-  out.access = access;
-  out.permission = permission;
-}
-
 export function initializeWebMidiPermissionBackend(
   out: HostMidiPermissionCapability,
   permissions: Permissions | undefined,
@@ -89,20 +59,7 @@ export function initializeWebMidiPermissionBackend(
   out.getPermission = () => queryWebMidiPermission(permissions);
 }
 
-interface WebMidiProfileApi {
-  readonly permissions?: Permissions;
-  requestMIDIAccess(): Promise<MIDIAccess>;
-}
-
-function createWebMidiProfile(api: Readonly<WebMidiProfileApi>, includePermission: false): WebMidiAccessCapabilities;
-function createWebMidiProfile(
-  api: Readonly<WebMidiProfileApi>,
-  includePermission: true,
-): WebMidiPermissionAccessCapabilities;
-function createWebMidiProfile(
-  api: Readonly<WebMidiProfileApi>,
-  includePermission: boolean,
-): WebMidiAccessCapabilities | WebMidiPermissionAccessCapabilities {
+export function webMidiAccess(api: Readonly<Pick<Navigator, 'requestMIDIAccess'>>): HostMidiAccessCapability {
   const accessByNative = new WeakMap<MIDIAccess, MidiAccess>();
   const inputByNative = new WeakMap<MIDIInput, MidiInputPort>();
   const outputByNative = new WeakMap<MIDIOutput, MidiOutputPort>();
@@ -168,26 +125,23 @@ function createWebMidiProfile(
     return access;
   }
 
-  const access = (() => {
-    const out = {} as HostMidiAccessCapability;
-    initializeWebMidiAccessBackend(out, api, toAccess);
-    return out;
-  })();
-  if (!includePermission)
-    return (() => {
-      const out = allocateEntity<WebMidiAccessCapabilities>();
-      initializeWebMidiAccessCapabilities(out, access);
-      return out;
-    })();
-  const permission = (() => {
-    const out = {} as HostMidiPermissionCapability;
-    initializeWebMidiPermissionBackend(out, api.permissions);
-    return out;
-  })();
-  const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
-  initializeWebMidiPermissionAccessCapabilities(out, access, permission);
+  const out = {} as HostMidiAccessCapability;
+  initializeWebMidiAccessBackend(out, api, toAccess);
   return out;
 }
+
+export function webMidiPermission(permissions: Permissions | undefined): HostMidiPermissionCapability {
+  const out = {} as HostMidiPermissionCapability;
+  initializeWebMidiPermissionBackend(out, permissions);
+  return out;
+}
+
+export const webHostMidiAccess: HostMidiAccessCapability = webMidiAccess({
+  requestMIDIAccess: () => navigator.requestMIDIAccess(),
+});
+export const webHostMidiPermission: HostMidiPermissionCapability = webMidiPermission(
+  typeof navigator !== 'undefined' ? navigator.permissions : undefined,
+);
 
 function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>(
   target: Target,

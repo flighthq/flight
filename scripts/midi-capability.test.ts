@@ -17,30 +17,31 @@ describe('MIDI explicit Host capability shape', () => {
     expect(host).not.toContain('export interface HasMidiPermission');
   });
 
-  it('keeps native Web MIDI types in the injected Web adapter and out of Permissions', () => {
+  it('keeps native Web MIDI types in the Web adapter and out of Permissions', () => {
     const permissions = productionSources('packages/permissions/src');
     expect(permissions).not.toMatch(/\b(?:MIDIAccess|MIDIInput|MIDIOptions|MIDIOutput|requestMIDIAccess)\b/u);
 
     const adapter = source('packages/host-web/src/webMidi.ts');
     expect(adapter).toContain("Pick<Navigator, 'requestMIDIAccess'>");
-    expect(adapter).toContain("Pick<Navigator, 'permissions' | 'requestMIDIAccess'>");
+    expect(adapter).toContain('permissions: Permissions | undefined');
     expect(adapter).not.toContain('globalThis');
-    expect(adapter).not.toMatch(/\bnavigator\s*\./u);
   });
 
-  it('constructs exact injected profiles while the default Web Host remains unable to request hardware', () => {
+  it('constructs exact capability leaves and publishes them through the default Web Host', () => {
     const adapter = source('packages/host-web/src/webMidi.ts');
-    expect(adapter).toContain('export function createWebMidiAccessCapabilities');
-    expect(adapter).toContain('export function createWebMidiPermissionAccessCapabilities');
+    expect(adapter).toContain('export function webMidiAccess');
+    expect(adapter).toContain('export function webMidiPermission');
+    expect(adapter).toContain('export const webHostMidiAccess: HostMidiAccessCapability');
+    expect(adapter).toContain('export const webHostMidiPermission: HostMidiPermissionCapability');
     expect(adapter).toMatch(/requestMIDIAccess\(\)/u);
     expect(adapter).not.toMatch(/requestMIDIAccess\s*\(\s*\{/u);
     expect(adapter).not.toContain('sysex: true');
 
     const defaultHost = source('packages/host-web/src/webHost.ts');
     const midiHost = source('packages/host-web/src/webMidiHost.ts');
-    expect(midiHost).toContain('export const webHostMidi = {} satisfies HostMidiCapabilities;');
+    expect(midiHost).toContain('access: webHostMidiAccess,');
+    expect(midiHost).toContain('permission: webHostMidiPermission,');
     expect(defaultHost).toContain('midi: webHostMidi,');
-    expect(defaultHost).not.toContain('requestMIDIAccess');
 
     const implementation = productionSources('packages/midi/src');
     expect(`${adapter}\n${implementation}`).not.toMatch(

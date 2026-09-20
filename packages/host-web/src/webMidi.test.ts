@@ -4,43 +4,78 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { webHost } from './webHost';
-import * as webMidi from './webMidi';
 import {
+  webMidiAccess,
+  webMidiPermission,
   initializeWebMidiAccessBackend,
-  initializeWebMidiAccessCapabilities,
   initializeWebMidiEventAttachment,
-  initializeWebMidiPermissionAccessCapabilities,
   initializeWebMidiPermissionBackend,
+  webHostMidiAccess,
+  webHostMidiPermission,
 } from './webMidi';
 
-describe('createWebMidiAccessCapabilities', () => {
-  it('constructs only the access profile and requests basic MIDI with zero options', async () => {
+describe('initializeWebMidiAccessBackend', () => {
+  it('is the construction initializer of webMidiAccess', () => {
+    expect(typeof initializeWebMidiAccessBackend).toBe('function');
+  });
+});
+
+describe('initializeWebMidiEventAttachment', () => {
+  it('is the construction initializer of createWebMidiEventAttachment', () => {
+    expect(typeof initializeWebMidiEventAttachment).toBe('function');
+  });
+});
+
+describe('initializeWebMidiPermissionBackend', () => {
+  it('is the construction initializer of webMidiPermission', () => {
+    expect(typeof initializeWebMidiPermissionBackend).toBe('function');
+  });
+});
+
+describe('webHost midi', () => {
+  it('populates both access and permission slots', () => {
+    const host = webHost as unknown as { midi: { access?: unknown; permission?: unknown } };
+    expect(typeof host.midi.access).toBe('object');
+    expect(typeof host.midi.permission).toBe('object');
+  });
+});
+
+describe('webHostMidiAccess', () => {
+  it('is a HostMidiAccessCapability singleton', () => {
+    expect(typeof webHostMidiAccess.requestAccess).toBe('function');
+  });
+});
+
+describe('webHostMidiPermission', () => {
+  it('is a HostMidiPermissionCapability singleton', () => {
+    expect(typeof webHostMidiPermission.getPermission).toBe('function');
+  });
+});
+
+describe('webMidiAccess', () => {
+  it('constructs a HostMidiAccessCapability and requests basic MIDI with zero options', async () => {
     const native = fakeMidiAccess();
     const requestMIDIAccess = vi.fn(async () => native.access);
-    const capabilities = requiredWebFunction('createWebMidiAccessCapabilities')({ requestMIDIAccess }) as Record<
-      string,
-      unknown
-    >;
-    expect(Object.keys(capabilities)).toEqual(['access']);
+    const access = webMidiAccess({ requestMIDIAccess } as unknown as Navigator);
 
-    const outcome = await requiredMidiFunction('requestMidiAccess')(capabilities.access);
+    const outcome = await requiredMidiFunction('requestMidiAccess')(access);
     expect(requestMIDIAccess).toHaveBeenCalledOnce();
     expect(requestMIDIAccess).toHaveBeenCalledWith();
     expect(outcome).toMatchObject({ reason: 'accepted' });
     expect(EntityRuntimeKey in (outcome as { access: object }).access).toBe(true);
   });
 
-  it('keeps stable native-to-Entity identities inside one injected profile and isolates another profile', async () => {
+  it('keeps stable native-to-Entity identities inside one backend and isolates another', async () => {
     const native = fakeMidiAccess();
-    const first = requiredWebFunction('createWebMidiAccessCapabilities')({
+    const first = webMidiAccess({
       requestMIDIAccess: async () => native.access,
-    }) as Record<string, unknown>;
-    const second = requiredWebFunction('createWebMidiAccessCapabilities')({
+    } as unknown as Navigator);
+    const second = webMidiAccess({
       requestMIDIAccess: async () => native.access,
-    }) as Record<string, unknown>;
-    const firstOutcome = await requiredMidiFunction('requestMidiAccess')(first.access);
-    const repeatedOutcome = await requiredMidiFunction('requestMidiAccess')(first.access);
-    const secondOutcome = await requiredMidiFunction('requestMidiAccess')(second.access);
+    } as unknown as Navigator);
+    const firstOutcome = await requiredMidiFunction('requestMidiAccess')(first);
+    const repeatedOutcome = await requiredMidiFunction('requestMidiAccess')(first);
+    const secondOutcome = await requiredMidiFunction('requestMidiAccess')(second);
     expect((repeatedOutcome as { access: unknown }).access).toBe((firstOutcome as { access: unknown }).access);
     expect((secondOutcome as { access: unknown }).access).not.toBe((firstOutcome as { access: unknown }).access);
 
@@ -56,19 +91,19 @@ describe('createWebMidiAccessCapabilities', () => {
       .mockRejectedValueOnce(namedError('NotAllowedError'))
       .mockRejectedValueOnce(namedError('SecurityError'))
       .mockRejectedValueOnce(new Error('transport failed'));
-    const capabilities = requiredWebFunction('createWebMidiAccessCapabilities')({ requestMIDIAccess });
+    const access = webMidiAccess({ requestMIDIAccess } as unknown as Navigator);
     const request = requiredMidiFunction('requestMidiAccess');
-    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'permission-denied' });
-    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'security-restricted' });
-    await expect(request(capabilities.access)).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(request(access)).resolves.toEqual({ reason: 'permission-denied' });
+    await expect(request(access)).resolves.toEqual({ reason: 'security-restricted' });
+    await expect(request(access)).resolves.toEqual({ reason: 'operation-failed' });
   });
 
   it('maps hotplug, port state, and copied input messages and releases exact native listeners', async () => {
     const native = fakeMidiAccess();
-    const capabilities = requiredWebFunction('createWebMidiAccessCapabilities')({
+    const access = webMidiAccess({
       requestMIDIAccess: async () => native.access,
-    });
-    const request = (await requiredMidiFunction('requestMidiAccess')((capabilities as { access: unknown }).access)) as {
+    } as unknown as Navigator);
+    const request = (await requiredMidiFunction('requestMidiAccess')(access)) as {
       access: unknown;
     };
     const accessSubscription = requiredMidiFunction('createMidiAccessStateSubscription')() as AccessSignal;
@@ -110,28 +145,15 @@ describe('createWebMidiAccessCapabilities', () => {
   });
 });
 
-describe('createWebMidiPermissionAccessCapabilities', () => {
-  it('adds only the read-only permission owner and never routes query through access', async () => {
-    const native = fakeMidiAccess();
+describe('webMidiPermission', () => {
+  it('queries the Permissions API for MIDI without routing through access', async () => {
     const query = vi.fn(async () => ({ state: 'prompt' }));
-    const requestMIDIAccess = vi.fn(async () => native.access);
-    const capabilities = requiredWebFunction('createWebMidiPermissionAccessCapabilities')({
-      permissions: { query },
-      requestMIDIAccess,
-    }) as Record<string, unknown>;
-    expect(Object.keys(capabilities).sort()).toEqual(['access', 'permission']);
-    await expect(requiredMidiFunction('getMidiPermission')(capabilities.permission)).resolves.toEqual({
+    const permission = webMidiPermission({ query } as unknown as Permissions);
+    await expect(requiredMidiFunction('getMidiPermission')(permission)).resolves.toEqual({
       reason: 'ok',
       state: 'prompt',
     });
     expect(query).toHaveBeenCalledWith({ name: 'midi', sysex: false });
-    expect(requestMIDIAccess).not.toHaveBeenCalled();
-  });
-});
-
-describe('initializeWebMidiAccessBackend', () => {
-  it('is the construction initializer of createWebMidiAccessBackend', () => {
-    expect(typeof initializeWebMidiAccessBackend).toBe('function');
   });
 });
 
@@ -228,39 +250,3 @@ function requiredMidiFunction(name: string): (...args: any[]) => any {
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
   return value as (...args: any[]) => any;
 }
-
-function requiredWebFunction(name: string): (...args: any[]) => any {
-  const value: unknown = Reflect.get(webMidi, name);
-  expect(value, `${name} export`).toBeTypeOf('function');
-  if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value as (...args: any[]) => any;
-}
-describe('initializeWebMidiAccessCapabilities', () => {
-  it('is the construction initializer of createWebMidiAccessCapabilities', () => {
-    expect(typeof initializeWebMidiAccessCapabilities).toBe('function');
-  });
-});
-
-describe('initializeWebMidiEventAttachment', () => {
-  it('is the construction initializer of createWebMidiEventAttachment', () => {
-    expect(typeof initializeWebMidiEventAttachment).toBe('function');
-  });
-});
-
-describe('initializeWebMidiPermissionAccessCapabilities', () => {
-  it('is the construction initializer of createWebMidiPermissionAccessCapabilities', () => {
-    expect(typeof initializeWebMidiPermissionAccessCapabilities).toBe('function');
-  });
-});
-
-describe('initializeWebMidiPermissionBackend', () => {
-  it('is the construction initializer of createWebMidiPermissionBackend', () => {
-    expect(typeof initializeWebMidiPermissionBackend).toBe('function');
-  });
-});
-
-describe('webHost midi', () => {
-  it('is structurally empty and cannot acquire hardware in default construction', () => {
-    expect((webHost as unknown as { midi: object }).midi).toEqual({});
-  });
-});

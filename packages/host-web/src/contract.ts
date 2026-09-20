@@ -17,6 +17,7 @@ export * from './webConnectivity';
 export * from './webConnectivityHost';
 export * from './webCursor';
 export * from './webIpcHost';
+export * from './webMidi';
 export * from './webMidiHost';
 export * from './webNotificationHost';
 export * from './webShortcutHost';

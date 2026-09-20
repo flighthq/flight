@@ -125,7 +125,7 @@ export { webHostMediaSessionGroup } from './webMediaSessionHost';
 export { webHostVideoGroup } from './webVideoHost';
 export { webHostMenuHighlight, webHostMenuPopup } from './webMenu';
 export { webHostMenu } from './webMenuHost';
-export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
+export { webHostMidiAccess, webHostMidiPermission, webMidiAccess, webMidiPermission } from './webMidi';
 export { webHostNet } from './webNet';
 export { createWebPageNotificationCapabilities } from './webNotification';
 export { webHostNotificationPermission, webHostPermissions } from './webPermissions';

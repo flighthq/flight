@@ -166,14 +166,3 @@ export interface MidiInputPortResourceOperations extends MidiPortResourceOperati
 export interface MidiOutputPortResourceOperations extends MidiPortResourceOperations {
   send(data: readonly number[], timestamp?: number): void;
 }
-
-export type WebMidiAccessCapabilities = Entity &
-  Readonly<{
-    access: HostMidiAccessCapability;
-  }>;
-
-export type WebMidiPermissionAccessCapabilities = Entity &
-  Readonly<{
-    access: HostMidiAccessCapability;
-    permission: HostMidiPermissionCapability;
-  }>;
