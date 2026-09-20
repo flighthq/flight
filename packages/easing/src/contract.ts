@@ -1,6 +1,5 @@
 export * from './createEasingSamples';
 export * from './easeBack';
-export * from './enableEasingGuards';
 export * from './easeBounce';
 export * from './easeCircular';
 export * from './easeCombinators';
@@ -18,4 +17,5 @@ export * from './easeQuintic';
 export * from './easeSine';
 export * from './easeSmoothstep';
 export * from './easeSteps';
+export * from './enableEasingGuards';
 export * from './getEasingDerivative';

@@ -1,6 +1,5 @@
 export * from './audioChannel';
 export * from './audioMixer';
-export * from './mediaChannelSignals';
 export * from './enableAudioMixerGuards';
+export * from './mediaChannelSignals';
 export * from './videoChannel';
-export { initializeAudioBus } from './audioMixer';

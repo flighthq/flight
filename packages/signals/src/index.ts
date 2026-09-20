@@ -1,20 +1,7 @@
-export {
-  cancelSignal,
-  clearSignal,
-  connectSignal,
-  connectSignalAtFrameRate,
-  connectSignalDebounced,
-  connectSignalThrottled,
-  connectSignalTracked,
-  createSignal,
-  createSignalScope,
-  disconnectSignal,
-  disconnectSignalConnection,
-  disconnectSignalScope,
-  emitSignal,
-  emitSignalSafe,
-  hasSignalSlots,
-  isSlotConnected,
-  pauseSignalConnection,
-  resumeSignalConnection,
-} from './contract';
+export * from './connection';
+export * from './emitter';
+export * from './safe';
+export { createSignalScope, disconnectSignalScope } from './scope';
+export { createSignal } from './signal';
+export * from './slot';
+export * from './throttle';

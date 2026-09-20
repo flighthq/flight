@@ -1,7 +1,7 @@
 export {
   acquireClipRegion,
-  clipRegionContainsPoint,
   clipRegionContainsClipRegion,
+  clipRegionContainsPoint,
   clipRegionContainsRectangle,
   clipRegionIntersectsClipRegion,
   clipRegionIntersectsRectangle,
@@ -13,13 +13,12 @@ export {
   createClipRegionFromPath,
   createClipRegionFromRectangle,
   createClipRegionFromRoundedRectangle,
-  disableClipGuards,
-  enableClipGuards,
   equalsClipRegion,
   explainClipRegion,
   explainClipRegionContours,
   getClipRegionBounds,
   intersectClipRegions,
+  invalidateClipRegion,
   isClipRegionEmpty,
   isClipRegionRectangular,
   normalizeClipRegion,
@@ -28,4 +27,5 @@ export {
   setClipRegionToRectangle,
   transformClipRegion,
   unionClipRegions,
-} from './contract';
+} from './clipRegion';
+export * from './enableClipGuards';

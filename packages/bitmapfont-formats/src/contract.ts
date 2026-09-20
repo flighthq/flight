@@ -1,5 +1,6 @@
-export { parseBitmapFontBinary } from './bitmapFontBinary';
-export { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt';
-export { parseBitmapFontJson } from './bitmapFontJson';
-export { parseBitmapFontXml } from './bitmapFontXml';
-export { explainBitmapFontParse } from './explainBitmapFontParse';
+export * from './bitmapFontBinary';
+export * from './bitmapFontFnt';
+export * from './bitmapFontJson';
+export * from './bitmapFontRecord';
+export * from './bitmapFontXml';
+export * from './explainBitmapFontParse';

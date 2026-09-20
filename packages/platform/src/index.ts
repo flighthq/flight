@@ -1,5 +1,6 @@
 export {
   comparePlatformVersions,
+  createPlatformInfo,
   getPlatformEngine,
   getPlatformInfo,
   getPlatformKind,
@@ -11,4 +12,4 @@ export {
   isPlatformTouch,
   isPlatformVersionAtLeast,
   isPlatformWeb,
-} from './contract';
+} from './platform';

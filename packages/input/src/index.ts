@@ -10,6 +10,7 @@ export {
   connectInputStateToInputManager,
   createInputKeyRepeatTimer,
   createInputManager,
+  createInputSignals,
   createInputState,
   detachGamepadInput,
   detachKeyboardInput,
@@ -28,4 +29,4 @@ export {
   wasInputGamepadButtonReleased,
   wasInputKeyPressed,
   wasInputKeyReleased,
-} from './contract';
+} from './inputManager';

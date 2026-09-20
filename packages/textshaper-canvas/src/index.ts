@@ -1,1 +1,1 @@
-export {} from './contract';
+export { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './canvasTextShaper';
