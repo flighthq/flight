@@ -1,3 +1,13 @@
+# render-gl: exports where the shared classifier gets it wrong.
+
+exclude:
+  # Test support, and package-internal: every caller is a render-gl test importing it relatively from
+  # './glTestHelper'. It reached the contract lane, where `createGlState` collides with the identically
+  # named helper in scene2d-gl — `npm run api:check` reports that as a duplicate exported name, and
+  # AGENTS.md requires exported function names to be globally unique. Excluding the module is the same
+  # rule scene2d-canvas and effects-canvas already apply to their own canvas test support.
+  - file: glTestHelper
+
 protected:
   - applyGlBlendMode
   - bindGlImageResourceTexture
@@ -29,7 +39,6 @@ protected:
   - createGlProgram
   - createGlRenderStateRuntime
   - createGlSkinPaletteTexture
-  - createGlState
   - createGlTexture
   - createGlTextureRenderTargetPool
   - declareGlRenderTargetColorSpace
@@ -65,8 +74,6 @@ protected:
   - isBlendModeSupported
   - isGlRenderTextureReady
   - linkGlProgram
-  - makeGL
-  - makeShaderLoc
   - readGlRenderTargetPixels
   - registerDefaultGlBlendModes
   - registerGlBitmapShader

@@ -25,7 +25,6 @@ export * from './glShader';
 export * from './glShaderBinding';
 export * from './glShaderRegistry';
 export * from './glSkinPaletteTexture';
-export * from './glTestHelper';
 export * from './glTextureResolver';
 export * from './glTextureUpload';
 export * from './glTextureVideoUpload';

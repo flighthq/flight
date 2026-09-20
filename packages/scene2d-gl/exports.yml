@@ -1,3 +1,13 @@
+# scene2d-gl: exports where the shared classifier gets it wrong.
+
+exclude:
+  # Test support, and package-internal: every caller is a scene2d-gl test importing it relatively from
+  # './glTestHelper'. It reached the contract lane, where `createGlState` collides with the identically
+  # named helper in render-gl — `npm run api:check` reports that as a duplicate exported name, and
+  # AGENTS.md requires exported function names to be globally unique. Excluding the module is the same
+  # rule scene2d-canvas and effects-canvas already apply to their own canvas test support.
+  - file: glTestHelper
+
 protected:
   - QUAD_BATCH_INSTANCE_FLOATS
   - QUAD_BATCH_VS
@@ -8,7 +18,6 @@ protected:
   - createGlRichTextData
   - createGlScale9ShapeData
   - createGlShapeData
-  - createGlState
   - defaultGlQuadBatchVelocityWriter
   - destroyGlRichTextData
   - destroyGlScale9ShapeData
