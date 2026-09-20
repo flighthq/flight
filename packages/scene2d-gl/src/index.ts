@@ -1,4 +1,5 @@
 export {
+  areGlColorAdjustmentGuardsEnabled,
   createGlCacheState,
   createGlVelocityTarget,
   defaultGlBitmapTextRenderer,
@@ -14,6 +15,7 @@ export {
   defaultGlScale9ShapeRenderer,
   defaultGlShapeCommands,
   defaultGlRasterShapeRenderer,
+  defaultGlRenderCacheRenderer,
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
@@ -22,6 +24,7 @@ export {
   drawGlScale9Sprite,
   drawGlSprite,
   explainGlScene2DCoverage,
+  enableGlColorAdjustmentGuards,
   enableGlStrokePathTessellation,
   enableGlClipSupport,
   enableGlRenderCache,
@@ -34,6 +37,7 @@ export {
   registerGlStandardMaterial,
   renderGlScene2D,
   renderGlVelocity,
+  standardGlMaterialRenderer,
   defaultScene2DGlRenderRegistries,
 } from './contract';
 export { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer';

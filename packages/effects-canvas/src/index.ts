@@ -25,6 +25,8 @@ export {
   defaultCanvasVignetteEffectRunner,
   endCanvasEffectPass,
   getCanvasBlendEffectBackdrop,
+  getCanvasRenderEffectRunner,
+  hasCanvasRenderEffectRunner,
   getCanvasBlendEffectCompositeOperation,
   getCanvasCompositeEffectOperation,
   registerCanvasBevelEffect,

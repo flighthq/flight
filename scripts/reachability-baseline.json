@@ -1366,7 +1366,7 @@
     {
       "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasRenderCacheRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
@@ -1384,13 +1384,13 @@
     {
       "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasScale9SpriteRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
       "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasScene2DRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
@@ -1438,7 +1438,7 @@
     {
       "packageName": "scene2d-dom",
       "symbol": "defaultDomRenderCacheRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
@@ -1462,7 +1462,7 @@
     {
       "packageName": "scene2d-dom",
       "symbol": "defaultDomScene2DRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
@@ -1522,7 +1522,7 @@
     {
       "packageName": "scene2d-gl",
       "symbol": "defaultGlRenderCacheRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
@@ -1612,7 +1612,7 @@
     {
       "packageName": "scene2d-wgpu",
       "symbol": "defaultWgpuRenderCacheRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {
