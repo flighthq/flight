@@ -22,6 +22,7 @@ export * from './bitmapFrom';
 export * from './bitmapGradient';
 export * from './bitmapGradientFill';
 export * from './bitmapHistogram';
+export * from './bitmapImageChannel';
 export * from './bitmapMedian';
 export * from './bitmapMorphological';
 export * from './bitmapNoise';
