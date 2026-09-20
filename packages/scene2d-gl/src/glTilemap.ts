@@ -127,7 +127,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   runtime.quadBatchWriterCount += drawCount;
 }
 
-export const defaultGlTilemapRenderer: SpriteRenderer = {
+export const glTilemapRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitGlTilemap,

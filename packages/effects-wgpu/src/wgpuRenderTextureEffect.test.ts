@@ -15,7 +15,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Effect, WgpuEffectRunner } from '@flighthq/types/contract';
 
-import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
+import { wgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry';
 import {
   applyWgpuEffectsToRenderTexture,
@@ -67,7 +67,7 @@ describe('applyWgpuEffectsToRenderTexture', () => {
     const dest = acquireWgpuRenderTexture(state, pool, { width: 16, height: 12 });
     const scratch = acquireWgpuRenderTexture(state, pool, { width: 16, height: 12 });
     writeWgpuRenderTextureTarget(state, source, () => {});
-    registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+    registerWgpuEffect(state, 'BlurEffect', wgpuBlurEffectRunner);
     beginWgpuFrame(state);
 
     expect(

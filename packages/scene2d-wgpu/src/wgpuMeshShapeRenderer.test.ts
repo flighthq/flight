@@ -16,7 +16,7 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { defaultWgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
+import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 
 beforeAll(() => installWgpuMock());
@@ -90,46 +90,6 @@ function gradientShape() {
   return shape;
 }
 
-describe('defaultWgpuMeshShapeRenderer', () => {
-  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
-    expect(defaultWgpuMeshShapeRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultWgpuMeshShapeRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuMeshShapeRenderer.destroyData).toBe('function');
-  });
-
-  it('never rasterizes, even with a rasterizer registered and a fill that cannot tessellate', async () => {
-    const state = await createWgpuRenderStateForTest();
-    beginWgpuScreenRenderPassForTest(state);
-    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    const rasterizer = vi.fn();
-    registerWgpuShapeRasterizer(state, rasterizer);
-
-    defaultWgpuMeshShapeRenderer.submit!(
-      state,
-      makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }),
-    );
-
-    expect(rasterizer).not.toHaveBeenCalled();
-  });
-
-  it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', async () => {
-    const state = await createWgpuRenderStateForTest();
-    beginWgpuScreenRenderPassForTest(state);
-    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    enableRenderRegistriesGuards(state);
-
-    defaultWgpuMeshShapeRenderer.submit!(
-      state,
-      makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }),
-    );
-
-    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
-      kind: 'Shape',
-      registry: RenderRegistryTable.ShapeRasterizer,
-    });
-  });
-});
-
 describe('drawWgpuMeshShape', () => {
   it('draws a solid fill as a GPU mesh and reports that it drew', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -167,5 +127,39 @@ describe('drawWgpuMeshShape', () => {
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     expect(drawWgpuMeshShape(state, makeShapeProxy({ commands: [], version: 1 }))).toBe(false);
     expect(drawWgpuMeshShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, null))).toBe(false);
+  });
+});
+
+describe('wgpuMeshShapeRenderer', () => {
+  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
+    expect(wgpuMeshShapeRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof wgpuMeshShapeRenderer.createData).toBe('function');
+    expect(typeof wgpuMeshShapeRenderer.destroyData).toBe('function');
+  });
+
+  it('never rasterizes, even with a rasterizer registered and a fill that cannot tessellate', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuScreenRenderPassForTest(state);
+    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
+    const rasterizer = vi.fn();
+    registerWgpuShapeRasterizer(state, rasterizer);
+
+    wgpuMeshShapeRenderer.submit!(state, makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }));
+
+    expect(rasterizer).not.toHaveBeenCalled();
+  });
+
+  it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', async () => {
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuScreenRenderPassForTest(state);
+    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
+    enableRenderRegistriesGuards(state);
+
+    wgpuMeshShapeRenderer.submit!(state, makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }));
+
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
+      kind: 'Shape',
+      registry: RenderRegistryTable.ShapeRasterizer,
+    });
   });
 });

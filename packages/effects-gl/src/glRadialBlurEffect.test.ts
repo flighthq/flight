@@ -6,11 +6,7 @@ import type { GlRenderState, GlTextureRenderTarget, RadialBlurEffect } from '@fl
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
-import {
-  applyRadialBlurEffectToGl,
-  defaultGlRadialBlurEffectRunner,
-  registerGlRadialBlurEffect,
-} from './glRadialBlurEffect';
+import { applyRadialBlurEffectToGl, glRadialBlurEffectRunner, registerGlRadialBlurEffect } from './glRadialBlurEffect';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),
@@ -124,12 +120,12 @@ describe('applyRadialBlurEffectToGl', () => {
   });
 });
 
-describe('defaultGlRadialBlurEffectRunner', () => {
+describe('glRadialBlurEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     glMock.uniform2f.mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlRadialBlurEffectRunner(
+    glRadialBlurEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createRadialBlurEffect({ centerY: 0.25 }),
     );
@@ -147,6 +143,6 @@ describe('registerGlRadialBlurEffect', () => {
 
     expect(getGlEffectRunner(state, 'RadialBlurEffect')).toBeNull();
     registerGlRadialBlurEffect(state);
-    expect(getGlEffectRunner(state, 'RadialBlurEffect')).toBe(defaultGlRadialBlurEffectRunner);
+    expect(getGlEffectRunner(state, 'RadialBlurEffect')).toBe(glRadialBlurEffectRunner);
   });
 });

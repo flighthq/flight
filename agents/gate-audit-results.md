@@ -99,7 +99,7 @@ implies is a separate question this audit did not ask.
 - **Exit code:** 1
 - **Failure output:**
   ```
-  ✗ effects-gl defaultGlKuwaharaEffectRunner [missing-registration] real built-in runner requires
+  ✗ effects-gl glKuwaharaEffectRunner [missing-registration] real built-in runner requires
     registerGlKuwaharaEffect; delete the runner if it is not real
   effects-gl registerGlKuwaharaEffect [LOST]
   ```

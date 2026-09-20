@@ -6,7 +6,7 @@ import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyTiltShiftEffectToCanvas,
-  defaultCanvasTiltShiftEffectRunner,
+  canvasTiltShiftEffectRunner,
   registerCanvasTiltShiftEffect,
 } from './canvasTiltShiftEffect';
 
@@ -135,11 +135,11 @@ describe('applyTiltShiftEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasTiltShiftEffectRunner', () => {
+describe('canvasTiltShiftEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, source, written } = createImpulseTargets(2, 16, [4]);
 
-    defaultCanvasTiltShiftEffectRunner(
+    canvasTiltShiftEffectRunner(
       {
         dest,
         pool: (() => {
@@ -168,6 +168,6 @@ describe('registerCanvasTiltShiftEffect', () => {
 
     expect(getCanvasEffectRunner(state, 'TiltShiftEffect')).toBeNull();
     registerCanvasTiltShiftEffect(state);
-    expect(getCanvasEffectRunner(state, 'TiltShiftEffect')).toBe(defaultCanvasTiltShiftEffectRunner);
+    expect(getCanvasEffectRunner(state, 'TiltShiftEffect')).toBe(canvasTiltShiftEffectRunner);
   });
 });

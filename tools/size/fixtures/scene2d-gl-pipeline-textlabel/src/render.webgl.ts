@@ -17,7 +17,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultGlTextLabelRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glTextLabelRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { createTextLabel } from '@flighthq/text';
 import { RegistryEntryState, TextLabelKind } from '@flighthq/types';
@@ -34,7 +34,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, TextLabelKind, defaultGlTextLabelRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, TextLabelKind, glTextLabelRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, {
   pixelRatio: 1,

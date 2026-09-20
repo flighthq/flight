@@ -27,12 +27,12 @@ export function applyChromaticAberrationEffectToGl(
   });
 }
 
-export const defaultGlChromaticAberrationEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glChromaticAberrationEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyChromaticAberrationEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
 
 export function registerGlChromaticAberrationEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ChromaticAberrationEffect', defaultGlChromaticAberrationEffectRunner);
+  registerGlEffect(state, 'ChromaticAberrationEffect', glChromaticAberrationEffectRunner);
 }
 
 const CHROMATIC_ABERRATION_FRAGMENT_SRC = `#version 300 es

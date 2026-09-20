@@ -138,7 +138,7 @@ export function registerWgpuTextInputOverlay(overlay: WgpuRichTextOverlay): void
   _webgpuTextInputOverlay = overlay;
 }
 
-export const defaultWgpuRichTextRenderer: Scene2DRenderer = {
+export const wgpuRichTextRenderer: Scene2DRenderer = {
   createData: createWgpuRichTextData,
   destroyData: destroyWgpuRichTextData,
   submit: drawWgpuRichText,

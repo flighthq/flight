@@ -104,7 +104,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   // rectanglePool.releaseMatrix(rect);
 }
 
-export const defaultCanvasQuadBatchRenderer: SpriteRenderer = {
+export const canvasQuadBatchRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: drawCanvasQuadBatch,
 };

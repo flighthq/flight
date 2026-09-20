@@ -3,7 +3,7 @@ import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToWgpu,
-  defaultWgpuBlendEffectRunner,
+  wgpuBlendEffectRunner,
   getWgpuBlendEffectBackdrop,
   getWgpuBlendEffectModeIndex,
   registerWgpuBlendEffect,
@@ -23,12 +23,6 @@ function makeTarget(): WgpuTextureRenderTarget {
 describe('applyBlendEffectToWgpu', () => {
   it('is a function', () => {
     expect(typeof applyBlendEffectToWgpu).toBe('function');
-  });
-});
-
-describe('defaultWgpuBlendEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuBlendEffectRunner).toBe('function');
   });
 });
 
@@ -135,5 +129,11 @@ describe('WGPU_BLEND_FRAGMENT_WGSL', () => {
     expect(WGPU_BLEND_FRAGMENT_WGSL).toContain('back.rgb / back.a');
     expect(WGPU_BLEND_FRAGMENT_WGSL).toContain('sourceAlpha + backdropAlpha * (1.0 - sourceAlpha)');
     expect(WGPU_BLEND_FRAGMENT_WGSL).toContain('mixed * sourceAlpha + cb * backdropAlpha * (1.0 - sourceAlpha)');
+  });
+});
+
+describe('wgpuBlendEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuBlendEffectRunner).toBe('function');
   });
 });

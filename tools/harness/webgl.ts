@@ -19,16 +19,16 @@ import {
   createGlRenderState,
   createGlSurface,
   createMatrix,
-  defaultGlParticleEmitter2DRenderer,
-  defaultGlQuadBatchRenderer,
-  defaultGlRichTextRenderer,
-  defaultGlScale9ShapeRenderer,
-  defaultCanvasShapeCommands,
-  defaultGlShapeRenderer,
-  defaultGlSpriteRenderer,
-  defaultGlTextLabelRenderer,
-  defaultCanvasTextureShapeCommands,
-  defaultGlTilemapRenderer,
+  glParticleEmitter2DRenderer,
+  glQuadBatchRenderer,
+  glRichTextRenderer,
+  glScale9ShapeRenderer,
+  canvasShapeCommands,
+  glShapeRenderer,
+  glSpriteRenderer,
+  glTextLabelRenderer,
+  canvasTextureShapeCommands,
+  glTilemapRenderer,
   enableFlightDiagnostics,
   enableGlBlendModeSupport,
   enableGlClipSupport,
@@ -49,8 +49,8 @@ import {
   renderGlScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  defaultScene2DCanvasRenderRegistries,
-  defaultScene3DGlRenderRegistries,
+  canvasScene2DRenderRegistries,
+  glScene3DRenderRegistries,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -80,7 +80,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
   appendWebSurface(glSurface, document.body);
 
-  const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+  const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
     pixelRatio,
     imageSurfaceProvider: webImageSurfaceCreator,
     sceneGraphSyncPolicy: options.syncPolicy,
@@ -104,25 +104,25 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   enableGlEffectGuards(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+      registerRenderer(state, ShapeKind, glShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+      registerRenderer(state, RichTextKind, glRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+      registerRenderer(state, TextLabelKind, glTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
+      registerRenderer(state, SpriteKind, glSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
+      registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
+      registerRenderer(state, QuadBatchKind, glQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
+      registerRenderer(state, TilemapKind, glTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
+      registerRenderer(state, Scale9ShapeKind, glScale9ShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }
   }
 
@@ -156,7 +156,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    defaultScene2DCanvasRenderRegistries,
+    canvasScene2DRenderRegistries,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

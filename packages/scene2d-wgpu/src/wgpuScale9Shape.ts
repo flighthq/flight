@@ -156,7 +156,7 @@ export function drawWgpuScale9ShapeMask(state: WgpuRenderState, data: RenderProx
   drawWgpuScale9Shape(state, data);
 }
 
-export const defaultWgpuScale9ShapeRenderer: Scene2DRenderer = {
+export const wgpuScale9ShapeRenderer: Scene2DRenderer = {
   createData: createWgpuScale9ShapeData,
   destroyData: destroyWgpuScale9ShapeData,
   submit: drawWgpuScale9Shape,

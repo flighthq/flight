@@ -46,10 +46,6 @@ export function applyBlendEffectToGl(
   });
 }
 
-export const defaultGlBlendEffectRunner: GlEffectRunner = (ctx, effect) => {
-  applyBlendEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BlendEffect);
-};
-
 // Maps an AdvancedBlendMode string to the integer the fragment shader switches on. Kept in lockstep with
 // the BLEND_FRAGMENT_SRC branch order; an unknown mode maps to -1 (Normal passthrough in the shader).
 export function getBlendEffectModeIndex(mode: AdvancedBlendMode): number {
@@ -63,8 +59,12 @@ export function getGlBlendEffectBackdrop(state: GlRenderState, backdropKey: stri
   return _backdrops.get(state)?.get(backdropKey) ?? null;
 }
 
+export const glBlendEffectRunner: GlEffectRunner = (ctx, effect) => {
+  applyBlendEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BlendEffect);
+};
+
 export function registerGlBlendEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
+  registerGlEffect(state, 'BlendEffect', glBlendEffectRunner);
 }
 
 // Registers a backdrop texture under `backdropKey` for this state, so a BlendEffect naming that key

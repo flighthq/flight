@@ -56,6 +56,10 @@ export function applyBevelEffectToCanvas(
   applyBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
+export const canvasBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+  applyBevelEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
+};
+
 // Clips the assembled band to the region `bevelType` keeps: inside the shape for 'inner', outside it for
 // 'outer', everywhere for 'full'. Exported because the gradient bevel applies the identical rule to a
 // ramp-tinted band, and one clip is easier to keep honest than two.
@@ -72,12 +76,8 @@ export function clipCanvasBevelBand(
   if (bevelType !== 'full') compositeCanvasImage(band, source, 0, 0, 'destination-in');
 }
 
-export const defaultCanvasBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
-  applyBevelEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
-};
-
 export function registerCanvasBevelEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'BevelEffect', defaultCanvasBevelEffectRunner);
+  registerCanvasEffect(state, 'BevelEffect', canvasBevelEffectRunner);
 }
 
 function applyBevelEffectToCanvasWithPool(

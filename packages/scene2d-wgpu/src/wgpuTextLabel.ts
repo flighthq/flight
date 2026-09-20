@@ -180,7 +180,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   runtime.quadBatchWriterCount++;
 }
 
-export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {
+export const wgpuTextLabelRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createWgpuTextLabelData,
   destroyData: destroyWgpuTextLabelData,

@@ -34,13 +34,13 @@ export function applyRadialBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuRadialBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuRadialBlurEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'RadialBlurEffect', wgpuRadialBlurEffectRunner);
+}
+
+export const wgpuRadialBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyRadialBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
-
-export function registerWgpuRadialBlurEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'RadialBlurEffect', defaultWgpuRadialBlurEffectRunner);
-}
 
 // Slot layout: [0]=center.x, [1]=center.y, [2]=strength, [3]=samples.
 const RADIAL_BLUR_FRAGMENT_WGSL = /* wgsl */ `

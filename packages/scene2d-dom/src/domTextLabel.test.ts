@@ -4,12 +4,12 @@ import { createTextLabel } from '@flighthq/text/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from './domTextLabel';
+import { domTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from './domTextLabel';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+  registerRenderer(state, TextLabelKind, domTextLabelRenderer);
   return state;
 }
 
@@ -19,10 +19,10 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultDomTextLabelRenderer', () => {
+describe('domTextLabelRenderer', () => {
   it('has submit, and createData', () => {
-    expect(typeof defaultDomTextLabelRenderer.submit).toBe('function');
-    expect(typeof defaultDomTextLabelRenderer.createData).toBe('function');
+    expect(typeof domTextLabelRenderer.submit).toBe('function');
+    expect(typeof domTextLabelRenderer.createData).toBe('function');
   });
 });
 

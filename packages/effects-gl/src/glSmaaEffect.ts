@@ -21,12 +21,12 @@ export function applySmaaEffectToGl(
   });
 }
 
-export const defaultGlSmaaEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glSmaaEffectRunner: GlEffectRunner = (ctx, effect) => {
   applySmaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
 
 export function registerGlSmaaEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'SmaaEffect', defaultGlSmaaEffectRunner);
+  registerGlEffect(state, 'SmaaEffect', glSmaaEffectRunner);
 }
 
 const SMAA_FRAGMENT_SRC = `#version 300 es

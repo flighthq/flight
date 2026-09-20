@@ -64,7 +64,7 @@ lane files, and a duplicate private helper.
 
 ### Effect catalog (18 runner/registrar pairs)
 
-Each kind has a `defaultCanvas<Kind>EffectRunner`, `registerCanvas<Kind>Effect`, and an
+Each kind has a `canvas<Kind>EffectRunner`, `registerCanvas<Kind>Effect`, and an
 `apply<Kind>EffectToCanvas` function. The apply functions accept explicit source/dest/pool
 parameters; the runner wraps the apply for pipeline dispatch.
 
@@ -157,8 +157,8 @@ The charter is mature and specific. Against its stated principles:
 - **"Opt-in and tree-shakable"** — **COMPLIANT.** Registration is per-kind and per-state. No
   register-all aggregate, no category registrars, no import-time registration.
 - **"Curated export lanes"** — **MINOR VIOLATION.** The index.ts named export list has alphabetical
-  ordering violations: `defaultCanvasLensDistortionEffectRunner`, `defaultCanvasTiltShiftEffectRunner`,
-  and `defaultCanvasPosterizeEffectRunner` appear after `defaultCanvasPixelateEffectRunner` rather
+  ordering violations: `canvasLensDistortionEffectRunner`, `canvasTiltShiftEffectRunner`,
+  and `canvasPosterizeEffectRunner` appear after `canvasPixelateEffectRunner` rather
   than in their alphabetical positions. The same three are misordered in the `registerCanvas*`
   block. contract.ts has analogous re-export ordering violations (`canvasColorMatrixPass` before
   `canvasBevelEffect`, `canvasTiltShiftEffect` between `canvasLensDistortionEffect` and

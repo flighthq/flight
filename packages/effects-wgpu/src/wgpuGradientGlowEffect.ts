@@ -89,13 +89,13 @@ export function applyGradientGlowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuGradientGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuGradientGlowEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'GradientGlowEffect', wgpuGradientGlowEffectRunner);
+}
+
+export const wgpuGradientGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
-
-export function registerWgpuGradientGlowEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'GradientGlowEffect', defaultWgpuGradientGlowEffectRunner);
-}
 
 // Uses the blurred alpha (group 1) to index into a gradient ramp texture (group 2).
 const GRADIENT_LOOKUP_FRAGMENT_WGSL = /* wgsl */ `

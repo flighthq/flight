@@ -96,7 +96,7 @@ export function initializeDomScale9SpriteData(
   out.element = null;
   out.pieces = [];
 }
-export const defaultDomScale9SpriteRenderer: Scene2DRenderer = {
+export const domScale9SpriteRenderer: Scene2DRenderer = {
   createData: createDomScale9SpriteData,
   submit: drawDomScale9Sprite,
 };

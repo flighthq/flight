@@ -19,7 +19,7 @@ import {
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
   registerCanvasSurfaceCreator,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
@@ -1165,7 +1165,7 @@ function packageSourceFiles(packageName: string): string[] {
     .map((entry) => join(sourceDir, entry.name));
 }
 
-function createCanvasProbeState(registry = defaultScene2DCanvasRenderRegistries) {
+function createCanvasProbeState(registry = canvasScene2DRenderRegistries) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
   const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));

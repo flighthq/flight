@@ -1,4 +1,4 @@
-import { applyHalftoneEffectToGl, defaultGlHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect';
+import { applyHalftoneEffectToGl, glHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect';
 
 describe('applyHalftoneEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyHalftoneEffectToGl', () => {
   });
 });
 
-describe('defaultGlHalftoneEffectRunner', () => {
+describe('glHalftoneEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlHalftoneEffectRunner).toBe('function');
+    expect(typeof glHalftoneEffectRunner).toBe('function');
   });
 });
 

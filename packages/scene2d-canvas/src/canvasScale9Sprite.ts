@@ -88,7 +88,7 @@ export function drawCanvasScale9Sprite(state: CanvasRenderState, renderProxy: Re
 // its texture-version dirty test. That is a dependency on the scene2d sprite CONTRACT, not on the canvas
 // sprite renderer: nothing here reaches into drawCanvasSprite, and registering this kind leaves
 // SpriteKind resolving to its own renderer untouched.
-export const defaultCanvasScale9SpriteRenderer: Scene2DRenderer = {
+export const canvasScale9SpriteRenderer: Scene2DRenderer = {
   createData: createSpriteRendererData,
   isDirty: isSpriteRendererDirty,
   submit: drawCanvasScale9Sprite,

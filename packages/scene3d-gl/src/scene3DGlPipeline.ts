@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { defaultScene2DGlRenderRegistries } from '@flighthq/scene2d-gl/contract';
+import { glScene2DRenderRegistries } from '@flighthq/scene2d-gl/contract';
 import type {
   GlMeshMaterialRenderer,
   GlModifierSnippet,
@@ -42,12 +42,16 @@ import {
 } from '@flighthq/types/contract';
 
 import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension';
-import { blinnPhongGlMeshMaterialRenderer } from './blinnPhongGlMeshMaterialRenderer';
 import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension';
-import { customShaderGlMeshMaterialRenderer } from './customShaderGlMeshMaterialRenderer';
-import { depthGlMeshMaterialRenderer } from './depthGlMeshMaterialRenderer';
-import { emissiveGlMeshMaterialRenderer } from './emissiveGlMeshMaterialRenderer';
-import { extendedPbrGlMeshMaterialRenderer } from './extendedPbrGlMeshMaterialRenderer';
+import { glBlinnPhongMeshMaterialRenderer } from './glBlinnPhongMeshMaterialRenderer';
+import { glCustomShaderMeshMaterialRenderer } from './glCustomShaderMeshMaterialRenderer';
+import { glDepthMeshMaterialRenderer } from './glDepthMeshMaterialRenderer';
+import { glEmissiveMeshMaterialRenderer } from './glEmissiveMeshMaterialRenderer';
+import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer';
+import { glLambertMeshMaterialRenderer } from './glLambertMeshMaterialRenderer';
+import { glMatcapMeshMaterialRenderer } from './glMatcapMeshMaterialRenderer';
+import { glNormalMeshMaterialRenderer } from './glNormalMeshMaterialRenderer';
+import { glPhongMeshMaterialRenderer } from './glPhongMeshMaterialRenderer';
 import {
   animatedNormalGlModifierSnippet,
   dissolveGlModifierSnippet,
@@ -58,43 +62,39 @@ import {
   toonGlModifierSnippet,
   vertexDisplaceGlModifierSnippet,
 } from './glShadedBuiltInModifiers';
+import { glShadedMeshMaterialRenderer } from './glShadedMeshMaterialRenderer';
+import { glSpecularGlossinessPbrMeshMaterialRenderer } from './glSpecularGlossinessPbrMeshMaterialRenderer';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
+import { glToonMeshMaterialRenderer } from './glToonMeshMaterialRenderer';
+import { glUnlitMeshMaterialRenderer } from './glUnlitMeshMaterialRenderer';
+import { glVertexColorMeshMaterialRenderer } from './glVertexColorMeshMaterialRenderer';
+import { glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer';
 import { iridescencePbrGlExtension } from './iridescencePbrGlExtension';
-import { lambertGlMeshMaterialRenderer } from './lambertGlMeshMaterialRenderer';
-import { matcapGlMeshMaterialRenderer } from './matcapGlMeshMaterialRenderer';
-import { normalGlMeshMaterialRenderer } from './normalGlMeshMaterialRenderer';
-import { phongGlMeshMaterialRenderer } from './phongGlMeshMaterialRenderer';
-import { shadedGlMeshMaterialRenderer } from './shadedGlMeshMaterialRenderer';
 import { sheenPbrGlExtension } from './sheenPbrGlExtension';
-import { specularGlossinessPbrGlMeshMaterialRenderer } from './specularGlossinessPbrGlMeshMaterialRenderer';
 import { specularPbrGlExtension } from './specularPbrGlExtension';
-import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';
-import { toonGlMeshMaterialRenderer } from './toonGlMeshMaterialRenderer';
 import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExtension';
-import { unlitGlMeshMaterialRenderer } from './unlitGlMeshMaterialRenderer';
-import { vertexColorGlMeshMaterialRenderer } from './vertexColorGlMeshMaterialRenderer';
-import { wireframeGlMeshMaterialRenderer } from './wireframeGlMeshMaterialRenderer';
 import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
 
 function buildScene3DGlMeshMaterialRenderers(
   base: Readonly<KeyedTable<GlMeshMaterialRenderer>>,
 ): KeyedTable<GlMeshMaterialRenderer> {
   let table = base;
-  table = withRegistryTableEntry(table, BlinnPhongMaterialKind, blinnPhongGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, DepthMaterialKind, depthGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, EmissiveMaterialKind, emissiveGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ExtendedPbrMaterialKind, extendedPbrGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, LambertMaterialKind, lambertGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, MatcapMaterialKind, matcapGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, NormalMaterialKind, normalGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, PhongMaterialKind, phongGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ShadedMaterialKind, shadedGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, SpecularGlossinessPbrMaterialKind, specularGlossinessPbrGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, StandardPbrMaterialKind, standardPbrGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ToonMaterialKind, toonGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, VertexColorMaterialKind, vertexColorGlMeshMaterialRenderer);
-  return withRegistryTableEntry(table, WireframeMaterialKind, wireframeGlMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, BlinnPhongMaterialKind, glBlinnPhongMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, CustomShaderMaterialKind, glCustomShaderMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, DepthMaterialKind, glDepthMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, EmissiveMaterialKind, glEmissiveMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, ExtendedPbrMaterialKind, glExtendedPbrMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, LambertMaterialKind, glLambertMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, MatcapMaterialKind, glMatcapMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, NormalMaterialKind, glNormalMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, PhongMaterialKind, glPhongMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, ShadedMaterialKind, glShadedMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, SpecularGlossinessPbrMaterialKind, glSpecularGlossinessPbrMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, StandardPbrMaterialKind, glStandardPbrMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, ToonMaterialKind, glToonMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, UnlitMaterialKind, glUnlitMeshMaterialRenderer);
+  table = withRegistryTableEntry(table, VertexColorMaterialKind, glVertexColorMeshMaterialRenderer);
+  return withRegistryTableEntry(table, WireframeMaterialKind, glWireframeMeshMaterialRenderer);
 }
 
 function buildScene3DGlModifierSnippets(base: Readonly<KeyedTable<GlModifierSnippet>>): KeyedTable<GlModifierSnippet> {
@@ -122,9 +122,9 @@ function buildScene3DGlPbrExtensions(
   return withRegistryTableEntry(table, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
 }
 
-export const defaultScene3DGlRenderRegistries: Readonly<GlRenderRegistries> = {
-  ...defaultScene2DGlRenderRegistries,
-  meshMaterialRenderers: buildScene3DGlMeshMaterialRenderers(defaultScene2DGlRenderRegistries.meshMaterialRenderers),
-  modifierSnippets: buildScene3DGlModifierSnippets(defaultScene2DGlRenderRegistries.modifierSnippets),
-  pbrExtensions: buildScene3DGlPbrExtensions(defaultScene2DGlRenderRegistries.pbrExtensions),
+export const glScene3DRenderRegistries: Readonly<GlRenderRegistries> = {
+  ...glScene2DRenderRegistries,
+  meshMaterialRenderers: buildScene3DGlMeshMaterialRenderers(glScene2DRenderRegistries.meshMaterialRenderers),
+  modifierSnippets: buildScene3DGlModifierSnippets(glScene2DRenderRegistries.modifierSnippets),
+  pbrExtensions: buildScene3DGlPbrExtensions(glScene2DRenderRegistries.pbrExtensions),
 };

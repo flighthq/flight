@@ -125,7 +125,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
   }
 }
 
-export const defaultWgpuBitmapTextRenderer: SpriteRenderer = {
+export const wgpuBitmapTextRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWgpuBitmapText,

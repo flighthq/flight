@@ -65,13 +65,13 @@ export function applyConvolutionEffectToWgpu(
   );
 }
 
-export const defaultWgpuConvolutionEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuConvolutionEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ConvolutionEffect', wgpuConvolutionEffectRunner);
+}
+
+export const wgpuConvolutionEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyConvolutionEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ConvolutionEffect);
 };
-
-export function registerWgpuConvolutionEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ConvolutionEffect', defaultWgpuConvolutionEffectRunner);
-}
 
 // Sums the kernel weights; returns 1 when the sum is 0 (e.g. an edge-detect kernel) so the divide is safe.
 function getAutoDivisor(matrix: ReadonlyArray<number>, length: number): number {

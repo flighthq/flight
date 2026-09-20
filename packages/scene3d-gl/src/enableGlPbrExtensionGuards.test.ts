@@ -8,7 +8,7 @@ import {
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards';
-import { extendedPbrGlMeshMaterialRenderer } from './extendedPbrGlMeshMaterialRenderer';
+import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer';
 import { registerGlPbrExtension } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -36,7 +36,7 @@ function getGuardMessages(material: ReturnType<typeof createExtendedPbrMaterial>
   const sink = createMemoryLogSink(8);
   addLogSink(sink.sink);
   try {
-    extendedPbrGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, createCamera());
+    glExtendedPbrMeshMaterialRenderer.bind(state, material, NO_LIGHTS, createCamera());
     return getMemoryLogSinkEntries(sink).map((entry) => String((entry.data as Record<string, unknown>).message));
   } finally {
     removeLogSink(sink.sink);
@@ -86,7 +86,7 @@ describe('enableGlPbrExtensionGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      extendedPbrGlMeshMaterialRenderer.bind(
+      glExtendedPbrMeshMaterialRenderer.bind(
         state,
         createExtendedPbrMaterial({ extensions: [createClearcoatPbrExtension()] }),
         NO_LIGHTS,

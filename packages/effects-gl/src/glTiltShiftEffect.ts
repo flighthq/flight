@@ -25,12 +25,12 @@ export function applyTiltShiftEffectToGl(
   });
 }
 
-export const defaultGlTiltShiftEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glTiltShiftEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToGl(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
 export function registerGlTiltShiftEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'TiltShiftEffect', defaultGlTiltShiftEffectRunner);
+  registerGlEffect(state, 'TiltShiftEffect', glTiltShiftEffectRunner);
 }
 
 const TILT_SHIFT_FRAGMENT_SRC = `#version 300 es

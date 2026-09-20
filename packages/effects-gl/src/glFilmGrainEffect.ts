@@ -23,12 +23,12 @@ export function applyFilmGrainEffectToGl(
   });
 }
 
-export const defaultGlFilmGrainEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glFilmGrainEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToGl(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
 };
 
 export function registerGlFilmGrainEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'FilmGrainEffect', defaultGlFilmGrainEffectRunner);
+  registerGlEffect(state, 'FilmGrainEffect', glFilmGrainEffectRunner);
 }
 
 const FILM_GRAIN_FRAGMENT_SRC = `#version 300 es

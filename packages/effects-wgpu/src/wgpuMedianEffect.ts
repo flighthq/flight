@@ -38,13 +38,13 @@ export function applyMedianEffectToWgpu(
   );
 }
 
-export const defaultWgpuMedianEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuMedianEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'MedianEffect', wgpuMedianEffectRunner);
+}
+
+export const wgpuMedianEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyMedianEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as MedianEffect);
 };
-
-export function registerWgpuMedianEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'MedianEffect', defaultWgpuMedianEffectRunner);
-}
 
 // Uniforms layout (16 bytes): offset 0 texelSize (vec2f), offset 8 radius (i32), offset 12 _pad (i32).
 const MEDIAN_WGSL = /* wgsl */ `

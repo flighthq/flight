@@ -1,4 +1,4 @@
-import { applySsaoEffectToGl, defaultGlSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect';
+import { applySsaoEffectToGl, glSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect';
 
 describe('applySsaoEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applySsaoEffectToGl', () => {
   });
 });
 
-describe('defaultGlSsaoEffectRunner', () => {
+describe('glSsaoEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlSsaoEffectRunner).toBe('function');
+    expect(typeof glSsaoEffectRunner).toBe('function');
   });
 });
 

@@ -1,6 +1,6 @@
 import {
   applyFilmGrainEffectToWgpu,
-  defaultWgpuFilmGrainEffectRunner,
+  wgpuFilmGrainEffectRunner,
   registerWgpuFilmGrainEffect,
 } from './wgpuFilmGrainEffect';
 
@@ -10,14 +10,14 @@ describe('applyFilmGrainEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuFilmGrainEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuFilmGrainEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuFilmGrainEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuFilmGrainEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuFilmGrainEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuFilmGrainEffectRunner).toBe('function');
   });
 });

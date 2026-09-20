@@ -1,33 +1,26 @@
 export * from './enableWgpuEffectGuards';
-export { defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
+export { wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
 export {
-  defaultWgpuBitmapDisplacementEffectRunner,
+  wgpuBitmapDisplacementEffectRunner,
   isWgpuBitmapDisplacementEffectResolvable,
   registerWgpuBitmapDisplacementEffect,
 } from './wgpuBitmapDisplacementEffect';
+export { wgpuBlendEffectRunner, registerWgpuBlendEffect, registerWgpuBlendEffectBackdrop } from './wgpuBlendEffect';
+export { wgpuBloomEffectRunner, registerWgpuBloomEffect } from './wgpuBloomEffect';
+export { wgpuBlurEffectRunner, registerWgpuBlurEffect } from './wgpuBlurEffect';
+export { wgpuCameraMotionBlurEffectRunner, registerWgpuCameraMotionBlurEffect } from './wgpuCameraMotionBlurEffect';
 export {
-  defaultWgpuBlendEffectRunner,
-  registerWgpuBlendEffect,
-  registerWgpuBlendEffectBackdrop,
-} from './wgpuBlendEffect';
-export { defaultWgpuBloomEffectRunner, registerWgpuBloomEffect } from './wgpuBloomEffect';
-export { defaultWgpuBlurEffectRunner, registerWgpuBlurEffect } from './wgpuBlurEffect';
-export {
-  defaultWgpuCameraMotionBlurEffectRunner,
-  registerWgpuCameraMotionBlurEffect,
-} from './wgpuCameraMotionBlurEffect';
-export {
-  defaultWgpuChromaticAberrationEffectRunner,
+  wgpuChromaticAberrationEffectRunner,
   registerWgpuChromaticAberrationEffect,
 } from './wgpuChromaticAberrationEffect';
-export { defaultWgpuCompositeEffectRunner, registerWgpuCompositeEffect } from './wgpuCompositeEffect';
-export { defaultWgpuContactShadowsEffectRunner, registerWgpuContactShadowsEffect } from './wgpuContactShadowsEffect';
-export { defaultWgpuConvolutionEffectRunner, registerWgpuConvolutionEffect } from './wgpuConvolutionEffect';
-export { defaultWgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect';
-export { defaultWgpuDirectionalBlurEffectRunner, registerWgpuDirectionalBlurEffect } from './wgpuDirectionalBlurEffect';
-export { defaultWgpuDisplacementEffectRunner, registerWgpuDisplacementEffect } from './wgpuDisplacementEffect';
-export { defaultWgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect';
-export { defaultWgpuDropShadowEffectRunner, registerWgpuDropShadowEffect } from './wgpuDropShadowEffect';
+export { wgpuCompositeEffectRunner, registerWgpuCompositeEffect } from './wgpuCompositeEffect';
+export { wgpuContactShadowsEffectRunner, registerWgpuContactShadowsEffect } from './wgpuContactShadowsEffect';
+export { wgpuConvolutionEffectRunner, registerWgpuConvolutionEffect } from './wgpuConvolutionEffect';
+export { wgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect';
+export { wgpuDirectionalBlurEffectRunner, registerWgpuDirectionalBlurEffect } from './wgpuDirectionalBlurEffect';
+export { wgpuDisplacementEffectRunner, registerWgpuDisplacementEffect } from './wgpuDisplacementEffect';
+export { wgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect';
+export { wgpuDropShadowEffectRunner, registerWgpuDropShadowEffect } from './wgpuDropShadowEffect';
 export {
   beginWgpuEffectPass,
   createWgpuEffectState,
@@ -37,35 +30,35 @@ export {
   setWgpuEffectStateSkipGuard,
   setWgpuEffectVelocityTexture,
 } from './wgpuEffectState';
-export { defaultWgpuFilmGrainEffectRunner, registerWgpuFilmGrainEffect } from './wgpuFilmGrainEffect';
-export { defaultWgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect';
-export { defaultWgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect';
-export { defaultWgpuGodRaysEffectRunner, registerWgpuGodRaysEffect } from './wgpuGodRaysEffect';
-export { defaultWgpuGradientBevelEffectRunner, registerWgpuGradientBevelEffect } from './wgpuGradientBevelEffect';
-export { defaultWgpuGradientGlowEffectRunner, registerWgpuGradientGlowEffect } from './wgpuGradientGlowEffect';
-export { defaultWgpuHalftoneEffectRunner, registerWgpuHalftoneEffect } from './wgpuHalftoneEffect';
-export { defaultWgpuInnerGlowEffectRunner, registerWgpuInnerGlowEffect } from './wgpuInnerGlowEffect';
-export { defaultWgpuInnerShadowEffectRunner, registerWgpuInnerShadowEffect } from './wgpuInnerShadowEffect';
-export { defaultWgpuKuwaharaEffectRunner, registerWgpuKuwaharaEffect } from './wgpuKuwaharaEffect';
-export { defaultWgpuLensDirtEffectRunner, registerWgpuLensDirtEffect } from './wgpuLensDirtEffect';
-export { defaultWgpuLensDistortionEffectRunner, registerWgpuLensDistortionEffect } from './wgpuLensDistortionEffect';
-export { defaultWgpuLensFlareEffectRunner, registerWgpuLensFlareEffect } from './wgpuLensFlareEffect';
-export { defaultWgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect';
-export { defaultWgpuMotionBlurEffectRunner, registerWgpuMotionBlurEffect } from './wgpuMotionBlurEffect';
-export { defaultWgpuOuterGlowEffectRunner, registerWgpuOuterGlowEffect } from './wgpuOuterGlowEffect';
-export { defaultWgpuOutlineEffectRunner, registerWgpuOutlineEffect } from './wgpuOutlineEffect';
-export { defaultWgpuPixelateEffectRunner, registerWgpuPixelateEffect } from './wgpuPixelateEffect';
-export { defaultWgpuPosterizeEffectRunner, registerWgpuPosterizeEffect } from './wgpuPosterizeEffect';
-export { defaultWgpuRadialBlurEffectRunner, registerWgpuRadialBlurEffect } from './wgpuRadialBlurEffect';
+export { wgpuFilmGrainEffectRunner, registerWgpuFilmGrainEffect } from './wgpuFilmGrainEffect';
+export { wgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect';
+export { wgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect';
+export { wgpuGodRaysEffectRunner, registerWgpuGodRaysEffect } from './wgpuGodRaysEffect';
+export { wgpuGradientBevelEffectRunner, registerWgpuGradientBevelEffect } from './wgpuGradientBevelEffect';
+export { wgpuGradientGlowEffectRunner, registerWgpuGradientGlowEffect } from './wgpuGradientGlowEffect';
+export { wgpuHalftoneEffectRunner, registerWgpuHalftoneEffect } from './wgpuHalftoneEffect';
+export { wgpuInnerGlowEffectRunner, registerWgpuInnerGlowEffect } from './wgpuInnerGlowEffect';
+export { wgpuInnerShadowEffectRunner, registerWgpuInnerShadowEffect } from './wgpuInnerShadowEffect';
+export { wgpuKuwaharaEffectRunner, registerWgpuKuwaharaEffect } from './wgpuKuwaharaEffect';
+export { wgpuLensDirtEffectRunner, registerWgpuLensDirtEffect } from './wgpuLensDirtEffect';
+export { wgpuLensDistortionEffectRunner, registerWgpuLensDistortionEffect } from './wgpuLensDistortionEffect';
+export { wgpuLensFlareEffectRunner, registerWgpuLensFlareEffect } from './wgpuLensFlareEffect';
+export { wgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect';
+export { wgpuMotionBlurEffectRunner, registerWgpuMotionBlurEffect } from './wgpuMotionBlurEffect';
+export { wgpuOuterGlowEffectRunner, registerWgpuOuterGlowEffect } from './wgpuOuterGlowEffect';
+export { wgpuOutlineEffectRunner, registerWgpuOutlineEffect } from './wgpuOutlineEffect';
+export { wgpuPixelateEffectRunner, registerWgpuPixelateEffect } from './wgpuPixelateEffect';
+export { wgpuPosterizeEffectRunner, registerWgpuPosterizeEffect } from './wgpuPosterizeEffect';
+export { wgpuRadialBlurEffectRunner, registerWgpuRadialBlurEffect } from './wgpuRadialBlurEffect';
 export * from './wgpuEffectRegistry';
 export * from './wgpuRenderTextureEffect';
-export { defaultWgpuScanlinesEffectRunner, registerWgpuScanlinesEffect } from './wgpuScanlinesEffect';
-export { defaultWgpuScreenSpaceFogEffectRunner, registerWgpuScreenSpaceFogEffect } from './wgpuScreenSpaceFogEffect';
-export { defaultWgpuSharpenEffectRunner, registerWgpuSharpenEffect } from './wgpuSharpenEffect';
-export { defaultWgpuSketchEffectRunner, registerWgpuSketchEffect } from './wgpuSketchEffect';
-export { defaultWgpuSmaaEffectRunner, registerWgpuSmaaEffect } from './wgpuSmaaEffect';
-export { defaultWgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect';
-export { defaultWgpuTiltShiftEffectRunner, registerWgpuTiltShiftEffect } from './wgpuTiltShiftEffect';
-export { defaultWgpuToneMapEffectRunner, registerWgpuToneMapEffect } from './wgpuToneMapEffect';
-export { defaultWgpuVignetteEffectRunner, registerWgpuVignetteEffect } from './wgpuVignetteEffect';
-export { defaultWgpuWhiteBalanceEffectRunner, registerWgpuWhiteBalanceEffect } from './wgpuWhiteBalanceEffect';
+export { wgpuScanlinesEffectRunner, registerWgpuScanlinesEffect } from './wgpuScanlinesEffect';
+export { wgpuScreenSpaceFogEffectRunner, registerWgpuScreenSpaceFogEffect } from './wgpuScreenSpaceFogEffect';
+export { wgpuSharpenEffectRunner, registerWgpuSharpenEffect } from './wgpuSharpenEffect';
+export { wgpuSketchEffectRunner, registerWgpuSketchEffect } from './wgpuSketchEffect';
+export { wgpuSmaaEffectRunner, registerWgpuSmaaEffect } from './wgpuSmaaEffect';
+export { wgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect';
+export { wgpuTiltShiftEffectRunner, registerWgpuTiltShiftEffect } from './wgpuTiltShiftEffect';
+export { wgpuToneMapEffectRunner, registerWgpuToneMapEffect } from './wgpuToneMapEffect';
+export { wgpuVignetteEffectRunner, registerWgpuVignetteEffect } from './wgpuVignetteEffect';
+export { wgpuWhiteBalanceEffectRunner, registerWgpuWhiteBalanceEffect } from './wgpuWhiteBalanceEffect';

@@ -52,7 +52,7 @@ a claim about this tree, not about a session.
   The lobe stretches but its shadowing/masking term does not.
 - **Specular-glossiness drops its packed map.** The renderer converts the scalars
   (`roughness = 1 - glossiness`) but passes `metallicRoughnessMap: null`
-  (`specularGlossinessPbrGlMeshMaterialRenderer.ts:111`), documented at `:39-41`. An asset whose
+  (`glSpecularGlossinessPbrMeshMaterialRenderer.ts:111`), documented at `:39-41`. An asset whose
   gloss varies per texel renders uniformly rough.
 - **No combined-extension raster proof.** `functional/scenes/` carries one scene per extension —
   `material-anisotropy`, `material-clearcoat`, `material-iridescence`, `material-sheen`,

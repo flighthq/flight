@@ -1,4 +1,4 @@
-import { applyMedianEffectToWgpu, defaultWgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect';
+import { applyMedianEffectToWgpu, wgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect';
 
 describe('applyMedianEffectToWgpu', () => {
   it('is a function', () => {
@@ -6,14 +6,14 @@ describe('applyMedianEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuMedianEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuMedianEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuMedianEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuMedianEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuMedianEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuMedianEffectRunner).toBe('function');
   });
 });

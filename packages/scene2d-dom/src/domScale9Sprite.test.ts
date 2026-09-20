@@ -12,7 +12,7 @@ import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import {
   createDomScale9SpriteData,
-  defaultDomScale9SpriteRenderer,
+  domScale9SpriteRenderer,
   drawDomScale9Sprite,
   initializeDomScale9SpriteData,
 } from './domScale9Sprite';
@@ -31,10 +31,10 @@ describe('createDomScale9SpriteData', () => {
   });
 });
 
-describe('defaultDomScale9SpriteRenderer', () => {
+describe('domScale9SpriteRenderer', () => {
   it('exposes renderer data and submit function', () => {
     expect(typeof createDomScale9SpriteData).toBe('function');
-    expect(defaultDomScale9SpriteRenderer.submit).toBe(drawDomScale9Sprite);
+    expect(domScale9SpriteRenderer.submit).toBe(drawDomScale9Sprite);
   });
 });
 
@@ -45,7 +45,7 @@ describe('drawDomScale9Sprite', () => {
     canvas.height = 100;
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, Scale9SpriteKind, defaultDomScale9SpriteRenderer);
+    registerRenderer(state, Scale9SpriteKind, domScale9SpriteRenderer);
     const sprite = createScale9Sprite(
       { x: 20, y: 20, width: 60, height: 60 },
       {

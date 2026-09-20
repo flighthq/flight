@@ -12,10 +12,10 @@ import { RegistryEntryState, Scale9SpriteKind, SpriteKind } from '@flighthq/type
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import {} from './canvasPipeline';
-import { defaultCanvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './canvasScale9Sprite';
-import { defaultCanvasSpriteRenderer } from './canvasSprite';
+import { canvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './canvasScale9Sprite';
+import { canvasSpriteRenderer } from './canvasSprite';
 import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { defaultScene2DCanvasRenderRegistries } from './scene2DCanvasPipeline';
+import { canvasScene2DRenderRegistries } from './scene2DCanvasPipeline';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -31,14 +31,14 @@ afterEach(() => {
 // here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the
 // coupling assertions want to distinguish from a bound renderer.
 function pipelineRenderer(kind: Kind): Renderer | null {
-  const entry = defaultScene2DCanvasRenderRegistries.renderers.entries.get(kind);
+  const entry = canvasScene2DRenderRegistries.renderers.entries.get(kind);
   return entry !== undefined && entry.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-  registerRenderer(state, Scale9SpriteKind, defaultCanvasScale9SpriteRenderer);
+  registerRenderer(state, Scale9SpriteKind, canvasScale9SpriteRenderer);
   return state;
 }
 
@@ -49,15 +49,15 @@ function makeTexture() {
   return createTexture({ dimension: '2d', source: image });
 }
 
-describe('defaultCanvasScale9SpriteRenderer', () => {
+describe('canvasScale9SpriteRenderer', () => {
   it('carries submit, renderer data, and the sprite identity dirty hook', () => {
-    expect(typeof defaultCanvasScale9SpriteRenderer.submit).toBe('function');
-    expect(typeof defaultCanvasScale9SpriteRenderer.createData).toBe('function');
-    expect(typeof defaultCanvasScale9SpriteRenderer.isDirty).toBe('function');
+    expect(typeof canvasScale9SpriteRenderer.submit).toBe('function');
+    expect(typeof canvasScale9SpriteRenderer.createData).toBe('function');
+    expect(typeof canvasScale9SpriteRenderer.isDirty).toBe('function');
   });
 
   it('is registered on the canvas pipeline as its own Scale9SpriteKind entry', () => {
-    expect(pipelineRenderer(Scale9SpriteKind)).toBe(defaultCanvasScale9SpriteRenderer);
+    expect(pipelineRenderer(Scale9SpriteKind)).toBe(canvasScale9SpriteRenderer);
   });
 
   // The renderer arm exists so a Scale9Sprite draws WITHOUT plain Sprite growing a grid branch. Two
@@ -65,17 +65,17 @@ describe('defaultCanvasScale9SpriteRenderer', () => {
   // DIFFERENT renderers, and SpriteKind must still resolve to the plain sprite renderer after the
   // scale9 entry is registered.
   it('leaves plain SpriteKind resolving to the untouched sprite renderer', () => {
-    expect(pipelineRenderer(SpriteKind)).toBe(defaultCanvasSpriteRenderer);
+    expect(pipelineRenderer(SpriteKind)).toBe(canvasSpriteRenderer);
     expect(pipelineRenderer(SpriteKind)).not.toBe(pipelineRenderer(Scale9SpriteKind));
   });
 
   it('draws a plain Sprite through the sprite renderer in exactly one blit', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-    registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+    registerRenderer(state, SpriteKind, canvasSpriteRenderer);
     const draw = vi.spyOn(state.context, 'drawImage');
     const sprite = createSprite({ data: { texture: makeTexture() } });
-    defaultCanvasSpriteRenderer.submit(state, getOrCreateRenderProxy2D(state, sprite));
+    canvasSpriteRenderer.submit(state, getOrCreateRenderProxy2D(state, sprite));
     // A plain Sprite is unsliced whatever this file registers — the proof that the grid did not leak
     // into the shared path is that the sprite still costs one drawImage.
     expect(draw).toHaveBeenCalledOnce();

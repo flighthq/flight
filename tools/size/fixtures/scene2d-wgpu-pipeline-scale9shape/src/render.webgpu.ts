@@ -21,10 +21,10 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
-  defaultCanvasShapeCommands,
+  canvasShapeCommands,
   registerCanvasShapeCommands,
 } from '@flighthq/scene2d-canvas';
-import { defaultWgpuScale9ShapeRenderer, registerWgpuShapeRasterizer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuScale9ShapeRenderer, registerWgpuShapeRasterizer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { createWgpuSurface } from '@flighthq/surface';
 import { Scale9ShapeKind } from '@flighthq/types';
@@ -39,7 +39,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  renderers: withRegistryTableEntry(registries.renderers, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer),
+  renderers: withRegistryTableEntry(registries.renderers, Scale9ShapeKind, wgpuScale9ShapeRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;
@@ -53,7 +53,7 @@ export const state = createWgpuRenderState(acquisition.device, registry, {
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 registerWgpuShapeRasterizer(
   state,
   createCanvasShapeRasterizer(createCanvasTextureResolvers(webCanvasRenderSurfaceCreator)),

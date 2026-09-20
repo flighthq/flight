@@ -1,4 +1,4 @@
-import { applyCrtEffectToWgpu, defaultWgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect';
+import { applyCrtEffectToWgpu, wgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect';
 
 describe('applyCrtEffectToWgpu', () => {
   it('is a function', () => {
@@ -6,14 +6,14 @@ describe('applyCrtEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuCrtEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuCrtEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuCrtEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuCrtEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuCrtEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuCrtEffectRunner).toBe('function');
   });
 });

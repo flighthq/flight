@@ -111,12 +111,12 @@ export function applyInnerShadowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlInnerShadowEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glInnerShadowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyInnerShadowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerShadowEffect);
 };
 
 export function registerGlInnerShadowEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'InnerShadowEffect', defaultGlInnerShadowEffectRunner);
+  registerGlEffect(state, 'InnerShadowEffect', glInnerShadowEffectRunner);
 }
 
 function applyGlInnerClipPass(

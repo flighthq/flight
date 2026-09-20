@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createHtmlView } from '@flighthq/scene2d';
-import { createDomRenderState, defaultDomHtmlViewRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
+import { createDomRenderState, domHtmlViewRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
 import { HtmlViewKind } from '@flighthq/types';
 
 const container = document.createElement('div');
@@ -15,7 +15,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, HtmlViewKind, defaultDomHtmlViewRenderer);
+registerRenderer(state, HtmlViewKind, domHtmlViewRenderer);
 
 const root = createDisplayObject();
 const view = createHtmlView();

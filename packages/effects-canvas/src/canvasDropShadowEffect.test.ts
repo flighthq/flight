@@ -2,7 +2,7 @@ import { createDropShadowEffect } from '@flighthq/effects/contract';
 
 import {
   applyDropShadowEffectToCanvas,
-  defaultCanvasDropShadowEffectRunner,
+  canvasDropShadowEffectRunner,
   registerCanvasDropShadowEffect,
 } from './canvasDropShadowEffect';
 import * as canvasEffectCompositing from './canvasEffectCompositing';
@@ -82,9 +82,9 @@ describe('applyDropShadowEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasDropShadowEffectRunner', () => {
+describe('canvasDropShadowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasDropShadowEffectRunner).toBe('function');
+    expect(typeof canvasDropShadowEffectRunner).toBe('function');
   });
 });
 

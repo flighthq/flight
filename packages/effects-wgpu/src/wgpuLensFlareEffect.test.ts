@@ -1,6 +1,6 @@
 import {
   applyLensFlareEffectToWgpu,
-  defaultWgpuLensFlareEffectRunner,
+  wgpuLensFlareEffectRunner,
   registerWgpuLensFlareEffect,
 } from './wgpuLensFlareEffect';
 
@@ -10,14 +10,14 @@ describe('applyLensFlareEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuLensFlareEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuLensFlareEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuLensFlareEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuLensFlareEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuLensFlareEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuLensFlareEffectRunner).toBe('function');
   });
 });

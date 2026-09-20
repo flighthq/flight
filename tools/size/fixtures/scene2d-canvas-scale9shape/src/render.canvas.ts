@@ -10,10 +10,10 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasScale9ShapeRenderer,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasScale9ShapeRenderer,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -25,7 +25,7 @@ import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
 // REQUIRED WIRING for one nine-sliced vector shape, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  Scale9ShapeKind -> defaultCanvasScale9ShapeRenderer
+//   renderer  Scale9ShapeKind -> canvasScale9ShapeRenderer
 //   commands  beginFill, drawRectangle, endFill. A Scale9Shape carries a shape command stream like any
 //             Shape does — the renderer remaps the command coordinates through a nine-slice mapper and
 //             then replays them, so the SAME three commands this shape records must be registered.
@@ -46,14 +46,14 @@ document.body.appendChild(canvas);
 
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
-for (const command of [defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]) {
+for (const command of [canvasBeginFill, canvasDrawRectangle, canvasEndFill]) {
   shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);
 }
 
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, canvasScale9ShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

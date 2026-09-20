@@ -72,10 +72,10 @@ export function applyDropShadowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
-export const defaultWgpuDropShadowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuDropShadowEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'DropShadowEffect', wgpuDropShadowEffectRunner);
+}
+
+export const wgpuDropShadowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
-
-export function registerWgpuDropShadowEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
-}

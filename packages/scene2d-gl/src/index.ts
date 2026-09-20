@@ -2,28 +2,28 @@ export * from './enableGlColorAdjustmentGuards';
 export * from './enableGlStrokePathTessellation';
 export * from './explainGlScene2DCoverage';
 export * from './glBitmapText';
-export { createGlCacheState, enableGlRenderCache, refreshGlRenderCache, defaultGlRenderCacheRenderer } from './glCache';
+export { createGlCacheState, enableGlRenderCache, refreshGlRenderCache, glRenderCacheRenderer } from './glCache';
 export * from './glClip';
 export * from './glColorAdjustmentMaterialFeature';
-export { defaultGlMeshShapeRenderer } from './glMeshShapeRenderer';
-export { renderGlScene2D, defaultGlScene2DRenderer } from './glNode2D';
-export { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
+export { glMeshShapeRenderer } from './glMeshShapeRenderer';
+export { renderGlScene2D, glScene2DRenderer } from './glNode2D';
+export { glParticleEmitter2DRenderer } from './glParticleEmitter2D';
 export * from './glQuadBatch';
-export { defaultGlRasterShapeRenderer } from './glRasterShapeRenderer';
-export { defaultGlRichTextRenderer } from './glRichText';
-export { defaultGlScale9ShapeRenderer } from './glScale9Shape';
-export { defaultGlScale9SpriteRenderer } from './glScale9Sprite';
-export { defaultGlShapeRenderer, defaultGlMorphShapeRenderer } from './glShape';
+export { glRasterShapeRenderer } from './glRasterShapeRenderer';
+export { glRichTextRenderer } from './glRichText';
+export { glScale9ShapeRenderer } from './glScale9Shape';
+export { glScale9SpriteRenderer } from './glScale9Sprite';
+export { glShapeRenderer, glMorphShapeRenderer } from './glShape';
 export * from './glShapeRasterizer';
-export { defaultGlSpriteRenderer } from './glSprite';
+export { glSpriteRenderer } from './glSprite';
 export * from './glStandardMaterial';
 export { enableGlTextInput } from './glTextInput';
-export { defaultGlTextLabelRenderer } from './glTextLabel';
+export { glTextLabelRenderer } from './glTextLabel';
 export * from './glTilemap';
 export {
   createGlVelocityTarget,
-  defaultGlNode2DVelocityWriter,
-  defaultGlParticleEmitter2DVelocityWriter,
+  glNode2DVelocityWriter,
+  glParticleEmitter2DVelocityWriter,
   registerGlVelocityWriter,
   renderGlVelocity,
 } from './glVelocity';

@@ -7,13 +7,13 @@ import { getDomRenderStateRuntime } from './domRenderState';
 
 // Plain display objects (containers, stages) have no visual geometry of their own.
 // Registering this renderer for DisplayObjectKind ensures cross-backend symmetry with
-// defaultCanvasScene2DRenderer and allows the DOM traversal to correctly process
+// canvasScene2DRenderer and allows the DOM traversal to correctly process
 // display-object containers when their kind is registered.
 export function drawDomScene2D(_state: DomRenderState, _renderProxy: RenderProxy2D): void {
   // No-op: containers are rendered implicitly by the traversal in renderDomScene2D.
 }
 
-export const defaultDomScene2DRenderer: Scene2DRenderer = {
+export const domScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomScene2D,
 };

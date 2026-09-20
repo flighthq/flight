@@ -26,13 +26,13 @@ export function applyLensDistortionEffectToWgpu(
   });
 }
 
-export const defaultWgpuLensDistortionEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuLensDistortionEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'LensDistortionEffect', wgpuLensDistortionEffectRunner);
+}
+
+export const wgpuLensDistortionEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
-
-export function registerWgpuLensDistortionEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'LensDistortionEffect', defaultWgpuLensDistortionEffectRunner);
-}
 
 const LENS_DISTORTION_FRAGMENT_WGSL = /* wgsl */ `
 struct Uniforms {

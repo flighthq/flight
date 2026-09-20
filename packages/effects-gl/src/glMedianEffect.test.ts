@@ -1,4 +1,4 @@
-import { applyMedianEffectToGl, defaultGlMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect';
+import { applyMedianEffectToGl, glMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect';
 
 describe('applyMedianEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyMedianEffectToGl', () => {
   });
 });
 
-describe('defaultGlMedianEffectRunner', () => {
+describe('glMedianEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlMedianEffectRunner).toBe('function');
+    expect(typeof glMedianEffectRunner).toBe('function');
   });
 });
 

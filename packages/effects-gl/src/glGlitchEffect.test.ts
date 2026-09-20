@@ -6,7 +6,7 @@ import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flight
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
-import { applyGlitchEffectToGl, defaultGlGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
+import { applyGlitchEffectToGl, glGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 // The shader is module-private, so it is read back from the argument the effect hands the program
@@ -124,12 +124,12 @@ describe('applyGlitchEffectToGl', () => {
   });
 });
 
-describe('defaultGlGlitchEffectRunner', () => {
+describe('glGlitchEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlGlitchEffectRunner(
+    glGlitchEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createGlitchEffect(),
     );
@@ -147,6 +147,6 @@ describe('registerGlGlitchEffect', () => {
 
     expect(getGlEffectRunner(state, 'GlitchEffect')).toBeNull();
     registerGlGlitchEffect(state);
-    expect(getGlEffectRunner(state, 'GlitchEffect')).toBe(defaultGlGlitchEffectRunner);
+    expect(getGlEffectRunner(state, 'GlitchEffect')).toBe(glGlitchEffectRunner);
   });
 });

@@ -20,12 +20,12 @@ export function applyToneMapEffectToGl(
   });
 }
 
-export const defaultGlToneMapEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glToneMapEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyToneMapEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
 
 export function registerGlToneMapEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
+  registerGlEffect(state, 'ToneMapEffect', glToneMapEffectRunner);
 }
 
 function buildToneMapFragment(operator: string): string {

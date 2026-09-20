@@ -6,11 +6,7 @@ import type { GlRenderState, GlTextureRenderTarget, ScanlinesEffect } from '@fli
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
-import {
-  applyScanlinesEffectToGl,
-  defaultGlScanlinesEffectRunner,
-  registerGlScanlinesEffect,
-} from './glScanlinesEffect';
+import { applyScanlinesEffectToGl, glScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 const glMock = {
@@ -90,11 +86,11 @@ describe('applyScanlinesEffectToGl', () => {
   });
 });
 
-describe('defaultGlScanlinesEffectRunner', () => {
+describe('glScanlinesEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlScanlinesEffectRunner(
+    glScanlinesEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createScanlinesEffect({ count: 13 }),
     );
@@ -112,6 +108,6 @@ describe('registerGlScanlinesEffect', () => {
 
     expect(getGlEffectRunner(state, 'ScanlinesEffect')).toBeNull();
     registerGlScanlinesEffect(state);
-    expect(getGlEffectRunner(state, 'ScanlinesEffect')).toBe(defaultGlScanlinesEffectRunner);
+    expect(getGlEffectRunner(state, 'ScanlinesEffect')).toBe(glScanlinesEffectRunner);
   });
 });

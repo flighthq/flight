@@ -49,7 +49,7 @@ export function createGlCacheState(
 }
 
 export function enableGlRenderCache(state: GlRenderState): void {
-  registerRenderCacheRenderer(state, defaultGlRenderCacheRenderer);
+  registerRenderCacheRenderer(state, glRenderCacheRenderer);
 }
 
 /**
@@ -169,7 +169,7 @@ function destroyOwnedGlRenderCacheTargets(ownerState: GlRenderState): void {
   _renderCacheTargets.delete(ownerState);
 }
 
-export const defaultGlRenderCacheRenderer: Scene2DRenderer = {
+export const glRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawGlRenderCache,
 };

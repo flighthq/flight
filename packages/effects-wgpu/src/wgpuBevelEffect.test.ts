@@ -8,7 +8,7 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyBevelEffectToWgpu, defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
+import { applyBevelEffectToWgpu, wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
 import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
@@ -211,26 +211,26 @@ describe('applyBevelEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuBevelEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    recorded.composites.length = 0;
-    const target = { format: 'rgba8unorm', height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
-
-    defaultWgpuBevelEffectRunner(
-      { dest: target, pool: {}, source: target, state: {} } as never,
-      createBevelEffect({ shadowColor: 0x102030ff }),
-    );
-
-    expect(recorded.composites[0]![4]).toBeCloseTo(0x10 / 255, 6);
-  });
-});
-
 describe('registerWgpuBevelEffect', () => {
   it('makes the runner resolvable for the BevelEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
     expect(getWgpuEffectRunner(state, 'BevelEffect')).toBeNull();
     registerWgpuBevelEffect(state);
-    expect(getWgpuEffectRunner(state, 'BevelEffect')).toBe(defaultWgpuBevelEffectRunner);
+    expect(getWgpuEffectRunner(state, 'BevelEffect')).toBe(wgpuBevelEffectRunner);
+  });
+});
+
+describe('wgpuBevelEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    recorded.composites.length = 0;
+    const target = { format: 'rgba8unorm', height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
+
+    wgpuBevelEffectRunner(
+      { dest: target, pool: {}, source: target, state: {} } as never,
+      createBevelEffect({ shadowColor: 0x102030ff }),
+    );
+
+    expect(recorded.composites[0]![4]).toBeCloseTo(0x10 / 255, 6);
   });
 });

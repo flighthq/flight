@@ -10,7 +10,7 @@ import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
+import { glSpriteRenderer, drawGlSprite } from './glSprite';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -57,14 +57,6 @@ function ct(scale: number): ColorScaleBias {
 }
 
 const CT_MODE_UNIFORM = 1;
-
-describe('defaultGlSpriteRenderer', () => {
-  it('declares the quad format and submit function', () => {
-    expect(defaultGlSpriteRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultGlSpriteRenderer.isDirty).toBe('function');
-    expect(defaultGlSpriteRenderer.submit).toBe(drawGlSprite);
-  });
-});
 
 describe('drawGlSprite', () => {
   it('writes natural size and uv window into the shared batch', () => {
@@ -150,5 +142,13 @@ describe('drawGlSprite', () => {
     drawGlSprite(state, makeRenderProxy(makeSprite()));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledOnce();
+  });
+});
+
+describe('glSpriteRenderer', () => {
+  it('declares the quad format and submit function', () => {
+    expect(glSpriteRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof glSpriteRenderer.isDirty).toBe('function');
+    expect(glSpriteRenderer.submit).toBe(drawGlSprite);
   });
 });

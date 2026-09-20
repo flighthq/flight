@@ -110,13 +110,13 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
 }
 
 // The canvas-only shape strategy: every shape rasterizes through the registered rasterizer, and this
-// module never references the tessellator — so registering this renderer instead of defaultGlShapeRenderer
+// module never references the tessellator — so registering this renderer instead of glShapeRenderer
 // leaves @flighthq/path's tessellatePath and shape's region resolvers out of the bundle.
 //
 // Choosing it means the full canvas command vocabulary must be registered on this state, unconditionally:
 // every shape replays its whole command stream. Pick it for exact 2D-canvas fidelity, or to avoid
-// shipping a tessellator at all; pick defaultGlMeshShapeRenderer for the opposite trade.
-export const defaultGlRasterShapeRenderer: Scene2DRenderer = {
+// shipping a tessellator at all; pick glMeshShapeRenderer for the opposite trade.
+export const glRasterShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlShapeData,
   destroyData: destroyGlShapeData,

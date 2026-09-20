@@ -58,16 +58,16 @@ export function applyGaussianBlurToWgpu(
   applyWgpuGaussianBlurPass(state, temp, dest, sigmaY, radiusY, 0, 1);
 }
 
-export const defaultWgpuBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuBlurEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'BlurEffect', wgpuBlurEffectRunner);
+}
+
+export const wgpuBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
   const temp = acquireWgpuTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
   releaseWgpuTextureRenderTarget(ctx.pool, temp);
 };
-
-export function registerWgpuBlurEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
-}
 
 function applyWgpuGaussianBlurPass(
   state: WgpuRenderState,

@@ -22,15 +22,15 @@ const FEATURE_FIXTURES = [
 // The renderer each drawing fixture is allowed to bind. The size-only control binds none, but that is
 // NOT listed here — it is derived from its declared kind, so the manifest stays the single source.
 const ALLOWED_RENDERER: Record<string, readonly string[]> = {
-  'scene2d-canvas-bitmaptext': ['defaultCanvasBitmapTextRenderer'],
-  'scene2d-canvas-morphshape': ['defaultCanvasMorphShapeRenderer'],
-  'scene2d-canvas-particleemitter2d': ['defaultCanvasParticleEmitter2DRenderer'],
-  'scene2d-canvas-quadbatch': ['defaultCanvasQuadBatchRenderer'],
-  'scene2d-canvas-richtext': ['defaultCanvasRichTextRenderer'],
-  'scene2d-canvas-scale9shape': ['defaultCanvasScale9ShapeRenderer'],
-  'scene2d-canvas-shape': ['defaultCanvasShapeRenderer'],
-  'scene2d-canvas-text': ['defaultCanvasTextLabelRenderer'],
-  'scene2d-canvas-tilemap': ['defaultCanvasTilemapRenderer'],
+  'scene2d-canvas-bitmaptext': ['canvasBitmapTextRenderer'],
+  'scene2d-canvas-morphshape': ['canvasMorphShapeRenderer'],
+  'scene2d-canvas-particleemitter2d': ['canvasParticleEmitter2DRenderer'],
+  'scene2d-canvas-quadbatch': ['canvasQuadBatchRenderer'],
+  'scene2d-canvas-richtext': ['canvasRichTextRenderer'],
+  'scene2d-canvas-scale9shape': ['canvasScale9ShapeRenderer'],
+  'scene2d-canvas-shape': ['canvasShapeRenderer'],
+  'scene2d-canvas-text': ['canvasTextLabelRenderer'],
+  'scene2d-canvas-tilemap': ['canvasTilemapRenderer'],
 };
 
 // Exactly the fixtures whose feature samples a texture, and which therefore register the one image
@@ -47,7 +47,7 @@ const TEXTURE_FIXTURES = [
 
 // Aggregates whose whole purpose is to bind everything at once. A per-feature fixture that reaches one
 // stops measuring its feature and starts measuring the aggregate.
-const AGGREGATES = ['defaultScene2DCanvasRenderRegistries', 'canvasShapeCommandTable', 'enableHostWeb'] as const;
+const AGGREGATES = ['canvasScene2DRenderRegistries', 'canvasShapeCommandTable', 'enableHostWeb'] as const;
 
 // ★ THE ROLE IS DECLARED IN PACKAGE METADATA, NOT IN A LIST HERE. `flightSize.kind` is what makes a
 // fixture the control: it draws nothing, carries no capture manifest, and is the subtrahend the other
@@ -131,7 +131,7 @@ describe('canvas size fixture isolation', () => {
   it('registers exactly the one renderer its feature requires', () => {
     for (const fixture of DRAWING_FIXTURES) {
       const source = fixtureSource(fixture);
-      const bound = [...source.matchAll(/\bdefaultCanvas(\w+Renderer)\b/gu)].map((match) => `defaultCanvas${match[1]}`);
+      const bound = [...source.matchAll(/\bcanvas(\w+Renderer)\b/gu)].map((match) => `canvas${match[1]}`);
       expect([...new Set(bound)].sort(), `${fixture} renderer set`).toEqual([...ALLOWED_RENDERER[fixture]].sort());
     }
   });
@@ -209,7 +209,7 @@ describe('size-only control fixture', () => {
   it('registers no renderer and draws no visible content', () => {
     for (const fixture of CONTROL_FIXTURES) {
       const source = fixtureSource(fixture);
-      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bdefaultCanvas\w+Renderer\b/u);
+      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bcanvas\w+Renderer\b/u);
       expect(source, `${fixture} must not register a renderer`).not.toMatch(/\bregisterRenderer\b/u);
     }
   });

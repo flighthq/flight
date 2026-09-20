@@ -12,8 +12,8 @@ import {
   createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
+  canvasShapeCommands,
+  canvasShapeRenderer,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   endCanvasRenderPass,
@@ -21,7 +21,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -46,14 +46,14 @@ const screen = createCanvasScreenRenderTarget(
   }),
 );
 const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
 );
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1d / 0xff, 0x1f / 0xff, 0x23 / 0xff, 1] } as const;
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 
 const root = createDisplayObject();
 root.scaleX = pixelRatio;

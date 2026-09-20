@@ -12,7 +12,7 @@ import { setGlPbrTransmissionSceneColor } from '@flighthq/scene3d-gl/contract';
 import type { Camera3D, GlEffectState, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   createScene3DLights,
   addNodeChild,
   beginGlRenderPass,
@@ -62,7 +62,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
 

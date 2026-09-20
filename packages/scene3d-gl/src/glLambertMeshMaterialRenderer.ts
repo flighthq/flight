@@ -1,0 +1,104 @@
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type {
+  LinearColor,
+  Camera3D,
+  GlMeshMaterialRenderer,
+  GlRenderState,
+  LambertMaterial,
+  Material,
+  MeshGeometry,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
+  GlClassicDefineKey,
+  GlClassicProgram,
+} from '@flighthq/types/contract';
+import { LambertMaterialKind } from '@flighthq/types/contract';
+
+import { ensureGlClassicProgram } from './glClassicPrelude';
+import { bindGlMeshLightBlock } from './glLitProgram';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+
+// The built-in classic Lambert forward-lit mesh-material renderer (GlMeshMaterialRenderer for
+// LambertMaterialKind). Diffuse-only Lambertian shading: bind selects the classic uber-shader's
+// `lambert` variant for the material's diffuse map / alpha mode, uploads the camera view-projection
+// and the packed light block, and the material's linear diffuse color. draw issues the indexed draw.
+// Lambert has no view-dependent term, so it skips the camera position; the shared classic prelude
+// compiles out the specular branch for the `lambert` model. See registerGlLambertMaterial to install.
+export const glLambertMeshMaterialRenderer: GlMeshMaterialRenderer = {
+  bind(
+    state: GlRenderState,
+    material: Readonly<Material> | null,
+    lights: Readonly<Scene3DLightBlock>,
+    camera: Readonly<Camera3D>,
+  ): void {
+    const lambert = material as Readonly<LambertMaterial> | null;
+    const program = ensureGlClassicProgram(state, defineKeyForMaterial(state, lambert));
+    beginGlMeshDraw(state, program, lambert !== null && lambert.doubleSided);
+
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
+    bindGlMeshLightBlock(state, program, lights);
+    bindGlLambertMaterialUniforms(state, program, lambert);
+  },
+
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
+    if (program === null) return;
+    drawGlMeshSubset(state, program, proxy, geometry);
+  },
+};
+
+// Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
+// side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
+export function registerGlLambertMaterial(state: GlRenderState): void {
+  registerGlMeshMaterialRenderer(state, LambertMaterialKind, glLambertMeshMaterialRenderer);
+}
+
+function bindGlLambertMaterialUniforms(
+  state: GlRenderState,
+  program: Readonly<GlClassicProgram>,
+  material: Readonly<LambertMaterial> | null,
+): void {
+  const gl = state.gl;
+  if (material === null) {
+    gl.uniform4f(program.locDiffuse, 1, 1, 1, 1);
+    gl.uniform1f(program.locAlphaCutoff, 0.5);
+    return;
+  }
+
+  unpackColorToLinear(scratchRgba, material.diffuse);
+  gl.uniform4f(program.locDiffuse, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+  gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
+
+  const diffuseMap = material.diffuseMap;
+  if (diffuseMap !== null) {
+    gl.activeTexture(gl.TEXTURE0);
+    if (resolveGlTexture(state, diffuseMap) !== null) gl.uniform1i(program.locDiffuseMap, 0);
+  }
+  bindGlUvTransform(gl, program, diffuseMap);
+}
+
+// The feature define key for a Lambert material: the fixed `lambert` lighting model plus which optional
+// maps are present and whether alpha-mask cutoff is active. Lambert never has specular or normal maps.
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<LambertMaterial> | null): GlClassicDefineKey {
+  return {
+    alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    hasAlphaMap: false,
+    hasDiffuseMap:
+      material !== null && material.diffuseMap !== null && resolveGlTexture(state, material.diffuseMap) !== null,
+    hasNormalMap: false,
+    hasSpecularMap: false,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
+    lightingModel: 'lambert',
+  };
+}
+
+const scratchRgba: LinearColor = [0, 0, 0, 0];

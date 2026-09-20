@@ -40,12 +40,12 @@ export function applyScreenSpaceFogEffectToGl(
   });
 }
 
-export const defaultGlScreenSpaceFogEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glScreenSpaceFogEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyScreenSpaceFogEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneDepthTexture, effect as ScreenSpaceFogEffect);
 };
 
 export function registerGlScreenSpaceFogEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
+  registerGlEffect(state, 'ScreenSpaceFogEffect', glScreenSpaceFogEffectRunner);
 }
 
 const SCREEN_SPACE_FOG_FRAGMENT_SRC = `#version 300 es

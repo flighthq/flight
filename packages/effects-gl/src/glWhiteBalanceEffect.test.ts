@@ -1,6 +1,6 @@
 import {
   applyWhiteBalanceEffectToGl,
-  defaultGlWhiteBalanceEffectRunner,
+  glWhiteBalanceEffectRunner,
   registerGlWhiteBalanceEffect,
 } from './glWhiteBalanceEffect';
 
@@ -10,9 +10,9 @@ describe('applyWhiteBalanceEffectToGl', () => {
   });
 });
 
-describe('defaultGlWhiteBalanceEffectRunner', () => {
+describe('glWhiteBalanceEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlWhiteBalanceEffectRunner).toBe('function');
+    expect(typeof glWhiteBalanceEffectRunner).toBe('function');
   });
 });
 

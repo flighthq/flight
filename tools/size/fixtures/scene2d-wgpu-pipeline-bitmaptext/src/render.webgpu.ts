@@ -20,7 +20,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultWgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { createWgpuSurface } from '@flighthq/surface';
 import { BitmapTextKind, StandardMaterialKind } from '@flighthq/types';
@@ -40,7 +40,7 @@ const registry = {
     StandardMaterialKind,
     standardWgpuMaterialRenderer,
   ),
-  renderers: withRegistryTableEntry(registries.renderers, BitmapTextKind, defaultWgpuBitmapTextRenderer),
+  renderers: withRegistryTableEntry(registries.renderers, BitmapTextKind, wgpuBitmapTextRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

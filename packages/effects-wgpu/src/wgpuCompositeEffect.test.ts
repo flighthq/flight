@@ -2,7 +2,7 @@ import { CompositeOperator } from '@flighthq/types/contract';
 
 import {
   applyCompositeEffectToWgpu,
-  defaultWgpuCompositeEffectRunner,
+  wgpuCompositeEffectRunner,
   getWgpuCompositeEffectOperatorIndex,
   WGPU_COMPOSITE_FRAGMENT_WGSL,
   registerWgpuCompositeEffect,
@@ -11,12 +11,6 @@ import {
 describe('applyCompositeEffectToWgpu', () => {
   it('is the public WebGPU composite entry point', () => {
     expect(typeof applyCompositeEffectToWgpu).toBe('function');
-  });
-});
-
-describe('defaultWgpuCompositeEffectRunner', () => {
-  it('is a render-effect runner', () => {
-    expect(typeof defaultWgpuCompositeEffectRunner).toBe('function');
   });
 });
 
@@ -43,5 +37,11 @@ describe('WGPU_COMPOSITE_FRAGMENT_WGSL', () => {
     expect(WGPU_COMPOSITE_FRAGMENT_WGSL).toContain('@group(2) @binding(0) var backdropTexture');
     expect(WGPU_COMPOSITE_FRAGMENT_WGSL).toContain('uni.operatorIndex == 10');
     expect(WGPU_COMPOSITE_FRAGMENT_WGSL).toContain('sourceFactor * layer + backdropFactor * back');
+  });
+});
+
+describe('wgpuCompositeEffectRunner', () => {
+  it('is a render-effect runner', () => {
+    expect(typeof wgpuCompositeEffectRunner).toBe('function');
   });
 });

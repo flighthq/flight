@@ -30,13 +30,13 @@ export function applyKuwaharaEffectToWgpu(
   });
 }
 
-export const defaultWgpuKuwaharaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuKuwaharaEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'KuwaharaEffect', wgpuKuwaharaEffectRunner);
+}
+
+export const wgpuKuwaharaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyKuwaharaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
-
-export function registerWgpuKuwaharaEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'KuwaharaEffect', defaultWgpuKuwaharaEffectRunner);
-}
 
 // Slot layout: [0]=radius, [1]=pad, [2..3]=resolution.
 const KUWAHARA_FRAGMENT_WGSL = /* wgsl */ `

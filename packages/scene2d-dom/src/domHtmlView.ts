@@ -27,7 +27,7 @@ export function drawDomHtmlView(state: DomRenderState, renderProxy: RenderProxy2
   setDomRendererElement(state, element);
 }
 
-export const defaultDomHtmlViewRenderer: Scene2DRenderer = {
+export const domHtmlViewRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomHtmlView,
 };

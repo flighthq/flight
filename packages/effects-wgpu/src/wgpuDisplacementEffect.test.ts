@@ -1,6 +1,6 @@
 import {
   applyDisplacementEffectToWgpu,
-  defaultWgpuDisplacementEffectRunner,
+  wgpuDisplacementEffectRunner,
   registerWgpuDisplacementEffect,
 } from './wgpuDisplacementEffect';
 
@@ -10,14 +10,14 @@ describe('applyDisplacementEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuDisplacementEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuDisplacementEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuDisplacementEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuDisplacementEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuDisplacementEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuDisplacementEffectRunner).toBe('function');
   });
 });

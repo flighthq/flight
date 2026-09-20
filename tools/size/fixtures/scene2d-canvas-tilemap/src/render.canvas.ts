@@ -10,7 +10,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasTilemapRenderer,
+  canvasTilemapRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
@@ -25,7 +25,7 @@ import { RegistryEntryState, TilemapKind } from '@flighthq/types';
 // REQUIRED WIRING for one tile grid, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  TilemapKind -> defaultCanvasTilemapRenderer
+//   renderer  TilemapKind -> canvasTilemapRenderer
 //   commands  NONE. A Tilemap replays no shape command stream.
 //   resolvers ONE image texture resolver. Every tile samples a region of the tileset atlas.
 //
@@ -44,7 +44,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, TilemapKind, defaultCanvasTilemapRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, TilemapKind, canvasTilemapRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

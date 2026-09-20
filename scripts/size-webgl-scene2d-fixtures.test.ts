@@ -28,7 +28,7 @@ const profiles = [
     kind: 'BitmapTextKind',
     name: 'scene2d-gl-pipeline-bitmaptext',
     registrations: ['registerGlImageTextureResolver', 'registerGlStandardMaterial', 'registerRenderer'],
-    renderer: 'defaultGlBitmapTextRenderer',
+    renderer: 'glBitmapTextRenderer',
   },
   {
     constructors: ['createDisplayObject'],
@@ -46,7 +46,7 @@ const profiles = [
     kind: 'DisplayObjectKind',
     name: 'scene2d-gl-pipeline-displayobject',
     registrations: ['registerRenderer'],
-    renderer: 'defaultGlScene2DRenderer',
+    renderer: 'glScene2DRenderer',
     sizeOnly: true,
   },
   {
@@ -68,7 +68,7 @@ const profiles = [
     kind: 'MorphShapeKind',
     name: 'scene2d-gl-pipeline-morphshape',
     registrations: ['registerRenderer'],
-    renderer: 'defaultGlMorphShapeRenderer',
+    renderer: 'glMorphShapeRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createParticleEmitter2D'],
@@ -90,7 +90,7 @@ const profiles = [
     kind: 'ParticleEmitter2DKind',
     name: 'scene2d-gl-pipeline-particleemitter2d',
     registrations: ['registerGlImageTextureResolver', 'registerRenderer'],
-    renderer: 'defaultGlParticleEmitter2DRenderer',
+    renderer: 'glParticleEmitter2DRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createRichText'],
@@ -110,7 +110,7 @@ const profiles = [
     kind: 'RichTextKind',
     name: 'scene2d-gl-pipeline-richtext',
     registrations: ['registerRenderer'],
-    renderer: 'defaultGlRichTextRenderer',
+    renderer: 'glRichTextRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createScale9Shape'],
@@ -137,7 +137,7 @@ const profiles = [
     // retired `registerGlShapeCommands` is what this list used to name, and the fixture had already
     // moved on — the profile had not, so the assertion failed against a fixture that was right.
     registrations: ['registerCanvasShapeCommands', 'registerGlShapeRasterizer', 'registerRenderer'],
-    renderer: 'defaultGlScale9ShapeRenderer',
+    renderer: 'glScale9ShapeRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createTextLabel'],
@@ -157,7 +157,7 @@ const profiles = [
     kind: 'TextLabelKind',
     name: 'scene2d-gl-pipeline-textlabel',
     registrations: ['registerGlStandardMaterial', 'registerRenderer'],
-    renderer: 'defaultGlTextLabelRenderer',
+    renderer: 'glTextLabelRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createTilemap'],
@@ -179,7 +179,7 @@ const profiles = [
     kind: 'TilemapKind',
     name: 'scene2d-gl-pipeline-tilemap',
     registrations: ['registerGlImageTextureResolver', 'registerGlStandardMaterial', 'registerRenderer'],
-    renderer: 'defaultGlTilemapRenderer',
+    renderer: 'glTilemapRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createSprite'],
@@ -199,7 +199,7 @@ const profiles = [
     kind: 'SpriteKind',
     name: 'scene2d-gl-pipeline-sprite',
     registrations: ['registerGlImageTextureResolver', 'registerGlStandardMaterial', 'registerRenderer'],
-    renderer: 'defaultGlSpriteRenderer',
+    renderer: 'glSpriteRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createShape'],
@@ -219,7 +219,7 @@ const profiles = [
     kind: 'ShapeKind',
     name: 'scene2d-gl-pipeline-shape',
     registrations: ['registerRenderer'],
-    renderer: 'defaultGlMeshShapeRenderer',
+    renderer: 'glMeshShapeRenderer',
   },
   {
     constructors: ['createDisplayObject', 'createQuadBatch'],
@@ -241,7 +241,7 @@ const profiles = [
     kind: 'QuadBatchKind',
     name: 'scene2d-gl-pipeline-quadbatch',
     registrations: ['registerGlImageTextureResolver', 'registerGlStandardMaterial', 'registerRenderer'],
-    renderer: 'defaultGlQuadBatchRenderer',
+    renderer: 'glQuadBatchRenderer',
   },
 ] as const;
 
@@ -293,7 +293,7 @@ describe('WebGL Scene2D size fixtures', () => {
         ].map((match) => match[1]);
         const kinds = [...new Set([...source.matchAll(/\b[A-Z]\w+Kind\b/g)].map((match) => match[0]))];
         const registrations = [...source.matchAll(/\b(register[A-Z]\w*)\s*\(/g)].map((match) => match[1]).sort();
-        const renderers = [...new Set([...source.matchAll(/\bdefaultGl\w+Renderer\b/g)].map((match) => match[0]))];
+        const renderers = [...new Set([...source.matchAll(/\bgl\w+Renderer\b/g)].map((match) => match[0]))];
 
         expect(imports).toEqual([...profile.imports].sort());
         expect(constructors).toEqual(profile.constructors);
@@ -302,7 +302,7 @@ describe('WebGL Scene2D size fixtures', () => {
         expect(renderers).toEqual([profile.renderer]);
         expect(source.match(/withRegistryTableEntry\s*\(/g)).toHaveLength(1);
         expect(source).toContain('createGlSurface(webHostGl,');
-        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|defaultScene2DGlRenderRegistries|webHost)\b/);
+        expect(source).not.toMatch(/\b(?:enableHostWebGlRenderSurface|glScene2DRenderRegistries|webHost)\b/);
       });
 
       it('threads the feature through the complete rendering call chain', () => {

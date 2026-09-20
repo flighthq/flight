@@ -20,7 +20,7 @@ status: ./status.md
 - the **ping-pong pipeline orchestrator** (`create/begin/end/destroyWgpuRenderEffectPipeline`, `setWgpuRenderEffectVelocityTexture`) that walks a per-frame `RenderEffect[]` across two pooled scratch targets and presents via a fullscreen pass;
 - the explicit **RenderTexture-to-RenderTexture bridge** (`applyWgpuRenderEffectsToRenderTexture`) used by per-node capture lanes, with caller-owned source/destination/scratch leases and deterministic final-destination parity;
 - the per-state **compiled-pipeline cache** (`getWgpuEffectPipeline`);
-- **44 effect runners** (`apply<Name>EffectToWgpu` + `defaultWgpu<Name>EffectRunner`), each paired with a matching per-kind registrar, including the advanced `BlendEffect` composite and multi-pass recipes such as mip-chain bloom.
+- **44 effect runners** (`apply<Name>EffectToWgpu` + `wgpu<Name>EffectRunner`), each paired with a matching per-kind registrar, including the advanced `BlendEffect` composite and multi-pass recipes such as mip-chain bloom.
 
 Where it ends: it does **not** own the effect descriptors or their math (that is `effects`), and it is one of a family of interchangeable backends alongside `effects-gl`, `effects-canvas`, and the agnostic core. The same agnostic `RenderEffect[]` drives every backend through its registry, but each backend exposes only its genuinely realized subset. WGPU realizes 44 built-ins; GL realizes 46 and additionally has a CustomShader seam that is not applicable to the fixed WGPU catalog.
 

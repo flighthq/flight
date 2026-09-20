@@ -95,7 +95,7 @@ export function initializeDomScale9ShapeData(
   out.context = null;
 }
 
-export const defaultDomScale9ShapeRenderer: Scene2DRenderer = {
+export const domScale9ShapeRenderer: Scene2DRenderer = {
   createData: createDomScale9ShapeData,
   submit: drawDomScale9Shape,
 };

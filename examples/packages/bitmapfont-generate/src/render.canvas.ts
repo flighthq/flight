@@ -8,8 +8,8 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasBitmapTextRenderer,
-  defaultCanvasSpriteRenderer,
+  canvasBitmapTextRenderer,
+  canvasSpriteRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -18,7 +18,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   SpriteKind,
 } from '@flighthq/sdk';
 
@@ -34,7 +34,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -44,8 +44,8 @@ const screenClear = { color: [0x11 / 0xff, 0x18 / 0xff, 0x27 / 0xff, 1] } as con
 enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-registerRenderer(state, BitmapTextKind, defaultCanvasBitmapTextRenderer);
+registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerRenderer(state, BitmapTextKind, canvasBitmapTextRenderer);
 
 export const scale = pixelRatio;
 

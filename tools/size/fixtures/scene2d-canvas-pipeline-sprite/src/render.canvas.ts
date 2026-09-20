@@ -10,7 +10,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasSpriteRenderer,
+  canvasSpriteRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
@@ -29,7 +29,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, defaultCanvasSpriteRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, canvasSpriteRenderer),
 };
 const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),

@@ -85,13 +85,13 @@ export function applyBevelEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
-export const defaultWgpuBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuBevelEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'BevelEffect', wgpuBevelEffectRunner);
+}
+
+export const wgpuBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyBevelEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
 };
-
-export function registerWgpuBevelEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
-}
 
 // Reads the blurred alpha field (group 1) and source (group 2); writes the tinted, clipped bevel
 // mask, premultiplied, blended over `dest` (which already holds the source when sourceMode is 'draw').

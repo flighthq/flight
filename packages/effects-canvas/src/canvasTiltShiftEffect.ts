@@ -75,12 +75,12 @@ export function applyTiltShiftEffectToCanvas(
   });
 }
 
-export const defaultCanvasTiltShiftEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasTiltShiftEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToCanvas(ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
 export function registerCanvasTiltShiftEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'TiltShiftEffect', defaultCanvasTiltShiftEffectRunner);
+  registerCanvasEffect(state, 'TiltShiftEffect', canvasTiltShiftEffectRunner);
 }
 
 const TAP_REACH = 3;

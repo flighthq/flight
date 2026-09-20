@@ -7,12 +7,12 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasShapeRenderer,
-  defaultCanvasSpriteRenderer,
-  defaultCanvasTextLabelRenderer,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasShapeRenderer,
+  canvasSpriteRenderer,
+  canvasTextLabelRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -22,7 +22,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -40,7 +40,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -49,11 +49,11 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x87 / 0xff, 0xce / 0xff, 0xeb / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerCanvasShapeCommands(state, [defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
+registerCanvasShapeCommands(state, [canvasBeginFill, canvasDrawRectangle, canvasEndFill]);
 
 export const scale = pixelRatio;
 

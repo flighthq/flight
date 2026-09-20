@@ -25,12 +25,12 @@ export function applySsaoEffectToGl(
   });
 }
 
-export const defaultGlSsaoEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glSsaoEffectRunner: GlEffectRunner = (ctx, effect) => {
   applySsaoEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
 
 export function registerGlSsaoEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'SsaoEffect', defaultGlSsaoEffectRunner);
+  registerGlEffect(state, 'SsaoEffect', glSsaoEffectRunner);
 }
 
 const SSAO_FRAGMENT_SRC = `#version 300 es

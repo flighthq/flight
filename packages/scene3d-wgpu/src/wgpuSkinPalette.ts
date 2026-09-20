@@ -135,9 +135,9 @@ export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.registries.gpuSkinning = {
     ...(runtime.registries.gpuSkinning ?? createSlotTable('WgpuGpuSkinning', 'Unregistered')),
-    entry: { state: RegistryEntryState.Bound, value: defaultWgpuSkinningAdapter },
+    entry: { state: RegistryEntryState.Bound, value: wgpuSkinningAdapter },
   };
-  getWgpuScene3DRuntime(state).skinningAdapter = defaultWgpuSkinningAdapter;
+  getWgpuScene3DRuntime(state).skinningAdapter = wgpuSkinningAdapter;
 }
 
 // Uploads the per-joint NORMAL palette into its own arena and returns the base TEXEL index its region
@@ -436,7 +436,7 @@ function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: stri
   return -1;
 }
 
-export const defaultWgpuSkinningAdapter: WgpuSkinningAdapter = {
+export const wgpuSkinningAdapter: WgpuSkinningAdapter = {
   extendMeshPrelude,
   extendShadowDepthPrelude,
   getDrawBindGroup: ensureWgpuSkinDrawBindGroup,

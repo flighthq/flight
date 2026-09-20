@@ -29,12 +29,12 @@ export function applyVignetteEffectToGl(
   });
 }
 
-export const defaultGlVignetteEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glVignetteEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyVignetteEffectToGl(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 export function registerGlVignetteEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
+  registerGlEffect(state, 'VignetteEffect', glVignetteEffectRunner);
 }
 
 const VIGNETTE_FRAGMENT_SRC = `#version 300 es

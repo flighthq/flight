@@ -5,7 +5,7 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import { applyBevelEffectToGl, defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
+import { applyBevelEffectToGl, glBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
 import * as glEffectBlitShaderMod from './glEffectBlitShader';
 import * as glEffectBoxBlurMod from './glEffectBoxBlur';
 import * as glEffectTintShaderMod from './glEffectTintShader';
@@ -120,9 +120,9 @@ describe('applyBevelEffectToGl', () => {
   });
 });
 
-describe('defaultGlBevelEffectRunner', () => {
+describe('glBevelEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlBevelEffectRunner).toBe('function');
+    expect(typeof glBevelEffectRunner).toBe('function');
   });
 });
 

@@ -54,7 +54,7 @@ export function applyCompositeEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasCompositeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasCompositeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyCompositeEffectToCanvas(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
 };
 
@@ -70,7 +70,7 @@ export function getCanvasCompositeEffectOperation(operator: CompositeOperator): 
 }
 
 export function registerCanvasCompositeEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'CompositeEffect', defaultCanvasCompositeEffectRunner);
+  registerCanvasEffect(state, 'CompositeEffect', canvasCompositeEffectRunner);
 }
 
 // CompositeOperator → Canvas 2D globalCompositeOperation. Ten of the eleven operators are a direct

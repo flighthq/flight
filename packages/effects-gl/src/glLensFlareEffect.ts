@@ -28,12 +28,12 @@ export function applyLensFlareEffectToGl(
   });
 }
 
-export const defaultGlLensFlareEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glLensFlareEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyLensFlareEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
 
 export function registerGlLensFlareEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'LensFlareEffect', defaultGlLensFlareEffectRunner);
+  registerGlEffect(state, 'LensFlareEffect', glLensFlareEffectRunner);
 }
 
 const LENS_FLARE_FRAGMENT_SRC = `#version 300 es

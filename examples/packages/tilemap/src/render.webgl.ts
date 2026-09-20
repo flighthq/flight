@@ -9,13 +9,13 @@ import {
 import type { Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   SpriteKind,
   TilemapKind,
   createGlRenderState,
   enableFlightDiagnostics,
-  defaultGlSpriteRenderer,
-  defaultGlTilemapRenderer,
+  glSpriteRenderer,
+  glTilemapRenderer,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -38,14 +38,14 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
-registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
+registerRenderer(state, SpriteKind, glSpriteRenderer);
+registerRenderer(state, TilemapKind, glTilemapRenderer);
 
 export const scale = pixelRatio;
 

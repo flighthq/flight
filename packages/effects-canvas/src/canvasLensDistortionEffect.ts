@@ -79,10 +79,10 @@ export function applyLensDistortionEffectToCanvas(
   });
 }
 
-export const defaultCanvasLensDistortionEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasLensDistortionEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToCanvas(ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
 export function registerCanvasLensDistortionEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'LensDistortionEffect', defaultCanvasLensDistortionEffectRunner);
+  registerCanvasEffect(state, 'LensDistortionEffect', canvasLensDistortionEffectRunner);
 }

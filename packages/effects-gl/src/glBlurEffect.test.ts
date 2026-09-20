@@ -14,7 +14,7 @@ import {
   applyBlurEffectToGlRenderTextures,
   applyGaussianBlurToGl,
   applyGaussianBlurToGlRenderTextures,
-  defaultGlBlurEffectRunner,
+  glBlurEffectRunner,
   registerGlBlurEffect,
 } from './glBlurEffect';
 import { getGlEffectRunner } from './glEffectRegistry';
@@ -78,9 +78,9 @@ describe('applyGaussianBlurToGlRenderTextures', () => {
   });
 });
 
-describe('defaultGlBlurEffectRunner', () => {
+describe('glBlurEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlBlurEffectRunner).toBe('function');
+    expect(typeof glBlurEffectRunner).toBe('function');
   });
 });
 
@@ -91,7 +91,7 @@ describe('registerGlBlurEffect', () => {
 
     registerGlBlurEffect(state);
 
-    expect(getGlEffectRunner(state, 'BlurEffect')).toBe(defaultGlBlurEffectRunner);
+    expect(getGlEffectRunner(state, 'BlurEffect')).toBe(glBlurEffectRunner);
     expect(getGlEffectRunner(other, 'BlurEffect')).toBeNull();
   });
 });

@@ -35,17 +35,17 @@ export function applyCompositeEffectToWgpu(
   );
 }
 
-export const defaultWgpuCompositeEffectRunner: WgpuEffectRunner = (context, effect) => {
-  applyCompositeEffectToWgpu(context.state, context.source, context.dest, effect as CompositeEffect);
-};
-
 export function getWgpuCompositeEffectOperatorIndex(operator: CompositeOperator): number {
   return COMPOSITE_OPERATOR_INDEX[operator] ?? 0;
 }
 
 export function registerWgpuCompositeEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'CompositeEffect', defaultWgpuCompositeEffectRunner);
+  registerWgpuEffect(state, 'CompositeEffect', wgpuCompositeEffectRunner);
 }
+
+export const wgpuCompositeEffectRunner: WgpuEffectRunner = (context, effect) => {
+  applyCompositeEffectToWgpu(context.state, context.source, context.dest, effect as CompositeEffect);
+};
 
 function getWgpuCompositeEffectPipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let pipeline = pipelines.get(state);

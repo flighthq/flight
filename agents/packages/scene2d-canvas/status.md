@@ -14,7 +14,7 @@ by: builder
 Re-checked against `packages/scene2d-canvas/src/` on 2026-08-08. A file:line here is a claim about this
 tree, not about a session.
 
-- **`lineStyle` drops two of its eight arguments.** `defaultCanvasLineStyle`
+- **`lineStyle` drops two of its eight arguments.** `canvasLineStyle`
   (`canvasShapeCommands.ts:315-333`) reads thickness/color/alpha at `buf[i..i+2]` and
   caps/joints/miterLimit at `buf[i+5..i+7]`, skipping `pixelHinting` (`buf[i+3]`) and `scaleMode`
   (`buf[i+4]`). `CanvasShapeDrawState` (`packages/types/src/CanvasShapeDrawState.ts`) has no
@@ -51,7 +51,7 @@ tree, not about a session.
   normalize at replay to deterministic Canvas defaults, eliminating prior-Shape context leakage.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 headline — "`LineScaleMode
   'none'` implemented; `strokeScaleMode` added to `CanvasShapeDrawState`" — is **false**: `strokeScaleMode`
-  has zero occurrences anywhere in `packages/`, and `defaultCanvasLineStyle` never reads `buf[i+4]`. Also
+  has zero occurrences anywhere in `packages/`, and `canvasLineStyle` never reads `buf[i+4]`. Also
   dropped as false: the blend-mode fidelity list (`BlendMode.Erase`/`Alpha`/`Invert`/`Shader`/`Subtract`
   are no longer enum members — `packages/types/src/BlendMode.ts` is the cheap fixed-function set only,
   with Porter-Duff moved to `CompositeEffect`); the `enable*Support` naming unification (the real names

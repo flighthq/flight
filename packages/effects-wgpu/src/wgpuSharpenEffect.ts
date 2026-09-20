@@ -28,13 +28,13 @@ export function applySharpenEffectToWgpu(
   });
 }
 
-export const defaultWgpuSharpenEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuSharpenEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'SharpenEffect', wgpuSharpenEffectRunner);
+}
+
+export const wgpuSharpenEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySharpenEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
 };
-
-export function registerWgpuSharpenEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'SharpenEffect', defaultWgpuSharpenEffectRunner);
-}
 
 // Slot layout: [0]=amount, [1]=pad, [2..3]=resolution.
 const SHARPEN_FRAGMENT_WGSL = /* wgsl */ `

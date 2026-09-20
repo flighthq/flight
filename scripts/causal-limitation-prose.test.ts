@@ -154,7 +154,7 @@ describe('causal limitation prose', () => {
     expect(read('packages/effects-gl/src/glContactShadowsEffect.ts')).toContain('applySsaoEffectToGl');
     expect(read('packages/effects-wgpu/src/wgpuContactShadowsEffect.ts')).toContain('applySsaoEffectToWgpu');
 
-    expect(domIndex).toContain('defaultDomSpriteRenderer');
+    expect(domIndex).toContain('domSpriteRenderer');
     for (const kind of ['QuadBatch', 'Tilemap', 'BitmapText', 'ParticleEmitter2D']) {
       if (new RegExp(`\\b${kind}\\b`).test(domIndex)) {
         throw new Error(`DOM now exposes ${kind}; update the recorded deliberate batch exclusion`);

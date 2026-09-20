@@ -6,7 +6,7 @@ import type { GlRenderState, GlTextureRenderTarget, GodRaysEffect } from '@fligh
 
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
-import { applyGodRaysEffectToGl, defaultGlGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
+import { applyGodRaysEffectToGl, glGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),
@@ -104,13 +104,13 @@ describe('applyGodRaysEffectToGl', () => {
   });
 });
 
-describe('defaultGlGodRaysEffectRunner', () => {
+describe('glGodRaysEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
     glMock.uniform2f.mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlGodRaysEffectRunner(
+    glGodRaysEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createGodRaysEffect({ centerY: 0.25 }),
     );
@@ -128,6 +128,6 @@ describe('registerGlGodRaysEffect', () => {
 
     expect(getGlEffectRunner(state, 'GodRaysEffect')).toBeNull();
     registerGlGodRaysEffect(state);
-    expect(getGlEffectRunner(state, 'GodRaysEffect')).toBe(defaultGlGodRaysEffectRunner);
+    expect(getGlEffectRunner(state, 'GodRaysEffect')).toBe(glGodRaysEffectRunner);
   });
 });

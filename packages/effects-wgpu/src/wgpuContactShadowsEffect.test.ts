@@ -3,7 +3,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 
 import {
   applyContactShadowsEffectToWgpu,
-  defaultWgpuContactShadowsEffectRunner,
+  wgpuContactShadowsEffectRunner,
   registerWgpuContactShadowsEffect,
 } from './wgpuContactShadowsEffect';
 import { getWgpuEffectRunner } from './wgpuEffectRegistry';
@@ -46,16 +46,16 @@ describe('applyContactShadowsEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuContactShadowsEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuContactShadowsEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuContactShadowsEffect', () => {
   it('installs the contact-shadows runner on the supplied state', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuContactShadowsEffect(state);
-    expect(getWgpuEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultWgpuContactShadowsEffectRunner);
+    expect(getWgpuEffectRunner(state, 'ContactShadowsEffect')).toBe(wgpuContactShadowsEffectRunner);
+  });
+});
+
+describe('wgpuContactShadowsEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuContactShadowsEffectRunner).toBe('function');
   });
 });

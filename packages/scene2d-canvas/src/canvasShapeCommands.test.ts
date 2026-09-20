@@ -34,7 +34,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { renderCanvasShapeCommands } from './canvasShape';
-import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
 
@@ -46,7 +46,7 @@ function makeShapeTarget(): { context: CanvasRenderingContext2D; state: RenderSt
   canvas.height = 200;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
   const state = createRenderState();
-  registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+  registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
   return { context, state };
 }
 
@@ -117,7 +117,7 @@ describe('appendShapeTangentArcTo rendering', () => {
   });
 });
 
-describe('defaultCanvasBeginFill', () => {
+describe('canvasBeginFill', () => {
   it('calls fill when alpha is above threshold', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'fill');
@@ -141,7 +141,7 @@ describe('defaultCanvasBeginFill', () => {
   });
 });
 
-describe('defaultCanvasBeginGradientFill', () => {
+describe('canvasBeginGradientFill', () => {
   it('calls createLinearGradient for linear type', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'createLinearGradient');
@@ -165,7 +165,7 @@ describe('defaultCanvasBeginGradientFill', () => {
   });
 });
 
-describe('defaultCanvasBeginTextureFill', () => {
+describe('canvasBeginTextureFill', () => {
   it('uses drawImage when drawRectangle fits within bitmap bounds', () => {
     const { context, state } = makeShapeTarget();
     const drawImageSpy = vi.spyOn(context, 'drawImage');
@@ -255,7 +255,7 @@ describe('defaultCanvasBeginTextureFill', () => {
   });
 });
 
-describe('defaultCanvasCubicCurveTo', () => {
+describe('canvasCubicCurveTo', () => {
   it('calls bezierCurveTo with correct control and anchor points', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'bezierCurveTo');
@@ -280,7 +280,7 @@ describe('defaultCanvasCubicCurveTo', () => {
   });
 });
 
-describe('defaultCanvasDrawCircle', () => {
+describe('canvasDrawCircle', () => {
   it('draws using arc', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'arc');
@@ -293,7 +293,7 @@ describe('defaultCanvasDrawCircle', () => {
   });
 });
 
-describe('defaultCanvasDrawEllipse', () => {
+describe('canvasDrawEllipse', () => {
   it('draws using ellipse', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'ellipse');
@@ -306,7 +306,7 @@ describe('defaultCanvasDrawEllipse', () => {
   });
 });
 
-describe('defaultCanvasDrawPath', () => {
+describe('canvasDrawPath', () => {
   it('executes MOVE_TO and LINE_TO path commands', () => {
     const { context, state } = makeShapeTarget();
     const moveSpy = vi.spyOn(context, 'moveTo');
@@ -398,7 +398,7 @@ describe('defaultCanvasDrawPath', () => {
   });
 });
 
-describe('defaultCanvasDrawRectangle', () => {
+describe('canvasDrawRectangle', () => {
   it('calls context.rect for a plain fill', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'rect');
@@ -411,7 +411,7 @@ describe('defaultCanvasDrawRectangle', () => {
   });
 });
 
-describe('defaultCanvasDrawRoundedRectangle', () => {
+describe('canvasDrawRoundedRectangle', () => {
   it('passes the authored corner radius through without treating it as a diameter', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'roundRect');
@@ -442,7 +442,7 @@ describe('defaultCanvasDrawRoundedRectangle', () => {
   });
 });
 
-describe('defaultCanvasEndFill', () => {
+describe('canvasEndFill', () => {
   it('flushes a pending fill path', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'fill');
@@ -455,7 +455,7 @@ describe('defaultCanvasEndFill', () => {
   });
 });
 
-describe('defaultCanvasLineGradientStyle', () => {
+describe('canvasLineGradientStyle', () => {
   it('applies a gradient stroke', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'stroke');
@@ -469,7 +469,7 @@ describe('defaultCanvasLineGradientStyle', () => {
   });
 });
 
-describe('defaultCanvasLineStyle', () => {
+describe('canvasLineStyle', () => {
   it('normalizes invalid retained Canvas style values to deterministic defaults', () => {
     const { context, state } = makeShapeTarget();
     context.lineWidth = 37;
@@ -531,7 +531,7 @@ describe('defaultCanvasLineStyle', () => {
   });
 });
 
-describe('defaultCanvasLineTextureStyle', () => {
+describe('canvasLineTextureStyle', () => {
   it('applies a bitmap stroke pattern', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'stroke');
@@ -545,7 +545,7 @@ describe('defaultCanvasLineTextureStyle', () => {
   });
 });
 
-describe('defaultCanvasLineTo', () => {
+describe('canvasLineTo', () => {
   it('calls context.lineTo', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'lineTo');
@@ -570,7 +570,7 @@ describe('defaultCanvasLineTo', () => {
   });
 });
 
-describe('defaultCanvasMoveTo', () => {
+describe('canvasMoveTo', () => {
   it('calls context.moveTo', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'moveTo');
@@ -584,7 +584,7 @@ describe('defaultCanvasMoveTo', () => {
   });
 });
 
-describe('defaultCanvasQuadraticCurveTo', () => {
+describe('canvasQuadraticCurveTo', () => {
   it('calls quadraticCurveTo with correct control and endpoint coordinates', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'quadraticCurveTo');
@@ -609,7 +609,7 @@ describe('defaultCanvasQuadraticCurveTo', () => {
   });
 });
 
-describe('defaultCanvasShapeCommands', () => {
+describe('canvasShapeCommands', () => {
   it('contains the texture-free standard shape command keys', () => {
     const keys = [
       'beginFill',
@@ -627,18 +627,15 @@ describe('defaultCanvasShapeCommands', () => {
       'moveTo',
       'quadraticCurveTo',
     ];
-    const registeredKeys = defaultCanvasShapeCommands.map((c) => c.key);
+    const registeredKeys = canvasShapeCommands.map((c) => c.key);
     for (const key of keys) {
       expect(registeredKeys).toContain(key);
     }
   });
 });
 
-describe('defaultCanvasTextureShapeCommands', () => {
+describe('canvasTextureShapeCommands', () => {
   it('contains the opt-in bitmap fill and stroke handlers', () => {
-    expect(defaultCanvasTextureShapeCommands.map((command) => command.key)).toEqual([
-      'beginTextureFill',
-      'lineTextureStyle',
-    ]);
+    expect(canvasTextureShapeCommands.map((command) => command.key)).toEqual(['beginTextureFill', 'lineTextureStyle']);
   });
 });

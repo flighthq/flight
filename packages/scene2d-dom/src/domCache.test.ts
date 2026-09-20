@@ -5,7 +5,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderSurfaceCreator } from '@flighthq/types/contract';
 
 import {
-  defaultDomRenderCacheRenderer,
+  domRenderCacheRenderer,
   enableDomRenderCache,
   ensureDomRenderCacheTarget,
   getDomRenderCacheTarget,
@@ -21,10 +21,10 @@ function makeCacheNode(source: unknown): any {
   return { source, kind: RenderCacheKind, transform2D: createMatrix(), alpha: 1, blendMode: null };
 }
 
-describe('defaultDomRenderCacheRenderer', () => {
+describe('domRenderCacheRenderer', () => {
   it('is a no-op when no cache is attached to the source', () => {
     const state = makeState();
-    expect(() => defaultDomRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()))).not.toThrow();
+    expect(() => domRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()))).not.toThrow();
   });
 
   it('places the target canvas attached to the source node', () => {
@@ -33,7 +33,7 @@ describe('defaultDomRenderCacheRenderer', () => {
     const cache = createRenderCache();
     useRenderCache(state, obj, cache);
     const target = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 16, 16);
-    defaultDomRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    domRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(target.canvas.style.transform).not.toBe('');
   });
 });
@@ -44,7 +44,7 @@ describe('enableDomRenderCache', () => {
     enableDomRenderCache(state);
     expect(getDomRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
-      value: defaultDomRenderCacheRenderer,
+      value: domRenderCacheRenderer,
     });
   });
 });

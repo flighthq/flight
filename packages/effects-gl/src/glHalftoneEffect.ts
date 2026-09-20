@@ -22,12 +22,12 @@ export function applyHalftoneEffectToGl(
   });
 }
 
-export const defaultGlHalftoneEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glHalftoneEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyHalftoneEffectToGl(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
 
 export function registerGlHalftoneEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'HalftoneEffect', defaultGlHalftoneEffectRunner);
+  registerGlEffect(state, 'HalftoneEffect', glHalftoneEffectRunner);
 }
 
 const HALFTONE_FRAGMENT_SRC = `#version 300 es

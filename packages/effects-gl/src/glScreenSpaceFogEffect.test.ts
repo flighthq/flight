@@ -8,7 +8,7 @@ import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
 import {
   applyScreenSpaceFogEffectToGl,
-  defaultGlScreenSpaceFogEffectRunner,
+  glScreenSpaceFogEffectRunner,
   registerGlScreenSpaceFogEffect,
 } from './glScreenSpaceFogEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
@@ -150,7 +150,7 @@ describe('applyScreenSpaceFogEffectToGl', () => {
   });
 });
 
-describe('defaultGlScreenSpaceFogEffectRunner', () => {
+describe('glScreenSpaceFogEffectRunner', () => {
   // The runner's whole job is forwarding `ctx.sceneDepthTexture` into the depth argument, which is the
   // one thing a caller cannot supply itself.
   it('forwards the scene depth texture from the runner context', () => {
@@ -159,7 +159,7 @@ describe('defaultGlScreenSpaceFogEffectRunner', () => {
     const depth = { id: 'ctxDepth' } as unknown as WebGLTexture;
     const target = { height: 8, texture: { id: 'scene' }, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlScreenSpaceFogEffectRunner(
+    glScreenSpaceFogEffectRunner(
       {
         dest: target,
         pool: { free: [], inUse: [] },
@@ -184,6 +184,6 @@ describe('registerGlScreenSpaceFogEffect', () => {
 
     expect(getGlEffectRunner(state, 'ScreenSpaceFogEffect')).toBeNull();
     registerGlScreenSpaceFogEffect(state);
-    expect(getGlEffectRunner(state, 'ScreenSpaceFogEffect')).toBe(defaultGlScreenSpaceFogEffectRunner);
+    expect(getGlEffectRunner(state, 'ScreenSpaceFogEffect')).toBe(glScreenSpaceFogEffectRunner);
   });
 });

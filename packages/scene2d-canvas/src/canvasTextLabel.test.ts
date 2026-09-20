@@ -3,7 +3,7 @@ import { createTextLabel } from '@flighthq/text/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasTestSupport';
-import { defaultCanvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel';
+import { canvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -14,7 +14,7 @@ function makeState() {
 
 describe('drawCanvasTextLabel', () => {
   it('creates RendererData with an entity runtime slot', () => {
-    const data = defaultCanvasTextLabelRenderer.createData!(makeState(), createTextLabel())!;
+    const data = canvasTextLabelRenderer.createData!(makeState(), createTextLabel())!;
     expect(EntityRuntimeKey in data).toBe(true);
   });
 

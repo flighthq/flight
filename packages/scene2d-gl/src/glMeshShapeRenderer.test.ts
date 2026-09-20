@@ -10,7 +10,7 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { defaultGlMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer';
+import { glMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { createGlState } from './glTestHelper';
 
@@ -60,34 +60,6 @@ function gradientShape() {
   return shape;
 }
 
-describe('defaultGlMeshShapeRenderer', () => {
-  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
-    expect(defaultGlMeshShapeRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultGlMeshShapeRenderer.createData).toBe('function');
-    expect(typeof defaultGlMeshShapeRenderer.destroyData).toBe('function');
-  });
-
-  it('never rasterizes, even with a rasterizer registered and a fill that cannot tessellate', () => {
-    // The whole point of pinning this strategy: a registered rasterizer is not consulted, so an app can
-    // choose the GPU path and know the canvas replay is dead weight it did not ship.
-    const { state } = createGlState();
-    const rasterizer = vi.fn();
-    registerGlShapeRasterizer(state, rasterizer);
-    defaultGlMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
-    expect(rasterizer).not.toHaveBeenCalled();
-  });
-
-  it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', () => {
-    const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
-    defaultGlMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
-    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
-      kind: 'Shape',
-      registry: RenderRegistryTable.ShapeRasterizer,
-    });
-  });
-});
-
 describe('drawGlMeshShape', () => {
   it('draws a solid fill as a GPU mesh and reports that it drew', () => {
     const { state, gl } = createGlState();
@@ -107,5 +79,33 @@ describe('drawGlMeshShape', () => {
     expect(drawGlMeshShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }, null))).toBe(
       false,
     );
+  });
+});
+
+describe('glMeshShapeRenderer', () => {
+  it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
+    expect(glMeshShapeRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof glMeshShapeRenderer.createData).toBe('function');
+    expect(typeof glMeshShapeRenderer.destroyData).toBe('function');
+  });
+
+  it('never rasterizes, even with a rasterizer registered and a fill that cannot tessellate', () => {
+    // The whole point of pinning this strategy: a registered rasterizer is not consulted, so an app can
+    // choose the GPU path and know the canvas replay is dead weight it did not ship.
+    const { state } = createGlState();
+    const rasterizer = vi.fn();
+    registerGlShapeRasterizer(state, rasterizer);
+    glMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
+    expect(rasterizer).not.toHaveBeenCalled();
+  });
+
+  it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', () => {
+    const { state } = createGlState();
+    enableRenderRegistriesGuards(state);
+    glMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
+    expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
+      kind: 'Shape',
+      registry: RenderRegistryTable.ShapeRasterizer,
+    });
   });
 });

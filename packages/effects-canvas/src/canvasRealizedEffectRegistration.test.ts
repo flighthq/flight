@@ -1,23 +1,23 @@
-import { defaultCanvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
-import { defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
-import { defaultCanvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
+import { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
+import { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+import { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { createCanvasRenderState } from './canvasEffectTestSupport';
-import { defaultCanvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
-import { defaultCanvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
-import { defaultCanvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
-import { defaultCanvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
-import { defaultCanvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
+import { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
+import { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
+import { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
+import { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
+import { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
 
 const CASES = [
-  ['BloomEffect', registerCanvasBloomEffect, defaultCanvasBloomEffectRunner],
-  ['BlurEffect', registerCanvasBlurEffect, defaultCanvasBlurEffectRunner],
-  ['DropShadowEffect', registerCanvasDropShadowEffect, defaultCanvasDropShadowEffectRunner],
-  ['FilmGrainEffect', registerCanvasFilmGrainEffect, defaultCanvasFilmGrainEffectRunner],
-  ['OuterGlowEffect', registerCanvasOuterGlowEffect, defaultCanvasOuterGlowEffectRunner],
-  ['PixelateEffect', registerCanvasPixelateEffect, defaultCanvasPixelateEffectRunner],
-  ['ScanlinesEffect', registerCanvasScanlinesEffect, defaultCanvasScanlinesEffectRunner],
-  ['VignetteEffect', registerCanvasVignetteEffect, defaultCanvasVignetteEffectRunner],
+  ['BloomEffect', registerCanvasBloomEffect, canvasBloomEffectRunner],
+  ['BlurEffect', registerCanvasBlurEffect, canvasBlurEffectRunner],
+  ['DropShadowEffect', registerCanvasDropShadowEffect, canvasDropShadowEffectRunner],
+  ['FilmGrainEffect', registerCanvasFilmGrainEffect, canvasFilmGrainEffectRunner],
+  ['OuterGlowEffect', registerCanvasOuterGlowEffect, canvasOuterGlowEffectRunner],
+  ['PixelateEffect', registerCanvasPixelateEffect, canvasPixelateEffectRunner],
+  ['ScanlinesEffect', registerCanvasScanlinesEffect, canvasScanlinesEffectRunner],
+  ['VignetteEffect', registerCanvasVignetteEffect, canvasVignetteEffectRunner],
 ] as const;
 
 describe('realized Canvas effect registration', () => {

@@ -28,12 +28,12 @@ export function applyDisplacementEffectToGl(
   });
 }
 
-export const defaultGlDisplacementEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glDisplacementEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDisplacementEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
 };
 
 export function registerGlDisplacementEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'DisplacementEffect', defaultGlDisplacementEffectRunner);
+  registerGlEffect(state, 'DisplacementEffect', glDisplacementEffectRunner);
 }
 
 const DISPLACEMENT_FRAGMENT_SRC = `#version 300 es

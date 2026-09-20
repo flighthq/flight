@@ -11,7 +11,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasQuadBatchRenderer,
+  canvasQuadBatchRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
@@ -25,7 +25,7 @@ import { QuadBatchKind, RegistryEntryState } from '@flighthq/types';
 // REQUIRED WIRING for one packed instanced-quad buffer, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  QuadBatchKind -> defaultCanvasQuadBatchRenderer
+//   renderer  QuadBatchKind -> canvasQuadBatchRenderer
 //   commands  NONE. A QuadBatch replays no shape command stream.
 //   resolvers ONE image texture resolver. Every instance samples the batch's atlas, so unlike the
 //             vector fixtures this genuinely needs a resolver — an empty container would resolve no
@@ -43,7 +43,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, QuadBatchKind, defaultCanvasQuadBatchRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, QuadBatchKind, canvasQuadBatchRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

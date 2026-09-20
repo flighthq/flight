@@ -7,7 +7,7 @@ import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contr
 
 import {
   createGlCacheState,
-  defaultGlRenderCacheRenderer,
+  glRenderCacheRenderer,
   enableGlRenderCache,
   ensureGlRenderCacheTarget,
   getGlRenderCacheTarget,
@@ -98,7 +98,7 @@ describe('createGlCacheState', () => {
     const cacheState = createGlCacheState(screen, { ...renderGl.getGlRenderStateRuntime(screen).registries });
     expect(renderGl.getGlRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
-      value: defaultGlRenderCacheRenderer,
+      value: glRenderCacheRenderer,
     });
     expect((cacheState as any).gl).toBe((screen as any).gl);
     expect(renderGl.getGlRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
@@ -118,51 +118,13 @@ describe('createGlCacheState', () => {
   });
 });
 
-describe('defaultGlRenderCacheRenderer', () => {
-  it('does nothing when no cache is attached to the source', () => {
-    const state = fakeScreen();
-    defaultGlRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(renderGl.drawGlTextureRenderTargetResult).not.toHaveBeenCalled();
-  });
-
-  it('composites the cache target attached to the source node', () => {
-    const state = fakeScreen();
-    const obj = createDisplayObject();
-    const cache = createRenderCache();
-    useRenderCache(state, obj, cache);
-    const target = ensureGlRenderCacheTarget(state, cache, 16, 16);
-    defaultGlRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(renderGl.drawGlTextureRenderTargetResult).toHaveBeenCalledWith(
-      expect.objectContaining({ state }),
-      expect.anything(),
-      target,
-      expect.anything(),
-    );
-  });
-
-  it('flushes pending batched geometry before the immediate composite', () => {
-    const state = fakeScreen();
-    const obj = createDisplayObject();
-    const cache = createRenderCache();
-    useRenderCache(state, obj, cache);
-    ensureGlRenderCacheTarget(state, cache, 16, 16);
-    defaultGlRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
-    // the walk must be drained first, or it replays after the cache result (a doubled image).
-    expect(glQuadBatchWriter.flushGlQuadBatchWriter).toHaveBeenCalledWith(state);
-    expect((glQuadBatchWriter.flushGlQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
-      (renderGl.drawGlTextureRenderTargetResult as any).mock.invocationCallOrder[0],
-    );
-  });
-});
-
 describe('enableGlRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableGlRenderCache(state);
     expect(renderGl.getGlRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
-      value: defaultGlRenderCacheRenderer,
+      value: glRenderCacheRenderer,
     });
   });
 });
@@ -202,6 +164,44 @@ describe('getGlRenderCacheTarget', () => {
     const cache = createRenderCache();
     const target = ensureGlRenderCacheTarget(state, cache, 8, 8);
     expect(getGlRenderCacheTarget(state, cache)).toBe(target);
+  });
+});
+
+describe('glRenderCacheRenderer', () => {
+  it('does nothing when no cache is attached to the source', () => {
+    const state = fakeScreen();
+    glRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
+    expect(renderGl.drawGlTextureRenderTargetResult).not.toHaveBeenCalled();
+  });
+
+  it('composites the cache target attached to the source node', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    const target = ensureGlRenderCacheTarget(state, cache, 16, 16);
+    glRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    expect(renderGl.drawGlTextureRenderTargetResult).toHaveBeenCalledWith(
+      expect.objectContaining({ state }),
+      expect.anything(),
+      target,
+      expect.anything(),
+    );
+  });
+
+  it('flushes pending batched geometry before the immediate composite', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    ensureGlRenderCacheTarget(state, cache, 16, 16);
+    glRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
+    // the walk must be drained first, or it replays after the cache result (a doubled image).
+    expect(glQuadBatchWriter.flushGlQuadBatchWriter).toHaveBeenCalledWith(state);
+    expect((glQuadBatchWriter.flushGlQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
+      (renderGl.drawGlTextureRenderTargetResult as any).mock.invocationCallOrder[0],
+    );
   });
 });
 

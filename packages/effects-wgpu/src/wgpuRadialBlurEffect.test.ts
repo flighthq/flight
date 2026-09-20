@@ -44,7 +44,7 @@ afterEach(() => vi.restoreAllMocks());
 import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import {
   applyRadialBlurEffectToWgpu,
-  defaultWgpuRadialBlurEffectRunner,
+  wgpuRadialBlurEffectRunner,
   registerWgpuRadialBlurEffect,
 } from './wgpuRadialBlurEffect';
 
@@ -116,26 +116,26 @@ describe('applyRadialBlurEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuRadialBlurEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
-
-    defaultWgpuRadialBlurEffectRunner(
-      { dest: target, pool: {}, source: target, state: {} } as never,
-      createRadialBlurEffect({ centerY: 0.25 }),
-    );
-
-    expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);
-  });
-});
-
 describe('registerWgpuRadialBlurEffect', () => {
   it('makes the runner resolvable for the RadialBlurEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
     expect(getWgpuEffectRunner(state, 'RadialBlurEffect')).toBeNull();
     registerWgpuRadialBlurEffect(state);
-    expect(getWgpuEffectRunner(state, 'RadialBlurEffect')).toBe(defaultWgpuRadialBlurEffectRunner);
+    expect(getWgpuEffectRunner(state, 'RadialBlurEffect')).toBe(wgpuRadialBlurEffectRunner);
+  });
+});
+
+describe('wgpuRadialBlurEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    recorded.uniforms.length = 0;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
+
+    wgpuRadialBlurEffectRunner(
+      { dest: target, pool: {}, source: target, state: {} } as never,
+      createRadialBlurEffect({ centerY: 0.25 }),
+    );
+
+    expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);
   });
 });

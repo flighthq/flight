@@ -11,7 +11,7 @@ import type { HostImageCapability, RenderState } from '@flighthq/types/contract'
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
 import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
@@ -29,8 +29,8 @@ afterEach(() => {
 // the base one, so a caller that wants bitmap-filled shapes opts into both.
 function makeRasterizerState(): RenderState {
   const state = createRenderState();
-  registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
-  registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
+  registerCanvasShapeCommands(state, canvasShapeCommands);
+  registerCanvasShapeCommands(state, canvasTextureShapeCommands);
   return state;
 }
 

@@ -20,12 +20,12 @@ export function applySketchEffectToGl(
   });
 }
 
-export const defaultGlSketchEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glSketchEffectRunner: GlEffectRunner = (ctx, effect) => {
   applySketchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
 
 export function registerGlSketchEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'SketchEffect', defaultGlSketchEffectRunner);
+  registerGlEffect(state, 'SketchEffect', glSketchEffectRunner);
 }
 
 const SKETCH_FRAGMENT_SRC = `#version 300 es

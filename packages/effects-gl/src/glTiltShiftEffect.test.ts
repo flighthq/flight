@@ -7,11 +7,7 @@ import type { GlRenderState, GlTextureRenderTarget, TiltShiftEffect } from '@fli
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
-import {
-  applyTiltShiftEffectToGl,
-  defaultGlTiltShiftEffectRunner,
-  registerGlTiltShiftEffect,
-} from './glTiltShiftEffect';
+import { applyTiltShiftEffectToGl, glTiltShiftEffectRunner, registerGlTiltShiftEffect } from './glTiltShiftEffect';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),
@@ -127,12 +123,12 @@ describe('applyTiltShiftEffectToGl', () => {
   });
 });
 
-describe('defaultGlTiltShiftEffectRunner', () => {
+describe('glTiltShiftEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     glMock.uniform1f.mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlTiltShiftEffectRunner(
+    glTiltShiftEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createTiltShiftEffect({ center: 0.2 }),
     );
@@ -150,6 +146,6 @@ describe('registerGlTiltShiftEffect', () => {
 
     expect(getGlEffectRunner(state, 'TiltShiftEffect')).toBeNull();
     registerGlTiltShiftEffect(state);
-    expect(getGlEffectRunner(state, 'TiltShiftEffect')).toBe(defaultGlTiltShiftEffectRunner);
+    expect(getGlEffectRunner(state, 'TiltShiftEffect')).toBe(glTiltShiftEffectRunner);
   });
 });

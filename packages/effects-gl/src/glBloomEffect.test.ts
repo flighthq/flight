@@ -1,4 +1,4 @@
-import { applyBloomEffectToGl, defaultGlBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect';
+import { applyBloomEffectToGl, glBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect';
 
 describe('applyBloomEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyBloomEffectToGl', () => {
   });
 });
 
-describe('defaultGlBloomEffectRunner', () => {
+describe('glBloomEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlBloomEffectRunner).toBe('function');
+    expect(typeof glBloomEffectRunner).toBe('function');
   });
 });
 

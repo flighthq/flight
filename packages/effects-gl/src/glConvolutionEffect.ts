@@ -53,12 +53,12 @@ export function applyConvolutionEffectToGl(
   });
 }
 
-export const defaultGlConvolutionEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glConvolutionEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyConvolutionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ConvolutionEffect);
 };
 
 export function registerGlConvolutionEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ConvolutionEffect', defaultGlConvolutionEffectRunner);
+  registerGlEffect(state, 'ConvolutionEffect', glConvolutionEffectRunner);
 }
 
 // Sums the kernel weights; returns 1 when the sum is 0 (e.g. an edge-detect kernel) so the divide is safe.

@@ -1,0 +1,86 @@
+import { unpackColorToLinear } from '@flighthq/color/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type {
+  LinearColor,
+  Camera3D,
+  EmissiveMaterial,
+  GlMeshMaterialRenderer,
+  GlRenderState,
+  Material,
+  MeshGeometry,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
+  GlUnlitDefineKey,
+} from '@flighthq/types/contract';
+import { EmissiveMaterialKind } from '@flighthq/types/contract';
+
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
+
+// The built-in Emissive forward renderer (GlMeshMaterialRenderer for EmissiveMaterialKind). Self-
+// illuminating and lighting-independent: bind selects the unlit variant for the emissive map / alpha
+// mode and uploads the linear emissive color scaled by emissiveStrength (values > 1 drive bloom over
+// the rgba16f scene target). Lights are ignored. See registerGlEmissiveMaterial to install it.
+export const glEmissiveMeshMaterialRenderer: GlMeshMaterialRenderer = {
+  bind(
+    state: GlRenderState,
+    material: Readonly<Material> | null,
+    _lights: Readonly<Scene3DLightBlock>,
+    camera: Readonly<Camera3D>,
+  ): void {
+    const gl = state.gl;
+    const emissive = material as Readonly<EmissiveMaterial> | null;
+    const program = ensureGlUnlitProgram(state, defineKeyForMaterial(state, emissive));
+    beginGlMeshDraw(state, program, emissive !== null && emissive.doubleSided);
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
+
+    if (emissive === null) {
+      bindGlUnlitSurface(state, program, WHITE, 1, null, 0.5);
+      return;
+    }
+    unpackColorToLinear(scratchRgba, emissive.emissive);
+    bindGlUnlitSurface(
+      state,
+      program,
+      scratchRgba,
+      emissive.emissiveStrength,
+      emissive.emissiveMap,
+      emissive.alphaCutoff,
+    );
+    bindGlUvTransform(gl, program, emissive.emissiveMap);
+  },
+
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
+    if (program === null) return;
+    drawGlMeshSubset(state, program, proxy, geometry);
+  },
+};
+
+// Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-
+// level side effect); call once per GlRenderState before drawScene3D so meshes with EmissiveMaterials
+// draw.
+export function registerGlEmissiveMaterial(state: GlRenderState): void {
+  registerGlMeshMaterialRenderer(state, EmissiveMaterialKind, glEmissiveMeshMaterialRenderer);
+}
+
+function defineKeyForMaterial(state: GlRenderState, material: Readonly<EmissiveMaterial> | null): GlUnlitDefineKey {
+  return {
+    alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
+    hasColorMap:
+      material !== null && material.emissiveMap !== null && resolveGlTexture(state, material.emissiveMap) !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.emissiveMap : null),
+    vertexColor: false,
+  };
+}
+
+const scratchRgba: LinearColor = [0, 0, 0, 0];
+const WHITE: LinearColor = [1, 1, 1, 1];

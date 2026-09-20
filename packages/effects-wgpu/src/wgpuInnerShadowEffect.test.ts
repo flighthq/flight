@@ -7,7 +7,7 @@ import * as wgpuEffectPassMod from './wgpuEffectPass';
 import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
 import {
   applyInnerShadowEffectToWgpu,
-  defaultWgpuInnerShadowEffectRunner,
+  wgpuInnerShadowEffectRunner,
   registerWgpuInnerShadowEffect,
 } from './wgpuInnerShadowEffect';
 
@@ -123,9 +123,9 @@ describe('applyInnerShadowEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuInnerShadowEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuInnerShadowEffectRunner).toBe('function');
+describe('registerWgpuInnerShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuInnerShadowEffect).toBeTypeOf('function');
   });
 });
 
@@ -141,8 +141,8 @@ function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
 
-describe('registerWgpuInnerShadowEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerWgpuInnerShadowEffect).toBeTypeOf('function');
+describe('wgpuInnerShadowEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuInnerShadowEffectRunner).toBe('function');
   });
 });

@@ -25,12 +25,12 @@ export function applyWhiteBalanceEffectToGl(
   });
 }
 
-export const defaultGlWhiteBalanceEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glWhiteBalanceEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyWhiteBalanceEffectToGl(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
 
 export function registerGlWhiteBalanceEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
+  registerGlEffect(state, 'WhiteBalanceEffect', glWhiteBalanceEffectRunner);
 }
 
 const WHITE_BALANCE_FRAGMENT_SRC = `#version 300 es

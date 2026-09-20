@@ -16,7 +16,7 @@ import { SpriteKind } from '@flighthq/types/contract';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
+import { canvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
 
@@ -34,7 +34,7 @@ function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
-  registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+  registerRenderer(state, SpriteKind, canvasSpriteRenderer);
   return state;
 }
 
@@ -45,18 +45,18 @@ function makeTexture() {
   return createTexture({ dimension: '2d', source: image });
 }
 
-describe('defaultCanvasSpriteRenderer', () => {
+describe('canvasSpriteRenderer', () => {
   it('installs the sprite identity dirty hook with submit and renderer data', () => {
-    expect(typeof defaultCanvasSpriteRenderer.submit).toBe('function');
-    expect(typeof defaultCanvasSpriteRenderer.createData).toBe('function');
-    expect(typeof defaultCanvasSpriteRenderer.isDirty).toBe('function');
+    expect(typeof canvasSpriteRenderer.submit).toBe('function');
+    expect(typeof canvasSpriteRenderer.createData).toBe('function');
+    expect(typeof canvasSpriteRenderer.isDirty).toBe('function');
   });
 
   it('dirties requiresInvalidation preparation after a same-size bare texture assignment', () => {
     const state = createCanvasRenderState(document.createElement('canvas'), {
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
-    registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+    registerRenderer(state, SpriteKind, canvasSpriteRenderer);
     const sprite = createSprite({ data: { texture: makeTexture() } });
     prepareScene2DRender(state, sprite);
     expect(prepareScene2DRender(state, sprite)).toBe(false);

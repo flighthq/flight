@@ -1,8 +1,4 @@
-import {
-  applyFilmGrainEffectToGl,
-  defaultGlFilmGrainEffectRunner,
-  registerGlFilmGrainEffect,
-} from './glFilmGrainEffect';
+import { applyFilmGrainEffectToGl, glFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
 
 describe('applyFilmGrainEffectToGl', () => {
   it('is a function', () => {
@@ -10,9 +6,9 @@ describe('applyFilmGrainEffectToGl', () => {
   });
 });
 
-describe('defaultGlFilmGrainEffectRunner', () => {
+describe('glFilmGrainEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlFilmGrainEffectRunner).toBe('function');
+    expect(typeof glFilmGrainEffectRunner).toBe('function');
   });
 });
 

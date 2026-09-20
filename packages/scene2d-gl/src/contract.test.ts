@@ -1,8 +1,8 @@
-import { defaultGlShapeRenderer, registerGlShapeRasterizer } from './contract';
+import { glShapeRenderer, registerGlShapeRasterizer } from './contract';
 
-describe('defaultGlShapeRenderer', () => {
+describe('glShapeRenderer', () => {
   it('is a Scene2DRenderer with a submit function', () => {
-    expect(typeof defaultGlShapeRenderer.submit).toBe('function');
+    expect(typeof glShapeRenderer.submit).toBe('function');
   });
 });
 
