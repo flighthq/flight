@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import { checkUnitTestCost, formatUnitTestCostReport, readUnitTestSources } from './unitTestCost';
-import { readUnitTestLaneFiles } from './unitTestLane';
+import { findMissingIntegrationTestFiles, readUnitTestLaneFiles } from './unitTestLane';
 
 function main(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,6 +21,19 @@ function main(): void {
     console.log(
       pc.red(
         `FAIL unit-lane scan reached only ${files.length} test files (expected at least ${MINIMUM_LANE_FILES}); the walk did not reach the lane, so this result describes the scan rather than the repository.`,
+      ),
+    );
+    process.exit(1);
+  }
+
+  // The other half of the routing promise. Keeping a child-process test out of the shared lane is only
+  // safe while something still runs it, and the integration project's include is exact paths — so an
+  // entry that names no file stops running with no failure anywhere.
+  const missing = findMissingIntegrationTestFiles(root);
+  if (missing.length > 0) {
+    console.log(
+      pc.red(
+        `FAIL ${missing.length} integration test file${missing.length === 1 ? '' : 's'} named in INTEGRATION_TEST_FILES no longer exist, so nothing runs them: ${missing.join(', ')}`,
       ),
     );
     process.exit(1);

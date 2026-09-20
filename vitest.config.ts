@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { REGISTRY_ISOLATED_TEST_FILES } from './scripts/registryIsolatedTests.js';
-import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE } from './scripts/unitTestLane.js';
+import { INTEGRATION_TEST_FILES, UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE } from './scripts/unitTestLane.js';
 import { workspacePackages } from './scripts/workspaces.js';
 import baseConfig from './vitest.config.base.js';
 
@@ -106,6 +106,24 @@ export default mergeConfig(
             include: [...UNIT_TEST_LANE_INCLUDE],
             exclude: [...UNIT_TEST_LANE_EXCLUDE],
             sequence: { groupOrder: 0 },
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'integration',
+            // Every file here starts a child process — a CLI, tsc, npm, git, tar — so each is an
+            // integration test that `unit-test-cost:check` keeps out of the shared lane. Routed, never
+            // dropped: `integration-tests:check` runs this project, so the move changes when they run
+            // rather than whether. The list lives in `scripts/unitTestLane.ts` beside the lane it is
+            // the complement of.
+            isolate: true,
+            include: [...INTEGRATION_TEST_FILES],
+            exclude: [...COMMON_EXCLUDE],
+            // Their children are compilers and package managers, so they compete for CPU with the
+            // parallel projects rather than sharing it. Ordered after them for the same reason the
+            // coverage gate and tool-capture are.
+            sequence: { groupOrder: 1 },
           },
         },
         {

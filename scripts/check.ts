@@ -111,6 +111,10 @@ if (!scoped) {
 
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('unit-test-cost:check', 'tsx', ['scripts/check-unit-test-cost.ts']);
+  // Runs the integration project. `unit-test-cost:check` keeps child-process tests OUT of the shared
+  // lane, and this is the half that keeps them RUNNING: CI executes `npm test` (shared) and
+  // `npm run test:unit` (per package), so a routed `scripts/*.test.ts` would otherwise run nowhere.
+  add('integration-tests:check', 'tsx', ['scripts/test.ts', '--project', 'integration']);
   // Named for what it governs (the two blessed export LANES per `exports.yml`), not `exports:check`,
   // which has long belonged to `completeness.ts` — the every-export-has-a-test gate that AGENTS.md and
   // agents/commands.md both cite under that name. Registering this one under it collided, and since
