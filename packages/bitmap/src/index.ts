@@ -1,4 +1,4 @@
-export { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap';
+export * from './bitmap';
 export * from './bitmapAffine';
 export * from './bitmapAlpha';
 export * from './bitmapBevel';
@@ -28,6 +28,7 @@ export * from './bitmapFrom';
 export * from './bitmapGradient';
 export * from './bitmapGradientFill';
 export * from './bitmapHistogram';
+export * from './bitmapImageChannel';
 export * from './bitmapMedian';
 export * from './bitmapMorphological';
 export * from './bitmapNoise';
