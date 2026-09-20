@@ -83,6 +83,7 @@
     "check:sdk-subpaths": "tsx ./scripts/check-sdk-subpaths.ts",
     "check:transport-bypasses": "tsx ./scripts/check-transport-bypasses.ts",
     "check:unit-test-cost": "tsx ./scripts/check-unit-test-cost.ts",
+    "ci": "npm run typecheck && npm test && npm run test:scripts && npm run test:host && npm run test:tools",
     "clean": "npm run clean:build",
     "clean:artifacts:functional": "tsx ./scripts/clean-functional-artifacts.ts",
     "clean:build": "tsx ./scripts/clean-package-dist.ts && tsc -b tsconfig.build.json --clean",
