@@ -97,7 +97,7 @@ export function resolveChangedTestArguments(
   workerCount: string | undefined,
   parallelism: number,
 ): string[] {
-  const args = ['--project', 'unit', '--changed', base];
+  const args = ['--changed', base];
   if (workerCount === undefined || workerCount === '') {
     return [...args, '--maxWorkers', String(Math.max(1, Math.floor(parallelism / 2)))];
   }

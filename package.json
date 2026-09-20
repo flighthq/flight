@@ -194,7 +194,7 @@
     "test:baseline": "npm run test:regression:baseline",
     "test:browser": "tsx ./packages/tool-capture/src/bin.ts batch",
     "test:cost": "tsx ./scripts/test-cost.ts",
-    "test:coverage": "tsx ./scripts/test.ts --project unit --coverage",
+    "test:coverage": "tsx ./scripts/test.ts --coverage",
     "test:examples": "tsx ./packages/tool-capture/src/bin.ts batch --only=examples",
     "test:examples:baseline": "npm run test:examples:regression:baseline",
     "test:examples:parity": "tsx ./packages/tool-capture/src/bin.ts validate --tool=examples --frames=30 --renderer=dom,canvas,webgl,webgpu --no-regression",

@@ -10,19 +10,9 @@ const completeReport = {
 } as const;
 
 describe('resolveVitestArguments', () => {
-  it('defaults to the unit project when no project is specified', () => {
-    expect(resolveVitestArguments([])).toEqual(['--project', 'unit']);
-    expect(resolveVitestArguments(['swf', '--update'])).toEqual(['--project', 'unit', 'swf', '--update']);
-  });
-
-  it('passes through an explicit --project without injecting the default', () => {
-    expect(resolveVitestArguments(['--project', 'isolated'])).toEqual(['--project', 'isolated']);
-    expect(resolveVitestArguments(['--project=tool-capture'])).toEqual(['--project=tool-capture']);
-  });
-
-  it('runs all projects when --all is given', () => {
-    expect(resolveVitestArguments(['--all'])).toEqual([]);
-    expect(resolveVitestArguments(['--all', '--reporter=dot'])).toEqual(['--reporter=dot']);
+  it('passes arguments through unchanged', () => {
+    expect(resolveVitestArguments([])).toEqual([]);
+    expect(resolveVitestArguments(['swf', '--update'])).toEqual(['swf', '--update']);
   });
 });
 
@@ -68,7 +58,7 @@ describe('assessVitestRun', () => {
 
 describe('preserveRequiredReporter', () => {
   it('leaves arguments alone when no reporter override is present', () => {
-    expect(preserveRequiredReporter(['--project', 'unit'], '/repo/completeness.ts')).toEqual(['--project', 'unit']);
+    expect(preserveRequiredReporter([], '/repo/completeness.ts')).toEqual([]);
   });
 
   it('appends the required reporter when the caller overrides reporters', () => {
