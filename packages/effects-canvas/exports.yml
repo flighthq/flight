@@ -1,10 +1,21 @@
+# effects-canvas: exports where the shared classifier gets it wrong.
+
+exclude:
+  # Test support, and package-internal: every caller is an effects-canvas test importing it relatively
+  # from './canvasEffectTestSupport'. It was not excluded, so five helpers reached the public lane — and
+  # because `packages/sdk/src/index.ts` does `export * from '@flighthq/effects-canvas'`, they reached the
+  # SDK barrel too. Four of them collide there with the real scene2d-canvas exports of the same names
+  # (createCanvasRenderState, createCanvasTextureRenderTarget, createCanvasRenderStateWithoutPass,
+  # acquireTestCanvasRenderSurface), which `npm run api:check` reports as duplicate exported names.
+  # scene2d-canvas already excludes its own equivalent, `canvasTestSupport`; this is the same rule.
+  - file: canvasEffectTestSupport
+
 protected:
   - applyCanvasGradientRampLookup
   - buildCanvasGradientRamp
   - clipCanvasBevelBand
   - unregisterCanvasBlendEffectBackdrop
   - acquireCanvasRenderTarget
-  - acquireTestCanvasRenderSurface
   - applyBevelEffectToCanvas
   - applyBlendEffectToCanvas
   - applyBloomEffectToCanvas
@@ -26,15 +37,11 @@ protected:
   - applyScanlinesEffectToCanvas
   - applyTiltShiftEffectToCanvas
   - applyVignetteEffectToCanvas
-  - canvasTestSurfaceCreator
   - clearCanvasTarget
   - compositeCanvasImage
   - compositeCanvasSourceMode
   - computeDropShadowEffectCss
   - computeOuterGlowEffectCss
-  - createCanvasRenderState
-  - createCanvasRenderStateWithoutPass
-  - createCanvasTextureRenderTarget
   - createCanvasTextureRenderTargetPool
   - drawCanvasAccumulationPass
   - drawCanvasEffectPass

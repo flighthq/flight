@@ -9,7 +9,6 @@ export * from './canvasDropShadowEffect';
 export * from './canvasEffectCompositing';
 export * from './canvasEffectDropShadowCss';
 export * from './canvasEffectState';
-export * from './canvasEffectTestSupport';
 export * from './canvasFilmGrainEffect';
 export * from './canvasGradientBevelEffect';
 export * from './canvasGradientGlowEffect';
