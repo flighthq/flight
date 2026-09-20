@@ -1,56 +1,48 @@
+export * from './anisotropyPbrGlExtension';
+export * from './blinnPhongGlMeshMaterialRenderer';
+export * from './clearcoatPbrGlExtension';
+export * from './customShaderGlMeshMaterialRenderer';
+export * from './depthGlMeshMaterialRenderer';
+export * from './emissiveGlMeshMaterialRenderer';
+export * from './enableGlPbrExtensionGuards';
+export * from './enableGlScene3DColorSpaceGuards';
+export * from './enableGlScene3DCustomShaderGuards';
+export * from './enableGlScene3DDeformGuards';
+export * from './enableGlScene3DForwardLightSelectionGuards';
+export * from './explainGlMeshGeometryUvSets';
+export * from './explainGlScene3DCoverage';
+export * from './explainGlScene3DForwardLightSelection';
+export * from './extendedPbrGlMeshMaterialRenderer';
+export * from './glEnvironmentCapture';
+export { bakeGlEnvironmentCaptureIbl, bakeGlEnvironmentIbl } from './glEnvironmentIblBake';
+export { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
+export * from './glMeshMaterialRegistry';
 export {
-  anisotropyPbrGlExtension,
-  areGlPbrExtensionGuardsEnabled,
-  bakeGlEnvironmentCaptureIbl,
-  bakeGlEnvironmentIbl,
-  blinnPhongGlMeshMaterialRenderer,
-  clearcoatPbrGlExtension,
-  explainGlScene3DCoverage,
-  hasGlScene3DCoverage,
-  renderGlEnvironmentSkybox,
-  renderGlScene3D,
-  renderGlScene3DShadowMap,
-  enableGlPbrExtensionGuards,
-  ensureGlMeshUpload,
   explainGlPbrExtensions,
-  extendedPbrGlMeshMaterialRenderer,
-  getGlEnvironmentCaptureTexture,
   getGlPbrExtensionRegistration,
-  iridescencePbrGlExtension,
-  prepareGlScene3DForwardLights,
-  renderGlEnvironmentCapture,
-  registerGlAnisotropyPbrExtension,
-  registerGlBlinnPhongMaterial,
-  registerBuiltInGlModifierSnippets,
-  registerGlClearcoatPbrExtension,
-  registerGlCustomShaderMaterial,
-  registerGlDepthMaterial,
-  registerGlEmissiveMaterial,
-  registerGlExtendedPbrMaterial,
-  registerGlCustomMaterialShader,
   registerGlPbrExtension,
-  registerGlIridescencePbrExtension,
-  registerGlLambertMaterial,
-  registerGlMatcapMaterial,
-  registerGlNormalMaterial,
-  registerGlPhongMaterial,
-  registerGlShadedMaterial,
-  registerGlSheenPbrExtension,
-  registerGlSpecularPbrExtension,
-  registerGlSpecularGlossinessPbrMaterial,
-  registerGlStandardPbrMaterial,
-  registerGlToonMaterial,
-  registerGlTransmissionVolumePbrExtension,
-  registerGlUnlitMaterial,
-  registerGlVertexColorMaterial,
-  registerGlWireframeMaterial,
-  registerGlWrappedDiffusePbrExtension,
-  defaultScene3DGlRenderRegistries,
-  setGlPbrTransmissionSceneColor,
-  setGlScene3DTime,
-  sheenPbrGlExtension,
-  specularPbrGlExtension,
-  transmissionVolumePbrGlExtension,
-  unlitGlMeshMaterialRenderer,
-  wrappedDiffusePbrGlExtension,
-} from './contract';
+} from './glPbrExtensionRegistry';
+export * from './glShadedBuiltInModifiers';
+export * from './glShadedModifierSnippet';
+export * from './glShadowMap';
+export * from './iridescencePbrGlExtension';
+export * from './lambertGlMeshMaterialRenderer';
+export * from './matcapGlMeshMaterialRenderer';
+export * from './normalGlMeshMaterialRenderer';
+export * from './phongGlMeshMaterialRenderer';
+export * from './prepareGlScene3DForwardLights';
+export * from './presentGlScene3D';
+export * from './registerGlStandardPbrMaterial';
+export * from './renderGlScene3D';
+export * from './scene3DGlPipeline';
+export * from './shadedGlMeshMaterialRenderer';
+export * from './sheenPbrGlExtension';
+export * from './specularGlossinessPbrGlMeshMaterialRenderer';
+export * from './specularPbrGlExtension';
+export * from './standardPbrGlMeshMaterialRenderer';
+export * from './toonGlMeshMaterialRenderer';
+export * from './transmissionVolumePbrGlExtension';
+export * from './unlitGlMeshMaterialRenderer';
+export * from './vertexColorGlMeshMaterialRenderer';
+export * from './wireframeGlMeshMaterialRenderer';
+export * from './wrappedDiffusePbrGlExtension';
