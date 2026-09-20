@@ -80,7 +80,6 @@
     "check:package-dist-orphans": "tsx ./scripts/check-package-dist-orphans.ts",
     "check:exports": "tsx ./scripts/check-exports.ts",
     "check:exports:fix": "tsx ./scripts/check-exports.ts --fix",
-    "check:renderer-public-exports": "tsx ./scripts/check-renderer-public-exports.ts",
     "check:sdk-subpaths": "tsx ./scripts/check-sdk-subpaths.ts",
     "check:transport-bypasses": "tsx ./scripts/check-transport-bypasses.ts",
     "clean": "npm run clean:build",

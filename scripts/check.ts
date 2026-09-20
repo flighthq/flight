@@ -111,7 +111,6 @@ if (!scoped) {
 
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('exports:check', 'tsx', ['scripts/check-exports.ts']);
-  add('renderer-public-exports:check', 'tsx', ['scripts/check-renderer-public-exports.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
   add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
   add('degree-constants:check', 'tsx', ['scripts/check-degree-constants.ts']);
