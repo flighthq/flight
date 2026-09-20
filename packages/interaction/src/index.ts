@@ -1,19 +1,25 @@
+export * from './displayHitTests';
+export * from './displayObjectOverlap';
+export * from './enableInteractionGuards';
 export {
-  applyNodeInteractiveStates,
-  areNodeChildrenHitTestEnabled,
-  captureInteractionPointer,
   clearFocus,
   connectFocusNavigation,
+  createFocusManager,
+  focusNextNode,
+  focusNodeInDirection,
+  focusPreviousNode,
+  getFocusedNode,
+  getFocusOrder,
+  isNodeFocused,
+  setFocusedNode,
+} from './focusManager';
+export * from './hitTests';
+export {
+  captureInteractionPointer,
   connectInputToInteraction,
   connectInteractionDispatchLayer,
   connectInteractionSignal,
-  containsNode2D,
-  createFocusManager,
   createInteractionManager,
-  createNodeInteractionState,
-  createNodeInteractiveStateBinding,
-  describeGraphHit,
-  disableInteractionGuards,
   disconnectInteractionSignal,
   dispatchInteractionContextMenu,
   dispatchInteractionKeyDown,
@@ -23,53 +29,24 @@ export {
   dispatchInteractionPointerMove,
   dispatchInteractionPointerUp,
   dispatchInteractionWheel,
-  disposeNodeInteractiveStateBinding,
-  enableInteractionGuards,
   enableInteractionSignals,
-  enableNodeInteractionState,
-  explainInteractionHitEligibility,
-  explainNodeInteractiveStateBinding,
-  findGraphHitTarget,
-  findGraphHitTargetPrecise,
-  findGraphHitTargets,
-  findGraphHitTargetsPrecise,
-  findSpatialInteractionTarget,
-  focusNextNode,
-  focusNodeInDirection,
-  focusPreviousNode,
-  getFocusOrder,
-  getFocusedNode,
   getInteractionSignals,
-  getNode2DOverlapRectangle,
+  invalidateInteractionCursor,
+  releaseInteractionPointer,
+  setInteractionConnectGuard,
+} from './interactionManager';
+export * from './interactionSpatialIndex';
+export {
+  areNodeChildrenHitTestEnabled,
+  createNodeInteractionState,
+  enableNodeInteractionState,
   getNodeCursor,
   getNodeHitArea,
   getNodeInteractionState,
   getNodeTabIndex,
-  hitTestAreaQuery,
-  hitTestAreaQueryCircle,
-  hitTestGraphLocalBounds,
-  hitTestGraphPoint,
-  hitTestGraphPointPrecise,
-  hitTestNode2Ds,
-  hitTestNode2DsShape,
-  hitTestNodeRegion,
-  invalidateInteractionCursor,
   isNodeFocusable,
-  isNodeFocused,
   isNodeHitTestEnabled,
   isNodePointerDoubleClickEnabled,
-  refreshInteractionSpatialIndex,
-  registerQuadBatchHitTest,
-  registerSpriteHitTest,
-  registerDefaultHitTests,
-  registerHitTest,
-  registerHitTestPrecise,
-  registerShapeHitTest,
-  registerTextHitTest,
-  registerTilemapHitTest,
-  releaseInteractionPointer,
-  setFocusedNode,
-  setInteractionConnectGuard,
   setNodeChildrenHitTestEnabled,
   setNodeCursor,
   setNodeFocusable,
@@ -77,4 +54,13 @@ export {
   setNodeHitTestEnabled,
   setNodePointerDoubleClickEnabled,
   setNodeTabIndex,
-} from './contract';
+} from './nodeInteractionState';
+export * from './nodeInteractiveStateBinding';
+export * from './registerDefaultHitTests';
+export * from './registerQuadBatchHitTest';
+export * from './registerShapeHitTest';
+export * from './registerSpriteHitTest';
+export * from './registerTextHitTest';
+export * from './registerTilemapHitTest';
+export * from './spatialQuery';
+export * from './spriteHitTests';

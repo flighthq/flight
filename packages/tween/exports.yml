@@ -1,0 +1,6 @@
+protected:
+  - addTweenToManager
+  - defaultManager
+  - hasTweenProperty
+  - invalidateTween
+  - makeTween

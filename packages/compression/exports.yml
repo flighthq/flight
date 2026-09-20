@@ -1,0 +1,6 @@
+protected:
+  - DISTANCE_BASE
+  - DISTANCE_EXTRA
+  - LENGTH_BASE
+  - LENGTH_EXTRA
+  - computeAdler32

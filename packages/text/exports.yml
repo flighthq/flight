@@ -1,0 +1,6 @@
+protected:
+  - createNativeTextData
+  - createRichTextData
+  - createTextFieldSignals
+  - createTextLabelData
+  - ensureTextLayout

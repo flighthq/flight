@@ -1,25 +1,24 @@
+export { disposeMidiAccess, getMidiAccessInputPorts, getMidiAccessOutputPorts, requestMidiAccess } from './midiAccess';
+export * from './midiPermission';
+export {
+  closeMidiPort,
+  disposeMidiPort,
+  getMidiPortConnection,
+  getMidiPortState,
+  openMidiPort,
+  sendMidiMessage,
+} from './midiPort';
 export {
   attachMidiAccessStateSubscription,
   attachMidiInputMessageSubscription,
   attachMidiPortStateSubscription,
-  closeMidiPort,
   createMidiAccessStateSubscription,
   createMidiInputMessageSubscription,
   createMidiPortStateSubscription,
   detachMidiAccessStateSubscription,
   detachMidiInputMessageSubscription,
   detachMidiPortStateSubscription,
-  disposeMidiAccess,
   disposeMidiAccessStateSubscription,
   disposeMidiInputMessageSubscription,
-  disposeMidiPort,
   disposeMidiPortStateSubscription,
-  getMidiAccessInputPorts,
-  getMidiAccessOutputPorts,
-  getMidiPermission,
-  getMidiPortConnection,
-  getMidiPortState,
-  openMidiPort,
-  requestMidiAccess,
-  sendMidiMessage,
-} from './contract';
+} from './midiSubscription';

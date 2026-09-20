@@ -10,7 +10,6 @@ export {
   connectInputStateToInputManager,
   createInputKeyRepeatTimer,
   createInputManager,
-  createInputSignals,
   createInputState,
   detachGamepadInput,
   detachKeyboardInput,

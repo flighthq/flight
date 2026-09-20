@@ -1,18 +1,16 @@
 export {
   cloneImageResource,
   createCompressedImageResource,
+  createImageResource,
+  invalidateImageResource,
+  isImageResourceEmpty,
+} from './imageResource';
+export * from './imageResourceFrom';
+export {
   createEmbeddedImageResourceReference,
   createExternalImageResourceReference,
-  createImageResource,
   createImageResourceFailure,
-  createImageResourceFromBitmap,
   explainImageResourceReferenceResolution,
-  isImageResourceEmpty,
-  isImageUrlSameOrigin,
-  loadImageResourceFromBase64,
-  loadImageResourceFromBlob,
-  loadImageResourceFromBytes,
-  loadImageResourceFromUrl,
   resetFailedImageResourceReference,
   resolveImageResourceReference,
-} from './contract';
+} from './imageResourceReference';

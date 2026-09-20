@@ -1,0 +1,6 @@
+protected:
+  - ensureMeshGeometryBounds
+  - getVertexFormatByteLength
+  - getVertexFormatComponentCount
+  - readVertexFormatComponent
+  - writeVertexFormatComponent

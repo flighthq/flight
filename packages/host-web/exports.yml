@@ -7,6 +7,3 @@ protected:
   - createWebSurfaceFromElement     # internal surface factory
   - getAudioSourceBufferSourceNode  # low-level Web Audio node access
   - getAudioSourceGainNode          # low-level Web Audio node access
-
-exclude:
-  - file: webMidi                    # incomplete: missing const webHostMidi seam

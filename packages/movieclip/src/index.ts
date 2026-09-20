@@ -2,7 +2,6 @@ export * from './enableMovieClipGuards';
 export {
   addMovieClipFrameScript,
   createMovieClip,
-  createMovieClipData,
   disposeMovieClipSignals,
   enableMovieClipSignals,
   getMovieClipCurrentFrame,

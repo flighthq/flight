@@ -1,0 +1,5 @@
+protected:
+  - INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE
+  - isFlightDocumentTokenReference
+  - readFlightDocumentTokenReferenceKey
+  - substituteFlightDocumentTokenValue

@@ -1,28 +1,7 @@
-export {
-  applyTween,
-  completeTween,
-  createColorTween,
-  createTween,
-  createTweenManager,
-  createTweenStagger,
-  createTweenTimer,
-  getActiveTweenCount,
-  getTweenProgress,
-  getTweensOf,
-  hasTweensOf,
-  killTweensOfProperty,
-  pauseAllTweens,
-  pauseTween,
-  pauseTweens,
-  resetAllTweens,
-  restartTween,
-  resumeAllTweens,
-  resumeTween,
-  resumeTweens,
-  seekTween,
-  setTweenProgress,
-  stopAllTweens,
-  stopTween,
-  stopTweens,
-  updateTweens,
-} from './contract';
+export * from './colorTween';
+export * from './timer';
+export * from './tween';
+export { createTweenManager } from './tweenManager';
+export { getTweenProgress, restartTween, seekTween, setTweenProgress } from './tweenProgress';
+export * from './tweenStagger';
+export * from './updateTweens';

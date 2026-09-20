@@ -1,3 +1,3 @@
 export * from './flightDocumentSceneTokens';
+export * from './flightDocumentTokenReference';
 export * from './substituteFlightDocumentSceneTokens';
-export { initializeFlightDocumentTokenResolverRegistry } from './flightDocumentSceneTokens';
